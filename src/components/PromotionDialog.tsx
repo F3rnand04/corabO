@@ -11,20 +11,16 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from './ui/badge';
-import { Zap, Clock, Banknote, ChevronDown, Upload, FileText, Check } from 'lucide-react';
+import { Zap, Clock, ChevronDown, Upload, Check } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { cn } from '@/lib/utils';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 
 type GalleryImage = {
   src: string;
@@ -52,6 +48,7 @@ export function PromotionDialog({ isOpen, onOpenChange, onActivate, image, isPro
   const [duration, setDuration] = useState<"24" | "48" | "72">("24");
   const [reference, setReference] = useState('');
   const [voucherFile, setVoucherFile] = useState<File | null>(null);
+  const [isPaymentSectionOpen, setIsPaymentSectionOpen] = useState(false);
 
   if (!image) return null;
 
@@ -139,49 +136,54 @@ export function PromotionDialog({ isOpen, onOpenChange, onActivate, image, isPro
                 </RadioGroup>
               </div>
 
-              <Collapsible>
-                 <CollapsibleTrigger asChild>
-                    <Button variant="default" className="w-full justify-between" disabled={!promotionText.trim() || isPromotionActive}>
-                       <span>Activar por ${promotionCost.toFixed(2)}</span>
-                       <ChevronDown className="h-4 w-4" />
-                    </Button>
-                 </CollapsibleTrigger>
-                 <CollapsibleContent className="py-4 px-3 mt-2 border rounded-md">
-                   <div className="space-y-4">
-                     <p className="text-sm font-semibold text-foreground">Realiza el pago a los siguientes datos:</p>
-                     <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md space-y-1">
-                        <p><strong>Banco:</strong> Banco de Corabo</p>
-                        <p><strong>Teléfono:</strong> 0412-1234567</p>
-                        <p><strong>RIF:</strong> J-12345678-9</p>
+              <div className="space-y-2">
+                <Button 
+                    variant="default" 
+                    className="w-full" 
+                    disabled={!promotionText.trim() || isPromotionActive}
+                    onClick={() => setIsPaymentSectionOpen(!isPaymentSectionOpen)}
+                >
+                    <span>Activar por ${promotionCost.toFixed(2)}</span>
+                    <ChevronDown className={cn("h-4 w-4 ml-2 transition-transform", isPaymentSectionOpen && "rotate-180")} />
+                </Button>
+
+                {isPaymentSectionOpen && (
+                     <div className="py-4 px-3 mt-2 border rounded-md bg-muted/50">
+                       <div className="space-y-4">
+                         <p className="text-sm font-semibold text-foreground">Realiza el pago a los siguientes datos:</p>
+                         <div className="text-sm text-muted-foreground bg-background p-3 rounded-md space-y-1">
+                            <p><strong>Banco:</strong> Banco de Corabo</p>
+                            <p><strong>Teléfono:</strong> 0412-1234567</p>
+                            <p><strong>RIF:</strong> J-12345678-9</p>
+                         </div>
+                         <p className="text-sm font-semibold text-foreground pt-2">Luego, registra tu pago aquí:</p>
+                         <div className="space-y-2">
+                            <Label htmlFor="voucher-upload">Comprobante de Pago</Label>
+                            <div className="flex items-center gap-2">
+                              <Button asChild variant="outline" size="icon"><Label htmlFor="voucher-upload" className="cursor-pointer"><Upload className="h-4 w-4"/></Label></Button>
+                               <Input 
+                                  id="voucher-upload" 
+                                  type="file" 
+                                  className="hidden" 
+                                  onChange={(e) => setVoucherFile(e.target.files ? e.target.files[0] : null)}
+                                />
+                               <span className={cn("text-sm text-muted-foreground", voucherFile && "text-foreground font-medium")}>
+                                 {voucherFile ? voucherFile.name : 'Seleccionar archivo...'}
+                               </span>
+                            </div>
+                         </div>
+                         <div className="space-y-2">
+                           <Label htmlFor="reference">Número de Referencia</Label>
+                           <Input id="reference" placeholder="00012345" value={reference} onChange={(e) => setReference(e.target.value)} />
+                         </div>
+                         <Button onClick={handleActivate} disabled={!reference || !voucherFile} className="w-full">
+                           <Check className="mr-2 h-4 w-4" />
+                           Confirmar Pago
+                         </Button>
+                       </div>
                      </div>
-                     <p className="text-sm font-semibold text-foreground pt-2">Luego, registra tu pago aquí:</p>
-                     <div className="space-y-2">
-                        <Label htmlFor="voucher-upload">Comprobante de Pago</Label>
-                        <div className="flex items-center gap-2">
-                          <Button asChild variant="outline" size="icon"><Label htmlFor="voucher-upload" className="cursor-pointer"><Upload className="h-4 w-4"/></Label></Button>
-                           <Input 
-                              id="voucher-upload" 
-                              type="file" 
-                              className="hidden" 
-                              onChange={(e) => setVoucherFile(e.target.files ? e.target.files[0] : null)}
-                            />
-                           <span className={cn("text-sm text-muted-foreground", voucherFile && "text-foreground font-medium")}>
-                             {voucherFile ? voucherFile.name : 'Seleccionar archivo...'}
-                           </span>
-                        </div>
-                     </div>
-                     <div className="space-y-2">
-                       <Label htmlFor="reference">Número de Referencia</Label>
-                       <Input id="reference" placeholder="00012345" value={reference} onChange={(e) => setReference(e.target.value)} />
-                     </div>
-                     <Button onClick={handleActivate} disabled={!reference || !voucherFile} className="w-full">
-                       <Check className="mr-2 h-4 w-4" />
-                       Confirmar Pago
-                     </Button>
-                   </div>
-                 </CollapsibleContent>
-              </Collapsible>
-              
+                )}
+              </div>
             </div>
           )}
         </ScrollArea>
