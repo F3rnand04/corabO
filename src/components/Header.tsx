@@ -24,16 +24,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 export function Header() {
-  const { currentUser, searchQuery, setSearchQuery, contacts, removeContact, setFeedView, feedView } = useCorabo();
+  const { currentUser, searchQuery, setSearchQuery, contacts, removeContact } = useCorabo();
   const router = useRouter();
-
-  const handleFeedViewChange = (view: 'servicios' | 'empresas') => {
-    // Navigate to home page if not already there
-    if (router.pathname !== '/') {
-        router.push('/');
-    }
-    setFeedView(view);
-  };
 
   return (
     <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm sticky top-0 z-40">
@@ -132,10 +124,6 @@ export function Header() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-            </div>
-            <div className="flex items-center gap-2">
-              <Button className="rounded-full flex-1" variant={feedView === 'servicios' ? 'secondary' : 'ghost'} onClick={() => handleFeedViewChange('servicios')}>Servicios</Button>
-              <Button className="rounded-full flex-1" variant={feedView === 'empresas' ? 'secondary' : 'ghost'} onClick={() => handleFeedViewChange('empresas')}>Empresas</Button>
             </div>
         </div>
       </div>

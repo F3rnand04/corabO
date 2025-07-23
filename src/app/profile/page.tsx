@@ -2,19 +2,19 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Star, Share2 } from 'lucide-react';
 
 export default function ProfilePage() {
-  // Datos de ejemplo del usuario (reemplaza con datos reales)
-  const user = {
-    name: "NOMBRE USUARIO",
-    specialty: "ESPECIALIDAD",
-    rating: 4.9,
+  // Datos de ejemplo del proveedor para asegurar que la página siempre se renderice
+  const providerProfile = {
+    name: "Tecno Soluciones S.A.",
+    specialty: "Reparación de Computadoras",
+    rating: 4.8,
     efficiency: "99.9%",
-    completedJobs: "00 | 05",
-    publications: 30,
-    totalJobs: 15,
+    completedJobs: "85 | 10",
+    publications: 5,
+    totalJobs: 95,
     profileImage: "https://placehold.co/128x128.png",
     mainImage: "https://placehold.co/600x400.png",
     shareCount: 4567,
@@ -37,7 +37,7 @@ export default function ProfilePage() {
           <CardContent className="p-4 flex items-center space-x-4">
             <div className="relative">
               <Image
-                src={user.profileImage}
+                src={providerProfile.profileImage}
                 alt="Profile Picture"
                 width={64}
                 height={64}
@@ -49,8 +49,8 @@ export default function ProfilePage() {
               </div>
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-gray-800">{user.name}</h1>
-              <p className="text-sm text-gray-600">{user.specialty}</p>
+              <h1 className="text-xl font-semibold text-gray-800">{providerProfile.name}</h1>
+              <p className="text-sm text-gray-600">{providerProfile.specialty}</p>
             </div>
           </CardContent>
         </Card>
@@ -60,22 +60,22 @@ export default function ProfilePage() {
           <CardContent className="p-4 flex justify-around items-center text-center text-gray-700">
             <div className="flex items-center space-x-1">
               <Star className="w-4 h-4 text-yellow-400 fill-yellow-400"/>
-              <span className="font-medium">{user.rating.toFixed(1)}</span>
+              <span className="font-medium">{providerProfile.rating.toFixed(1)}</span>
             </div>
             <div>
-              <p className="font-medium">{user.efficiency}</p>
+              <p className="font-medium">{providerProfile.efficiency}</p>
               <p className="text-xs text-gray-500">Efec.</p>
             </div>
             <div>
-              <p className="font-medium">{user.completedJobs}</p>
+              <p className="font-medium">{providerProfile.completedJobs}</p>
               <p className="text-xs text-gray-500">Trab. Realizados</p>
             </div>
             <div>
-              <p className="font-medium">{user.publications}</p>
+              <p className="font-medium">{providerProfile.publications}</p>
               <p className="text-xs text-gray-500">Publicaciones</p>
             </div>
             <div>
-              <p className="font-medium">{user.totalJobs}</p>
+              <p className="font-medium">{providerProfile.totalJobs}</p>
               <p className="text-xs text-gray-500">Trab. Realizados</p>
             </div>
           </CardContent>
@@ -94,7 +94,7 @@ export default function ProfilePage() {
             {/* Tarjeta de Imagen Principal */}
             <div className="relative">
               <Image
-                src={user.mainImage}
+                src={providerProfile.mainImage}
                 alt="Main content image"
                 width={600}
                 height={400}
@@ -103,11 +103,11 @@ export default function ProfilePage() {
               />
               <div className="absolute top-6 right-6 flex flex-col items-center space-y-1 bg-white bg-opacity-75 p-1 rounded">
                 <Share2 className="text-gray-600 h-5 w-5 cursor-pointer"/>
-                <span className="text-xs text-gray-600">{user.shareCount}</span>
+                <span className="text-xs text-gray-600">{providerProfile.shareCount}</span>
               </div>
               <div className="absolute bottom-6 right-6 flex flex-col items-center space-y-1 bg-white bg-opacity-75 p-1 rounded">
                 <Star className="text-yellow-400 fill-yellow-400 h-6 w-6 cursor-pointer"/>
-                <span className="text-sm text-gray-700 font-semibold">{user.starCount.toFixed(1)}</span>
+                <span className="text-sm text-gray-700 font-semibold">{providerProfile.starCount.toFixed(1)}</span>
               </div>
             </div>
 
@@ -119,7 +119,7 @@ export default function ProfilePage() {
 
             {/* Grid de Thumbnails */}
             <div className="grid grid-cols-3 gap-4">
-              {user.thumbnails.map((thumb, index) => (
+              {providerProfile.thumbnails.map((thumb, index) => (
                 <div key={index} className="relative">
                   <Image
                     src={thumb}

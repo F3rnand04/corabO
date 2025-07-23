@@ -6,8 +6,6 @@ import type { User, Product, Service, CartItem, Transaction, TransactionStatus }
 import { users, products, services, initialTransactions } from '@/lib/mock-data';
 import { useToast } from "@/hooks/use-toast"
 
-type FeedView = 'servicios' | 'empresas';
-
 interface CoraboState {
   currentUser: User;
   users: User[];
@@ -18,7 +16,6 @@ interface CoraboState {
   searchQuery: string;
   contacts: User[];
   isGpsActive: boolean;
-  feedView: FeedView;
   switchUser: (userId: string) => void;
   addToCart: (product: Product, quantity: number) => void;
   updateCartQuantity: (productId: string, quantity: number) => void;
@@ -33,7 +30,6 @@ interface CoraboState {
   addContact: (user: User) => void;
   removeContact: (userId: string) => void;
   toggleGps: () => void;
-  setFeedView: (view: FeedView) => void;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -46,7 +42,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [contacts, setContacts] = useState<User[]>([]);
   const [isGpsActive, setIsGpsActive] = useState(false);
-  const [feedView, setFeedView] = useState<FeedView>('empresas');
 
 
   const findOrCreateCartTransaction = (): Transaction => {
@@ -228,7 +223,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     searchQuery,
     contacts,
     isGpsActive,
-    feedView,
     switchUser,
     addToCart,
     updateCartQuantity,
@@ -243,7 +237,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     addContact,
     removeContact,
     toggleGps,
-    setFeedView,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;
