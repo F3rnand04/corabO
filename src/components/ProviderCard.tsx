@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,7 +29,8 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                 <div className="p-3">
                     <div className="flex items-start gap-3">
                         <Avatar className="w-12 h-12 border-2 border-primary">
-                             <AvatarFallback className="text-xs">Foto</AvatarFallback>
+                             <AvatarImage src={`https://i.pravatar.cc/150?u=${provider.id}`} alt={provider.name} />
+                             <AvatarFallback className="text-xs">{provider.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div className="flex-grow">
                             <div className="flex justify-between items-start">
