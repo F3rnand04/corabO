@@ -8,9 +8,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from './ui/scroll-area';
+import { Trash2 } from 'lucide-react';
 
 type GalleryImage = {
   src: string;
@@ -29,32 +30,35 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, image }: ImageDetails
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl p-0">
-        <div className="grid grid-cols-1 md:grid-cols-2">
-            <div className="relative aspect-square md:aspect-auto">
-                 <Image
-                    src={image.src}
-                    alt={image.alt}
-                    fill
-                    className="object-cover rounded-t-lg md:rounded-l-lg md:rounded-t-none"
-                    data-ai-hint="product detail"
-                />
-            </div>
-            <div className="flex flex-col">
-                <DialogHeader className="p-6 pb-2 text-left">
+      <DialogContent className="sm:max-w-2xl p-0 flex flex-col max-h-[90vh]">
+        <div className="relative aspect-video flex-shrink-0">
+             <Image
+                src={image.src}
+                alt={image.alt}
+                fill
+                className="object-cover rounded-t-lg"
+                data-ai-hint="product detail"
+            />
+        </div>
+        <ScrollArea className="flex-grow overflow-y-auto">
+            <div className="p-6">
+                <DialogHeader className="text-left mb-4">
                     <DialogTitle className="text-2xl">{image.alt}</DialogTitle>
                 </DialogHeader>
-                <div className="p-6 pt-0 flex-grow overflow-y-auto">
-                    <DialogDescription className="text-base text-foreground">
-                        {image.description}
-                    </DialogDescription>
+
+                <div className="flex flex-wrap gap-2 mb-4">
+                    <Button variant="outline">Editar Descripción</Button>
+                    <Button variant="destructive" size="icon">
+                        <Trash2 className="h-4 w-4"/>
+                    </Button>
+                    <Button variant="secondary" onClick={() => onOpenChange(false)} className="ml-auto">Cerrar</Button>
                 </div>
-                <DialogFooter className="p-6 pt-2 bg-muted/50 rounded-b-lg md:rounded-b-none md:rounded-br-lg flex-row justify-between sm:justify-between">
-                     <Button variant="ghost">Editar Descripción</Button>
-                     <Button variant="secondary" onClick={() => onOpenChange(false)}>Cerrar</Button>
-                </DialogFooter>
+
+                <DialogDescription className="text-base text-foreground">
+                    {image.description}
+                </DialogDescription>
             </div>
-        </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
