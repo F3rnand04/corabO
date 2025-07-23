@@ -153,10 +153,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const requestService = (service: Service) => {
-    if (currentUser.type !== 'client') {
-        toast({ variant: 'destructive', title: "Acción no permitida", description: "Solo los clientes pueden solicitar servicios."});
-        return;
-    }
     const newTx: Transaction = {
         id: `txn-${Date.now()}`,
         type: 'Servicio',
@@ -176,10 +172,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const sendQuote = (transactionId: string, quote: { breakdown: string; total: number }) => {
-     if (currentUser.type !== 'provider') {
-        toast({ variant: 'destructive', title: "Acción no permitida", description: "Solo los prestadores pueden enviar cotizaciones."});
-        return;
-    }
     updateTransaction(transactionId, tx => ({
         status: 'Cotización Recibida',
         amount: quote.total,
@@ -190,10 +182,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const acceptQuote = (transactionId: string) => {
-    if (currentUser.type !== 'client') {
-        toast({ variant: 'destructive', title: "Acción no permitida", description: "Solo los clientes pueden aceptar cotizaciones."});
-        return;
-    }
     updateTransaction(transactionId, {
         status: 'Servicio en Curso',
         date: new Date().toISOString(),
