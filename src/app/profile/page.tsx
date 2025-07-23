@@ -53,7 +53,7 @@ export default function ProfilePage() {
                              <div className="flex items-center gap-2 text-sm mt-1">
                                 <div className="flex items-center gap-1">
                                     <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                                    <span>{currentUser.reputation}</span>
+                                    <span>4.9</span>
                                 </div>
                                 <Separator orientation="vertical" className="h-4" />
                                 <span>99.9% Efec.</span>
@@ -89,18 +89,18 @@ export default function ProfilePage() {
                     <div className="relative aspect-[4/3] w-full rounded-2xl overflow-hidden">
                         <Image src="https://placehold.co/600x400.png" alt="Main content" layout="fill" objectFit="cover" data-ai-hint="professional service landscape" />
                     </div>
-                    <div className="absolute bottom-4 right-6 flex flex-col items-center gap-4 text-black">
+                    <div className="absolute bottom-4 right-6 flex flex-col items-center gap-4 text-white">
                        <div className="flex flex-col items-center">
                             <Button variant="ghost" size="icon" className="text-black bg-white/50 rounded-full h-10 w-10">
                                 <Share className="w-5 h-5" />
                             </Button>
-                            <span className="text-xs font-bold mt-1 drop-shadow-md">4567</span>
+                            <span className="text-xs font-bold mt-1 drop-shadow-md text-black">4567</span>
                         </div>
                        <div className="flex flex-col items-center">
                              <Button variant="ghost" size="icon" className="text-black bg-white/50 rounded-full h-10 w-10">
                                 <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
                              </Button>
-                            <span className="text-xs font-bold mt-1 drop-shadow-md">8934.5</span>
+                            <span className="text-xs font-bold mt-1 drop-shadow-md text-black">8934.5</span>
                         </div>
                     </div>
                 </div>

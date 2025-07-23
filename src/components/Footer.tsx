@@ -1,39 +1,19 @@
 "use client";
 
-import { Home, PlayCircle, Search, MessageSquare, User, Settings, ArrowUp } from "lucide-react";
+import { Home, PlayCircle, Search, MessageSquare, User } from "lucide-react";
 import { Button } from "./ui/button";
-import { useRouter, usePathname } from "next/navigation";
-import { useCorabo } from "@/contexts/CoraboContext";
+import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogTrigger } from "./ui/dialog";
 import { CategoryHub } from "./CategoryHub";
 import { useState } from "react";
 
 export function Footer() {
   const router = useRouter();
-  const pathname = usePathname();
-  const { currentUser } = useCorabo();
   const [isHubOpen, setIsHubOpen] = useState(false);
-
-  const isProviderOnProfilePage = currentUser.type === 'provider' && pathname === '/profile';
 
   const handleProfileClick = () => {
     router.push('/profile');
   };
-  
-  // This is a placeholder, as the real settings page is on the profile view for providers
-  const handleSettingsClick = () => {
-    if (currentUser.type === 'provider') {
-       router.push('/profile'); // Or a dedicated settings page if it exists
-    } else {
-       alert('Navegando a la página de Configuración...');
-    }
-  };
-
-  // If we are on the provider's own profile page, we don't render the standard footer.
-  // The custom footer for that page is handled directly in `src/app/profile/page.tsx`.
-  if (isProviderOnProfilePage) {
-    return null;
-  }
 
   return (
     <footer className="bg-background border-t sticky bottom-0 z-40">

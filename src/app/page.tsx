@@ -3,7 +3,6 @@
 import { useCorabo } from "@/contexts/CoraboContext";
 import { ServiceCard } from "@/components/ServiceCard";
 import { ProviderCard } from "@/components/ProviderCard";
-import { Separator } from "@/components/ui/separator";
 
 export default function HomePage() {
   const { services, users, searchQuery, feedView } = useCorabo();
