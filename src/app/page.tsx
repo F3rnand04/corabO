@@ -29,7 +29,7 @@ export default function Home() {
   );
 
   return (
-    <div className="container px-2">
+    <div className="container px-2 py-4">
       {feedView === 'empresas' && (
         <div className="space-y-4">
           {repeatedProviders.map(provider => (
@@ -38,12 +38,10 @@ export default function Home() {
         </div>
       )}
       {feedView === 'servicios' && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredServices.map(service => (
-              <ServiceCard key={service.id} service={service} />
-            ))}
-          </div>
+         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
+          {filteredServices.map(service => (
+            <ServiceCard key={service.id} service={service} />
+          ))}
         </div>
       )}
     </div>

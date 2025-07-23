@@ -2,10 +2,15 @@
 "use client";
 
 import type { Service } from "@/lib/types";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { Star, Send } from "lucide-react";
+import { Star, Send, MessageCircle } from "lucide-react";
+import Image from "next/image";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Separator } from "./ui/separator";
+import { Badge } from "./ui/badge";
+import Link from "next/link";
 
 interface ServiceCardProps {
   service: Service;
@@ -14,29 +19,81 @@ interface ServiceCardProps {
 export function ServiceCard({ service }: ServiceCardProps) {
   const { requestService, users, currentUser } = useCorabo();
   const provider = users.find(u => u.id === service.providerId);
+  
+  if (!provider) {
+    return null; // or a fallback UI
+  }
+
+  const profileLink = `/companies/${provider.id}`;
 
   return (
-    <Card className="flex flex-col">
-      <CardHeader>
-        <CardTitle>{service.name}</CardTitle>
-        <CardDescription className="pt-2">{service.description}</CardDescription>
-      </CardHeader>
-      <CardContent className="flex-grow">
-         <div className="flex justify-between items-center text-sm text-muted-foreground">
-            <span>Ofrecido por {provider?.name}</span>
-             <div className="flex items-center gap-1">
-                <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                <span>{provider?.reputation}</span>
+    <Card className="rounded-2xl overflow-hidden shadow-md">
+      <CardContent className="p-0">
+        <div className="p-3">
+          <div className="flex items-start gap-3">
+            <Avatar className="w-12 h-12 border-2 border-primary">
+              <AvatarImage src={`https://i.pravatar.cc/150?u=${provider.id}`} alt={provider.name} />
+              <AvatarFallback className="text-xs">{provider.name.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <div className="flex-grow">
+              <p className="font-bold text-base">{service.name}</p>
+              <p className="text-sm text-muted-foreground">Ofrecido por <Link href={profileLink} className="hover:underline text-primary">{provider.name}</Link></p>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                <div className="flex items-center gap-1">
+                  <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                  <span className="font-semibold text-foreground">{provider.reputation}</span>
+                </div>
+              </div>
             </div>
+          </div>
+        </div>
+
+        <div className="relative aspect-video w-full">
+          <Image src="https://placehold.co/600x400.png" alt={service.name} layout="fill" objectFit="cover" data-ai-hint="service person working"/>
+          <Badge variant="destructive" className="absolute top-2 left-2 bg-red-500 text-white shadow-lg">OFERTA</Badge>
+          <div className="absolute bottom-2 right-2 flex flex-col items-end gap-2 text-white">
+              <div className="flex flex-col items-center">
+                  <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">
+                      <Star className="w-5 h-5" />
+                  </Button>
+                  <span className="text-xs font-bold mt-1 drop-shadow-md">4.5k</span>
+              </div>
+              <div className="flex flex-col items-center">
+                    <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">
+                      <MessageCircle className="w-5 h-5" />
+                    </Button>
+                  <span className="text-xs font-bold mt-1 drop-shadow-md">8.9k</span>
+              </div>
+                <div className="flex flex-col items-center">
+                    <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">
+                      <Send className="w-5 h-5" />
+                    </Button>
+                  <span className="text-xs font-bold mt-1 drop-shadow-md">1.2k</span>
+              </div>
+          </div>
+        </div>
+        
+        <div className="p-3">
+          <p className="text-sm text-muted-foreground mb-2">{service.description}</p>
+        </div>
+
+        <div className="flex justify-around items-center p-2 border-t">
+          <Button variant="ghost" className="text-muted-foreground font-semibold text-sm">Mensaje</Button>
+          <Separator orientation="vertical" className="h-6" />
+          <Link href={profileLink} passHref>
+              <Button variant="ghost" className="text-muted-foreground font-semibold text-sm">Ver Perfil</Button>
+          </Link>
+          <Separator orientation="vertical" className="h-6" />
+          {currentUser.type === 'client' && (
+            <Button variant="ghost" className="text-primary font-bold text-sm" onClick={() => requestService(service)}>
+              <Send className="mr-2 h-4 w-4" /> Solicitar
+            </Button>
+          )}
+           {currentUser.type !== 'client' && (
+             <Button variant="ghost" className="text-muted-foreground font-semibold text-sm">Comentarios</Button>
+           )}
         </div>
       </CardContent>
-      <CardFooter>
-        {currentUser.type === 'client' && (
-          <Button onClick={() => requestService(service)} className="w-full">
-            <Send className="mr-2 h-4 w-4" /> Solicitar Servicio
-          </Button>
-        )}
-      </CardFooter>
     </Card>
   );
 }
