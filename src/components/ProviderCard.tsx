@@ -16,7 +16,7 @@ interface ProviderCardProps {
 }
 
 export function ProviderCard({ provider }: ProviderCardProps) {
-    const { addContact } = useCorabo();
+    const { addContact, isGpsActive } = useCorabo();
     const profileLink = provider.type === 'provider' ? `/companies/${provider.id}` : '#';
 
     const handleSaveContact = () => {
@@ -54,7 +54,7 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                             </div>
                         </div>
                          <div className="flex flex-col items-center gap-1 text-muted-foreground">
-                            <MapPin className="w-5 h-5 text-green-500" />
+                            <MapPin className={`w-5 h-5 ${isGpsActive ? 'text-green-500' : 'text-muted-foreground'}`} />
                             <span className="text-xs font-semibold">2.5 km</span>
                         </div>
                     </div>
