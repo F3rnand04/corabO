@@ -15,7 +15,7 @@ interface ProviderCardProps {
 
 export function ProviderCard({ provider }: ProviderCardProps) {
     return (
-        <Card className="rounded-2xl">
+        <Card className="rounded-2xl overflow-hidden">
             <CardContent className="p-3">
                 <div className="flex items-start gap-3">
                     <Avatar className="w-12 h-12 border">
@@ -53,23 +53,25 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                     <Image src="https://placehold.co/600x400.png" alt="Provider content" layout="fill" objectFit="cover" data-ai-hint="landscape nature" />
                     <div className="absolute bottom-2 right-2 flex flex-col items-center gap-2">
                         <div className="flex flex-col items-center text-white">
-                            <Button variant="ghost" size="icon" className="text-white hover:text-white">
-                                <Send className="w-6 h-6" />
+                            <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full">
+                                <Send className="w-5 h-5" />
                             </Button>
-                            <span className="text-xs font-bold">4567</span>
+                            <span className="text-xs font-bold mt-1">4.5k</span>
                         </div>
-                        <div className="flex flex-col items-center text-white">
-                             <Button variant="ghost" size="icon" className="text-white hover:text-white">
-                                <Star className="w-7 h-7 text-yellow-400 fill-yellow-400" />
+                        <div className="flex flex-col items-center text-white mt-2">
+                             <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full">
+                                <Star className="w-6 h-6 text-yellow-400 fill-yellow-400" />
                              </Button>
-                            <span className="text-xs font-bold">8934.5</span>
+                            <span className="text-xs font-bold mt-1">8.9k</span>
                         </div>
                     </div>
                 </div>
 
                 <div className="flex justify-around items-center">
                     <Button variant="ghost" className="text-muted-foreground font-semibold">Mensaje</Button>
+                    <Separator orientation="vertical" className="h-6" />
                     <Button variant="ghost" className="text-muted-foreground font-semibold">Ver Perfil</Button>
+                     <Separator orientation="vertical" className="h-6" />
                     <Button variant="ghost" className="text-muted-foreground font-semibold">Comentarios</Button>
                 </div>
             </CardContent>
