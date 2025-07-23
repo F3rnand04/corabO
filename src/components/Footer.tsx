@@ -31,8 +31,10 @@ export default function Footer() {
                   <Button
                     size="icon"
                     className={cn(
-                      "relative -top-6 w-16 h-16 bg-background rounded-full shadow-lg border-4 border-background hover:bg-muted",
-                      isActive && "bg-primary/10 text-primary"
+                      "relative -top-6 w-16 h-16 rounded-full shadow-lg",
+                      isActive 
+                        ? "bg-primary/10 text-primary border-4 border-background"
+                        : "bg-primary text-primary-foreground hover:bg-primary/90"
                     )}
                   >
                     <item.icon className="w-8 h-8" />
