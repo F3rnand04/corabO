@@ -17,7 +17,7 @@ interface ServiceCardProps {
 }
 
 export function ServiceCard({ service }: ServiceCardProps) {
-  const { requestService, users, currentUser, isGpsActive, addContact } = useCorabo();
+  const { users, isGpsActive, addContact } = useCorabo();
   const provider = users.find(u => u.id === service.providerId);
   
   if (!provider) {
@@ -99,15 +99,6 @@ export function ServiceCard({ service }: ServiceCardProps) {
           <Link href={profileLink} passHref>
               <Button variant="ghost" className="text-muted-foreground font-semibold text-sm">Ver Perfil</Button>
           </Link>
-          <Separator orientation="vertical" className="h-6" />
-          {currentUser.type === 'client' && (
-            <Button variant="ghost" className="text-primary font-bold text-sm" onClick={() => requestService(service)}>
-              Solicitar
-            </Button>
-          )}
-           {currentUser.type !== 'client' && (
-             <Button variant="ghost" className="text-muted-foreground font-semibold text-sm">Comentarios</Button>
-           )}
         </div>
       </CardContent>
     </Card>
