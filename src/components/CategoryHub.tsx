@@ -9,12 +9,12 @@ interface CategoryHubProps {
 }
 
 const categories = [
-  { name: 'Hogar', icon: Home, color: 'text-blue-500', href: '/services?category=Hogar' },
-  { name: 'Tecnología', icon: Laptop, color: 'text-green-500', href: '/services?category=Tecnología' },
-  { name: 'Salud', icon: Heart, color: 'text-red-500', href: '/services?category=Salud' },
-  { name: 'Educación', icon: GraduationCap, color: 'text-yellow-500', href: '/services?category=Educacion' },
-  { name: 'Eventos', icon: PartyPopper, color: 'text-purple-500', href: '/services?category=Eventos' },
-  { name: 'Belleza', icon: Scissors, color: 'text-pink-500', href: '/services?category=Belleza' },
+  { name: 'Hogar y Reparaciones', icon: Home, color: 'bg-blue-500', href: '/services?category=Hogar' },
+  { name: 'Tecnología y Soporte', icon: Laptop, color: 'bg-green-500', href: '/services?category=Tecnología' },
+  { name: 'Salud y Bienestar', icon: Heart, color: 'bg-red-500', href: '/services?category=Salud' },
+  { name: 'Educación', icon: GraduationCap, color: 'bg-yellow-500', href: '/services?category=Educacion' },
+  { name: 'Eventos', icon: PartyPopper, color: 'bg-purple-500', href: '/services?category=Eventos' },
+  { name: 'Belleza', icon: Scissors, color: 'bg-pink-500', href: '/services?category=Belleza' },
 ];
 
 export function CategoryHub({ onCategorySelect }: CategoryHubProps) {
@@ -26,10 +26,12 @@ export function CategoryHub({ onCategorySelect }: CategoryHubProps) {
           <Link href={category.href} key={category.name} passHref>
             <div 
               onClick={onCategorySelect}
-              className="flex flex-col items-center justify-center p-4 aspect-square bg-muted/50 rounded-2xl hover:bg-muted transition-all cursor-pointer group"
+              className="flex flex-col items-center justify-center p-2 aspect-square rounded-full hover:scale-105 transition-all cursor-pointer group"
             >
-              <category.icon className={`w-10 h-10 ${category.color} mb-2 transition-transform group-hover:scale-110`} />
-              <p className="font-semibold text-center text-sm">{category.name}</p>
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center ${category.color} shadow-lg`}>
+                 <category.icon className="w-8 h-8 text-white" />
+              </div>
+              <p className="font-semibold text-center text-xs mt-2">{category.name}</p>
             </div>
           </Link>
         ))}
