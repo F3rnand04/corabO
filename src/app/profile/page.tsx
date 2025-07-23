@@ -1,11 +1,11 @@
 
 'use client';
 
-import React, { useState, TouchEvent } from 'react';
+import { useState, TouchEvent } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Share2, Plus, Calendar, Wallet, MapPin, ChevronLeft, ChevronRight, MessageCircle, Send } from 'lucide-react';
+import { Star, Send, Plus, Calendar, Wallet, MapPin, ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react';
 import ProfileFooter from '@/components/ProfileFooter';
 import { cn } from '@/lib/utils';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
@@ -22,7 +22,6 @@ export default function ProfilePage() {
     specialty: "Especialidad",
     rating: 4.9,
     efficiency: "99.9%",
-    publications: 30,
     completedJobs: 15,
     otherStat: "00 | 05",
     profileImage: "https://placehold.co/128x128.png",
@@ -129,7 +128,7 @@ export default function ProfilePage() {
 
           <div className="flex justify-around text-center text-xs text-muted-foreground -mt-2">
             <div className="flex-1">
-                  <p className="font-semibold text-foreground">{providerProfile.publications}</p>
+                  <p className="font-semibold text-foreground">{providerProfile.gallery.length}</p>
                   <p>Publicaciones</p>
             </div>
               <div className="flex-1">
