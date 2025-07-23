@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useCorabo } from '@/contexts/CoraboContext';
@@ -6,10 +7,10 @@ import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ProviderCard } from '@/components/ProviderCard';
-import { Map, SlidersHorizontal } from 'lucide-react';
+import { Map, SlidersHorizontal, RadioTower } from 'lucide-react';
 
 export default function MapPage() {
-    const { users } = useCorabo();
+    const { users, isGpsActive, toggleGps } = useCorabo();
     const providers = users.filter(u => u.type === 'provider');
 
     // Posiciones simuladas para los avatares en el mapa
@@ -23,10 +24,15 @@ export default function MapPage() {
     return (
         <main className="container py-8">
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-3xl font-bold flex items-center gap-2">
-                    <Map className="h-8 w-8 text-primary" />
-                    Mapa de Servicios
-                </h1>
+                 <div className="flex items-center gap-4">
+                    <h1 className="text-3xl font-bold flex items-center gap-2">
+                        <Map className="h-8 w-8 text-primary" />
+                        Mapa de Servicios
+                    </h1>
+                     <Button variant={isGpsActive ? "default" : "outline"} size="icon" onClick={toggleGps} className="h-9 w-9">
+                        <RadioTower className="h-5 w-5" />
+                    </Button>
+                </div>
                 <Button variant="outline">
                     <SlidersHorizontal className="mr-2 h-4 w-4" />
                     Filtros

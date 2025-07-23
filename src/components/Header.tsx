@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -85,9 +86,7 @@ export function Header() {
           </Sheet>
 
           <div className="flex items-center space-x-1 sm:space-x-2">
-            <Button variant="ghost" size="icon" onClick={toggleGps} className={isGpsActive ? 'text-green-500' : ''}>
-                <RadioTower className="h-5 w-5" />
-            </Button>
+            
             <Button variant="ghost" size="icon" onClick={() => router.push('/map')}>
               <MapPin className="h-5 w-5" />
             </Button>
