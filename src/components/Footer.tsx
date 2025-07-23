@@ -28,6 +28,12 @@ export function Footer() {
     alert('Navegando a la página de Configuración...');
   };
 
+  // If we are on the provider's own profile page, we don't render the standard footer.
+  // The custom footer for that page is handled directly in `src/app/profile/page.tsx`.
+  if (isProviderOnProfilePage) {
+    return null;
+  }
+
   return (
     <footer className="bg-background border-t sticky bottom-0 z-40">
       <div className="container flex justify-around h-16 items-center px-2">
@@ -40,39 +46,26 @@ export function Footer() {
            <span className="text-xs">Cómo se hace</span>
         </Button>
         
-        {isProviderOnProfilePage ? (
+        <Dialog open={isHubOpen} onOpenChange={setIsHubOpen}>
+        <DialogTrigger asChild>
             <Button variant="default" size="icon" className="h-14 w-14 rounded-full shadow-lg -translate-y-4 bg-primary hover:bg-primary/90">
-                <ArrowUp className="h-7 w-7" />
+            <Search className="h-7 w-7" />
             </Button>
-        ) : (
-            <Dialog open={isHubOpen} onOpenChange={setIsHubOpen}>
-            <DialogTrigger asChild>
-                <Button variant="default" size="icon" className="h-14 w-14 rounded-full shadow-lg -translate-y-4 bg-primary hover:bg-primary/90">
-                <Search className="h-7 w-7" />
-                </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md w-full bg-background/90 backdrop-blur-sm border-none shadow-2xl rounded-3xl">
-                <CategoryHub onCategorySelect={() => setIsHubOpen(false)} />
-            </DialogContent>
-            </Dialog>
-        )}
+        </DialogTrigger>
+        <DialogContent className="max-w-md w-full bg-background/90 backdrop-blur-sm border-none shadow-2xl rounded-3xl">
+            <CategoryHub onCategorySelect={() => setIsHubOpen(false)} />
+        </DialogContent>
+        </Dialog>
 
         <Button variant="ghost" className="flex-col h-auto p-1 text-muted-foreground hover:text-primary">
           <MessageSquare className="h-6 w-6" />
            <span className="text-xs">Mensajes</span>
         </Button>
 
-        {isProviderOnProfilePage ? (
-            <Button variant="ghost" className="flex-col h-auto p-1 text-muted-foreground hover:text-primary" onClick={handleSettingsClick}>
-              <Settings className="h-6 w-6" />
-              <span className="text-xs">Ajustes</span>
-            </Button>
-        ) : (
-            <Button variant="ghost" className="flex-col h-auto p-1 text-muted-foreground hover:text-primary" onClick={handleProfileClick}>
-                <User className="h-6 w-6" />
-                <span className="text-xs">Perfil</span>
-            </Button>
-        )}
+        <Button variant="ghost" className="flex-col h-auto p-1 text-muted-foreground hover:text-primary" onClick={handleProfileClick}>
+            <User className="h-6 w-6" />
+            <span className="text-xs">Perfil</span>
+        </Button>
       </div>
     </footer>
   );
