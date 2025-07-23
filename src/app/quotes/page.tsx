@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FileText, Plus, Trash2, Send, Info, Paperclip, ChevronDown } from 'lucide-react';
+import { FileText, Plus, Trash2, Send, Info, Paperclip, Lock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Select,
@@ -116,13 +116,20 @@ export default function QuotesPage() {
                       </div>
                        <div>
                         <label className="text-sm font-medium mb-2 block">Adjuntar Documento (Opcional)</label>
-                         <Button asChild variant="outline" className="w-full justify-start text-muted-foreground">
-                            <label className="cursor-pointer">
-                                <Paperclip className="mr-2 h-4 w-4" />
-                                <span className="truncate">{fileName || 'Seleccionar archivo...'}</span>
-                                <input type="file" className="sr-only" onChange={handleFileChange}/>
-                            </label>
-                        </Button>
+                        {isVerified ? (
+                             <Button asChild variant="outline" className="w-full justify-start text-muted-foreground">
+                                <label className="cursor-pointer">
+                                    <Paperclip className="mr-2 h-4 w-4" />
+                                    <span className="truncate">{fileName || 'Seleccionar archivo...'}</span>
+                                    <input type="file" className="sr-only" onChange={handleFileChange}/>
+                                </label>
+                            </Button>
+                        ) : (
+                            <div className="flex items-center justify-center w-full h-10 px-3 py-2 text-sm bg-muted rounded-md border border-dashed">
+                                <Lock className="mr-2 h-4 w-4 text-muted-foreground" />
+                                <span className="text-muted-foreground">Solo para usuarios verificados</span>
+                            </div>
+                        )}
                       </div>
                     </div>
 
