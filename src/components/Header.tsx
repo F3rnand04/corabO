@@ -40,16 +40,6 @@ export function Header() {
             <Button variant="ghost" size="icon" onClick={() => router.push('/transactions')}>
               <Wallet className="h-5 w-5" />
             </Button>
-            <div className="relative">
-              <Button variant="ghost" size="icon" onClick={() => router.push('/transactions?tab=cart')}>
-                <ShoppingCart className="h-5 w-5" />
-              </Button>
-              {cart.length > 0 && (
-                <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 justify-center p-0 text-xs">
-                  {cart.reduce((acc, item) => acc + item.quantity, 0)}
-                </Badge>
-              )}
-            </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon">
