@@ -1,3 +1,4 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { Providers } from './providers';
@@ -22,10 +23,12 @@ export default function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} font-body antialiased bg-background`}>
+      <body className={`${inter.variable} antialiased bg-background`}>
         <Providers>
           <AppLayout>
-            {children}
+            <div className="pb-20">
+              {children}
+            </div>
           </AppLayout>
         </Providers>
       </body>

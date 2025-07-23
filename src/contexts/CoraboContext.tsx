@@ -6,8 +6,6 @@ import type { User, Product, Service, CartItem, Transaction, TransactionStatus }
 import { users, products, services, initialTransactions } from '@/lib/mock-data';
 import { useToast } from "@/hooks/use-toast"
 
-type FeedView = 'servicios' | 'empresas';
-
 interface CoraboState {
   currentUser: User;
   users: User[];
@@ -18,8 +16,6 @@ interface CoraboState {
   searchQuery: string;
   contacts: User[];
   isGpsActive: boolean;
-  feedView: FeedView;
-  setFeedView: (view: FeedView) => void;
   switchUser: (userId: string) => void;
   addToCart: (product: Product, quantity: number) => void;
   updateCartQuantity: (productId: string, quantity: number) => void;
@@ -46,7 +42,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [contacts, setContacts] = useState<User[]>([]);
   const [isGpsActive, setIsGpsActive] = useState(false);
-  const [feedView, setFeedView] = useState<FeedView>('empresas');
 
   const findOrCreateCartTransaction = (): Transaction => {
     const existingCartTx = transactions.find(
@@ -227,8 +222,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     searchQuery,
     contacts,
     isGpsActive,
-    feedView,
-    setFeedView,
     switchUser,
     addToCart,
     updateCartQuantity,
