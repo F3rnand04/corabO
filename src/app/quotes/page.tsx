@@ -9,8 +9,16 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FileText, Plus, Trash2, Send, Info } from 'lucide-react';
+import { FileText, Plus, Trash2, Send, Info, Paperclip, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 
 interface QuoteItem {
   id: number;
@@ -24,6 +32,9 @@ export default function QuotesPage() {
   const [items, setItems] = useState<QuoteItem[]>([]);
   const [currentItem, setCurrentItem] = useState('');
   const [currentQty, setCurrentQty] = useState(1);
+  const [category, setCategory] = useState('');
+  const [fileName, setFileName] = useState('');
+
 
   // Simulación de límites basados en el usuario
   const quoteLimit = currentUser.type === 'provider' ? 20 : 5;
@@ -52,10 +63,23 @@ export default function QuotesPage() {
       toast({ variant: 'destructive', title: 'Error', description: 'Debes añadir al menos un artículo a la lista.' });
       return;
     }
+    if (!category) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Por favor, selecciona una categoría para tu cotización.' });
+        return;
+    }
     // Lógica de envío simulada
     toast({ title: 'Cotización Enviada', description: 'Tu solicitud de cotización ha sido enviada a los proveedores cercanos.' });
     setItems([]);
+    setCategory('');
+    setFileName('');
   };
+  
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setFileName(e.target.files[0].name);
+    }
+  };
+
 
   return (
     <main className="container py-8">
@@ -74,6 +98,34 @@ export default function QuotesPage() {
                     <CardTitle>Tu Lista de Cotización</CardTitle>
                 </CardHeader>
                 <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label className="text-sm font-medium mb-2 block">Categoría</label>
+                         <Select value={category} onValueChange={setCategory}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Selecciona una categoría" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="tecnologia">Tecnología</SelectItem>
+                                <SelectItem value="hogar">Hogar y Jardinería</SelectItem>
+                                <SelectItem value="construccion">Construcción</SelectItem>
+                                <SelectItem value="servicios">Servicios Profesionales</SelectItem>
+                                <SelectItem value="otros">Otros</SelectItem>
+                            </SelectContent>
+                        </Select>
+                      </div>
+                       <div>
+                        <label className="text-sm font-medium mb-2 block">Adjuntar Documento (Opcional)</label>
+                         <Button asChild variant="outline" className="w-full justify-start text-muted-foreground">
+                            <label className="cursor-pointer">
+                                <Paperclip className="mr-2 h-4 w-4" />
+                                <span className="truncate">{fileName || 'Seleccionar archivo...'}</span>
+                                <input type="file" className="sr-only" onChange={handleFileChange}/>
+                            </label>
+                        </Button>
+                      </div>
+                    </div>
+
                     <div className="flex flex-col sm:flex-row gap-2 mb-4">
                         <Textarea 
                             placeholder="Describe el producto o servicio que necesitas..." 
