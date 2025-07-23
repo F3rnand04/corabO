@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, TouchEvent } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
@@ -18,10 +19,7 @@ export default function ProfilePage() {
     completedJobs: 15,
     otherStat: "00 | 05",
     profileImage: "https://placehold.co/128x128.png",
-    mainImage: "https://placehold.co/600x400.png",
-    shareCount: 4567,
-    starCount: 8934.5,
-    thumbnails: [
+    gallery: [
       "https://placehold.co/600x400.png?text=1",
       "https://placehold.co/600x400.png?text=2",
       "https://placehold.co/600x400.png?text=3",
@@ -29,10 +27,54 @@ export default function ProfilePage() {
       "https://placehold.co/600x400.png?text=5",
       "https://placehold.co/600x400.png?text=6",
     ],
+    shareCount: 4567,
+    starCount: 8934.5,
   };
 
-  const [currentMainImage, setCurrentMainImage] = useState(providerProfile.mainImage);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: TouchEvent<HTMLDivElement>) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: TouchEvent<HTMLDivElement>) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      handleNext();
+    }
+    if (isRightSwipe) {
+      handlePrev();
+    }
+    setTouchStart(null);
+    setTouchEnd(null);
+  };
+
+  const handlePrev = () => {
+    setCurrentImageIndex((prevIndex) =>
+      prevIndex === 0 ? providerProfile.gallery.length - 1 : prevIndex - 1
+    );
+  };
+
+  const handleNext = () => {
+    setCurrentImageIndex((prevIndex) =>
+      prevIndex === providerProfile.gallery.length - 1 ? 0 : prevIndex + 1
+    );
+  };
+
+  const currentMainImage = providerProfile.gallery[currentImageIndex];
 
   return (
     <div className="bg-background min-h-screen">
@@ -92,7 +134,12 @@ export default function ProfilePage() {
         <Card className="rounded-2xl overflow-hidden shadow-lg">
           <CardContent className="p-0">
             {/* Main Image */}
-            <div className="relative">
+            <div 
+              className="relative"
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEnd}
+            >
               <Image
                 src={currentMainImage}
                 alt="Main content image"
@@ -127,11 +174,11 @@ export default function ProfilePage() {
             {/* Thumbnails Grid */}
             <div className="p-4">
                 <div className="grid grid-cols-3 gap-2">
-                {providerProfile.thumbnails.map((thumb, index) => (
+                {providerProfile.gallery.map((thumb, index) => (
                     <div 
                         key={index} 
                         className="relative aspect-square cursor-pointer group"
-                        onClick={() => setCurrentMainImage(thumb)}
+                        onClick={() => setCurrentImageIndex(index)}
                     >
                     <Image
                         src={thumb}
@@ -139,7 +186,7 @@ export default function ProfilePage() {
                         fill
                         className={cn(
                             "rounded-lg object-cover transition-all duration-200",
-                            currentMainImage === thumb 
+                            currentImageIndex === index 
                                 ? "ring-2 ring-primary ring-offset-2" 
                                 : "ring-0 group-hover:opacity-80"
                         )}
