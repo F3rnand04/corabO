@@ -72,23 +72,23 @@ export function ServiceCard({ service }: ServiceCardProps) {
           <Image src="https://placehold.co/600x400.png" alt={service.name} layout="fill" objectFit="cover" data-ai-hint="service person working"/>
           <Badge variant="destructive" className="absolute top-2 left-2 bg-red-500 text-white shadow-lg">HOY 10% Off</Badge>
           <div className="absolute bottom-2 right-2 flex flex-col items-end gap-2 text-white">
+            <div className="flex flex-col items-center">
+                <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">
+                    <Star className="w-5 h-5" />
+                </Button>
+                <span className="text-xs font-bold mt-1 drop-shadow-md">4.5k</span>
+            </div>
+            <div className="flex flex-col items-center">
+                  <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">
+                    <MessageCircle className="w-5 h-5" />
+                  </Button>
+                <span className="text-xs font-bold mt-1 drop-shadow-md">8.9k</span>
+            </div>
               <div className="flex flex-col items-center">
                   <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">
-                      <Star className="w-5 h-5" />
+                    <Send className="w-5 h-5" />
                   </Button>
-                  <span className="text-xs font-bold mt-1 drop-shadow-md">4.5k</span>
-              </div>
-              <div className="flex flex-col items-center">
-                    <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">
-                      <MessageCircle className="w-5 h-5" />
-                    </Button>
-                  <span className="text-xs font-bold mt-1 drop-shadow-md">8.9k</span>
-              </div>
-                <div className="flex flex-col items-center">
-                    <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">
-                      <Send className="w-5 h-5" />
-                    </Button>
-                  <span className="text-xs font-bold mt-1 drop-shadow-md">1.2k</span>
+                <span className="text-xs font-bold mt-1 drop-shadow-md">1.2k</span>
               </div>
           </div>
         </div>
