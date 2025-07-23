@@ -8,7 +8,7 @@ export function Footer() {
   const router = useRouter();
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 bg-background border-t z-50">
+    <footer className="fixed bottom-0 left-0 right-0 bg-background border-t z-50 md:hidden">
       <div className="container flex justify-around h-16 items-center px-2">
         <Button variant="ghost" className="flex-col h-auto p-1 text-muted-foreground hover:text-primary" onClick={() => router.push('/')}>
           <Home className="h-6 w-6" />
@@ -18,8 +18,8 @@ export function Footer() {
           <PlayCircle className="h-6 w-6" />
            <span className="text-xs">Cómo se hace</span>
         </Button>
-        <Button variant="default" size="icon" className="h-12 w-12 rounded-full shadow-lg -translate-y-2" onClick={() => router.push('/services')}>
-          <Search className="h-6 w-6" />
+        <Button variant="default" size="icon" className="h-14 w-14 rounded-full shadow-lg -translate-y-4 bg-primary hover:bg-primary/90">
+          <Search className="h-7 w-7" />
         </Button>
         <Button variant="ghost" className="flex-col h-auto p-1 text-muted-foreground hover:text-primary">
           <MessageSquare className="h-6 w-6" />
