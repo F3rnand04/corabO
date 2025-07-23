@@ -20,13 +20,11 @@ export function Footer() {
     if (currentUser.type === 'provider') {
       router.push('/profile');
     } else {
-      // For clients, profile could lead to transactions or a settings page
       router.push('/transactions?tab=history'); 
     }
   };
   
   const handleSettingsClick = () => {
-    // Placeholder for settings page
     alert('Navegando a la página de Configuración...');
   };
 
@@ -64,10 +62,10 @@ export function Footer() {
            <span className="text-xs">Mensajes</span>
         </Button>
 
-        {currentUser.type === 'provider' ? (
-             <Button variant="ghost" className="flex-col h-auto p-1 text-muted-foreground hover:text-primary" onClick={handleProfileClick}>
-                <User className="h-6 w-6" />
-                <span className="text-xs">Perfil</span>
+        {isProviderOnProfilePage ? (
+            <Button variant="ghost" className="flex-col h-auto p-1 text-muted-foreground hover:text-primary" onClick={handleSettingsClick}>
+              <Settings className="h-6 w-6" />
+              <span className="text-xs">Ajustes</span>
             </Button>
         ) : (
             <Button variant="ghost" className="flex-col h-auto p-1 text-muted-foreground hover:text-primary" onClick={handleProfileClick}>

@@ -28,12 +28,10 @@ export default function ProviderProfilePage() {
 
     const stats = [
         { name: 'Publicaciones', value: providerProducts.length },
-        { name: 'Efectividad', value: '99.9%' },
-        { name: 'Reputación', value: currentUser.reputation, icon: Star },
         { name: 'Trabajos Realizados', value: completedJobs },
+        { name: 'Reputación', value: currentUser.reputation, icon: Star },
     ];
     
-    // Demo data for gallery
     const galleryImages = [
         ...providerProducts.map(p => p.imageUrl),
         "https://placehold.co/600x400.png",
@@ -68,8 +66,8 @@ export default function ProviderProfilePage() {
                                         <p className="text-muted-foreground">{stats[0].name}</p>
                                     </div>
                                     <div className="flex flex-col items-center gap-1">
-                                         <p className="font-bold">{stats[3].value}</p>
-                                        <p className="text-muted-foreground">{stats[3].name}</p>
+                                         <p className="font-bold">{stats[1].value}</p>
+                                        <p className="text-muted-foreground">{stats[1].name}</p>
                                     </div>
                                     <div className="flex flex-col items-center gap-1">
                                         <div className="flex items-center gap-1">
@@ -89,7 +87,7 @@ export default function ProviderProfilePage() {
                             <Calendar className="h-5 w-5" />
                             <span className="text-xs">Agenda</span>
                         </Button>
-                        <Button variant="ghost" size="icon" className="flex flex-col h-auto gap-1 text-muted-foreground">
+                        <Button variant="ghost" size="icon" className="flex flex-col h-auto gap-1 text-muted-foreground" onClick={() => window.location.href='/transactions'}>
                             <Wallet className="h-5 w-5" />
                             <span className="text-xs">Registro</span>
                         </Button>
