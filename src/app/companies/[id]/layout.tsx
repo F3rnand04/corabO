@@ -3,6 +3,5 @@ export default function CompanyProfileLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Este layout específico para el perfil de la empresa no renderiza el Header ni el Footer.
-  return <div className="bg-background">{children}</div>;
+  return <>{children}</>;
 }
