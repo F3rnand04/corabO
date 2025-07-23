@@ -14,7 +14,7 @@ export function Footer() {
   const { currentUser } = useCorabo();
   const [isHubOpen, setIsHubOpen] = useState(false);
 
-  const isProviderProfile = currentUser.type === 'provider' && pathname === '/profile';
+  const isProviderOnProfilePage = currentUser.type === 'provider' && pathname === '/profile';
 
   const handleProfileClick = () => {
     if (currentUser.type === 'provider') {
@@ -42,7 +42,7 @@ export function Footer() {
            <span className="text-xs">Cómo se hace</span>
         </Button>
         
-        {isProviderProfile ? (
+        {isProviderOnProfilePage ? (
             <Button variant="default" size="icon" className="h-14 w-14 rounded-full shadow-lg -translate-y-4 bg-primary hover:bg-primary/90">
                 <ArrowUp className="h-7 w-7" />
             </Button>
@@ -64,10 +64,10 @@ export function Footer() {
            <span className="text-xs">Mensajes</span>
         </Button>
 
-        {isProviderProfile ? (
-            <Button variant="ghost" className="flex-col h-auto p-1 text-muted-foreground hover:text-primary" onClick={handleSettingsClick}>
-                <Settings className="h-6 w-6" />
-                <span className="text-xs">Ajustes</span>
+        {currentUser.type === 'provider' ? (
+             <Button variant="ghost" className="flex-col h-auto p-1 text-muted-foreground hover:text-primary" onClick={handleProfileClick}>
+                <User className="h-6 w-6" />
+                <span className="text-xs">Perfil</span>
             </Button>
         ) : (
             <Button variant="ghost" className="flex-col h-auto p-1 text-muted-foreground hover:text-primary" onClick={handleProfileClick}>
