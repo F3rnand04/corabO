@@ -3,138 +3,158 @@
 import React from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
-import { Star, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Star, Share2, Plus, Calendar, Wallet, MapPin } from 'lucide-react';
 
 export default function ProfilePage() {
   const providerProfile = {
-    name: "Tecno Soluciones S.A.",
-    specialty: "Reparación de Computadoras",
-    rating: 4.8,
+    name: "NOMBRE USUARIO",
+    specialty: "Especialidad",
+    rating: 4.9,
     efficiency: "99.9%",
-    completedJobs: "85 | 10",
-    publications: 5,
-    totalJobs: 95,
+    publications: 30,
+    completedJobs: 15,
+    otherStat: "00 | 05",
     profileImage: "https://placehold.co/128x128.png",
     mainImage: "https://placehold.co/600x400.png",
     shareCount: 4567,
     starCount: 8934.5,
     thumbnails: [
-      "https://placehold.co/100x100.png",
-      "https://placehold.co/100x100.png",
-      "https://placehold.co/100x100.png",
-      "https://placehold.co/100x100.png",
-      "https://placehold.co/100x100.png",
-      "https://placehold.co/100x100.png",
+      "https://placehold.co/150x150.png",
+      "https://placehold.co/150x150.png",
+      "https://placehold.co/150x150.png",
+      "https://placehold.co/150x150.png",
+      "https://placehold.co/150x150.png",
+      "https://placehold.co/150x150.png",
     ],
   };
 
   return (
-    <div className="bg-gray-100 min-h-screen flex flex-col">
-      <main className="container py-4 space-y-4">
-        {/* Profile Header Section */}
-        <Card>
-          <CardContent className="p-4 flex items-center space-x-4">
-            <div className="relative">
-              <Image
-                src={providerProfile.profileImage}
-                alt="Profile Picture"
-                width={64}
-                height={64}
-                className="rounded-full object-cover"
-                data-ai-hint="user profile"
-              />
-              <div className="absolute bottom-0 right-0 bg-green-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs border-2 border-white cursor-pointer">
-                +
-              </div>
+    <div className="bg-background min-h-screen">
+      <main className="container mx-auto py-4 px-2 space-y-4 max-w-2xl">
+        
+        {/* Profile Header */}
+        <div className="flex items-center space-x-4">
+          <div className="relative shrink-0">
+            <Avatar>
+              <AvatarImage src={providerProfile.profileImage} alt={providerProfile.name} data-ai-hint="user profile photo"/>
+            </Avatar>
+            <div className="absolute -bottom-1 -right-1 bg-gray-200 text-gray-600 rounded-full w-5 h-5 flex items-center justify-center border-2 border-background cursor-pointer">
+              <Plus className="w-3 h-3" />
             </div>
-            <div>
-              <h1 className="text-xl font-semibold text-gray-800">{providerProfile.name}</h1>
-              <p className="text-sm text-gray-600">{providerProfile.specialty}</p>
+          </div>
+          <div className="flex-grow">
+            <h1 className="text-lg font-bold text-foreground">{providerProfile.name}</h1>
+            <p className="text-sm text-muted-foreground">{providerProfile.specialty}</p>
+            <div className="flex items-center gap-3 text-sm mt-2 text-muted-foreground">
+                <div className="flex items-center gap-1">
+                    <Star className="w-4 h-4 text-yellow-400 fill-yellow-400"/>
+                    <span className="font-semibold text-foreground">{providerProfile.rating.toFixed(1)}</span>
+                </div>
+                <Separator />
+                <span>{providerProfile.efficiency} Efec.</span>
+                <Separator />
+                <span>{providerProfile.otherStat}</span>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+           <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon"><Calendar className="w-5 h-5 text-muted-foreground" /></Button>
+              <Button variant="ghost" size="icon"><Wallet className="w-5 h-5 text-muted-foreground" /></Button>
+              <Button variant="ghost" size="icon"><MapPin className="w-5 h-5 text-green-500" /></Button>
+           </div>
+        </div>
 
-        {/* Stats Section */}
-        <Card>
-          <CardContent className="p-4 flex justify-around items-center text-center text-gray-700">
-            <div className="flex items-center space-x-1">
-              <Star className="w-4 h-4 text-yellow-400 fill-yellow-400"/>
-              <span className="font-medium">{providerProfile.rating.toFixed(1)}</span>
+        <div className="flex justify-around text-center text-xs text-muted-foreground -mt-2">
+           <div className="flex-1">
+                <p className="font-semibold text-foreground">{providerProfile.publications}</p>
+                <p>Publicaciones</p>
+           </div>
+            <div className="flex-1">
+                <p className="font-semibold text-foreground">{providerProfile.completedJobs}</p>
+                <p>Trab. Realizados</p>
             </div>
-            <div>
-              <p className="font-medium">{providerProfile.efficiency}</p>
-              <p className="text-xs text-gray-500">Efec.</p>
-            </div>
-            <div>
-              <p className="font-medium">{providerProfile.completedJobs}</p>
-              <p className="text-xs text-gray-500">Trab. Realizados</p>
-            </div>
-            <div>
-              <p className="font-medium">{providerProfile.publications}</p>
-              <p className="text-xs text-gray-500">Publicaciones</p>
-            </div>
-            <div>
-              <p className="font-medium">{providerProfile.totalJobs}</p>
-              <p className="text-xs text-gray-500">Trab. Realizados</p>
-            </div>
-          </CardContent>
-        </Card>
+        </div>
+
 
         {/* Campaign Management Button */}
         <div className="flex justify-end">
-          <Button className="bg-gradient-to-r from-green-400 to-green-600 text-white px-4 py-2 rounded-full text-sm font-medium shadow-md">
-            GESTION DE CAMPAÑAS
+          <Button variant="secondary" className="rounded-full text-xs h-8 px-4 font-bold">
+            GESTIÓN DE CAMPAÑAS
           </Button>
         </div>
 
-        {/* Main Content (Image and Tabs) */}
-        <Card>
-          <CardContent className="p-4 space-y-4">
-            {/* Main Image Card */}
+        {/* Main Content Card */}
+        <Card className="rounded-2xl overflow-hidden shadow-lg">
+          <CardContent className="p-0">
+            {/* Main Image */}
             <div className="relative">
               <Image
                 src={providerProfile.mainImage}
                 alt="Main content image"
                 width={600}
                 height={400}
-                className="rounded-lg object-cover w-full"
+                className="rounded-t-2xl object-cover w-full aspect-[4/3]"
                 data-ai-hint="professional workspace"
               />
-              <div className="absolute top-6 right-6 flex flex-col items-center space-y-1 bg-white bg-opacity-75 p-1 rounded">
-                <Share2 className="text-gray-600 h-5 w-5 cursor-pointer"/>
-                <span className="text-xs text-gray-600">{providerProfile.shareCount}</span>
+              <div className="absolute top-4 right-4 flex flex-col items-center space-y-4">
+                <div className="flex flex-col items-center text-foreground">
+                    <Share2 className="h-7 w-7 drop-shadow-md"/>
+                    <span className="text-xs font-semibold drop-shadow-md">{providerProfile.shareCount}</span>
+                </div>
               </div>
-              <div className="absolute bottom-6 right-6 flex flex-col items-center space-y-1 bg-white bg-opacity-75 p-1 rounded">
-                <Star className="text-yellow-400 fill-yellow-400 h-6 w-6 cursor-pointer"/>
-                <span className="text-sm text-gray-700 font-semibold">{providerProfile.starCount.toFixed(1)}</span>
+              <div className="absolute bottom-4 right-4 flex flex-col items-center">
+                <Star className="text-yellow-400 fill-yellow-400 h-8 w-8 drop-shadow-md"/>
+                <span className="text-sm text-foreground font-bold drop-shadow-md">{providerProfile.starCount.toFixed(1)}</span>
               </div>
             </div>
 
-            {/* Promotion and Description Tabs */}
-            <div className="flex justify-around text-gray-700 font-medium text-lg border-b border-gray-200">
-              <span className="border-b-2 border-green-500 pb-2 cursor-pointer">Promoción del Día</span>
-              <span className="pb-2 cursor-pointer">Editar Descripción</span>
+            {/* Tabs */}
+            <div className="flex justify-around font-semibold text-center border-b">
+              <div className="flex-1 p-3 cursor-pointer border-b-2 border-primary text-primary">
+                Promoción del Día
+              </div>
+              <div className="flex-1 p-3 cursor-pointer text-muted-foreground">
+                Editar Descripción
+              </div>
             </div>
 
             {/* Thumbnails Grid */}
-            <div className="grid grid-cols-3 gap-4">
-              {providerProfile.thumbnails.map((thumb, index) => (
-                <div key={index} className="relative">
-                  <Image
-                    src={thumb}
-                    alt={`Thumbnail ${index + 1}`}
-                    width={100}
-                    height={100}
-                    className="rounded-lg object-cover w-full h-auto"
-                    data-ai-hint="product image"
-                  />
+            <div className="p-4">
+                <div className="grid grid-cols-3 gap-2">
+                {providerProfile.thumbnails.map((thumb, index) => (
+                    <div key={index} className="relative aspect-square">
+                    <Image
+                        src={thumb}
+                        alt={`Thumbnail ${index + 1}`}
+                        layout="fill"
+                        className="rounded-lg object-cover"
+                        data-ai-hint="product image"
+                    />
+                    </div>
+                ))}
                 </div>
-              ))}
             </div>
           </CardContent>
         </Card>
       </main>
     </div>
   );
+}
+
+
+// Helper components to match the design structure
+function Avatar({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-muted bg-gray-100 flex items-center justify-center">
+      {children}
+    </div>
+  );
+}
+
+function AvatarImage({ src, alt, ...props }: { src: string, alt: string, "data-ai-hint": string }) {
+  return <Image src={src} alt={alt} width={64} height={64} className="object-cover w-full h-full" {...props}/>;
+}
+
+function Separator() {
+    return <div className="h-4 w-px bg-border"></div>
 }
