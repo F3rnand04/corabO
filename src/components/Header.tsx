@@ -1,7 +1,6 @@
 
 "use client";
 
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MapPin, FileText, Wallet, Menu, Search, FileHeart, X, LogOut } from "lucide-react";
@@ -22,9 +21,10 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { cn } from "@/lib/utils";
 
 export function Header() {
-  const { currentUser, searchQuery, setSearchQuery, contacts, removeContact } = useCorabo();
+  const { currentUser, searchQuery, setSearchQuery, contacts, removeContact, feedView, setFeedView } = useCorabo();
   const router = useRouter();
 
   return (
@@ -115,6 +115,28 @@ export function Header() {
         </div>
 
         <div className="py-2 flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+                <Button 
+                    className={cn(
+                        "rounded-full flex-1",
+                        feedView === 'servicios' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
+                    )}
+                    variant={feedView === 'servicios' ? 'default' : 'secondary'}
+                    onClick={() => setFeedView('servicios')}
+                >
+                    Servicios
+                </Button>
+                <Button 
+                    className={cn(
+                        "rounded-full flex-1",
+                        feedView === 'empresas' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
+                    )}
+                    variant={feedView === 'empresas' ? 'default' : 'secondary'}
+                    onClick={() => setFeedView('empresas')}
+                >
+                    Empresas
+                </Button>
+            </div>
            <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input
