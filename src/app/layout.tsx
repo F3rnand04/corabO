@@ -23,13 +23,11 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased bg-background">
         <Providers>
-            <div className="flex flex-col h-screen">
-                <Header />
-                <main className="flex-1 overflow-y-auto pt-[148px] pb-20">
-                    {children}
-                </main>
-                <Footer />
-            </div>
+            <Header />
+            <main>
+                {children}
+            </main>
+            <Footer />
         </Providers>
       </body>
     </html>

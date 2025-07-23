@@ -29,7 +29,7 @@ export function Header() {
   const router = useRouter();
 
   return (
-    <header className="fixed top-0 z-40 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
+    <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
       <div className="container px-2 sm:px-4">
         <div className="flex h-16 items-center justify-between">
           
