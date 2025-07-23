@@ -24,8 +24,13 @@ export function Footer() {
     }
   };
   
+  // This is a placeholder, as the real settings page is on the profile view for providers
   const handleSettingsClick = () => {
-    alert('Navegando a la página de Configuración...');
+    if (currentUser.type === 'provider') {
+       router.push('/profile'); // Or a dedicated settings page if it exists
+    } else {
+       alert('Navegando a la página de Configuración...');
+    }
   };
 
   // If we are on the provider's own profile page, we don't render the standard footer.
