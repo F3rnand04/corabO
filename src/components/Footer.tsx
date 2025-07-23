@@ -17,13 +17,7 @@ export function Footer() {
   const isProviderOnProfilePage = currentUser.type === 'provider' && pathname === '/profile';
 
   const handleProfileClick = () => {
-    // For providers, navigate to their dedicated profile page
-    if (currentUser.type === 'provider') {
-      router.push('/profile');
-    } else {
-      // For clients, navigate to their transaction history
-      router.push('/transactions');
-    }
+    router.push('/profile');
   };
   
   // This is a placeholder, as the real settings page is on the profile view for providers
