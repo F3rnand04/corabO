@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MapPin, FileText, Wallet, Menu, Search, ChevronDown, User, FileHeart, X, RadioTower } from "lucide-react";
+import { MapPin, FileText, Wallet, Menu, Search, FileHeart, X, LogOut } from "lucide-react";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { useRouter } from "next/navigation";
 import {
@@ -21,12 +21,10 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { UserSwitcher } from "./UserSwitcher";
-import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 export function Header() {
-  const { currentUser, cart, searchQuery, setSearchQuery, contacts, removeContact, isGpsActive, toggleGps } = useCorabo();
+  const { currentUser, searchQuery, setSearchQuery, contacts, removeContact } = useCorabo();
   const router = useRouter();
 
   return (
@@ -107,9 +105,10 @@ export function Header() {
                 <DropdownMenuItem>Modo Oscuro</DropdownMenuItem>
                 <DropdownMenuItem>Políticas de la Empresa</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <div className="p-2">
-                  <UserSwitcher />
-                </div>
+                <DropdownMenuItem>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Cerrar Sesión</span>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
