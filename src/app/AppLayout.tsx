@@ -7,20 +7,15 @@ import { Footer } from '@/components/Footer';
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   
-  // Define routes where Header and Footer should be hidden
-  const noLayoutRoutes = ['/companies'];
+  // Define routes where Header should be hidden
+  const noHeaderRoutes = ['/companies'];
 
-  const hideLayout = noLayoutRoutes.some(route => pathname.startsWith(route));
-
-  if (hideLayout) {
-    return <>{children}</>;
-  }
-  
-  const hideFooter = pathname.startsWith('/profile');
+  const hideHeader = noHeaderRoutes.some(route => pathname.startsWith(route));
+  const hideFooter = pathname.startsWith('/profile') || noHeaderRoutes.some(route => pathname.startsWith(route));
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
+      {!hideHeader && <Header />}
       <main className="flex-grow">
         {children}
       </main>
