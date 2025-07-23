@@ -5,7 +5,7 @@ import React, { useState, TouchEvent } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Share2, Plus, Calendar, Wallet, MapPin } from 'lucide-react';
+import { Star, Share2, Plus, Calendar, Wallet, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 import ProfileFooter from '@/components/ProfileFooter';
 import { cn } from '@/lib/utils';
 
@@ -135,7 +135,7 @@ export default function ProfilePage() {
           <CardContent className="p-0">
             {/* Main Image */}
             <div 
-              className="relative"
+              className="relative group"
               onTouchStart={onTouchStart}
               onTouchMove={onTouchMove}
               onTouchEnd={onTouchEnd}
@@ -149,6 +149,22 @@ export default function ProfilePage() {
                 data-ai-hint="professional workspace"
                 key={currentMainImage} 
               />
+              <Button 
+                  onClick={handlePrev}
+                  variant="ghost" 
+                  size="icon" 
+                  className="absolute top-1/2 left-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 hidden md:flex group-hover:flex"
+              >
+                  <ChevronLeft className="h-5 w-5" />
+              </Button>
+              <Button 
+                  onClick={handleNext}
+                  variant="ghost" 
+                  size="icon" 
+                  className="absolute top-1/2 right-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 hidden md:flex group-hover:flex"
+              >
+                  <ChevronRight className="h-5 w-5" />
+              </Button>
               <div className="absolute top-4 right-4 flex flex-col items-center space-y-4">
                 <div className="flex flex-col items-center text-foreground">
                     <Share2 className="h-7 w-7 drop-shadow-md"/>
