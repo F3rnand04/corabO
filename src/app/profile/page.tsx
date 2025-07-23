@@ -211,7 +211,10 @@ export default function ProfilePage() {
                 <div className="flex-1 p-3 cursor-pointer border-b-2 border-primary text-primary">
                   Promoción del Día
                 </div>
-                <div className="flex-1 p-3 cursor-pointer text-muted-foreground">
+                <div
+                  className="flex-1 p-3 cursor-pointer text-muted-foreground"
+                  onClick={() => handleImageDoubleClick(currentImage)}
+                >
                   Editar Descripción
                 </div>
               </div>
