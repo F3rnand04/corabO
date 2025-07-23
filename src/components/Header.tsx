@@ -1,65 +1,58 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from 'next/navigation';
-import { Bot, Home, Wrench, ShoppingCart } from "lucide-react";
-
-import { cn } from "@/lib/utils";
-import { useCorabo } from "@/contexts/CoraboContext";
+import { Bot, MapPin, FileText, Wallet, Menu, Search, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { UserSwitcher } from "./UserSwitcher";
+import { Input } from "@/components/ui/input";
 
 export function Header() {
-  const { cart, currentUser } = useCorabo();
-  const pathname = usePathname();
-  const cartItemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
-
-  const navLinks = [
-    { href: '/', label: 'Home', icon: Home },
-    { href: '/products', label: 'Productos', icon: Bot },
-    { href: '/services', label: 'Servicios', icon: Wrench },
-    { href: '/transactions', label: 'Transacciones', icon: Wrench },
-  ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center">
-        <div className="mr-4 flex items-center">
-          <Link href="/" className="mr-6 flex items-center space-x-2">
-            <Bot className="h-6 w-6 text-primary" />
-            <span className="font-bold">Corabo</span>
+    <header className="fixed top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
+      <div className="container px-2 sm:px-4">
+        <div className="flex h-16 items-center justify-between">
+          <Link href="/" className="flex items-center space-x-2">
+            <div className="h-10 w-10 bg-gray-300 rounded-full flex items-center justify-center">
+              <span className="text-xs font-bold text-gray-600">Logo</span>
+            </div>
+            <span className="font-bold text-lg">corabO</span>
           </Link>
-          <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
-            {navLinks.map(({ href, label }) => (
-              <Link
-                key={href}
-                href={href}
-                className={cn(
-                  "transition-colors hover:text-foreground/80",
-                  pathname === href ? "text-foreground" : "text-foreground/60"
-                )}
-              >
-                {label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-        <div className="flex flex-1 items-center justify-end space-x-4">
-          <UserSwitcher />
-          {currentUser.type === 'client' && (
-            <Button variant="ghost" size="icon" asChild>
-              <Link href="/cart">
-                <ShoppingCart className="h-5 w-5" />
-                {cartItemCount > 0 && (
-                  <Badge className="absolute top-1 right-1 h-5 w-5 p-0 flex items-center justify-center" variant="destructive">
-                    {cartItemCount}
-                  </Badge>
-                )}
-                <span className="sr-only">Carrito de compras</span>
-              </Link>
+          <div className="flex items-center space-x-1 sm:space-x-2">
+            <Button variant="ghost" size="icon" className="flex-col h-auto p-1 text-xs">
+                <MapPin className="h-5 w-5" />
+                <span className="text-muted-foreground">Ubicación</span>
             </Button>
-          )}
+            <Button variant="ghost" size="icon" className="flex-col h-auto p-1 text-xs">
+                <FileText className="h-5 w-5" />
+                <span className="text-muted-foreground">Cotizar</span>
+            </Button>
+            <Button variant="ghost" size="icon" className="flex-col h-auto p-1 text-xs">
+                <Wallet className="h-5 w-5" />
+                <span className="text-muted-foreground">Registros</span>
+            </Button>
+            <Button variant="ghost" size="icon">
+                <Menu className="h-6 w-6" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="py-2">
+             <div className="flex items-center gap-2">
+                <div className="flex-1 flex items-center gap-2">
+                    <Button className="rounded-full flex-1" variant="secondary">Servicios</Button>
+                    <Button className="rounded-full flex-1" variant="ghost">Empresas</Button>
+                </div>
+                 <div className="relative">
+                    <Input
+                        type="search"
+                        className="w-full rounded-full pl-4 pr-10"
+                    />
+                    <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                </div>
+                <Button variant="ghost" size="icon" className="rounded-full bg-primary/10">
+                    <MessageSquare className="h-5 w-5 text-primary" />
+                </Button>
+            </div>
         </div>
       </div>
     </header>
