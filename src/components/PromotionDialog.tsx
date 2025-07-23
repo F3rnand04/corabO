@@ -21,8 +21,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from './ui/badge';
-import { Zap, Clock, CreditCard } from 'lucide-react';
+import { Zap, Clock, CreditCard, ChevronDown } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
+import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 
 type GalleryImage = {
   src: string;
@@ -42,9 +43,12 @@ interface PromotionDialogProps {
   isPromotionActive: boolean;
 }
 
+const promotionSuggestions = ["10% OFF", "2x1 Hoy", "Envío Gratis", "Oferta Especial", "Nuevo"];
+const costPerDay = 2.50;
+
 export function PromotionDialog({ isOpen, onOpenChange, onActivate, image, isPromotionActive }: PromotionDialogProps) {
   const [promotionText, setPromotionText] = useState('HOY 10% OFF');
-  const [promotionCost, setPromotionCost] = useState(2.50);
+  const [duration, setDuration] = useState<"24" | "48" | "72">("24");
 
   if (!image) return null;
 
@@ -53,6 +57,8 @@ export function PromotionDialog({ isOpen, onOpenChange, onActivate, image, isPro
       onActivate(promotionText);
     }
   };
+  
+  const promotionCost = (parseInt(duration) / 24) * costPerDay;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -63,7 +69,7 @@ export function PromotionDialog({ isOpen, onOpenChange, onActivate, image, isPro
             Promoción del Día
           </DialogTitle>
           <DialogDescription>
-            Destaca esta imagen en el feed principal durante 24 horas.
+            Destaca esta imagen en el feed principal.
           </DialogDescription>
         </DialogHeader>
 
@@ -81,13 +87,14 @@ export function PromotionDialog({ isOpen, onOpenChange, onActivate, image, isPro
               </Alert>
             </div>
           ) : (
-            <div className="space-y-4 py-4">
+            <div className="space-y-6 py-4">
               <div className="relative aspect-video w-full rounded-md overflow-hidden">
                 <Image src={image.src} alt={image.alt} layout="fill" objectFit="cover" data-ai-hint="promotional image"/>
                 <Badge variant="destructive" className="absolute top-2 left-2 shadow-lg">
                   {promotionText || "Tu Oferta Aquí"}
                 </Badge>
               </div>
+              
               <div className="space-y-2">
                 <Label htmlFor="promotion-text">Texto de la Oferta</Label>
                 <Input
@@ -96,30 +103,46 @@ export function PromotionDialog({ isOpen, onOpenChange, onActivate, image, isPro
                   onChange={(e) => setPromotionText(e.target.value)}
                   placeholder="Ej: HOY 15% OFF"
                 />
+                <div className="flex flex-wrap gap-1 pt-1">
+                    {promotionSuggestions.map(suggestion => (
+                        <Badge 
+                            key={suggestion} 
+                            variant="outline" 
+                            className="cursor-pointer hover:bg-muted"
+                            onClick={() => setPromotionText(suggestion)}
+                        >
+                            {suggestion}
+                        </Badge>
+                    ))}
+                </div>
               </div>
 
-               <div className="space-y-2">
-                <Label htmlFor="promotion-cost">Costo de Activación</Label>
-                 <div className="flex items-center gap-2">
-                   <span className="text-lg font-semibold">$</span>
-                   <Input
-                     id="promotion-cost"
-                     type="number"
-                     value={promotionCost}
-                     onChange={(e) => setPromotionCost(parseFloat(e.target.value) || 0)}
-                     className="w-24"
-                   />
-                 </div>
+               <div className="space-y-3">
+                 <Label>Duración y Costo</Label>
+                 <RadioGroup value={duration} onValueChange={(value: "24" | "48" | "72") => setDuration(value)}>
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="24" id="d24" />
+                        <Label htmlFor="d24">24 horas - <span className="font-bold">${(costPerDay).toFixed(2)}</span></Label>
+                    </div>
+                     <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="48" id="d48" />
+                        <Label htmlFor="d48">48 horas - <span className="font-bold">${(costPerDay * 2).toFixed(2)}</span></Label>
+                    </div>
+                     <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="72" id="d72" />
+                        <Label htmlFor="d72">72 horas - <span className="font-bold">${(costPerDay * 3).toFixed(2)}</span></Label>
+                    </div>
+                </RadioGroup>
               </div>
 
               <Collapsible>
                  <CollapsibleTrigger asChild>
-                    <Button variant="outline" className="w-full">
-                       <CreditCard className="mr-2 h-4 w-4" />
-                       Configurar Pago
+                    <Button variant="outline" className="w-full justify-between">
+                       <span><CreditCard className="mr-2 h-4 w-4 inline-block"/>Configurar Pago</span>
+                       <ChevronDown className="h-4 w-4" />
                     </Button>
                  </CollapsibleTrigger>
-                 <CollapsibleContent className="py-4 px-2 mt-2 border rounded-md">
+                 <CollapsibleContent className="py-4 px-3 mt-2 border rounded-md">
                    <div className="space-y-4">
                      <p className="text-sm text-muted-foreground">Introduce tus datos de facturación. Usamos un proveedor seguro para procesar los pagos.</p>
                      <div className="space-y-2">
@@ -149,7 +172,7 @@ export function PromotionDialog({ isOpen, onOpenChange, onActivate, image, isPro
             Cancelar
           </Button>
           {!isPromotionActive && (
-            <Button onClick={handleActivate} disabled={!promotionText.trim() || promotionCost <= 0}>
+            <Button onClick={handleActivate} disabled={!promotionText.trim()}>
               Activar por ${promotionCost.toFixed(2)}
             </Button>
           )}
