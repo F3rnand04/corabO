@@ -5,7 +5,7 @@ import type { Service } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { Star, Send, MessageCircle } from "lucide-react";
+import { Star, Send, MessageCircle, MapPin, Bookmark } from "lucide-react";
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Separator } from "./ui/separator";
@@ -17,7 +17,7 @@ interface ServiceCardProps {
 }
 
 export function ServiceCard({ service }: ServiceCardProps) {
-  const { requestService, users, currentUser } = useCorabo();
+  const { requestService, users, currentUser, isGpsActive, addContact } = useCorabo();
   const provider = users.find(u => u.id === service.providerId);
   
   if (!provider) {
@@ -25,6 +25,10 @@ export function ServiceCard({ service }: ServiceCardProps) {
   }
 
   const profileLink = `/companies/${provider.id}`;
+
+  const handleSaveContact = () => {
+    addContact(provider);
+  };
 
   return (
     <Card className="rounded-2xl overflow-hidden shadow-md">
@@ -36,21 +40,36 @@ export function ServiceCard({ service }: ServiceCardProps) {
               <AvatarFallback className="text-xs">{provider.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="flex-grow">
-              <p className="font-bold text-base">{service.name}</p>
-              <p className="text-sm text-muted-foreground">Ofrecido por <Link href={profileLink} className="hover:underline text-primary">{provider.name}</Link></p>
+              <div className="flex justify-between items-start">
+                  <div>
+                      <p className="font-bold text-base">{service.name}</p>
+                      <p className="text-sm text-muted-foreground">Ofrecido por <Link href={profileLink} className="hover:underline text-primary">{provider.name}</Link></p>
+                  </div>
+                  <Button variant="ghost" size="icon" className="shrink-0 text-muted-foreground hover:text-primary" onClick={handleSaveContact}>
+                      <Bookmark className="w-5 h-5" />
+                  </Button>
+              </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                 <div className="flex items-center gap-1">
                   <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
                   <span className="font-semibold text-foreground">{provider.reputation}</span>
                 </div>
+                <Separator orientation="vertical" className="h-4" />
+                <span>99.9% Efec.</span>
+                <Separator orientation="vertical" className="h-4" />
+                <span className="text-green-600 font-semibold">00-05 min</span>
               </div>
+            </div>
+            <div className="flex flex-col items-center gap-1 text-muted-foreground">
+              <MapPin className={`w-5 h-5 ${isGpsActive ? 'text-green-500' : 'text-muted-foreground'}`} />
+              <span className="text-xs font-semibold">2.5 km</span>
             </div>
           </div>
         </div>
 
         <div className="relative aspect-video w-full">
           <Image src="https://placehold.co/600x400.png" alt={service.name} layout="fill" objectFit="cover" data-ai-hint="service person working"/>
-          <Badge variant="destructive" className="absolute top-2 left-2 bg-red-500 text-white shadow-lg">OFERTA</Badge>
+          <Badge variant="destructive" className="absolute top-2 left-2 bg-red-500 text-white shadow-lg">HOY 10% Off</Badge>
           <div className="absolute bottom-2 right-2 flex flex-col items-end gap-2 text-white">
               <div className="flex flex-col items-center">
                   <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">
@@ -73,10 +92,6 @@ export function ServiceCard({ service }: ServiceCardProps) {
           </div>
         </div>
         
-        <div className="p-3">
-          <p className="text-sm text-muted-foreground mb-2">{service.description}</p>
-        </div>
-
         <div className="flex justify-around items-center p-2 border-t">
           <Button variant="ghost" className="text-muted-foreground font-semibold text-sm">Mensaje</Button>
           <Separator orientation="vertical" className="h-6" />
@@ -86,7 +101,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
           <Separator orientation="vertical" className="h-6" />
           {currentUser.type === 'client' && (
             <Button variant="ghost" className="text-primary font-bold text-sm" onClick={() => requestService(service)}>
-              <Send className="mr-2 h-4 w-4" /> Solicitar
+              Solicitar
             </Button>
           )}
            {currentUser.type !== 'client' && (
