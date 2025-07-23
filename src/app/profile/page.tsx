@@ -9,7 +9,6 @@ import { Star, Share2, Plus, Calendar, Wallet, MapPin, ChevronLeft, ChevronRight
 import ProfileFooter from '@/components/ProfileFooter';
 import { cn } from '@/lib/utils';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 type GalleryImage = {
   src: string;
@@ -34,8 +33,6 @@ export default function ProfilePage() {
       { src: "https://placehold.co/600x400.png?text=4", alt: "Imagen 4", description: "Cuarta imagen de la galería de promociones." },
       { src: "https://placehold.co/600x400.png?text=5", alt: "Imagen 5", description: "Quinta imagen, enfocada en los detalles." },
       { src: "https://placehold.co/600x400.png?text=6", alt: "Imagen 6", description: "Sexta y última imagen de esta promoción." },
-      { src: "https://placehold.co/600x400.png?text=7", alt: "Imagen 7", description: "Imagen adicional para probar el scroll." },
-      { src: "https://placehold.co/600x400.png?text=8", alt: "Imagen 8", description: "Otra imagen más en la galería." },
     ],
     shareCount: 4567,
     starCount: 8934.5,
@@ -207,34 +204,28 @@ export default function ProfilePage() {
               </div>
 
               {/* Thumbnails Grid */}
-              <div className="p-4">
-                  <ScrollArea className="w-full whitespace-nowrap rounded-md">
-                    <div className="flex w-max space-x-2">
-                      {providerProfile.gallery.map((thumb, index) => (
-                          <div 
-                              key={index} 
-                              className="relative aspect-square cursor-pointer group flex-shrink-0"
-                              style={{ width: 'calc((100% - 16px) / 3)'}} // Adjust based on gap
-                              onClick={() => setCurrentImageIndex(index)}
-                              onDoubleClick={() => handleImageDoubleClick(thumb)}
-                          >
-                          <Image
-                              src={thumb.src}
-                              alt={thumb.alt}
-                              fill
-                              className={cn(
-                                  "rounded-lg object-cover transition-all duration-200",
-                                  currentImageIndex === index 
-                                      ? "ring-2 ring-primary ring-offset-2" 
-                                      : "ring-0 group-hover:opacity-80"
-                              )}
-                              data-ai-hint="product image"
-                          />
-                          </div>
-                      ))}
-                    </div>
-                    <ScrollBar orientation="horizontal" />
-                  </ScrollArea>
+              <div className="p-4 grid grid-cols-3 gap-2">
+                  {providerProfile.gallery.map((thumb, index) => (
+                      <div 
+                          key={index} 
+                          className="relative aspect-square cursor-pointer group"
+                          onClick={() => setCurrentImageIndex(index)}
+                          onDoubleClick={() => handleImageDoubleClick(thumb)}
+                      >
+                      <Image
+                          src={thumb.src}
+                          alt={thumb.alt}
+                          fill
+                          className={cn(
+                              "rounded-lg object-cover transition-all duration-200",
+                              currentImageIndex === index 
+                                  ? "ring-2 ring-primary ring-offset-2" 
+                                  : "ring-0 group-hover:opacity-80"
+                          )}
+                          data-ai-hint="product image"
+                      />
+                      </div>
+                  ))}
               </div>
             </CardContent>
           </Card>
