@@ -40,11 +40,13 @@ export function Footer() {
            <span className="text-xs">Mensajes</span>
         </Button>
 
-        <Link href="/profile" passHref legacyBehavior>
-            <a className="flex flex-col items-center justify-center h-auto p-1 text-muted-foreground hover:text-primary">
+        <Link href="/profile" passHref>
+          <Button asChild variant="ghost" className="flex-col h-auto p-1 text-muted-foreground hover:text-primary">
+            <a>
               <User className="h-6 w-6" />
               <span className="text-xs">Perfil</span>
             </a>
+          </Button>
         </Link>
       </div>
     </footer>

@@ -7,16 +7,15 @@ import { Footer } from '@/components/Footer';
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   
-  const hideHeader = pathname.startsWith('/profile');
-  const hideFooter = pathname.startsWith('/profile');
+  const isProfilePage = pathname === '/profile';
 
   return (
     <div className="flex flex-col min-h-screen">
-      {!hideHeader && <Header />}
+      {!isProfilePage && <Header />}
       <main className="flex-grow">
         {children}
       </main>
-      {!hideFooter && <Footer />}
+      {!isProfilePage && <Footer />}
     </div>
   );
 }
