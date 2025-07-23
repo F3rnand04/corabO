@@ -12,6 +12,7 @@ interface CoraboState {
   services: Service[];
   cart: CartItem[];
   transactions: Transaction[];
+  searchQuery: string;
   switchUser: (userId: string) => void;
   addToCart: (product: Product, quantity: number) => void;
   updateCartQuantity: (productId: string, quantity: number) => void;
@@ -22,6 +23,7 @@ interface CoraboState {
   acceptQuote: (transactionId: string) => void;
   startDispute: (transactionId: string) => void;
   checkout: (withDelivery: boolean) => void;
+  setSearchQuery: (query: string) => void;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -31,6 +33,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<User>(users[0]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const findOrCreateCartTransaction = (): Transaction => {
     const existingCartTx = transactions.find(
@@ -196,6 +199,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     services,
     cart,
     transactions,
+    searchQuery,
     switchUser,
     addToCart,
     updateCartQuantity,
@@ -206,6 +210,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     sendQuote,
     acceptQuote,
     startDispute,
+    setSearchQuery,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;

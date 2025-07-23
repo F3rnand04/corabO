@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MapPin, FileText, Wallet, Menu, Search, ChevronDown, ShoppingCart } from "lucide-react";
+import { MapPin, FileText, Wallet, Menu, Search, ChevronDown } from "lucide-react";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { useRouter } from "next/navigation";
 import {
@@ -17,7 +17,7 @@ import { UserSwitcher } from "./UserSwitcher";
 import { Badge } from "./ui/badge";
 
 export function Header() {
-  const { currentUser, cart } = useCorabo();
+  const { currentUser, cart, searchQuery, setSearchQuery } = useCorabo();
   const router = useRouter();
 
   return (
@@ -66,6 +66,8 @@ export function Header() {
                 type="search"
                 placeholder="Busca un servicio o producto..."
                 className="w-full rounded-full pl-10 pr-4"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
           <div className="flex items-center gap-2">
