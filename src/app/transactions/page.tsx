@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import type { Transaction, TransactionStatus } from '@/lib/types';
 import { TransactionDetailsDialog } from '@/components/TransactionDetailsDialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { AlertTriangle, CheckCircle, Handshake, MessageSquare, ShieldAlert, Truck, Minus, Plus, Trash2, Check, ShoppingCart as ShoppingCartIcon, FileDown } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Handshake, MessageSquare, ShieldAlert, Truck, Minus, Plus, Trash2, Check, ShoppingCart as ShoppingCartIcon, FileDown, LineChart, List, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -27,7 +27,7 @@ export default function TransactionsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [filter, setFilter] = useState<FilterStatus>('all');
   const [withDelivery, setWithDelivery] = useState(false);
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'history');
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'summary');
 
   useEffect(() => {
     const tab = searchParams.get('tab');
@@ -81,38 +81,39 @@ export default function TransactionsPage() {
   return (
     <>
       <main className="container py-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Registro de Transacciones</CardTitle>
-            <CardDescription>
-              Aquí puedes ver un historial de tus interacciones y gestionar tu carrito de compras.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="history">Historial</TabsTrigger>
+        <div className="mb-6">
+            <h1 className="text-3xl font-bold">Registro de Transacciones</h1>
+            <p className="text-muted-foreground">Tu centro de control financiero.</p>
+        </div>
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-3 mb-6">
+                <TabsTrigger value="summary"><LineChart className="mr-2 h-4 w-4" /> Resumen</TabsTrigger>
+                <TabsTrigger value="history"><List className="mr-2 h-4 w-4" /> Historial</TabsTrigger>
                 <TabsTrigger value="cart">
-                  Carrito
-                  {cart.length > 0 && (
-                    <Badge variant="destructive" className="ml-2">
-                      {cart.reduce((acc, item) => acc + item.quantity, 0)}
+                    <ShoppingCart className="mr-2 h-4 w-4" />
+                    Carrito
+                    {cart.length > 0 && (
+                    <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 flex items-center justify-center">
+                        {cart.reduce((acc, item) => acc + item.quantity, 0)}
                     </Badge>
-                  )}
+                    )}
                 </TabsTrigger>
-              </TabsList>
-              <TabsContent value="history" className="mt-4">
-                <Card className="mb-6">
+            </TabsList>
+            <TabsContent value="summary">
+                 <Card>
                   <CardHeader>
-                    <CardTitle>Resumen Visual</CardTitle>
+                    <CardTitle>Resumen Visual de Movimientos</CardTitle>
+                    <CardDescription>Gráfica de ingresos y egresos de los últimos meses.</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <TransactionsChart transactions={userTransactions} />
                   </CardContent>
                 </Card>
-                
+            </TabsContent>
+            <TabsContent value="history">
                 <div className="flex justify-between items-center mb-4">
-                  <Tabs value={filter} onValueChange={(value) => setFilter(value as FilterStatus)} className="mb-4">
+                  <Tabs value={filter} onValueChange={(value) => setFilter(value as FilterStatus)}>
                       <TabsList>
                           {filters.map(f => (
                               <TabsTrigger key={f} value={f}>{f === 'all' ? 'Todas' : f}</TabsTrigger>
@@ -125,7 +126,7 @@ export default function TransactionsPage() {
                   </Button>
                 </div>
 
-                <div className="border rounded-md">
+                <Card>
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -168,19 +169,18 @@ export default function TransactionsPage() {
                       )}
                     </TableBody>
                   </Table>
-                </div>
-              </TabsContent>
-              <TabsContent value="cart" className="mt-4">
+                </Card>
+            </TabsContent>
+            <TabsContent value="cart">
                 {!isClient ? (
-                   <div className="text-center py-20 border-2 border-dashed rounded-lg">
+                   <div className="text-center py-20 border-2 border-dashed rounded-lg bg-muted/50">
                     <h2 className="mt-4 text-xl font-semibold">Acceso Denegado</h2>
                     <p className="mt-2 text-muted-foreground">El carrito solo está disponible para perfiles de cliente.</p>
                   </div>
                 ) : cart.length > 0 ? (
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                     <div className="lg:col-span-2">
                       <Card>
-                        <CardContent className="p-0">
                           <Table>
                             <TableHeader>
                               <TableRow>
@@ -206,7 +206,7 @@ export default function TransactionsPage() {
                                       <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateCartQuantity(product.id, quantity - 1)}>
                                         <Minus className="h-4 w-4" />
                                       </Button>
-                                      <span>{quantity}</span>
+                                      <span className="font-mono">{quantity}</span>
                                       <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => updateCartQuantity(product.id, quantity + 1)}>
                                         <Plus className="h-4 w-4" />
                                       </Button>
@@ -222,39 +222,37 @@ export default function TransactionsPage() {
                               ))}
                             </TableBody>
                           </Table>
-                        </CardContent>
                       </Card>
                     </div>
                     <div className="lg:col-span-1">
                       <Card>
                         <CardHeader>
-                          <CardTitle>Resumen de la Pre-factura</CardTitle>
-                          <CardDescription>Revisa tu orden antes de finalizar.</CardDescription>
+                          <CardTitle>Resumen de Pre-factura</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
                           <div className="flex items-center justify-between">
-                            <span>Subtotal</span>
+                            <span className="text-muted-foreground">Subtotal</span>
                             <span className="font-medium">${subtotal.toFixed(2)}</span>
                           </div>
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              <Truck className="h-5 w-5 text-muted-foreground" />
-                              <Label htmlFor="delivery-switch">¿Desea Delivery?</Label>
-                            </div>
+                            <Label htmlFor="delivery-switch" className="flex items-center gap-2 text-muted-foreground cursor-pointer">
+                              <Truck className="h-5 w-5" />
+                              ¿Desea Delivery?
+                            </Label>
                             <Switch id="delivery-switch" checked={withDelivery} onCheckedChange={setWithDelivery} />
                           </div>
                           {withDelivery && (
-                            <div className="flex items-center justify-between text-sm text-muted-foreground">
-                              <span>Costo de envío (simulado)</span>
+                            <div className="flex items-center justify-between text-sm text-muted-foreground pl-7">
+                              <span>Costo de envío</span>
                               <span className="font-medium">${deliveryCost.toFixed(2)}</span>
                             </div>
                           )}
-                          <div className="flex items-center justify-between text-xl font-bold border-t pt-4">
+                        </CardContent>
+                        <CardFooter className="flex-col gap-4">
+                           <div className="flex items-center justify-between text-xl font-bold border-t pt-4 w-full">
                             <span>Total</span>
                             <span>${total.toFixed(2)}</span>
                           </div>
-                        </CardContent>
-                        <CardFooter>
                           <Button className="w-full" size="lg" onClick={handleCheckout}>
                             <Check className="mr-2 h-5 w-5" />
                             Finalizar Compra
@@ -264,7 +262,7 @@ export default function TransactionsPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-20 border-2 border-dashed rounded-lg">
+                  <div className="text-center py-20 border-2 border-dashed rounded-lg bg-muted/50">
                     <ShoppingCartIcon className="mx-auto h-12 w-12 text-muted-foreground" />
                     <h2 className="mt-4 text-xl font-semibold">Tu carrito está vacío</h2>
                     <p className="mt-2 text-muted-foreground">Añade productos para verlos aquí.</p>
@@ -273,10 +271,8 @@ export default function TransactionsPage() {
                     </Button>
                   </div>
                 )}
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+            </TabsContent>
+        </Tabs>
       </main>
       <TransactionDetailsDialog
         isOpen={isDialogOpen}
@@ -287,3 +283,4 @@ export default function TransactionsPage() {
   );
 }
 
+    
