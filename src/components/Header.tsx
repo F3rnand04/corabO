@@ -41,7 +41,7 @@ export function Header() {
               <Wallet className="h-5 w-5" />
             </Button>
             <div className="relative">
-              <Button variant="ghost" size="icon" onClick={() => router.push('/cart')}>
+              <Button variant="ghost" size="icon" onClick={() => router.push('/transactions?tab=cart')}>
                 <ShoppingCart className="h-5 w-5" />
               </Button>
               {cart.length > 0 && (
