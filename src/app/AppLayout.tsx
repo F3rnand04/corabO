@@ -16,7 +16,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
   
-  const hideFooter = pathname.startsWith('/profile') || pathname.startsWith('/transactions');
+  const hideFooter = pathname.startsWith('/profile');
 
   return (
     <div className="flex flex-col min-h-screen">
