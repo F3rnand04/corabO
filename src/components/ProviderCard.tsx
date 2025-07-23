@@ -9,13 +9,19 @@ import { Separator } from "@/components/ui/separator";
 import type { User as UserType } from "@/lib/types";
 import { Star, MapPin, Bookmark, Send, MessageCircle } from "lucide-react";
 import Link from "next/link";
+import { useCorabo } from "@/contexts/CoraboContext";
 
 interface ProviderCardProps {
     provider: UserType;
 }
 
 export function ProviderCard({ provider }: ProviderCardProps) {
+    const { addContact } = useCorabo();
     const profileLink = provider.type === 'provider' ? `/companies/${provider.id}` : '#';
+
+    const handleSaveContact = () => {
+        addContact(provider);
+    };
 
     return (
         <Card className="rounded-2xl overflow-hidden shadow-md">
@@ -23,7 +29,7 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                 <div className="p-3">
                     <div className="flex items-start gap-3">
                         <Avatar className="w-12 h-12 border-2 border-primary">
-                            <AvatarFallback className="text-xs">Foto</AvatarFallback>
+                             <AvatarFallback className="text-xs">Foto</AvatarFallback>
                         </Avatar>
                         <div className="flex-grow">
                             <div className="flex justify-between items-start">
@@ -31,7 +37,7 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                                     <p className="font-bold text-base">{provider.name}</p>
                                     <p className="text-sm text-muted-foreground">Especialidad del Proveedor</p>
                                 </div>
-                                <Button variant="ghost" size="icon" className="shrink-0 text-muted-foreground hover:text-primary">
+                                <Button variant="ghost" size="icon" className="shrink-0 text-muted-foreground hover:text-primary" onClick={handleSaveContact}>
                                     <Bookmark className="w-5 h-5" />
                                 </Button>
                             </div>

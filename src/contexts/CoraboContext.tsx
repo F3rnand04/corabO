@@ -13,6 +13,7 @@ interface CoraboState {
   cart: CartItem[];
   transactions: Transaction[];
   searchQuery: string;
+  contacts: User[];
   switchUser: (userId: string) => void;
   addToCart: (product: Product, quantity: number) => void;
   updateCartQuantity: (productId: string, quantity: number) => void;
@@ -24,6 +25,8 @@ interface CoraboState {
   startDispute: (transactionId: string) => void;
   checkout: (withDelivery: boolean) => void;
   setSearchQuery: (query: string) => void;
+  addContact: (user: User) => void;
+  removeContact: (userId: string) => void;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -34,6 +37,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
   const [searchQuery, setSearchQuery] = useState('');
+  const [contacts, setContacts] = useState<User[]>([]);
 
   const findOrCreateCartTransaction = (): Transaction => {
     const existingCartTx = transactions.find(
@@ -192,6 +196,22 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     toast({ variant: 'destructive', title: "Disputa Iniciada", description: "La transacción está ahora en disputa." });
   };
 
+  const addContact = (user: User) => {
+    setContacts(prev => {
+        if (prev.find(c => c.id === user.id)) {
+            toast({ variant: "default", title: "Contacto ya existe", description: `${user.name} ya está en tus contactos.` });
+            return prev;
+        }
+        toast({ title: "Contacto añadido", description: `${user.name} fue añadido a tus contactos.` });
+        return [...prev, user];
+    });
+  };
+
+  const removeContact = (userId: string) => {
+    setContacts(prev => prev.filter(c => c.id !== userId));
+    toast({ variant: "destructive", title: "Contacto eliminado", description: "El contacto ha sido eliminado." });
+  };
+
   const value = {
     currentUser,
     users,
@@ -200,6 +220,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     cart,
     transactions,
     searchQuery,
+    contacts,
     switchUser,
     addToCart,
     updateCartQuantity,
@@ -211,6 +232,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     acceptQuote,
     startDispute,
     setSearchQuery,
+    addContact,
+    removeContact,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;
