@@ -14,18 +14,8 @@ export default function TransactionsLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-background min-h-screen">
-      <div className="container py-4">
-        <div className="flex items-center mb-4">
-          <Button asChild variant="ghost" size="icon">
-            <Link href="/">
-              <ChevronLeft className="h-6 w-6" />
-              <span className="sr-only">Volver al Inicio</span>
-            </Link>
-          </Button>
-        </div>
-        {children}
-      </div>
+    <div className="bg-slate-50 min-h-screen font-sans">
+      {children}
     </div>
   );
 }
