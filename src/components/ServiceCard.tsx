@@ -5,7 +5,7 @@ import type { Service } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { Star, Send, MessageCircle, MapPin, Bookmark } from "lucide-react";
+import { Star, Send, MessageCircle, MapPin, Bookmark, CheckCircle } from "lucide-react";
 import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Separator } from "./ui/separator";
@@ -41,14 +41,15 @@ export function ServiceCard({ service }: ServiceCardProps) {
             </Avatar>
             <div className="flex-grow">
               <div className="flex justify-between items-start">
-                  <div>
-                      <p className="font-bold text-base">{service.name}</p>
-                      <p className="text-sm text-muted-foreground">Ofrecido por <Link href={profileLink} className="hover:underline text-primary">{provider.name}</Link></p>
+                  <div className="flex items-center gap-2">
+                      <p className="font-bold text-base">{provider.name}</p>
+                      {provider.verified && <CheckCircle className="w-4 h-4 text-blue-500" />}
                   </div>
                   <Button variant="ghost" size="icon" className="shrink-0 text-muted-foreground hover:text-primary" onClick={handleSaveContact}>
                       <Bookmark className="w-5 h-5" />
                   </Button>
               </div>
+              <p className="text-sm text-muted-foreground">Ofrece: {service.name}</p>
               <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                 <div className="flex items-center gap-1">
                   <Star className="w-4 h-4 text-amber-400 fill-amber-400" />

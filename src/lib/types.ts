@@ -3,6 +3,7 @@ export type User = {
   name: string;
   type: 'client' | 'provider';
   reputation: number;
+  verified?: boolean;
 };
 
 export type Product = {
