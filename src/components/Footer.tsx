@@ -17,10 +17,12 @@ export function Footer() {
   const isProviderOnProfilePage = currentUser.type === 'provider' && pathname === '/profile';
 
   const handleProfileClick = () => {
+    // For providers, navigate to their dedicated profile page
     if (currentUser.type === 'provider') {
       router.push('/profile');
     } else {
-      router.push('/transactions?tab=history'); 
+      // For clients, navigate to their transaction history
+      router.push('/transactions');
     }
   };
   
