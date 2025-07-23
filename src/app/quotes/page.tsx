@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { FileText, Plus, Trash2, Send, Info, Paperclip, Lock } from 'lucide-react';
+import { FileText, Plus, Trash2, Send, Info, Paperclip, Lock, ShieldCheck, Banknote, UserCheck, UploadCloud, Eye, EyeOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Select,
@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
 interface QuoteItem {
@@ -34,6 +35,8 @@ export default function QuotesPage() {
   const [currentQty, setCurrentQty] = useState(1);
   const [category, setCategory] = useState('');
   const [fileName, setFileName] = useState('');
+  const [isRegistryActive, setIsRegistryActive] = useState(false);
+  const [activationStep, setActivationStep] = useState(0); // 0: inactive, 1: id, 2: account, 3: done
 
 
   // Simulación de límites basados en el usuario
@@ -79,6 +82,128 @@ export default function QuotesPage() {
       setFileName(e.target.files[0].name);
     }
   };
+
+  const handleActivateRegistry = () => {
+    // Simula el proceso de activación
+    toast({ title: 'Proceso de Activación Iniciado', description: 'Por favor, completa los pasos de verificación.' });
+    setIsRegistryActive(true);
+    setActivationStep(1);
+  };
+  
+  const handleVerifyId = () => {
+      toast({ title: 'Identidad Verificada', description: 'Por favor, configura tu cuenta de pago.' });
+      setActivationStep(2);
+  }
+
+  const handleFinishActivation = () => {
+      toast({ title: '¡Registro Activado!', description: 'Ahora puedes realizar cotizaciones especiales.' });
+      setActivationStep(3);
+  }
+
+  if (!isRegistryActive) {
+      return (
+        <main className="container py-8 flex items-center justify-center" style={{minHeight: 'calc(100vh - 200px)'}}>
+            <Card className="max-w-md text-center">
+                <CardHeader>
+                    <CardTitle className="flex flex-col items-center justify-center gap-4">
+                        <div className="p-4 bg-primary/10 rounded-full">
+                            <FileText className="h-10 w-10 text-primary" />
+                        </div>
+                        Activar Registro de Cotizaciones
+                    </CardTitle>
+                    <CardDescription>
+                        Para crear cotizaciones especiales, primero debes activar tu registro. Este proceso de verificación protege tu identidad y tus transacciones.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground mb-4">
+                        Al activar tu registro, podrás enviar y recibir cotizaciones personalizadas de forma segura dentro de la plataforma.
+                    </p>
+                </CardContent>
+                <CardFooter>
+                    <Button className="w-full" onClick={handleActivateRegistry}>
+                        <ShieldCheck className="mr-2 h-4 w-4" />
+                        Activar Registro
+                    </Button>
+                </CardFooter>
+            </Card>
+        </main>
+      )
+  }
+
+  if (activationStep < 3) {
+      return (
+           <main className="container py-8">
+                <div className="flex flex-col items-center gap-3 mb-6 text-center">
+                    <FileText className="h-10 w-10 text-primary" />
+                    <div>
+                        <h1 className="text-3xl font-bold">Activación de Registro</h1>
+                        <p className="text-muted-foreground">Sigue los pasos para completar la activación de forma segura.</p>
+                    </div>
+                </div>
+                <Tabs value={`step-${activationStep}`} className="w-full max-w-2xl mx-auto">
+                    <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="step-0" disabled>Solicitud</TabsTrigger>
+                        <TabsTrigger value="step-1" disabled={activationStep < 1}>Verificación</TabsTrigger>
+                        <TabsTrigger value="step-2" disabled={activationStep < 2}>Cuenta</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value={`step-${activationStep}`}>
+                        <Card>
+                             {activationStep === 1 && (
+                                <>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2"><UserCheck className="h-5 w-5" />Verificación de Identidad</CardTitle>
+                                    <CardDescription>Confirma tu autenticidad para proteger tu cuenta.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                     <div className="p-4 border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-center h-40 bg-muted/50 hover:bg-muted cursor-pointer">
+                                        <UploadCloud className="h-10 w-10 text-muted-foreground mb-2" />
+                                        <p className="font-semibold">Captura tu documento de identidad</p>
+                                        <p className="text-xs text-muted-foreground">Asegura buena iluminación y sin reflejos.</p>
+                                        <Input type="file" className="sr-only"/>
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="id-number">Número de Identificación</Label>
+                                        <Input id="id-number" placeholder="Ej: 12.345.678" />
+                                        <p className="text-xs text-muted-foreground mt-1">Debe coincidir exactamente con tu documento.</p>
+                                    </div>
+                                </CardContent>
+                                <CardFooter>
+                                    <Button className="w-full" onClick={handleVerifyId}>Verificar Identidad</Button>
+                                </CardFooter>
+                                </>
+                            )}
+                             {activationStep === 2 && (
+                                <>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center gap-2"><Banknote className="h-5 w-5" />Configuración de Cuenta de Pago</CardTitle>
+                                    <CardDescription>Vincula tu cuenta para recibir fondos de forma segura.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                     <div className="p-3 bg-destructive/10 text-destructive border border-destructive/20 rounded-md text-sm">
+                                        <p className="font-bold">¡Importante!</p>
+                                        <p>No se admiten cuentas de terceros. Solo se aceptarán cuentas a nombre del titular de la cuenta Corabo.</p>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="account-holder">Nombre del Titular</Label>
+                                        <Input id="account-holder" value={currentUser.name} disabled />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="account-number">Número de Cuenta o Teléfono (Pago Móvil)</Label>
+                                        <Input id="account-number" placeholder="Ingresa los datos de tu cuenta" />
+                                    </div>
+                                </CardContent>
+                                <CardFooter>
+                                    <Button className="w-full" onClick={handleFinishActivation}>Finalizar Activación</Button>
+                                </CardFooter>
+                                </>
+                            )}
+                        </Card>
+                    </TabsContent>
+                </Tabs>
+           </main>
+      )
+  }
 
 
   return (
@@ -226,3 +351,5 @@ export default function QuotesPage() {
     </main>
   );
 }
+
+    
