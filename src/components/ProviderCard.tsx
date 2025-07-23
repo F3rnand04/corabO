@@ -54,15 +54,21 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                     <div className="absolute bottom-2 right-2 flex flex-col items-center gap-2">
                         <div className="flex flex-col items-center text-white">
                             <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full">
-                                <Send className="w-5 h-5" />
+                                <Star className="w-5 h-5" />
                             </Button>
                             <span className="text-xs font-bold mt-1">4.5k</span>
                         </div>
                         <div className="flex flex-col items-center text-white mt-2">
                              <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full">
-                                <Star className="w-6 h-6 text-yellow-400 fill-yellow-400" />
+                                <MessageCircle className="w-5 h-5" />
                              </Button>
                             <span className="text-xs font-bold mt-1">8.9k</span>
+                        </div>
+                         <div className="flex flex-col items-center text-white mt-2">
+                             <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full">
+                                <Send className="w-5 h-5" />
+                             </Button>
+                            <span className="text-xs font-bold mt-1">1.2k</span>
                         </div>
                     </div>
                 </div>

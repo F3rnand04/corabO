@@ -2,7 +2,6 @@
 
 import { Home, PlayCircle, Search, MessageSquare, User } from "lucide-react";
 import { Button } from "./ui/button";
-import { useCorabo } from "@/contexts/CoraboContext";
 import { useRouter } from "next/navigation";
 
 export function Footer() {
