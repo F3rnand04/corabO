@@ -3,11 +3,10 @@
 import { useCorabo } from "@/contexts/CoraboContext";
 import { ServiceCard } from "@/components/ServiceCard";
 import { ProviderCard } from "@/components/ProviderCard";
-import { CompaniesCarousel } from "@/components/CompaniesCarousel";
 import { Separator } from "@/components/ui/separator";
 
 export default function HomePage() {
-  const { services, users, searchQuery, feedView, currentUser } = useCorabo();
+  const { services, users, searchQuery, feedView } = useCorabo();
 
   const providers = users.filter(u => u.type === 'provider');
 
@@ -22,15 +21,6 @@ export default function HomePage() {
 
   return (
     <main className="container py-4">
-      
-      {feedView === 'empresas' && (
-         <div>
-          <h2 className="text-xl font-bold px-2 mb-2">Empresas Destacadas</h2>
-          <CompaniesCarousel />
-          <Separator className="my-4" />
-        </div>
-      )}
-
       <div className="space-y-4">
         {feedView === 'servicios' ? (
           filteredServices.length > 0 ? (
