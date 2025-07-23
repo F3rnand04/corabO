@@ -170,7 +170,7 @@ export default function ProfilePage() {
                     onClick={handlePrev}
                     variant="ghost" 
                     size="icon" 
-                    className="absolute top-1/2 left-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 hidden md:flex group-hover:flex"
+                    className="absolute top-1/3 left-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 hidden md:flex group-hover:flex"
                 >
                     <ChevronLeft className="h-5 w-5" />
                 </Button>
@@ -178,7 +178,7 @@ export default function ProfilePage() {
                     onClick={handleNext}
                     variant="ghost" 
                     size="icon" 
-                    className="absolute top-1/2 right-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 hidden md:flex group-hover:flex"
+                    className="absolute top-1/3 right-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 hidden md:flex group-hover:flex"
                 >
                     <ChevronRight className="h-5 w-5" />
                 </Button>
