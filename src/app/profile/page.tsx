@@ -6,19 +6,30 @@ import { Separator } from "@/components/ui/separator";
 import { Star, Calendar, Wallet, MapPin, Share, Home, PlayCircle, ArrowUp, MessageSquare, Settings, Plus } from "lucide-react";
 import Image from "next/image";
 import { useCorabo } from "@/contexts/CoraboContext";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function ProfilePage() {
     const { currentUser } = useCorabo();
+    const router = useRouter();
 
-    // Check if the current user is a provider to show the detailed profile
+    useEffect(() => {
+        // Redirect client users to the homepage
+        if (currentUser.type === 'client') {
+            router.push('/');
+        }
+    }, [currentUser, router]);
+
+    // Show a loading state or null while redirecting
     if (currentUser.type !== 'provider') {
         return (
              <main className="container py-8">
-                <h1 className="text-3xl font-bold">Perfil de Cliente</h1>
-                <p className="text-muted-foreground">Esta página está en construcción para usuarios clientes.</p>
+                <h1 className="text-3xl font-bold">Cargando...</h1>
+                <p className="text-muted-foreground">Redirigiendo a la página principal.</p>
             </main>
         )
     }
+
 
     return (
         <div className="bg-background min-h-screen flex flex-col">
