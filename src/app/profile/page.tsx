@@ -4,9 +4,9 @@ import React from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Star, Share2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function ProfilePage() {
-  // Datos de ejemplo del proveedor para asegurar que la página siempre se renderice
   const providerProfile = {
     name: "Tecno Soluciones S.A.",
     specialty: "Reparación de Computadoras",
@@ -32,7 +32,7 @@ export default function ProfilePage() {
   return (
     <div className="bg-gray-100 min-h-screen flex flex-col">
       <main className="container py-4 space-y-4">
-        {/* Sección de Encabezado del Perfil */}
+        {/* Profile Header Section */}
         <Card>
           <CardContent className="p-4 flex items-center space-x-4">
             <div className="relative">
@@ -55,7 +55,7 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Sección de Estadísticas */}
+        {/* Stats Section */}
         <Card>
           <CardContent className="p-4 flex justify-around items-center text-center text-gray-700">
             <div className="flex items-center space-x-1">
@@ -81,17 +81,17 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Botón de Gestión de Campañas */}
+        {/* Campaign Management Button */}
         <div className="flex justify-end">
-          <button className="bg-gradient-to-r from-green-400 to-green-600 text-white px-4 py-2 rounded-full text-sm font-medium shadow-md">
+          <Button className="bg-gradient-to-r from-green-400 to-green-600 text-white px-4 py-2 rounded-full text-sm font-medium shadow-md">
             GESTION DE CAMPAÑAS
-          </button>
+          </Button>
         </div>
 
-        {/* Sección de Contenido Principal (Imagen y Tabs) */}
+        {/* Main Content (Image and Tabs) */}
         <Card>
           <CardContent className="p-4 space-y-4">
-            {/* Tarjeta de Imagen Principal */}
+            {/* Main Image Card */}
             <div className="relative">
               <Image
                 src={providerProfile.mainImage}
@@ -111,13 +111,13 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Tabs de Promoción y Descripción */}
+            {/* Promotion and Description Tabs */}
             <div className="flex justify-around text-gray-700 font-medium text-lg border-b border-gray-200">
               <span className="border-b-2 border-green-500 pb-2 cursor-pointer">Promoción del Día</span>
               <span className="pb-2 cursor-pointer">Editar Descripción</span>
             </div>
 
-            {/* Grid de Thumbnails */}
+            {/* Thumbnails Grid */}
             <div className="grid grid-cols-3 gap-4">
               {providerProfile.thumbnails.map((thumb, index) => (
                 <div key={index} className="relative">
