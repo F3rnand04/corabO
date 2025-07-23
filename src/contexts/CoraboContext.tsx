@@ -14,6 +14,7 @@ interface CoraboState {
   transactions: Transaction[];
   searchQuery: string;
   contacts: User[];
+  isGpsActive: boolean;
   switchUser: (userId: string) => void;
   addToCart: (product: Product, quantity: number) => void;
   updateCartQuantity: (productId: string, quantity: number) => void;
@@ -27,6 +28,7 @@ interface CoraboState {
   setSearchQuery: (query: string) => void;
   addContact: (user: User) => void;
   removeContact: (userId: string) => void;
+  toggleGps: () => void;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -38,6 +40,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
   const [searchQuery, setSearchQuery] = useState('');
   const [contacts, setContacts] = useState<User[]>([]);
+  const [isGpsActive, setIsGpsActive] = useState(false);
 
   const findOrCreateCartTransaction = (): Transaction => {
     const existingCartTx = transactions.find(
@@ -212,6 +215,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     toast({ variant: "destructive", title: "Contacto eliminado", description: "El contacto ha sido eliminado." });
   };
 
+  const toggleGps = () => {
+    setIsGpsActive(prev => !prev);
+    toast({
+        title: `GPS ${!isGpsActive ? 'Activado' : 'Desactivado'}`,
+        description: `Ahora ${!isGpsActive ? 'eres visible' : 'no eres visible'} y puedes ver proveedores cercanos.`
+    });
+  };
+
   const value = {
     currentUser,
     users,
@@ -221,6 +232,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     transactions,
     searchQuery,
     contacts,
+    isGpsActive,
     switchUser,
     addToCart,
     updateCartQuantity,
@@ -234,6 +246,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     setSearchQuery,
     addContact,
     removeContact,
+    toggleGps,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;

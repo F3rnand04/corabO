@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MapPin, FileText, Wallet, Menu, Search, ChevronDown, User, FileHeart, X } from "lucide-react";
+import { MapPin, FileText, Wallet, Menu, Search, ChevronDown, User, FileHeart, X, RadioTower } from "lucide-react";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { useRouter } from "next/navigation";
 import {
@@ -25,7 +25,7 @@ import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 export function Header() {
-  const { currentUser, cart, searchQuery, setSearchQuery, contacts, removeContact } = useCorabo();
+  const { currentUser, cart, searchQuery, setSearchQuery, contacts, removeContact, isGpsActive, toggleGps } = useCorabo();
   const router = useRouter();
 
   return (
@@ -85,6 +85,9 @@ export function Header() {
           </Sheet>
 
           <div className="flex items-center space-x-1 sm:space-x-2">
+            <Button variant="ghost" size="icon" onClick={toggleGps} className={isGpsActive ? 'text-green-500' : ''}>
+                <RadioTower className="h-5 w-5" />
+            </Button>
             <Button variant="ghost" size="icon" onClick={() => router.push('/map')}>
               <MapPin className="h-5 w-5" />
             </Button>
