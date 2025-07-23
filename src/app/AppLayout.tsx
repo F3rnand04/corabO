@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { Header } from '@/components/Header';
-import { Footer } from '@/components/Footer';
+import Footer from '@/components/Footer';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
