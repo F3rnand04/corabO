@@ -21,9 +21,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from './ui/badge';
-import { Zap, Clock, CreditCard, ChevronDown } from 'lucide-react';
+import { Zap, Clock, Banknote, ChevronDown, Upload, FileText } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
+import { cn } from '@/lib/utils';
 
 type GalleryImage = {
   src: string;
@@ -49,6 +50,8 @@ const costPerDay = 2.50;
 export function PromotionDialog({ isOpen, onOpenChange, onActivate, image, isPromotionActive }: PromotionDialogProps) {
   const [promotionText, setPromotionText] = useState('HOY 10% OFF');
   const [duration, setDuration] = useState<"24" | "48" | "72">("24");
+  const [reference, setReference] = useState('');
+  const [voucherFile, setVoucherFile] = useState<File | null>(null);
 
   if (!image) return null;
 
@@ -138,26 +141,37 @@ export function PromotionDialog({ isOpen, onOpenChange, onActivate, image, isPro
               <Collapsible>
                  <CollapsibleTrigger asChild>
                     <Button variant="outline" className="w-full justify-between">
-                       <span><CreditCard className="mr-2 h-4 w-4 inline-block"/>Configurar Pago</span>
+                       <span><Banknote className="mr-2 h-4 w-4 inline-block"/>Pagar con Transferencia / Pago Móvil</span>
                        <ChevronDown className="h-4 w-4" />
                     </Button>
                  </CollapsibleTrigger>
                  <CollapsibleContent className="py-4 px-3 mt-2 border rounded-md">
                    <div className="space-y-4">
-                     <p className="text-sm text-muted-foreground">Introduce tus datos de facturación. Usamos un proveedor seguro para procesar los pagos.</p>
-                     <div className="space-y-2">
-                       <Label htmlFor="card-number">Número de Tarjeta</Label>
-                       <Input id="card-number" placeholder="**** **** **** 1234" />
+                     <p className="text-sm font-semibold text-foreground">Realiza el pago a los siguientes datos:</p>
+                     <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md space-y-1">
+                        <p><strong>Banco:</strong> Banco de Corabo</p>
+                        <p><strong>Teléfono:</strong> 0412-1234567</p>
+                        <p><strong>RIF:</strong> J-12345678-9</p>
                      </div>
-                     <div className="grid grid-cols-2 gap-4">
-                       <div className="space-y-2">
-                         <Label htmlFor="expiry-date">Vencimiento</Label>
-                         <Input id="expiry-date" placeholder="MM/AA" />
-                       </div>
-                       <div className="space-y-2">
-                         <Label htmlFor="cvc">CVC</Label>
-                         <Input id="cvc" placeholder="123" />
-                       </div>
+                     <p className="text-sm font-semibold text-foreground pt-2">Luego, registra tu pago aquí:</p>
+                     <div className="space-y-2">
+                        <Label htmlFor="voucher-upload">Comprobante de Pago</Label>
+                        <div className="flex items-center gap-2">
+                          <Button asChild variant="outline" size="icon"><Label htmlFor="voucher-upload" className="cursor-pointer"><Upload className="h-4 w-4"/></Label></Button>
+                           <Input 
+                              id="voucher-upload" 
+                              type="file" 
+                              className="hidden" 
+                              onChange={(e) => setVoucherFile(e.target.files ? e.target.files[0] : null)}
+                            />
+                           <span className={cn("text-sm text-muted-foreground", voucherFile && "text-foreground font-medium")}>
+                             {voucherFile ? voucherFile.name : 'Seleccionar archivo...'}
+                           </span>
+                        </div>
+                     </div>
+                     <div className="space-y-2">
+                       <Label htmlFor="reference">Número de Referencia</Label>
+                       <Input id="reference" placeholder="00012345" value={reference} onChange={(e) => setReference(e.target.value)} />
                      </div>
                    </div>
                  </CollapsibleContent>
@@ -172,7 +186,7 @@ export function PromotionDialog({ isOpen, onOpenChange, onActivate, image, isPro
             Cancelar
           </Button>
           {!isPromotionActive && (
-            <Button onClick={handleActivate} disabled={!promotionText.trim()}>
+            <Button onClick={handleActivate} disabled={!promotionText.trim() || !reference || !voucherFile}>
               Activar por ${promotionCost.toFixed(2)}
             </Button>
           )}
