@@ -105,6 +105,7 @@ export function PromotionDialog({ isOpen, onOpenChange, onActivate, image, isPro
                   value={promotionText}
                   onChange={(e) => setPromotionText(e.target.value)}
                   placeholder="Ej: HOY 15% OFF"
+                  maxLength={15}
                 />
                 <div className="flex flex-wrap gap-1 pt-1">
                     {promotionSuggestions.map(suggestion => (
