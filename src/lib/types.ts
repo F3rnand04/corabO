@@ -4,6 +4,10 @@ export type User = {
   type: 'client' | 'provider';
   reputation: number;
   verified?: boolean;
+  promotion?: {
+    text: string;
+    expires: string;
+  };
 };
 
 export type Product = {

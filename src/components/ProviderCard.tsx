@@ -24,6 +24,8 @@ export function ProviderCard({ provider }: ProviderCardProps) {
         addContact(provider);
     };
 
+    const isPromotionActive = provider.promotion && new Date(provider.promotion.expires) > new Date();
+
     return (
         <Card className="rounded-2xl overflow-hidden shadow-md">
             <CardContent className="p-0">
@@ -64,7 +66,9 @@ export function ProviderCard({ provider }: ProviderCardProps) {
 
                 <div className="relative aspect-video w-full">
                     <Image src="https://placehold.co/600x400.png" alt="Provider content" layout="fill" objectFit="cover" data-ai-hint="service person working" />
-                     <Badge variant="destructive" className="absolute top-2 left-2 bg-red-500 text-white shadow-lg">HOY 10% Off</Badge>
+                    {isPromotionActive && provider.promotion && (
+                        <Badge variant="destructive" className="absolute top-2 left-2 bg-red-500 text-white shadow-lg">{provider.promotion.text}</Badge>
+                    )}
                     <div className="absolute bottom-2 right-2 flex flex-col items-end gap-2 text-white">
                         <div className="flex flex-col items-center">
                             <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">

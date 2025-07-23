@@ -2,7 +2,17 @@ import type { User, Product, Service, Transaction } from './types';
 
 export const users: User[] = [
   { id: 'client1', name: 'Juan Cliente', type: 'client', reputation: 4.5 },
-  { id: 'provider1', name: 'Tecno Soluciones S.A.', type: 'provider', reputation: 4.8, verified: true },
+  { 
+    id: 'provider1', 
+    name: 'Tecno Soluciones S.A.', 
+    type: 'provider', 
+    reputation: 4.8, 
+    verified: true,
+    promotion: {
+      text: 'HOY 10% OFF',
+      expires: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(), // Expires in 12 hours
+    }
+  },
   { id: 'provider2', name: 'Hogar Feliz Servicios', type: 'provider', reputation: 4.2 },
 ];
 

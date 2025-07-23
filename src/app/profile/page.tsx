@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, TouchEvent } from 'react';
+import { useState, TouchEvent, useEffect } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
@@ -9,15 +9,20 @@ import { Star, Send, Plus, Calendar, Wallet, MapPin, ChevronLeft, ChevronRight, 
 import ProfileFooter from '@/components/ProfileFooter';
 import { cn } from '@/lib/utils';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
+import { PromotionDialog } from '@/components/PromotionDialog';
 
 type GalleryImage = {
   src: string;
   alt: string;
   description: string;
+  promotion?: {
+    text: string;
+    expires: string;
+  };
 };
 
 export default function ProfilePage() {
-  const providerProfile = {
+  const [providerProfile, setProviderProfile] = useState({
     name: "NOMBRE USUARIO",
     specialty: "Especialidad",
     rating: 4.9,
@@ -36,13 +41,23 @@ export default function ProfilePage() {
     shareCount: 4567,
     starCount: 8934.5,
     messageCount: 8900,
-  };
+  });
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [isPromotionDialogOpen, setIsPromotionDialogOpen] = useState(false);
+  const [_, setForceRerender] = useState(0);
+
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setForceRerender(Math.random());
+    }, 1000 * 60); // Rerender every minute to update promotion time
+    return () => clearInterval(interval);
+  }, []);
 
   const minSwipeDistance = 50;
 
@@ -85,10 +100,39 @@ export default function ProfilePage() {
   
   const handleImageDoubleClick = (image: GalleryImage) => {
     setSelectedImage(image);
-    setIsDialogOpen(true);
+    setIsDetailsDialogOpen(true);
+  };
+
+  const handlePromotionTabClick = () => {
+    setIsPromotionDialogOpen(true);
+  };
+
+  const handleActivatePromotion = (promotionText: string) => {
+    const now = new Date();
+    const expiryDate = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours from now
+
+    setProviderProfile(prevProfile => {
+      const newGallery = [...prevProfile.gallery];
+      newGallery[currentImageIndex].promotion = {
+        text: promotionText,
+        expires: expiryDate.toISOString(),
+      };
+      return { ...prevProfile, gallery: newGallery };
+    });
+    setIsPromotionDialogOpen(false);
   };
 
   const currentImage = providerProfile.gallery[currentImageIndex];
+  const isPromotionActive = currentImage.promotion && new Date(currentImage.promotion.expires) > new Date();
+
+  const getPromotionTimeRemaining = () => {
+    if (!isPromotionActive || !currentImage.promotion) return "";
+    const diff = new Date(currentImage.promotion.expires).getTime() - new Date().getTime();
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    return `Activa (${hours}h ${minutes}m restantes)`;
+  };
+
 
   return (
     <>
@@ -165,6 +209,11 @@ export default function ProfilePage() {
                   data-ai-hint="professional workspace"
                   key={currentImage.src} 
                 />
+                 {isPromotionActive && currentImage.promotion && (
+                    <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-md shadow-lg">
+                        {currentImage.promotion.text}
+                    </div>
+                 )}
                 <Button 
                     onClick={handlePrev}
                     variant="ghost" 
@@ -207,8 +256,14 @@ export default function ProfilePage() {
 
               {/* Tabs */}
               <div className="flex justify-around font-semibold text-center border-b">
-                <div className="flex-1 p-3 cursor-pointer border-b-2 border-primary text-primary">
-                  Promoción del Día
+                <div
+                  className={cn(
+                    "flex-1 p-3 cursor-pointer",
+                    isPromotionActive ? "text-green-600 border-b-2 border-green-600" : "border-b-2 border-primary text-primary"
+                  )}
+                  onClick={handlePromotionTabClick}
+                >
+                  {isPromotionActive ? getPromotionTimeRemaining() : "Promoción del Día"}
                 </div>
                 <div
                   className="flex-1 p-3 cursor-pointer text-muted-foreground"
@@ -239,6 +294,11 @@ export default function ProfilePage() {
                           )}
                           data-ai-hint="product image"
                       />
+                       {thumb.promotion && new Date(thumb.promotion.expires) > new Date() && (
+                         <div className="absolute top-1 left-1 bg-red-500 text-white text-[10px] font-bold px-1 rounded-sm shadow-lg">
+                           PROMO
+                         </div>
+                       )}
                       </div>
                   ))}
               </div>
@@ -249,11 +309,18 @@ export default function ProfilePage() {
       </div>
       {selectedImage && (
         <ImageDetailsDialog
-          isOpen={isDialogOpen}
-          onOpenChange={setIsDialogOpen}
+          isOpen={isDetailsDialogOpen}
+          onOpenChange={setIsDetailsDialogOpen}
           image={selectedImage}
         />
       )}
+      <PromotionDialog
+        isOpen={isPromotionDialogOpen}
+        onOpenChange={setIsPromotionDialogOpen}
+        onActivate={handleActivatePromotion}
+        image={currentImage}
+        isPromotionActive={isPromotionActive}
+      />
     </>
   );
 }
