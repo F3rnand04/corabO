@@ -19,26 +19,9 @@ import {
   Wallet,
 } from "lucide-react";
 import Image from "next/image";
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 
 export default function ProfilePage() {
     const { currentUser } = useCorabo();
-    const router = useRouter();
-
-    useEffect(() => {
-        if (currentUser.type === 'client') {
-            router.push('/');
-        }
-    }, [currentUser, router]);
-
-    if (currentUser.type !== 'provider') {
-        return (
-            <main className="flex min-h-screen flex-col items-center justify-center p-24">
-                <p>Redirigiendo...</p>
-            </main>
-        );
-    }
   
   return (
     <div className="bg-background min-h-screen">
