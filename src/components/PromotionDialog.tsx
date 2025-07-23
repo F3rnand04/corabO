@@ -21,7 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from './ui/badge';
-import { Zap, Clock, Banknote, ChevronDown, Upload, FileText } from 'lucide-react';
+import { Zap, Clock, Banknote, ChevronDown, Upload, FileText, Check } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { cn } from '@/lib/utils';
@@ -56,7 +56,7 @@ export function PromotionDialog({ isOpen, onOpenChange, onActivate, image, isPro
   if (!image) return null;
 
   const handleActivate = () => {
-    if (promotionText.trim()) {
+    if (promotionText.trim() && reference && voucherFile) {
       onActivate(promotionText);
     }
   };
@@ -141,8 +141,8 @@ export function PromotionDialog({ isOpen, onOpenChange, onActivate, image, isPro
 
               <Collapsible>
                  <CollapsibleTrigger asChild>
-                    <Button variant="outline" className="w-full justify-between">
-                       <span><Banknote className="mr-2 h-4 w-4 inline-block"/>Pagar con Transferencia / Pago Móvil</span>
+                    <Button variant="default" className="w-full justify-between" disabled={!promotionText.trim() || isPromotionActive}>
+                       <span>Activar por ${promotionCost.toFixed(2)}</span>
                        <ChevronDown className="h-4 w-4" />
                     </Button>
                  </CollapsibleTrigger>
@@ -174,6 +174,10 @@ export function PromotionDialog({ isOpen, onOpenChange, onActivate, image, isPro
                        <Label htmlFor="reference">Número de Referencia</Label>
                        <Input id="reference" placeholder="00012345" value={reference} onChange={(e) => setReference(e.target.value)} />
                      </div>
+                     <Button onClick={handleActivate} disabled={!reference || !voucherFile} className="w-full">
+                       <Check className="mr-2 h-4 w-4" />
+                       Confirmar Pago
+                     </Button>
                    </div>
                  </CollapsibleContent>
               </Collapsible>
@@ -184,13 +188,8 @@ export function PromotionDialog({ isOpen, onOpenChange, onActivate, image, isPro
 
         <DialogFooter className="mt-auto pt-4 flex-shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancelar
+            {isPromotionActive ? 'Cerrar' : 'Cancelar'}
           </Button>
-          {!isPromotionActive && (
-            <Button onClick={handleActivate} disabled={!promotionText.trim() || !reference || !voucherFile}>
-              Activar por ${promotionCost.toFixed(2)}
-            </Button>
-          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
