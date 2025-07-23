@@ -127,7 +127,7 @@ export default function ProviderProfilePage() {
                    <span className="text-xs">Mensajeria</span>
                 </Button>
 
-                <Button variant="ghost" className="flex-col h-auto p-1 text-muted-foreground hover:text-primary">
+                <Button variant="ghost" className="flex-col h-auto p-1 text-muted-foreground hover:text-primary" onClick={() => { /* Navigate to settings */ }}>
                   <Settings className="h-6 w-6" />
                   <span className="text-xs">Ajustes</span>
                 </Button>
