@@ -43,8 +43,8 @@ export default function ProfilePage() {
                                  <AvatarImage src={`https://i.pravatar.cc/150?u=${currentUser.id}`} alt={currentUser.name} />
                                  <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
                             </Avatar>
-                            <Button size="icon" className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-gray-300 hover:bg-gray-400">
-                                <Plus className="w-4 h-4 text-gray-600" />
+                            <Button size="icon" variant="outline" className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-background hover:bg-muted">
+                                <Plus className="w-4 h-4 text-muted-foreground" />
                             </Button>
                         </div>
                         <div className="flex-grow">
@@ -87,20 +87,20 @@ export default function ProfilePage() {
                 {/* Main Image */}
                 <div className="mt-4 px-4 relative">
                     <div className="relative aspect-[4/3] w-full rounded-2xl overflow-hidden">
-                        <Image src="https://placehold.co/600x400.png" alt="Main content" layout="fill" objectFit="cover" data-ai-hint="professional service landscape" />
+                        <Image src="https://placehold.co/600x450.png" alt="Main content" layout="fill" objectFit="cover" data-ai-hint="professional service landscape" />
                     </div>
                     <div className="absolute bottom-4 right-6 flex flex-col items-center gap-4 text-white">
                        <div className="flex flex-col items-center">
-                            <Button variant="ghost" size="icon" className="text-black bg-white/50 rounded-full h-10 w-10">
+                            <Button variant="ghost" size="icon" className="text-black bg-white/70 backdrop-blur-sm rounded-full h-10 w-10 hover:bg-white/90">
                                 <Share className="w-5 h-5" />
                             </Button>
-                            <span className="text-xs font-bold mt-1 drop-shadow-md text-black">4567</span>
+                            <span className="text-xs font-bold mt-1 text-black drop-shadow-md">4567</span>
                         </div>
                        <div className="flex flex-col items-center">
-                             <Button variant="ghost" size="icon" className="text-black bg-white/50 rounded-full h-10 w-10">
+                             <Button variant="ghost" size="icon" className="text-black bg-white/70 backdrop-blur-sm rounded-full h-10 w-10 hover:bg-white/90">
                                 <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
                              </Button>
-                            <span className="text-xs font-bold mt-1 drop-shadow-md text-black">8934.5</span>
+                            <span className="text-xs font-bold mt-1 text-black drop-shadow-md">8934.5</span>
                         </div>
                     </div>
                 </div>
@@ -131,7 +131,7 @@ export default function ProfilePage() {
                         <PlayCircle className="h-6 w-6" />
                     </Button>
                     
-                    <Button variant="secondary" size="icon" className="h-14 w-14 rounded-full shadow-lg -translate-y-4 bg-muted hover:bg-muted/80">
+                    <Button variant="secondary" size="icon" className="h-14 w-14 rounded-full shadow-lg -translate-y-4 bg-muted hover:bg-muted/80 ring-4 ring-background">
                         <ArrowUp className="h-7 w-7 text-muted-foreground" />
                     </Button>
 
