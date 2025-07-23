@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useCorabo } from "@/contexts/CoraboContext";
+import { users } from "@/lib/mock-data";
 import {
   ArrowUp,
   Calendar,
@@ -20,8 +20,13 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 
+// Use a static provider user for display purposes to avoid context/state issues.
+const displayUser = users.find(u => u.type === 'provider');
+
 export default function ProfilePage() {
-    const { currentUser } = useCorabo();
+    if (!displayUser) {
+        return <div>Proveedor no encontrado.</div>
+    }
   
   return (
     <div className="bg-background min-h-screen">
@@ -31,7 +36,7 @@ export default function ProfilePage() {
           <div className="flex items-center space-x-3">
             <div className="relative">
               <Avatar className="w-20 h-20 border">
-                <AvatarImage src={`https://i.pravatar.cc/150?u=${currentUser.id}`} alt={currentUser.name} />
+                <AvatarImage src={`https://i.pravatar.cc/150?u=${displayUser.id}`} alt={displayUser.name} />
                 <AvatarFallback>U</AvatarFallback>
               </Avatar>
               <div className="absolute bottom-0 right-0 bg-green-500 rounded-full w-6 h-6 flex items-center justify-center border-2 border-white">
@@ -39,7 +44,7 @@ export default function ProfilePage() {
               </div>
             </div>
             <div>
-              <h1 className="text-lg font-bold text-gray-800">{currentUser.name}</h1>
+              <h1 className="text-lg font-bold text-gray-800">{displayUser.name}</h1>
               <p className="text-sm text-gray-500">Especialidad del Proveedor</p>
             </div>
           </div>
@@ -52,7 +57,7 @@ export default function ProfilePage() {
         <div className="mt-4 flex justify-around items-center text-center text-sm">
            <div className="flex items-center space-x-1">
              <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-             <span className="font-medium">{currentUser.reputation}</span>
+             <span className="font-medium">{displayUser.reputation}</span>
            </div>
            <Separator orientation="vertical" className="h-6" />
            <div>
