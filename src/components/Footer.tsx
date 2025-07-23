@@ -6,14 +6,11 @@ import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogTrigger } from "./ui/dialog";
 import { CategoryHub } from "./CategoryHub";
 import { useState } from "react";
+import Link from "next/link";
 
 export function Footer() {
   const router = useRouter();
   const [isHubOpen, setIsHubOpen] = useState(false);
-
-  const handleProfileClick = () => {
-    router.push('/profile');
-  };
 
   return (
     <footer className="bg-background border-t sticky bottom-0 z-40">
@@ -43,10 +40,12 @@ export function Footer() {
            <span className="text-xs">Mensajes</span>
         </Button>
 
-        <Button variant="ghost" className="flex-col h-auto p-1 text-muted-foreground hover:text-primary" onClick={handleProfileClick}>
-            <User className="h-6 w-6" />
-            <span className="text-xs">Perfil</span>
-        </Button>
+        <Link href="/profile" passHref legacyBehavior>
+          <Button variant="ghost" className="flex-col h-auto p-1 text-muted-foreground hover:text-primary">
+              <User className="h-6 w-6" />
+              <span className="text-xs">Perfil</span>
+          </Button>
+        </Link>
       </div>
     </footer>
   );
