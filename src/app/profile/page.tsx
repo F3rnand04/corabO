@@ -3,6 +3,7 @@
 import React from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Star, Share2 } from 'lucide-react';
 
 export default function ProfilePage() {
   // Datos de ejemplo del usuario (reemplaza con datos reales)
@@ -14,33 +15,34 @@ export default function ProfilePage() {
     completedJobs: "00 | 05",
     publications: 30,
     totalJobs: 15,
-    profileImage: "/placeholder-avatar.png", // Ruta a la imagen de perfil
-    mainImage: "/placeholder-main.png", // Ruta a la imagen principal
+    profileImage: "https://placehold.co/128x128.png",
+    mainImage: "https://placehold.co/600x400.png",
     shareCount: 4567,
     starCount: 8934.5,
     thumbnails: [
-      "/placeholder-thumb1.png",
-      "/placeholder-thumb2.png",
-      "/placeholder-thumb3.png",
-      "/placeholder-thumb4.png",
-      "/placeholder-thumb5.png",
-      "/placeholder-thumb6.png",
+      "https://placehold.co/100x100.png",
+      "https://placehold.co/100x100.png",
+      "https://placehold.co/100x100.png",
+      "https://placehold.co/100x100.png",
+      "https://placehold.co/100x100.png",
+      "https://placehold.co/100x100.png",
     ],
   };
 
   return (
     <div className="bg-gray-100 min-h-screen flex flex-col">
-      <main className="container py-4 space-y-4"> {/* Usando container y space-y-4 como en el home */}
+      <main className="container py-4 space-y-4">
         {/* Sección de Encabezado del Perfil */}
-        <Card> {/* Ejemplo de uso de un componente Card */}
+        <Card>
           <CardContent className="p-4 flex items-center space-x-4">
             <div className="relative">
               <Image
                 src={user.profileImage}
                 alt="Profile Picture"
-                width={64} // Ajusta el tamaño según sea necesario
-                height={64} // Ajusta el tamaño según sea necesario
+                width={64}
+                height={64}
                 className="rounded-full object-cover"
+                data-ai-hint="user profile"
               />
               <div className="absolute bottom-0 right-0 bg-green-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs border-2 border-white cursor-pointer">
                 +
@@ -57,7 +59,7 @@ export default function ProfilePage() {
         <Card>
           <CardContent className="p-4 flex justify-around items-center text-center text-gray-700">
             <div className="flex items-center space-x-1">
-              <i className="fas fa-star text-yellow-400"></i>
+              <Star className="w-4 h-4 text-yellow-400 fill-yellow-400"/>
               <span className="font-medium">{user.rating.toFixed(1)}</span>
             </div>
             <div>
@@ -94,24 +96,25 @@ export default function ProfilePage() {
               <Image
                 src={user.mainImage}
                 alt="Main content image"
-                width={600} // Ajusta el tamaño según sea necesario
-                height={400} // Ajusta el tamaño según sea necesario
+                width={600}
+                height={400}
                 className="rounded-lg object-cover w-full"
+                data-ai-hint="professional workspace"
               />
-              <div className="absolute top-6 right-6 flex flex-col items-center space-y-1 bg-white bg-opacity-75 p-1 rounded"> {/* Fondo semitransparente para mejor visibilidad */}
-                <i className="fas fa-share-alt text-gray-600 text-xl cursor-pointer"></i>
+              <div className="absolute top-6 right-6 flex flex-col items-center space-y-1 bg-white bg-opacity-75 p-1 rounded">
+                <Share2 className="text-gray-600 h-5 w-5 cursor-pointer"/>
                 <span className="text-xs text-gray-600">{user.shareCount}</span>
               </div>
-              <div className="absolute bottom-6 right-6 flex flex-col items-center space-y-1 bg-white bg-opacity-75 p-1 rounded"> {/* Fondo semitransparente */}
-                <i className="fas fa-star text-yellow-400 text-2xl cursor-pointer"></i>
+              <div className="absolute bottom-6 right-6 flex flex-col items-center space-y-1 bg-white bg-opacity-75 p-1 rounded">
+                <Star className="text-yellow-400 fill-yellow-400 h-6 w-6 cursor-pointer"/>
                 <span className="text-sm text-gray-700 font-semibold">{user.starCount.toFixed(1)}</span>
               </div>
             </div>
 
             {/* Tabs de Promoción y Descripción */}
-            <div className="flex justify-around text-gray-700 font-medium text-lg border-b border-gray-200"> {/* Añadido borde inferior */}
-              <span className="border-b-2 border-green-500 pb-2 cursor-pointer">Promoción del Día</span> {/* Ajustado padding y cursor */}
-              <span className="pb-2 cursor-pointer">Editar Descripción</span> {/* Ajustado padding y cursor */}
+            <div className="flex justify-around text-gray-700 font-medium text-lg border-b border-gray-200">
+              <span className="border-b-2 border-green-500 pb-2 cursor-pointer">Promoción del Día</span>
+              <span className="pb-2 cursor-pointer">Editar Descripción</span>
             </div>
 
             {/* Grid de Thumbnails */}
@@ -121,11 +124,11 @@ export default function ProfilePage() {
                   <Image
                     src={thumb}
                     alt={`Thumbnail ${index + 1}`}
-                    width={100} // Ajusta el tamaño según sea necesario
-                    height={100} // Ajusta el tamaño según sea necesario
+                    width={100}
+                    height={100}
                     className="rounded-lg object-cover w-full h-auto"
+                    data-ai-hint="product image"
                   />
-                  {/* Considera añadir un overlay o indicador si un thumbnail es el "del día" */}
                 </div>
               ))}
             </div>
