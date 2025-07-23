@@ -1,11 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Star, Share2, Plus, Calendar, Wallet, MapPin } from 'lucide-react';
 import ProfileFooter from '@/components/ProfileFooter';
+import { cn } from '@/lib/utils';
 
 export default function ProfilePage() {
   const providerProfile = {
@@ -21,14 +22,17 @@ export default function ProfilePage() {
     shareCount: 4567,
     starCount: 8934.5,
     thumbnails: [
-      "https://placehold.co/150x150.png",
-      "https://placehold.co/150x150.png",
-      "https://placehold.co/150x150.png",
-      "https://placehold.co/150x150.png",
-      "https://placehold.co/150x150.png",
-      "https://placehold.co/150x150.png",
+      "https://placehold.co/600x400.png?text=1",
+      "https://placehold.co/600x400.png?text=2",
+      "https://placehold.co/600x400.png?text=3",
+      "https://placehold.co/600x400.png?text=4",
+      "https://placehold.co/600x400.png?text=5",
+      "https://placehold.co/600x400.png?text=6",
     ],
   };
+
+  const [currentMainImage, setCurrentMainImage] = useState(providerProfile.mainImage);
+
 
   return (
     <div className="bg-background min-h-screen">
@@ -90,12 +94,13 @@ export default function ProfilePage() {
             {/* Main Image */}
             <div className="relative">
               <Image
-                src={providerProfile.mainImage}
+                src={currentMainImage}
                 alt="Main content image"
                 width={600}
                 height={400}
-                className="rounded-t-2xl object-cover w-full aspect-[4/3]"
+                className="rounded-t-2xl object-cover w-full aspect-[4/3] transition-opacity duration-300"
                 data-ai-hint="professional workspace"
+                key={currentMainImage} 
               />
               <div className="absolute top-4 right-4 flex flex-col items-center space-y-4">
                 <div className="flex flex-col items-center text-foreground">
@@ -123,12 +128,21 @@ export default function ProfilePage() {
             <div className="p-4">
                 <div className="grid grid-cols-3 gap-2">
                 {providerProfile.thumbnails.map((thumb, index) => (
-                    <div key={index} className="relative aspect-square">
+                    <div 
+                        key={index} 
+                        className="relative aspect-square cursor-pointer group"
+                        onClick={() => setCurrentMainImage(thumb)}
+                    >
                     <Image
                         src={thumb}
                         alt={`Thumbnail ${index + 1}`}
                         fill
-                        className="rounded-lg object-cover"
+                        className={cn(
+                            "rounded-lg object-cover transition-all duration-200",
+                            currentMainImage === thumb 
+                                ? "ring-2 ring-primary ring-offset-2" 
+                                : "ring-0 group-hover:opacity-80"
+                        )}
                         data-ai-hint="product image"
                     />
                     </div>
