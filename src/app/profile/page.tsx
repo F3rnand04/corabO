@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Star, Share2, Plus, Calendar, Wallet, MapPin } from 'lucide-react';
+import ProfileFooter from '@/components/ProfileFooter';
 
 export default function ProfilePage() {
   const providerProfile = {
@@ -31,7 +32,7 @@ export default function ProfilePage() {
 
   return (
     <div className="bg-background min-h-screen">
-      <main className="container mx-auto py-4 px-2 space-y-4 max-w-2xl">
+      <main className="container mx-auto py-4 px-2 space-y-4 max-w-2xl pb-24">
         
         {/* Profile Header */}
         <div className="flex items-center space-x-4">
@@ -126,7 +127,7 @@ export default function ProfilePage() {
                     <Image
                         src={thumb}
                         alt={`Thumbnail ${index + 1}`}
-                        layout="fill"
+                        fill
                         className="rounded-lg object-cover"
                         data-ai-hint="product image"
                     />
@@ -137,6 +138,7 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
       </main>
+      <ProfileFooter />
     </div>
   );
 }
