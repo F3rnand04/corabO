@@ -8,12 +8,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import type { User as UserType } from "@/lib/types";
 import { Star, MapPin, Bookmark, Send, MessageCircle } from "lucide-react";
+import Link from "next/link";
 
 interface ProviderCardProps {
     provider: UserType;
 }
 
 export function ProviderCard({ provider }: ProviderCardProps) {
+    const profileLink = provider.type === 'provider' ? `/companies/${provider.id}` : '#';
+
     return (
         <Card className="rounded-2xl overflow-hidden shadow-md">
             <CardContent className="p-0">
@@ -78,7 +81,9 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                 <div className="flex justify-around items-center p-2 border-t">
                     <Button variant="ghost" className="text-muted-foreground font-semibold text-sm">Mensaje</Button>
                     <Separator orientation="vertical" className="h-6" />
-                    <Button variant="ghost" className="text-muted-foreground font-semibold text-sm">Ver Perfil</Button>
+                    <Link href={profileLink} passHref>
+                        <Button variant="ghost" className="text-muted-foreground font-semibold text-sm">Ver Perfil</Button>
+                    </Link>
                      <Separator orientation="vertical" className="h-6" />
                     <Button variant="ghost" className="text-muted-foreground font-semibold text-sm">Comentarios</Button>
                 </div>

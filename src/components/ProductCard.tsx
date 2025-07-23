@@ -5,7 +5,7 @@ import type { Product } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { Star, Plus } from "lucide-react";
+import { Star, Plus, MessageCircle } from "lucide-react";
 
 interface ProductCardProps {
   product: Product;
@@ -24,13 +24,26 @@ export function ProductCard({ product }: ProductCardProps) {
         <CardTitle>{product.name}</CardTitle>
         <CardDescription className="pt-2">{product.description}</CardDescription>
       </CardHeader>
-      <CardContent className="flex-grow">
+      <CardContent className="flex-grow space-y-4">
          <div className="flex justify-between items-center text-sm text-muted-foreground">
-            <span>Vendido por {provider?.name}</span>
+            <a href={`/companies/${provider?.id}`} className="hover:underline">Vendido por {provider?.name}</a>
              <div className="flex items-center gap-1">
                 <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
                 <span>{provider?.reputation}</span>
             </div>
+        </div>
+        <div>
+          <h4 className="font-semibold text-sm mb-2">Comentarios</h4>
+          <div className="text-sm text-muted-foreground space-y-2">
+            <div className="flex items-start gap-2">
+              <MessageCircle className="w-4 h-4 mt-1 shrink-0" />
+              <p>"¡Excelente producto! Superó mis expectativas."</p>
+            </div>
+             <div className="flex items-start gap-2">
+              <MessageCircle className="w-4 h-4 mt-1 shrink-0" />
+              <p>"Muy buena calidad y el envío fue rápido."</p>
+            </div>
+          </div>
         </div>
       </CardContent>
       <CardFooter className="flex justify-between items-center">

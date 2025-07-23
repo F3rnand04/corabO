@@ -80,7 +80,7 @@ export function Header() {
             </div>
           <div className="flex items-center gap-2">
             <Button className="rounded-full flex-1" variant="secondary" onClick={() => router.push('/services')}>Servicios</Button>
-            <Button className="rounded-full flex-1" variant="ghost" onClick={() => router.push('/products')}>Empresas</Button>
+            <Button className="rounded-full flex-1" variant="ghost" onClick={() => router.push('/companies')}>Empresas</Button>
           </div>
         </div>
       </div>
