@@ -46,7 +46,7 @@ export function Header() {
               </Button>
               {cart.length > 0 && (
                 <Badge variant="destructive" className="absolute -top-1 -right-1 h-4 w-4 justify-center p-0 text-xs">
-                  {cart.length}
+                  {cart.reduce((acc, item) => acc + item.quantity, 0)}
                 </Badge>
               )}
             </div>

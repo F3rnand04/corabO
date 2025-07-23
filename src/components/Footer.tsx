@@ -3,12 +3,20 @@
 import { Home, PlayCircle, Search, MessageSquare, User } from "lucide-react";
 import { Button } from "./ui/button";
 import { useRouter } from "next/navigation";
+import { useCorabo } from "@/contexts/CoraboContext";
 
 export function Footer() {
   const router = useRouter();
+  const { currentUser } = useCorabo();
+
+  const handleProfileClick = () => {
+    // This is a placeholder. In a real app, you'd have a dedicated profile page.
+    // For now, it will go to the products page.
+    router.push('/products'); 
+  };
 
   return (
-    <footer className="fixed bottom-0 left-0 right-0 bg-background border-t z-50 md:hidden">
+    <footer className="fixed bottom-0 left-0 right-0 bg-background border-t z-50">
       <div className="container flex justify-around h-16 items-center px-2">
         <Button variant="ghost" className="flex-col h-auto p-1 text-muted-foreground hover:text-primary" onClick={() => router.push('/')}>
           <Home className="h-6 w-6" />
@@ -25,7 +33,7 @@ export function Footer() {
           <MessageSquare className="h-6 w-6" />
            <span className="text-xs">Mensajes</span>
         </Button>
-        <Button variant="ghost" className="flex-col h-auto p-1 text-muted-foreground hover:text-primary" onClick={() => router.push('/products')}>
+        <Button variant="ghost" className="flex-col h-auto p-1 text-muted-foreground hover:text-primary" onClick={handleProfileClick}>
           <User className="h-6 w-6" />
           <span className="text-xs">Perfil</span>
         </Button>

@@ -23,9 +23,9 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased bg-background">
         <Providers>
-            <div className="flex flex-col min-h-screen">
+            <div className="flex flex-col h-screen">
                 <Header />
-                <main className="flex-grow pt-40 pb-20">
+                <main className="flex-1 overflow-y-auto pt-[148px] pb-20">
                     {children}
                 </main>
                 <Footer />

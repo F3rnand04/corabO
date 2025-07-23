@@ -20,6 +20,12 @@ export default function Home() {
          {providers.map(provider => (
           <ProviderCard key={`${provider.id}-3`} provider={provider} />
         ))}
+          {providers.map(provider => (
+          <ProviderCard key={`${provider.id}-4`} provider={provider} />
+        ))}
+         {providers.map(provider => (
+          <ProviderCard key={`${provider.id}-5`} provider={provider} />
+        ))}
       </div>
     </div>
   );
