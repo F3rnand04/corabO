@@ -1,143 +1,137 @@
-"use client";
+'use client';
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { users } from "@/lib/mock-data";
-import {
-  ArrowUp,
-  Calendar,
-  Home,
-  MapPin,
-  MessageSquare,
-  PlayCircle,
-  Plus,
-  Settings,
-  Share2,
-  Star,
-  Wallet,
-} from "lucide-react";
-import Image from "next/image";
-
-// Use a static provider user for display purposes to avoid context/state issues.
-const displayUser = users.find(u => u.type === 'provider');
+import React from 'react';
+import Image from 'next/image';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function ProfilePage() {
-    if (!displayUser) {
-        return <div>Proveedor no encontrado.</div>
-    }
-  
+  // Datos de ejemplo del usuario (reemplaza con datos reales)
+  const user = {
+    name: "NOMBRE USUARIO",
+    specialty: "ESPECIALIDAD",
+    rating: 4.9,
+    efficiency: "99.9%",
+    completedJobs: "00 | 05",
+    publications: 30,
+    totalJobs: 15,
+    profileImage: "/placeholder-avatar.png", // Ruta a la imagen de perfil
+    mainImage: "/placeholder-main.png", // Ruta a la imagen principal
+    shareCount: 4567,
+    starCount: 8934.5,
+    thumbnails: [
+      "/placeholder-thumb1.png",
+      "/placeholder-thumb2.png",
+      "/placeholder-thumb3.png",
+      "/placeholder-thumb4.png",
+      "/placeholder-thumb5.png",
+      "/placeholder-thumb6.png",
+    ],
+  };
+
   return (
-    <div className="bg-background min-h-screen">
-      {/* Header */}
-      <header className="bg-white p-4 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+    <div className="bg-gray-100 min-h-screen flex flex-col">
+      <main className="container py-4 space-y-4"> {/* Usando container y space-y-4 como en el home */}
+        {/* Sección de Encabezado del Perfil */}
+        <Card> {/* Ejemplo de uso de un componente Card */}
+          <CardContent className="p-4 flex items-center space-x-4">
             <div className="relative">
-              <Avatar className="w-20 h-20 border">
-                <AvatarImage src={`https://i.pravatar.cc/150?u=${displayUser.id}`} alt={displayUser.name} />
-                <AvatarFallback>U</AvatarFallback>
-              </Avatar>
-              <div className="absolute bottom-0 right-0 bg-green-500 rounded-full w-6 h-6 flex items-center justify-center border-2 border-white">
-                <Plus className="w-4 h-4 text-white" />
+              <Image
+                src={user.profileImage}
+                alt="Profile Picture"
+                width={64} // Ajusta el tamaño según sea necesario
+                height={64} // Ajusta el tamaño según sea necesario
+                className="rounded-full object-cover"
+              />
+              <div className="absolute bottom-0 right-0 bg-green-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs border-2 border-white cursor-pointer">
+                +
               </div>
             </div>
             <div>
-              <h1 className="text-lg font-bold text-gray-800">{displayUser.name}</h1>
-              <p className="text-sm text-gray-500">Especialidad del Proveedor</p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-3">
-            <Calendar className="text-gray-500" />
-            <Wallet className="text-gray-500" />
-            <MapPin className="text-gray-500" />
-          </div>
-        </div>
-        <div className="mt-4 flex justify-around items-center text-center text-sm">
-           <div className="flex items-center space-x-1">
-             <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-             <span className="font-medium">{displayUser.reputation}</span>
-           </div>
-           <Separator orientation="vertical" className="h-6" />
-           <div>
-             <p className="font-medium">99.9%</p>
-             <p className="text-xs text-gray-500">Efec.</p>
-           </div>
-            <Separator orientation="vertical" className="h-6" />
-           <div>
-             <p className="font-medium">00 | 05</p>
-             <p className="text-xs text-gray-500">Trab. Realizados</p>
-           </div>
-            <Separator orientation="vertical" className="h-6" />
-           <div>
-             <p className="font-medium">30</p>
-             <p className="text-xs text-gray-500">Publicaciones</p>
-           </div>
-        </div>
-      </header>
-
-      {/* Campaign Button */}
-      <div className="p-4 flex justify-end">
-        <Button className="bg-gradient-to-r from-gray-400 to-gray-600 text-white rounded-full text-xs font-medium shadow-md h-8">
-          GESTION DE CAMPAÑAS
-        </Button>
-      </div>
-
-      {/* Main Content */}
-      <main className="flex-grow p-4 space-y-6 pb-24">
-        <Card className="rounded-xl shadow-md overflow-hidden">
-          <CardContent className="p-0 relative">
-            <div className="relative w-full h-64">
-              <Image src="https://placehold.co/600x400/a7d9ed/ffffff?text=" alt="Promotional" layout="fill" objectFit="cover" data-ai-hint="landscape abstract" />
-              <div className="absolute top-4 right-4 flex flex-col items-center space-y-4">
-                  <div className="flex flex-col items-center">
-                    <Share2 className="text-gray-700 w-6 h-6" />
-                    <span className="text-xs text-gray-700 font-semibold">4567</span>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <Star className="text-yellow-400 fill-yellow-400 w-7 h-7" />
-                    <span className="text-sm text-gray-700 font-semibold">8934.5</span>
-                  </div>
-              </div>
+              <h1 className="text-xl font-semibold text-gray-800">{user.name}</h1>
+              <p className="text-sm text-gray-600">{user.specialty}</p>
             </div>
           </CardContent>
         </Card>
-        
-        <div className="flex justify-around text-gray-700 font-medium text-md">
-            <span className="border-b-2 border-green-500 pb-1 text-black font-semibold">Promoción del Día</span>
-            <span className="text-gray-500">Editar Descripción</span>
+
+        {/* Sección de Estadísticas */}
+        <Card>
+          <CardContent className="p-4 flex justify-around items-center text-center text-gray-700">
+            <div className="flex items-center space-x-1">
+              <i className="fas fa-star text-yellow-400"></i>
+              <span className="font-medium">{user.rating.toFixed(1)}</span>
+            </div>
+            <div>
+              <p className="font-medium">{user.efficiency}</p>
+              <p className="text-xs text-gray-500">Efec.</p>
+            </div>
+            <div>
+              <p className="font-medium">{user.completedJobs}</p>
+              <p className="text-xs text-gray-500">Trab. Realizados</p>
+            </div>
+            <div>
+              <p className="font-medium">{user.publications}</p>
+              <p className="text-xs text-gray-500">Publicaciones</p>
+            </div>
+            <div>
+              <p className="font-medium">{user.totalJobs}</p>
+              <p className="text-xs text-gray-500">Trab. Realizados</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Botón de Gestión de Campañas */}
+        <div className="flex justify-end">
+          <button className="bg-gradient-to-r from-green-400 to-green-600 text-white px-4 py-2 rounded-full text-sm font-medium shadow-md">
+            GESTION DE CAMPAÑAS
+          </button>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
-            {[...Array(6)].map((_, i) => (
-                <div key={i} className="relative aspect-square">
-                     <Image src="https://placehold.co/200x200/a7d9ed/ffffff?text=" layout="fill" objectFit="cover" className="rounded-lg" alt={`promo ${i+1}`} data-ai-hint="landscape abstract" />
+        {/* Sección de Contenido Principal (Imagen y Tabs) */}
+        <Card>
+          <CardContent className="p-4 space-y-4">
+            {/* Tarjeta de Imagen Principal */}
+            <div className="relative">
+              <Image
+                src={user.mainImage}
+                alt="Main content image"
+                width={600} // Ajusta el tamaño según sea necesario
+                height={400} // Ajusta el tamaño según sea necesario
+                className="rounded-lg object-cover w-full"
+              />
+              <div className="absolute top-6 right-6 flex flex-col items-center space-y-1 bg-white bg-opacity-75 p-1 rounded"> {/* Fondo semitransparente para mejor visibilidad */}
+                <i className="fas fa-share-alt text-gray-600 text-xl cursor-pointer"></i>
+                <span className="text-xs text-gray-600">{user.shareCount}</span>
+              </div>
+              <div className="absolute bottom-6 right-6 flex flex-col items-center space-y-1 bg-white bg-opacity-75 p-1 rounded"> {/* Fondo semitransparente */}
+                <i className="fas fa-star text-yellow-400 text-2xl cursor-pointer"></i>
+                <span className="text-sm text-gray-700 font-semibold">{user.starCount.toFixed(1)}</span>
+              </div>
+            </div>
+
+            {/* Tabs de Promoción y Descripción */}
+            <div className="flex justify-around text-gray-700 font-medium text-lg border-b border-gray-200"> {/* Añadido borde inferior */}
+              <span className="border-b-2 border-green-500 pb-2 cursor-pointer">Promoción del Día</span> {/* Ajustado padding y cursor */}
+              <span className="pb-2 cursor-pointer">Editar Descripción</span> {/* Ajustado padding y cursor */}
+            </div>
+
+            {/* Grid de Thumbnails */}
+            <div className="grid grid-cols-3 gap-4">
+              {user.thumbnails.map((thumb, index) => (
+                <div key={index} className="relative">
+                  <Image
+                    src={thumb}
+                    alt={`Thumbnail ${index + 1}`}
+                    width={100} // Ajusta el tamaño según sea necesario
+                    height={100} // Ajusta el tamaño según sea necesario
+                    className="rounded-lg object-cover w-full h-auto"
+                  />
+                  {/* Considera añadir un overlay o indicador si un thumbnail es el "del día" */}
                 </div>
-            ))}
-        </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </main>
-
-      {/* Custom Bottom Nav */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white p-2 flex justify-around items-center border-t border-gray-200 shadow-lg z-50">
-        <Button variant="ghost" className="flex-col h-auto p-1">
-            <Home className="w-6 h-6 text-gray-500" />
-        </Button>
-        <Button variant="ghost" className="flex-col h-auto p-1">
-            <PlayCircle className="w-6 h-6 text-gray-500" />
-        </Button>
-        <div className="relative">
-            <Button size="icon" className="relative -top-5 w-16 h-16 bg-white rounded-full shadow-lg border-4 border-background hover:bg-gray-100">
-                <ArrowUp className="w-8 h-8 text-green-500" />
-            </Button>
-        </div>
-        <Button variant="ghost" className="flex-col h-auto p-1">
-            <MessageSquare className="w-6 h-6 text-gray-500" />
-        </Button>
-        <Button variant="ghost" className="flex-col h-auto p-1">
-            <Settings className="w-6 h-6 text-gray-500" />
-        </Button>
-      </nav>
     </div>
   );
 }
