@@ -24,7 +24,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 export function Header() {
-  const { currentUser, searchQuery, setSearchQuery, contacts, removeContact } = useCorabo();
+  const { currentUser, searchQuery, setSearchQuery, contacts, removeContact, feedView, setFeedView } = useCorabo();
   const router = useRouter();
 
   return (
@@ -124,6 +124,10 @@ export function Header() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
+            </div>
+            <div className="flex items-center gap-2">
+              <Button className="rounded-full flex-1" variant={feedView === 'servicios' ? 'secondary' : 'ghost'} onClick={() => setFeedView('servicios')}>Servicios</Button>
+              <Button className="rounded-full flex-1" variant={feedView === 'empresas' ? 'secondary' : 'ghost'} onClick={() => setFeedView('empresas')}>Empresas</Button>
             </div>
         </div>
       </div>

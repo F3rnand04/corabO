@@ -1,15 +1,12 @@
 
 "use client";
 
-import { useState } from "react";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { ServiceCard } from "@/components/ServiceCard";
 import { ProviderCard } from "@/components/ProviderCard";
-import { Button } from "@/components/ui/button";
 
 export default function HomePage() {
-  const { services, users, searchQuery } = useCorabo();
-  const [feedView, setFeedView] = useState<'servicios' | 'empresas'>('empresas');
+  const { services, users, searchQuery, feedView } = useCorabo();
 
   const providers = users.filter(u => u.type === 'provider');
 
@@ -24,10 +21,6 @@ export default function HomePage() {
 
   return (
     <main className="container py-4">
-      <div className="flex items-center gap-2 mb-4">
-        <Button className="rounded-full flex-1" variant={feedView === 'servicios' ? 'secondary' : 'ghost'} onClick={() => setFeedView('servicios')}>Servicios</Button>
-        <Button className="rounded-full flex-1" variant={feedView === 'empresas' ? 'secondary' : 'ghost'} onClick={() => setFeedView('empresas')}>Empresas</Button>
-      </div>
       <div className="space-y-4">
         {feedView === 'servicios' ? (
           filteredServices.length > 0 ? (
