@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -8,12 +9,13 @@ import { Badge } from '@/components/ui/badge';
 import type { Transaction, TransactionStatus } from '@/lib/types';
 import { TransactionDetailsDialog } from '@/components/TransactionDetailsDialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { AlertTriangle, CheckCircle, Handshake, MessageSquare, ShieldAlert, Truck, Minus, Plus, Trash2, Check, ShoppingCart as ShoppingCartIcon } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Handshake, MessageSquare, ShieldAlert, Truck, Minus, Plus, Trash2, Check, ShoppingCart as ShoppingCartIcon, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
+import TransactionsChart from '@/components/charts/TransactionsChart';
 
 type FilterStatus = 'all' | TransactionStatus;
 
@@ -72,6 +74,10 @@ export default function TransactionsPage() {
 
   const isClient = currentUser.type === 'client';
 
+  const handleExportPDF = () => {
+    alert("Funcionalidad para exportar a PDF no implementada aún.");
+  }
+
   return (
     <>
       <main className="container py-8">
@@ -96,13 +102,28 @@ export default function TransactionsPage() {
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="history" className="mt-4">
-                <Tabs value={filter} onValueChange={(value) => setFilter(value as FilterStatus)} className="mb-4">
-                    <TabsList>
-                        {filters.map(f => (
-                            <TabsTrigger key={f} value={f}>{f === 'all' ? 'Todas' : f}</TabsTrigger>
-                        ))}
-                    </TabsList>
-                </Tabs>
+                <Card className="mb-6">
+                  <CardHeader>
+                    <CardTitle>Resumen Visual</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <TransactionsChart transactions={userTransactions} />
+                  </CardContent>
+                </Card>
+                
+                <div className="flex justify-between items-center mb-4">
+                  <Tabs value={filter} onValueChange={(value) => setFilter(value as FilterStatus)} className="mb-4">
+                      <TabsList>
+                          {filters.map(f => (
+                              <TabsTrigger key={f} value={f}>{f === 'all' ? 'Todas' : f}</TabsTrigger>
+                          ))}
+                      </TabsList>
+                  </Tabs>
+                  <Button variant="outline" onClick={handleExportPDF}>
+                    <FileDown className="mr-2 h-4 w-4" />
+                    Exportar PDF
+                  </Button>
+                </div>
 
                 <div className="border rounded-md">
                   <Table>
@@ -265,3 +286,4 @@ export default function TransactionsPage() {
     </>
   );
 }
+
