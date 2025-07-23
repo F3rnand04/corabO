@@ -22,7 +22,6 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { CompaniesCarousel } from "./CompaniesCarousel";
 
 export function Header() {
   const { currentUser, searchQuery, setSearchQuery, contacts, removeContact } = useCorabo();
@@ -130,7 +129,6 @@ export function Header() {
               <Button className="rounded-full flex-1" variant="secondary" onClick={() => router.push('/services')}>Servicios</Button>
               <Button className="rounded-full flex-1" variant="ghost" onClick={() => router.push('/companies')}>Empresas</Button>
             </div>
-          <CompaniesCarousel />
         </div>
       </div>
     </header>
