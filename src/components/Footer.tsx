@@ -16,7 +16,7 @@ export function Footer() {
   };
 
   return (
-    <footer className="bg-background border-t">
+    <footer className="bg-background border-t sticky bottom-0 z-40">
       <div className="container flex justify-around h-16 items-center px-2">
         <Button variant="ghost" className="flex-col h-auto p-1 text-muted-foreground hover:text-primary" onClick={() => router.push('/')}>
           <Home className="h-6 w-6" />
