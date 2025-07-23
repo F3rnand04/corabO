@@ -11,12 +11,17 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from './ui/badge';
-import { Zap, Clock } from 'lucide-react';
+import { Zap, Clock, CreditCard } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 
 type GalleryImage = {
@@ -39,6 +44,7 @@ interface PromotionDialogProps {
 
 export function PromotionDialog({ isOpen, onOpenChange, onActivate, image, isPromotionActive }: PromotionDialogProps) {
   const [promotionText, setPromotionText] = useState('HOY 10% OFF');
+  const [promotionCost, setPromotionCost] = useState(2.50);
 
   if (!image) return null;
 
@@ -91,13 +97,49 @@ export function PromotionDialog({ isOpen, onOpenChange, onActivate, image, isPro
                   placeholder="Ej: HOY 15% OFF"
                 />
               </div>
-              <Alert>
-                <Zap className="h-4 w-4" />
-                <AlertTitle>Costo de Activación: $2.50</AlertTitle>
-                <AlertDescription>
-                  Se realizará un único cargo a tu método de pago. La promoción durará 24 horas.
-                </AlertDescription>
-              </Alert>
+
+               <div className="space-y-2">
+                <Label htmlFor="promotion-cost">Costo de Activación</Label>
+                 <div className="flex items-center gap-2">
+                   <span className="text-lg font-semibold">$</span>
+                   <Input
+                     id="promotion-cost"
+                     type="number"
+                     value={promotionCost}
+                     onChange={(e) => setPromotionCost(parseFloat(e.target.value) || 0)}
+                     className="w-24"
+                   />
+                 </div>
+              </div>
+
+              <Collapsible>
+                 <CollapsibleTrigger asChild>
+                    <Button variant="outline" className="w-full">
+                       <CreditCard className="mr-2 h-4 w-4" />
+                       Configurar Pago
+                    </Button>
+                 </CollapsibleTrigger>
+                 <CollapsibleContent className="py-4 px-2 mt-2 border rounded-md">
+                   <div className="space-y-4">
+                     <p className="text-sm text-muted-foreground">Introduce tus datos de facturación. Usamos un proveedor seguro para procesar los pagos.</p>
+                     <div className="space-y-2">
+                       <Label htmlFor="card-number">Número de Tarjeta</Label>
+                       <Input id="card-number" placeholder="**** **** **** 1234" />
+                     </div>
+                     <div className="grid grid-cols-2 gap-4">
+                       <div className="space-y-2">
+                         <Label htmlFor="expiry-date">Vencimiento</Label>
+                         <Input id="expiry-date" placeholder="MM/AA" />
+                       </div>
+                       <div className="space-y-2">
+                         <Label htmlFor="cvc">CVC</Label>
+                         <Input id="cvc" placeholder="123" />
+                       </div>
+                     </div>
+                   </div>
+                 </CollapsibleContent>
+              </Collapsible>
+              
             </div>
           )}
         </ScrollArea>
@@ -107,8 +149,8 @@ export function PromotionDialog({ isOpen, onOpenChange, onActivate, image, isPro
             Cancelar
           </Button>
           {!isPromotionActive && (
-            <Button onClick={handleActivate} disabled={!promotionText.trim()}>
-              Activar Promoción por $2.50
+            <Button onClick={handleActivate} disabled={!promotionText.trim() || promotionCost <= 0}>
+              Activar por ${promotionCost.toFixed(2)}
             </Button>
           )}
         </DialogFooter>
