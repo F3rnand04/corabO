@@ -11,7 +11,7 @@ export default function TransactionsLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-gray-800 text-white min-h-screen">
+    <div className="bg-background text-foreground min-h-screen">
       {children}
     </div>
   );
