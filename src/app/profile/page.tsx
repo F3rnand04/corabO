@@ -5,7 +5,7 @@ import React, { useState, TouchEvent } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Share2, Plus, Calendar, Wallet, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Star, Share2, Plus, Calendar, Wallet, MapPin, ChevronLeft, ChevronRight, MessageCircle, Send } from 'lucide-react';
 import ProfileFooter from '@/components/ProfileFooter';
 import { cn } from '@/lib/utils';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
@@ -36,6 +36,7 @@ export default function ProfilePage() {
     ],
     shareCount: 4567,
     starCount: 8934.5,
+    messageCount: 8900,
   };
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -181,16 +182,28 @@ export default function ProfilePage() {
                 >
                     <ChevronRight className="h-5 w-5" />
                 </Button>
-                <div className="absolute top-4 right-4 flex flex-col items-center space-y-4">
-                  <div className="flex flex-col items-center text-foreground">
-                      <Share2 className="h-7 w-7 drop-shadow-md"/>
-                      <span className="text-xs font-semibold drop-shadow-md">{providerProfile.shareCount}</span>
-                  </div>
+                
+                <div className="absolute bottom-2 right-2 flex flex-col items-end gap-2 text-white">
+                    <div className="flex flex-col items-center">
+                        <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">
+                            <Star className="w-5 h-5" />
+                        </Button>
+                        <span className="text-xs font-bold mt-1 drop-shadow-md">{(providerProfile.starCount / 1000).toFixed(1)}k</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                        <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">
+                            <MessageCircle className="w-5 h-5" />
+                        </Button>
+                        <span className="text-xs font-bold mt-1 drop-shadow-md">{(providerProfile.messageCount / 1000).toFixed(1)}k</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                        <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">
+                            <Send className="w-5 h-5" />
+                        </Button>
+                        <span className="text-xs font-bold mt-1 drop-shadow-md">{(providerProfile.shareCount / 1000).toFixed(1)}k</span>
+                    </div>
                 </div>
-                <div className="absolute bottom-4 right-4 flex flex-col items-center">
-                  <Star className="text-yellow-400 fill-yellow-400 h-8 w-8 drop-shadow-md"/>
-                  <span className="text-sm text-foreground font-bold drop-shadow-md">{providerProfile.starCount.toFixed(1)}</span>
-                </div>
+
               </div>
 
               {/* Tabs */}
