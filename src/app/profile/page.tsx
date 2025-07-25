@@ -18,7 +18,7 @@ import type { GalleryImage } from '@/lib/types';
 
 export default function ProfilePage() {
   const { toast } = useToast();
-  const { currentUser, updateUserProfileImage } = useCorabo();
+  const { currentUser, updateUserProfileImage, removeGalleryImage } = useCorabo();
   
   const [gallery, setGallery] = useState<GalleryImage[]>(currentUser.gallery || []);
 
@@ -70,6 +70,15 @@ export default function ProfilePage() {
             });
         };
         reader.readAsDataURL(file);
+    }
+  };
+  
+  const handleDeleteImage = (imageId: string) => {
+    removeGalleryImage(currentUser.id, imageId);
+    setIsDetailsDialogOpen(false);
+    // Reset index if needed
+    if (currentImageIndex >= (currentUser.gallery?.length ?? 1) - 1) {
+      setCurrentImageIndex(0);
     }
   };
 
@@ -370,6 +379,7 @@ export default function ProfilePage() {
           onOpenChange={setIsDetailsDialogOpen}
           image={selectedImage}
           isOwnerView={true}
+          onDelete={handleDeleteImage}
         />
       )}
       {currentImage && 
@@ -384,5 +394,3 @@ export default function ProfilePage() {
     </>
   );
 }
-
-    

@@ -35,6 +35,7 @@ interface CoraboState {
   toggleGps: () => void;
   updateUserProfileImage: (userId: string, imageUrl: string) => void;
   updateUserProfileAndGallery: (userId: string, newGalleryImage: GalleryImage) => void;
+  removeGalleryImage: (userId: string, imageId: string) => void;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -242,7 +243,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     setUsers(prevUsers => 
         prevUsers.map(u => {
             if (u.id === userId) {
-                const updatedGallery = [newGalleryImage, ...(u.gallery || [])];
+                const updatedGallery = [{...newGalleryImage, id: newGalleryImage.src}, ...(u.gallery || [])];
                 updatedUser = { ...u, gallery: updatedGallery };
                 return updatedUser;
             }
@@ -253,6 +254,29 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     if (currentUser.id === userId && updatedUser) {
         setCurrentUser(updatedUser);
     }
+  };
+  
+  const removeGalleryImage = (userId: string, imageId: string) => {
+    let updatedUser: User | undefined;
+    setUsers(prevUsers =>
+      prevUsers.map(u => {
+        if (u.id === userId) {
+          const updatedGallery = u.gallery?.filter(image => image.id !== imageId) || [];
+          updatedUser = { ...u, gallery: updatedGallery };
+          return updatedUser;
+        }
+        return u;
+      })
+    );
+
+    if (currentUser.id === userId && updatedUser) {
+        setCurrentUser(updatedUser);
+    }
+
+    toast({
+        title: "Publicación Eliminada",
+        description: "La imagen ha sido eliminada de tu galería."
+    });
   };
 
 
@@ -281,9 +305,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     addContact,
     removeContact,
     toggleGps,
-    setFeedView,
     updateUserProfileImage,
     updateUserProfileAndGallery,
+    removeGalleryImage,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;

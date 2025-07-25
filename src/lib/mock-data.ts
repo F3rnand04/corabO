@@ -17,6 +17,7 @@ export const users: User[] = [
     },
     gallery: [
       { 
+        id: 'provider1-img1',
         src: "https://placehold.co/600x400.png", 
         alt: "Soporte Técnico", 
         description: "Soporte técnico especializado para equipos de computación, tanto hardware como software. Resolvemos tus problemas con rapidez y eficacia.",
@@ -26,12 +27,14 @@ export const users: User[] = [
         ]
       },
       { 
+        id: 'provider1-img2',
         src: "https://placehold.co/600x400.png", 
         alt: "Instalación de Redes", 
         description: "Instalación y configuración de redes cableadas e inalámbricas para oficinas y hogares. Optimizamos la cobertura y seguridad de tu conexión.",
         comments: []
       },
       { 
+        id: 'provider1-img3',
         src: "https://placehold.co/600x400.png", 
         alt: "Venta de Equipos", 
         description: "Los mejores equipos y componentes para tus necesidades. Asesoramiento personalizado para que hagas la mejor inversión.",
@@ -40,6 +43,7 @@ export const users: User[] = [
         ]
       },
        { 
+        id: 'provider1-img4',
         src: "https://placehold.co/600x400.png", 
         alt: "Mantenimiento Preventivo", 
         description: "Planes de mantenimiento preventivo para empresas. Asegura la continuidad de tus operaciones y alarga la vida útil de tus equipos.",
@@ -55,6 +59,7 @@ export const users: User[] = [
     profileImage: `https://placehold.co/150x150.png`,
     gallery: [
       { 
+        id: 'provider2-img1',
         src: "https://placehold.co/600x400.png", 
         alt: "Limpieza Profunda", 
         description: "Descripción detallada del servicio de limpieza profunda para cocinas, baños y áreas comunes. Dejamos tu hogar reluciente.",
@@ -64,12 +69,14 @@ export const users: User[] = [
         ]
       },
       { 
+        id: 'provider2-img2',
         src: "https://placehold.co/600x400.png", 
         alt: "Armado de Muebles", 
         description: "Instalación y armado de todo tipo de muebles. Trabajo rápido, limpio y garantizado, sin que te sobren tornillos.",
         comments: []
       },
       { 
+        id: 'provider2-img3',
         src: "https://placehold.co/600x400.png", 
         alt: "Jardinería", 
         description: "Servicio de jardinería y mantenimiento de áreas verdes. Diseño, poda, riego y control de plagas para que tengas el jardín de tus sueños.",
@@ -78,11 +85,13 @@ export const users: User[] = [
         ]
       },
       { 
+        id: 'provider2-img4',
         src: "https://placehold.co/600x400.png", 
         alt: "Reparaciones Eléctricas", 
         description: "Reparaciones eléctricas menores, como cambio de enchufes, interruptores y lámparas. Seguridad y calidad garantizada." 
       },
       { 
+        id: 'provider2-img5',
         src: "https://placehold.co/600x400.png", 
         alt: "Plomería de Emergencia", 
         description: "Plomería de emergencia para fugas y obstrucciones. Atención 24 horas para resolver tus problemas al instante." 
@@ -98,6 +107,7 @@ export const users: User[] = [
     profileImage: `https://placehold.co/150x150.png`,
     gallery: [
       { 
+        id: 'provider3-img1',
         src: "https://placehold.co/600x400.png", 
         alt: "Diseño de Logos", 
         description: "Creación de logos modernos y memorables. Desarrollamos una identidad visual única que representa los valores de tu marca.",
@@ -106,6 +116,7 @@ export const users: User[] = [
         ]
       },
       { 
+        id: 'provider3-img2',
         src: "https://placehold.co/600x400.png", 
         alt: "Branding Corporativo", 
         description: "Desarrollo de identidad de marca completa: logos, paleta de colores, tipografía y manual de marca para una comunicación consistente.",

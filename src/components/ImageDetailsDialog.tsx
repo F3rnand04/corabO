@@ -15,17 +15,12 @@ import { Trash2, MessageSquare } from 'lucide-react';
 import { Input } from './ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Separator } from './ui/separator';
+import type { GalleryImage } from '@/lib/types';
+import { useCorabo } from '@/contexts/CoraboContext';
 
 type Comment = {
   author: string;
   text: string;
-};
-
-type GalleryImage = {
-  src: string;
-  alt: string;
-  description: string;
-  comments?: Comment[];
 };
 
 interface ImageDetailsDialogProps {
@@ -33,10 +28,20 @@ interface ImageDetailsDialogProps {
   onOpenChange: (isOpen: boolean) => void;
   image: GalleryImage | null;
   isOwnerView?: boolean;
+  onDelete?: (imageId: string) => void;
 }
 
-export function ImageDetailsDialog({ isOpen, onOpenChange, image, isOwnerView = false }: ImageDetailsDialogProps) {
+export function ImageDetailsDialog({ isOpen, onOpenChange, image, isOwnerView = false, onDelete }: ImageDetailsDialogProps) {
+  const { currentUser } = useCorabo();
+
   if (!image) return null;
+
+  const handleDelete = () => {
+    if(onDelete && image) {
+      onDelete(image.id);
+      onOpenChange(false);
+    }
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -64,7 +69,7 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, image, isOwnerView = 
                     {isOwnerView && (
                       <>
                         <Button variant="outline">Editar Descripción</Button>
-                        <Button variant="destructive" size="icon">
+                        <Button variant="destructive" size="icon" onClick={handleDelete}>
                             <Trash2 className="h-4 w-4"/>
                         </Button>
                       </>
