@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Home, PlaySquare, Search, MessageSquare, Settings } from 'lucide-react';
+import { Home, PlaySquare, Upload, MessageSquare, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { UploadDialog } from './UploadDialog';
@@ -16,7 +16,7 @@ export default function ProfileFooter() {
   const navItems = [
     { href: '/', icon: Home, label: 'Inicio' },
     { href: '/videos', icon: PlaySquare, label: 'Videos' },
-    { href: '/search', icon: Search, label: 'Buscar', isCentral: true },
+    { href: '#upload', icon: Upload, label: 'Añadir', isCentral: true },
     { href: '/messages', icon: MessageSquare, label: 'Mensajes' },
     { href: '/settings', icon: Settings, label: 'Ajustes' },
   ];
@@ -30,16 +30,16 @@ export default function ProfileFooter() {
 
             if (item.isCentral) {
               return (
-                 <Link key={item.href} href={item.href} passHref>
-                    <Button
-                    size="icon"
-                    className={cn(
-                        "relative -top-4 w-16 h-16 rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90",
-                    )}
-                    >
-                        <item.icon className="w-8 h-8" />
-                    </Button>
-                </Link>
+                <Button
+                  key={item.href}
+                  onClick={() => setIsUploadOpen(true)}
+                  size="icon"
+                  className={cn(
+                    "relative -top-4 w-16 h-16 rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90",
+                  )}
+                >
+                    <item.icon className="w-8 h-8" />
+                </Button>
               );
             }
             
@@ -59,6 +59,7 @@ export default function ProfileFooter() {
           })}
         </div>
       </footer>
+       <UploadDialog isOpen={isUploadOpen} onOpenChange={setIsUploadOpen} />
     </>
   );
 }

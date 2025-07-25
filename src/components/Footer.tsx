@@ -4,22 +4,19 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Home, PlaySquare, Upload, MessageSquare, CircleUser } from 'lucide-react';
+import { Home, PlaySquare, Search, MessageSquare, CircleUser } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCorabo } from '@/contexts/CoraboContext';
-import { useState } from 'react';
-import { UploadDialog } from './UploadDialog';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 export default function Footer() {
   const pathname = usePathname();
-  const [isUploadOpen, setIsUploadOpen] = useState(false);
   const { currentUser } = useCorabo();
 
   const navItems = [
     { href: '/', icon: Home, label: 'Inicio' },
     { href: '/videos', icon: PlaySquare, label: 'Videos' },
-    { href: '#upload', icon: Upload, label: 'Añadir', isCentral: true },
+    { href: '/search', icon: Search, label: 'Buscar', isCentral: true },
     { href: '/messages', icon: MessageSquare, label: 'Mensajes' },
     { href: '/profile', icon: CircleUser, label: 'Perfil' },
   ];
@@ -33,16 +30,16 @@ export default function Footer() {
 
             if (item.isCentral) {
               return (
-                <Button
-                  key={item.href}
-                  onClick={() => setIsUploadOpen(true)}
-                  size="icon"
-                  className={cn(
-                    "relative -top-4 w-16 h-16 rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90",
-                  )}
-                >
-                    <item.icon className="w-8 h-8" />
-                </Button>
+                 <Link key={item.href} href={item.href} passHref>
+                    <Button
+                    size="icon"
+                    className={cn(
+                        "relative -top-4 w-16 h-16 rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90",
+                    )}
+                    >
+                        <item.icon className="w-8 h-8" />
+                    </Button>
+                </Link>
               );
             }
 
@@ -81,7 +78,6 @@ export default function Footer() {
           })}
         </div>
       </footer>
-       <UploadDialog isOpen={isUploadOpen} onOpenChange={setIsUploadOpen} />
     </>
   );
 }
