@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import type { User, Product, Service, CartItem, Transaction, TransactionStatus } from '@/lib/types';
+import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage } from '@/lib/types';
 import { users as initialUsers, products, services as initialServices, initialTransactions } from '@/lib/mock-data';
 import { useToast } from "@/hooks/use-toast"
 
@@ -34,7 +34,7 @@ interface CoraboState {
   removeContact: (userId: string) => void;
   toggleGps: () => void;
   setFeedView: (view: FeedView) => void;
-  updateUserProfileImage: (userId: string, imageUrl: string) => void;
+  updateUserProfileAndGallery: (userId: string, imageUrl: string, gallery: GalleryImage[]) => void;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -220,12 +220,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     });
   };
   
-  const updateUserProfileImage = (userId: string, imageUrl: string) => {
+  const updateUserProfileAndGallery = (userId: string, imageUrl: string, gallery: GalleryImage[]) => {
     let updatedUser: User | undefined;
     setUsers(prevUsers => 
         prevUsers.map(u => {
             if (u.id === userId) {
-                updatedUser = { ...u, profileImage: imageUrl };
+                updatedUser = { ...u, profileImage: imageUrl, gallery };
                 return updatedUser;
             }
             return u;
@@ -264,7 +264,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     removeContact,
     toggleGps,
     setFeedView,
-    updateUserProfileImage,
+    updateUserProfileAndGallery,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;
@@ -277,3 +277,5 @@ export const useCorabo = () => {
   }
   return context;
 };
+
+    

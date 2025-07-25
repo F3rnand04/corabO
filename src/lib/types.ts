@@ -1,5 +1,19 @@
 
 
+export type GalleryImage = {
+  src: string;
+  alt: string;
+  description: string;
+  comments?: {
+    author: string;
+    text: string;
+  }[];
+  promotion?: {
+    text: string;
+    expires: string;
+  };
+};
+
 export type User = {
   id: string;
   name: string;
@@ -11,15 +25,7 @@ export type User = {
     text: string;
     expires: string;
   };
-  gallery?: {
-    src: string;
-    alt: string;
-    description: string;
-    comments?: {
-      author: string;
-      text: string;
-    }[];
-  }[];
+  gallery?: GalleryImage[];
 };
 
 export type Product = {
@@ -75,3 +81,5 @@ export type Transaction = {
     deliveryCost: number;
   };
 };
+
+    

@@ -9,53 +9,26 @@ import { Star, Send, Plus, Calendar, Wallet, MapPin, ChevronLeft, ChevronRight, 
 import { cn } from '@/lib/utils';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
 import { PromotionDialog } from '@/components/PromotionDialog';
-import { Avatar, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useCorabo } from '@/contexts/CoraboContext';
+import type { GalleryImage } from '@/lib/types';
 
-
-type GalleryImage = {
-  src: string;
-  alt: string;
-  description: string;
-  promotion?: {
-    text: string;
-    expires: string;
-  };
-};
 
 export default function ProfilePage() {
   const { toast } = useToast();
-  const { currentUser, updateUserProfileImage } = useCorabo();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { currentUser, updateUserProfileAndGallery } = useCorabo();
   
-  const [providerProfile, setProviderProfile] = useState<{
-    name: string;
-    specialty: string;
-    rating: number;
-    efficiency: string;
-    completedJobs: number;
-    otherStat: string;
-    gallery: GalleryImage[];
-    shareCount: number;
-    starCount: number;
-    messageCount: number;
-  }>({
+  const [gallery, setGallery] = useState<GalleryImage[]>(currentUser.gallery || []);
+
+  const [providerProfile, setProviderProfile] = useState({
     name: currentUser.name,
     specialty: "Especialidad",
     rating: 4.9,
     efficiency: "99.9%",
     completedJobs: 15,
     otherStat: "00 | 05",
-    gallery: currentUser.gallery || [
-      { src: "https://placehold.co/600x400.png?text=1", alt: "Imagen 1", description: "Descripción detallada de la primera imagen promocional." },
-      { src: "https://placehold.co/600x400.png?text=2", alt: "Imagen 2", description: "Descripción detallada de la segunda imagen." },
-      { src: "https://placehold.co/600x400.png?text=3", alt: "Imagen 3", description: "Esta es la tercera imagen, mostrando otro ángulo del producto." },
-      { src: "https://placehold.co/600x400.png?text=4", alt: "Imagen 4", description: "Cuarta imagen de la galería de promociones." },
-      { src: "https://placehold.co/600x400.png?text=5", alt: "Imagen 5", description: "Quinta imagen, enfocada en los detalles." },
-      { src: "https://placehold.co/600x400.png?text=6", alt: "Imagen 6", description: "Sexta y última imagen de esta promoción." },
-    ],
     shareCount: 4567,
     starCount: 8934.5,
     messageCount: 8900,
@@ -69,6 +42,10 @@ export default function ProfilePage() {
   const [isPromotionDialogOpen, setIsPromotionDialogOpen] = useState(false);
   const [_, setForceRerender] = useState(0);
 
+  useEffect(() => {
+    setGallery(currentUser.gallery || []);
+    setProviderProfile(prev => ({...prev, name: currentUser.name}));
+  }, [currentUser]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -106,13 +83,13 @@ export default function ProfilePage() {
 
   const handlePrev = () => {
     setCurrentImageIndex((prevIndex) =>
-      prevIndex === 0 ? providerProfile.gallery.length - 1 : prevIndex - 1
+      prevIndex === 0 ? gallery.length - 1 : prevIndex - 1
     );
   };
 
   const handleNext = () => {
     setCurrentImageIndex((prevIndex) =>
-      prevIndex === providerProfile.gallery.length - 1 ? 0 : prevIndex + 1
+      prevIndex === gallery.length - 1 ? 0 : prevIndex + 1
     );
   };
   
@@ -129,64 +106,34 @@ export default function ProfilePage() {
     const now = new Date();
     const expiryDate = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours from now
 
-    setProviderProfile(prevProfile => {
-      const newGallery = [...prevProfile.gallery];
-      newGallery[currentImageIndex].promotion = {
+    const newGallery = [...gallery];
+    newGallery[currentImageIndex].promotion = {
         text: promotionText,
         expires: expiryDate.toISOString(),
-      };
-      return { ...prevProfile, gallery: newGallery };
-    });
+    };
+    updateUserProfileAndGallery(currentUser.id, currentUser.profileImage, newGallery);
+    
     setIsPromotionDialogOpen(false);
   };
-  
-  const handleAddImageClick = () => {
-    fileInputRef.current?.click();
-  };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const imageUrl = reader.result as string;
-        
-        // This will be the new profile picture
-        updateUserProfileImage(currentUser.id, imageUrl);
-
-        const newGalleryImage: GalleryImage = {
-          src: imageUrl,
-          alt: `Imagen ${providerProfile.gallery.length + 1}`,
-          description: 'Nueva imagen cargada por el usuario.',
-        };
-
-        setProviderProfile(prevProfile => ({
-          ...prevProfile,
-          gallery: [newGalleryImage, ...prevProfile.gallery]
-        }));
-        
-        setCurrentImageIndex(0);
-
-        toast({
-          title: "Imagen Cargada",
-          description: "Tu nueva imagen ha sido añadida a la vitrina y tu foto de perfil ha sido actualizada."
-        });
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-
-  const currentImage = providerProfile.gallery[currentImageIndex];
-  const isPromotionActive = currentImage.promotion && new Date(currentImage.promotion.expires) > new Date();
+  const currentImage = gallery.length > 0 ? gallery[currentImageIndex] : null;
+  const isPromotionActive = currentImage?.promotion && new Date(currentImage.promotion.expires) > new Date();
 
   const getPromotionTimeRemaining = () => {
-    if (!isPromotionActive || !currentImage.promotion) return "";
+    if (!isPromotionActive || !currentImage?.promotion) return "";
     const diff = new Date(currentImage.promotion.expires).getTime() - new Date().getTime();
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
     return `Activa (${hours}h ${minutes}m restantes)`;
   };
+
+  if (!currentUser || !currentImage) {
+      return (
+        <main className="container py-8">
+            <h1 className="text-3xl font-bold">Cargando perfil...</h1>
+        </main>
+      );
+  }
 
 
   return (
@@ -199,21 +146,8 @@ export default function ProfilePage() {
             <div className="relative shrink-0">
               <Avatar className="w-16 h-16">
                 <AvatarImage src={currentUser.profileImage} alt={currentUser.name} data-ai-hint="user profile photo"/>
+                <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
               </Avatar>
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={handleFileChange}
-                className="hidden"
-                accept="image/*"
-              />
-              <div 
-                className="absolute -bottom-1 -right-1 bg-gray-200 text-gray-600 rounded-full w-5 h-5 flex items-center justify-center border-2 border-background cursor-pointer"
-                onClick={handleAddImageClick}
-                title="Añadir imagen a la vitrina"
-              >
-                <Plus className="w-3 h-3" />
-              </div>
             </div>
             <div className="flex-grow">
               <h1 className="text-lg font-bold text-foreground">{providerProfile.name}</h1>
@@ -238,7 +172,7 @@ export default function ProfilePage() {
 
           <div className="flex justify-around text-center text-xs text-muted-foreground -mt-2">
             <div className="flex-1">
-                  <p className="font-semibold text-foreground">{providerProfile.gallery.length}</p>
+                  <p className="font-semibold text-foreground">{gallery.length}</p>
                   <p>Publicaciones</p>
             </div>
               <div className="flex-1">
@@ -341,7 +275,7 @@ export default function ProfilePage() {
 
               {/* Thumbnails Grid */}
               <div className="p-4 grid grid-cols-3 gap-2">
-                  {providerProfile.gallery.map((thumb, index) => (
+                  {gallery.map((thumb, index) => (
                       <div 
                           key={index} 
                           className="relative aspect-square cursor-pointer group"
@@ -385,8 +319,10 @@ export default function ProfilePage() {
         onOpenChange={setIsPromotionDialogOpen}
         onActivate={handleActivatePromotion}
         image={currentImage}
-        isPromotionActive={isPromotionActive}
+        isPromotionActive={!!isPromotionActive}
       />
     </>
   );
 }
+
+    
