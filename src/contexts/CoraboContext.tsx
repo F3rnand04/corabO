@@ -35,7 +35,7 @@ interface CoraboState {
   toggleGps: () => void;
   setFeedView: (view: FeedView) => void;
   updateUserProfileImage: (userId: string, imageUrl: string, gallery: GalleryImage[]) => void;
-  updateUserProfileAndGallery: (userId: string, profileImageUrl: string, gallery: GalleryImage[]) => void;
+  updateUserProfileAndGallery: (userId: string, newGalleryImage: GalleryImage) => void;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -238,12 +238,13 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
-  const updateUserProfileAndGallery = (userId: string, profileImageUrl: string, gallery: GalleryImage[]) => {
+  const updateUserProfileAndGallery = (userId: string, newGalleryImage: GalleryImage) => {
     let updatedUser: User | undefined;
     setUsers(prevUsers => 
         prevUsers.map(u => {
             if (u.id === userId) {
-                updatedUser = { ...u, profileImage: profileImageUrl, gallery };
+                const updatedGallery = [newGalleryImage, ...(u.gallery || [])];
+                updatedUser = { ...u, profileImage: newGalleryImage.src, gallery: updatedGallery };
                 return updatedUser;
             }
             return u;

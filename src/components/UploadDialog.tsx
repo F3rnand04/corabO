@@ -74,9 +74,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
       description: description,
     };
 
-    const updatedGallery = [newGalleryImage, ...(currentUser.gallery || [])];
-
-    updateUserProfileAndGallery(currentUser.id, imagePreview, updatedGallery);
+    updateUserProfileAndGallery(currentUser.id, newGalleryImage);
 
     toast({
       title: "¡Publicación Exitosa!",
