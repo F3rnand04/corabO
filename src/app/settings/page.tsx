@@ -5,7 +5,7 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { ChevronLeft, MessageCircle, X, Copy, Settings } from 'lucide-react';
+import { ChevronLeft, MessageCircle, X, Copy, Settings, UserCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import SettingsFooter from '@/components/SettingsFooter';
@@ -27,15 +27,16 @@ export default function SettingsPage() {
            <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <ChevronLeft className="w-6 h-6" />
           </Button>
-          <div className="text-center">
-            <Link href="#" className="text-sm font-semibold text-red-500">SUSCRIBIR</Link>
-            <p className="font-bold text-lg">Nivel 1</p>
-          </div>
-          <div className="w-10"></div>
+          <h1 className="font-bold text-lg">Ajustes</h1>
+           <Link href="#" passHref>
+             <Button variant="link" className="text-sm">
+                SUSCRIBIR
+             </Button>
+           </Link>
         </div>
       </header>
       
-      <main className="container py-4 px-4 space-y-6">
+      <main className="container py-4 px-4 space-y-6 max-w-2xl pb-24">
 
         {/* User Info Section */}
         <div className="flex items-center space-x-4">
@@ -59,7 +60,6 @@ export default function SettingsPage() {
                 </Button>
             </div>
             <p className="text-sm text-green-500 font-semibold">Validado</p>
-            <Link href="#" className="text-sm text-red-500 font-semibold">Validar</Link>
         </div>
         
         <Separator />
@@ -97,8 +97,6 @@ export default function SettingsPage() {
           </div>
         </div>
       </main>
-      
-      <SettingsFooter />
     </div>
   );
 }
