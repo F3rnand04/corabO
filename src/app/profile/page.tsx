@@ -324,6 +324,7 @@ export default function ProfilePage() {
           isOpen={isDetailsDialogOpen}
           onOpenChange={setIsDetailsDialogOpen}
           image={selectedImage}
+          isOwnerView={true}
         />
       )}
       <PromotionDialog

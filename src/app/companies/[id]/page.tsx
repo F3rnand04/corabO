@@ -268,6 +268,7 @@ export default function CompanyProfilePage() {
           isOpen={isDetailsDialogOpen}
           onOpenChange={setIsDetailsDialogOpen}
           image={selectedImage}
+          isOwnerView={false}
         />
       )}
     </>

@@ -23,9 +23,10 @@ interface ImageDetailsDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   image: GalleryImage | null;
+  isOwnerView?: boolean;
 }
 
-export function ImageDetailsDialog({ isOpen, onOpenChange, image }: ImageDetailsDialogProps) {
+export function ImageDetailsDialog({ isOpen, onOpenChange, image, isOwnerView = false }: ImageDetailsDialogProps) {
   if (!image) return null;
 
   return (
@@ -47,10 +48,14 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, image }: ImageDetails
                 </DialogHeader>
 
                 <div className="flex flex-wrap gap-2 mb-4">
-                    <Button variant="outline">Editar Descripción</Button>
-                    <Button variant="destructive" size="icon">
-                        <Trash2 className="h-4 w-4"/>
-                    </Button>
+                    {isOwnerView && (
+                      <>
+                        <Button variant="outline">Editar Descripción</Button>
+                        <Button variant="destructive" size="icon">
+                            <Trash2 className="h-4 w-4"/>
+                        </Button>
+                      </>
+                    )}
                     <Button variant="secondary" onClick={() => onOpenChange(false)} className="ml-auto">Cerrar</Button>
                 </div>
 
