@@ -22,35 +22,37 @@ export default function SettingsPage() {
     <div className="bg-background min-h-screen">
       <main className="container py-4 px-4 space-y-6 max-w-2xl pb-24">
         {/* User Info & Subscription Section */}
-        <div className="flex items-start justify-between">
-          <div className="flex items-center space-x-4">
-            <Avatar className="w-16 h-16">
+        <div className="flex items-start space-x-4">
+            <Avatar className="w-16 h-16 shrink-0">
               <AvatarImage src={`https://i.pravatar.cc/150?u=${currentUser.id}`} alt={currentUser.name} />
               <AvatarFallback>Foto</AvatarFallback>
             </Avatar>
-            <div className='flex-grow'>
-              <p className="font-bold">ID corabO</p>
-              <p className="text-sm text-muted-foreground">Correo: uruario@gmail.com</p>
-              <p className="text-sm text-muted-foreground">teléfono: 0412 12345678</p>
-            </div>
-          </div>
-          <div className='text-right'>
-              <Link href="#" passHref>
-                <span className="text-sm text-red-500 font-semibold cursor-pointer">SUSCRIBIR</span>
-              </Link>
-              <p className="font-bold text-lg">Nivel 1</p>
-            </div>
-        </div>
 
-        {/* Validation Section */}
-        <div className="text-right -mt-4">
-            <div className="flex items-center justify-end gap-2">
-                <span className="font-mono text-sm">ABC123456</span>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleCopy('ABC123456')}>
-                    <Copy className="h-4 w-4 text-muted-foreground"/>
-                </Button>
+            <div className="flex-grow space-y-1">
+                <div className="flex justify-between items-start">
+                    <div>
+                        <p className="font-bold">ID corabO</p>
+                        <p className="text-sm text-muted-foreground">Correo: uruario@gmail.com</p>
+                        <p className="text-sm text-muted-foreground">teléfono: 0412 12345678</p>
+                    </div>
+                    <div className='text-right'>
+                        <Link href="#" passHref>
+                            <span className="text-sm text-red-500 font-semibold cursor-pointer">SUSCRIBIR</span>
+                        </Link>
+                        <p className="font-bold text-lg">Nivel 1</p>
+                    </div>
+                </div>
+
+                 <div className="text-left">
+                    <div className="flex items-center gap-2">
+                        <span className="font-mono text-sm">ABC123456</span>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleCopy('ABC123456')}>
+                            <Copy className="h-4 w-4 text-muted-foreground"/>
+                        </Button>
+                    </div>
+                    <p className="text-sm text-green-500 font-semibold">Validado</p>
+                </div>
             </div>
-            <p className="text-sm text-green-500 font-semibold">Validado</p>
         </div>
         
         <Separator />
