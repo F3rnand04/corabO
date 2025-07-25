@@ -13,7 +13,7 @@ export default function CompanyProfileFooter() {
   const navItems = [
     { href: '/', icon: Home, label: 'Inicio' },
     { href: '/videos', icon: PlaySquare, label: 'Videos' },
-    { href: '/search', icon: Search, label: 'Buscar', isCentral: true },
+    { href: '#', icon: Search, label: 'Buscar', isCentral: true },
     { href: '/messages', icon: MessageSquare, label: 'Mensajes' },
     { href: '/profile', icon: UserCircle, label: 'Perfil' },
   ];
