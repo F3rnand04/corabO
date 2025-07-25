@@ -30,6 +30,8 @@ export default function CompanyProfilePage() {
     );
   }
   
+  const gallery = provider.gallery || [];
+  
   // Use mock data for now, should be replaced with real data from provider object
   const profileData = {
     name: provider.name,
@@ -37,20 +39,14 @@ export default function CompanyProfilePage() {
     rating: provider.reputation || 4.9,
     efficiency: "99.9%",
     otherStat: "00 | 05",
-    publications: 30,
+    publications: gallery.length,
     completedJobs: 15,
     distance: "2.5 km",
     profileImage: `https://i.pravatar.cc/150?u=${provider.id}`,
     mainImage: "https://placehold.co/600x400.png",
     shareCount: 4567,
     starCount: 8934.5,
-    gallery: [
-      { src: "https://placehold.co/400x400.png?text=1", alt: "Publicación 1" },
-      { src: "https://placehold.co/400x400.png?text=2", alt: "Publicación 2" },
-      { src: "https://placehold.co/400x400.png?text=3", alt: "Publicación 3" },
-      { src: "https://placehold.co/400x400.png?text=4", alt: "Publicación 4" },
-      { src: "https://placehold.co/400x400.png?text=5", alt: "Publicación 5" },
-    ]
+    gallery: gallery
   };
 
   return (
