@@ -190,7 +190,10 @@ export default function SettingsPage() {
                         <AvatarFallback>Foto</AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-semibold text-sm">{contact.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-sm">{contact.name}</p>
+                          {contact.verified && <CheckCircle className="w-4 h-4 text-blue-500" />}
+                        </div>
                         <p className="text-xs text-muted-foreground">{specialty}</p>
                       </div>
                     </div>
