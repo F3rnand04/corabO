@@ -32,6 +32,8 @@ export default function CompanyProfilePage() {
 
   // Find the specific provider by id from the URL
   const provider = users.find(u => u.id === params.id);
+  const [starCount, setStarCount] = useState(8934.5);
+
 
   if (!provider) {
     return (
@@ -56,7 +58,6 @@ export default function CompanyProfilePage() {
     profileImage: `https://i.pravatar.cc/150?u=${provider.id}`,
     mainImage: gallery.length > 0 ? gallery[currentImageIndex].src : "https://placehold.co/600x400.png",
     shareCount: 4567,
-    starCount: 8934.5,
     messageCount: 1234,
     gallery: gallery
   };
@@ -101,6 +102,10 @@ export default function CompanyProfilePage() {
   const handleImageDoubleClick = (image: GalleryImage) => {
     setSelectedImage(image);
     setIsDetailsDialogOpen(true);
+  };
+
+  const handleStarClick = () => {
+    setStarCount(prevCount => prevCount + 1);
   };
   
   const currentImage = gallery.length > 0 ? gallery[currentImageIndex] : null;
@@ -194,10 +199,10 @@ export default function CompanyProfilePage() {
                   </Button>
                   <div className="absolute bottom-2 right-2 flex flex-col items-end gap-2 text-white">
                       <div className="flex flex-col items-center">
-                          <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10">
+                          <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={handleStarClick}>
                               <Star className="w-5 h-5" />
                           </Button>
-                          <span className="text-xs font-bold mt-1 drop-shadow-md">{(profileData.starCount / 1000).toFixed(1)}k</span>
+                          <span className="text-xs font-bold mt-1 drop-shadow-md">{(starCount / 1000).toFixed(1)}k</span>
                       </div>
                        <div className="flex flex-col items-center">
                           <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10">
