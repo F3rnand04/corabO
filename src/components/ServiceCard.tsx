@@ -1,3 +1,4 @@
+
 "use client";
 
 import type { Service } from "@/lib/types";
@@ -97,10 +98,14 @@ export function ServiceCard({ service }: ServiceCardProps) {
           </div>
         </div>
         
-        <div className="border-t">
-          <Link href={profileLink} passHref>
-            <Button variant="ghost" className="w-full rounded-none h-12 text-muted-foreground font-semibold text-sm">
-                Ver Perfil
+        <div className="flex justify-around items-center border-t">
+          <Button variant="ghost" className="flex-1 text-muted-foreground font-semibold text-sm rounded-none h-12">
+            Mensaje
+          </Button>
+          <Separator orientation="vertical" className="h-6" />
+          <Link href={profileLink} passHref className="flex-1">
+            <Button variant="ghost" className="w-full text-muted-foreground font-semibold text-sm rounded-none h-12">
+              Ver Perfil
             </Button>
           </Link>
         </div>
