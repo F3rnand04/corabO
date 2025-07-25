@@ -5,7 +5,7 @@ import { useState, TouchEvent, useEffect, useRef, ChangeEvent } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Send, Plus, Calendar, Wallet, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Star, Send, Plus, Calendar, Wallet, MapPin, ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
 import { PromotionDialog } from '@/components/PromotionDialog';
@@ -70,6 +70,8 @@ export default function ProfilePage() {
             const updatedGallery = [newGalleryImage, ...gallery];
             
             updateUserProfileImage(currentUser.id, newImageUrl, updatedGallery);
+            setGallery(updatedGallery);
+            setCurrentImageIndex(0);
 
             toast({
                 title: "¡Imagen Actualizada!",
@@ -129,7 +131,15 @@ export default function ProfilePage() {
   };
 
   const handlePromotionTabClick = () => {
-    setIsPromotionDialogOpen(true);
+    if(gallery.length > 0) {
+      setIsPromotionDialogOpen(true);
+    } else {
+      toast({
+        variant: "destructive",
+        title: "No hay imágenes",
+        description: "Añade una imagen a tu galería para poder promocionarla."
+      })
+    }
   };
 
   const handleActivatePromotion = (promotionText: string) => {
@@ -142,6 +152,7 @@ export default function ProfilePage() {
         expires: expiryDate.toISOString(),
     };
     updateUserProfileImage(currentUser.id, currentUser.profileImage, newGallery);
+    setGallery(newGallery);
     
     setIsPromotionDialogOpen(false);
   };
@@ -157,7 +168,7 @@ export default function ProfilePage() {
     return `Activa (${hours}h ${minutes}m restantes)`;
   };
 
-  if (!currentUser || !currentImage) {
+  if (!currentUser) {
       return (
         <main className="container py-8">
             <h1 className="text-3xl font-bold">Cargando perfil...</h1>
@@ -239,56 +250,66 @@ export default function ProfilePage() {
               {/* Main Image */}
               <div 
                 className="relative group"
-                onTouchStart={onTouchStart}
-                onTouchMove={onTouchTouchEnd}
-                onDoubleClick={() => handleImageDoubleClick(currentImage)}
+                onTouchStart={gallery.length > 0 ? onTouchStart : undefined}
+                onTouchMove={gallery.length > 0 ? onTouchMove : undefined}
+                onTouchEnd={gallery.length > 0 ? onTouchEnd : undefined}
+                onDoubleClick={currentImage ? () => handleImageDoubleClick(currentImage) : undefined}
               >
-                <Image
-                  src={currentImage.src}
-                  alt={currentImage.alt}
-                  width={600}
-                  height={400}
-                  className="rounded-t-2xl object-cover w-full aspect-[4/3] transition-opacity duration-300 cursor-pointer"
-                  data-ai-hint="professional workspace"
-                  key={currentImage.src} 
-                />
-                 {isPromotionActive && currentImage.promotion && (
-                    <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-md shadow-lg">
-                        {currentImage.promotion.text}
+                {currentImage ? (
+                  <>
+                    <Image
+                      src={currentImage.src}
+                      alt={currentImage.alt}
+                      width={600}
+                      height={400}
+                      className="rounded-t-2xl object-cover w-full aspect-[4/3] transition-opacity duration-300 cursor-pointer"
+                      data-ai-hint="professional workspace"
+                      key={currentImage.src} 
+                    />
+                    {isPromotionActive && currentImage.promotion && (
+                        <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-md shadow-lg">
+                            {currentImage.promotion.text}
+                        </div>
+                    )}
+                    <Button 
+                        onClick={handlePrev}
+                        variant="ghost" 
+                        size="icon" 
+                        className="absolute top-1/3 left-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 hidden md:flex group-hover:flex"
+                    >
+                        <ChevronLeft className="h-5 w-5" />
+                    </Button>
+                    <Button 
+                        onClick={handleNext}
+                        variant="ghost" 
+                        size="icon" 
+                        className="absolute top-1/3 right-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 hidden md:flex group-hover:flex"
+                    >
+                        <ChevronRight className="h-5 w-5" />
+                    </Button>
+                    
+                    <div className="absolute bottom-2 right-2 flex flex-col items-end gap-4 text-white">
+                        <div className="flex flex-col items-center">
+                            <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">
+                                <Send className="w-5 h-5" />
+                            </Button>
+                            <span className="text-xs font-bold mt-1 drop-shadow-md">{(providerProfile.shareCount / 1000).toFixed(1)}k</span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                            <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">
+                                <Star className="w-5 h-5" />
+                            </Button>
+                            <span className="text-xs font-bold mt-1 drop-shadow-md">{(providerProfile.starCount / 1000).toFixed(1)}k</span>
+                        </div>
                     </div>
-                 )}
-                <Button 
-                    onClick={handlePrev}
-                    variant="ghost" 
-                    size="icon" 
-                    className="absolute top-1/3 left-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 hidden md:flex group-hover:flex"
-                >
-                    <ChevronLeft className="h-5 w-5" />
-                </Button>
-                <Button 
-                    onClick={handleNext}
-                    variant="ghost" 
-                    size="icon" 
-                    className="absolute top-1/3 right-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 hidden md:flex group-hover:flex"
-                >
-                    <ChevronRight className="h-5 w-5" />
-                </Button>
-                
-                <div className="absolute bottom-2 right-2 flex flex-col items-end gap-4 text-white">
-                    <div className="flex flex-col items-center">
-                        <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">
-                            <Send className="w-5 h-5" />
-                        </Button>
-                        <span className="text-xs font-bold mt-1 drop-shadow-md">{(providerProfile.shareCount / 1000).toFixed(1)}k</span>
-                    </div>
-                    <div className="flex flex-col items-center">
-                        <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">
-                            <Star className="w-5 h-5" />
-                        </Button>
-                        <span className="text-xs font-bold mt-1 drop-shadow-md">{(providerProfile.starCount / 1000).toFixed(1)}k</span>
-                    </div>
-                </div>
-
+                  </>
+                ) : (
+                   <div className="w-full aspect-[4/3] bg-muted flex flex-col items-center justify-center text-center p-4">
+                        <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
+                        <h3 className="font-bold text-lg text-foreground">Tu vitrina está vacía</h3>
+                        <p className="text-muted-foreground text-sm">Haz clic en el botón <Plus className="inline w-4 h-4" /> sobre tu avatar para añadir tu primera publicación.</p>
+                   </div>
+                )}
               </div>
 
               {/* Tabs */}
@@ -304,7 +325,7 @@ export default function ProfilePage() {
                 </div>
                 <div
                   className="flex-1 p-3 cursor-pointer text-muted-foreground"
-                  onClick={() => handleImageDoubleClick(currentImage)}
+                  onClick={() => currentImage && handleImageDoubleClick(currentImage)}
                 >
                   Editar Descripción
                 </div>
@@ -312,32 +333,38 @@ export default function ProfilePage() {
 
               {/* Thumbnails Grid */}
               <div className="p-4 grid grid-cols-3 gap-2">
-                  {gallery.map((thumb, index) => (
-                      <div 
-                          key={index} 
-                          className="relative aspect-square cursor-pointer group"
-                          onClick={() => setCurrentImageIndex(index)}
-                          onDoubleClick={() => handleImageDoubleClick(thumb)}
-                      >
-                      <Image
-                          src={thumb.src}
-                          alt={thumb.alt}
-                          fill
-                          className={cn(
-                              "rounded-lg object-cover transition-all duration-200",
-                              currentImageIndex === index 
-                                  ? "ring-2 ring-primary ring-offset-2" 
-                                  : "ring-0 group-hover:opacity-80"
-                          )}
-                          data-ai-hint="product image"
-                      />
-                       {thumb.promotion && new Date(thumb.promotion.expires) > new Date() && (
-                         <div className="absolute top-1 left-1 bg-red-500 text-white text-[10px] font-bold px-1 rounded-sm shadow-lg">
-                           PROMO
-                         </div>
-                       )}
-                      </div>
-                  ))}
+                  {gallery.length > 0 ? (
+                    gallery.map((thumb, index) => (
+                        <div 
+                            key={index} 
+                            className="relative aspect-square cursor-pointer group"
+                            onClick={() => setCurrentImageIndex(index)}
+                            onDoubleClick={() => handleImageDoubleClick(thumb)}
+                        >
+                        <Image
+                            src={thumb.src}
+                            alt={thumb.alt}
+                            fill
+                            className={cn(
+                                "rounded-lg object-cover transition-all duration-200",
+                                currentImageIndex === index 
+                                    ? "ring-2 ring-primary ring-offset-2" 
+                                    : "ring-0 group-hover:opacity-80"
+                            )}
+                            data-ai-hint="product image"
+                        />
+                         {thumb.promotion && new Date(thumb.promotion.expires) > new Date() && (
+                           <div className="absolute top-1 left-1 bg-red-500 text-white text-[10px] font-bold px-1 rounded-sm shadow-lg">
+                             PROMO
+                           </div>
+                         )}
+                        </div>
+                    ))
+                  ) : (
+                    <p className="col-span-3 text-center text-muted-foreground py-8">
+                      No hay publicaciones en tu galería.
+                    </p>
+                  )}
               </div>
             </CardContent>
           </Card>
@@ -351,13 +378,15 @@ export default function ProfilePage() {
           isOwnerView={true}
         />
       )}
-      <PromotionDialog
-        isOpen={isPromotionDialogOpen}
-        onOpenChange={setIsPromotionDialogOpen}
-        onActivate={handleActivatePromotion}
-        image={currentImage}
-        isPromotionActive={!!isPromotionActive}
-      />
+      {currentImage && 
+        <PromotionDialog
+          isOpen={isPromotionDialogOpen}
+          onOpenChange={setIsPromotionDialogOpen}
+          onActivate={handleActivatePromotion}
+          image={currentImage}
+          isPromotionActive={!!isPromotionActive}
+        />
+      }
     </>
   );
 }
