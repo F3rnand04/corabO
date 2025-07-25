@@ -162,7 +162,7 @@ export default function CompanyProfilePage() {
                     onClick={handlePrev}
                     variant="ghost" 
                     size="icon" 
-                    className="absolute top-1/2 left-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-1/3 left-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                     <ChevronLeft className="h-5 w-5" />
                 </Button>
@@ -170,7 +170,7 @@ export default function CompanyProfilePage() {
                     onClick={handleNext}
                     variant="ghost" 
                     size="icon" 
-                    className="absolute top-1/2 right-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-1/3 right-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                     <ChevronRight className="h-5 w-5" />
                 </Button>
@@ -249,7 +249,3 @@ export default function CompanyProfilePage() {
     </>
   );
 }
-
-    
-
-    
