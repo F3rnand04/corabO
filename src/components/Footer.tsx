@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Home, PlaySquare, Upload, MessageSquare, Settings } from 'lucide-react';
+import { Home, PlaySquare, Upload, MessageSquare, CircleUser } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { useState } from 'react';
@@ -19,7 +19,7 @@ export default function Footer() {
     { href: '/videos', icon: PlaySquare, label: 'Videos' },
     { href: '#upload', icon: Upload, label: 'Añadir', isCentral: true },
     { href: '/messages', icon: MessageSquare, label: 'Mensajes' },
-    { href: '/profile', icon: Settings, label: 'Ajustes' },
+    { href: '/profile', icon: CircleUser, label: 'Perfil' },
   ];
 
   return (
