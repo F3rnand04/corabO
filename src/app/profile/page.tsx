@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, TouchEvent, useEffect } from 'react';
+import { useState, TouchEvent, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
 import { PromotionDialog } from '@/components/PromotionDialog';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
 
 
 type GalleryImage = {
@@ -25,6 +26,8 @@ type GalleryImage = {
 };
 
 export default function ProfilePage() {
+  const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [providerProfile, setProviderProfile] = useState<{
     name: string;
     specialty: string;
@@ -136,6 +139,38 @@ export default function ProfilePage() {
     });
     setIsPromotionDialogOpen(false);
   };
+  
+  const handleAddImageClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const newImage: GalleryImage = {
+          src: reader.result as string,
+          alt: `Imagen ${providerProfile.gallery.length + 1}`,
+          description: 'Nueva imagen cargada por el usuario.',
+        };
+
+        setProviderProfile(prevProfile => ({
+          ...prevProfile,
+          gallery: [newImage, ...prevProfile.gallery]
+        }));
+        
+        setCurrentImageIndex(0);
+
+        toast({
+          title: "Imagen Cargada",
+          description: "Tu nueva imagen ha sido añadida a la galería."
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
 
   const currentImage = providerProfile.gallery[currentImageIndex];
   const isPromotionActive = currentImage.promotion && new Date(currentImage.promotion.expires) > new Date();
@@ -160,7 +195,18 @@ export default function ProfilePage() {
               <Avatar className="w-16 h-16">
                 <AvatarImage src={providerProfile.profileImage} alt={providerProfile.name} data-ai-hint="user profile photo"/>
               </Avatar>
-              <div className="absolute -bottom-1 -right-1 bg-gray-200 text-gray-600 rounded-full w-5 h-5 flex items-center justify-center border-2 border-background cursor-pointer">
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange}
+                className="hidden"
+                accept="image/*"
+              />
+              <div 
+                className="absolute -bottom-1 -right-1 bg-gray-200 text-gray-600 rounded-full w-5 h-5 flex items-center justify-center border-2 border-background cursor-pointer"
+                onClick={handleAddImageClick}
+                title="Añadir imagen a la vitrina"
+              >
                 <Plus className="w-3 h-3" />
               </div>
             </div>
