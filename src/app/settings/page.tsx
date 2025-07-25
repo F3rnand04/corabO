@@ -22,6 +22,12 @@ export default function SettingsPage() {
   const [validationCode, setValidationCode] = useState('');
   const [validationError, setValidationError] = useState('');
 
+  const [isEmailValidated, setIsEmailValidated] = useState(false);
+  const [isEmailValidationSent, setIsEmailValidationSent] = useState(false);
+  const [emailValidationCode, setEmailValidationCode] = useState('');
+  const [emailValidationError, setEmailValidationError] = useState('');
+
+
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
     toast({ title: "Copiado", description: "ID copiado al portapapeles." });
@@ -45,6 +51,27 @@ export default function SettingsPage() {
       });
     } else {
       setValidationError('El código ingresado es incorrecto.');
+    }
+  };
+
+  const handleValidateEmailClick = () => {
+    setIsEmailValidationSent(true);
+    setEmailValidationError('');
+    toast({ title: "Código Enviado", description: "Se envió un código a tu correo. (El código es 123456)" });
+  };
+
+  const handleConfirmEmailValidation = () => {
+    if (emailValidationCode === '123456') {
+        setIsEmailValidated(true);
+        setIsEmailValidationSent(false);
+        setEmailValidationCode('');
+        setEmailValidationError('');
+        toast({
+            title: "Correo Validado",
+            description: "Tu correo ha sido validado con éxito.",
+        });
+    } else {
+        setEmailValidationError('El código ingresado es incorrecto.');
     }
   };
 
@@ -79,8 +106,36 @@ export default function SettingsPage() {
 
                 <div className="flex justify-between items-center">
                     <p className="text-sm text-muted-foreground">Correo: uruario@gmail.com</p>
-                    <p className="text-sm text-green-500 font-semibold">Validado</p>
+                    {isEmailValidated ? (
+                        <div className="flex items-center gap-1 text-sm text-green-500 font-semibold">
+                            <CheckCircle className="w-4 h-4" />
+                            <span>Validado</span>
+                        </div>
+                    ) : (
+                        <Button variant="link" className="h-auto p-0 text-sm text-primary" onClick={handleValidateEmailClick} disabled={isEmailValidationSent}>
+                            Validar
+                        </Button>
+                    )}
                 </div>
+                {isEmailValidationSent && !isEmailValidated && (
+                    <div className="pt-2 space-y-2">
+                        <div className="flex items-center gap-2">
+                            <Input 
+                                type="text"
+                                placeholder="Ingresa el código"
+                                value={emailValidationCode}
+                                onChange={(e) => {
+                                    setEmailValidationCode(e.target.value);
+                                    setEmailValidationError('');
+                                }}
+                                className="h-8"
+                            />
+                            <Button size="sm" onClick={handleConfirmEmailValidation}>Confirmar</Button>
+                        </div>
+                        {emailValidationError && <p className="text-xs text-red-500">{emailValidationError}</p>}
+                    </div>
+                )}
+
 
                  <div className="flex justify-between items-center">
                     <p className="text-sm text-muted-foreground">teléfono: 0412 12345678</p>
