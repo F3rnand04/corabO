@@ -33,8 +33,7 @@ interface CoraboState {
   addContact: (user: User) => void;
   removeContact: (userId: string) => void;
   toggleGps: () => void;
-  setFeedView: (view: FeedView) => void;
-  updateUserProfileImage: (userId: string, imageUrl: string, gallery: GalleryImage[]) => void;
+  updateUserProfileImage: (userId: string, imageUrl: string) => void;
   updateUserProfileAndGallery: (userId: string, newGalleryImage: GalleryImage) => void;
 }
 
@@ -221,12 +220,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     });
   };
   
-  const updateUserProfileImage = (userId: string, imageUrl: string, gallery: GalleryImage[]) => {
+  const updateUserProfileImage = (userId: string, imageUrl: string) => {
     let updatedUser: User | undefined;
     setUsers(prevUsers => 
         prevUsers.map(u => {
             if (u.id === userId) {
-                updatedUser = { ...u, profileImage: imageUrl, gallery };
+                updatedUser = { ...u, profileImage: imageUrl };
                 return updatedUser;
             }
             return u;
@@ -244,7 +243,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         prevUsers.map(u => {
             if (u.id === userId) {
                 const updatedGallery = [newGalleryImage, ...(u.gallery || [])];
-                updatedUser = { ...u, profileImage: newGalleryImage.src, gallery: updatedGallery };
+                updatedUser = { ...u, gallery: updatedGallery };
                 return updatedUser;
             }
             return u;

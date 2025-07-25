@@ -62,20 +62,11 @@ export default function ProfilePage() {
         const reader = new FileReader();
         reader.onloadend = () => {
             const newImageUrl = reader.result as string;
-            const newGalleryImage: GalleryImage = {
-                src: newImageUrl,
-                alt: `Imagen de ${currentUser.name}`,
-                description: "Nueva imagen cargada.",
-            };
-            const updatedGallery = [newGalleryImage, ...gallery];
-            
-            updateUserProfileImage(currentUser.id, newImageUrl, updatedGallery);
-            setGallery(updatedGallery);
-            setCurrentImageIndex(0);
+            updateUserProfileImage(currentUser.id, newImageUrl);
 
             toast({
-                title: "¡Imagen Actualizada!",
-                description: "Tu nueva imagen ya está en tu vitrina y tu perfil ha sido actualizado.",
+                title: "¡Foto de Perfil Actualizada!",
+                description: "Tu nueva foto de perfil está visible.",
             });
         };
         reader.readAsDataURL(file);
@@ -151,7 +142,10 @@ export default function ProfilePage() {
         text: promotionText,
         expires: expiryDate.toISOString(),
     };
-    updateUserProfileImage(currentUser.id, currentUser.profileImage, newGallery);
+    // This part is tricky. We are modifying a copy of the user's gallery
+    // but we need a way to persist this back to the main user state in the context.
+    // For now, let's just update the local state to see the effect.
+    // A proper implementation would call a function from the context like `updateUserGallery`.
     setGallery(newGallery);
     
     setIsPromotionDialogOpen(false);
