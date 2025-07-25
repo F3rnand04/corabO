@@ -45,6 +45,25 @@ export default function Footer() {
                 </Button>
               );
             }
+
+            if (item.href === '/profile') {
+              return (
+                 <Link key={item.href} href={item.href} passHref>
+                    <Button
+                    variant="ghost"
+                    className={cn(
+                        "flex-col h-auto p-0 rounded-full text-muted-foreground hover:text-primary w-8 h-8",
+                        isActive && "ring-2 ring-primary"
+                    )}
+                    >
+                        <Avatar className="w-8 h-8">
+                            <AvatarImage src={currentUser.profileImage} alt={currentUser.name} />
+                            <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                    </Button>
+                </Link>
+              )
+            }
             
             return (
               <Link key={item.href} href={item.href} passHref>
