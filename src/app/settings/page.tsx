@@ -1,22 +1,53 @@
 
 'use client';
 
+import { useState } from 'react';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { ChevronLeft, MessageCircle, X, Copy } from 'lucide-react';
+import { ChevronLeft, MessageCircle, X, Copy, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useToast } from "@/hooks/use-toast";
 
 export default function SettingsPage() {
   const { currentUser, contacts, removeContact } = useCorabo();
   const router = useRouter();
+  const { toast } = useToast();
+
+  const [isPhoneValidated, setIsPhoneValidated] = useState(false);
+  const [isValidationSent, setIsValidationSent] = useState(false);
+  const [validationCode, setValidationCode] = useState('');
+  const [validationError, setValidationError] = useState('');
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
-    // Here you would typically show a toast notification
+    toast({ title: "Copiado", description: "ID copiado al portapapeles." });
   };
+
+  const handleValidatePhoneClick = () => {
+    setIsValidationSent(true);
+    setValidationError('');
+    toast({ title: "Código Enviado", description: "Se envió un código a tu número. (El código es 123456)" });
+  };
+
+  const handleConfirmValidation = () => {
+    if (validationCode === '123456') {
+      setIsPhoneValidated(true);
+      setIsValidationSent(false);
+      setValidationCode('');
+      setValidationError('');
+      toast({
+        title: "Teléfono Validado",
+        description: "Tu número ha sido validado con éxito.",
+      });
+    } else {
+      setValidationError('El código ingresado es incorrecto.');
+    }
+  };
+
 
   return (
     <div className="bg-background min-h-screen">
@@ -29,13 +60,11 @@ export default function SettingsPage() {
             </Avatar>
 
             <div className="flex-grow space-y-1 w-full">
-                <div className="flex justify-end">
+                <div className="flex justify-end items-start gap-4">
                      <Link href="#" passHref>
                         <span className="text-sm text-red-500 font-semibold cursor-pointer">SUSCRIBIR</span>
                     </Link>
-                </div>
-                 <div className="flex justify-end">
-                    <p className="font-bold text-lg">Nivel 1</p>
+                    <p className="font-bold text-lg text-right">Nivel 1</p>
                 </div>
                 
                 <div className="flex justify-between items-center">
@@ -55,8 +84,35 @@ export default function SettingsPage() {
 
                  <div className="flex justify-between items-center">
                     <p className="text-sm text-muted-foreground">teléfono: 0412 12345678</p>
-                     <Button variant="link" className="h-auto p-0 text-sm text-primary">Validar</Button>
+                    {isPhoneValidated ? (
+                         <div className="flex items-center gap-1 text-sm text-green-500 font-semibold">
+                            <CheckCircle className="w-4 h-4" />
+                            <span>Validado</span>
+                        </div>
+                    ) : (
+                        <Button variant="link" className="h-auto p-0 text-sm text-primary" onClick={handleValidatePhoneClick} disabled={isValidationSent}>
+                            Validar
+                        </Button>
+                    )}
                 </div>
+                {isValidationSent && !isPhoneValidated && (
+                    <div className="pt-2 space-y-2">
+                        <div className="flex items-center gap-2">
+                            <Input 
+                                type="text"
+                                placeholder="Ingresa el código"
+                                value={validationCode}
+                                onChange={(e) => {
+                                    setValidationCode(e.target.value);
+                                    setValidationError('');
+                                }}
+                                className="h-8"
+                            />
+                            <Button size="sm" onClick={handleConfirmValidation}>Confirmar</Button>
+                        </div>
+                        {validationError && <p className="text-xs text-red-500">{validationError}</p>}
+                    </div>
+                )}
             </div>
         </div>
         
@@ -92,23 +148,19 @@ export default function SettingsPage() {
             ) : (
                <>
                  {[...Array(4)].map((_, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 rounded-2xl bg-muted/70">
+                    <div key={i} className="flex items-center justify-between p-3 rounded-2xl bg-muted/70 animate-pulse">
                         <div className="flex items-center gap-3">
-                            <Avatar className="h-12 w-12">
-                                <AvatarFallback>Foto</AvatarFallback>
+                            <Avatar className="h-12 w-12 bg-gray-300">
+                                <AvatarFallback></AvatarFallback>
                             </Avatar>
-                            <div>
-                                <p className="font-semibold text-sm">NOMBRE USUARIO</p>
-                                <p className="text-xs text-muted-foreground">Especialidad</p>
+                            <div className="space-y-2">
+                                <div className="h-4 bg-gray-300 rounded w-24"></div>
+                                <div className="h-3 bg-gray-300 rounded w-20"></div>
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-background">
-                            <MessageCircle className="h-4 w-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-background">
-                            <X className="h-4 w-4" />
-                            </Button>
+                            <div className="h-8 w-8 rounded-full bg-gray-300"></div>
+                            <div className="h-8 w-8 rounded-full bg-gray-300"></div>
                         </div>
                     </div>
                  ))}
