@@ -5,11 +5,9 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { ChevronLeft, MessageCircle, X, Copy, Settings, UserCircle } from 'lucide-react';
+import { ChevronLeft, MessageCircle, X, Copy } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import SettingsFooter from '@/components/SettingsFooter';
-
 
 export default function SettingsPage() {
   const { currentUser, contacts, removeContact } = useCorabo();
@@ -27,12 +25,13 @@ export default function SettingsPage() {
            <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <ChevronLeft className="w-6 h-6" />
           </Button>
-          <h1 className="font-bold text-lg">Ajustes</h1>
-           <Link href="#" passHref>
-             <Button variant="link" className="text-sm">
-                SUSCRIBIR
-             </Button>
-           </Link>
+          <div className='text-center'>
+            <Link href="#" passHref>
+              <span className="text-sm text-red-500 font-semibold cursor-pointer">SUSCRIBIR</span>
+            </Link>
+            <p className="font-bold text-lg">Nivel 1</p>
+          </div>
+           <div/>
         </div>
       </header>
       
@@ -42,7 +41,7 @@ export default function SettingsPage() {
         <div className="flex items-center space-x-4">
           <Avatar className="w-16 h-16">
             <AvatarImage src={`https://i.pravatar.cc/150?u=${currentUser.id}`} alt={currentUser.name} />
-            <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+            <AvatarFallback>Foto</AvatarFallback>
           </Avatar>
           <div className='flex-grow'>
             <p className="font-bold">ID corabO</p>
@@ -74,7 +73,7 @@ export default function SettingsPage() {
                   <div className="flex items-center gap-3">
                     <Avatar className="h-12 w-12">
                       <AvatarImage src={`https://i.pravatar.cc/150?u=${contact.id}`} alt={contact.name} />
-                      <AvatarFallback>{contact.name.charAt(0)}</AvatarFallback>
+                      <AvatarFallback>Foto</AvatarFallback>
                     </Avatar>
                     <div>
                       <p className="font-semibold text-sm">{contact.name}</p>
@@ -92,7 +91,29 @@ export default function SettingsPage() {
                 </div>
               ))
             ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">No tienes contactos guardados.</p>
+               <>
+                 {[...Array(4)].map((_, i) => (
+                    <div key={i} className="flex items-center justify-between p-3 rounded-2xl bg-muted/70">
+                        <div className="flex items-center gap-3">
+                            <Avatar className="h-12 w-12">
+                                <AvatarFallback>Foto</AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <p className="font-semibold text-sm">NOMBRE USUARIO</p>
+                                <p className="text-xs text-muted-foreground">Especialidad</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-background">
+                            <MessageCircle className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-background">
+                            <X className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
+                 ))}
+               </>
             )}
           </div>
         </div>
