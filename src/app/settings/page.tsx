@@ -87,7 +87,7 @@ export default function SettingsPage() {
             </Avatar>
 
             <div className="flex-grow space-y-1 w-full">
-                <div className="flex justify-end items-start gap-4">
+                <div className="flex flex-col items-end">
                      <Link href="#" passHref>
                         <span className="text-sm text-red-500 font-semibold cursor-pointer">SUSCRIBIR</span>
                     </Link>
