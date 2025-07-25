@@ -7,7 +7,6 @@ import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, MessageCircle, CheckCircle } from 'lucide-react';
-import CompanyProfileFooter from '@/components/CompanyProfileFooter';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
@@ -269,7 +268,6 @@ export default function CompanyProfilePage() {
             </CardContent>
           </Card>
         </main>
-        <CompanyProfileFooter />
       </div>
 
        {selectedImage && (

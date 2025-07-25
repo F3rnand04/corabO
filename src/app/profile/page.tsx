@@ -6,7 +6,6 @@ import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Star, Send, Plus, Calendar, Wallet, MapPin, ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react';
-import ProfileFooter from '@/components/ProfileFooter';
 import { cn } from '@/lib/utils';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
 import { PromotionDialog } from '@/components/PromotionDialog';
