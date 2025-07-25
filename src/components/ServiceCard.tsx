@@ -98,11 +98,11 @@ export function ServiceCard({ service }: ServiceCardProps) {
           </div>
         </div>
         
-        <div className="flex justify-around items-center p-2 border-t">
-          <Button variant="ghost" className="text-muted-foreground font-semibold text-sm">Mensaje</Button>
-          <Separator orientation="vertical" className="h-6" />
+        <div className="border-t">
           <Link href={profileLink} passHref>
-              <Button variant="ghost" className="text-muted-foreground font-semibold text-sm">Ver Perfil</Button>
+            <Button variant="ghost" className="w-full rounded-none h-12 text-muted-foreground font-semibold text-sm">
+                Ver Perfil
+            </Button>
           </Link>
         </div>
       </CardContent>
