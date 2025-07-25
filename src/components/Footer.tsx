@@ -6,9 +6,13 @@ import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Home, PlaySquare, Search, MessageSquare, UserCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useCorabo } from '@/contexts/CoraboContext';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+
 
 export default function Footer() {
   const pathname = usePathname();
+  const { currentUser } = useCorabo();
 
   const navItems = [
     { href: '/', icon: Home, label: 'Inicio' },
@@ -42,6 +46,24 @@ export default function Footer() {
                 </Link>
               </div>
             );
+          }
+
+          if (item.label === 'Perfil') {
+             return (
+              <Link key={item.href} href={item.href} passHref>
+                <div className={cn("flex flex-col items-center justify-center h-auto p-1", isActive && "text-primary")}>
+                    <Avatar className={cn(
+                      "w-7 h-7",
+                      isActive && "border-2 border-primary"
+                    )}>
+                        <AvatarImage src={currentUser.profileImage} alt={currentUser.name} />
+                        <AvatarFallback>
+                            <UserCircle className="w-6 h-6" />
+                        </AvatarFallback>
+                    </Avatar>
+                </div>
+              </Link>
+             )
           }
 
           return (
