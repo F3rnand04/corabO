@@ -12,6 +12,7 @@ export type User = {
   gallery?: {
     src: string;
     alt: string;
+    description: string;
   }[];
 };
 

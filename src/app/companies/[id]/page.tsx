@@ -12,6 +12,12 @@ import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useState, TouchEvent } from 'react';
+import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
+import type { User } from '@/lib/types';
+
+// Extend the local gallery type to include description
+type GalleryImage = NonNullable<User['gallery']>[0] & { description: string };
+
 
 export default function CompanyProfilePage() {
   const params = useParams();
@@ -20,6 +26,8 @@ export default function CompanyProfilePage() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   
   const minSwipeDistance = 50;
 
@@ -35,9 +43,8 @@ export default function CompanyProfilePage() {
     );
   }
   
-  const gallery = provider.gallery || [];
+  const gallery: GalleryImage[] = (provider.gallery || []).map(g => ({ ...g, description: `Descripción para ${g.alt}`}));
   
-  // Use mock data for now, should be replaced with real data from provider object
   const profileData = {
     name: provider.name,
     specialty: "Especialidad de la Empresa",
@@ -91,6 +98,13 @@ export default function CompanyProfilePage() {
       prevIndex === gallery.length - 1 ? 0 : prevIndex + 1
     );
   };
+
+  const handleImageDoubleClick = (image: GalleryImage) => {
+    setSelectedImage(image);
+    setIsDetailsDialogOpen(true);
+  };
+  
+  const currentImage = gallery[currentImageIndex];
 
   return (
     <>
@@ -148,13 +162,14 @@ export default function CompanyProfilePage() {
                 onTouchStart={onTouchStart}
                 onTouchMove={onTouchMove}
                 onTouchEnd={onTouchEnd}
+                onDoubleClick={() => handleImageDoubleClick(currentImage)}
               >
                 <Image
                   src={profileData.mainImage}
                   alt="Imagen principal del perfil"
                   width={600}
                   height={400}
-                  className="rounded-t-2xl object-cover w-full aspect-[4/3]"
+                  className="rounded-t-2xl object-cover w-full aspect-[4/3] cursor-pointer"
                   data-ai-hint="professional workspace"
                   key={profileData.mainImage}
                 />
@@ -225,6 +240,7 @@ export default function CompanyProfilePage() {
                           key={index} 
                           className="relative aspect-square cursor-pointer group"
                           onClick={() => setCurrentImageIndex(index)}
+                          onDoubleClick={() => handleImageDoubleClick(thumb)}
                       >
                       <Image
                           src={thumb.src}
@@ -246,6 +262,14 @@ export default function CompanyProfilePage() {
         </main>
         <CompanyProfileFooter />
       </div>
+
+       {selectedImage && (
+        <ImageDetailsDialog
+          isOpen={isDetailsDialogOpen}
+          onOpenChange={setIsDetailsDialogOpen}
+          image={selectedImage}
+        />
+      )}
     </>
   );
 }

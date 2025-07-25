@@ -22,7 +22,19 @@ type GalleryImage = {
 };
 
 export default function ProfilePage() {
-  const [providerProfile, setProviderProfile] = useState({
+  const [providerProfile, setProviderProfile] = useState<{
+    name: string;
+    specialty: string;
+    rating: number;
+    efficiency: string;
+    completedJobs: number;
+    otherStat: string;
+    profileImage: string;
+    gallery: GalleryImage[];
+    shareCount: number;
+    starCount: number;
+    messageCount: number;
+  }>({
     name: "NOMBRE USUARIO",
     specialty: "Especialidad",
     rating: 4.9,
