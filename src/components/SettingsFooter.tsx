@@ -14,7 +14,7 @@ export default function SettingsFooter() {
     { href: '/', icon: Home, label: 'Inicio' },
     { href: '/videos', icon: PlaySquare, label: 'Videos' },
     { href: '/messages', icon: MessageSquare, label: 'Mensajes' },
-    { href: '/settings', icon: UserCircle, label: 'Perfil' },
+    { href: '#', icon: UserCircle, label: 'Perfil' },
   ];
 
   return (
@@ -30,7 +30,7 @@ export default function SettingsFooter() {
                 className={cn(
                   "flex-col h-auto p-1 text-muted-foreground hover:text-primary",
                    // The settings icon itself should be active on the settings page
-                  (isActive || (item.href === '/settings' && pathname.startsWith('/settings'))) && "text-primary"
+                  (isActive || (item.label === 'Perfil' && pathname.startsWith('/settings'))) && "text-primary"
                 )}
               >
                 <item.icon className="w-6 h-6" />
