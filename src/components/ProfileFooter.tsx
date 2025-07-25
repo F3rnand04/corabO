@@ -18,7 +18,7 @@ export default function ProfileFooter() {
     { href: '/videos', icon: PlaySquare, label: 'Videos' },
     { href: '#upload', icon: Upload, label: 'Añadir', isCentral: true },
     { href: '/messages', icon: MessageSquare, label: 'Mensajes' },
-    { href: '/settings', icon: Settings, label: 'Ajustes' },
+    { href: '#settings', icon: Settings, label: 'Ajustes' },
   ];
 
   return (
@@ -43,6 +43,21 @@ export default function ProfileFooter() {
               );
             }
             
+            if (item.href === '#settings') {
+                return (
+                    <Button
+                      key={item.href}
+                      variant="ghost"
+                      className={cn(
+                        "flex-col h-auto p-1 text-muted-foreground hover:text-primary",
+                        isActive && "text-primary"
+                      )}
+                    >
+                      <item.icon className="w-6 h-6" />
+                    </Button>
+                )
+            }
+
             return (
               <Link key={item.href} href={item.href} passHref>
                 <Button
