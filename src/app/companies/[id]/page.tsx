@@ -177,9 +177,9 @@ export default function CompanyProfilePage() {
                 <div className="absolute bottom-2 right-2 flex flex-col items-end gap-2 text-white">
                     <div className="flex flex-col items-center">
                         <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10">
-                            <Send className="w-5 h-5" />
+                            <Star className="w-5 h-5" />
                         </Button>
-                        <span className="text-xs font-bold mt-1 drop-shadow-md">{profileData.shareCount}</span>
+                        <span className="text-xs font-bold mt-1 drop-shadow-md">{(profileData.starCount / 1000).toFixed(1)}k</span>
                     </div>
                      <div className="flex flex-col items-center">
                         <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10">
@@ -189,9 +189,9 @@ export default function CompanyProfilePage() {
                     </div>
                     <div className="flex flex-col items-center">
                         <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10">
-                            <Star className="w-5 h-5" />
+                            <Send className="w-5 h-5" />
                         </Button>
-                        <span className="text-xs font-bold mt-1 drop-shadow-md">{(profileData.starCount / 1000).toFixed(1)}k</span>
+                        <span className="text-xs font-bold mt-1 drop-shadow-md">{profileData.shareCount}</span>
                     </div>
                 </div>
 
@@ -249,5 +249,7 @@ export default function CompanyProfilePage() {
     </>
   );
 }
+
+    
 
     
