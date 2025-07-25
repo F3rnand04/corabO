@@ -6,7 +6,7 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react';
+import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, MessageCircle, CheckCircle } from 'lucide-react';
 import CompanyProfileFooter from '@/components/CompanyProfileFooter';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -117,7 +117,10 @@ export default function CompanyProfilePage() {
               <AvatarFallback>{profileData.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="flex-grow">
-              <h1 className="text-lg font-bold text-foreground">{profileData.name}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg font-bold text-foreground">{profileData.name}</h1>
+                {provider.verified && <CheckCircle className="w-5 h-5 text-blue-500" />}
+              </div>
               <p className="text-sm text-muted-foreground">{profileData.specialty}</p>
               <div className="flex items-center gap-2 text-sm mt-1 text-muted-foreground">
                   <div className="flex items-center gap-1">

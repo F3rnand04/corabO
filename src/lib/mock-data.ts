@@ -13,7 +13,32 @@ export const users: User[] = [
     promotion: {
       text: 'HOY 10% OFF',
       expires: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(), // Expires in 12 hours
-    }
+    },
+    gallery: [
+      { 
+        src: "https://placehold.co/400x400.png?text=Tec1", 
+        alt: "Soporte Técnico", 
+        description: "Soporte técnico especializado para equipos de computación.",
+        comments: [
+          { author: "Mario Gómez", text: "Resolvieron mi problema en minutos. ¡Excelente!" },
+          { author: "Laura Mendez", text: "Muy amables y eficientes." },
+        ]
+      },
+      { 
+        src: "https://placehold.co/400x400.png?text=Tec2", 
+        alt: "Redes", 
+        description: "Instalación y configuración de redes para oficinas y hogares.",
+        comments: []
+      },
+      { 
+        src: "https://placehold.co/400x400.png?text=Tec3", 
+        alt: "Venta de Equipos", 
+        description: "Los mejores equipos y componentes para tus necesidades.",
+         comments: [
+          { author: "Pedro R.", text: "Conseguí todo lo que buscaba." },
+        ]
+      },
+    ]
   },
   { 
     id: 'provider2', 
