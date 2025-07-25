@@ -4,7 +4,7 @@
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Bookmark, Send, Star } from 'lucide-react';
+import { Bookmark, Send, Star, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 
@@ -31,64 +31,61 @@ export default function VideosPage() {
           
           <div className="absolute inset-0 z-20 text-white flex flex-col p-4">
             {/* Header section */}
-            <div className="flex items-start justify-between">
-                <Link href={`/companies/${user!.id}`}>
-                    <div className="flex items-center gap-3">
-                        <Avatar className="w-12 h-12 border-2 border-white">
-                            <AvatarImage src={`https://i.pravatar.cc/150?u=${user!.id}`} alt={user!.name} />
-                            <AvatarFallback>{user!.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                            <p className="font-bold text-base drop-shadow-md">{user!.name}</p>
-                            <p className="text-sm drop-shadow-md">Especialidad</p>
-                            <div className="flex items-center gap-2 text-sm mt-1">
-                                <div className="flex items-center gap-1">
-                                    <Star className="w-4 h-4 text-yellow-400 fill-yellow-400"/>
-                                    <span className="font-semibold">{user!.reputation.toFixed(1)}</span>
-                                </div>
-                                <span>99.9% Efec.</span>
-                            </div>
-                        </div>
-                    </div>
-                </Link>
-                <Button variant="ghost" size="icon" className="text-white">
-                    <Bookmark className="w-6 h-6" />
-                </Button>
-            </div>
-
             <div className="flex-grow" />
 
             {/* Right side actions */}
-             <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center gap-4">
+             <div className="absolute right-4 bottom-28 flex flex-col items-center gap-6">
+                <Link href={`/companies/${user!.id}`} className="block">
+                    <Avatar className="w-12 h-12 border-2 border-white">
+                        <AvatarImage src={`https://i.pravatar.cc/150?u=${user!.id}`} alt={user!.name} />
+                        <AvatarFallback>{user!.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                </Link>
                 <div className="flex flex-col items-center">
                     <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-12 w-12">
-                        <Send className="w-6 h-6" />
+                        <Star className="w-7 h-7" />
                     </Button>
-                    <span className="text-xs font-bold mt-1 drop-shadow-md">4567</span>
+                    <span className="text-sm font-bold mt-1 drop-shadow-md">8.9k</span>
                 </div>
                 <div className="flex flex-col items-center">
                     <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-12 w-12">
-                        <Star className="w-6 h-6" />
+                        <MessageCircle className="w-7 h-7" />
                     </Button>
-                    <span className="text-xs font-bold mt-1 drop-shadow-md">8934.5</span>
+                    <span className="text-sm font-bold mt-1 drop-shadow-md">1.2k</span>
+                </div>
+                <div className="flex flex-col items-center">
+                    <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-12 w-12">
+                        <Send className="w-7 h-7" />
+                    </Button>
+                    <span className="text-sm font-bold mt-1 drop-shadow-md">4.5k</span>
+                </div>
+                <div className="flex flex-col items-center">
+                    <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-12 w-12">
+                        <Bookmark className="w-7 h-7" />
+                    </Button>
+                    <span className="text-sm font-bold mt-1 drop-shadow-md">Guardar</span>
                 </div>
             </div>
 
             {/* Bottom info */}
             <div className="mb-16">
-                <h3 className="font-bold text-lg drop-shadow-md">Título del Video</h3>
+                <div className="flex items-center gap-2">
+                    <p className="font-bold text-base drop-shadow-md">{user!.name}</p>
+                </div>
+                <p className="text-sm drop-shadow-md mt-1">
+                    Descripción del video o servicio que se está mostrando... #hashtag #servicio
+                </p>
+                <p className="text-xs font-semibold mt-2 drop-shadow-md">Ver traducción</p>
             </div>
             
             {/* Bottom action bar */}
-            <div className="absolute bottom-16 left-0 right-0">
-                <div className="flex justify-around items-center p-2 text-center text-sm font-semibold">
-                    <Button variant="ghost" className="flex-1 text-white text-base">Mensaje</Button>
+            <div className="absolute bottom-0 left-0 right-0">
+                <div className="flex justify-around items-center p-2 text-center text-sm font-semibold bg-black/30">
+                    <Button variant="ghost" className="flex-1 text-white text-base">Servicio</Button>
                     <Separator orientation="vertical" className="h-6 bg-white/50" />
-                     <Link href={`/companies/${user!.id}`} passHref className="flex-1">
-                        <Button variant="ghost" className="w-full text-white text-base">Ver Perfil</Button>
+                     <Link href={`/quotes`} passHref className="flex-1">
+                        <Button variant="ghost" className="w-full text-white text-base">Cotizar</Button>
                     </Link>
-                    <Separator orientation="vertical" className="h-6 bg-white/50" />
-                    <Button variant="ghost" className="flex-1 text-white text-base">Comentarios</Button>
                 </div>
             </div>
           </div>

@@ -10,6 +10,9 @@ import ProfileFooter from '@/components/ProfileFooter';
 import { cn } from '@/lib/utils';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
 import { PromotionDialog } from '@/components/PromotionDialog';
+import { Avatar, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
+
 
 type GalleryImage = {
   src: string;
@@ -154,7 +157,7 @@ export default function ProfilePage() {
           {/* Profile Header */}
           <div className="flex items-center space-x-4">
             <div className="relative shrink-0">
-              <Avatar>
+              <Avatar className="w-16 h-16">
                 <AvatarImage src={providerProfile.profileImage} alt={providerProfile.name} data-ai-hint="user profile photo"/>
               </Avatar>
               <div className="absolute -bottom-1 -right-1 bg-gray-200 text-gray-600 rounded-full w-5 h-5 flex items-center justify-center border-2 border-background cursor-pointer">
@@ -169,9 +172,9 @@ export default function ProfilePage() {
                       <Star className="w-4 h-4 text-yellow-400 fill-yellow-400"/>
                       <span className="font-semibold text-foreground">{providerProfile.rating.toFixed(1)}</span>
                   </div>
-                  <Separator />
+                  <Separator orientation="vertical" className="h-4" />
                   <span>{providerProfile.efficiency} Efec.</span>
-                  <Separator />
+                   <Separator orientation="vertical" className="h-4" />
                   <span>{providerProfile.otherStat}</span>
               </div>
             </div>
@@ -317,7 +320,6 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
         </main>
-        <ProfileFooter />
       </div>
       {selectedImage && (
         <ImageDetailsDialog
@@ -336,22 +338,4 @@ export default function ProfilePage() {
       />
     </>
   );
-}
-
-
-// Helper components to match the design structure
-function Avatar({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-muted bg-gray-100 flex items-center justify-center">
-      {children}
-    </div>
-  );
-}
-
-function AvatarImage({ src, alt, ...props }: { src: string, alt: string, "data-ai-hint": string }) {
-  return <Image src={src} alt={alt} width={64} height={64} className="object-cover w-full h-full" {...props}/>;
-}
-
-function Separator() {
-    return <div className="h-4 w-px bg-border"></div>
 }
