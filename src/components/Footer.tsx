@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Home, PlaySquare, Search, MessageSquare, User } from 'lucide-react';
+import { Home, PlaySquare, Search, MessageSquare, UserCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function Footer() {
@@ -15,7 +15,7 @@ export default function Footer() {
     { href: '/videos', icon: PlaySquare, label: 'Videos' },
     { href: '/search', icon: Search, label: 'Buscar', isCentral: true },
     { href: '/messages', icon: MessageSquare, label: 'Mensajes' },
-    { href: '/profile', icon: User, label: 'Perfil' },
+    { href: '/profile', icon: UserCircle, label: 'Perfil' },
   ];
 
   return (
