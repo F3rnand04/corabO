@@ -97,8 +97,6 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                     <Link href={profileLink} passHref>
                         <Button variant="ghost" className="text-muted-foreground font-semibold text-sm">Ver Perfil</Button>
                     </Link>
-                     <Separator orientation="vertical" className="h-6" />
-                    <Button variant="ghost" className="text-muted-foreground font-semibold text-sm">Comentarios</Button>
                 </div>
             </CardContent>
         </Card>
