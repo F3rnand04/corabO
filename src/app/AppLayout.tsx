@@ -13,19 +13,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isVideosPage = pathname === '/videos';
 
   const shouldShowMainHeader = !isProfilePage && !isCompanyProfilePage && !isVideosPage;
-  const shouldShowMainFooter = !isProfilePage && !isCompanyProfilePage && !isVideosPage;
-
+  
+  // This logic determines which footer to show, or none at all.
   const getFooter = () => {
     if (isProfilePage) {
+      // Show the specific footer for the user's own profile page
       return <ProfileFooter />;
     }
     if (isCompanyProfilePage) {
+      // Show the specific footer for a company's profile page
       return <CompanyProfileFooter />;
     }
-    if (shouldShowMainFooter) {
-      return <Footer />;
+    if (isVideosPage) {
+        // No footer on the videos page
+        return null;
     }
-    return null;
+    // Show the main footer on all other pages
+    return <Footer />;
   };
 
   return (
