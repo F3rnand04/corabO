@@ -5,7 +5,7 @@ import { useState, TouchEvent, useEffect, useRef, ChangeEvent } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Send, Plus, Calendar, Wallet, MapPin, ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react';
+import { Star, Send, Plus, Calendar, Wallet, MapPin, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
 import { PromotionDialog } from '@/components/PromotionDialog';
@@ -31,7 +31,6 @@ export default function ProfilePage() {
     otherStat: "00 | 05",
     shareCount: 4567,
     starCount: 8934.5,
-    messageCount: 8900,
   });
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -241,7 +240,7 @@ export default function ProfilePage() {
               <div 
                 className="relative group"
                 onTouchStart={onTouchStart}
-                onTouchMove={onTouchEnd}
+                onTouchMove={onTouchTouchEnd}
                 onDoubleClick={() => handleImageDoubleClick(currentImage)}
               >
                 <Image
@@ -275,24 +274,18 @@ export default function ProfilePage() {
                     <ChevronRight className="h-5 w-5" />
                 </Button>
                 
-                <div className="absolute bottom-2 right-2 flex flex-col items-end gap-2 text-white">
-                    <div className="flex flex-col items-center">
-                        <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">
-                            <Star className="w-5 h-5" />
-                        </Button>
-                        <span className="text-xs font-bold mt-1 drop-shadow-md">{(providerProfile.starCount / 1000).toFixed(1)}k</span>
-                    </div>
-                    <div className="flex flex-col items-center">
-                        <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">
-                            <MessageCircle className="w-5 h-5" />
-                        </Button>
-                        <span className="text-xs font-bold mt-1 drop-shadow-md">{(providerProfile.messageCount / 1000).toFixed(1)}k</span>
-                    </div>
+                <div className="absolute bottom-2 right-2 flex flex-col items-end gap-4 text-white">
                     <div className="flex flex-col items-center">
                         <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">
                             <Send className="w-5 h-5" />
                         </Button>
                         <span className="text-xs font-bold mt-1 drop-shadow-md">{(providerProfile.shareCount / 1000).toFixed(1)}k</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                        <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">
+                            <Star className="w-5 h-5" />
+                        </Button>
+                        <span className="text-xs font-bold mt-1 drop-shadow-md">{(providerProfile.starCount / 1000).toFixed(1)}k</span>
                     </div>
                 </div>
 
@@ -368,3 +361,5 @@ export default function ProfilePage() {
     </>
   );
 }
+
+    
