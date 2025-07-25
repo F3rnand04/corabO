@@ -4,10 +4,9 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Home, PlaySquare, Search, MessageSquare, UserCircle } from 'lucide-react';
+import { Home, PlaySquare, Plus, MessageSquare, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCorabo } from '@/contexts/CoraboContext';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 
 export default function Footer() {
@@ -17,9 +16,9 @@ export default function Footer() {
   const navItems = [
     { href: '/', icon: Home, label: 'Inicio' },
     { href: '/videos', icon: PlaySquare, label: 'Videos' },
-    { href: '/search', icon: Search, label: 'Buscar', isCentral: true },
+    { href: '/profile', icon: Plus, label: 'Añadir', isCentral: true },
     { href: '/messages', icon: MessageSquare, label: 'Mensajes' },
-    { href: '/profile', icon: UserCircle, label: 'Perfil' },
+    { href: '/settings', icon: Settings, label: 'Ajustes' },
   ];
 
   return (
@@ -47,25 +46,7 @@ export default function Footer() {
               </div>
             );
           }
-
-          if (item.label === 'Perfil') {
-             return (
-              <Link key={item.href} href={item.href} passHref>
-                <div className={cn("flex flex-col items-center justify-center h-auto p-1", isActive && "text-primary")}>
-                    <Avatar className={cn(
-                      "w-7 h-7",
-                      isActive && "border-2 border-primary"
-                    )}>
-                        <AvatarImage src={currentUser.profileImage} alt={currentUser.name} />
-                        <AvatarFallback>
-                            <UserCircle className="w-6 h-6" />
-                        </AvatarFallback>
-                    </Avatar>
-                </div>
-              </Link>
-             )
-          }
-
+          
           return (
             <Link key={item.href} href={item.href} passHref>
               <Button
