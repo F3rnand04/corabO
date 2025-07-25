@@ -24,11 +24,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       // Show the specific footer for a company's profile page
       return <CompanyProfileFooter />;
     }
-    if (isVideosPage) {
-        // No footer on the videos page
-        return null;
-    }
-    // Show the main footer on all other pages
+    // Show the main footer on all other pages (including videos)
     return <Footer />;
   };
 
