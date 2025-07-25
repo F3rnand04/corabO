@@ -13,7 +13,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from "@/hooks/use-toast";
 
 export default function SettingsPage() {
-  const { currentUser, contacts, removeContact } = useCorabo();
+  const { currentUser, contacts, removeContact, services } = useCorabo();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -178,28 +178,33 @@ export default function SettingsPage() {
           <h2 className="text-lg font-bold mb-4">Contactos</h2>
           <div className="space-y-3">
             {contacts.length > 0 ? (
-              contacts.map(contact => (
-                <div key={contact.id} className="flex items-center justify-between p-3 rounded-2xl bg-muted/70">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={contact.profileImage} alt={contact.name} />
-                      <AvatarFallback>Foto</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-semibold text-sm">{contact.name}</p>
-                      <p className="text-xs text-muted-foreground">Especialidad</p>
+              contacts.map(contact => {
+                const contactService = services.find(s => s.providerId === contact.id);
+                const specialty = contactService ? `Ofrece: ${contactService.name}` : 'Especialidad no definida';
+
+                return (
+                  <div key={contact.id} className="flex items-center justify-between p-3 rounded-2xl bg-muted/70">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage src={contact.profileImage} alt={contact.name} />
+                        <AvatarFallback>Foto</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-semibold text-sm">{contact.name}</p>
+                        <p className="text-xs text-muted-foreground">{specialty}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-background">
+                        <MessageCircle className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-background" onClick={() => removeContact(contact.id)}>
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-background">
-                      <MessageCircle className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-background" onClick={() => removeContact(contact.id)}>
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))
+                )
+              })
             ) : (
                <>
                  {[...Array(4)].map((_, i) => (

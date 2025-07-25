@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import type { User, Product, Service, CartItem, Transaction, TransactionStatus } from '@/lib/types';
-import { users as initialUsers, products, services, initialTransactions } from '@/lib/mock-data';
+import { users as initialUsers, products, services as initialServices, initialTransactions } from '@/lib/mock-data';
 import { useToast } from "@/hooks/use-toast"
 
 type FeedView = 'servicios' | 'empresas';
@@ -42,6 +42,7 @@ const CoraboContext = createContext<CoraboState | undefined>(undefined);
 export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
   const [users, setUsers] = useState<User[]>(initialUsers);
+  const [services, setServices] = useState<Service[]>(initialServices);
   const [currentUser, setCurrentUser] = useState<User>(users[0]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
