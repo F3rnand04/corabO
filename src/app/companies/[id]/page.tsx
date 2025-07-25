@@ -6,17 +6,22 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Calendar, MapPin, Bookmark, Send } from 'lucide-react';
+import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react';
 import CompanyProfileFooter from '@/components/CompanyProfileFooter';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { useState } from 'react';
+import { useState, TouchEvent } from 'react';
 
 export default function CompanyProfilePage() {
   const params = useParams();
   const { users } = useCorabo();
   const [activeTab, setActiveTab] = useState('comentarios');
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  
+  const minSwipeDistance = 50;
 
   // Find the specific provider by id from the URL
   const provider = users.find(u => u.id === params.id);
@@ -43,10 +48,48 @@ export default function CompanyProfilePage() {
     completedJobs: 15,
     distance: "2.5 km",
     profileImage: `https://i.pravatar.cc/150?u=${provider.id}`,
-    mainImage: "https://placehold.co/600x400.png",
+    mainImage: gallery.length > 0 ? gallery[currentImageIndex].src : "https://placehold.co/600x400.png",
     shareCount: 4567,
     starCount: 8934.5,
+    messageCount: 1234,
     gallery: gallery
+  };
+
+  const onTouchStart = (e: TouchEvent<HTMLDivElement>) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: TouchEvent<HTMLDivElement>) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      handleNext();
+    }
+    if (isRightSwipe) {
+      handlePrev();
+    }
+    setTouchStart(null);
+    setTouchEnd(null);
+  };
+
+  const handlePrev = () => {
+    setCurrentImageIndex((prevIndex) =>
+      prevIndex === 0 ? gallery.length - 1 : prevIndex - 1
+    );
+  };
+
+  const handleNext = () => {
+    setCurrentImageIndex((prevIndex) =>
+      prevIndex === gallery.length - 1 ? 0 : prevIndex + 1
+    );
   };
 
   return (
@@ -100,7 +143,12 @@ export default function CompanyProfilePage() {
                 <Bookmark className="w-5 h-5" />
             </Button>
             <CardContent className="p-0">
-              <div className="relative group">
+              <div 
+                className="relative group"
+                onTouchStart={onTouchStart}
+                onTouchMove={onTouchMove}
+                onTouchEnd={onTouchEnd}
+              >
                 <Image
                   src={profileData.mainImage}
                   alt="Imagen principal del perfil"
@@ -108,13 +156,36 @@ export default function CompanyProfilePage() {
                   height={400}
                   className="rounded-t-2xl object-cover w-full aspect-[4/3]"
                   data-ai-hint="professional workspace"
+                  key={profileData.mainImage}
                 />
+                 <Button 
+                    onClick={handlePrev}
+                    variant="ghost" 
+                    size="icon" 
+                    className="absolute top-1/2 left-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                    <ChevronLeft className="h-5 w-5" />
+                </Button>
+                <Button 
+                    onClick={handleNext}
+                    variant="ghost" 
+                    size="icon" 
+                    className="absolute top-1/2 right-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                    <ChevronRight className="h-5 w-5" />
+                </Button>
                 <div className="absolute bottom-2 right-2 flex flex-col items-end gap-2 text-white">
                     <div className="flex flex-col items-center">
                         <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10">
                             <Send className="w-5 h-5" />
                         </Button>
                         <span className="text-xs font-bold mt-1 drop-shadow-md">{profileData.shareCount}</span>
+                    </div>
+                     <div className="flex flex-col items-center">
+                        <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10">
+                            <MessageCircle className="w-5 h-5" />
+                        </Button>
+                        <span className="text-xs font-bold mt-1 drop-shadow-md">{(profileData.messageCount / 1000).toFixed(1)}k</span>
                     </div>
                     <div className="flex flex-col items-center">
                         <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10">
@@ -153,12 +224,18 @@ export default function CompanyProfilePage() {
                       <div 
                           key={index} 
                           className="relative aspect-square cursor-pointer group"
+                          onClick={() => setCurrentImageIndex(index)}
                       >
                       <Image
                           src={thumb.src}
                           alt={thumb.alt}
                           fill
-                          className="object-cover"
+                           className={cn(
+                              "object-cover transition-all duration-200",
+                              currentImageIndex === index 
+                                  ? "ring-2 ring-primary ring-offset-2" 
+                                  : "ring-0 group-hover:opacity-80"
+                          )}
                           data-ai-hint="product image"
                       />
                       </div>
@@ -172,3 +249,5 @@ export default function CompanyProfilePage() {
     </>
   );
 }
+
+    
