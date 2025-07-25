@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, TouchEvent, useEffect, useRef } from 'react';
+import { useState, TouchEvent, useEffect, useRef, ChangeEvent } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,7 @@ import type { GalleryImage } from '@/lib/types';
 
 export default function ProfilePage() {
   const { toast } = useToast();
-  const { currentUser, updateUserProfileAndGallery } = useCorabo();
+  const { currentUser, updateUserProfileImage } = useCorabo();
   
   const [gallery, setGallery] = useState<GalleryImage[]>(currentUser.gallery || []);
 
@@ -42,6 +42,9 @@ export default function ProfilePage() {
   const [isPromotionDialogOpen, setIsPromotionDialogOpen] = useState(false);
   const [_, setForceRerender] = useState(0);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+
   useEffect(() => {
     setGallery(currentUser.gallery || []);
     setProviderProfile(prev => ({...prev, name: currentUser.name}));
@@ -53,6 +56,34 @@ export default function ProfilePage() {
     }, 1000 * 60); // Rerender every minute to update promotion time
     return () => clearInterval(interval);
   }, []);
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const newImageUrl = reader.result as string;
+            const newGalleryImage: GalleryImage = {
+                src: newImageUrl,
+                alt: `Imagen de ${currentUser.name}`,
+                description: "Nueva imagen cargada.",
+            };
+            const updatedGallery = [newGalleryImage, ...gallery];
+            
+            updateUserProfileImage(currentUser.id, newImageUrl, updatedGallery);
+
+            toast({
+                title: "¡Imagen Actualizada!",
+                description: "Tu nueva imagen ya está en tu vitrina y tu perfil ha sido actualizado.",
+            });
+        };
+        reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
 
   const minSwipeDistance = 50;
 
@@ -111,7 +142,7 @@ export default function ProfilePage() {
         text: promotionText,
         expires: expiryDate.toISOString(),
     };
-    updateUserProfileAndGallery(currentUser.id, currentUser.profileImage, newGallery);
+    updateUserProfileImage(currentUser.id, currentUser.profileImage, newGallery);
     
     setIsPromotionDialogOpen(false);
   };
@@ -144,10 +175,24 @@ export default function ProfilePage() {
           {/* Profile Header */}
           <div className="flex items-center space-x-4">
             <div className="relative shrink-0">
-              <Avatar className="w-16 h-16">
+               <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleFileChange}
+                  className="hidden"
+                  accept="image/*"
+                />
+              <Avatar className="w-16 h-16 cursor-pointer" onClick={handleAvatarClick}>
                 <AvatarImage src={currentUser.profileImage} alt={currentUser.name} data-ai-hint="user profile photo"/>
                 <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
               </Avatar>
+               <Button 
+                size="icon" 
+                className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary text-primary-foreground"
+                onClick={handleAvatarClick}
+               >
+                 <Plus className="w-4 h-4" />
+               </Button>
             </div>
             <div className="flex-grow">
               <h1 className="text-lg font-bold text-foreground">{providerProfile.name}</h1>
@@ -324,5 +369,3 @@ export default function ProfilePage() {
     </>
   );
 }
-
-    

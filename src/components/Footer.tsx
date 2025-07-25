@@ -7,25 +7,18 @@ import { Button } from '@/components/ui/button';
 import { Home, PlaySquare, Plus, MessageSquare, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCorabo } from '@/contexts/CoraboContext';
-import { UploadDialog } from './UploadDialog';
 import { useState } from 'react';
 
 export default function Footer() {
   const pathname = usePathname();
-  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
 
   const navItems = [
     { href: '/', icon: Home, label: 'Inicio' },
     { href: '/videos', icon: PlaySquare, label: 'Videos' },
-    { href: '#', icon: Plus, label: 'Añadir', isCentral: true },
+    { href: '/profile', icon: Plus, label: 'Añadir', isCentral: true },
     { href: '/messages', icon: MessageSquare, label: 'Mensajes' },
     { href: '/settings', icon: Settings, label: 'Ajustes' },
   ];
-
-  const handleCentralButtonClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsUploadDialogOpen(true);
-  };
 
   return (
     <>
@@ -36,17 +29,16 @@ export default function Footer() {
 
             if (item.isCentral) {
               return (
-                <div key={item.href} className="relative">
+                <Link key={item.href} href={item.href} passHref>
                   <Button
                     size="icon"
-                    onClick={handleCentralButtonClick}
                     className={cn(
-                      "relative -top-6 w-16 h-16 rounded-full shadow-lg bg-gradient-to-tr from-primary to-accent text-primary-foreground hover:scale-110 transition-transform",
+                      "relative -top-4 w-16 h-16 rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90",
                     )}
                   >
                       <item.icon className="w-8 h-8" />
                   </Button>
-                </div>
+                </Link>
               );
             }
             
@@ -66,9 +58,6 @@ export default function Footer() {
           })}
         </div>
       </footer>
-      <UploadDialog isOpen={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen} />
     </>
   );
 }
-
-    
