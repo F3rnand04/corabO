@@ -19,7 +19,7 @@ export default function Footer() {
     { href: '/videos', icon: PlaySquare, label: 'Videos' },
     { href: '#upload', icon: Upload, label: 'Añadir', isCentral: true },
     { href: '/messages', icon: MessageSquare, label: 'Mensajes' },
-    { href: '/settings', icon: Settings, label: 'Ajustes' },
+    { href: '/profile', icon: Settings, label: 'Ajustes' },
   ];
 
   return (
