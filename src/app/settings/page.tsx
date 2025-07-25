@@ -20,34 +20,26 @@ export default function SettingsPage() {
 
   return (
     <div className="bg-background min-h-screen">
-      <header className="container sticky top-0 bg-background/95 backdrop-blur z-10 py-3">
-        <div className="flex items-center justify-between">
-           <Button variant="ghost" size="icon" onClick={() => router.back()}>
-            <ChevronLeft className="w-6 h-6" />
-          </Button>
-          <div className='text-center'>
-            <Link href="#" passHref>
-              <span className="text-sm text-red-500 font-semibold cursor-pointer">SUSCRIBIR</span>
-            </Link>
-            <p className="font-bold text-lg">Nivel 1</p>
-          </div>
-           <div/>
-        </div>
-      </header>
-      
       <main className="container py-4 px-4 space-y-6 max-w-2xl pb-24">
-
-        {/* User Info Section */}
-        <div className="flex items-center space-x-4">
-          <Avatar className="w-16 h-16">
-            <AvatarImage src={`https://i.pravatar.cc/150?u=${currentUser.id}`} alt={currentUser.name} />
-            <AvatarFallback>Foto</AvatarFallback>
-          </Avatar>
-          <div className='flex-grow'>
-            <p className="font-bold">ID corabO</p>
-            <p className="text-sm text-muted-foreground">Correo: uruario@gmail.com</p>
-            <p className="text-sm text-muted-foreground">teléfono: 0412 12345678</p>
+        {/* User Info & Subscription Section */}
+        <div className="flex items-start justify-between">
+          <div className="flex items-center space-x-4">
+            <Avatar className="w-16 h-16">
+              <AvatarImage src={`https://i.pravatar.cc/150?u=${currentUser.id}`} alt={currentUser.name} />
+              <AvatarFallback>Foto</AvatarFallback>
+            </Avatar>
+            <div className='flex-grow'>
+              <p className="font-bold">ID corabO</p>
+              <p className="text-sm text-muted-foreground">Correo: uruario@gmail.com</p>
+              <p className="text-sm text-muted-foreground">teléfono: 0412 12345678</p>
+            </div>
           </div>
+          <div className='text-right'>
+              <Link href="#" passHref>
+                <span className="text-sm text-red-500 font-semibold cursor-pointer">SUSCRIBIR</span>
+              </Link>
+              <p className="font-bold text-lg">Nivel 1</p>
+            </div>
         </div>
 
         {/* Validation Section */}
