@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Home, PlaySquare, MessageSquare, UserCircle, Settings } from 'lucide-react';
+import { Home, PlaySquare, MessageSquare, UserCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function SettingsFooter() {
@@ -29,8 +29,7 @@ export default function SettingsFooter() {
                 variant="ghost"
                 className={cn(
                   "flex-col h-auto p-1 text-muted-foreground hover:text-primary",
-                   // The settings icon itself should be active on the settings page
-                  (isActive || (item.label === 'Perfil' && pathname.startsWith('/settings'))) && "text-primary"
+                  isActive && "text-primary"
                 )}
               >
                 <item.icon className="w-6 h-6" />
