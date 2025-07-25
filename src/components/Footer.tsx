@@ -4,22 +4,22 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Home, PlaySquare, Plus, MessageSquare } from 'lucide-react';
+import { Home, PlaySquare, Upload, MessageSquare, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCorabo } from '@/contexts/CoraboContext';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { User } from 'lucide-react';
+import { useState } from 'react';
+import { UploadDialog } from './UploadDialog';
 
 export default function Footer() {
   const pathname = usePathname();
-  const { currentUser } = useCorabo();
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
 
   const navItems = [
     { href: '/', icon: Home, label: 'Inicio' },
     { href: '/videos', icon: PlaySquare, label: 'Videos' },
-    { href: '/profile', icon: Plus, label: 'Añadir', isCentral: true },
+    { href: '#upload', icon: Upload, label: 'Añadir', isCentral: true },
     { href: '/messages', icon: MessageSquare, label: 'Mensajes' },
-    { href: '/profile', icon: 'User', label: 'Perfil' },
+    { href: '/settings', icon: Settings, label: 'Ajustes' },
   ];
 
   return (
@@ -31,38 +31,17 @@ export default function Footer() {
 
             if (item.isCentral) {
               return (
-                <Link key={item.href} href={item.href} passHref>
-                  <Button
-                    size="icon"
-                    className={cn(
-                      "relative -top-4 w-16 h-16 rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90",
-                    )}
-                  >
-                      <item.icon className="w-8 h-8" />
-                  </Button>
-                </Link>
+                <Button
+                  key={item.href}
+                  onClick={() => setIsUploadOpen(true)}
+                  size="icon"
+                  className={cn(
+                    "relative -top-4 w-16 h-16 rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90",
+                  )}
+                >
+                    <item.icon className="w-8 h-8" />
+                </Button>
               );
-            }
-
-            if (item.icon === 'User') {
-                 return (
-                    <Link key={item.href} href={item.href} passHref>
-                        <Button
-                            variant="ghost"
-                            className={cn(
-                                "flex-col h-auto p-0 rounded-full",
-                                isActive && "ring-2 ring-primary"
-                            )}
-                        >
-                            <Avatar className="w-8 h-8">
-                                <AvatarImage src={currentUser.profileImage} alt={currentUser.name} />
-                                <AvatarFallback>
-                                    <User className="w-5 h-5" />
-                                </AvatarFallback>
-                            </Avatar>
-                        </Button>
-                    </Link>
-                );
             }
             
             return (
@@ -81,6 +60,7 @@ export default function Footer() {
           })}
         </div>
       </footer>
+       <UploadDialog isOpen={isUploadOpen} onOpenChange={setIsUploadOpen} />
     </>
   );
 }

@@ -241,8 +241,7 @@ export default function ProfilePage() {
               <div 
                 className="relative group"
                 onTouchStart={onTouchStart}
-                onTouchMove={onTouchMove}
-                onTouchEnd={onTouchEnd}
+                onTouchMove={onTouchEnd}
                 onDoubleClick={() => handleImageDoubleClick(currentImage)}
               >
                 <Image
