@@ -1,4 +1,5 @@
 
+
 import type { User, Product, Service, Transaction } from './types';
 
 export const users: User[] = [
@@ -20,11 +21,39 @@ export const users: User[] = [
     type: 'provider', 
     reputation: 4.2 ,
     gallery: [
-      { src: "https://placehold.co/400x400.png?text=Servicio1", alt: "Servicio 1", description: "Descripción detallada del servicio 1." },
-      { src: "https://placehold.co/400x400.png?text=Servicio2", alt: "Servicio 2", description: "Descripción detallada del servicio 2." },
-      { src: "https://placehold.co/400x400.png?text=Servicio3", alt: "Servicio 3", description: "Descripción detallada del servicio 3." },
-      { src: "https://placehold.co/400x400.png?text=Servicio4", alt: "Servicio 4", description: "Descripción detallada del servicio 4." },
-      { src: "https://placehold.co/400x400.png?text=Servicio5", alt: "Servicio 5", description: "Descripción detallada del servicio 5." },
+      { 
+        src: "https://placehold.co/400x400.png?text=Servicio1", 
+        alt: "Servicio 1", 
+        description: "Descripción detallada del servicio de limpieza profunda para cocinas.",
+        comments: [
+          { author: "Ana Pérez", text: "¡El mejor servicio! Mi cocina quedó impecable." },
+          { author: "Carlos Ruiz", text: "Muy profesionales y puntuales. Los recomiendo." },
+        ]
+      },
+      { 
+        src: "https://placehold.co/400x400.png?text=Servicio2", 
+        alt: "Servicio 2", 
+        description: "Instalación de estanterías y muebles. Trabajo rápido y garantizado.",
+        comments: []
+      },
+      { 
+        src: "https://placehold.co/400x400.png?text=Servicio3", 
+        alt: "Servicio 3", 
+        description: "Servicio de jardinería y mantenimiento de áreas verdes.",
+         comments: [
+          { author: "Luisa F.", text: "Mi jardín nunca se había visto tan bien." },
+        ]
+      },
+      { 
+        src: "https://placehold.co/400x400.png?text=Servicio4", 
+        alt: "Servicio 4", 
+        description: "Reparaciones eléctricas menores, cambio de enchufes y lámparas." 
+      },
+      { 
+        src: "https://placehold.co/400x400.png?text=Servicio5", 
+        alt: "Servicio 5", 
+        description: "Plomería de emergencia, atención 24 horas." 
+      },
     ]
   },
 ];

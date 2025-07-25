@@ -15,8 +15,7 @@ import { useState, TouchEvent } from 'react';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
 import type { User } from '@/lib/types';
 
-// Extend the local gallery type to include description
-type GalleryImage = NonNullable<User['gallery']>[0] & { description: string };
+type GalleryImage = NonNullable<User['gallery']>[0];
 
 
 export default function CompanyProfilePage() {
@@ -43,7 +42,7 @@ export default function CompanyProfilePage() {
     );
   }
   
-  const gallery: GalleryImage[] = (provider.gallery || []).map(g => ({ ...g, description: `Descripción para ${g.alt}`}));
+  const gallery: GalleryImage[] = provider.gallery || [];
   
   const profileData = {
     name: provider.name,
@@ -104,7 +103,7 @@ export default function CompanyProfilePage() {
     setIsDetailsDialogOpen(true);
   };
   
-  const currentImage = gallery[currentImageIndex];
+  const currentImage = gallery.length > 0 ? gallery[currentImageIndex] : null;
 
   return (
     <>
@@ -157,60 +156,62 @@ export default function CompanyProfilePage() {
                 <Bookmark className="w-5 h-5" />
             </Button>
             <CardContent className="p-0">
-              <div 
-                className="relative group"
-                onTouchStart={onTouchStart}
-                onTouchMove={onTouchMove}
-                onTouchEnd={onTouchEnd}
-                onDoubleClick={() => handleImageDoubleClick(currentImage)}
-              >
-                <Image
-                  src={profileData.mainImage}
-                  alt="Imagen principal del perfil"
-                  width={600}
-                  height={400}
-                  className="rounded-t-2xl object-cover w-full aspect-[4/3] cursor-pointer"
-                  data-ai-hint="professional workspace"
-                  key={profileData.mainImage}
-                />
-                 <Button 
-                    onClick={handlePrev}
-                    variant="ghost" 
-                    size="icon" 
-                    className="absolute top-1/3 left-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+              {currentImage && (
+                <div 
+                  className="relative group"
+                  onTouchStart={onTouchStart}
+                  onTouchMove={onTouchMove}
+                  onTouchEnd={onTouchEnd}
+                  onDoubleClick={() => handleImageDoubleClick(currentImage)}
                 >
-                    <ChevronLeft className="h-5 w-5" />
-                </Button>
-                <Button 
-                    onClick={handleNext}
-                    variant="ghost" 
-                    size="icon" 
-                    className="absolute top-1/3 right-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                    <ChevronRight className="h-5 w-5" />
-                </Button>
-                <div className="absolute bottom-2 right-2 flex flex-col items-end gap-2 text-white">
-                    <div className="flex flex-col items-center">
-                        <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10">
-                            <Star className="w-5 h-5" />
-                        </Button>
-                        <span className="text-xs font-bold mt-1 drop-shadow-md">{(profileData.starCount / 1000).toFixed(1)}k</span>
-                    </div>
-                     <div className="flex flex-col items-center">
-                        <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10">
-                            <MessageCircle className="w-5 h-5" />
-                        </Button>
-                        <span className="text-xs font-bold mt-1 drop-shadow-md">{(profileData.messageCount / 1000).toFixed(1)}k</span>
-                    </div>
-                    <div className="flex flex-col items-center">
-                        <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10">
-                            <Send className="w-5 h-5" />
-                        </Button>
-                        <span className="text-xs font-bold mt-1 drop-shadow-md">{profileData.shareCount}</span>
-                    </div>
-                </div>
+                  <Image
+                    src={profileData.mainImage}
+                    alt="Imagen principal del perfil"
+                    width={600}
+                    height={400}
+                    className="rounded-t-2xl object-cover w-full aspect-[4/3] cursor-pointer"
+                    data-ai-hint="professional workspace"
+                    key={profileData.mainImage}
+                  />
+                  <Button 
+                      onClick={handlePrev}
+                      variant="ghost" 
+                      size="icon" 
+                      className="absolute top-1/3 left-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                      <ChevronLeft className="h-5 w-5" />
+                  </Button>
+                  <Button 
+                      onClick={handleNext}
+                      variant="ghost" 
+                      size="icon" 
+                      className="absolute top-1/3 right-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                      <ChevronRight className="h-5 w-5" />
+                  </Button>
+                  <div className="absolute bottom-2 right-2 flex flex-col items-end gap-2 text-white">
+                      <div className="flex flex-col items-center">
+                          <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10">
+                              <Star className="w-5 h-5" />
+                          </Button>
+                          <span className="text-xs font-bold mt-1 drop-shadow-md">{(profileData.starCount / 1000).toFixed(1)}k</span>
+                      </div>
+                       <div className="flex flex-col items-center">
+                          <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10">
+                              <MessageCircle className="w-5 h-5" />
+                          </Button>
+                          <span className="text-xs font-bold mt-1 drop-shadow-md">{(profileData.messageCount / 1000).toFixed(1)}k</span>
+                      </div>
+                      <div className="flex flex-col items-center">
+                          <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10">
+                              <Send className="w-5 h-5" />
+                          </Button>
+                          <span className="text-xs font-bold mt-1 drop-shadow-md">{profileData.shareCount}</span>
+                      </div>
+                  </div>
 
-              </div>
+                </div>
+              )}
               
               <div className="flex justify-around font-semibold text-center border-b">
                 <div

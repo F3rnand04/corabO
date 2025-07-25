@@ -1,4 +1,5 @@
 
+
 export type User = {
   id: string;
   name: string;
@@ -13,6 +14,10 @@ export type User = {
     src: string;
     alt: string;
     description: string;
+    comments?: {
+      author: string;
+      text: string;
+    }[];
   }[];
 };
 
