@@ -4,22 +4,24 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Home, PlaySquare, Upload, MessageSquare, Settings } from 'lucide-react';
+import { Home, PlaySquare, Upload, MessageSquare, CircleUser } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { useState } from 'react';
 import { UploadDialog } from './UploadDialog';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 export default function Footer() {
   const pathname = usePathname();
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const { currentUser } = useCorabo();
 
   const navItems = [
     { href: '/', icon: Home, label: 'Inicio' },
     { href: '/videos', icon: PlaySquare, label: 'Videos' },
     { href: '#upload', icon: Upload, label: 'Añadir', isCentral: true },
     { href: '/messages', icon: MessageSquare, label: 'Mensajes' },
-    { href: '/settings', icon: Settings, label: 'Ajustes' },
+    { href: '/profile', icon: CircleUser, label: 'Perfil' },
   ];
 
   return (
@@ -64,5 +66,3 @@ export default function Footer() {
     </>
   );
 }
-
-    
