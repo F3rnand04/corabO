@@ -13,6 +13,7 @@ import { PromotionDialog } from '@/components/PromotionDialog';
 import { Avatar, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { useCorabo } from '@/contexts/CoraboContext';
 
 
 type GalleryImage = {
@@ -27,7 +28,9 @@ type GalleryImage = {
 
 export default function ProfilePage() {
   const { toast } = useToast();
+  const { currentUser, updateUserProfileImage } = useCorabo();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
   const [providerProfile, setProviderProfile] = useState<{
     name: string;
     specialty: string;
@@ -35,20 +38,18 @@ export default function ProfilePage() {
     efficiency: string;
     completedJobs: number;
     otherStat: string;
-    profileImage: string;
     gallery: GalleryImage[];
     shareCount: number;
     starCount: number;
     messageCount: number;
   }>({
-    name: "NOMBRE USUARIO",
+    name: currentUser.name,
     specialty: "Especialidad",
     rating: 4.9,
     efficiency: "99.9%",
     completedJobs: 15,
     otherStat: "00 | 05",
-    profileImage: "https://placehold.co/128x128.png",
-    gallery: [
+    gallery: currentUser.gallery || [
       { src: "https://placehold.co/600x400.png?text=1", alt: "Imagen 1", description: "Descripción detallada de la primera imagen promocional." },
       { src: "https://placehold.co/600x400.png?text=2", alt: "Imagen 2", description: "Descripción detallada de la segunda imagen." },
       { src: "https://placehold.co/600x400.png?text=3", alt: "Imagen 3", description: "Esta es la tercera imagen, mostrando otro ángulo del producto." },
@@ -149,22 +150,27 @@ export default function ProfilePage() {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        const newImage: GalleryImage = {
-          src: reader.result as string,
+        const imageUrl = reader.result as string;
+        
+        // This will be the new profile picture
+        updateUserProfileImage(currentUser.id, imageUrl);
+
+        const newGalleryImage: GalleryImage = {
+          src: imageUrl,
           alt: `Imagen ${providerProfile.gallery.length + 1}`,
           description: 'Nueva imagen cargada por el usuario.',
         };
 
         setProviderProfile(prevProfile => ({
           ...prevProfile,
-          gallery: [newImage, ...prevProfile.gallery]
+          gallery: [newGalleryImage, ...prevProfile.gallery]
         }));
         
         setCurrentImageIndex(0);
 
         toast({
           title: "Imagen Cargada",
-          description: "Tu nueva imagen ha sido añadida a la galería."
+          description: "Tu nueva imagen ha sido añadida a la vitrina y tu foto de perfil ha sido actualizada."
         });
       };
       reader.readAsDataURL(file);
@@ -193,7 +199,7 @@ export default function ProfilePage() {
           <div className="flex items-center space-x-4">
             <div className="relative shrink-0">
               <Avatar className="w-16 h-16">
-                <AvatarImage src={providerProfile.profileImage} alt={providerProfile.name} data-ai-hint="user profile photo"/>
+                <AvatarImage src={currentUser.profileImage} alt={currentUser.name} data-ai-hint="user profile photo"/>
               </Avatar>
               <input 
                 type="file" 

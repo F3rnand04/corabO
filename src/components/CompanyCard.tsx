@@ -19,7 +19,7 @@ export function CompanyCard({ company }: CompanyCardProps) {
             <Card className="rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                 <CardContent className="p-2 flex flex-col items-center text-center">
                     <Avatar className="w-16 h-16 border-2 border-primary mb-2">
-                        <AvatarImage src={`https://i.pravatar.cc/150?u=${company.id}`} alt={company.name} />
+                        <AvatarImage src={company.profileImage} alt={company.name} />
                         <AvatarFallback>{company.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <p className="font-semibold text-sm truncate w-full">{company.name}</p>

@@ -3,13 +3,14 @@
 import type { User, Product, Service, Transaction } from './types';
 
 export const users: User[] = [
-  { id: 'client1', name: 'Juan Cliente', type: 'client', reputation: 4.5 },
+  { id: 'client1', name: 'Juan Cliente', type: 'client', reputation: 4.5, profileImage: `https://i.pravatar.cc/150?u=client1` },
   { 
     id: 'provider1', 
     name: 'Tecno Soluciones S.A.', 
     type: 'provider', 
     reputation: 4.8, 
     verified: true,
+    profileImage: `https://i.pravatar.cc/150?u=provider1`,
     promotion: {
       text: 'HOY 10% OFF',
       expires: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(), // Expires in 12 hours
@@ -45,6 +46,7 @@ export const users: User[] = [
     name: 'Hogar Feliz Servicios', 
     type: 'provider', 
     reputation: 4.2 ,
+    profileImage: `https://i.pravatar.cc/150?u=provider2`,
     gallery: [
       { 
         src: "https://placehold.co/400x400.png?text=Servicio1", 

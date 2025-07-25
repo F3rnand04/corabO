@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import type { User, Product, Service, CartItem, Transaction, TransactionStatus } from '@/lib/types';
-import { users, products, services, initialTransactions } from '@/lib/mock-data';
+import { users as initialUsers, products, services, initialTransactions } from '@/lib/mock-data';
 import { useToast } from "@/hooks/use-toast"
 
 type FeedView = 'servicios' | 'empresas';
@@ -34,12 +34,14 @@ interface CoraboState {
   removeContact: (userId: string) => void;
   toggleGps: () => void;
   setFeedView: (view: FeedView) => void;
+  updateUserProfileImage: (userId: string, imageUrl: string) => void;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
 
 export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
+  const [users, setUsers] = useState<User[]>(initialUsers);
   const [currentUser, setCurrentUser] = useState<User>(users[0]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
@@ -216,6 +218,24 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         description: `Ahora ${!isGpsActive ? 'eres visible' : 'no eres visible'} y puedes ver proveedores cercanos.`
     });
   };
+  
+  const updateUserProfileImage = (userId: string, imageUrl: string) => {
+    let updatedUser: User | undefined;
+    setUsers(prevUsers => 
+        prevUsers.map(u => {
+            if (u.id === userId) {
+                updatedUser = { ...u, profileImage: imageUrl };
+                return updatedUser;
+            }
+            return u;
+        })
+    );
+
+    if (currentUser.id === userId && updatedUser) {
+        setCurrentUser(updatedUser);
+    }
+  };
+
 
   const value = {
     currentUser,
@@ -243,6 +263,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     removeContact,
     toggleGps,
     setFeedView,
+    updateUserProfileImage,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;

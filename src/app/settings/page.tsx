@@ -82,7 +82,7 @@ export default function SettingsPage() {
         {/* User Info & Subscription Section */}
         <div className="flex items-start space-x-4">
             <Avatar className="w-20 h-20 shrink-0">
-              <AvatarImage src={`https://i.pravatar.cc/150?u=${currentUser.id}`} alt={currentUser.name} />
+              <AvatarImage src={currentUser.profileImage} alt={currentUser.name} />
               <AvatarFallback>Foto</AvatarFallback>
             </Avatar>
 
@@ -182,7 +182,7 @@ export default function SettingsPage() {
                 <div key={contact.id} className="flex items-center justify-between p-3 rounded-2xl bg-muted/70">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-12 w-12">
-                      <AvatarImage src={`https://i.pravatar.cc/150?u=${contact.id}`} alt={contact.name} />
+                      <AvatarImage src={contact.profileImage} alt={contact.name} />
                       <AvatarFallback>Foto</AvatarFallback>
                     </Avatar>
                     <div>

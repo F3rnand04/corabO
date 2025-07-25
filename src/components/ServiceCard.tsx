@@ -39,7 +39,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
         <div className="p-3">
           <div className="flex items-start gap-3">
             <Avatar className="w-12 h-12 border-2 border-primary">
-              <AvatarImage src={`https://i.pravatar.cc/150?u=${provider.id}`} alt={provider.name} />
+              <AvatarImage src={provider.profileImage} alt={provider.name} />
               <AvatarFallback className="text-xs">{provider.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="flex-grow">

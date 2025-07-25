@@ -55,7 +55,7 @@ export default function CompanyProfilePage() {
     publications: gallery.length,
     completedJobs: 15,
     distance: "2.5 km",
-    profileImage: `https://i.pravatar.cc/150?u=${provider.id}`,
+    profileImage: provider.profileImage,
     mainImage: gallery.length > 0 ? gallery[currentImageIndex].src : "https://placehold.co/600x400.png",
     shareCount: 4567,
     messageCount: 1234,

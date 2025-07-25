@@ -5,6 +5,7 @@ export type User = {
   name: string;
   type: 'client' | 'provider';
   reputation: number;
+  profileImage: string;
   verified?: boolean;
   promotion?: {
     text: string;

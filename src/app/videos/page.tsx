@@ -37,7 +37,7 @@ export default function VideosPage() {
              <div className="absolute right-4 bottom-28 flex flex-col items-center gap-6">
                 <Link href={`/companies/${user!.id}`} className="block">
                     <Avatar className="w-12 h-12 border-2 border-white">
-                        <AvatarImage src={`https://i.pravatar.cc/150?u=${user!.id}`} alt={user!.name} />
+                        <AvatarImage src={user!.profileImage} alt={user!.name} />
                         <AvatarFallback>{user!.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                 </Link>
