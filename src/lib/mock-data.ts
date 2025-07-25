@@ -1,3 +1,4 @@
+
 import type { User, Product, Service, Transaction } from './types';
 
 export const users: User[] = [
@@ -13,7 +14,19 @@ export const users: User[] = [
       expires: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(), // Expires in 12 hours
     }
   },
-  { id: 'provider2', name: 'Hogar Feliz Servicios', type: 'provider', reputation: 4.2 },
+  { 
+    id: 'provider2', 
+    name: 'Hogar Feliz Servicios', 
+    type: 'provider', 
+    reputation: 4.2 ,
+    gallery: [
+      { src: "https://placehold.co/400x400.png?text=Servicio1", alt: "Servicio 1" },
+      { src: "https://placehold.co/400x400.png?text=Servicio2", alt: "Servicio 2" },
+      { src: "https://placehold.co/400x400.png?text=Servicio3", alt: "Servicio 3" },
+      { src: "https://placehold.co/400x400.png?text=Servicio4", alt: "Servicio 4" },
+      { src: "https://placehold.co/400x400.png?text=Servicio5", alt: "Servicio 5" },
+    ]
+  },
 ];
 
 export const products: Product[] = [

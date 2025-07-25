@@ -1,3 +1,4 @@
+
 export type User = {
   id: string;
   name: string;
@@ -8,6 +9,10 @@ export type User = {
     text: string;
     expires: string;
   };
+  gallery?: {
+    src: string;
+    alt: string;
+  }[];
 };
 
 export type Product = {
