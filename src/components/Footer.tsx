@@ -4,20 +4,22 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Home, PlaySquare, Plus, MessageSquare, Settings } from 'lucide-react';
+import { Home, PlaySquare, Plus, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCorabo } from '@/contexts/CoraboContext';
-import { useState } from 'react';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { User } from 'lucide-react';
 
 export default function Footer() {
   const pathname = usePathname();
+  const { currentUser } = useCorabo();
 
   const navItems = [
     { href: '/', icon: Home, label: 'Inicio' },
     { href: '/videos', icon: PlaySquare, label: 'Videos' },
     { href: '/profile', icon: Plus, label: 'Añadir', isCentral: true },
     { href: '/messages', icon: MessageSquare, label: 'Mensajes' },
-    { href: '/settings', icon: Settings, label: 'Ajustes' },
+    { href: '/profile', icon: 'User', label: 'Perfil' },
   ];
 
   return (
@@ -40,6 +42,27 @@ export default function Footer() {
                   </Button>
                 </Link>
               );
+            }
+
+            if (item.icon === 'User') {
+                 return (
+                    <Link key={item.href} href={item.href} passHref>
+                        <Button
+                            variant="ghost"
+                            className={cn(
+                                "flex-col h-auto p-0 rounded-full",
+                                isActive && "ring-2 ring-primary"
+                            )}
+                        >
+                            <Avatar className="w-8 h-8">
+                                <AvatarImage src={currentUser.profileImage} alt={currentUser.name} />
+                                <AvatarFallback>
+                                    <User className="w-5 h-5" />
+                                </AvatarFallback>
+                            </Avatar>
+                        </Button>
+                    </Link>
+                );
             }
             
             return (
