@@ -51,6 +51,8 @@ export default function Step1_ProfileType({ onSelect, currentType }: Step1_Profi
       return currentType === 'client' ? 'client' : 'provider_service';
   }
 
+  const isChangingToProvider = currentType === 'client' && nextType.startsWith('provider');
+
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold">Paso 1: Elige tu tipo de perfil</h2>
@@ -87,15 +89,18 @@ export default function Step1_ProfileType({ onSelect, currentType }: Step1_Profi
        <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Advertencia: ¿Cambiar tipo de perfil?</AlertDialogTitle>
+            <AlertDialogTitle>
+              {isChangingToProvider ? '¡Felicidades por dar el siguiente paso!' : '¿Cambiar tipo de perfil?'}
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Cambiar tu tipo de perfil puede resultar en la pérdida de la información específica de tu perfil actual (ej. portafolio, horarios, etc.).
-              ¿Estás seguro de que deseas continuar?
+              {isChangingToProvider
+                ? "Al convertirte en proveedor, podrás crear tu propia vitrina de servicios o productos. ¿Estás listo para empezar a ofrecer tus talentos?"
+                : "La información específica de tu perfil actual (como tu portafolio) podría no ser visible en el nuevo tipo. ¿Deseas continuar?"}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmChange}>Cambiar y Continuar</AlertDialogAction>
+            <AlertDialogAction onClick={handleConfirmChange}>Continuar</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
