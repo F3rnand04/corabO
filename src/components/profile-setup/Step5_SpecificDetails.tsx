@@ -1,8 +1,7 @@
 
 'use client';
 
-import { useState, useRef, ChangeEvent } from 'react';
-import Image from 'next/image';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,31 +15,54 @@ import { cn } from '@/lib/utils';
 interface Step5_SpecificDetailsProps {
   onBack: () => void;
   onNext: () => void;
+  formData: any;
+  setFormData: (data: any) => void;
 }
 
 const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
-export default function Step5_SpecificDetails({ onBack, onNext }: Step5_SpecificDetailsProps) {
-  const [specialty, setSpecialty] = useState('');
-  const [location, setLocation] = useState('');
-  const [serviceRadius, setServiceRadius] = useState(10);
-  const [hasPhysicalLocation, setHasPhysicalLocation] = useState(true);
-  const [showExactLocation, setShowExactLocation] = useState(true);
-  const [isOnlyDelivery, setIsOnlyDelivery] = useState(false);
+export default function Step5_SpecificDetails({ onBack, onNext, formData, setFormData }: Step5_SpecificDetailsProps) {
+  const [specialty, setSpecialty] = useState(formData.specialty);
+  const [location, setLocation] = useState(formData.location);
+  const [serviceRadius, setServiceRadius] = useState(formData.serviceRadius);
+  const [hasPhysicalLocation, setHasPhysicalLocation] = useState(formData.hasPhysicalLocation);
+  const [showExactLocation, setShowExactLocation] = useState(formData.showExactLocation);
+  const [isOnlyDelivery, setIsOnlyDelivery] = useState(formData.isOnlyDelivery);
+  const [website, setWebsite] = useState(formData.website);
+  const [schedule, setSchedule] = useState(formData.schedule);
+
+  useEffect(() => {
+    setFormData({ 
+      ...formData, 
+      specialty,
+      location,
+      serviceRadius,
+      hasPhysicalLocation,
+      showExactLocation,
+      isOnlyDelivery,
+      website,
+      schedule
+    });
+  }, [specialty, location, serviceRadius, hasPhysicalLocation, showExactLocation, isOnlyDelivery, website, schedule]);
 
   const MAX_RADIUS_FREE = 10;
   const isOverFreeRadius = serviceRadius > MAX_RADIUS_FREE;
   
   const handleGpsClick = () => {
-    // Simulate getting GPS location and setting a Google Maps link
     setLocation('https://maps.app.goo.gl/h2bYMPEgneUp9i7J8');
+  };
+
+  const handleScheduleChange = (day: string, field: 'from' | 'to' | 'active', value: string | boolean) => {
+    setSchedule((prev: any) => ({
+      ...prev,
+      [day]: { ...prev[day], [field]: value }
+    }));
   };
 
   return (
     <div className="space-y-8">
       <h2 className="text-xl font-semibold">Paso 5: Detalles Específicos del Proveedor</h2>
       
-      {/* Specialty / Description */}
       <div className="space-y-2">
         <Label htmlFor="specialty">Especialidad / Descripción corta</Label>
         <Textarea 
@@ -54,7 +76,6 @@ export default function Step5_SpecificDetails({ onBack, onNext }: Step5_Specific
         <p className="text-xs text-muted-foreground text-right">{specialty.length} / 150</p>
       </div>
 
-      {/* Location Logic */}
       <div className="space-y-4">
         <Label>Ubicación y Área de Cobertura</Label>
         <div className="space-y-4 rounded-md border p-4">
@@ -133,30 +154,28 @@ export default function Step5_SpecificDetails({ onBack, onNext }: Step5_Specific
         </div>
       </div>
 
-      {/* Schedule */}
       <div className="space-y-4">
         <Label>Horarios de Atención</Label>
         <div className="space-y-3 rounded-md border p-4">
             {daysOfWeek.map(day => (
                  <div key={day} className="flex flex-col sm:flex-row sm:items-center justify-between">
                     <div className="flex items-center gap-3 mb-2 sm:mb-0">
-                        <Switch id={`switch-${day}`} />
+                        <Switch id={`switch-${day}`} checked={schedule[day]?.active} onCheckedChange={(checked) => handleScheduleChange(day, 'active', checked)} />
                         <Label htmlFor={`switch-${day}`} className="w-24">{day}</Label>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Input type="time" defaultValue="09:00" className="w-full sm:w-auto"/>
+                        <Input type="time" value={schedule[day]?.from} onChange={(e) => handleScheduleChange(day, 'from', e.target.value)} className="w-full sm:w-auto"/>
                         <span>-</span>
-                        <Input type="time" defaultValue="17:00" className="w-full sm:w-auto"/>
+                        <Input type="time" value={schedule[day]?.to} onChange={(e) => handleScheduleChange(day, 'to', e.target.value)} className="w-full sm:w-auto"/>
                     </div>
                  </div>
             ))}
         </div>
       </div>
 
-       {/* Social Media */}
       <div className="space-y-2">
         <Label htmlFor="website">Redes Sociales / Sitio Web (Opcional)</Label>
-        <Input id="website" placeholder="https://tu-sitio-web.com" />
+        <Input id="website" placeholder="https://tu-sitio-web.com" value={website} onChange={(e) => setWebsite(e.target.value)} />
       </div>
 
       <div className="flex justify-between">

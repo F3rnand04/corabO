@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Info, MessageSquare } from "lucide-react";
@@ -10,10 +11,25 @@ import { useCorabo } from "@/contexts/CoraboContext";
 interface Step4_GeneralDetailsProps {
   onBack: () => void;
   onNext: () => void;
+  formData: any;
+  setFormData: (data: any) => void;
 }
 
-export default function Step4_GeneralDetails({ onBack, onNext }: Step4_GeneralDetailsProps) {
-  const { currentUser } = useCorabo();
+export default function Step4_GeneralDetails({ onBack, onNext, formData, setFormData }: Step4_GeneralDetailsProps) {
+  const { currentUser, validateEmail, validatePhone } = useCorabo();
+
+  const handleValueChange = (field: 'email' | 'phone', value: string) => {
+    setFormData({ ...formData, [field]: value });
+  };
+  
+  useEffect(() => {
+    // Sync with currentUser's validation status
+    setFormData({
+      ...formData,
+      email: currentUser.email,
+      phone: currentUser.phone
+    });
+  }, [currentUser.email, currentUser.phone]);
 
   return (
     <div className="space-y-6">
@@ -35,13 +51,17 @@ export default function Step4_GeneralDetails({ onBack, onNext }: Step4_GeneralDe
 
             <ValidationItem
                 label="Correo Electrónico:"
-                value="usuario@email.com" // Placeholder, should come from context
-                initialStatus="idle"
+                value={formData.email}
+                initialStatus={currentUser.emailValidated ? 'validated' : 'idle'}
+                onValidate={() => validateEmail(currentUser.id)}
+                onValueChange={(value) => handleValueChange('email', value)}
             />
              <ValidationItem
                 label="Teléfono:"
-                value="0412-1234567" // Placeholder
-                initialStatus="idle"
+                value={formData.phone}
+                initialStatus={currentUser.phoneValidated ? 'validated' : 'idle'}
+                onValidate={() => validatePhone(currentUser.id)}
+                 onValueChange={(value) => handleValueChange('phone', value)}
             />
         </div>
         

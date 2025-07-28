@@ -14,6 +14,7 @@ interface ValidationItemProps {
     initialStatus?: ValidationStatus;
     isEditable?: boolean;
     onValidate?: () => void;
+    onValueChange?: (value: string) => void;
 }
 
 export function ValidationItem({ 
@@ -21,7 +22,8 @@ export function ValidationItem({
     value: initialValue, 
     initialStatus = 'idle',
     isEditable = true,
-    onValidate 
+    onValidate,
+    onValueChange,
 }: ValidationItemProps) {
     const [status, setStatus] = useState<ValidationStatus>(initialStatus);
     const [code, setCode] = useState('');
@@ -66,7 +68,12 @@ export function ValidationItem({
                     <Input 
                         className="h-8 text-sm w-auto flex-grow" 
                         value={currentValue} 
-                        onChange={(e) => setCurrentValue(e.target.value)} 
+                        onChange={(e) => {
+                            setCurrentValue(e.target.value);
+                            if (onValueChange) {
+                                onValueChange(e.target.value);
+                            }
+                        }} 
                     />
                 ) : (
                     <span className="text-sm">{currentValue}</span>

@@ -11,6 +11,24 @@ import Step5_SpecificDetails from '@/components/profile-setup/Step5_SpecificDeta
 import Step6_Review from '@/components/profile-setup/Step6_Review';
 import { useCorabo } from '@/contexts/CoraboContext';
 
+type FormData = {
+    username: string;
+    useUsername: boolean;
+    categories: string[];
+    primaryCategory: string | null;
+    email: string;
+    phone: string;
+    specialty: string;
+    hasPhysicalLocation: boolean;
+    location: string;
+    showExactLocation: boolean;
+    serviceRadius: number;
+    isOnlyDelivery: boolean;
+    website: string;
+    schedule: Record<string, { from: string, to: string, active: boolean }>;
+};
+
+
 const steps = [
   { id: 1, name: 'Tipo de Perfil' },
   { id: 2, name: 'Nombre de Usuario' },
@@ -20,21 +38,39 @@ const steps = [
   { id: 6, name: 'Revisión Final' },
 ];
 
+const initialSchedule = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'].reduce((acc, day) => {
+    acc[day] = { from: '09:00', to: '17:00', active: true };
+    return acc;
+}, {} as FormData['schedule']);
+['Sábado', 'Domingo'].forEach(day => {
+  initialSchedule[day] = { from: '09:00', to: '17:00', active: false };
+});
+
+
 export default function ProfileSetupPage() {
   const { currentUser } = useCorabo();
   const [currentStep, setCurrentStep] = useState(1);
   const [profileType, setProfileType] = useState(currentUser.type);
-  const [formData, setFormData] = useState({
-      username: currentUser.name,
+  const [formData, setFormData] = useState<FormData>({
+      username: currentUser.name || '',
+      useUsername: true,
       categories: [],
-      fullName: '',
-      email: '',
-      phone: '',
-      bio: '',
-      gallery: [],
-      schedule: {},
-      serviceArea: '',
+      primaryCategory: null,
+      email: currentUser.email || '',
+      phone: currentUser.phone || '',
+      specialty: '',
+      hasPhysicalLocation: true,
+      location: '',
+      showExactLocation: true,
+      serviceRadius: 10,
+      isOnlyDelivery: false,
+      website: '',
+      schedule: initialSchedule,
   });
+
+  const goToStep = (step: number) => {
+    setCurrentStep(step);
+  };
 
   const handleNext = () => {
     // For 'client', skip step 3 and 5
@@ -70,15 +106,15 @@ export default function ProfileSetupPage() {
       case 1:
         return <Step1_ProfileType onSelect={handleProfileTypeSelect} currentType={profileType} />;
       case 2:
-        return <Step2_Username onBack={handleBack} onNext={handleNext} />;
+        return <Step2_Username onBack={handleBack} onNext={handleNext} formData={formData} setFormData={setFormData} />;
       case 3:
-        return <Step3_Category onBack={handleBack} onNext={handleNext} />;
+        return <Step3_Category onBack={handleBack} onNext={handleNext} formData={formData} setFormData={setFormData} />;
       case 4:
-        return <Step4_GeneralDetails onBack={handleBack} onNext={handleNext} />;
+        return <Step4_GeneralDetails onBack={handleBack} onNext={handleNext} formData={formData} setFormData={setFormData} />;
       case 5:
-        return <Step5_SpecificDetails onBack={handleBack} onNext={handleNext} />;
+        return <Step5_SpecificDetails onBack={handleBack} onNext={handleNext} formData={formData} setFormData={setFormData} />;
       case 6:
-        return <Step6_Review onBack={handleBack} />;
+        return <Step6_Review onBack={handleBack} formData={formData} profileType={profileType} goToStep={goToStep} />;
       default:
         return <Step1_ProfileType onSelect={handleProfileTypeSelect} currentType={profileType} />;
     }

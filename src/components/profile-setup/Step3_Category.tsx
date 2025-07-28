@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -13,23 +13,30 @@ import { cn } from '@/lib/utils';
 interface Step3_CategoryProps {
   onBack: () => void;
   onNext: () => void;
+  formData: any;
+  setFormData: (data: any) => void;
 }
 
-const categories = [
-  { id: 'hogar', name: 'Hogar y Reparaciones', description: 'Plomería, electricidad, jardinería...' },
-  { id: 'tecnologia', name: 'Tecnología y Soporte', description: 'Reparación de PC, redes, diseño...' },
-  { id: 'automotriz', name: 'Automotriz y Repuestos', description: 'Mecánica, repuestos, latonería...' },
-  { id: 'alimentos', name: 'Alimentos y Restaurantes', description: 'Restaurantes, catering, mercados...' },
-  { id: 'salud', name: 'Salud y Bienestar', description: 'Fisioterapia, nutrición, entrenadores...' },
-  { id: 'educacion', name: 'Educación', description: 'Tutorías, clases, cursos...' },
-  { id: 'eventos', name: 'Eventos', description: 'Fotografía, catering, música...' },
-  { id: 'belleza', name: 'Belleza', description: 'Peluquería, maquillaje, spa...' },
-  { id: 'fletes', name: 'Fletes y Delivery', description: 'Mudanzas, entregas, transporte...' },
+const allCategories = [
+  { id: 'Hogar y Reparaciones', name: 'Hogar y Reparaciones', description: 'Plomería, electricidad, jardinería...' },
+  { id: 'Tecnología y Soporte', name: 'Tecnología y Soporte', description: 'Reparación de PC, redes, diseño...' },
+  { id: 'Automotriz y Repuestos', name: 'Automotriz y Repuestos', description: 'Mecánica, repuestos, latonería...' },
+  { id: 'Alimentos y Restaurantes', name: 'Alimentos y Restaurantes', description: 'Restaurantes, catering, mercados...' },
+  { id: 'Salud y Bienestar', name: 'Salud y Bienestar', description: 'Fisioterapia, nutrición, entrenadores...' },
+  { id: 'Educación', name: 'Educación', description: 'Tutorías, clases, cursos...' },
+  { id: 'Eventos', name: 'Eventos', description: 'Fotografía, catering, música...' },
+  { id: 'Belleza', name: 'Belleza', description: 'Peluquería, maquillaje, spa...' },
+  { id: 'Fletes y Delivery', name: 'Fletes y Delivery', description: 'Mudanzas, entregas, transporte...' },
 ];
 
-export default function Step3_Category({ onBack, onNext }: Step3_CategoryProps) {
-    const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-    const [primaryCategory, setPrimaryCategory] = useState<string | null>(null);
+export default function Step3_Category({ onBack, onNext, formData, setFormData }: Step3_CategoryProps) {
+    const [selectedCategories, setSelectedCategories] = useState<string[]>(formData.categories);
+    const [primaryCategory, setPrimaryCategory] = useState<string | null>(formData.primaryCategory);
+
+    useEffect(() => {
+        setFormData({ ...formData, categories: selectedCategories, primaryCategory });
+    }, [selectedCategories, primaryCategory]);
+
 
     const handleCategoryToggle = (categoryId: string) => {
         const newSelected = selectedCategories.includes(categoryId)
@@ -52,7 +59,7 @@ export default function Step3_Category({ onBack, onNext }: Step3_CategoryProps) 
       <div className="space-y-4">
         <p className="text-sm text-muted-foreground">Selecciona una o más áreas de especialización. Si seleccionas varias, puedes indicar cuál es tu categoría principal.</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {categories.map((category) => (
+            {allCategories.map((category) => (
                 <div key={category.id} className="flex items-start space-x-3 rounded-md border p-4 transition-colors hover:bg-muted/50">
                     <Checkbox
                         id={category.id}
@@ -85,7 +92,7 @@ export default function Step3_Category({ onBack, onNext }: Step3_CategoryProps) 
           <Label>Indica tu categoría principal</Label>
           <div className="flex flex-wrap gap-2">
             {selectedCategories.map((catId) => {
-              const category = categories.find(c => c.id === catId);
+              const category = allCategories.find(c => c.id === catId);
               return (
                 <Button 
                     key={catId}

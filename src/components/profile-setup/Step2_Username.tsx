@@ -11,17 +11,24 @@ import { Switch } from '../ui/switch';
 interface Step2_UsernameProps {
   onBack: () => void;
   onNext: () => void;
+  formData: any;
+  setFormData: (data: any) => void;
 }
 
 type ValidationState = 'idle' | 'checking' | 'available' | 'unavailable' | 'invalid';
 
-export default function Step2_Username({ onBack, onNext }: Step2_UsernameProps) {
-  const [username, setUsername] = useState('');
+export default function Step2_Username({ onBack, onNext, formData, setFormData }: Step2_UsernameProps) {
+  const [username, setUsername] = useState(formData.username);
+  const [useUsername, setUseUsername] = useState(formData.useUsername);
   const [validationState, setValidationState] = useState<ValidationState>('idle');
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [error, setError] = useState('');
 
   const forbiddenWords = ['admin', 'root', 'support', 'terrorist', 'crime']; // Simplified list
+
+  useEffect(() => {
+    setFormData({ ...formData, username, useUsername });
+  }, [username, useUsername]);
 
   useEffect(() => {
     if (!username) {
@@ -90,7 +97,7 @@ export default function Step2_Username({ onBack, onNext }: Step2_UsernameProps) 
       </div>
 
        <div className="flex items-center space-x-2 pt-2">
-            <Switch id="show-username" defaultChecked />
+            <Switch id="show-username" checked={useUsername} onCheckedChange={setUseUsername}/>
             <Label htmlFor="show-username" className="text-muted-foreground">
                 Usar este nombre en mi perfil público.
                 <span className="block text-xs">Si se desactiva, se mostrará tu nombre completo en su lugar.</span>
