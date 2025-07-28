@@ -20,7 +20,7 @@ export default function ProfileFooter() {
     { href: '/videos', icon: PlaySquare, label: 'Videos' },
     { href: '#upload', icon: Upload, label: 'Añadir', isCentral: true, action: () => setIsUploadOpen(true) },
     { href: '/messages', icon: MessageSquare, label: 'Mensajes' },
-    { href: '/settings', icon: Settings, label: 'Ajustes' },
+    { href: '/profile-setup', icon: Settings, label: 'Ajustes' },
   ];
 
   return (
