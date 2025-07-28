@@ -25,6 +25,7 @@ interface CoraboState {
   removeFromCart: (productId: string) => void;
   getCartTotal: () => number;
   requestService: (service: Service) => void;
+  requestQuoteFromGroup: (serviceName: string, items: string[]) => void;
   sendQuote: (transactionId: string, quote: { breakdown: string; total: number }) => void;
   acceptQuote: (transactionId: string) => void;
   startDispute: (transactionId: string) => void;
@@ -174,6 +175,32 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     toast({ title: "Servicio Solicitado", description: `Has solicitado el servicio: ${service.name}` });
   };
   
+  const requestQuoteFromGroup = (serviceName: string, items: string[]) => {
+     // For demo, we'll just send it to the first provider found
+     const provider = users.find(u => u.type === 'provider');
+     if (!provider) {
+        toast({ variant: 'destructive', title: "Error", description: "No se encontraron proveedores para enviar la cotización." });
+        return;
+     }
+
+     const newTx: Transaction = {
+         id: `txn-${Date.now()}`,
+         type: 'Servicio',
+         status: 'Solicitud Pendiente',
+         date: new Date().toISOString(),
+         amount: 0,
+         clientId: currentUser.id,
+         providerId: provider.id, // In a real app, this would be a group or multiple providers
+         details: {
+             serviceName: serviceName,
+             quoteItems: items,
+             delivery: false,
+             deliveryCost: 0
+         },
+     };
+     setTransactions(prev => [newTx, ...prev]);
+  }
+
   const sendQuote = (transactionId: string, quote: { breakdown: string; total: number }) => {
     updateTransaction(transactionId, tx => ({
         status: 'Cotización Recibida',
@@ -291,6 +318,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     contacts,
     isGpsActive,
     feedView,
+    setFeedView,
     switchUser,
     addToCart,
     updateCartQuantity,
@@ -298,6 +326,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     getCartTotal,
     checkout,
     requestService,
+    requestQuoteFromGroup,
     sendQuote,
     acceptQuote,
     startDispute,

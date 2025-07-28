@@ -8,10 +8,12 @@ import { Home, PlaySquare, Upload, MessageSquare, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { UploadDialog } from './UploadDialog';
+import { QuoteRequestDialog } from './QuoteRequestDialog';
 
 export default function ProfileFooter() {
   const pathname = usePathname();
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [isQuoteRequestOpen, setIsQuoteRequestOpen] = useState(false);
 
   const navItems = [
     { href: '/', icon: Home, label: 'Inicio' },
@@ -48,6 +50,7 @@ export default function ProfileFooter() {
                     <Button
                       key={item.href}
                       variant="ghost"
+                      onClick={() => setIsQuoteRequestOpen(true)}
                       className={cn(
                         "flex-col h-auto p-1 text-muted-foreground hover:text-primary",
                         isActive && "text-primary"
@@ -75,6 +78,7 @@ export default function ProfileFooter() {
         </div>
       </footer>
        <UploadDialog isOpen={isUploadOpen} onOpenChange={setIsUploadOpen} />
+       <QuoteRequestDialog isOpen={isQuoteRequestOpen} onOpenChange={setIsQuoteRequestOpen} />
     </>
   );
 }

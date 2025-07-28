@@ -78,9 +78,8 @@ export type Transaction = {
       breakdown: string;
       total: number;
     };
+    quoteItems?: string[];
     delivery: boolean;
     deliveryCost: number;
   };
 };
-
-    
