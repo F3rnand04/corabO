@@ -22,6 +22,7 @@ const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sába
 
 export default function Step5_SpecificDetails({ onBack, onNext }: Step5_SpecificDetailsProps) {
   const [specialty, setSpecialty] = useState('');
+  const [location, setLocation] = useState('');
   const [serviceRadius, setServiceRadius] = useState(10);
   const [hasPhysicalLocation, setHasPhysicalLocation] = useState(true);
   const [showExactLocation, setShowExactLocation] = useState(true);
@@ -29,6 +30,11 @@ export default function Step5_SpecificDetails({ onBack, onNext }: Step5_Specific
 
   const MAX_RADIUS_FREE = 10;
   const isOverFreeRadius = serviceRadius > MAX_RADIUS_FREE;
+  
+  const handleGpsClick = () => {
+    // Simulate getting GPS location and setting a Google Maps link
+    setLocation('https://maps.app.goo.gl/h2bYMPEgneUp9i7J8');
+  };
 
   return (
     <div className="space-y-8">
@@ -65,9 +71,17 @@ export default function Step5_SpecificDetails({ onBack, onNext }: Step5_Specific
            </div>
 
             <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input id="location" placeholder="Ingresa la dirección de tu negocio (Obligatorio)" className="pl-10"/>
-                 {/* Aca podriamos agregar un boton para buscar en el mapa */}
+                <MapPin 
+                  className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground cursor-pointer hover:text-primary transition-colors"
+                  onClick={handleGpsClick}
+                />
+                <Input 
+                  id="location" 
+                  placeholder="Ingresa la dirección de tu negocio (Obligatorio)" 
+                  className="pl-10"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                />
             </div>
 
             <div className="flex items-center justify-between">
