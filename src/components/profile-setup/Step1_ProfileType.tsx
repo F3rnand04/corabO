@@ -3,7 +3,6 @@
 
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { User, Briefcase, Building } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
@@ -20,29 +19,25 @@ const profileTypes = [
 ];
 
 export default function Step1_ProfileType({ onSelect, currentType }: Step1_ProfileTypeProps) {
-  const [selectedType, setSelectedType] = useState('');
   const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const [nextType, setNextType] = useState('');
+  const [nextType, setNextType] = useState<'client' | 'provider' | null>(null);
 
-  const handleSelection = (type: string) => {
-    const newTypeForBackend = type.startsWith('provider') ? 'provider' : 'client';
+  const handleSelection = (typeId: string) => {
+    const newTypeForBackend = typeId.startsWith('provider') ? 'provider' : 'client';
     
     if (currentType && newTypeForBackend !== currentType) {
-        setNextType(type);
+        setNextType(newTypeForBackend);
         setIsAlertOpen(true);
     } else {
-        setSelectedType(type);
+        onSelect(newTypeForBackend);
     }
   };
 
   const handleConfirmChange = () => {
-    setSelectedType(nextType);
+    if (nextType) {
+      onSelect(nextType);
+    }
     setIsAlertOpen(false);
-  }
-
-  const handleSubmit = () => {
-    const finalType = selectedType.startsWith('provider') ? 'provider' : 'client';
-    onSelect(finalType);
   }
 
   const getMappedCurrentType = () => {
@@ -50,8 +45,9 @@ export default function Step1_ProfileType({ onSelect, currentType }: Step1_Profi
       // For now, let's assume 'provider' maps to 'Servicio' for display.
       return currentType === 'client' ? 'client' : 'provider_service';
   }
+  
+  const isChangingToProvider = currentType === 'client' && nextType === 'provider';
 
-  const isChangingToProvider = currentType === 'client' && nextType.startsWith('provider');
 
   return (
     <div className="space-y-6">
@@ -63,7 +59,7 @@ export default function Step1_ProfileType({ onSelect, currentType }: Step1_Profi
             onClick={() => handleSelection(type.id)}
             className={cn(
               'cursor-pointer transition-all',
-              (selectedType === type.id || (!selectedType && getMappedCurrentType() === type.id)) 
+              (getMappedCurrentType() === type.id) 
               ? 'border-primary ring-2 ring-primary' 
               : 'hover:border-primary/50'
             )}
@@ -79,11 +75,6 @@ export default function Step1_ProfileType({ onSelect, currentType }: Step1_Profi
             </CardContent>
           </Card>
         ))}
-      </div>
-      <div className="flex justify-end">
-        <Button onClick={handleSubmit} disabled={!selectedType && !currentType}>
-            Continuar
-        </Button>
       </div>
 
        <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
