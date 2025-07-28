@@ -54,7 +54,7 @@ export function AdvancedQuoteDialog({ isOpen, onOpenChange }: AdvancedQuoteDialo
             <div className="p-4 border rounded-lg hover:border-primary transition-all">
                 <h3 className="font-semibold">Llega a más de 10 cotizaciones personalizadas</h3>
                 <p className="text-sm text-muted-foreground mt-1">Tu solicitud será destacada y enviada a proveedores premium y verificados.</p>
-                <p className="text-lg font-bold my-2">$3.00 - $20.00</p>
+                <p className="text-lg font-bold my-2">$3.00 - $5.00</p>
                 <Button className="w-full" onClick={handlePayPerQuote}>
                     Pagar y Continuar <ArrowRight className="ml-2 h-4 w-4"/>
                 </Button>
