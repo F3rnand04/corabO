@@ -101,7 +101,7 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, image, isOwnerView = 
                              <p className="text-sm text-muted-foreground text-center py-4">No hay comentarios aún. ¡Sé el primero!</p>
                          )}
                     </div>
-                     {!isOwnerView && (
+                     {!isOwnerView && currentUser.type === 'client' && (
                           <div className="mt-6 flex items-center gap-2">
                               <Input placeholder="Añade un comentario..." />
                               <Button>Comentar</Button>
