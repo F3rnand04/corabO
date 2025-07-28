@@ -39,28 +39,26 @@ export default function ContactsPage() {
       <div className="container py-6 px-4">
         {/* User Info Section */}
         <div className="bg-background p-4 rounded-xl shadow-sm mb-6">
-            <div className='flex justify-between items-start'>
-                <div className="flex items-center gap-4">
-                    <Avatar className="w-16 h-16 border-2 border-muted">
-                        <AvatarImage src={currentUser.profileImage} alt={currentUser.name} />
-                        <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                        <p className="font-bold">ID corabO</p>
-                        <div className="flex items-center gap-2">
-                           <p className="font-mono text-sm">ABC123456</p>
-                           <Button variant="ghost" size="icon" className="w-6 h-6">
-                                <Copy className="w-4 h-4 text-muted-foreground" />
-                           </Button>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <p className="text-sm text-muted-foreground">Correo: uruario@gmail.com</p>
-                            <p className="text-sm font-semibold text-green-600">Validado</p>
-                        </div>
-                         <div className="flex items-center gap-2">
-                            <p className="text-sm text-muted-foreground">teléfono: 0412 12345678</p>
-                            <p className="text-sm font-semibold text-red-500">Validar</p>
-                        </div>
+            <div className='flex items-center gap-4'>
+                <Avatar className="w-16 h-16 border-2 border-muted shrink-0">
+                    <AvatarImage src={currentUser.profileImage} alt={currentUser.name} />
+                    <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <div className="w-full">
+                    <p className="font-bold">ID corabO</p>
+                    <div className="flex items-center gap-2">
+                       <p className="font-mono text-sm">ABC123456</p>
+                       <Button variant="ghost" size="icon" className="w-6 h-6">
+                            <Copy className="w-4 h-4 text-muted-foreground" />
+                       </Button>
+                    </div>
+                    <div className="flex items-center justify-between mt-1">
+                        <p className="text-sm text-muted-foreground">Correo: uruario@gmail.com</p>
+                        <p className="text-sm font-semibold text-green-600">Validado</p>
+                    </div>
+                     <div className="flex items-center justify-between mt-1">
+                        <p className="text-sm text-muted-foreground">teléfono: 0412 12345678</p>
+                        <p className="text-sm font-semibold text-red-500">Validar</p>
                     </div>
                 </div>
             </div>
