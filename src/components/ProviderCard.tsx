@@ -8,9 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import type { User as UserType } from "@/lib/types";
-import { Star, MapPin, Bookmark, Send, MessageCircle, CheckCircle } from "lucide-react";
+import { Star, MapPin, Bookmark, Send, MessageCircle, CheckCircle, Flag } from "lucide-react";
 import Link from "next/link";
 import { useCorabo } from "@/contexts/CoraboContext";
+import { useState } from "react";
+import { ReportDialog } from "./ReportDialog";
+
 
 interface ProviderCardProps {
     provider: UserType;
@@ -18,6 +21,7 @@ interface ProviderCardProps {
 
 export function ProviderCard({ provider }: ProviderCardProps) {
     const { addContact, isGpsActive } = useCorabo();
+    const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
     const profileLink = provider.type === 'provider' ? `/companies/${provider.id}` : '#';
 
     const handleSaveContact = () => {
@@ -32,6 +36,7 @@ export function ProviderCard({ provider }: ProviderCardProps) {
     const specialty = provider.profileSetupData?.specialty || "Especialidad del Proveedor";
 
     return (
+        <>
         <Card className="rounded-2xl overflow-hidden shadow-md">
             <CardContent className="p-0">
                 <div className="p-3">
@@ -69,10 +74,20 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                     </div>
                 </div>
 
-                <div className="relative aspect-video w-full">
+                <div className="relative aspect-video w-full group">
                     <Image src="https://placehold.co/600x400.png" alt="Provider content" layout="fill" objectFit="cover" data-ai-hint="service person working" />
+                    
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="absolute top-2 left-2 z-10 text-white bg-black/20 hover:bg-black/40 rounded-full h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => setIsReportDialogOpen(true)}
+                        >
+                        <Flag className="w-4 h-4" />
+                    </Button>
+
                     {isPromotionActive && provider.promotion && (
-                        <Badge variant="destructive" className="absolute top-2 left-2 bg-red-500 text-white shadow-lg">{provider.promotion.text}</Badge>
+                        <Badge variant="destructive" className="absolute top-2 right-2 bg-red-500 text-white shadow-lg">{provider.promotion.text}</Badge>
                     )}
                     <div className="absolute bottom-2 right-2 flex flex-col items-end gap-2 text-white">
                         <div className="flex flex-col items-center">
@@ -105,5 +120,12 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                 </div>
             </CardContent>
         </Card>
+        <ReportDialog 
+            isOpen={isReportDialogOpen} 
+            onOpenChange={setIsReportDialogOpen} 
+            providerId={provider.id} 
+            publicationId="provider-img" 
+        />
+        </>
     )
 }
