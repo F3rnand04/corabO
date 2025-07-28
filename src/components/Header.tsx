@@ -57,20 +57,12 @@ export function Header() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {hasCompletedProfileSetup && (
-                  <>
-                    <Link href="/profile-setup" passHref>
-                      <DropdownMenuItem>
-                        <User className="mr-2 h-4 w-4" />
-                        <span>Resumen de Perfil</span>
-                      </DropdownMenuItem>
-                    </Link>
                     <Link href="/profile-setup" passHref>
                       <DropdownMenuItem>
                         <User className="mr-2 h-4 w-4" />
                         <span>Revisión de Perfil</span>
                       </DropdownMenuItem>
                     </Link>
-                  </>
                 )}
                 <DropdownMenuItem>Historial de Búsquedas</DropdownMenuItem>
                 <DropdownMenuItem>Modo Oscuro</DropdownMenuItem>
