@@ -33,10 +33,10 @@ export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogP
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Star className="text-yellow-500" />
-            Plan de Suscripción
+            Plan de Suscripción Verificado
           </DialogTitle>
           <DialogDescription>
-            Obtén la insignia de verificado y amplía tu alcance.
+            Obtén la insignia de verificado, amplía tu alcance y genera más confianza.
           </DialogDescription>
         </DialogHeader>
 
@@ -51,13 +51,25 @@ export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogP
         ) : (
             <div className="space-y-4 py-4">
                 <p>Conviértete en un miembro verificado de la comunidad Corabo y disfruta de beneficios exclusivos:</p>
-                <ul className="space-y-2 list-disc list-inside text-muted-foreground">
-                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-500"/> Insignia de perfil verificado.</li>
-                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-500"/> Mayor visibilidad en las búsquedas.</li>
-                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-500"/> Radio de acción ampliado sin límites.</li>
-                    <li className="flex items-center gap-2"><CheckCircle className="w-4 h-4 text-green-500"/> Acceso a soporte prioritario.</li>
+                <ul className="space-y-2 list-inside text-sm text-muted-foreground">
+                    <li className="flex items-start gap-3">
+                        <CheckCircle className="w-4 h-4 text-green-500 mt-1 shrink-0"/> 
+                        <span><span className="font-semibold text-foreground">Insignia de Perfil Verificado:</span> Aumenta la confianza de tus clientes potenciales.</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                        <CheckCircle className="w-4 h-4 text-green-500 mt-1 shrink-0"/> 
+                         <span><span className="font-semibold text-foreground">Mayor Visibilidad:</span> Aparece en más resultados de búsqueda.</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                        <CheckCircle className="w-4 h-4 text-green-500 mt-1 shrink-0"/>
+                         <span><span className="font-semibold text-foreground">Alcance sin Límites:</span> Ofrece tus servicios o busca sin restricciones de distancia.</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                        <CheckCircle className="w-4 h-4 text-green-500 mt-1 shrink-0"/>
+                         <span><span className="font-semibold text-foreground">Soporte Prioritario:</span> Recibe ayuda más rápido cuando la necesites.</span>
+                    </li>
                 </ul>
-                <p className="font-bold text-center text-lg">Precio: $9.99 / mes</p>
+                <p className="font-bold text-center text-lg pt-2">Precio: $9.99 / mes</p>
             </div>
         )}
 
