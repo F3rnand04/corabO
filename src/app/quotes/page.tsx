@@ -17,6 +17,13 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 function QuotesHeader() {
   const router = useRouter();
@@ -39,6 +46,15 @@ function QuotesHeader() {
   );
 }
 
+const serviceGroups = [
+    { name: 'Hogar y Reparaciones' },
+    { name: 'Tecnología y Soporte' },
+    { name: 'Salud y Bienestar' },
+    { name: 'Educación y Capacitación' },
+    { name: 'Eventos y Entretenimiento' },
+    { name: 'Belleza y Cuidado Personal' },
+];
+
 export default function QuotesPage() {
   return (
     <>
@@ -47,6 +63,26 @@ export default function QuotesPage() {
         <div className="mx-auto max-w-2xl">
           <Card className="shadow-lg">
             <CardContent className="p-6 space-y-6">
+              <div className="flex items-center gap-2">
+                 <Select>
+                    <SelectTrigger className="w-[150px]">
+                      <Users className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="GRUPOS" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {serviceGroups.map((group) => (
+                        <SelectItem key={group.name} value={group.name}>{group.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                 <div className="relative flex-grow">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input placeholder="Buscar en Grupos..." className="pl-10" />
+                 </div>
+              </div>
+              
+              <Separator />
+
               <div className="space-y-2">
                 <Label htmlFor="needs" className="text-base font-semibold">
                   QUÉ NECESITAS:
