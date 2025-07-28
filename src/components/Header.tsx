@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MapPin, FileText, Wallet, Menu, Search, LogOut } from "lucide-react";
+import { MapPin, FileText, Wallet, Menu, Search, LogOut, User } from "lucide-react";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -17,8 +17,10 @@ import {
 import { cn } from "@/lib/utils";
 
 export function Header() {
-  const { searchQuery, setSearchQuery, feedView, setFeedView } = useCorabo();
+  const { searchQuery, setSearchQuery, feedView, setFeedView, currentUser } = useCorabo();
   const router = useRouter();
+  
+  const hasCompletedProfileSetup = !!currentUser?.profileSetupData?.specialty;
 
   return (
     <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm sticky top-0 z-40">
@@ -54,6 +56,14 @@ export function Header() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                {hasCompletedProfileSetup && (
+                  <Link href="/profile-setup" passHref>
+                    <DropdownMenuItem>
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Resumen de Perfil</span>
+                    </DropdownMenuItem>
+                  </Link>
+                )}
                 <DropdownMenuItem>Historial de Búsquedas</DropdownMenuItem>
                 <DropdownMenuItem>Modo Oscuro</DropdownMenuItem>
                 <DropdownMenuItem>Políticas de la Empresa</DropdownMenuItem>
