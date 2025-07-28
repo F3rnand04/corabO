@@ -13,29 +13,28 @@ import {
   Upload,
   PlusCircle,
   Users,
+  ChevronLeft,
+  AlertCircle,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 function QuotesHeader() {
+  const router = useRouter();
   return (
     <header className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container px-4 sm:px-6">
         <div className="flex h-16 items-center justify-between">
+          <Button variant="ghost" size="icon" onClick={() => router.back()}>
+            <ChevronLeft className="h-6 w-6" />
+          </Button>
           <div className="flex items-center gap-2">
-            <FileText className="h-6 w-6 text-muted-foreground" />
-            <p className="text-xs text-muted-foreground font-semibold">Cotizar</p>
+            <p className="font-semibold">Solicitar Cotización</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="secondary" className="rounded-full">
-              <Users className="mr-2 h-4 w-4" />
-              Grupo
-            </Button>
-            <Button variant="ghost" size="icon">
-              <Search className="h-5 w-5 text-muted-foreground" />
-            </Button>
-          </div>
+          <Button variant="ghost" size="icon">
+            <AlertCircle className="h-6 w-6 text-muted-foreground" />
+          </Button>
         </div>
       </div>
-      <Separator />
     </header>
   );
 }
