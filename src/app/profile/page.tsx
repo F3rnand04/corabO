@@ -15,11 +15,13 @@ import { useToast } from '@/hooks/use-toast';
 import { useCorabo } from '@/contexts/CoraboContext';
 import type { GalleryImage } from '@/lib/types';
 import ProfileFooter from '@/components/ProfileFooter';
+import { useRouter } from 'next/navigation';
 
 
 export default function ProfilePage() {
   const { toast } = useToast();
-  const { currentUser, updateUserProfileImage, removeGalleryImage } = useCorabo();
+  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, isGpsActive } = useCorabo();
+  const router = useRouter();
   
   const [gallery, setGallery] = useState<GalleryImage[]>(currentUser.gallery || []);
 
@@ -233,7 +235,9 @@ export default function ProfilePage() {
             <div className="flex items-center gap-2">
                 <Button variant="ghost" size="icon"><Calendar className="w-5 h-5 text-muted-foreground" /></Button>
                 <Button variant="ghost" size="icon"><Wallet className="w-5 h-5 text-muted-foreground" /></Button>
-                <Button variant="ghost" size="icon"><MapPin className="w-5 h-5 text-green-500" /></Button>
+                <Button variant="ghost" size="icon" onClick={toggleGps} onDoubleClick={() => router.push('/map')}>
+                    <MapPin className={cn("w-5 h-5 text-muted-foreground", isGpsActive && "text-green-500")} />
+                </Button>
             </div>
           </div>
 
@@ -336,8 +340,8 @@ export default function ProfilePage() {
               <div className="flex justify-around font-semibold text-center border-b">
                 <div
                   className={cn(
-                    "flex-1 p-3",
-                    !isProvider ? "cursor-not-allowed text-muted-foreground/50" : "cursor-pointer",
+                    "flex-1 p-3 cursor-pointer",
+                    !isProvider ? "cursor-not-allowed text-muted-foreground/50" : "",
                     isPromotionActive && isProvider
                         ? "text-green-600 border-b-2 border-green-600" 
                         : isProvider 
