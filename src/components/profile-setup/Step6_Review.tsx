@@ -1,18 +1,23 @@
 
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Separator } from "../ui/separator";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { Badge } from "../ui/badge";
-import { CheckCircle, Edit, Globe, MapPin, Tag, UserCircle, XCircle } from "lucide-react";
+import { CheckCircle, Edit, Globe, MapPin, Tag, UserCircle, XCircle, AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { Slider } from '../ui/slider';
+import { cn } from '@/lib/utils';
+import { Label } from '../ui/label';
 
 interface Step6_ReviewProps {
   onBack: () => void;
   formData: any;
+  setFormData: (data: any) => void;
   profileType: 'client' | 'provider';
   goToStep: (step: number) => void;
 }
@@ -29,10 +34,24 @@ const allCategories = [
   { id: 'Fletes y Delivery', name: 'Fletes y Delivery' },
 ];
 
-export default function Step6_Review({ onBack, formData, profileType, goToStep }: Step6_ReviewProps) {
+const MAX_RADIUS_FREE = 10;
+
+
+export default function Step6_Review({ onBack, formData, setFormData, profileType, goToStep }: Step6_ReviewProps) {
   const { currentUser, updateFullProfile } = useCorabo();
   const router = useRouter();
   const { toast } = useToast();
+  const [serviceRadius, setServiceRadius] = useState(formData.serviceRadius || 10);
+  
+  useEffect(() => {
+    // Sync local state with formData from props
+    setServiceRadius(formData.serviceRadius || 10);
+  }, [formData.serviceRadius]);
+
+  useEffect(() => {
+    // Update parent formData when local slider changes
+    setFormData({ ...formData, serviceRadius });
+  }, [serviceRadius, setFormData]);
 
   const isProvider = profileType === 'provider';
   
@@ -46,14 +65,17 @@ export default function Step6_Review({ onBack, formData, profileType, goToStep }
       description: "Recuerda que datos como tu nombre de usuario y tipo de perfil solo pueden cambiarse dos veces al año para mantener la confianza en la comunidad."
     });
   }
+  
+  const isOverFreeRadius = serviceRadius > MAX_RADIUS_FREE;
 
-  const renderItem = (label: string, value: React.ReactNode, step: number) => (
-    <div className="flex justify-between items-start py-3">
-        <div>
+  const renderItem = (label: string, value: React.ReactNode, step: number, children?: React.ReactNode) => (
+    <div className="flex justify-between items-start py-4">
+        <div className="flex-grow pr-4">
             <p className="text-sm font-medium text-muted-foreground">{label}</p>
-            <div className="font-semibold text-foreground">{value}</div>
+            <div className="font-semibold text-foreground mt-1">{value}</div>
+            {children}
         </div>
-        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => goToStep(step)}>
+        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => goToStep(step)}>
             <Edit className="h-4 w-4"/>
         </Button>
     </div>
@@ -119,10 +141,38 @@ export default function Step6_Review({ onBack, formData, profileType, goToStep }
                             <MapPin className="w-4 h-4" />
                             {formData.location}
                         </p>
-                        <p>{formData.showExactLocation ? "Ubicación exacta visible" : `Cobertura de ${formData.serviceRadius}km`}</p>
+                         <p className="text-sm text-muted-foreground">{formData.showExactLocation ? "Ubicación exacta visible para clientes." : `Radio de cobertura de ${serviceRadius}km.`}</p>
                         {formData.website && <p className="flex items-center gap-2 text-blue-600"><Globe className="w-4 h-4"/>{formData.website}</p>}
                     </div>
-                ), 5)}
+                    ), 5,
+                    // Children for radius slider
+                    !formData.showExactLocation && (
+                        <div className="pt-4 mt-4 border-t">
+                            <div className="space-y-3 pt-2">
+                                <div className="flex justify-between items-center">
+                                    <Label htmlFor="service-radius">Ampliar radio de acción</Label>
+                                    <Badge variant={isOverFreeRadius ? "destructive" : "secondary"} className="font-mono">{serviceRadius} km</Badge>
+                                </div>
+                                <Slider
+                                    id="service-radius"
+                                    min={5}
+                                    max={100}
+                                    step={5}
+                                    value={[serviceRadius]}
+                                    onValueChange={(value) => setServiceRadius(value[0])}
+                                    className={cn(isOverFreeRadius && '[&_.bg-primary]:bg-destructive')}
+                                />
+                                {isOverFreeRadius && (
+                                    <div className="flex items-center justify-center gap-2 text-destructive text-xs p-2 bg-destructive/10 rounded-md">
+                                        <AlertCircle className="h-4 w-4" />
+                                        <span>Para ampliar el radio, necesitas un plan.</span>
+                                        <Button size="sm" className="h-7 text-xs" variant="destructive">Suscribir</Button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )
+                )}
                 </>
               )}
           </CardContent>
@@ -135,3 +185,5 @@ export default function Step6_Review({ onBack, formData, profileType, goToStep }
     </div>
   );
 }
+
+    

@@ -10,23 +10,7 @@ import Step4_GeneralDetails from '@/components/profile-setup/Step4_GeneralDetail
 import Step5_SpecificDetails from '@/components/profile-setup/Step5_SpecificDetails';
 import Step6_Review from '@/components/profile-setup/Step6_Review';
 import { useCorabo } from '@/contexts/CoraboContext';
-
-type FormData = {
-    username: string;
-    useUsername: boolean;
-    categories: string[];
-    primaryCategory: string | null;
-    email: string;
-    phone: string;
-    specialty: string;
-    hasPhysicalLocation: boolean;
-    location: string;
-    showExactLocation: boolean;
-    serviceRadius: number;
-    isOnlyDelivery: boolean;
-    website: string;
-    schedule: Record<string, { from: string, to: string, active: boolean }>;
-};
+import type { ProfileSetupData } from '@/lib/types';
 
 
 const steps = [
@@ -41,9 +25,11 @@ const steps = [
 const initialSchedule = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'].reduce((acc, day) => {
     acc[day] = { from: '09:00', to: '17:00', active: true };
     return acc;
-}, {} as FormData['schedule']);
+}, {} as ProfileSetupData['schedule']);
 ['Sábado', 'Domingo'].forEach(day => {
-  initialSchedule[day] = { from: '09:00', to: '17:00', active: false };
+  if(initialSchedule){
+    initialSchedule[day] = { from: '09:00', to: '17:00', active: false };
+  }
 });
 
 
@@ -51,7 +37,7 @@ export default function ProfileSetupPage() {
   const { currentUser } = useCorabo();
   const [currentStep, setCurrentStep] = useState(1);
   const [profileType, setProfileType] = useState(currentUser.type);
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<ProfileSetupData>({
       username: currentUser.name || '',
       useUsername: true,
       categories: [],
@@ -66,6 +52,7 @@ export default function ProfileSetupPage() {
       isOnlyDelivery: false,
       website: '',
       schedule: initialSchedule,
+      ...currentUser.profileSetupData,
   });
 
   const goToStep = (step: number) => {
@@ -114,7 +101,7 @@ export default function ProfileSetupPage() {
       case 5:
         return <Step5_SpecificDetails onBack={handleBack} onNext={handleNext} formData={formData} setFormData={setFormData} />;
       case 6:
-        return <Step6_Review onBack={handleBack} formData={formData} profileType={profileType} goToStep={goToStep} />;
+        return <Step6_Review onBack={handleBack} formData={formData} setFormData={setFormData} profileType={profileType} goToStep={goToStep} />;
       default:
         return <Step1_ProfileType onSelect={handleProfileTypeSelect} currentType={profileType} />;
     }
@@ -146,3 +133,5 @@ export default function ProfileSetupPage() {
     </main>
   );
 }
+
+    
