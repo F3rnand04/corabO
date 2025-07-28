@@ -3,9 +3,8 @@
 
 import { CategoryHub } from '@/components/CategoryHub';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useCorabo } from '@/contexts/CoraboContext';
-import { ChevronLeft, Search } from 'lucide-react';
+import { ChevronLeft, List } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function SearchPage() {
@@ -18,22 +17,31 @@ export default function SearchPage() {
         router.push('/');
     }
 
+    const handleShowAll = () => {
+        setSearchQuery('');
+        setFeedView('servicios'); // o 'empresas', dependiendo de la vista por defecto que prefieras
+        router.push('/');
+    }
+
     return (
         <>
             <header className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                 <div className="container px-4 sm:px-6">
                     <div className="flex h-16 items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                        <ChevronLeft className="h-6 w-6" />
-                    </Button>
-                    <div className="relative flex-grow">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                        <Input placeholder="Busca un servicio o producto..." className="pl-10 rounded-full" />
-                    </div>
+                        <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                            <ChevronLeft className="h-6 w-6" />
+                        </Button>
+                        <h2 className="text-xl font-bold">Explorar</h2>
                     </div>
                 </div>
             </header>
             <main className="container py-4">
+                <div className="mb-6">
+                    <Button variant="outline" className="w-full" onClick={handleShowAll}>
+                        <List className="mr-2 h-4 w-4" />
+                        Ver Todo (Feed Principal)
+                    </Button>
+                </div>
                 <CategoryHub onCategorySelect={handleCategorySelect} />
             </main>
         </>
