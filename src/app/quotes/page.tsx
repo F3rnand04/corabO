@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -21,6 +22,7 @@ import {
   XCircle,
   Package,
   Hand,
+  ChevronDown,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import {
@@ -42,6 +44,9 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { cn } from '@/lib/utils';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { AdvancedSearchOptions } from '@/components/AdvancedSearchOptions';
+
 
 function QuotesHeader() {
   const router = useRouter();
@@ -103,6 +108,7 @@ type QuoteFormValues = z.infer<typeof quoteSchema>;
 export default function QuotesPage() {
   const { toast } = useToast();
   const { requestQuoteFromGroup } = useCorabo();
+  const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
 
   const form = useForm<QuoteFormValues>({
     resolver: zodResolver(quoteSchema),
@@ -278,12 +284,18 @@ export default function QuotesPage() {
               </Form>
             </CardContent>
           </Card>
-          <div className="mt-6">
-            <Button variant="ghost" className="w-full justify-start">
-              <PlusCircle className="mr-2 h-5 w-5" />
-              Búsqueda Avanzada
-            </Button>
-          </div>
+          <Collapsible open={isAdvancedSearchOpen} onOpenChange={setIsAdvancedSearchOpen} className="mt-6">
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" className="w-full justify-start">
+                    <PlusCircle className="mr-2 h-5 w-5" />
+                    Búsqueda Avanzada
+                    <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform", isAdvancedSearchOpen && "rotate-180")} />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="py-2 animate-in fade-in-0 zoom-in-95">
+                <AdvancedSearchOptions />
+              </CollapsibleContent>
+            </Collapsible>
         </div>
       </main>
     </>
