@@ -37,6 +37,8 @@ interface CoraboState {
   updateUserProfileImage: (userId: string, imageUrl: string) => void;
   updateUserProfileAndGallery: (userId: string, newGalleryImage: GalleryImage) => void;
   removeGalleryImage: (userId: string, imageId: string) => void;
+  validateEmail: (userId: string) => void;
+  validatePhone: (userId: string) => void;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -248,57 +250,43 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     });
   };
   
-  const updateUserProfileImage = (userId: string, imageUrl: string) => {
+  const updateUser = (userId: string, updates: Partial<User> | ((user: User) => Partial<User>)) => {
     let updatedUser: User | undefined;
-    setUsers(prevUsers => 
-        prevUsers.map(u => {
-            if (u.id === userId) {
-                updatedUser = { ...u, profileImage: imageUrl };
-                return updatedUser;
-            }
-            return u;
-        })
-    );
+    const finalUpdates = typeof updates === 'function' ? updates(users.find(u => u.id === userId)!) : updates;
 
-    if (currentUser.id === userId && updatedUser) {
-        setCurrentUser(updatedUser);
-    }
-  };
-  
-  const updateUserProfileAndGallery = (userId: string, newGalleryImage: GalleryImage) => {
-    let updatedUser: User | undefined;
-    setUsers(prevUsers => 
-        prevUsers.map(u => {
-            if (u.id === userId) {
-                const updatedGallery = [{...newGalleryImage, id: newGalleryImage.src}, ...(u.gallery || [])];
-                updatedUser = { ...u, gallery: updatedGallery };
-                return updatedUser;
-            }
-            return u;
-        })
-    );
-
-    if (currentUser.id === userId && updatedUser) {
-        setCurrentUser(updatedUser);
-    }
-  };
-  
-  const removeGalleryImage = (userId: string, imageId: string) => {
-    let updatedUser: User | undefined;
     setUsers(prevUsers =>
       prevUsers.map(u => {
         if (u.id === userId) {
-          const updatedGallery = u.gallery?.filter(image => image.id !== imageId) || [];
-          updatedUser = { ...u, gallery: updatedGallery };
+          updatedUser = { ...u, ...finalUpdates };
           return updatedUser;
         }
         return u;
       })
     );
-
     if (currentUser.id === userId && updatedUser) {
-        setCurrentUser(updatedUser);
+      setCurrentUser(updatedUser);
     }
+    return updatedUser;
+  };
+
+  const updateUserProfileImage = (userId: string, imageUrl: string) => {
+    updateUser(userId, { profileImage: imageUrl });
+  };
+  
+  const updateUserProfileAndGallery = (userId: string, newGalleryImage: GalleryImage) => {
+    updateUser(userId, (user) => ({
+        gallery: [{...newGalleryImage, id: newGalleryImage.src}, ...(user.gallery || [])]
+    }));
+    toast({
+      title: "¡Publicación Exitosa!",
+      description: "Tu nueva imagen ya está en tu vitrina y tu perfil ha sido actualizado.",
+    });
+  };
+  
+  const removeGalleryImage = (userId: string, imageId: string) => {
+    updateUser(userId, (user) => ({
+        gallery: user.gallery?.filter(image => image.id !== imageId) || []
+    }));
 
     toast({
         title: "Publicación Eliminada",
@@ -306,6 +294,13 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const validateEmail = (userId: string) => {
+    updateUser(userId, { emailValidated: true });
+  }
+
+  const validatePhone = (userId: string) => {
+     updateUser(userId, { phoneValidated: true });
+  }
 
   const value = {
     currentUser,
@@ -337,6 +332,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     updateUserProfileImage,
     updateUserProfileAndGallery,
     removeGalleryImage,
+    validateEmail,
+    validatePhone,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;

@@ -30,7 +30,7 @@ function ContactsHeader() {
 
 
 export default function ContactsPage() {
-  const { currentUser, contacts, removeContact } = useCorabo();
+  const { currentUser, contacts, removeContact, validateEmail, validatePhone } = useCorabo();
 
   return (
     <>
@@ -57,13 +57,17 @@ export default function ContactsPage() {
              <div className="mt-4 space-y-2">
                 <ValidationItem
                     label="Correo:"
-                    value="uruario@gmail.com"
-                    initialStatus="validated"
+                    value={currentUser.email}
+                    initialStatus={currentUser.emailValidated ? 'validated' : 'idle'}
+                    onValidate={() => validateEmail(currentUser.id)}
+                    isEditable={false}
                 />
                 <ValidationItem
                     label="Teléfono:"
-                    value="0412 12345678"
-                    initialStatus="idle"
+                    value={currentUser.phone}
+                    initialStatus={currentUser.phoneValidated ? 'validated' : 'idle'}
+                    onValidate={() => validatePhone(currentUser.id)}
+                    isEditable={false}
                 />
             </div>
         </div>

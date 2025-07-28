@@ -21,6 +21,10 @@ export type User = {
   type: 'client' | 'provider';
   reputation: number;
   profileImage: string;
+  email: string;
+  phone: string;
+  emailValidated: boolean;
+  phoneValidated: boolean;
   verified?: boolean;
   promotion?: {
     text: string;

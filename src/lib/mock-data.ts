@@ -3,7 +3,7 @@
 import type { User, Product, Service, Transaction } from './types';
 
 export const users: User[] = [
-  { id: 'client1', name: 'Juan Cliente', type: 'client', reputation: 4.5, profileImage: `https://i.pravatar.cc/150?u=client1`, gallery: [] },
+  { id: 'client1', name: 'Juan Cliente', type: 'client', reputation: 4.5, profileImage: `https://i.pravatar.cc/150?u=client1`, email: 'juan.cliente@email.com', phone: '04121234567', emailValidated: true, phoneValidated: false, gallery: [] },
   { 
     id: 'provider1', 
     name: 'Tecno Soluciones S.A.', 
@@ -11,6 +11,10 @@ export const users: User[] = [
     reputation: 4.8, 
     verified: true,
     profileImage: `https://placehold.co/150x150.png`,
+    email: 'contacto@tecnosoluciones.com',
+    phone: '02129876543',
+    emailValidated: true,
+    phoneValidated: true,
     promotion: {
       text: 'HOY 10% OFF',
       expires: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(), // Expires in 12 hours
@@ -57,6 +61,10 @@ export const users: User[] = [
     type: 'provider', 
     reputation: 4.2 ,
     profileImage: `https://placehold.co/150x150.png`,
+    email: 'servicios@hogarfeliz.com',
+    phone: '04149876543',
+    emailValidated: true,
+    phoneValidated: false,
     gallery: [
       { 
         id: 'provider2-img1',
@@ -105,6 +113,10 @@ export const users: User[] = [
     reputation: 4.9, 
     verified: true,
     profileImage: `https://placehold.co/150x150.png`,
+    email: 'hola@disenocreativo.net',
+    phone: '04241112233',
+    emailValidated: true,
+    phoneValidated: true,
     gallery: [
       { 
         id: 'provider3-img1',
