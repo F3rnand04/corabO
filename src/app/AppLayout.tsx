@@ -11,13 +11,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isProfilePage = pathname === '/profile';
   const isCompanyProfilePage = pathname.startsWith('/companies/');
   const isVideosPage = pathname === '/videos';
-  const isSettingsPage = pathname === '/settings';
+  const isProfileSetupPage = pathname === '/profile-setup';
   const isQuotesPage = pathname === '/quotes';
   const isContactsPage = pathname === '/contacts';
   const isSearchPage = pathname === '/search';
 
-  const shouldShowMainHeader = !isProfilePage && !isCompanyProfilePage && !isVideosPage && !isSettingsPage && !isQuotesPage && !isContactsPage && !isSearchPage;
-  const shouldShowFooter = !isProfilePage && !isSettingsPage && !isQuotesPage && !isContactsPage && !isSearchPage;
+  const shouldShowMainHeader = !isProfilePage && !isCompanyProfilePage && !isVideosPage && !isProfileSetupPage && !isQuotesPage && !isContactsPage && !isSearchPage;
+  const shouldShowFooter = !isProfilePage && !isProfileSetupPage && !isQuotesPage && !isContactsPage && !isSearchPage;
   
   return (
     <div className="flex flex-col min-h-screen">
