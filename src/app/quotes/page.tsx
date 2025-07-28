@@ -53,7 +53,7 @@ function QuotesHeader() {
             <ChevronLeft className="h-6 w-6" />
           </Button>
           <div className="flex items-center gap-2">
-            <p className="font-semibold">Solicitar Cotización</p>
+            {/* Title removed as per user request */}
           </div>
           <Button variant="ghost" size="icon">
             <AlertCircle className="h-6 w-6 text-muted-foreground" />
@@ -142,27 +142,7 @@ export default function QuotesPage() {
             <CardContent className="p-6">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                   <div className="flex items-center gap-2">
-                     <Select>
-                        <SelectTrigger className="w-[150px]">
-                          <Users className="h-4 w-4 mr-2" />
-                          <SelectValue placeholder="GRUPOS" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {serviceGroups.map((group) => (
-                            <SelectItem key={group.name} value={group.name}>{group.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                     <div className="relative flex-grow">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                        <Input placeholder="Buscar servicio o producto..." className="pl-10" />
-                     </div>
-                  </div>
-              
-                  <Separator />
-
-                   <FormField
+                  <FormField
                     control={form.control}
                     name="type"
                     render={({ field }) => (
@@ -198,6 +178,26 @@ export default function QuotesPage() {
                         </FormItem>
                     )}
                   />
+                  
+                   <div className="flex items-center gap-2">
+                     <Select>
+                        <SelectTrigger className="w-[150px]">
+                          <Users className="h-4 w-4 mr-2" />
+                          <SelectValue placeholder="GRUPOS" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {serviceGroups.map((group) => (
+                            <SelectItem key={group.name} value={group.name}>{group.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                     <div className="relative flex-grow">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        <Input placeholder="Buscar servicio o producto..." className="pl-10" />
+                     </div>
+                  </div>
+              
+                  <Separator />
 
                   {quoteType === 'service' && (
                     <>
@@ -286,3 +286,4 @@ export default function QuotesPage() {
     </>
   );
 }
+
