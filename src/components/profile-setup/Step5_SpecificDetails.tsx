@@ -73,13 +73,13 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
         <Label htmlFor="specialty">Especialidad / Descripción corta</Label>
         <Textarea 
             id="specialty" 
-            placeholder="Ej: Expertos en cocina italiana tradicional." 
-            rows={3} 
-            maxLength={150}
+            placeholder="Ej: Expertos en cocina italiana." 
+            rows={2} 
+            maxLength={30}
             value={specialty}
             onChange={(e) => setSpecialty(e.target.value)}
         />
-        <p className="text-xs text-muted-foreground text-right">{specialty.length} / 150</p>
+        <p className="text-xs text-muted-foreground text-right">{specialty.length} / 30</p>
       </div>
 
        <div className="space-y-3">
