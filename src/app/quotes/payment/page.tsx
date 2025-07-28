@@ -4,7 +4,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, CheckCircle, CreditCard, ChevronLeft, Star, Zap, Smartphone, Landmark, AlertCircle, Plus, Minus } from 'lucide-react';
+import { Check, CheckCircle, CreditCard, ChevronLeft, Star, Zap, Smartphone, Landmark, AlertCircle, Plus, Minus, TrendingUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -46,6 +46,16 @@ export default function QuotePaymentPage() {
     };
 
     const bolivaresAmount = (amount * EXCHANGE_RATE).toFixed(2);
+    
+    const getBenefitMessage = () => {
+        if (amount <= 3) {
+            return "Recibe hasta **10 cotizaciones** de nuestra red de proveedores.";
+        }
+        if (amount === 4) {
+            return "Tu solicitud será **destacada** y recibirás hasta **13 cotizaciones**.";
+        }
+        return "Conviértete en **prioridad máxima**. Tu solicitud destacará y recibirás hasta **20 cotizaciones**.";
+    };
 
     return (
         <div className="bg-muted/30 min-h-screen">
@@ -63,7 +73,7 @@ export default function QuotePaymentPage() {
                 <div className="mx-auto max-w-md">
                     <Card className="shadow-lg">
                         <CardContent className="p-6">
-                            <div className="text-center space-y-4 py-8">
+                            <div className="text-center space-y-2 py-8">
                                 <div className="flex items-center justify-center gap-4">
                                      <Button variant="outline" size="icon" onClick={() => setAmount(Math.max(1, amount - 1))} className="rounded-full w-10 h-10">
                                         <Minus className="w-5 h-5"/>
@@ -74,6 +84,12 @@ export default function QuotePaymentPage() {
                                      </Button>
                                 </div>
                                 <p className="text-muted-foreground">Bs.: {bolivaresAmount}</p>
+                                <div className="text-center pt-4">
+                                    <p 
+                                        className="text-sm text-foreground/90 transition-all duration-300" 
+                                        dangerouslySetInnerHTML={{ __html: getBenefitMessage() }}
+                                    />
+                                </div>
                             </div>
 
                             <Separator />
