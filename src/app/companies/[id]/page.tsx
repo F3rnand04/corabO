@@ -47,7 +47,7 @@ export default function CompanyProfilePage() {
   
   const profileData = {
     name: provider.name,
-    specialty: "Especialidad de la Empresa",
+    specialty: provider.profileSetupData?.specialty || "Especialidad de la Empresa",
     rating: provider.reputation || 4.9,
     efficiency: "99.9%",
     otherStat: "00 | 05",
