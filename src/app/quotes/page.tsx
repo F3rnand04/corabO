@@ -89,7 +89,7 @@ export default function QuotesPage() {
                 </Label>
                 <Input
                   id="needs"
-                  placeholder="Ej: Título breve y claro de tu solicitud..."
+                  placeholder="Ej: Instalar una lámpara de techo"
                   className="text-base"
                 />
               </div>
@@ -103,7 +103,7 @@ export default function QuotesPage() {
                 </Label>
                 <Textarea
                   id="description"
-                  placeholder="Describe con detalle lo que necesitas. Incluye marcas, modelos, medidas, urgencia o cualquier otro dato que ayude a los proveedores a darte una cotización precisa."
+                  placeholder="La lámpara es de tipo colgante, el techo es de drywall y está a 3 metros de altura. Ya tengo la lámpara, solo necesito la instalación."
                   rows={6}
                   className="text-base"
                 />
