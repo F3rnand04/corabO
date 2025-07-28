@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Home, PlaySquare, Upload, MessageSquare, Settings } from 'lucide-react';
+import { Home, PlaySquare, Upload, MessageSquare, Settings, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { UploadDialog } from './UploadDialog';
@@ -20,7 +20,7 @@ export default function ProfileFooter() {
     { href: '/videos', icon: PlaySquare, label: 'Videos' },
     { href: '#upload', icon: Upload, label: 'Añadir', isCentral: true, action: () => setIsUploadOpen(true) },
     { href: '/messages', icon: MessageSquare, label: 'Mensajes' },
-    { href: '/settings', icon: Settings, label: 'Ajustes' },
+    { href: '#settings', icon: Settings, label: 'Ajustes', action: () => {} },
   ];
 
   return (
@@ -29,6 +29,20 @@ export default function ProfileFooter() {
         <div className="container h-16 flex justify-around items-center px-2">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
+
+            const buttonContent = (
+              <Button
+                key={item.href}
+                variant="ghost"
+                onClick={item.action}
+                className={cn(
+                  "flex-col h-auto p-1 text-muted-foreground hover:text-primary",
+                  isActive && "text-primary"
+                )}
+              >
+                <item.icon className="w-6 h-6" />
+              </Button>
+            );
 
             if (item.isCentral) {
               return (
@@ -45,22 +59,12 @@ export default function ProfileFooter() {
               );
             }
             
-            if (item.action) {
-                 return (
-                    <Button
-                      key={item.href}
-                      variant="ghost"
-                      onClick={item.action}
-                      className={cn(
-                        "flex-col h-auto p-1 text-muted-foreground hover:text-primary",
-                        isActive && "text-primary"
-                      )}
-                    >
-                      <item.icon className="w-6 h-6" />
-                    </Button>
-                )
+            // If it has an action but is not a link
+            if (item.action && item.href.startsWith('#')) {
+                 return buttonContent;
             }
 
+            // Default to a link
             return (
               <Link key={item.href} href={item.href} passHref>
                 <Button
