@@ -4,22 +4,20 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Home, PlaySquare, Upload, MessageSquare, Settings, FileText } from 'lucide-react';
+import { Home, PlaySquare, Upload, MessageSquare, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { UploadDialog } from './UploadDialog';
-import { QuoteRequestDialog } from './QuoteRequestDialog';
 
 export default function ProfileFooter() {
   const pathname = usePathname();
   const [isUploadOpen, setIsUploadOpen] = useState(false);
-  const [isQuoteRequestOpen, setIsQuoteRequestOpen] = useState(false);
 
   const navItems = [
     { href: '/', icon: Home, label: 'Inicio' },
     { href: '/videos', icon: PlaySquare, label: 'Videos' },
     { href: '#upload', icon: Upload, label: 'Añadir', isCentral: true, action: () => setIsUploadOpen(true) },
-    { href: '#cotizar', icon: FileText, label: 'Cotizar', action: () => setIsQuoteRequestOpen(true) },
+    { href: '/messages', icon: MessageSquare, label: 'Mensajes' },
     { href: '#settings', icon: Settings, label: 'Ajustes' },
   ];
 
@@ -47,17 +45,16 @@ export default function ProfileFooter() {
             
             if (item.action || item.href === '#settings') {
                  return (
-                    <div key={item.href}>
-                        <Button
-                            variant="ghost"
-                            onClick={item.action}
-                            className={cn(
-                                "flex-col h-auto p-1 text-muted-foreground hover:text-primary"
-                            )}
-                            >
-                            <item.icon className="w-6 h-6" />
-                        </Button>
-                    </div>
+                    <Button
+                        key={item.href}
+                        variant="ghost"
+                        onClick={item.action}
+                        className={cn(
+                            "flex-col h-auto p-1 text-muted-foreground hover:text-primary"
+                        )}
+                        >
+                        <item.icon className="w-6 h-6" />
+                    </Button>
                  );
             }
 
@@ -78,7 +75,6 @@ export default function ProfileFooter() {
         </div>
       </footer>
        <UploadDialog isOpen={isUploadOpen} onOpenChange={setIsUploadOpen} />
-       <QuoteRequestDialog isOpen={isQuoteRequestOpen} onOpenChange={setIsQuoteRequestOpen} />
     </>
   );
 }
