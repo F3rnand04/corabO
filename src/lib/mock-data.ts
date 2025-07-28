@@ -19,6 +19,18 @@ export const users: User[] = [
       text: 'HOY 10% OFF',
       expires: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(), // Expires in 12 hours
     },
+    profileSetupData: {
+      username: 'TecnoSoluciones',
+      useUsername: true,
+      categories: ['Tecnología y Soporte'],
+      primaryCategory: 'Tecnología y Soporte',
+      specialty: 'Expertos en soluciones tecnológicas integrales para empresas y soporte técnico especializado.',
+      hasPhysicalLocation: true,
+      location: 'Av. Principal de las Mercedes, Caracas',
+      showExactLocation: true,
+      serviceRadius: 10,
+      website: 'https://tecnosoluciones.com',
+    },
     gallery: [
       { 
         id: 'provider1-img1',
