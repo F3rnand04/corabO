@@ -50,13 +50,16 @@ export default function HomePage() {
   const getFilteredProviders = () => {
      const lowerCaseQuery = searchQuery.toLowerCase();
      
-     if (lowerCaseQuery.trim() === '') {
+     if (lowerCaseQuery.trim() === '' && feedView === 'empresas') {
         return providers;
     }
     
     return providers.filter(provider => {
-        const providerNameMatch = provider.name.toLowerCase().includes(lowerCaseQuery);
+        const providerName = provider.profileSetupData?.useUsername ? provider.profileSetupData.username : provider.name;
+        const providerNameMatch = providerName?.toLowerCase().includes(lowerCaseQuery);
         
+        const specialtyMatch = provider.profileSetupData?.specialty?.toLowerCase().includes(lowerCaseQuery);
+
         const productMatch = products.some(product => 
             product.providerId === provider.id && (
                 product.name.toLowerCase().includes(lowerCaseQuery) ||
@@ -71,7 +74,7 @@ export default function HomePage() {
             )
         );
 
-        return providerNameMatch || productMatch || serviceMatch;
+        return providerNameMatch || productMatch || serviceMatch || specialtyMatch;
     });
   }
 

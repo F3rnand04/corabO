@@ -26,26 +26,31 @@ export function ProviderCard({ provider }: ProviderCardProps) {
 
     const isPromotionActive = provider.promotion && new Date(provider.promotion.expires) > new Date();
 
+    const displayName = provider.profileSetupData?.useUsername 
+        ? provider.profileSetupData.username || provider.name 
+        : provider.name;
+    const specialty = provider.profileSetupData?.specialty || "Especialidad del Proveedor";
+
     return (
         <Card className="rounded-2xl overflow-hidden shadow-md">
             <CardContent className="p-0">
                 <div className="p-3">
                     <div className="flex items-start gap-3">
                         <Avatar className="w-12 h-12 border-2 border-primary">
-                             <AvatarImage src={provider.profileImage} alt={provider.name} />
-                             <AvatarFallback className="text-xs">{provider.name.charAt(0)}</AvatarFallback>
+                             <AvatarImage src={provider.profileImage} alt={displayName} />
+                             <AvatarFallback className="text-xs">{displayName.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div className="flex-grow">
                             <div className="flex justify-between items-start">
                                 <div className="flex items-center gap-2">
-                                    <p className="font-bold text-base">{provider.name}</p>
+                                    <p className="font-bold text-base">{displayName}</p>
                                     {provider.verified && <CheckCircle className="w-4 h-4 text-blue-500" />}
                                 </div>
                                 <Button variant="ghost" size="icon" className="shrink-0 text-muted-foreground hover:text-primary" onClick={handleSaveContact}>
                                     <Bookmark className="w-5 h-5" />
                                 </Button>
                             </div>
-                             <p className="text-sm text-muted-foreground">Especialidad del Proveedor</p>
+                             <p className="text-sm text-muted-foreground">{specialty}</p>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                                 <div className="flex items-center gap-1">
                                     <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
