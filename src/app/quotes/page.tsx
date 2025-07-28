@@ -89,7 +89,7 @@ export default function QuotesPage() {
                 </Label>
                 <Input
                   id="needs"
-                  placeholder="Ej: Repuesto para laptop, servicio de plomería..."
+                  placeholder="Ej: Título breve y claro de tu solicitud..."
                   className="text-base"
                 />
               </div>
@@ -103,7 +103,7 @@ export default function QuotesPage() {
                 </Label>
                 <Textarea
                   id="description"
-                  placeholder="Añade detalles, marcas, o la urgencia de tu solicitud..."
+                  placeholder="Describe con detalle lo que necesitas. Incluye marcas, modelos, medidas, urgencia o cualquier otro dato que ayude a los proveedores a darte una cotización precisa."
                   rows={6}
                   className="text-base"
                 />
