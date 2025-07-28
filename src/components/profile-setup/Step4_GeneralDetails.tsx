@@ -22,7 +22,7 @@ export default function Step4_GeneralDetails({ onBack, onNext }: Step4_GeneralDe
         <div className="space-y-4">
             <div className="p-4 bg-muted/50 rounded-lg border">
                 <p className="font-semibold text-lg">{currentUser.name}</p>
-                <p className="text-sm text-muted-foreground">Este es el nombre asociado a tu cuenta y no puede ser modificado.</p>
+                <p className="text-sm text-muted-foreground">Este es el nombre asociado a tu cuenta. Para cambios, contáctanos con una justificación y con gusto te ayudaremos.</p>
             </div>
 
             <ValidationItem
