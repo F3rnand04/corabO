@@ -19,6 +19,7 @@ const categories = [
   { id: 'hogar', name: 'Hogar y Reparaciones', description: 'Plomería, electricidad, jardinería...' },
   { id: 'tecnologia', name: 'Tecnología y Soporte', description: 'Reparación de PC, redes, diseño...' },
   { id: 'automotriz', name: 'Automotriz y Repuestos', description: 'Mecánica, repuestos, latonería...' },
+  { id: 'alimentos', name: 'Alimentos y Restaurantes', description: 'Restaurantes, catering, mercados...' },
   { id: 'salud', name: 'Salud y Bienestar', description: 'Fisioterapia, nutrición, entrenadores...' },
   { id: 'educacion', name: 'Educación', description: 'Tutorías, clases, cursos...' },
   { id: 'eventos', name: 'Eventos', description: 'Fotografía, catering, música...' },

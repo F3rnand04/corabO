@@ -68,6 +68,7 @@ const serviceGroups = [
     { name: 'Hogar y Reparaciones' },
     { name: 'Tecnología y Soporte' },
     { name: 'Automotriz y Repuestos' },
+    { name: 'Alimentos y Restaurantes' },
     { name: 'Fletes y Delivery' },
     { name: 'Salud y Bienestar' },
     { name: 'Educación y Capacitación' },

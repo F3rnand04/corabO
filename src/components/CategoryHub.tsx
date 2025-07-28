@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Home, Laptop, Heart, GraduationCap, PartyPopper, Scissors, Car, Truck } from 'lucide-react';
+import { Home, Laptop, Heart, GraduationCap, PartyPopper, Scissors, Car, Truck, UtensilsCrossed } from 'lucide-react';
 
 interface CategoryHubProps {
   onCategorySelect?: (categoryName: string) => void;
@@ -11,6 +11,7 @@ const categories = [
   { name: 'Hogar y Reparaciones', icon: Home },
   { name: 'Tecnología y Soporte', icon: Laptop },
   { name: 'Automotriz y Repuestos', icon: Car },
+  { name: 'Alimentos y Restaurantes', icon: UtensilsCrossed },
   { name: 'Salud y Bienestar', icon: Heart },
   { name: 'Educación', icon: GraduationCap },
   { name: 'Eventos', icon: PartyPopper },
