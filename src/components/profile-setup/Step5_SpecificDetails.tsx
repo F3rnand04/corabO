@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from '../ui/textarea';
-import { MapPin, Building, AlertCircle, Package, Wrench } from 'lucide-react';
+import { MapPin, Building, AlertCircle, Package, Hand } from 'lucide-react';
 import { Switch } from '../ui/switch';
 import { Slider } from '../ui/slider';
 import { Badge } from '../ui/badge';
@@ -87,7 +87,7 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
         <RadioGroup value={offerType} onValueChange={(value: 'product' | 'service') => setOfferType(value)} className="flex gap-4">
             <div className="flex items-center space-x-2">
                 <RadioGroupItem value="service" id="service" />
-                <Label htmlFor="service" className="flex items-center gap-2 font-normal cursor-pointer"><Wrench className="w-4 h-4"/> Servicios</Label>
+                <Label htmlFor="service" className="flex items-center gap-2 font-normal cursor-pointer"><Hand className="w-4 h-4"/> Servicios</Label>
             </div>
              <div className="flex items-center space-x-2">
                 <RadioGroupItem value="product" id="product" />

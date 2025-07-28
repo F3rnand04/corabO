@@ -20,7 +20,7 @@ import {
   AlertCircle,
   XCircle,
   Package,
-  Wrench,
+  Hand,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import {
@@ -173,7 +173,7 @@ export default function QuotesPage() {
                                         <FormControl>
                                             <RadioGroupItem value="service" id="service" />
                                         </FormControl>
-                                        <Label htmlFor="service" className="flex items-center gap-2 font-normal cursor-pointer"><Wrench className="w-4 h-4"/> Servicios</Label>
+                                        <Label htmlFor="service" className="flex items-center gap-2 font-normal cursor-pointer"><Hand className="w-4 h-4"/> Servicios</Label>
                                     </FormItem>
                                 </RadioGroup>
                             </FormControl>
