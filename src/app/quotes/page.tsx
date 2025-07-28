@@ -67,6 +67,7 @@ function QuotesHeader() {
 const serviceGroups = [
     { name: 'Hogar y Reparaciones' },
     { name: 'Tecnología y Soporte' },
+    { name: 'Automotriz y Repuestos' },
     { name: 'Salud y Bienestar' },
     { name: 'Educación y Capacitación' },
     { name: 'Eventos y Entretenimiento' },
@@ -286,4 +287,3 @@ export default function QuotesPage() {
     </>
   );
 }
-
