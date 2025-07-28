@@ -20,7 +20,7 @@ export default function ProfileFooter() {
     { href: '/videos', icon: PlaySquare, label: 'Videos' },
     { href: '#upload', icon: Upload, label: 'Añadir', isCentral: true, action: () => setIsUploadOpen(true) },
     { href: '#cotizar', icon: FileText, label: 'Cotizar', action: () => setIsQuoteRequestOpen(true) },
-    { href: '/settings', icon: Settings, label: 'Ajustes' },
+    { href: '#settings', icon: Settings, label: 'Ajustes' },
   ];
 
   return (
@@ -45,7 +45,7 @@ export default function ProfileFooter() {
               );
             }
             
-            if (item.action) {
+            if (item.action || item.href === '#settings') {
                  return (
                     <div key={item.href}>
                         <Button
