@@ -70,16 +70,28 @@ export default function QuotePaymentPage() {
     };
     
     const paymentData = {
-        'mobile': { bank: "Banco de Corabo", phone: "0412-1234567", rif: "J-12345678-9" },
-        'transfer': { bank: "Banco de Corabo", account: "0102-0123-4567-8901-2345", rif: "J-12345678-9", holder: "Corabo C.A." },
+        'mobile': { bank: "Banco de Corabo", phone: "0412-1234567", rif: "J-12345678-9", title: "Datos para Pago Móvil" },
+        'transfer': { bank: "Banco de Corabo", account: "0102-0123-4567-8901-2345", rif: "J-12345678-9", holder: "Corabo C.A.", title: "Datos para Transferencia" },
     }
     
     const selectedData = selectedPaymentMethod ? paymentData[selectedPaymentMethod as keyof typeof paymentData] : null;
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
-        toast({ title: 'Copiado', description: `${text} ha sido copiado.` });
+        toast({ title: 'Copiado', description: `'${text}' ha sido copiado.` });
     }
+
+    const copyAllToClipboard = () => {
+        if (!selectedData) return;
+        
+        const allDataString = Object.entries(selectedData)
+            .filter(([key]) => key !== 'title')
+            .map(([key, value]) => `${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}`)
+            .join('\n');
+            
+        navigator.clipboard.writeText(allDataString);
+        toast({ title: 'Copiado', description: `Todos los datos de pago han sido copiados.` });
+    };
 
     return (
         <div className="bg-muted/30 min-h-screen">
@@ -154,12 +166,21 @@ export default function QuotePaymentPage() {
                              <h3 className="font-semibold text-center">Completa tu pago y regístralo</h3>
                              {selectedData && (
                                  <div className="text-sm bg-background p-4 rounded-lg border space-y-2">
-                                     <p className="font-bold mb-2">Realiza el pago a los siguientes datos:</p>
-                                     <div className="flex justify-between items-center"><span>Banco:</span> <span className="font-mono">{selectedData.bank}</span></div>
-                                     { 'phone' in selectedData && <div className="flex justify-between items-center"><span>Teléfono:</span> <span className="font-mono">{selectedData.phone}</span></div> }
-                                     { 'account' in selectedData && <div className="flex justify-between items-center"><span>Cuenta:</span> <span className="font-mono">{selectedData.account}</span></div> }
-                                     { 'holder' in selectedData && <div className="flex justify-between items-center"><span>Titular:</span> <span className="font-mono">{selectedData.holder}</span></div> }
-                                     <div className="flex justify-between items-center"><span>RIF:</span> <span className="font-mono">{selectedData.rif}</span></div>
+                                     <p className="font-bold mb-2">{selectedData.title}</p>
+                                     {Object.entries(selectedData).filter(([key]) => key !== 'title').map(([key, value]) => (
+                                         <div key={key} className="flex justify-between items-center">
+                                            <span className="capitalize">{key}:</span>
+                                            <div className="flex items-center gap-2">
+                                              <span className="font-mono">{value}</span>
+                                              <Button variant="ghost" size="icon" className="w-6 h-6" onClick={() => copyToClipboard(value as string)}><Copy className="h-3 w-3"/></Button>
+                                            </div>
+                                         </div>
+                                     ))}
+                                     <Separator className="my-2"/>
+                                      <Button variant="outline" size="sm" className="w-full" onClick={copyAllToClipboard}>
+                                        <Copy className="mr-2 h-3 w-3"/>
+                                        Copiar todos los datos
+                                      </Button>
                                  </div>
                              )}
 
