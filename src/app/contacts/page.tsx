@@ -47,18 +47,22 @@ export default function ContactsPage() {
                     </Avatar>
                     <div>
                         <p className="font-bold">ID corabO</p>
-                        <p className="text-sm text-muted-foreground">Correo: uruario@gmail.com</p>
-                        <p className="text-sm text-muted-foreground">teléfono: 0412 12345678</p>
+                        <div className="flex items-center gap-2">
+                           <p className="font-mono text-sm">ABC123456</p>
+                           <Button variant="ghost" size="icon" className="w-6 h-6">
+                                <Copy className="w-4 h-4 text-muted-foreground" />
+                           </Button>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <p className="text-sm text-muted-foreground">Correo: uruario@gmail.com</p>
+                            <p className="text-sm font-semibold text-green-600">Validado</p>
+                        </div>
+                         <div className="flex items-center gap-2">
+                            <p className="text-sm text-muted-foreground">teléfono: 0412 12345678</p>
+                            <p className="text-sm font-semibold text-red-500">Validar</p>
+                        </div>
                     </div>
                 </div>
-                <Button variant="ghost" size="icon">
-                    <Copy className="w-5 h-5 text-muted-foreground" />
-                </Button>
-            </div>
-            <div className="text-right mt-2 space-y-1">
-                <p className="font-mono text-sm">ABC123456</p>
-                <p className="text-sm font-semibold text-green-600">Validado</p>
-                <p className="text-sm font-semibold text-red-500">Validar</p>
             </div>
         </div>
 
@@ -102,4 +106,3 @@ export default function ContactsPage() {
     </>
   );
 }
-
