@@ -4,29 +4,85 @@
 import { useCorabo } from "@/contexts/CoraboContext";
 import { ServiceCard } from "@/components/ServiceCard";
 import { ProviderCard } from "@/components/ProviderCard";
+import { ProductCard } from "@/components/ProductCard";
+import type { Service, User, Product } from "@/lib/types";
+
+type FeedItem = (Service & { type: 'service' }) | (Product & { type: 'product' });
 
 export default function HomePage() {
-  const { services, users, searchQuery, feedView } = useCorabo();
+  const { services, users, products, searchQuery, feedView } = useCorabo();
 
   const providers = users.filter(u => u.type === 'provider');
 
-  const filteredServices = services.filter(service => 
-    service.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    users.find(u => u.id === service.providerId)?.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const getFilteredItems = () => {
+    if (searchQuery.trim() === '') {
+        if (feedView === 'servicios') {
+            return services.map(s => ({ ...s, type: 'service' as const }));
+        }
+        return []; // No search query and in 'empresas' view, show only providers based on filter below
+    }
 
-  const filteredProviders = providers.filter(provider => 
-    provider.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+    const servicesWithProvider = services.map(service => {
+        const provider = users.find(u => u.id === service.providerId);
+        return { ...service, providerName: provider?.name.toLowerCase() || '' };
+    });
+
+    const lowerCaseQuery = searchQuery.toLowerCase();
+
+    const filteredServices = servicesWithProvider.filter(service =>
+      service.name.toLowerCase().includes(lowerCaseQuery) ||
+      service.providerName.includes(lowerCaseQuery)
+    );
+
+    const filteredProducts = products.filter(product =>
+      product.name.toLowerCase().includes(lowerCaseQuery) ||
+      product.description.toLowerCase().includes(lowerCaseQuery)
+    );
+    
+    const combinedFeed: FeedItem[] = [
+      ...filteredServices.map(s => ({ ...s, type: 'service' as const })),
+      ...filteredProducts.map(p => ({ ...p, type: 'product' as const }))
+    ];
+    
+    return combinedFeed;
+  };
+
+  const getFilteredProviders = () => {
+     if (searchQuery.trim() === '') {
+        return providers;
+    }
+    const lowerCaseQuery = searchQuery.toLowerCase();
+    
+    return providers.filter(provider => {
+        const providerNameMatch = provider.name.toLowerCase().includes(lowerCaseQuery);
+        
+        const productMatch = products.some(product => 
+            product.providerId === provider.id && product.name.toLowerCase().includes(lowerCaseQuery)
+        );
+
+        return providerNameMatch || productMatch;
+    });
+  }
+
+  const filteredItems = getFilteredItems();
+  const filteredProviders = getFilteredProviders();
 
   return (
     <main className="container py-4">
       <div className="space-y-4">
         {feedView === 'servicios' ? (
-          filteredServices.length > 0 ? (
-            filteredServices.map(service => <ServiceCard key={service.id} service={service} />)
+          filteredItems.length > 0 ? (
+            filteredItems.map(item => {
+              if (item.type === 'service') {
+                return <ServiceCard key={`service-${item.id}`} service={item} />;
+              }
+              if (item.type === 'product') {
+                return <ProductCard key={`product-${item.id}`} product={item} />;
+              }
+              return null;
+            })
           ) : (
-            <p className="text-center text-muted-foreground">No se encontraron servicios.</p>
+            <p className="text-center text-muted-foreground">No se encontraron servicios ni productos.</p>
           )
         ) : (
           filteredProviders.length > 0 ? (
