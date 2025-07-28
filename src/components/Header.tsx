@@ -20,7 +20,7 @@ export function Header() {
   const { searchQuery, setSearchQuery, feedView, setFeedView, currentUser } = useCorabo();
   const router = useRouter();
   
-  const hasCompletedProfileSetup = !!currentUser?.profileSetupData?.specialty;
+  const hasCompletedProfileSetup = !!currentUser?.profileSetupData;
 
   return (
     <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm sticky top-0 z-40">
