@@ -47,7 +47,7 @@ export function Header() {
             <Button variant="ghost" size="icon" onClick={() => router.push('/map')}>
               <MapPin className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => router.push('/quotes')}>
+            <Button variant="ghost" size="icon">
               <FileText className="h-5 w-5" />
             </Button>
             <Button variant="ghost" size="icon" onClick={() => router.push('/transactions')}>
