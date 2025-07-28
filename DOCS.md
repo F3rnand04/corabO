@@ -62,15 +62,33 @@ El `CoraboContext` es el corazón de la aplicación. Centraliza toda la lógica 
         3.  Establece `searchQuery` con el nombre de la categoría seleccionada.
         -   El resultado es que el feed principal muestra solo las empresas que pertenecen a ese grupo.
 
-### 4.3. Solicitud de Cotizaciones
+### 4.3. Solicitud de Cotizaciones (`src/app/quotes/page.tsx`)
 
--   **Página de Cotizaciones (`src/app/quotes/page.tsx`):**
-    -   Permite a los usuarios solicitar cotizaciones para **productos** o **servicios**.
-    -   Utiliza `react-hook-form` y `zod` para la gestión y validación del formulario.
-    -   **Formulario Dinámico:** La interfaz cambia según si el usuario selecciona "Producto" o "Servicio".
-        -   **Producto:** Permite añadir hasta 3 productos en campos de texto separados.
-        -   **Servicio:** Muestra campos para un título ("QUÉ NECESITAS") y una descripción detallada.
-    -   **Selección de Grupo:** El usuario puede seleccionar un grupo (ej: "Automotriz y Repuestos") para dirigir su solicitud.
+-   **Formulario Dinámico:** La interfaz permite a los usuarios cotizar **productos** o **servicios**. Utiliza `react-hook-form` y `zod` para la gestión y validación.
+-   **Mensaje de Éxito:** Al enviar el formulario, el usuario recibe una notificación de confirmación ("¡Felicidades! Recibirás hasta 3 cotizaciones personalizadas.").
+-   **Búsqueda Avanzada y Monetización (`4.3.1`):**
+
+#### 4.3.1. Flujo de Búsqueda Avanzada
+
+Este flujo está diseñado para ofrecer opciones premium a los usuarios, creando un embudo de conversión hacia el pago por uso o la suscripción.
+
+1.  **Componente `AdvancedSearchOptions.tsx`:**
+    -   En la página de cotizaciones, un botón desplegable de "Búsqueda Avanzada" revela opciones premium (ej: "Usuarios Verificados", "Mejor Reputación").
+    -   Estas opciones aparecen visualmente "bloqueadas", indicando su exclusividad.
+
+2.  **Diálogo de Oferta (`AdvancedQuoteDialog.tsx`):**
+    -   Al hacer clic en una opción bloqueada, se abre un diálogo modal.
+    -   Este diálogo presenta dos rutas al usuario con mensajes comerciales:
+        -   **Pago por Uso:** "Llega a más de 10 cotizaciones personalizadas" con un rango de precio dinámico (ej: $3.00 - $5.00). Al seleccionar esta opción, se redirige al usuario a la página de pago.
+        -   **Suscripción:** "O suscríbete y cotiza sin límites según tu nivel". Esta opción utiliza la función `subscribeUser` del `CoraboContext`.
+
+3.  **Página de Pago (`src/app/quotes/payment/page.tsx`):**
+    -   **Layout Aislado:** Esta página no muestra el `Header` ni el `Footer` principal para minimizar distracciones. Incluye su propia cabecera con un botón para volver atrás.
+    -   **Selector de Monto Interactivo:** El usuario puede ajustar el monto a pagar (ej: $3, $4, $5) con botones de `+` y `-`.
+    -   **Información Dinámica:** La interfaz muestra el monto equivalente en la moneda local (Bs.) y un mensaje comercial que detalla el beneficio de cada nivel de precio (ej: "Recibe hasta 10 cotizaciones").
+    -   **Selección de Método de Pago:** Al seleccionar un método ("Pago Móvil" o "Transferencia"), la interfaz se expande para mostrar los detalles del pago y un formulario para subir el comprobante.
+    -   **Funcionalidad de Copiado:** Se incluyen botones para copiar individualmente cada dato de pago (número de cuenta, RIF, etc.) y un botón para copiar todos los datos a la vez, mejorando la usabilidad.
+    -   **Carga de Comprobante:** El usuario puede seleccionar un archivo de imagen como comprobante. El botón final de "Confirmar Pago" solo se activa cuando se ha subido un archivo y se ha introducido una referencia.
 
 ### 4.4. Perfiles de Usuario y Empresa
 
@@ -78,6 +96,7 @@ El `CoraboContext` es el corazón de la aplicación. Centraliza toda la lógica 
     -   Muestra la información del `currentUser`.
     -   Permite al proveedor ver y gestionar su galería de publicaciones.
     -   El pie de página (`ProfileFooter`) es específico para esta vista y contiene un botón central para subir nuevas publicaciones (`UploadDialog`).
+    -   **Consistencia de UI:** El icono de GPS (`MapPin`) en esta página replica la funcionalidad del `Header`: un clic para activar/desactivar y doble clic para ir a la página del mapa.
 -   **Perfil de Empresa (`src/app/companies/[id]/page.tsx`):**
     -   Muestra el perfil público de un proveedor.
     -   Permite a los clientes ver la galería, la reputación y la información de contacto de la empresa.
@@ -88,4 +107,4 @@ El `CoraboContext` es el corazón de la aplicación. Centraliza toda la lógica 
 
 ## 5. Conclusión
 
-El prototipo actual tiene una base sólida y una lógica bien definida. El `CoraboContext` actúa eficazmente como un motor de estado central, y el flujo de navegación está optimizado para la búsqueda y conexión entre usuarios. Los futuros desarrollos deben seguir estos patrones para mantener la coherencia y la escalabilidad del proyecto.
+El prototipo actual tiene una base sólida y una lógica bien definida. El `CoraboContext` actúa eficazmente como un motor de estado central, y los flujos de usuario están optimizados para la búsqueda, conexión y monetización. Los futuros desarrollos deben seguir estos patrones para mantener la coherencia y la escalabilidad del proyecto.
