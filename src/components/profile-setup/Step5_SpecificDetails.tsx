@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from '../ui/textarea';
-import { UploadCloud, X, PlusCircle, Trash2 } from 'lucide-react';
+import { UploadCloud, Trash2, MapPin } from 'lucide-react';
 import { Switch } from '../ui/switch';
+import { Slider } from '../ui/slider';
+import { Badge } from '../ui/badge';
 
 interface Step5_SpecificDetailsProps {
   onBack: () => void;
@@ -20,6 +22,7 @@ const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sába
 export default function Step5_SpecificDetails({ onBack, onNext }: Step5_SpecificDetailsProps) {
   const [images, setImages] = useState<{ id: number; src: string; file: File }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [serviceRadius, setServiceRadius] = useState(30);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
@@ -73,6 +76,39 @@ export default function Step5_SpecificDetails({ onBack, onNext }: Step5_Specific
         </div>
       </div>
       
+       {/* Service Area */}
+      <div className="space-y-4">
+        <Label>Ubicación y Área de Servicio</Label>
+        <div className="space-y-3 rounded-md border p-4">
+            <div className="relative">
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input id="serviceArea" placeholder="Ej: Av. Principal, Local 5, Caracas" className="pl-10"/>
+            </div>
+            <div className="flex items-center justify-between">
+                 <Label htmlFor="show-exact-location" className="flex items-center gap-2">
+                    <Switch id="show-exact-location" />
+                    Mostrar ubicación exacta
+                 </Label>
+            </div>
+             <div className="space-y-2 pt-2">
+                <div className="flex justify-between items-center">
+                    <Label htmlFor="service-radius">Radio de servicio</Label>
+                    <Badge variant="outline" className="font-mono">{serviceRadius} km</Badge>
+                </div>
+                <Slider
+                    id="service-radius"
+                    min={5}
+                    max={100}
+                    step={5}
+                    value={[serviceRadius]}
+                    onValueChange={(value) => setServiceRadius(value[0])}
+                />
+                <p className="text-xs text-muted-foreground">Define el alcance de tu servicio. Los usuarios suscritos pueden acceder a un rango mayor.</p>
+            </div>
+        </div>
+      </div>
+
+
       {/* Schedule */}
       <div className="space-y-4">
         <Label>Horarios de Atención</Label>
@@ -91,12 +127,6 @@ export default function Step5_SpecificDetails({ onBack, onNext }: Step5_Specific
                  </div>
             ))}
         </div>
-      </div>
-
-       {/* Service Area */}
-      <div className="space-y-2">
-        <Label htmlFor="serviceArea">Área de Servicio</Label>
-        <Input id="serviceArea" placeholder="Ej: Caracas, Distrito Capital" />
       </div>
 
        {/* Social Media */}
