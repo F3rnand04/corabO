@@ -68,7 +68,7 @@ export function AdvancedQuoteDialog({ isOpen, onOpenChange }: AdvancedQuoteDialo
 
             {/* Option 2: Subscribe */}
             <div className="p-4 border rounded-lg hover:border-primary transition-all">
-                <h3 className="font-semibold">Suscríbete y cotiza sin límites</h3>
+                <h3 className="font-semibold">Suscríbete y cotiza sin límites según tu nivel</h3>
                 <p className="text-sm text-muted-foreground mt-1">Disfruta de búsquedas avanzadas ilimitadas, insignia de verificado y más.</p>
                 <Button className="w-full mt-4" variant="secondary" onClick={handleSubscribe}>
                     <Star className="mr-2 h-4 w-4"/>
