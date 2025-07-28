@@ -136,8 +136,8 @@ export default function QuotesPage() {
     requestQuoteFromGroup(quoteDetails, data.items.map(i => i.name));
 
     toast({
-      title: "Solicitud de Cotización Enviada",
-      description: "Tu solicitud ha sido enviada a los proveedores correspondientes."
+      title: "¡Felicidades!",
+      description: "Recibirás hasta 3 cotizaciones personalizadas."
     });
     form.reset();
   };
@@ -273,8 +273,8 @@ export default function QuotesPage() {
                   )}
 
                   <div className="flex justify-between items-center">
-                    <Button type="submit" variant="link" className="p-0 text-green-600 h-auto">
-                      Enviar
+                    <Button type="submit">
+                      Solicitar Cotización
                     </Button>
                     <Button variant="ghost" size="icon">
                       <Upload className="h-6 w-6 text-muted-foreground" />
