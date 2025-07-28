@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Home, PlaySquare, Upload, MessageSquare, Settings } from 'lucide-react';
+import { Home, PlaySquare, Upload, MessageSquare, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { UploadDialog } from './UploadDialog';
@@ -18,7 +18,7 @@ export default function ProfileFooter() {
     { href: '/videos', icon: PlaySquare, label: 'Videos' },
     { href: '#upload', icon: Upload, label: 'Añadir', isCentral: true },
     { href: '/messages', icon: MessageSquare, label: 'Mensajes' },
-    { href: '#settings', icon: Settings, label: 'Ajustes' },
+    { href: '#quotes', icon: FileText, label: 'Cotizar' },
   ];
 
   return (
@@ -43,7 +43,7 @@ export default function ProfileFooter() {
               );
             }
             
-            if (item.href === '#settings') {
+            if (item.href === '#quotes') {
                 return (
                     <Button
                       key={item.href}

@@ -14,7 +14,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isSettingsPage = pathname === '/settings';
 
   const shouldShowMainHeader = !isProfilePage && !isCompanyProfilePage && !isVideosPage && !isSettingsPage;
-  const shouldShowFooter = !isProfilePage;
+  const shouldShowFooter = !isProfilePage && !isSettingsPage;
   
   return (
     <div className="flex flex-col min-h-screen">
