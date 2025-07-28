@@ -86,7 +86,7 @@ const quoteSchema = z.object({
     type: z.enum(['product', 'service'], { required_error: "Debes seleccionar un tipo."}),
     group: z.string().min(1, "Debes seleccionar un grupo."),
     searchQuery: z.string().min(1, "Debes especificar una búsqueda."),
-    items: z.array(z.object({ name: z.string().min(1, "El nombre no puede estar vacío.") })).min(1, 'Debes añadir al menos un producto.').max(3),
+    items: z.array(z.object({ name: z.string().min(1, "El nombre no puede estar vacío.") })).max(3),
     title: z.string(),
     description: z.string(),
     file: z.any().optional(),
@@ -112,6 +112,7 @@ export default function QuotesPage() {
   const { toast } = useToast();
   const { requestQuoteFromGroup } = useCorabo();
   const [isAdvancedSearchOpen, setIsAdvancedSearchOpen] = useState(false);
+  const router = useRouter();
 
   const form = useForm<QuoteFormValues>({
     resolver: zodResolver(quoteSchema),
@@ -133,17 +134,22 @@ export default function QuotesPage() {
   const quoteType = form.watch('type');
 
   const onSubmit = (data: QuoteFormValues) => {
-    const quoteDetails = data.type === 'product'
-      ? `Productos: ${data.items.map(i => i.name).join(', ')}`
-      : `Servicio: ${data.title}`;
+    const success = requestQuoteFromGroup(data.title, data.items.map(i => i.name));
 
-    requestQuoteFromGroup(quoteDetails, data.items.map(i => i.name));
-
-    toast({
-      title: "¡Felicidades!",
-      description: "Recibirás hasta 3 cotizaciones personalizadas."
-    });
-    form.reset();
+    if (success) {
+        toast({
+        title: "¡Felicidades!",
+        description: "Recibirás hasta 3 cotizaciones personalizadas."
+        });
+        form.reset();
+    } else {
+        toast({
+            variant: "destructive",
+            title: "Límite de Cotizaciones Diarias Alcanzado",
+            description: "Has superado el límite de cotizaciones para el mismo servicio/producto hoy. ¡Suscríbete para cotizar sin límites!",
+            action: <Button variant="secondary" onClick={() => router.push('/contacts')}>Suscribirme</Button>
+        })
+    }
   };
 
   return (

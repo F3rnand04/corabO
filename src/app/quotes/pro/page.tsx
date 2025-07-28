@@ -132,23 +132,28 @@ export default function QuotesProPage() {
   const quoteType = form.watch('type');
 
   const onSubmit = (data: QuoteFormValues) => {
-    const quoteDetails = data.type === 'product'
-      ? `Productos: ${data.items.map(i => i.name).join(', ')}`
-      : `Servicio: ${data.title}`;
+    const success = requestQuoteFromGroup(data.title, data.items.map(i => i.name));
 
-    requestQuoteFromGroup(quoteDetails, data.items.map(i => i.name));
+    if (success) {
+        let successMessage = "¡Excelente! Tu solicitud PRO ha sido enviada a más de 15 proveedores premium. ¡Las mejores cotizaciones están en camino!";
+        
+        if (unlockedOption === 'verified') {
+            successMessage = "¡Misión Cumplida! Tu solicitud PRO ha sido enviada a más de 20 proveedores verificados. ¡Prepárate para recibir las mejores ofertas!";
+        }
 
-    let successMessage = "¡Excelente! Tu solicitud PRO ha sido enviada a más de 15 proveedores premium. ¡Las mejores cotizaciones están en camino!";
-    
-    if (unlockedOption === 'verified') {
-        successMessage = "¡Misión Cumplida! Tu solicitud PRO ha sido enviada a más de 20 proveedores verificados. ¡Prepárate para recibir las mejores ofertas!";
+        toast({
+        title: "¡Cotización PRO Enviada!",
+        description: successMessage
+        });
+        form.reset();
+    } else {
+         toast({
+            variant: "destructive",
+            title: "Límite de Cotizaciones Diarias Alcanzado",
+            description: "Has superado el límite de cotizaciones para el mismo servicio/producto hoy. ¡Suscríbete para cotizar sin límites!",
+            action: <Button variant="secondary" onClick={() => router.push('/contacts')}>Suscribirme</Button>
+        })
     }
-
-    toast({
-      title: "¡Cotización PRO Enviada!",
-      description: successMessage
-    });
-    form.reset();
   };
 
   return (

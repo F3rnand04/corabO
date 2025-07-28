@@ -8,6 +8,11 @@ import { useToast } from "@/hooks/use-toast"
 
 type FeedView = 'servicios' | 'empresas';
 
+interface DailyQuote {
+    requestSignature: string;
+    count: number;
+}
+
 interface CoraboState {
   currentUser: User;
   users: User[];
@@ -25,7 +30,7 @@ interface CoraboState {
   removeFromCart: (productId: string) => void;
   getCartTotal: () => number;
   requestService: (service: Service) => void;
-  requestQuoteFromGroup: (serviceName: string, items: string[]) => void;
+  requestQuoteFromGroup: (serviceName: string, items: string[]) => boolean;
   sendQuote: (transactionId: string, quote: { breakdown: string; total: number }) => void;
   acceptQuote: (transactionId: string) => void;
   startDispute: (transactionId: string) => void;
@@ -57,6 +62,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [contacts, setContacts] = useState<User[]>([]);
   const [isGpsActive, setIsGpsActive] = useState(false);
   const [feedView, setFeedView] = useState<FeedView>('servicios');
+  const [dailyQuotes, setDailyQuotes] = useState<Record<string, DailyQuote[]>>({});
 
   const findOrCreateCartTransaction = (): Transaction => {
     const existingCartTx = transactions.find(
@@ -180,12 +186,34 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     toast({ title: "Servicio Solicitado", description: `Has solicitado el servicio: ${service.name}` });
   };
   
-  const requestQuoteFromGroup = (serviceName: string, items: string[]) => {
+  const requestQuoteFromGroup = (serviceName: string, items: string[]): boolean => {
+     // Create a unique signature for the request
+     const requestSignature = [...items, serviceName].sort().join('|');
+     
+     if (!currentUser.isSubscribed) {
+         const today = new Date().toISOString().split('T')[0];
+         const userQuotesToday = dailyQuotes[currentUser.id] || [];
+         const quoteRequest = userQuotesToday.find(q => q.requestSignature === requestSignature);
+
+         if (quoteRequest && quoteRequest.count >= 3) {
+             return false; // Block request
+         }
+
+         // Update count
+         if (quoteRequest) {
+             quoteRequest.count++;
+         } else {
+             userQuotesToday.push({ requestSignature, count: 1 });
+         }
+         setDailyQuotes({ ...dailyQuotes, [currentUser.id]: userQuotesToday });
+     }
+
+
      // For demo, we'll just send it to the first provider found
      const provider = users.find(u => u.type === 'provider');
      if (!provider) {
         toast({ variant: 'destructive', title: "Error", description: "No se encontraron proveedores para enviar la cotización." });
-        return;
+        return false;
      }
 
      const newTx: Transaction = {
@@ -204,6 +232,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
          },
      };
      setTransactions(prev => [newTx, ...prev]);
+     return true;
   }
 
   const sendQuote = (transactionId: string, quote: { breakdown: string; total: number }) => {
