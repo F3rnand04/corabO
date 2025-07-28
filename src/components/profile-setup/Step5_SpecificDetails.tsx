@@ -137,7 +137,7 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
                      {isOverFreeRadius ? (
                          <div className="flex items-center justify-center gap-2 text-destructive text-xs p-2 bg-destructive/10 rounded-md">
                             <AlertCircle className="h-4 w-4" />
-                            <span>Para ampliar el radio, necesitas un plan.</span>
+                            <span className="flex-grow">¡Activa un plan para ampliar tu alcance y obtener la insignia de verificado!</span>
                             <Button size="sm" className="h-7 text-xs" variant="destructive" onClick={() => setIsSubscriptionDialogOpen(true)}>Suscribir</Button>
                          </div>
                      ) : (
