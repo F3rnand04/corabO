@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from '../ui/label';
 import { Check, X, LoaderCircle } from 'lucide-react';
+import { Switch } from '../ui/switch';
 
 interface Step2_UsernameProps {
   onBack: () => void;
@@ -87,6 +88,14 @@ export default function Step2_Username({ onBack, onNext }: Step2_UsernameProps) 
             {renderFeedback()}
         </div>
       </div>
+
+       <div className="flex items-center space-x-2 pt-2">
+            <Switch id="show-username" defaultChecked />
+            <Label htmlFor="show-username" className="text-muted-foreground">
+                Usar este nombre en mi perfil público.
+                <span className="block text-xs">Si se desactiva, se mostrará tu nombre completo en su lugar.</span>
+            </Label>
+        </div>
 
       {validationState === 'unavailable' && suggestions.length > 0 && (
         <div className="space-y-2">
