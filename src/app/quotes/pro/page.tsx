@@ -21,6 +21,7 @@ import {
   Hand,
   Zap,
   Star,
+  Upload,
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -264,6 +265,20 @@ export default function QuotesProPage() {
                   </div>
                  )}
                   
+                  <div className="space-y-2">
+                    <Label>Adjuntar Archivos (Opcional)</Label>
+                    <div className="flex items-center gap-2">
+                      <Button asChild variant="outline">
+                        <Label htmlFor="file-upload" className="cursor-pointer">
+                          <Upload className="mr-2 h-4 w-4" />
+                          Cargar PDF o Fotos
+                        </Label>
+                      </Button>
+                      <Input id="file-upload" type="file" className="hidden" multiple accept="image/*,.pdf" />
+                      <p className="text-xs text-muted-foreground">Puedes subir hasta 5 fotos o 1 PDF.</p>
+                    </div>
+                  </div>
+
                   <div className="pt-4">
                     <AdvancedSearchOptions unlockedOption={unlockedOption} />
                   </div>
