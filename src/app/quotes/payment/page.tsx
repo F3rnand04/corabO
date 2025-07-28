@@ -4,7 +4,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, CheckCircle, CreditCard, ChevronLeft, Star } from 'lucide-react';
+import { Check, CheckCircle, CreditCard, ChevronLeft, Star, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
