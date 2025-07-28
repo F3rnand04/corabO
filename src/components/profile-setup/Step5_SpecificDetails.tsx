@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from '../ui/textarea';
-import { UploadCloud, Trash2, MapPin } from 'lucide-react';
+import { MapPin, Building, AlertCircle } from 'lucide-react';
 import { Switch } from '../ui/switch';
 import { Slider } from '../ui/slider';
 import { Badge } from '../ui/badge';
+import { cn } from '@/lib/utils';
 
 interface Step5_SpecificDetailsProps {
   onBack: () => void;
@@ -20,94 +21,103 @@ interface Step5_SpecificDetailsProps {
 const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
 export default function Step5_SpecificDetails({ onBack, onNext }: Step5_SpecificDetailsProps) {
-  const [images, setImages] = useState<{ id: number; src: string; file: File }[]>([]);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [serviceRadius, setServiceRadius] = useState(30);
+  const [specialty, setSpecialty] = useState('');
+  const [serviceRadius, setServiceRadius] = useState(10);
+  const [hasPhysicalLocation, setHasPhysicalLocation] = useState(true);
+  const [showExactLocation, setShowExactLocation] = useState(true);
+  const [isOnlyDelivery, setIsOnlyDelivery] = useState(false);
 
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
-    const newImages = files.map((file, index) => ({
-      id: Date.now() + index,
-      src: URL.createObjectURL(file),
-      file: file,
-    }));
-    setImages(prev => [...prev, ...newImages]);
-  };
-
-  const removeImage = (id: number) => {
-    setImages(prev => prev.filter(img => img.id !== id));
-  };
+  const MAX_RADIUS_FREE = 10;
+  const isOverFreeRadius = serviceRadius > MAX_RADIUS_FREE;
 
   return (
     <div className="space-y-8">
       <h2 className="text-xl font-semibold">Paso 5: Detalles Específicos del Proveedor</h2>
       
-      {/* Bio / Description */}
+      {/* Specialty / Description */}
       <div className="space-y-2">
-        <Label htmlFor="bio">Biografía / Descripción del Servicio</Label>
-        <Textarea id="bio" placeholder="Describe tu servicio, tu experiencia y lo que te hace único." rows={5} />
+        <Label htmlFor="specialty">Especialidad / Descripción corta</Label>
+        <Textarea 
+            id="specialty" 
+            placeholder="Ej: Expertos en cocina italiana tradicional." 
+            rows={3} 
+            maxLength={150}
+            value={specialty}
+            onChange={(e) => setSpecialty(e.target.value)}
+        />
+        <p className="text-xs text-muted-foreground text-right">{specialty.length} / 150</p>
       </div>
 
-      {/* Portfolio / Gallery */}
+      {/* Location Logic */}
       <div className="space-y-4">
-        <Label>Portafolio / Galería de Imágenes</Label>
-        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            {images.map(image => (
-                <div key={image.id} className="relative group aspect-square">
-                    <Image src={image.src} alt="preview" fill className="rounded-md object-cover" />
-                    <Button
-                        variant="destructive" size="icon"
-                        className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => removeImage(image.id)}
-                    >
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
-                </div>
-            ))}
-            <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="flex flex-col items-center justify-center aspect-square rounded-md border-2 border-dashed hover:border-primary hover:bg-muted/50 transition-colors"
-            >
-                <UploadCloud className="w-8 h-8 text-muted-foreground" />
-                <span className="text-xs text-center mt-1 text-muted-foreground">Añadir</span>
-            </button>
-            <input type="file" ref={fileInputRef} onChange={handleFileChange} multiple accept="image/*" className="hidden" />
-        </div>
-      </div>
-      
-       {/* Service Area */}
-      <div className="space-y-4">
-        <Label>Ubicación y Área de Servicio</Label>
-        <div className="space-y-3 rounded-md border p-4">
+        <Label>Ubicación y Área de Cobertura</Label>
+        <div className="space-y-4 rounded-md border p-4">
+           <div className="flex items-center justify-between">
+             <Label htmlFor="has-physical-location" className="flex items-center gap-2 font-medium">
+                <Building className="w-5 h-5"/>
+                Tengo un local físico
+             </Label>
+             <Switch 
+                id="has-physical-location" 
+                checked={hasPhysicalLocation}
+                onCheckedChange={setHasPhysicalLocation}
+            />
+           </div>
+
             <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input id="serviceArea" placeholder="Ej: Av. Principal, Local 5, Caracas" className="pl-10"/>
+                <Input id="location" placeholder="Ingresa la dirección de tu negocio (Obligatorio)" className="pl-10"/>
+                 {/* Aca podriamos agregar un boton para buscar en el mapa */}
             </div>
+
             <div className="flex items-center justify-between">
-                 <Label htmlFor="show-exact-location" className="flex items-center gap-2">
-                    <Switch id="show-exact-location" />
+                 <Label htmlFor="show-exact-location" className="flex items-center gap-2 font-medium">
                     Mostrar ubicación exacta
                  </Label>
-            </div>
-             <div className="space-y-2 pt-2">
-                <div className="flex justify-between items-center">
-                    <Label htmlFor="service-radius">Radio de servicio</Label>
-                    <Badge variant="outline" className="font-mono">{serviceRadius} km</Badge>
-                </div>
-                <Slider
-                    id="service-radius"
-                    min={5}
-                    max={100}
-                    step={5}
-                    value={[serviceRadius]}
-                    onValueChange={(value) => setServiceRadius(value[0])}
+                 <Switch 
+                    id="show-exact-location" 
+                    checked={showExactLocation}
+                    onCheckedChange={setShowExactLocation}
                 />
-                <p className="text-xs text-muted-foreground">Define el alcance de tu servicio. Los usuarios suscritos pueden acceder a un rango mayor.</p>
             </div>
+            
+            {!showExactLocation && (
+                <div className="space-y-3 pt-2">
+                    <div className="flex justify-between items-center">
+                        <Label htmlFor="service-radius">Radio de acción</Label>
+                        <Badge variant={isOverFreeRadius ? "destructive" : "secondary"} className="font-mono">{serviceRadius} km</Badge>
+                    </div>
+                    <Slider
+                        id="service-radius"
+                        min={5}
+                        max={100}
+                        step={5}
+                        value={[serviceRadius]}
+                        onValueChange={(value) => setServiceRadius(value[0])}
+                        className={cn(isOverFreeRadius && '[&_.bg-primary]:bg-destructive')}
+                    />
+                     {isOverFreeRadius ? (
+                         <div className="flex items-center justify-center gap-2 text-destructive text-xs p-2 bg-destructive/10 rounded-md">
+                            <AlertCircle className="h-4 w-4" />
+                            <span>Para ampliar el radio, necesitas un plan.</span>
+                            <Button size="sm" className="h-7 text-xs" variant="destructive">Suscribir</Button>
+                         </div>
+                     ) : (
+                        <div className="flex items-center justify-between pt-2">
+                            <Label htmlFor="only-delivery" className="flex items-center gap-2">
+                                Mi servicio es solo delivery
+                            </Label>
+                            <Switch 
+                                id="only-delivery"
+                                checked={isOnlyDelivery}
+                                onCheckedChange={setIsOnlyDelivery}
+                            />
+                        </div>
+                     )}
+                </div>
+            )}
         </div>
       </div>
-
 
       {/* Schedule */}
       <div className="space-y-4">
@@ -131,10 +141,9 @@ export default function Step5_SpecificDetails({ onBack, onNext }: Step5_Specific
 
        {/* Social Media */}
       <div className="space-y-2">
-        <Label htmlFor="website">Redes Sociales / Sitio Web</Label>
+        <Label htmlFor="website">Redes Sociales / Sitio Web (Opcional)</Label>
         <Input id="website" placeholder="https://tu-sitio-web.com" />
       </div>
-
 
       <div className="flex justify-between">
         <Button variant="outline" onClick={onBack}>Atrás</Button>
