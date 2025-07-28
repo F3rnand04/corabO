@@ -10,19 +10,15 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import {
   FileText,
   Search,
-  Upload,
   PlusCircle,
-  Users,
   ChevronLeft,
   AlertCircle,
   XCircle,
   Package,
   Hand,
-  ChevronDown,
   Zap,
   Star,
 } from 'lucide-react';
@@ -45,8 +41,6 @@ import {
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { useCorabo } from '@/contexts/CoraboContext';
-import { cn } from '@/lib/utils';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { AdvancedSearchOptions } from '@/components/AdvancedSearchOptions';
 
 
@@ -86,7 +80,7 @@ const serviceGroups = [
 
 const quoteSchema = z.object({
     type: z.enum(['product', 'service'], { required_error: "Debes seleccionar un tipo."}),
-    items: z.array(z.object({ name: z.string().min(1, "El nombre no puede estar vacío.") })).min(1, 'Debes añadir al menos un producto.').max(5),
+    items: z.array(z.object({ name: z.string().min(1, "El nombre no puede estar vacío.") })).max(5),
     title: z.string(),
     description: z.string(),
     searchQuery: z.string().min(1, "Debes especificar un proveedor o grupo."),
@@ -205,64 +199,70 @@ export default function QuotesProPage() {
                     )}
                 />
               
-                  <FormField
-                      control={form.control}
-                      name="title"
-                      render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>QUÉ NECESITAS:</FormLabel>
+                 {quoteType === 'service' && (
+                  <>
+                    <FormField
+                        control={form.control}
+                        name="title"
+                        render={({ field }) => (
+                          <FormItem>
+                              <FormLabel>QUÉ NECESITAS:</FormLabel>
+                              <FormControl>
+                                  <Input placeholder="Ej: Instalar una lámpara de techo" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                    <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Descripción detallada:</FormLabel>
                             <FormControl>
-                                <Input placeholder="Ej: Instalar una lámpara de techo" {...field} />
+                              <Textarea
+                                placeholder="Describe con el mayor detalle posible tu requerimiento para obtener cotizaciones más precisas. Incluye medidas, materiales, ubicación, etc."
+                                rows={8}
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                          </FormItem>
+                        )}
+                      />
+                  </>
+                 )}
 
-                  <FormField
-                      control={form.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Descripción detallada:</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="Describe con el mayor detalle posible tu requerimiento para obtener cotizaciones más precisas. Incluye medidas, materiales, ubicación, etc."
-                              rows={8}
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                  <div className="space-y-2">
-                    <Label>Productos (opcional, máx. 5)</Label>
-                    {fields.map((field, index) => (
-                       <div key={field.id} className="flex items-center gap-2">
-                         <Input 
-                            {...form.register(`items.${index}.name` as const)}
-                            placeholder={`Producto ${index + 1}`}
-                         />
-                         <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 1}>
-                            <XCircle className="w-5 h-5 text-destructive" />
-                         </Button>
-                       </div>
-                    ))}
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => append({ name: '' })}
-                        disabled={fields.length >= 5}
-                        className="text-xs"
-                    >
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Añadir Producto
-                    </Button>
-                    <FormMessage>{form.formState.errors.items?.message || form.formState.errors.items?.root?.message}</FormMessage>
-                </div>
+                 {quoteType === 'product' && (
+                    <div className="space-y-2">
+                      <Label>Productos (opcional, máx. 5)</Label>
+                      {fields.map((field, index) => (
+                         <div key={field.id} className="flex items-center gap-2">
+                           <Input 
+                              {...form.register(`items.${index}.name` as const)}
+                              placeholder={`Producto ${index + 1}`}
+                           />
+                           <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 1}>
+                              <XCircle className="w-5 h-5 text-destructive" />
+                           </Button>
+                         </div>
+                      ))}
+                      <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => append({ name: '' })}
+                          disabled={fields.length >= 5}
+                          className="text-xs"
+                      >
+                          <PlusCircle className="mr-2 h-4 w-4" />
+                          Añadir Producto
+                      </Button>
+                      <FormMessage>{form.formState.errors.items?.message || form.formState.errors.items?.root?.message}</FormMessage>
+                  </div>
+                 )}
                   
                   <div className="pt-4">
                     <AdvancedSearchOptions unlockedOption={unlockedOption} />
