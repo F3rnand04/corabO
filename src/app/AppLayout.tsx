@@ -17,15 +17,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isSearchPage = pathname === '/search';
   const isMapPage = pathname === '/map';
   const isQuotesPaymentPage = pathname === '/quotes/payment';
+  const isQuotesProPage = pathname === '/quotes/pro';
 
-  const shouldShowMainHeader = !isProfilePage && !isCompanyProfilePage && !isVideosPage && !isProfileSetupPage && !isQuotesPage && !isContactsPage && !isSearchPage && !isMapPage && !isQuotesPaymentPage;
-  const shouldShowFooter = !isProfilePage && !isProfileSetupPage && !isQuotesPage && !isContactsPage && !isSearchPage && !isMapPage && !isQuotesPaymentPage;
+
+  const shouldShowMainHeader = !isProfilePage && !isCompanyProfilePage && !isVideosPage && !isProfileSetupPage && !isQuotesPage && !isContactsPage && !isSearchPage && !isMapPage && !isQuotesPaymentPage && !isQuotesProPage;
+  const shouldShowFooter = !isProfilePage && !isProfileSetupPage && !isQuotesPage && !isContactsPage && !isSearchPage && !isMapPage && !isQuotesPaymentPage && !isQuotesProPage;
   
   return (
     <div className="flex flex-col min-h-screen">
       {shouldShowMainHeader && <Header />}
       <main className="flex-grow">
-        <div className={!isSearchPage && !isMapPage && !isQuotesPaymentPage ? "pb-20" : ""}>
+        <div className={!isSearchPage && !isMapPage && !isQuotesPaymentPage && !isQuotesProPage ? "pb-20" : ""}>
           {children}
         </div>
       </main>

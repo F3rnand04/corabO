@@ -54,7 +54,7 @@ export default function QuotePaymentPage() {
             description: `Tu búsqueda por $${amount.toFixed(2)} ha sido activada.`,
             className: "bg-green-100 border-green-300 text-green-800",
         });
-        router.push('/quotes');
+        router.push('/quotes/pro');
     };
 
     const bolivaresAmount = (amount * EXCHANGE_RATE).toFixed(2);
@@ -135,14 +135,14 @@ export default function QuotePaymentPage() {
                                 <p className="font-semibold text-center">Selecciona Método de Pago</p>
                                 <div className="space-y-3">
                                     <Button 
-                                            variant={selectedPaymentMethod === 'mobile' ? 'default' : 'secondary'}
+                                            variant={'secondary'}
                                             className="w-full h-16 text-base justify-start px-6"
                                             onClick={() => handleSelectPaymentMethod('mobile')}
                                         >
                                     <Smartphone className="mr-4 h-6 w-6"/> Pago Móvil
                                 </Button>
                                         <Button 
-                                            variant={selectedPaymentMethod === 'transfer' ? 'default' : 'secondary'}
+                                            variant={'secondary'}
                                             className="w-full h-16 text-base justify-start px-6"
                                             onClick={() => handleSelectPaymentMethod('transfer')}
                                         >
