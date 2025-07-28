@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MapPin, FileText, Wallet, Menu, Search, FileHeart, X, LogOut } from "lucide-react";
+import { MapPin, FileText, Wallet, Menu, Search, LogOut } from "lucide-react";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -14,18 +14,10 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { cn } from "@/lib/utils";
 
 export function Header() {
-  const { currentUser, searchQuery, setSearchQuery, contacts, removeContact, feedView, setFeedView } = useCorabo();
+  const { searchQuery, setSearchQuery, feedView, setFeedView } = useCorabo();
   const router = useRouter();
 
   return (
@@ -33,48 +25,14 @@ export function Header() {
       <div className="container px-2 sm:px-4">
         <div className="flex h-16 items-center justify-between">
           
-          <Sheet>
-            <SheetTrigger asChild>
-              <div className="flex items-center space-x-2 cursor-pointer">
-                <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
-                  <span className="text-lg font-bold text-primary">C</span>
-                </div>
-                <span className="font-bold text-xl">corabO</span>
+          <Link href="/contacts" passHref>
+            <div className="flex items-center space-x-2 cursor-pointer">
+              <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
+                <span className="text-lg font-bold text-primary">C</span>
               </div>
-            </SheetTrigger>
-            <SheetContent side="left">
-              <SheetHeader>
-                <SheetTitle className="flex items-center gap-2">
-                  <FileHeart /> Contactos Guardados
-                </SheetTitle>
-              </SheetHeader>
-              <div className="py-4">
-                {contacts.length > 0 ? (
-                  <ul className="space-y-3">
-                    {contacts.map(contact => (
-                      <li key={contact.id} className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Avatar>
-                            <AvatarImage src={contact.profileImage} />
-                            <AvatarFallback>{contact.name.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-semibold">{contact.name}</p>
-                            <p className="text-xs text-muted-foreground">{contact.type}</p>
-                          </div>
-                        </div>
-                        <Button variant="ghost" size="icon" onClick={() => removeContact(contact.id)}>
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-center text-muted-foreground pt-8">No tienes contactos guardados todavía.</p>
-                )}
-              </div>
-            </SheetContent>
-          </Sheet>
+              <span className="font-bold text-xl">corabO</span>
+            </div>
+          </Link>
 
           <div className="flex items-center space-x-1 sm:space-x-2">
             
