@@ -4,9 +4,10 @@
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { ChevronLeft, Copy, MessageSquare, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { ValidationItem } from '@/components/ValidationItem';
 
 function ContactsHeader() {
   const router = useRouter();
@@ -30,7 +31,6 @@ function ContactsHeader() {
 
 export default function ContactsPage() {
   const { currentUser, contacts, removeContact } = useCorabo();
-  const router = useRouter();
 
   return (
     <>
@@ -52,15 +52,19 @@ export default function ContactsPage() {
                             <Copy className="w-4 h-4 text-muted-foreground" />
                        </Button>
                     </div>
-                    <div className="flex items-center justify-between mt-1">
-                        <p className="text-sm text-muted-foreground">Correo: uruario@gmail.com</p>
-                        <p className="text-sm font-semibold text-green-600">Validado</p>
-                    </div>
-                     <div className="flex items-center justify-between mt-1">
-                        <p className="text-sm text-muted-foreground">teléfono: 0412 12345678</p>
-                        <p className="text-sm font-semibold text-red-500">Validar</p>
-                    </div>
                 </div>
+            </div>
+             <div className="mt-4 space-y-2">
+                <ValidationItem
+                    label="Correo:"
+                    value="uruario@gmail.com"
+                    initialStatus="validated"
+                />
+                <ValidationItem
+                    label="Teléfono:"
+                    value="0412 12345678"
+                    initialStatus="idle"
+                />
             </div>
         </div>
 
