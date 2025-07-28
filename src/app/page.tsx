@@ -48,19 +48,30 @@ export default function HomePage() {
   };
 
   const getFilteredProviders = () => {
-     if (searchQuery.trim() === '') {
+     const lowerCaseQuery = searchQuery.toLowerCase();
+     
+     if (lowerCaseQuery.trim() === '') {
         return providers;
     }
-    const lowerCaseQuery = searchQuery.toLowerCase();
     
     return providers.filter(provider => {
         const providerNameMatch = provider.name.toLowerCase().includes(lowerCaseQuery);
         
         const productMatch = products.some(product => 
-            product.providerId === provider.id && product.name.toLowerCase().includes(lowerCaseQuery)
+            product.providerId === provider.id && (
+                product.name.toLowerCase().includes(lowerCaseQuery) ||
+                product.description.toLowerCase().includes(lowerCaseQuery)
+            )
+        );
+        
+        const serviceMatch = services.some(service => 
+            service.providerId === provider.id && (
+                service.name.toLowerCase().includes(lowerCaseQuery) || 
+                service.category.toLowerCase().includes(lowerCaseQuery)
+            )
         );
 
-        return providerNameMatch || productMatch;
+        return providerNameMatch || productMatch || serviceMatch;
     });
   }
 

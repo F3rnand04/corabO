@@ -4,16 +4,18 @@
 import { CategoryHub } from '@/components/CategoryHub';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useCorabo } from '@/contexts/CoraboContext';
 import { ChevronLeft, Search } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function SearchPage() {
     const router = useRouter();
+    const { setSearchQuery, setFeedView } = useCorabo();
 
-    const handleCategorySelect = () => {
-        // This function can be used to close the search page/modal 
-        // and navigate to the selected category results.
-        // For now, it's just a placeholder.
+    const handleCategorySelect = (categoryName: string) => {
+        setFeedView('empresas');
+        setSearchQuery(categoryName);
+        router.push('/');
     }
 
     return (
