@@ -41,6 +41,7 @@ import {
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { useCorabo } from '@/contexts/CoraboContext';
+import { cn } from '@/lib/utils';
 
 function QuotesHeader() {
   const router = useRouter();
@@ -161,12 +162,12 @@ export default function QuotesPage() {
               
                   <Separator />
 
-                  <FormField
+                   <FormField
                     control={form.control}
                     name="type"
                     render={({ field }) => (
-                        <FormItem className="space-y-3">
-                            <FormLabel>¿Qué necesitas cotizar?</FormLabel>
+                        <FormItem className="flex items-center justify-between">
+                            <FormLabel className="text-base font-semibold">¿Qué necesitas cotizar?</FormLabel>
                             <FormControl>
                                 <RadioGroup
                                     onValueChange={(value) => {
@@ -193,7 +194,7 @@ export default function QuotesPage() {
                                     </FormItem>
                                 </RadioGroup>
                             </FormControl>
-                            <FormMessage />
+                            <FormMessage className="col-span-2" />
                         </FormItem>
                     )}
                   />
