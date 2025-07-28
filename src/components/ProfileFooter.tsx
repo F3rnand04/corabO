@@ -18,9 +18,9 @@ export default function ProfileFooter() {
   const navItems = [
     { href: '/', icon: Home, label: 'Inicio' },
     { href: '/videos', icon: PlaySquare, label: 'Videos' },
-    { href: '#upload', icon: Upload, label: 'Añadir', isCentral: true },
+    { href: '#upload', icon: Upload, label: 'Añadir', isCentral: true, action: () => setIsUploadOpen(true) },
     { href: '/messages', icon: MessageSquare, label: 'Mensajes' },
-    { href: '#quotes', icon: FileText, label: 'Cotizar' },
+    { href: '#quotes', icon: FileText, label: 'Cotizar', action: () => setIsQuoteRequestOpen(true) },
   ];
 
   return (
@@ -34,7 +34,7 @@ export default function ProfileFooter() {
               return (
                 <Button
                   key={item.href}
-                  onClick={() => setIsUploadOpen(true)}
+                  onClick={item.action}
                   size="icon"
                   className={cn(
                     "relative -top-4 w-16 h-16 rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90",
@@ -45,12 +45,12 @@ export default function ProfileFooter() {
               );
             }
             
-            if (item.href === '#quotes') {
-                return (
+            if (item.action) {
+                 return (
                     <Button
                       key={item.href}
                       variant="ghost"
-                      onClick={() => setIsQuoteRequestOpen(true)}
+                      onClick={item.action}
                       className={cn(
                         "flex-col h-auto p-1 text-muted-foreground hover:text-primary",
                         isActive && "text-primary"
