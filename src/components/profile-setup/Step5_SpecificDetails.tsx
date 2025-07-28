@@ -161,7 +161,7 @@ export default function Step5_SpecificDetails({ onBack, onNext }: Step5_Specific
 
       <div className="flex justify-between">
         <Button variant="outline" onClick={onBack}>Atrás</Button>
-        <Button onClick={onNext}>Siguiente</Button>
+        <Button onClick={onNext} disabled={!location.trim()}>Siguiente</Button>
       </div>
     </div>
   );
