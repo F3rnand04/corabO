@@ -15,6 +15,22 @@ export type GalleryImage = {
   };
 };
 
+export type ProfileSetupData = {
+  username?: string;
+  useUsername?: boolean;
+  categories?: string[];
+  primaryCategory?: string | null;
+  specialty?: string;
+  hasPhysicalLocation?: boolean;
+  location?: string;
+  showExactLocation?: boolean;
+  serviceRadius?: number;
+  isOnlyDelivery?: boolean;
+  website?: string;
+  schedule?: Record<string, { from: string; to: string; active: boolean }>;
+};
+
+
 export type User = {
   id: string;
   name: string;
@@ -31,6 +47,7 @@ export type User = {
     expires: string;
   };
   gallery?: GalleryImage[];
+  profileSetupData?: ProfileSetupData;
 };
 
 export type Product = {

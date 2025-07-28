@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage } from '@/lib/types';
+import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData } from '@/lib/types';
 import { users as initialUsers, products, services as initialServices, initialTransactions } from '@/lib/mock-data';
 import { useToast } from "@/hooks/use-toast"
 
@@ -40,6 +40,7 @@ interface CoraboState {
   validateEmail: (userId: string) => void;
   validatePhone: (userId: string) => void;
   setFeedView: (view: FeedView) => void;
+  updateFullProfile: (userId: string, data: ProfileSetupData) => void;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -262,7 +263,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const updateUser = (userId: string, updates: Partial<User> | ((user: User) => Partial<User>)) => {
     let updatedUser: User | undefined;
-    const finalUpdates = typeof updates === 'function' ? updates(users.find(u => u.id === userId)!) : updates;
+    const userToUpdate = users.find(u => u.id === userId)
+    if (!userToUpdate) return;
+
+    const finalUpdates = typeof updates === 'function' ? updates(userToUpdate) : updates;
 
     setUsers(prevUsers =>
       prevUsers.map(u => {
@@ -312,6 +316,19 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
      updateUser(userId, { phoneValidated: true });
   }
 
+  const updateFullProfile = (userId: string, data: ProfileSetupData) => {
+     updateUser(userId, user => ({
+      ...user,
+      type: data.categories?.length ? 'provider' : 'client',
+      email: data.email || user.email,
+      phone: data.phone || user.phone,
+      profileSetupData: {
+        ...(user.profileSetupData || {}),
+        ...data,
+      }
+     }))
+  }
+
   const value = {
     currentUser,
     users,
@@ -344,6 +361,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     removeGalleryImage,
     validateEmail,
     validatePhone,
+    updateFullProfile,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;

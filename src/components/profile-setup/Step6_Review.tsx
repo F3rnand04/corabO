@@ -7,6 +7,8 @@ import { Separator } from "../ui/separator";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { Badge } from "../ui/badge";
 import { CheckCircle, Edit, Globe, MapPin, Tag, UserCircle, XCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
 
 interface Step6_ReviewProps {
   onBack: () => void;
@@ -28,10 +30,22 @@ const allCategories = [
 ];
 
 export default function Step6_Review({ onBack, formData, profileType, goToStep }: Step6_ReviewProps) {
-  const { currentUser } = useCorabo();
+  const { currentUser, updateFullProfile } = useCorabo();
+  const router = useRouter();
+  const { toast } = useToast();
+
   const isProvider = profileType === 'provider';
   
   const getCategoryName = (id: string) => allCategories.find(c => c.id === id)?.name || id;
+
+  const handleFinish = () => {
+    updateFullProfile(currentUser.id, formData);
+    router.push('/profile');
+    toast({
+      title: "¡Perfil Actualizado!",
+      description: "Recuerda que datos como tu nombre de usuario y tipo de perfil solo pueden cambiarse dos veces al año para mantener la confianza en la comunidad."
+    });
+  }
 
   const renderItem = (label: string, value: React.ReactNode, step: number) => (
     <div className="flex justify-between items-start py-3">
@@ -67,7 +81,7 @@ export default function Step6_Review({ onBack, formData, profileType, goToStep }
                 </div>
               ), 2)}
 
-              {isProvider && renderItem("Categorías", (
+              {isProvider && formData.categories.length > 0 && renderItem("Categorías", (
                 <div className="flex flex-wrap gap-2 pt-1">
                     {formData.categories.map((cat: string) => (
                         <Badge key={cat} variant={cat === formData.primaryCategory ? "default" : "secondary"}>
@@ -92,14 +106,14 @@ export default function Step6_Review({ onBack, formData, profileType, goToStep }
 
               {isProvider && (
                 <>
-                {renderItem("Especialidad", (
+                {formData.specialty && renderItem("Especialidad", (
                      <div className="flex items-start gap-2">
                         <Tag className="w-5 h-5 mt-0.5 text-muted-foreground" />
-                        <p className="italic text-foreground/80">"{formData.specialty || 'No especificado'}"</p>
+                        <p className="italic text-foreground/80">"{formData.specialty}"</p>
                     </div>
                 ), 5)}
 
-                {renderItem("Ubicación y Cobertura", (
+                {formData.location && renderItem("Ubicación y Cobertura", (
                      <div className="space-y-1 pt-1">
                         <p className="flex items-center gap-2">
                             <MapPin className="w-4 h-4" />
@@ -116,7 +130,7 @@ export default function Step6_Review({ onBack, formData, profileType, goToStep }
 
       <div className="flex justify-between">
         <Button variant="outline" onClick={onBack}>Atrás</Button>
-        <Button>Finalizar Configuración</Button>
+        <Button onClick={handleFinish}>Finalizar Configuración</Button>
       </div>
     </div>
   );

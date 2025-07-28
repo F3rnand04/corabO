@@ -25,8 +25,8 @@ export default function ProfilePage() {
 
   const [providerProfile, setProviderProfile] = useState({
     name: currentUser.name,
-    specialty: "Especialidad",
-    rating: 4.9,
+    specialty: currentUser.profileSetupData?.specialty || "Especialidad",
+    rating: currentUser.reputation || 4.9,
     efficiency: "99.9%",
     completedJobs: 15,
     otherStat: "00 | 05",
@@ -47,7 +47,11 @@ export default function ProfilePage() {
 
   useEffect(() => {
     setGallery(currentUser.gallery || []);
-    setProviderProfile(prev => ({...prev, name: currentUser.name}));
+    setProviderProfile(prev => ({
+        ...prev, 
+        name: currentUser.profileSetupData?.useUsername ? currentUser.profileSetupData?.username || currentUser.name : currentUser.name,
+        specialty: currentUser.profileSetupData?.specialty || "Especialidad"
+    }));
   }, [currentUser]);
 
   useEffect(() => {
