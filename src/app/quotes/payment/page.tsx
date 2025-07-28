@@ -34,16 +34,9 @@ export default function QuotePaymentPage() {
         }
     }, [searchParams, toast]);
     
-    const handleProceedToPayment = () => {
-        if (!selectedPaymentMethod) {
-            toast({
-                variant: 'destructive',
-                title: 'Error',
-                description: 'Por favor, selecciona un método de pago.'
-            });
-            return;
-        }
-        setStep(2); // Move to the payment details step
+    const handleSelectPaymentMethod = (method: string) => {
+        setSelectedPaymentMethod(method);
+        setStep(2);
     };
 
 
@@ -131,14 +124,14 @@ export default function QuotePaymentPage() {
                                    <Button 
                                         variant={selectedPaymentMethod === 'mobile' ? 'default' : 'secondary'}
                                         className="w-full h-16 text-base justify-start px-6"
-                                        onClick={() => setSelectedPaymentMethod('mobile')}
+                                        onClick={() => handleSelectPaymentMethod('mobile')}
                                     >
                                        <Smartphone className="mr-4 h-6 w-6"/> Pago Móvil
                                    </Button>
                                     <Button 
                                         variant={selectedPaymentMethod === 'transfer' ? 'default' : 'secondary'}
                                         className="w-full h-16 text-base justify-start px-6"
-                                        onClick={() => setSelectedPaymentMethod('transfer')}
+                                        onClick={() => handleSelectPaymentMethod('transfer')}
                                     >
                                        <Landmark className="mr-4 h-6 w-6"/> Transferencia
                                    </Button>
@@ -197,11 +190,7 @@ export default function QuotePaymentPage() {
                         </CardContent>
                     </Card>
                      <div className="mt-6">
-                        {step === 1 ? (
-                            <Button className="w-full h-12 text-lg" onClick={handleProceedToPayment} disabled={!selectedPaymentMethod}>
-                               Continuar
-                            </Button>
-                        ) : (
+                        {step === 2 && (
                             <Button className="w-full h-12 text-lg" onClick={handleConfirmPayment} disabled={!reference || !voucherFile}>
                                <Check className="mr-2 h-5 w-5"/>
                                Confirmar Pago
@@ -213,4 +202,3 @@ export default function QuotePaymentPage() {
         </div>
     );
 }
-
