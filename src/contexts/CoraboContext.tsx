@@ -39,6 +39,7 @@ interface CoraboState {
   removeGalleryImage: (userId: string, imageId: string) => void;
   validateEmail: (userId: string) => void;
   validatePhone: (userId: string) => void;
+  setFeedView: (view: FeedView) => void;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -243,11 +244,20 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const toggleGps = () => {
-    setIsGpsActive(prev => !prev);
-    toast({
-        title: `GPS ${!isGpsActive ? 'Activado' : 'Desactivado'}`,
-        description: `Ahora ${!isGpsActive ? 'eres visible' : 'no eres visible'} y puedes ver proveedores cercanos.`
-    });
+    const willBeActive = !isGpsActive;
+    setIsGpsActive(willBeActive);
+    
+    if (willBeActive) {
+      toast({
+        title: "GPS Activado",
+        description: "Ahora eres visible según la ubicación de tu perfil.",
+      });
+    } else {
+       toast({
+        title: "GPS Desactivado",
+        description: "Has dejado de ser visible para otros usuarios.",
+      });
+    }
   };
   
   const updateUser = (userId: string, updates: Partial<User> | ((user: User) => Partial<User>)) => {
