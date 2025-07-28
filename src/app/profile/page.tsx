@@ -23,6 +23,8 @@ export default function ProfilePage() {
   
   const [gallery, setGallery] = useState<GalleryImage[]>(currentUser.gallery || []);
 
+  const isProvider = currentUser.type === 'provider';
+
   const [providerProfile, setProviderProfile] = useState({
     name: currentUser.name,
     specialty: currentUser.profileSetupData?.specialty || "Especialidad",
@@ -63,7 +65,7 @@ export default function ProfilePage() {
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
+    if (file && isProvider) {
         const reader = new FileReader();
         reader.onloadend = () => {
             const newImageUrl = reader.result as string;
@@ -79,6 +81,7 @@ export default function ProfilePage() {
   };
   
   const handleDeleteImage = (imageId: string) => {
+    if (!isProvider) return;
     removeGalleryImage(currentUser.id, imageId);
     setIsDetailsDialogOpen(false);
     // Reset index if needed
@@ -88,6 +91,14 @@ export default function ProfilePage() {
   };
 
   const handleAvatarClick = () => {
+    if (!isProvider) {
+      toast({
+        variant: "default",
+        title: "Función para proveedores",
+        description: "Para editar tu perfil, primero debes registrarte como proveedor."
+      });
+      return;
+    }
     fileInputRef.current?.click();
   };
 
@@ -131,11 +142,13 @@ export default function ProfilePage() {
   };
   
   const handleImageDoubleClick = (image: GalleryImage) => {
+    if (!isProvider) return;
     setSelectedImage(image);
     setIsDetailsDialogOpen(true);
   };
 
   const handlePromotionTabClick = () => {
+    if (!isProvider) return;
     if(gallery.length > 0) {
       setIsPromotionDialogOpen(true);
     } else {
@@ -148,6 +161,7 @@ export default function ProfilePage() {
   };
 
   const handleActivatePromotion = (promotionText: string) => {
+    if (!isProvider) return;
     const now = new Date();
     const expiryDate = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours from now
 
@@ -200,10 +214,11 @@ export default function ProfilePage() {
                   className="hidden"
                   accept="image/*"
                 />
-              <Avatar className="w-16 h-16 cursor-pointer" onClick={handleAvatarClick}>
+              <Avatar className={cn("w-16 h-16", isProvider && "cursor-pointer")} onClick={handleAvatarClick}>
                 <AvatarImage src={currentUser.profileImage} alt={currentUser.name} data-ai-hint="user profile photo"/>
                 <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
               </Avatar>
+              {isProvider && (
                <Button 
                 size="icon" 
                 className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-primary text-primary-foreground"
@@ -211,6 +226,7 @@ export default function ProfilePage() {
                >
                  <Plus className="w-4 h-4" />
                </Button>
+               )}
             </div>
             <div className="flex-grow">
               <h1 className="text-lg font-bold text-foreground">{providerProfile.name}</h1>
@@ -247,7 +263,11 @@ export default function ProfilePage() {
 
           {/* Campaign Management Button */}
           <div className="flex justify-end">
-            <Button variant="secondary" className="rounded-full text-xs h-8 px-4 font-bold">
+             <Button 
+              variant="secondary" 
+              className="rounded-full text-xs h-8 px-4 font-bold"
+              disabled={!isProvider}
+            >
               GESTIÓN DE CAMPAÑAS
             </Button>
           </div>
@@ -257,11 +277,11 @@ export default function ProfilePage() {
             <CardContent className="p-0">
               {/* Main Image */}
               <div 
-                className="relative group"
-                onTouchStart={gallery.length > 0 ? onTouchStart : undefined}
-                onTouchMove={gallery.length > 0 ? onTouchMove : undefined}
-                onTouchEnd={gallery.length > 0 ? onTouchEnd : undefined}
-                onDoubleClick={currentImage ? () => handleImageDoubleClick(currentImage) : undefined}
+                className={cn("relative group", isProvider && "cursor-pointer")}
+                onTouchStart={isProvider && gallery.length > 0 ? onTouchStart : undefined}
+                onTouchMove={isProvider && gallery.length > 0 ? onTouchMove : undefined}
+                onTouchEnd={isProvider && gallery.length > 0 ? onTouchEnd : undefined}
+                onDoubleClick={isProvider && currentImage ? () => handleImageDoubleClick(currentImage) : undefined}
               >
                 {currentImage ? (
                   <>
@@ -270,7 +290,7 @@ export default function ProfilePage() {
                       alt={currentImage.alt}
                       width={600}
                       height={400}
-                      className="rounded-t-2xl object-cover w-full aspect-[4/3] transition-opacity duration-300 cursor-pointer"
+                      className="rounded-t-2xl object-cover w-full aspect-[4/3] transition-opacity duration-300"
                       data-ai-hint="professional workspace"
                       key={currentImage.src} 
                     />
@@ -279,43 +299,54 @@ export default function ProfilePage() {
                             {currentImage.promotion.text}
                         </div>
                     )}
-                    <Button 
-                        onClick={handlePrev}
-                        variant="ghost" 
-                        size="icon" 
-                        className="absolute top-1/3 left-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 hidden md:flex group-hover:flex"
-                    >
-                        <ChevronLeft className="h-5 w-5" />
-                    </Button>
-                    <Button 
-                        onClick={handleNext}
-                        variant="ghost" 
-                        size="icon" 
-                        className="absolute top-1/3 right-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 hidden md:flex group-hover:flex"
-                    >
-                        <ChevronRight className="h-5 w-5" />
-                    </Button>
-                    
-                    <div className="absolute bottom-2 right-2 flex flex-col items-end gap-4 text-white">
-                        <div className="flex flex-col items-center">
-                            <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">
-                                <Send className="w-5 h-5" />
-                            </Button>
-                            <span className="text-xs font-bold mt-1 drop-shadow-md">{(providerProfile.shareCount / 1000).toFixed(1)}k</span>
+                    {isProvider && (
+                      <>
+                        <Button 
+                            onClick={handlePrev}
+                            variant="ghost" 
+                            size="icon" 
+                            className="absolute top-1/3 left-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 hidden md:flex group-hover:flex"
+                        >
+                            <ChevronLeft className="h-5 w-5" />
+                        </Button>
+                        <Button 
+                            onClick={handleNext}
+                            variant="ghost" 
+                            size="icon" 
+                            className="absolute top-1/3 right-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 hidden md:flex group-hover:flex"
+                        >
+                            <ChevronRight className="h-5 w-5" />
+                        </Button>
+                        
+                        <div className="absolute bottom-2 right-2 flex flex-col items-end gap-4 text-white">
+                            <div className="flex flex-col items-center">
+                                <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">
+                                    <Send className="w-5 h-5" />
+                                </Button>
+                                <span className="text-xs font-bold mt-1 drop-shadow-md">{(providerProfile.shareCount / 1000).toFixed(1)}k</span>
+                            </div>
+                            <div className="flex flex-col items-center">
+                                <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">
+                                    <Star className="w-5 h-5" />
+                                </Button>
+                                <span className="text-xs font-bold mt-1 drop-shadow-md">{(providerProfile.starCount / 1000).toFixed(1)}k</span>
+                            </div>
                         </div>
-                        <div className="flex flex-col items-center">
-                            <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">
-                                <Star className="w-5 h-5" />
-                            </Button>
-                            <span className="text-xs font-bold mt-1 drop-shadow-md">{(providerProfile.starCount / 1000).toFixed(1)}k</span>
-                        </div>
-                    </div>
+                      </>
+                    )}
                   </>
                 ) : (
                    <div className="w-full aspect-[4/3] bg-muted flex flex-col items-center justify-center text-center p-4">
                         <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
-                        <h3 className="font-bold text-lg text-foreground">Tu vitrina está vacía</h3>
-                        <p className="text-muted-foreground text-sm">Haz clic en el botón <Plus className="inline w-4 h-4" /> sobre tu avatar para añadir tu primera publicación.</p>
+                        <h3 className="font-bold text-lg text-foreground">
+                          {isProvider ? "Tu vitrina está vacía" : "Explora perfiles de proveedores"}
+                        </h3>
+                        <p className="text-muted-foreground text-sm">
+                          {isProvider 
+                            ? "Haz clic en el botón + sobre tu avatar para añadir tu primera publicación."
+                            : "Aquí verás las publicaciones de los proveedores."
+                          }
+                        </p>
                    </div>
                 )}
               </div>
@@ -324,16 +355,25 @@ export default function ProfilePage() {
               <div className="flex justify-around font-semibold text-center border-b">
                 <div
                   className={cn(
-                    "flex-1 p-3 cursor-pointer",
-                    isPromotionActive ? "text-green-600 border-b-2 border-green-600" : "border-b-2 border-primary text-primary"
+                    "flex-1 p-3",
+                    isProvider ? "cursor-pointer" : "cursor-not-allowed text-muted-foreground/50",
+                    isPromotionActive && isProvider
+                        ? "text-green-600 border-b-2 border-green-600" 
+                        : isProvider 
+                            ? "border-b-2 border-primary text-primary" 
+                            : "text-muted-foreground"
                   )}
                   onClick={handlePromotionTabClick}
+                  aria-disabled={!isProvider}
                 >
-                  {isPromotionActive ? getPromotionTimeRemaining() : "Promoción del Día"}
+                  {isPromotionActive && isProvider ? getPromotionTimeRemaining() : "Promoción del Día"}
                 </div>
                 <div
-                  className="flex-1 p-3 cursor-pointer text-muted-foreground"
-                  onClick={() => currentImage && handleImageDoubleClick(currentImage)}
+                  className={cn(
+                    "flex-1 p-3 text-muted-foreground",
+                    isProvider && "cursor-pointer"
+                  )}
+                  onClick={() => isProvider && currentImage && handleImageDoubleClick(currentImage)}
                 >
                   Editar Descripción
                 </div>
@@ -345,9 +385,9 @@ export default function ProfilePage() {
                     gallery.map((thumb, index) => (
                         <div 
                             key={index} 
-                            className="relative aspect-square cursor-pointer group"
-                            onClick={() => setCurrentImageIndex(index)}
-                            onDoubleClick={() => handleImageDoubleClick(thumb)}
+                            className={cn("relative aspect-square group", isProvider && "cursor-pointer")}
+                            onClick={() => isProvider && setCurrentImageIndex(index)}
+                            onDoubleClick={() => isProvider && handleImageDoubleClick(thumb)}
                         >
                         <Image
                             src={thumb.src}
@@ -355,7 +395,7 @@ export default function ProfilePage() {
                             fill
                             className={cn(
                                 "rounded-lg object-cover transition-all duration-200",
-                                currentImageIndex === index 
+                                currentImageIndex === index && isProvider
                                     ? "ring-2 ring-primary ring-offset-2" 
                                     : "ring-0 group-hover:opacity-80"
                             )}
@@ -379,7 +419,7 @@ export default function ProfilePage() {
         </main>
         <ProfileFooter />
       </div>
-      {selectedImage && (
+      {selectedImage && isProvider && (
         <ImageDetailsDialog
           isOpen={isDetailsDialogOpen}
           onOpenChange={setIsDetailsDialogOpen}
@@ -388,7 +428,7 @@ export default function ProfilePage() {
           onDelete={handleDeleteImage}
         />
       )}
-      {currentImage && 
+      {currentImage && isProvider &&
         <PromotionDialog
           isOpen={isPromotionDialogOpen}
           onOpenChange={setIsPromotionDialogOpen}
