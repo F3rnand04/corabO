@@ -19,15 +19,16 @@ import { Separator } from "./ui/separator";
 interface AdvancedQuoteDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
+  selectedOption: string | null;
 }
 
-export function AdvancedQuoteDialog({ isOpen, onOpenChange }: AdvancedQuoteDialogProps) {
+export function AdvancedQuoteDialog({ isOpen, onOpenChange, selectedOption }: AdvancedQuoteDialogProps) {
   const { currentUser, subscribeUser } = useCorabo();
   const router = useRouter();
 
   const handlePayPerQuote = () => {
     onOpenChange(false);
-    router.push('/quotes/payment?from=advanced-dialog');
+    router.push(`/quotes/payment?from=advanced-dialog&option=${selectedOption}`);
   }
 
   const handleSubscribe = () => {

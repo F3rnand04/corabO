@@ -58,7 +58,8 @@ function QuotesHeader() {
             <ChevronLeft className="h-6 w-6" />
           </Button>
           <div className="flex items-center gap-2">
-            {/* Title removed as per user request */}
+            <FileText className="w-5 h-5" />
+            <h1 className="text-xl font-semibold">Cotizar</h1>
           </div>
           <Button variant="ghost" size="icon">
             <AlertCircle className="h-6 w-6 text-muted-foreground" />
@@ -113,7 +114,7 @@ export default function QuotesPage() {
   const form = useForm<QuoteFormValues>({
     resolver: zodResolver(quoteSchema),
     defaultValues: {
-      type: 'service',
+      type: 'product',
       items: [{ name: '' }],
       title: '',
       description: '',
@@ -147,155 +148,112 @@ export default function QuotesPage() {
       <QuotesHeader />
       <main className="container py-6">
         <div className="mx-auto max-w-2xl">
-          <Card className="shadow-lg">
-            <CardContent className="p-6">
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <FormField
-                    control={form.control}
-                    name="type"
-                    render={({ field }) => (
-                        <FormItem className="flex items-center justify-between">
-                            <FormLabel className="text-base font-semibold">¿Qué necesitas cotizar?</FormLabel>
-                            <FormControl>
-                                <RadioGroup
-                                    onValueChange={(value) => {
-                                        field.onChange(value);
-                                        form.clearErrors(); // Clear errors when changing type
-                                        if (value === 'product' && fields.length === 0) {
-                                            append({ name: '' });
-                                        }
-                                    }}
-                                    defaultValue={field.value}
-                                    className="flex gap-4"
-                                >
-                                    <FormItem className="flex items-center space-x-2 space-y-0">
-                                        <FormControl>
-                                            <RadioGroupItem value="product" id="product" />
-                                        </FormControl>
-                                        <Label htmlFor="product" className="flex items-center gap-2 font-normal cursor-pointer"><Package className="w-4 h-4"/> Productos</Label>
-                                    </FormItem>
-                                    <FormItem className="flex items-center space-x-2 space-y-0">
-                                        <FormControl>
-                                            <RadioGroupItem value="service" id="service" />
-                                        </FormControl>
-                                        <Label htmlFor="service" className="flex items-center gap-2 font-normal cursor-pointer"><Hand className="w-4 h-4"/> Servicios</Label>
-                                    </FormItem>
-                                </RadioGroup>
-                            </FormControl>
-                            <FormMessage className="col-span-2" />
-                        </FormItem>
-                    )}
-                  />
-                  
-                   <div className="flex items-center gap-2">
-                     <Select>
-                        <SelectTrigger className="w-[150px]">
-                          <Users className="h-4 w-4 mr-2" />
-                          <SelectValue placeholder="GRUPOS" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {serviceGroups.map((group) => (
-                            <SelectItem key={group.name} value={group.name}>{group.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                     <div className="relative flex-grow">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                        <Input placeholder="Buscar servicio o producto..." className="pl-10" />
-                     </div>
-                  </div>
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               
-                  <Separator />
-
-                  {quoteType === 'service' && (
-                    <>
-                       <FormField
-                          control={form.control}
-                          name="title"
-                          render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>QUÉ NECESITAS:</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="Ej: Instalar una lámpara de techo" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      <FormField
-                          control={form.control}
-                          name="description"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Descripción:</FormLabel>
-                              <FormControl>
-                                <Textarea
-                                  placeholder="La lámpara es de tipo colgante, el techo es de drywall y está a 3 metros de altura. Ya tengo la lámpara, solo necesito la instalación."
-                                  rows={6}
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                    </>
+               <div className="flex items-center gap-2">
+                 <Select>
+                    <SelectTrigger className="w-[150px] rounded-full">
+                      <SelectValue placeholder="GRUPOS" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {serviceGroups.map((group) => (
+                        <SelectItem key={group.name} value={group.name}>{group.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                 <div className="relative flex-grow">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input placeholder="Buscar servicio o producto..." className="pl-10 rounded-full" />
+                 </div>
+              </div>
+          
+              <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>QUÉ NECESITAS:</FormLabel>
+                        <FormControl>
+                            <Input placeholder="Ej: Instalar una lámpara de techo" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
                   )}
-
-                  {quoteType === 'product' && (
-                     <div className="space-y-2">
-                        <Label>Productos (máx. 3)</Label>
-                        {fields.map((field, index) => (
-                           <div key={field.id} className="flex items-center gap-2">
-                             <Input 
-                                {...form.register(`items.${index}.name` as const)}
-                                placeholder={`Producto ${index + 1}`}
-                             />
-                             <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 1}>
-                                <XCircle className="w-5 h-5 text-destructive" />
-                             </Button>
-                           </div>
-                        ))}
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => append({ name: '' })}
-                            disabled={fields.length >= 3}
-                            className="text-xs"
-                        >
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            Añadir Producto
-                        </Button>
-                        <FormMessage>{form.formState.errors.items?.message || form.formState.errors.items?.root?.message}</FormMessage>
-                    </div>
+                />
+              
+              <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Descripción:</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="La lámpara es de tipo colgante, el techo es de drywall y está a 3 metros de altura. Ya tengo la lámpara, solo necesito la instalación."
+                          rows={6}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
+                />
 
-                  <div className="flex justify-between items-center">
-                    <Button type="submit">
-                      Solicitar Cotización
-                    </Button>
-                    <Button variant="ghost" size="icon">
-                      <Upload className="h-6 w-6 text-muted-foreground" />
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
-          <Collapsible open={isAdvancedSearchOpen} onOpenChange={setIsAdvancedSearchOpen} className="mt-6">
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" className="w-full justify-start">
-                    <PlusCircle className="mr-2 h-5 w-5" />
-                    Búsqueda Avanzada
-                    <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform", isAdvancedSearchOpen && "rotate-180")} />
+              <div className="space-y-2">
+                <Label>Lista de Productos (opcional)</Label>
+                {fields.map((field, index) => (
+                   <div key={field.id} className="flex items-center gap-2">
+                     <Input 
+                        {...form.register(`items.${index}.name` as const)}
+                        placeholder={`Producto ${index + 1}`}
+                     />
+                     <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 1}>
+                        <XCircle className="w-5 h-5 text-destructive" />
+                     </Button>
+                   </div>
+                ))}
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => append({ name: '' })}
+                    disabled={fields.length >= 3}
+                    className="text-xs"
+                >
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Añadir Producto
                 </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="py-2 animate-in fade-in-0 zoom-in-95">
-                <AdvancedSearchOptions />
-              </CollapsibleContent>
-            </Collapsible>
+                <FormMessage>{form.formState.errors.items?.message || form.formState.errors.items?.root?.message}</FormMessage>
+            </div>
+
+
+              <div className="flex justify-between items-center">
+                <Button variant="ghost" className="p-0 h-auto">
+                    <Upload className="mr-2 h-5 w-5 text-muted-foreground" />
+                    <span className="text-muted-foreground">Cargar Documento</span>
+                </Button>
+                <Button type="submit" className="px-8">
+                  Enviar
+                </Button>
+              </div>
+              
+              <Collapsible open={isAdvancedSearchOpen} onOpenChange={setIsAdvancedSearchOpen} className="pt-6">
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" className="w-full justify-start p-0 h-auto">
+                        <PlusCircle className="mr-2 h-5 w-5" />
+                        Búsqueda Avanzada
+                        <ChevronDown className={cn("ml-auto h-4 w-4 transition-transform", isAdvancedSearchOpen && "rotate-180")} />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="py-4 animate-in fade-in-0 zoom-in-95">
+                    <AdvancedSearchOptions />
+                  </CollapsibleContent>
+              </Collapsible>
+            </form>
+          </Form>
+          
         </div>
       </main>
     </>

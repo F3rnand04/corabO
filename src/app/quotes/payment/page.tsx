@@ -4,7 +4,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, CheckCircle, CreditCard, ChevronLeft, Star, Zap, Smartphone, Landmark, AlertCircle, Plus, Minus, TrendingUp, Upload, Copy } from 'lucide-react';
+import { Check, CheckCircle, CreditCard, ChevronLeft, Star, Smartphone, Landmark, AlertCircle, Plus, Minus, Upload, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect, useState, ChangeEvent } from 'react';
 import { cn } from '@/lib/utils';
@@ -23,6 +23,7 @@ export default function QuotePaymentPage() {
     const [step, setStep] = useState(1);
     const [voucherFile, setVoucherFile] = useState<File | null>(null);
     const [reference, setReference] = useState('');
+    const advancedOption = searchParams.get('option');
 
 
     useEffect(() => {
@@ -54,7 +55,7 @@ export default function QuotePaymentPage() {
             description: `Tu búsqueda por $${amount.toFixed(2)} ha sido activada.`,
             className: "bg-green-100 border-green-300 text-green-800",
         });
-        router.push('/quotes/pro');
+        router.push(`/quotes/pro?unlocked=${advancedOption}`);
     };
 
     const bolivaresAmount = (amount * EXCHANGE_RATE).toFixed(2);
@@ -86,7 +87,7 @@ export default function QuotePaymentPage() {
         
         const allDataString = Object.entries(selectedData)
             .filter(([key]) => key !== 'title')
-            .map(([key, value]) => `${key.charAt(0).toUpperCase() + key.slice(1)}: ${value}`)
+            .map(([key, value]) => `${(key.charAt(0).toUpperCase() + key.slice(1))}: ${value}`)
             .join('\n');
             
         navigator.clipboard.writeText(allDataString);
@@ -172,7 +173,7 @@ export default function QuotePaymentPage() {
                                         <p className="font-bold mb-2">{selectedData.title}</p>
                                         {Object.entries(selectedData).filter(([key]) => key !== 'title').map(([key, value]) => (
                                             <div key={key} className="flex justify-between items-center">
-                                                <span className="capitalize text-muted-foreground">{key}:</span>
+                                                <span className="capitalize text-muted-foreground">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
                                                 <div className="flex items-center gap-2">
                                                 <span className="font-mono">{value}</span>
                                                 <Button variant="ghost" size="icon" className="w-6 h-6" onClick={() => copyToClipboard(value as string)}><Copy className="h-3 w-3"/></Button>
@@ -192,7 +193,7 @@ export default function QuotePaymentPage() {
                                     <div className="space-y-2">
                                         <Label htmlFor="voucher-upload">Comprobante de Pago</Label>
                                         <div className="flex items-center gap-2">
-                                            <Label htmlFor="voucher-upload" className="cursor-pointer">
+                                            <Label htmlFor="voucher-upload" className="cursor-pointer flex-shrink-0">
                                                 <Button asChild variant="outline">
                                                     <span><Upload className="h-4 w-4 mr-2"/>Subir</span>
                                                 </Button>
@@ -204,7 +205,7 @@ export default function QuotePaymentPage() {
                                                 accept="image/*"
                                                 onChange={(e: ChangeEvent<HTMLInputElement>) => setVoucherFile(e.target.files ? e.target.files[0] : null)}
                                                 />
-                                            <span className={cn("text-sm text-muted-foreground", voucherFile && "text-foreground font-medium")}>
+                                            <span className={cn("text-sm text-muted-foreground truncate", voucherFile && "text-foreground font-medium")}>
                                                 {voucherFile ? voucherFile.name : 'Seleccionar archivo...'}
                                             </span>
                                         </div>
