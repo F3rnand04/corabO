@@ -8,9 +8,11 @@ import { Home, PlaySquare, Upload, MessageSquare, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { UploadDialog } from './UploadDialog';
+import { useRouter } from 'next/navigation';
 
 export default function ProfileFooter() {
   const pathname = usePathname();
+  const router = useRouter();
   const [isUploadOpen, setIsUploadOpen] = useState(false);
 
   const navItems = [
@@ -18,7 +20,7 @@ export default function ProfileFooter() {
     { href: '/videos', icon: PlaySquare, label: 'Videos' },
     { href: '#upload', icon: Upload, label: 'Añadir', isCentral: true, action: () => setIsUploadOpen(true) },
     { href: '/messages', icon: MessageSquare, label: 'Mensajes' },
-    { href: '#settings', icon: Settings, label: 'Ajustes' },
+    { href: '/settings', icon: Settings, label: 'Ajustes' },
   ];
 
   return (
@@ -42,26 +44,12 @@ export default function ProfileFooter() {
                 </Button>
               );
             }
-            
-            if (item.action || item.href === '#settings') {
-                 return (
-                    <Button
-                        key={item.href}
-                        variant="ghost"
-                        onClick={item.action}
-                        className={cn(
-                            "flex-col h-auto p-1 text-muted-foreground hover:text-primary"
-                        )}
-                        >
-                        <item.icon className="w-6 h-6" />
-                    </Button>
-                 );
-            }
 
             return (
-              <Link key={item.href} href={item.href} passHref>
+              <Link key={item.href} href={item.href !== '#upload' ? item.href : '#'} passHref>
                 <Button
                   variant="ghost"
+                  onClick={item.action}
                   className={cn(
                     "flex-col h-auto p-1 text-muted-foreground hover:text-primary",
                     isActive && "text-primary"
