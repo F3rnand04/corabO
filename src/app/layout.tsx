@@ -26,9 +26,7 @@ export default function RootLayout({
       <body className={`${inter.variable} antialiased bg-background`}>
         <Providers>
           <AppLayout>
-            <div className="pb-20">
-              {children}
-            </div>
+            {children}
           </AppLayout>
         </Providers>
       </body>
