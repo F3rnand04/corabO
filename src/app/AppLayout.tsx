@@ -15,15 +15,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isQuotesPage = pathname === '/quotes';
   const isContactsPage = pathname === '/contacts';
   const isSearchPage = pathname === '/search';
+  const isMapPage = pathname === '/map';
 
-  const shouldShowMainHeader = !isProfilePage && !isCompanyProfilePage && !isVideosPage && !isProfileSetupPage && !isQuotesPage && !isContactsPage && !isSearchPage;
-  const shouldShowFooter = !isProfilePage && !isProfileSetupPage && !isQuotesPage && !isContactsPage && !isSearchPage;
+  const shouldShowMainHeader = !isProfilePage && !isCompanyProfilePage && !isVideosPage && !isProfileSetupPage && !isQuotesPage && !isContactsPage && !isSearchPage && !isMapPage;
+  const shouldShowFooter = !isProfilePage && !isProfileSetupPage && !isQuotesPage && !isContactsPage && !isSearchPage && !isMapPage;
   
   return (
     <div className="flex flex-col min-h-screen">
       {shouldShowMainHeader && <Header />}
       <main className="flex-grow">
-        <div className={!isSearchPage ? "pb-20" : ""}>
+        <div className={!isSearchPage && !isMapPage ? "pb-20" : ""}>
           {children}
         </div>
       </main>
