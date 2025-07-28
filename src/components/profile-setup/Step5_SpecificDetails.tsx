@@ -43,7 +43,7 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
       website,
       schedule
     });
-  }, [specialty, location, serviceRadius, hasPhysicalLocation, showExactLocation, isOnlyDelivery, website, schedule]);
+  }, [specialty, location, serviceRadius, hasPhysicalLocation, showExactLocation, isOnlyDelivery, website, schedule, setFormData]);
 
   const MAX_RADIUS_FREE = 10;
   const isOverFreeRadius = serviceRadius > MAX_RADIUS_FREE;
