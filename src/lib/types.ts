@@ -21,6 +21,7 @@ export type ProfileSetupData = {
   categories?: string[];
   primaryCategory?: string | null;
   specialty?: string;
+  offerType?: 'product' | 'service';
   hasPhysicalLocation?: boolean;
   location?: string;
   showExactLocation?: boolean;

@@ -45,6 +45,7 @@ export default function ProfileSetupPage() {
       email: currentUser.email || '',
       phone: currentUser.phone || '',
       specialty: '',
+      offerType: 'service',
       hasPhysicalLocation: true,
       location: '',
       showExactLocation: true,
