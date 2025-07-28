@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Info } from "lucide-react";
+import { Info, MessageSquare } from "lucide-react";
 import { ValidationItem } from "@/components/ValidationItem";
 import { useCorabo } from "@/contexts/CoraboContext";
 
@@ -21,8 +21,16 @@ export default function Step4_GeneralDetails({ onBack, onNext }: Step4_GeneralDe
         
         <div className="space-y-4">
             <div className="p-4 bg-muted/50 rounded-lg border">
-                <p className="font-semibold text-lg">{currentUser.name}</p>
-                <p className="text-sm text-muted-foreground">Este es el nombre asociado a tu cuenta. Para cambios, contáctanos con una justificación y con gusto te ayudaremos.</p>
+                <div className="flex justify-between items-start">
+                    <div>
+                        <p className="font-semibold text-lg">{currentUser.name}</p>
+                        <p className="text-sm text-muted-foreground mt-1">Este es el nombre asociado a tu cuenta. Para cambios, contáctanos con una justificación y con gusto te ayudaremos.</p>
+                    </div>
+                    <Button variant="outline" size="sm" className="ml-4">
+                        <MessageSquare className="w-4 h-4 mr-2"/>
+                        Contactar
+                    </Button>
+                </div>
             </div>
 
             <ValidationItem
