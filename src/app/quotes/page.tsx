@@ -200,64 +200,68 @@ export default function QuotesPage() {
                     )}
                 />
           
-              <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>QUÉ NECESITAS:</FormLabel>
-                        <FormControl>
-                            <Input placeholder="Ej: Instalar una lámpara de techo" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              
-              <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Descripción:</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="La lámpara es de tipo colgante, el techo es de drywall y está a 3 metros de altura. Ya tengo la lámpara, solo necesito la instalación."
-                          rows={6}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-              <div className="space-y-2">
-                <Label>Lista de Productos (opcional)</Label>
-                {fields.map((field, index) => (
-                   <div key={field.id} className="flex items-center gap-2">
-                     <Input 
-                        {...form.register(`items.${index}.name` as const)}
-                        placeholder={`Producto ${index + 1}`}
-                     />
-                     <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 1}>
-                        <XCircle className="w-5 h-5 text-destructive" />
-                     </Button>
-                   </div>
-                ))}
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => append({ name: '' })}
-                    disabled={fields.length >= 3}
-                    className="text-xs"
-                >
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Añadir Producto
-                </Button>
-                <FormMessage>{form.formState.errors.items?.message || form.formState.errors.items?.root?.message}</FormMessage>
-            </div>
+               {quoteType === 'service' ? (
+                <>
+                  <FormField
+                      control={form.control}
+                      name="title"
+                      render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>QUÉ NECESITAS:</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Ej: Instalar una lámpara de techo" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  
+                  <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Descripción:</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="La lámpara es de tipo colgante, el techo es de drywall y está a 3 metros de altura. Ya tengo la lámpara, solo necesito la instalación."
+                              rows={6}
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                </>
+              ) : (
+                <div className="space-y-2">
+                  <Label>Lista de Productos (opcional)</Label>
+                  {fields.map((field, index) => (
+                     <div key={field.id} className="flex items-center gap-2">
+                       <Input 
+                          {...form.register(`items.${index}.name` as const)}
+                          placeholder={`Producto ${index + 1}`}
+                       />
+                       <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 1}>
+                          <XCircle className="w-5 h-5 text-destructive" />
+                       </Button>
+                     </div>
+                  ))}
+                  <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => append({ name: '' })}
+                      disabled={fields.length >= 3}
+                      className="text-xs"
+                  >
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Añadir Producto
+                  </Button>
+                  <FormMessage>{form.formState.errors.items?.message || form.formState.errors.items?.root?.message}</FormMessage>
+                </div>
+              )}
 
 
               <div className="flex justify-between items-center">
