@@ -5,58 +5,101 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileHeart, X } from 'lucide-react';
+import { ChevronLeft, Copy, MessageSquare, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+
+function ContactsHeader() {
+  const router = useRouter();
+  return (
+    <header className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container px-4 sm:px-6">
+        <div className="flex h-16 items-center justify-between">
+          <Button variant="ghost" size="icon" onClick={() => router.back()}>
+            <ChevronLeft className="h-6 w-6" />
+          </Button>
+          <div className="text-right">
+            <p className="font-bold text-sm text-red-500">SUSCRIBIR</p>
+            <p className="font-bold text-lg">Nivel 1</p>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+}
+
 
 export default function ContactsPage() {
-  const { contacts, removeContact } = useCorabo();
+  const { currentUser, contacts, removeContact } = useCorabo();
+  const router = useRouter();
 
   return (
-    <main className="container py-8">
-      <Card className="max-w-2xl mx-auto">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileHeart /> Contactos Guardados
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {contacts.length > 0 ? (
-            <ul className="space-y-4">
-              {contacts.map((contact) => (
-                <li
-                  key={contact.id}
-                  className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                >
-                  <div className="flex items-center gap-4">
-                    <Avatar className="w-12 h-12">
-                      <AvatarImage src={contact.profileImage} />
-                      <AvatarFallback>
-                        {contact.name.charAt(0)}
-                      </AvatarFallback>
+    <>
+    <ContactsHeader />
+    <main className="bg-muted/30 min-h-screen">
+      <div className="container py-6 px-4">
+        {/* User Info Section */}
+        <div className="bg-background p-4 rounded-xl shadow-sm mb-6">
+            <div className='flex justify-between items-start'>
+                <div className="flex items-center gap-4">
+                    <Avatar className="w-16 h-16 border-2 border-muted">
+                        <AvatarImage src={currentUser.profileImage} alt={currentUser.name} />
+                        <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-semibold">{contact.name}</p>
-                      <p className="text-sm text-muted-foreground capitalize">
-                        {contact.type}
-                      </p>
+                        <p className="font-bold">ID corabO</p>
+                        <p className="text-sm text-muted-foreground">Correo: uruario@gmail.com</p>
+                        <p className="text-sm text-muted-foreground">teléfono: 0412 12345678</p>
                     </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeContact(contact.id)}
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </li>
-              ))}
-            </ul>
+                </div>
+                <Button variant="ghost" size="icon">
+                    <Copy className="w-5 h-5 text-muted-foreground" />
+                </Button>
+            </div>
+            <div className="text-right mt-2 space-y-1">
+                <p className="font-mono text-sm">ABC123456</p>
+                <p className="text-sm font-semibold text-green-600">Validado</p>
+                <p className="text-sm font-semibold text-red-500">Validar</p>
+            </div>
+        </div>
+
+        {/* Contacts List */}
+        <h2 className="text-xl font-bold mb-4 px-2">Contactos</h2>
+        
+        <div className="space-y-3">
+          {contacts.length > 0 ? (
+            contacts.map((contact) => (
+              <Card key={contact.id} className="rounded-full shadow-sm">
+                <CardContent className="p-2 flex items-center justify-between">
+                    <div className='flex items-center gap-3'>
+                        <Avatar className="w-12 h-12">
+                            <AvatarImage src={contact.profileImage} alt={contact.name} />
+                            <AvatarFallback>{contact.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <p className="font-semibold text-sm">{contact.name}</p>
+                            <p className="text-xs text-muted-foreground">Especialidad</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 pr-2">
+                        <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full">
+                            <MessageSquare className="w-5 h-5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full" onClick={() => removeContact(contact.id)}>
+                            <X className="w-5 h-5" />
+                        </Button>
+                    </div>
+                </CardContent>
+              </Card>
+            ))
           ) : (
             <p className="text-sm text-center text-muted-foreground py-12">
               No tienes contactos guardados todavía.
             </p>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </main>
+    </>
   );
 }
+
