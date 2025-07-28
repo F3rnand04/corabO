@@ -42,6 +42,7 @@ export type User = {
   emailValidated: boolean;
   phoneValidated: boolean;
   verified?: boolean;
+  isSubscribed?: boolean;
   promotion?: {
     text: string;
     expires: string;

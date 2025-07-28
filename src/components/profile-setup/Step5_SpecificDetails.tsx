@@ -11,6 +11,7 @@ import { Switch } from '../ui/switch';
 import { Slider } from '../ui/slider';
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
+import { SubscriptionDialog } from '../SubscriptionDialog';
 
 interface Step5_SpecificDetailsProps {
   onBack: () => void;
@@ -30,6 +31,7 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
   const [isOnlyDelivery, setIsOnlyDelivery] = useState(formData.isOnlyDelivery);
   const [website, setWebsite] = useState(formData.website);
   const [schedule, setSchedule] = useState(formData.schedule);
+  const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
 
   useEffect(() => {
     setFormData({ 
@@ -60,6 +62,7 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
   };
 
   return (
+    <>
     <div className="space-y-8">
       <h2 className="text-xl font-semibold">Paso 5: Detalles Específicos del Proveedor</h2>
       
@@ -135,7 +138,7 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
                          <div className="flex items-center justify-center gap-2 text-destructive text-xs p-2 bg-destructive/10 rounded-md">
                             <AlertCircle className="h-4 w-4" />
                             <span>Para ampliar el radio, necesitas un plan.</span>
-                            <Button size="sm" className="h-7 text-xs" variant="destructive">Suscribir</Button>
+                            <Button size="sm" className="h-7 text-xs" variant="destructive" onClick={() => setIsSubscriptionDialogOpen(true)}>Suscribir</Button>
                          </div>
                      ) : (
                         <div className="flex items-center justify-between pt-2">
@@ -183,5 +186,7 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
         <Button onClick={onNext} disabled={!location.trim()}>Siguiente</Button>
       </div>
     </div>
+    <SubscriptionDialog isOpen={isSubscriptionDialogOpen} onOpenChange={setIsSubscriptionDialogOpen} />
+    </>
   );
 }

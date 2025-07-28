@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Slider } from '../ui/slider';
 import { cn } from '@/lib/utils';
 import { Label } from '../ui/label';
+import { SubscriptionDialog } from '../SubscriptionDialog';
 
 interface Step6_ReviewProps {
   onBack: () => void;
@@ -42,6 +43,7 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
   const router = useRouter();
   const { toast } = useToast();
   const [serviceRadius, setServiceRadius] = useState(formData.serviceRadius || 10);
+  const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
   
   useEffect(() => {
     // Sync local state with formData from props
@@ -66,7 +68,7 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
     });
   }
   
-  const isOverFreeRadius = serviceRadius > MAX_RADIUS_FREE;
+  const isOverFreeRadius = serviceRadius > MAX_RADIUS_FREE && !currentUser.isSubscribed;
 
   const renderItem = (label: string, value: React.ReactNode, step: number, children?: React.ReactNode) => (
     <div className="flex justify-between items-start py-4">
@@ -82,6 +84,7 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
   );
 
   return (
+    <>
     <div className="space-y-6">
       <h2 className="text-xl font-semibold">Paso 6: Revisión y Confirmación</h2>
       <p className="text-sm text-muted-foreground">
@@ -166,7 +169,7 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
                                     <div className="flex items-center justify-center gap-2 text-destructive text-xs p-2 bg-destructive/10 rounded-md">
                                         <AlertCircle className="h-4 w-4" />
                                         <span>Para ampliar el radio, necesitas un plan.</span>
-                                        <Button size="sm" className="h-7 text-xs" variant="destructive">Suscribir</Button>
+                                        <Button size="sm" className="h-7 text-xs" variant="destructive" onClick={() => setIsSubscriptionDialogOpen(true)}>Suscribir</Button>
                                     </div>
                                 )}
                             </div>
@@ -183,7 +186,7 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
         <Button onClick={handleFinish}>Finalizar Configuración</Button>
       </div>
     </div>
+    <SubscriptionDialog isOpen={isSubscriptionDialogOpen} onOpenChange={setIsSubscriptionDialogOpen} />
+    </>
   );
 }
-
-    

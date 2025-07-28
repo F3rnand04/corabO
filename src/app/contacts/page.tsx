@@ -5,12 +5,16 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
-import { ChevronLeft, Copy, MessageSquare, X } from 'lucide-react';
+import { ChevronLeft, Copy, MessageSquare, X, CheckCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ValidationItem } from '@/components/ValidationItem';
+import { SubscriptionDialog } from '@/components/SubscriptionDialog';
+import { useState } from 'react';
 
-function ContactsHeader() {
+function ContactsHeader({ onSubscribeClick }: { onSubscribeClick: () => void }) {
   const router = useRouter();
+  const { currentUser } = useCorabo();
+
   return (
     <header className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container px-4 sm:px-6">
@@ -18,9 +22,14 @@ function ContactsHeader() {
           <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <ChevronLeft className="h-6 w-6" />
           </Button>
-          <div className="text-right">
-            <p className="font-bold text-sm text-red-500">SUSCRIBIR</p>
-            <p className="font-bold text-lg">Nivel 1</p>
+          <div className="text-right cursor-pointer" onClick={onSubscribeClick}>
+            <p className="font-bold text-sm text-red-500">
+                {currentUser.isSubscribed ? 'PLAN ACTIVO' : 'SUSCRIBIR'}
+            </p>
+            <p className="font-bold text-lg flex items-center gap-1">
+                {currentUser.isSubscribed && <CheckCircle className="w-4 h-4 text-green-500"/>}
+                Nivel 1
+            </p>
           </div>
         </div>
       </div>
@@ -31,10 +40,11 @@ function ContactsHeader() {
 
 export default function ContactsPage() {
   const { currentUser, contacts, removeContact, validateEmail, validatePhone } = useCorabo();
+  const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
 
   return (
     <>
-    <ContactsHeader />
+    <ContactsHeader onSubscribeClick={() => setIsSubscriptionDialogOpen(true)} />
     <main className="bg-muted/30 min-h-screen">
       <div className="container py-6 px-4">
         {/* User Info Section */}
@@ -109,6 +119,7 @@ export default function ContactsPage() {
         </div>
       </div>
     </main>
+    <SubscriptionDialog isOpen={isSubscriptionDialogOpen} onOpenChange={setIsSubscriptionDialogOpen} />
     </>
   );
 }

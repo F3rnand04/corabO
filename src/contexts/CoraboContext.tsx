@@ -41,6 +41,7 @@ interface CoraboState {
   validatePhone: (userId: string) => void;
   setFeedView: (view: FeedView) => void;
   updateFullProfile: (userId: string, data: ProfileSetupData) => void;
+  subscribeUser: (userId: string) => void;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -329,6 +330,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
      }))
   }
 
+  const subscribeUser = (userId: string) => {
+    updateUser(userId, { isSubscribed: true, verified: true });
+    toast({
+        title: "¡Suscripción Activada!",
+        description: "Ahora eres un usuario verificado y tienes acceso a todos los beneficios."
+    });
+  }
+
   const value = {
     currentUser,
     users,
@@ -362,6 +371,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     validateEmail,
     validatePhone,
     updateFullProfile,
+    subscribeUser,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;
