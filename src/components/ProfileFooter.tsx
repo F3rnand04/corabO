@@ -19,8 +19,8 @@ export default function ProfileFooter() {
     { href: '/', icon: Home, label: 'Inicio' },
     { href: '/videos', icon: PlaySquare, label: 'Videos' },
     { href: '#upload', icon: Upload, label: 'Añadir', isCentral: true, action: () => setIsUploadOpen(true) },
-    { href: '/messages', icon: MessageSquare, label: 'Mensajes' },
-    { href: '#settings', icon: Settings, label: 'Ajustes', action: () => {} },
+    { href: '#cotizar', icon: FileText, label: 'Cotizar', action: () => setIsQuoteRequestOpen(true) },
+    { href: '/settings', icon: Settings, label: 'Ajustes' },
   ];
 
   return (
@@ -29,20 +29,6 @@ export default function ProfileFooter() {
         <div className="container h-16 flex justify-around items-center px-2">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
-
-            const buttonContent = (
-              <Button
-                key={item.href}
-                variant="ghost"
-                onClick={item.action}
-                className={cn(
-                  "flex-col h-auto p-1 text-muted-foreground hover:text-primary",
-                  isActive && "text-primary"
-                )}
-              >
-                <item.icon className="w-6 h-6" />
-              </Button>
-            );
 
             if (item.isCentral) {
               return (
@@ -59,12 +45,22 @@ export default function ProfileFooter() {
               );
             }
             
-            // If it has an action but is not a link
-            if (item.action && item.href.startsWith('#')) {
-                 return buttonContent;
+            if (item.action) {
+                 return (
+                    <div key={item.href}>
+                        <Button
+                            variant="ghost"
+                            onClick={item.action}
+                            className={cn(
+                                "flex-col h-auto p-1 text-muted-foreground hover:text-primary"
+                            )}
+                            >
+                            <item.icon className="w-6 h-6" />
+                        </Button>
+                    </div>
+                 );
             }
 
-            // Default to a link
             return (
               <Link key={item.href} href={item.href} passHref>
                 <Button
