@@ -87,7 +87,7 @@ const quoteSchema = z.object({
     items: z.array(z.object({ name: z.string().min(1, "El nombre no puede estar vacío.") })).min(1, 'Debes añadir al menos un producto.').max(3),
     title: z.string(),
     description: z.string(),
-    searchQuery: z.string().min(1, "Debes especificar un proveedor o grupo."),
+    searchQuery: z.string(),
 }).refine(data => {
     if (data.type === 'service') return data.title.length > 0;
     return true;
@@ -263,12 +263,20 @@ export default function QuotesPage() {
                 </div>
               )}
 
+              <div className="space-y-2">
+                <Label>Adjuntar Archivos (Opcional)</Label>
+                 <div className="flex items-center gap-2">
+                    <Button asChild variant="outline">
+                      <Label htmlFor="file-upload" className="cursor-pointer">
+                        <Upload className="mr-2 h-4 w-4" />
+                        Cargar PDF o Fotos
+                      </Label>
+                    </Button>
+                    <Input id="file-upload" type="file" className="hidden" multiple accept="image/*,.pdf" />
+                  </div>
+              </div>
 
-              <div className="flex justify-between items-center">
-                <Button variant="ghost" className="p-0 h-auto">
-                    <Upload className="mr-2 h-5 w-5 text-muted-foreground" />
-                    <span className="text-muted-foreground">Cargar Documento</span>
-                </Button>
+              <div className="flex justify-end pt-4">
                 <Button type="submit" className="px-8">
                   Enviar
                 </Button>

@@ -84,7 +84,7 @@ const quoteSchema = z.object({
     items: z.array(z.object({ name: z.string().min(1, "El nombre no puede estar vacío.") })).max(5),
     title: z.string(),
     description: z.string(),
-    searchQuery: z.string().min(1, "Debes especificar un proveedor o grupo."),
+    searchQuery: z.string(),
 }).refine(data => {
     if (data.type === 'service') return data.title.length > 0;
     return true;
@@ -135,9 +135,15 @@ export default function QuotesProPage() {
 
     requestQuoteFromGroup(quoteDetails, data.items.map(i => i.name));
 
+    let successMessage = "¡Excelente! Tu solicitud PRO ha sido enviada a más de 15 proveedores premium. ¡Las mejores cotizaciones están en camino!";
+    
+    if (unlockedOption === 'verified') {
+        successMessage = "¡Misión Cumplida! Tu solicitud PRO ha sido enviada a más de 20 proveedores verificados. ¡Prepárate para recibir las mejores ofertas!";
+    }
+
     toast({
-      title: "¡Felicidades! Solicitud PRO enviada",
-      description: "Recibirás cotizaciones de los mejores proveedores."
+      title: "¡Cotización PRO Enviada!",
+      description: successMessage
     });
     form.reset();
   };
@@ -200,7 +206,7 @@ export default function QuotesProPage() {
                     )}
                 />
               
-                 {quoteType === 'service' && (
+                 {quoteType === 'service' ? (
                   <>
                     <FormField
                         control={form.control}
@@ -234,9 +240,7 @@ export default function QuotesProPage() {
                         )}
                       />
                   </>
-                 )}
-
-                 {quoteType === 'product' && (
+                 ) : (
                     <div className="space-y-2">
                       <Label>Productos (opcional, máx. 5)</Label>
                       {fields.map((field, index) => (
