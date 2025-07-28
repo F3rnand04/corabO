@@ -132,7 +132,11 @@ export default function QuotesProPage() {
   const quoteType = form.watch('type');
 
   const onSubmit = (data: QuoteFormValues) => {
-    const success = requestQuoteFromGroup(data.title, data.items.map(i => i.name));
+    const success = requestQuoteFromGroup(
+      data.title, 
+      data.items.map(i => i.name),
+      data.searchQuery
+    );
 
     if (success) {
         let successMessage = "¡Excelente! Tu solicitud PRO ha sido enviada a más de 15 proveedores premium. ¡Las mejores cotizaciones están en camino!";

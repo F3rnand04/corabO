@@ -30,7 +30,7 @@ interface CoraboState {
   removeFromCart: (productId: string) => void;
   getCartTotal: () => number;
   requestService: (service: Service) => void;
-  requestQuoteFromGroup: (serviceName: string, items: string[]) => boolean;
+  requestQuoteFromGroup: (serviceName: string, items: string[], groupOrProvider: string) => boolean;
   sendQuote: (transactionId: string, quote: { breakdown: string; total: number }) => void;
   acceptQuote: (transactionId: string) => void;
   startDispute: (transactionId: string) => void;
@@ -186,24 +186,35 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     toast({ title: "Servicio Solicitado", description: `Has solicitado el servicio: ${service.name}` });
   };
   
-  const requestQuoteFromGroup = (serviceName: string, items: string[]): boolean => {
-     // Create a unique signature for the request
-     const requestSignature = [...items, serviceName].sort().join('|');
+  const requestQuoteFromGroup = (serviceName: string, items: string[], groupOrProvider: string): boolean => {
+     // Create a unique signature for the request based on content AND target
+     const requestSignature = [...items, serviceName, groupOrProvider].sort().join('|');
      
      if (!currentUser.isSubscribed) {
          const today = new Date().toISOString().split('T')[0];
          const userQuotesToday = dailyQuotes[currentUser.id] || [];
          const quoteRequest = userQuotesToday.find(q => q.requestSignature === requestSignature);
 
-         if (quoteRequest && quoteRequest.count >= 3) {
-             return false; // Block request
+         // This logic is now flawed. The idea is to limit asking for the SAME THING to DIFFERENT people.
+         // Let's adjust. The signature should be just the items. We count how many different providers they've been sent to.
+         const itemSignature = [...items, serviceName].sort().join('|');
+
+         const requestsForSameItem = userQuotesToday.filter(q => q.requestSignature.startsWith(itemSignature));
+         
+         if (requestsForSameItem.length >= 3) {
+             const alreadySentToThisProvider = requestsForSameItem.some(q => q.requestSignature === `${itemSignature}|${groupOrProvider}`);
+             if (!alreadySentToThisProvider) {
+                 return false; // Block request to a 4th provider for the same item.
+             }
          }
 
          // Update count
-         if (quoteRequest) {
-             quoteRequest.count++;
+         const newSignature = `${itemSignature}|${groupOrProvider}`;
+         const existingEntry = userQuotesToday.find(q => q.requestSignature === newSignature);
+         if (existingEntry) {
+             existingEntry.count++;
          } else {
-             userQuotesToday.push({ requestSignature, count: 1 });
+             userQuotesToday.push({ requestSignature: newSignature, count: 1 });
          }
          setDailyQuotes({ ...dailyQuotes, [currentUser.id]: userQuotesToday });
      }

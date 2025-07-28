@@ -134,7 +134,11 @@ export default function QuotesPage() {
   const quoteType = form.watch('type');
 
   const onSubmit = (data: QuoteFormValues) => {
-    const success = requestQuoteFromGroup(data.title, data.items.map(i => i.name));
+    const success = requestQuoteFromGroup(
+      data.title, 
+      data.items.map(i => i.name),
+      data.searchQuery
+    );
 
     if (success) {
         toast({
