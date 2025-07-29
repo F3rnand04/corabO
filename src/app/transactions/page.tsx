@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { ChevronLeft, Settings, Wallet, ShoppingCart, TrendingUp, Circle, Calendar, Bell, PieChart } from "lucide-react";
 import { useRouter } from "next/navigation";
-import TransactionsBarChart from "@/components/charts/TransactionsBarChart";
+import TransactionsLineChart from "@/components/charts/TransactionsLineChart";
 import TransactionsPieChart from "@/components/charts/TransactionsPieChart";
 import { TransactionDetailsDialog } from "@/components/TransactionDetailsDialog";
 import type { Transaction } from "@/lib/types";
@@ -65,7 +65,7 @@ export default function TransactionsPage() {
     const { transactions, currentUser } = useCorabo();
     const [isModuleActive, setIsModuleActive] = useState(false);
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
-    const [chartType, setChartType] = useState<'bar' | 'pie'>('bar');
+    const [chartType, setChartType] = useState<'line' | 'pie'>('line');
 
     const pendingCount = transactions.filter(t => t.status === 'Solicitud Pendiente').length;
     const paymentCommitmentsCount = transactions.filter(t => t.status === 'Acuerdo Aceptado - Pendiente de Ejecución').length;
@@ -84,7 +84,7 @@ export default function TransactionsPage() {
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between pb-2">
                                 <div className="flex items-center gap-2">
-                                     <Button size="icon" variant={chartType === 'bar' ? 'default' : 'secondary'} onClick={() => setChartType('bar')}>
+                                     <Button size="icon" variant={chartType === 'line' ? 'default' : 'secondary'} onClick={() => setChartType('line')}>
                                         <TrendingUp className="w-5 h-5"/>
                                     </Button>
                                      <Button size="icon" variant={chartType === 'pie' ? 'default' : 'secondary'} onClick={() => setChartType('pie')}>
@@ -93,8 +93,8 @@ export default function TransactionsPage() {
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                {chartType === 'bar' ? (
-                                    <TransactionsBarChart transactions={transactions} />
+                                {chartType === 'line' ? (
+                                    <TransactionsLineChart transactions={transactions} />
                                 ) : (
                                     <TransactionsPieChart transactions={transactions} />
                                 )}
