@@ -302,26 +302,22 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
-  const updateUser = (userId: string, updates: Partial<User> | ((user: User) => Partial<User>)): User | undefined => {
-    let updatedUser: User | undefined;
-    const userToUpdate = users.find(u => u.id === userId)
-    if (!userToUpdate) return;
-
-    const finalUpdates = typeof updates === 'function' ? updates(userToUpdate) : updates;
-
+  const updateUser = (userId: string, updates: Partial<User> | ((user: User) => Partial<User>)) => {
     setUsers(prevUsers =>
       prevUsers.map(u => {
         if (u.id === userId) {
-          updatedUser = { ...u, ...finalUpdates };
+          const userToUpdate = users.find(u => u.id === userId)!;
+          const finalUpdates = typeof updates === 'function' ? updates(userToUpdate) : updates;
+          const updatedUser = { ...u, ...finalUpdates };
+          
+          if (currentUser.id === userId) {
+            setCurrentUser(updatedUser);
+          }
           return updatedUser;
         }
         return u;
       })
     );
-    if (currentUser.id === userId && updatedUser) {
-      setCurrentUser(updatedUser);
-    }
-    return updatedUser;
   };
 
   const updateUserProfileImage = (userId: string, imageUrl: string) => {
@@ -381,11 +377,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const activateTransactions = (userId: string, creditLimit: number) => {
-    const updatedUser = updateUser(userId, { isTransactionsActive: true, credicoraLimit: creditLimit });
-    if (updatedUser) {
-        setCurrentUser(updatedUser); // Force context update
-        router.push('/transactions');
-    }
+    updateUser(userId, { isTransactionsActive: true, credicoraLimit: creditLimit });
   }
 
   const value = {

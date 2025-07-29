@@ -132,6 +132,7 @@ export default function TransactionsSettingsPage() {
                     className: "bg-green-100 border-green-300 text-green-800",
                 });
                 activateTransactions(currentUser.id, 150);
+                router.push('/transactions');
             }
             setIsVerifyingAccount(false);
         }, 2000);
@@ -220,7 +221,7 @@ export default function TransactionsSettingsPage() {
                         <CardContent className="space-y-6">
                             <div className="flex gap-2 rounded-lg bg-muted p-1">
                                 <Button 
-                                    variant={paymentMethod === 'account' ? 'primary' : 'ghost'} 
+                                    variant={paymentMethod === 'account' ? 'default' : 'ghost'} 
                                     onClick={() => setPaymentMethod('account')}
                                     className="flex-1"
                                 >
@@ -228,7 +229,7 @@ export default function TransactionsSettingsPage() {
                                     Cuenta Bancaria
                                 </Button>
                                 <Button 
-                                    variant={paymentMethod === 'mobile' ? 'primary' : 'ghost'} 
+                                    variant={paymentMethod === 'mobile' ? 'default' : 'ghost'} 
                                     onClick={() => setPaymentMethod('mobile')}
                                     className="flex-1"
                                 >
