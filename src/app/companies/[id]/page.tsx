@@ -6,7 +6,7 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, MessageCircle, CheckCircle, ThumbsUp } from 'lucide-react';
+import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, MessageCircle, CheckCircle, ThumbsUp, Flag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
@@ -14,26 +14,29 @@ import { useState, TouchEvent } from 'react';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
 import type { User } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { ReportDialog } from '@/components/ReportDialog';
+
 
 type GalleryImage = NonNullable<User['gallery']>[0];
 
 
 export default function CompanyProfilePage() {
   const params = useParams();
-  const { users } = useCorabo();
+  const { users, addContact } = useCorabo();
   const { toast } = useToast();
+  
+  const provider = users.find(u => u.id === params.id);
+  
   const [activeTab, setActiveTab] = useState('comentarios');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   
   const minSwipeDistance = 50;
 
-  // Find the specific provider by id from the URL
-  const provider = users.find(u => u.id === params.id);
-  
   // Local state for interactions
   const [starCount, setStarCount] = useState(8934);
   const [isLiked, setIsLiked] = useState(false);
@@ -103,7 +106,7 @@ export default function CompanyProfilePage() {
     );
   };
 
-  const handleImageDoubleClick = (image: GalleryImage) => {
+  const handleImageDoubleClick = () => {
     handleStarClick();
   };
 
@@ -146,6 +149,10 @@ export default function CompanyProfilePage() {
        });
     }
   }
+
+  const handleSaveContact = () => {
+    addContact(provider);
+  };
   
   const currentImage = gallery.length > 0 ? gallery[currentImageIndex] : null;
 
@@ -199,7 +206,7 @@ export default function CompanyProfilePage() {
 
           {/* Main Content Card */}
           <Card className="rounded-2xl overflow-hidden shadow-lg relative">
-             <Button variant="ghost" size="icon" className="absolute top-2 right-2 z-10 text-muted-foreground bg-white/50 rounded-full">
+             <Button variant="ghost" size="icon" className="absolute top-2 right-2 z-10 text-muted-foreground bg-white/50 rounded-full" onClick={handleSaveContact}>
                 <Bookmark className="w-5 h-5" />
             </Button>
             <CardContent className="p-0">
@@ -209,7 +216,7 @@ export default function CompanyProfilePage() {
                   onTouchStart={onTouchStart}
                   onTouchMove={onTouchMove}
                   onTouchEnd={onTouchEnd}
-                  onDoubleClick={() => handleImageDoubleClick(currentImage)}
+                  onDoubleClick={handleImageDoubleClick}
                 >
                   <Image
                     src={profileData.mainImage}
@@ -220,6 +227,14 @@ export default function CompanyProfilePage() {
                     data-ai-hint="professional workspace"
                     key={profileData.mainImage}
                   />
+                   <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="absolute top-2 left-2 z-10 text-white bg-black/20 hover:bg-black/40 rounded-full h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => setIsReportDialogOpen(true)}
+                    >
+                      <Flag className="w-4 h-4" />
+                    </Button>
                   <Button 
                       onClick={handlePrev}
                       variant="ghost" 
@@ -309,7 +324,12 @@ export default function CompanyProfilePage() {
           </Card>
         </main>
       </div>
-
+      <ReportDialog 
+            isOpen={isReportDialogOpen} 
+            onOpenChange={setIsReportDialogOpen} 
+            providerId={provider.id} 
+            publicationId={currentImage?.id || 'provider-img'} 
+        />
        {selectedImage && (
         <ImageDetailsDialog
           isOpen={isDetailsDialogOpen}
@@ -322,3 +342,5 @@ export default function CompanyProfilePage() {
     </>
   );
 }
+
+    

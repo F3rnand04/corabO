@@ -5,7 +5,7 @@ import { useState, TouchEvent, useEffect, useRef, ChangeEvent } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Send, Plus, Calendar, Wallet, MapPin, ChevronLeft, ChevronRight, ImageIcon, Settings } from 'lucide-react';
+import { Star, Send, Plus, Calendar, Wallet, MapPin, ChevronLeft, ChevronRight, ImageIcon, Settings, MessageCircle, Flag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
 import { PromotionDialog } from '@/components/PromotionDialog';
@@ -16,6 +16,7 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import type { GalleryImage } from '@/lib/types';
 import ProfileFooter from '@/components/ProfileFooter';
 import { useRouter } from 'next/navigation';
+import { ReportDialog } from '@/components/ReportDialog';
 
 
 export default function ProfilePage() {
@@ -27,6 +28,12 @@ export default function ProfilePage() {
 
   const isProvider = currentUser.type === 'provider';
 
+  // Local state for interactions
+  const [starCount, setStarCount] = useState(8934);
+  const [isLiked, setIsLiked] = useState(false);
+  const [shareCount, setShareCount] = useState(4567);
+  const [messageCount, setMessageCount] = useState(1234);
+
   const [providerProfile, setProviderProfile] = useState({
     name: currentUser.name,
     specialty: currentUser.profileSetupData?.specialty || "Especialidad",
@@ -34,8 +41,6 @@ export default function ProfilePage() {
     efficiency: "99.9%",
     completedJobs: 15,
     otherStat: "00 | 05",
-    shareCount: 4567,
-    starCount: 8934.5,
   });
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -44,6 +49,7 @@ export default function ProfilePage() {
   const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [isPromotionDialogOpen, setIsPromotionDialogOpen] = useState(false);
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [_, setForceRerender] = useState(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -134,10 +140,50 @@ export default function ProfilePage() {
     );
   };
   
-  const handleImageDoubleClick = (image: GalleryImage) => {
+  const handleImageDoubleClick = () => {
+    handleStarClick();
+  };
+
+  const openDetailsDialog = (image: GalleryImage) => {
     setSelectedImage(image);
     setIsDetailsDialogOpen(true);
+  }
+
+  const handleStarClick = () => {
+    if (isLiked) {
+      setStarCount(prev => prev - 1);
+    } else {
+      setStarCount(prev => prev + 1);
+    }
+    setIsLiked(prev => !prev);
   };
+
+  const handleShareClick = async () => {
+    const currentImage = gallery.length > 0 ? gallery[currentImageIndex] : null;
+    if (!currentImage) return;
+
+    const shareData = {
+      title: `Mira esta publicación de ${currentUser.name}`,
+      text: `${currentImage.alt}: ${currentImage.description}`,
+      url: window.location.href, // Shares the URL of the current profile page
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        setShareCount(prev => prev + 1);
+      } else {
+        throw new Error("Share API not supported");
+      }
+    } catch (error) {
+       navigator.clipboard.writeText(shareData.url);
+       toast({
+         title: "Enlace Copiado",
+         description: "El enlace al perfil ha sido copiado a tu portapapeles.",
+       });
+    }
+  }
+
 
   const handlePromotionTabClick = () => {
     if (!isProvider) return;
@@ -273,7 +319,7 @@ export default function ProfilePage() {
                 onTouchStart={gallery.length > 0 ? onTouchStart : undefined}
                 onTouchMove={gallery.length > 0 ? onTouchMove : undefined}
                 onTouchEnd={gallery.length > 0 ? onTouchEnd : undefined}
-                onDoubleClick={currentImage ? () => handleImageDoubleClick(currentImage) : undefined}
+                onDoubleClick={currentImage ? handleImageDoubleClick : undefined}
               >
                 {currentImage ? (
                   <>
@@ -286,6 +332,14 @@ export default function ProfilePage() {
                       data-ai-hint="professional workspace"
                       key={currentImage.src} 
                     />
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="absolute top-2 left-2 z-10 text-white bg-black/20 hover:bg-black/40 rounded-full h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => setIsReportDialogOpen(true)}
+                    >
+                      <Flag className="w-4 h-4" />
+                    </Button>
                     {isProvider && isPromotionActive && currentImage.promotion && (
                         <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-md shadow-lg">
                             {currentImage.promotion.text}
@@ -308,20 +362,26 @@ export default function ProfilePage() {
                         <ChevronRight className="h-5 w-5" />
                     </Button>
                     
-                    <div className="absolute bottom-2 right-2 flex flex-col items-end gap-4 text-white">
-                        <div className="flex flex-col items-center">
-                            <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">
-                                <Send className="w-5 h-5" />
-                            </Button>
-                            <span className="text-xs font-bold mt-1 drop-shadow-md">{(providerProfile.shareCount / 1000).toFixed(1)}k</span>
-                        </div>
-                        <div className="flex flex-col items-center">
-                            <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">
-                                <Star className="w-5 h-5" />
-                            </Button>
-                            <span className="text-xs font-bold mt-1 drop-shadow-md">{(providerProfile.starCount / 1000).toFixed(1)}k</span>
-                        </div>
-                    </div>
+                     <div className="absolute bottom-2 right-2 flex flex-col items-end gap-2 text-white">
+                      <div className="flex flex-col items-center">
+                          <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={handleStarClick}>
+                              <Star className={cn("w-5 h-5", isLiked && "fill-yellow-400 text-yellow-400")} />
+                          </Button>
+                          <span className="text-xs font-bold mt-1 drop-shadow-md">{(starCount / 1000).toFixed(1)}k</span>
+                      </div>
+                       <div className="flex flex-col items-center">
+                          <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={() => openDetailsDialog(currentImage)}>
+                              <MessageCircle className="w-5 h-5" />
+                          </Button>
+                          <span className="text-xs font-bold mt-1 drop-shadow-md">{(messageCount / 1000).toFixed(1)}k</span>
+                      </div>
+                      <div className="flex flex-col items-center">
+                          <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={handleShareClick}>
+                              <Send className="w-5 h-5" />
+                          </Button>
+                          <span className="text-xs font-bold mt-1 drop-shadow-md">{shareCount}</span>
+                      </div>
+                  </div>
                   </>
                 ) : (
                    <div className="w-full aspect-[4/3] bg-muted flex flex-col items-center justify-center text-center p-4">
@@ -358,7 +418,7 @@ export default function ProfilePage() {
                     "flex-1 p-3 cursor-pointer",
                     !currentImage ? "text-muted-foreground/50 cursor-not-allowed" : "text-muted-foreground"
                   )}
-                  onClick={() => currentImage && handleImageDoubleClick(currentImage)}
+                  onClick={() => currentImage && openDetailsDialog(currentImage)}
                 >
                   Editar Descripción
                 </div>
@@ -372,7 +432,7 @@ export default function ProfilePage() {
                             key={index} 
                             className="relative aspect-square group cursor-pointer"
                             onClick={() => setCurrentImageIndex(index)}
-                            onDoubleClick={() => handleImageDoubleClick(thumb)}
+                            onDoubleClick={() => openDetailsDialog(thumb)}
                         >
                         <Image
                             src={thumb.src}
@@ -404,6 +464,12 @@ export default function ProfilePage() {
         </main>
         <ProfileFooter />
       </div>
+       <ReportDialog 
+            isOpen={isReportDialogOpen} 
+            onOpenChange={setIsReportDialogOpen} 
+            providerId={currentUser.id} 
+            publicationId={currentImage?.id || 'profile-img'} 
+        />
       {selectedImage && (
         <ImageDetailsDialog
           isOpen={isDetailsDialogOpen}
@@ -411,6 +477,7 @@ export default function ProfilePage() {
           image={selectedImage}
           isOwnerView={true}
           onDelete={handleDeleteImage}
+          onCommentSubmit={() => setMessageCount(prev => prev + 1)}
         />
       )}
       {currentImage && isProvider &&
@@ -425,3 +492,5 @@ export default function ProfilePage() {
     </>
   );
 }
+
+    

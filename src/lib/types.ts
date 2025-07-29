@@ -5,6 +5,7 @@ export type GalleryImageComment = {
   text: string;
   likes?: number;
   dislikes?: number;
+  profileImage?: string;
 };
 
 export type GalleryImage = {
@@ -110,3 +111,5 @@ export type Transaction = {
     deliveryCost: number;
   };
 };
+
+    

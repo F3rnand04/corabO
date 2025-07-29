@@ -46,11 +46,12 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, image, isOwnerView = 
 
   const handlePostComment = () => {
     if (newComment.trim()) {
-      const commentToAdd = {
+      const commentToAdd: Comment = {
         author: currentUser.name,
         text: newComment,
         likes: 0,
-        dislikes: 0
+        dislikes: 0,
+        profileImage: currentUser.profileImage,
       };
       setComments(prev => [...prev, commentToAdd]);
       setNewComment("");
@@ -106,6 +107,7 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, image, isOwnerView = 
                         {comments?.map((comment, index) => (
                            <div key={index} className="flex items-start gap-3">
                                <Avatar className="w-8 h-8 shrink-0">
+                                   <AvatarImage src={comment.profileImage} alt={comment.author} />
                                    <AvatarFallback>{comment.author.charAt(0)}</AvatarFallback>
                                </Avatar>
                                <div className="flex-grow">
@@ -134,7 +136,7 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, image, isOwnerView = 
                                 onChange={(e) => setNewComment(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handlePostComment()}
                               />
-                              <Button onClick={handlePostComment}>Comentar</Button>
+                              <Button onClick={handlePostComment} disabled={!newComment.trim()}>Comentar</Button>
                           </div>
                       )}
                 </div>
@@ -144,3 +146,5 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, image, isOwnerView = 
     </Dialog>
   );
 }
+
+    
