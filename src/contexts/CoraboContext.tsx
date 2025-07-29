@@ -5,6 +5,7 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData } from '@/lib/types';
 import { users as initialUsers, products, services as initialServices, initialTransactions } from '@/lib/mock-data';
 import { useToast } from "@/hooks/use-toast"
+import { useRouter } from 'next/navigation';
 
 type FeedView = 'servicios' | 'empresas';
 
@@ -54,6 +55,7 @@ const CoraboContext = createContext<CoraboState | undefined>(undefined);
 
 export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
+  const router = useRouter();
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [services, setServices] = useState<Service[]>(initialServices);
   const [currentUser, setCurrentUser] = useState<User>(users[0]);
@@ -300,7 +302,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
-  const updateUser = (userId: string, updates: Partial<User> | ((user: User) => Partial<User>)) => {
+  const updateUser = (userId: string, updates: Partial<User> | ((user: User) => Partial<User>)): User | undefined => {
     let updatedUser: User | undefined;
     const userToUpdate = users.find(u => u.id === userId)
     if (!userToUpdate) return;
@@ -379,7 +381,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const activateTransactions = (userId: string, creditLimit: number) => {
-    updateUser(userId, { isTransactionsActive: true, credicoraLimit: creditLimit });
+    const updatedUser = updateUser(userId, { isTransactionsActive: true, credicoraLimit: creditLimit });
+    if (updatedUser) {
+        setCurrentUser(updatedUser); // Force context update
+        router.push('/transactions');
+    }
   }
 
   const value = {

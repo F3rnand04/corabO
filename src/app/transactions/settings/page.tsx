@@ -132,7 +132,6 @@ export default function TransactionsSettingsPage() {
                     className: "bg-green-100 border-green-300 text-green-800",
                 });
                 activateTransactions(currentUser.id, 150);
-                router.push('/transactions');
             }
             setIsVerifyingAccount(false);
         }, 2000);
