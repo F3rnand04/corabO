@@ -7,16 +7,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { ChevronLeft, Settings, Wallet, ShoppingCart, TrendingUp, Circle, Calendar, Bell, PieChart, Eye, EyeOff } from "lucide-react";
+import { ChevronLeft, Settings, Wallet, ShoppingCart, TrendingUp, Circle, Calendar, Bell, PieChart, Eye, EyeOff, Info } from "lucide-react";
 import { useRouter } from "next/navigation";
 import TransactionsLineChart from "@/components/charts/TransactionsLineChart";
 import TransactionsPieChart from "@/components/charts/TransactionsPieChart";
 import { TransactionDetailsDialog } from "@/components/TransactionDetailsDialog";
 import type { Transaction } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 
-function TransactionsHeader({ onSettingsClick }: { onSettingsClick: () => void }) {
+function TransactionsHeader({ onSettingsClick, isModuleActive }: { onSettingsClick: () => void; isModuleActive: boolean }) {
     const router = useRouter();
     return (
         <header className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
@@ -34,7 +35,7 @@ function TransactionsHeader({ onSettingsClick }: { onSettingsClick: () => void }
                             <ShoppingCart className="h-6 w-6 text-muted-foreground" />
                         </Button>
                         <Button variant="ghost" size="icon" onClick={onSettingsClick}>
-                            <Settings className="h-6 w-6 text-muted-foreground" />
+                            <Settings className={cn("h-6 w-6 text-muted-foreground transition-colors", !isModuleActive && "text-green-500 animate-pulse")} />
                         </Button>
                     </div>
                 </div>
@@ -67,6 +68,7 @@ export default function TransactionsPage() {
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
     const [chartType, setChartType] = useState<'line' | 'pie'>('line');
     const [showSensitiveData, setShowSensitiveData] = useState(true);
+    const { toast } = useToast();
 
     const pendingCount = transactions.filter(t => t.status === 'Solicitud Pendiente').length;
     const paymentCommitmentsCount = transactions.filter(t => t.status === 'Acuerdo Aceptado - Pendiente de Ejecución').length;
@@ -74,12 +76,25 @@ export default function TransactionsPage() {
     const handleTransactionClick = (transaction: Transaction) => {
         setSelectedTransaction(transaction);
     }
+
+    const handleInactiveClick = () => {
+        if (!isModuleActive) {
+            toast({
+                title: "¡Activa tu Registro de Transacciones!",
+                description: "Haz clic en el ícono de engranaje para empezar a llevar el control de tus finanzas.",
+                action: <Settings className="w-5 h-5 text-green-500"/>
+            });
+        }
+    }
     
     return (
         <div className="bg-muted/20 min-h-screen">
-            <TransactionsHeader onSettingsClick={() => setIsModuleActive(prev => !prev)} />
+            <TransactionsHeader 
+                onSettingsClick={() => setIsModuleActive(prev => !prev)}
+                isModuleActive={isModuleActive}
+            />
             
-            <main className="container py-6">
+            <main className="container py-6" onClick={handleInactiveClick}>
                  {isModuleActive ? (
                     <div className="space-y-6">
                         <Card>
@@ -166,13 +181,14 @@ export default function TransactionsPage() {
                         </Card>
                     </div>
                 ) : (
-                    <div className="text-center py-20">
+                    <div className="text-center py-20 cursor-pointer">
                         <Wallet className="mx-auto h-16 w-16 text-muted-foreground" />
                         <h2 className="mt-4 text-2xl font-semibold">Módulo Desactivado</h2>
                         <p className="mt-2 text-muted-foreground">
                             Para ver tu registro de transacciones, activa el módulo desde el menú de Ajustes.
                         </p>
                         <Button className="mt-6" onClick={() => setIsModuleActive(true)}>
+                            <Info className="w-4 h-4 mr-2"/>
                             Activar Módulo
                         </Button>
                     </div>
@@ -186,3 +202,5 @@ export default function TransactionsPage() {
         </div>
     );
 }
+
+    
