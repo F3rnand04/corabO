@@ -355,7 +355,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const updateFullProfile = (userId: string, data: ProfileSetupData) => {
-     updateUser(userId, user => ({
+    const newType = data.offerType === 'service' ? 'servicios' : 'empresas';
+    updateUser(userId, user => ({
       ...user,
       type: data.categories?.length ? 'provider' : 'client',
       email: data.email || user.email,
@@ -364,12 +365,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         ...(user.profileSetupData || {}),
         ...data,
       }
-     }));
-     if (data.offerType === 'service') {
-       setFeedView('servicios');
-     } else {
-       setFeedView('empresas');
-     }
+    }));
+    setFeedView(newType);
   }
 
   const subscribeUser = (userId: string) => {
