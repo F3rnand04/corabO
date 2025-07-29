@@ -15,11 +15,9 @@ import { Trash2, MessageSquare, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Input } from './ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Separator } from './ui/separator';
-import type { GalleryImage } from '@/lib/types';
+import type { GalleryImage, GalleryImageComment } from '@/lib/types';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { useState } from 'react';
-
-type Comment = NonNullable<GalleryImage['comments']>[0];
 
 interface ImageDetailsDialogProps {
   isOpen: boolean;
@@ -46,7 +44,7 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, image, isOwnerView = 
 
   const handlePostComment = () => {
     if (newComment.trim()) {
-      const commentToAdd: Comment = {
+      const commentToAdd: GalleryImageComment = {
         author: currentUser.name,
         text: newComment,
         likes: 0,

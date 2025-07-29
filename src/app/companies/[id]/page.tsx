@@ -12,13 +12,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useState, TouchEvent } from 'react';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
-import type { User } from '@/lib/types';
+import type { User, GalleryImage } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { ReportDialog } from '@/components/ReportDialog';
-
-
-type GalleryImage = NonNullable<User['gallery']>[0];
-
 
 export default function CompanyProfilePage() {
   const params = useParams();
@@ -27,7 +23,6 @@ export default function CompanyProfilePage() {
   
   const provider = users.find(u => u.id === params.id);
   
-  const [activeTab, setActiveTab] = useState('comentarios');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
@@ -342,5 +337,3 @@ export default function CompanyProfilePage() {
     </>
   );
 }
-
-    
