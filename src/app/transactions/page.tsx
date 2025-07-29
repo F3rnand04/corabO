@@ -7,11 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { ChevronLeft, Settings, Wallet, ShoppingCart, TrendingUp, Circle, Calendar, Bell } from "lucide-react";
+import { ChevronLeft, Settings, Wallet, ShoppingCart, TrendingUp, Circle, Calendar, Bell, PieChart } from "lucide-react";
 import { useRouter } from "next/navigation";
-import TransactionsChart from "@/components/charts/TransactionsChart";
+import TransactionsBarChart from "@/components/charts/TransactionsBarChart";
+import TransactionsPieChart from "@/components/charts/TransactionsPieChart";
 import { TransactionDetailsDialog } from "@/components/TransactionDetailsDialog";
 import type { Transaction } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 
 function TransactionsHeader({ onSettingsClick }: { onSettingsClick: () => void }) {
@@ -63,6 +65,7 @@ export default function TransactionsPage() {
     const { transactions } = useCorabo();
     const [isModuleActive, setIsModuleActive] = useState(false);
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+    const [chartType, setChartType] = useState<'bar' | 'pie'>('bar');
 
     const pendingCount = transactions.filter(t => t.status === 'Solicitud Pendiente').length;
     const paymentCommitmentsCount = transactions.filter(t => t.status === 'Acuerdo Aceptado - Pendiente de Ejecución').length;
@@ -84,16 +87,20 @@ export default function TransactionsPage() {
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between pb-2">
                                 <div className="flex items-center gap-2">
-                                    <Button size="icon" variant="secondary">
+                                     <Button size="icon" variant={chartType === 'bar' ? 'default' : 'secondary'} onClick={() => setChartType('bar')}>
                                         <TrendingUp className="w-5 h-5"/>
                                     </Button>
-                                     <Button size="icon" variant="secondary">
-                                        <Circle className="w-5 h-5"/>
+                                     <Button size="icon" variant={chartType === 'pie' ? 'default' : 'secondary'} onClick={() => setChartType('pie')}>
+                                        <PieChart className="w-5 h-5"/>
                                     </Button>
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                <TransactionsChart transactions={transactions} />
+                                {chartType === 'bar' ? (
+                                    <TransactionsBarChart transactions={transactions} />
+                                ) : (
+                                    <TransactionsPieChart transactions={transactions} />
+                                )}
                             </CardContent>
                         </Card>
 
@@ -171,4 +178,3 @@ export default function TransactionsPage() {
         </div>
     );
 }
-
