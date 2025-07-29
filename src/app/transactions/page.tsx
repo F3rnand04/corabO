@@ -64,6 +64,7 @@ const TransactionItem = ({ label, count, color, onClick }: { label: string; coun
 
 export default function TransactionsPage() {
     const { transactions, currentUser } = useCorabo();
+    const router = useRouter();
     const [isModuleActive, setIsModuleActive] = useState(false);
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
     const [chartType, setChartType] = useState<'line' | 'pie'>('line');
@@ -86,11 +87,15 @@ export default function TransactionsPage() {
             });
         }
     }
+
+    const navigateToSettings = () => {
+        router.push('/transactions/settings');
+    }
     
     return (
         <div className="bg-muted/20 min-h-screen">
             <TransactionsHeader 
-                onSettingsClick={() => setIsModuleActive(prev => !prev)}
+                onSettingsClick={navigateToSettings}
                 isModuleActive={isModuleActive}
             />
             
@@ -187,7 +192,7 @@ export default function TransactionsPage() {
                         <p className="mt-2 text-muted-foreground">
                             Para ver tu registro de transacciones, activa el módulo desde el menú de Ajustes.
                         </p>
-                        <Button className="mt-6" onClick={(e) => { e.stopPropagation(); setIsModuleActive(true); }}>
+                        <Button className="mt-6" onClick={(e) => { e.stopPropagation(); navigateToSettings(); }}>
                             <Info className="w-4 h-4 mr-2"/>
                             Activar Módulo
                         </Button>
