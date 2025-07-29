@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { ChevronLeft, Settings, Wallet, ShoppingCart, TrendingUp, Circle, Calendar, Bell, PieChart, Eye, EyeOff, Info, FileText, Banknote, ShieldAlert, Power, LogOut } from "lucide-react";
+import { Home, Settings, Wallet, ShoppingCart, TrendingUp, Circle, Calendar, Bell, PieChart, Eye, EyeOff, Info, FileText, Banknote, ShieldAlert, Power, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import TransactionsLineChart from "@/components/charts/TransactionsLineChart";
 import TransactionsPieChart from "@/components/charts/TransactionsPieChart";
@@ -28,7 +28,7 @@ import {
   DropdownMenuSubContent,
   DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Switch } from "@/components/ui/switch";
 
 function TransactionsHeader() {
@@ -50,8 +50,8 @@ function TransactionsHeader() {
         <header className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
             <div className="container px-4 sm:px-6">
                 <div className="flex h-16 items-center justify-between">
-                    <Button variant="ghost" size="icon" onClick={() => router.back()}>
-                        <ChevronLeft className="h-6 w-6" />
+                    <Button variant="ghost" size="icon" onClick={() => router.push('/')}>
+                        <Home className="h-6 w-6" />
                     </Button>
                     <div className="flex items-center gap-2">
                         <Wallet className="h-6 w-6 text-muted-foreground" />
