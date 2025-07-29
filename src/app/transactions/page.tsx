@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { ChevronLeft, Settings, Wallet, ShoppingCart, TrendingUp, Circle, Calendar, Bell, PieChart } from "lucide-react";
+import { ChevronLeft, Settings, Wallet, ShoppingCart, TrendingUp, Circle, Calendar, Bell, PieChart, Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import TransactionsLineChart from "@/components/charts/TransactionsLineChart";
 import TransactionsPieChart from "@/components/charts/TransactionsPieChart";
@@ -66,6 +66,7 @@ export default function TransactionsPage() {
     const [isModuleActive, setIsModuleActive] = useState(false);
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
     const [chartType, setChartType] = useState<'line' | 'pie'>('line');
+    const [showSensitiveData, setShowSensitiveData] = useState(true);
 
     const pendingCount = transactions.filter(t => t.status === 'Solicitud Pendiente').length;
     const paymentCommitmentsCount = transactions.filter(t => t.status === 'Acuerdo Aceptado - Pendiente de Ejecución').length;
@@ -110,25 +111,26 @@ export default function TransactionsPage() {
                         </div>
                         
                         <Card className="bg-card">
-                            <CardHeader>
+                           <CardHeader className="py-4">
                                 <div className="flex justify-between items-start">
-                                    <div>
-                                        <CardTitle>CREDICORA</CardTitle>
-                                    </div>
+                                    <CardTitle className="text-lg">CREDICORA</CardTitle>
                                     <div className="text-right">
-                                        <p className="text-2xl font-bold">150,00$</p>
+                                        <p className="text-xl font-bold">{showSensitiveData ? '150,00$' : '$***,**'}</p>
                                     </div>
-                                    <div>
-                                        <Calendar className="w-6 h-6 text-muted-foreground ml-2" />
+                                    <div className="flex items-center">
+                                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowSensitiveData(!showSensitiveData)}>
+                                            {showSensitiveData ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                                        </Button>
+                                        <Calendar className="w-5 h-5 text-muted-foreground ml-1" />
                                     </div>
                                 </div>
-                                <div className="flex justify-between text-sm pt-4">
+                                <div className="flex justify-between text-xs pt-2">
                                     <div className="text-muted-foreground">USADO</div>
-                                    <div className="font-semibold">00,00$</div>
+                                    <div className="font-semibold">{showSensitiveData ? '00,00$' : '$**,**'}</div>
                                 </div>
-                                <div className="flex justify-between text-sm">
+                                <div className="flex justify-between text-xs">
                                     <div className="text-muted-foreground">DISPONIBLE</div>
-                                    <div className="font-semibold">150,00$</div>
+                                    <div className="font-semibold">{showSensitiveData ? '150,00$' : '$***,**'}</div>
                                 </div>
                             </CardHeader>
                             <Separator />
