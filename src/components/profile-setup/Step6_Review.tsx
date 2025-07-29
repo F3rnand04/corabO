@@ -39,7 +39,7 @@ const MAX_RADIUS_FREE = 10;
 
 
 export default function Step6_Review({ onBack, formData, setFormData, profileType, goToStep }: Step6_ReviewProps) {
-  const { currentUser, updateFullProfile } = useCorabo();
+  const { currentUser, updateFullProfile, setFeedView } = useCorabo();
   const router = useRouter();
   const { toast } = useToast();
   const [serviceRadius, setServiceRadius] = useState(formData.serviceRadius || 10);

@@ -187,32 +187,29 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const requestQuoteFromGroup = (serviceName: string, items: string[], groupOrProvider: string): boolean => {
-     // Create a unique signature for the request based on content AND target
-     const requestSignature = [...items, serviceName, groupOrProvider].sort().join('|');
+     const itemSignature = [...items, serviceName].sort().join('|');
      
      if (!currentUser.isSubscribed) {
          const today = new Date().toISOString().split('T')[0];
          const userQuotesToday = dailyQuotes[currentUser.id] || [];
-         const quoteRequest = userQuotesToday.find(q => q.requestSignature === requestSignature);
-
-         // This logic is now flawed. The idea is to limit asking for the SAME THING to DIFFERENT people.
-         // Let's adjust. The signature should be just the items. We count how many different providers they've been sent to.
-         const itemSignature = [...items, serviceName].sort().join('|');
-
-         const requestsForSameItem = userQuotesToday.filter(q => q.requestSignature.startsWith(itemSignature));
          
-         if (requestsForSameItem.length >= 3) {
-             const alreadySentToThisProvider = requestsForSameItem.some(q => q.requestSignature === `${itemSignature}|${groupOrProvider}`);
-             if (!alreadySentToThisProvider) {
-                 return false; // Block request to a 4th provider for the same item.
-             }
+         const requestsForSameItemToDifferentProviders = userQuotesToday.filter(
+             q => q.requestSignature.startsWith(itemSignature)
+         );
+         
+         const uniqueProvidersContacted = new Set(
+             requestsForSameItemToDifferentProviders.map(q => q.requestSignature.split('|').pop())
+         );
+
+         if (uniqueProvidersContacted.size >= 3 && !uniqueProvidersContacted.has(groupOrProvider)) {
+             return false; // Block request to a 4th provider for the same item.
          }
 
-         // Update count
          const newSignature = `${itemSignature}|${groupOrProvider}`;
-         const existingEntry = userQuotesToday.find(q => q.requestSignature === newSignature);
-         if (existingEntry) {
-             existingEntry.count++;
+         const existingEntryIndex = userQuotesToday.findIndex(q => q.requestSignature === newSignature);
+         
+         if (existingEntryIndex > -1) {
+            // Already requested from this provider today, let it pass
          } else {
              userQuotesToday.push({ requestSignature: newSignature, count: 1 });
          }
@@ -367,7 +364,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         ...(user.profileSetupData || {}),
         ...data,
       }
-     }))
+     }));
+     if (data.offerType === 'product') {
+       setFeedView('empresas');
+     } else {
+       setFeedView('servicios');
+     }
   }
 
   const subscribeUser = (userId: string) => {
