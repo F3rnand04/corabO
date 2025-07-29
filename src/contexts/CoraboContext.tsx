@@ -365,10 +365,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         ...data,
       }
      }));
-     if (data.offerType === 'product') {
-       setFeedView('empresas');
-     } else {
+     if (data.offerType === 'service') {
        setFeedView('servicios');
+     } else {
+       setFeedView('empresas');
      }
   }
 
