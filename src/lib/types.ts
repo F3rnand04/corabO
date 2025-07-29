@@ -89,16 +89,17 @@ export type TransactionStatus =
   | 'Acuerdo Aceptado - Pendiente de Ejecución'
   | 'Servicio en Curso'
   | 'En Disputa'
-  | 'Resuelto';
+  | 'Resuelto'
+  | 'Recarga';
 
 export type Transaction = {
   id: string;
-  type: 'Compra' | 'Servicio';
+  type: 'Compra' | 'Servicio' | 'Sistema';
   status: TransactionStatus;
   date: string;
   amount: number;
   clientId: string;
-  providerId: string;
+  providerId?: string; // Optional for system transactions
   details: {
     items?: CartItem[];
     serviceName?: string;
@@ -107,8 +108,9 @@ export type Transaction = {
       total: number;
     };
     quoteItems?: string[];
-    delivery: boolean;
-    deliveryCost: number;
+    delivery?: boolean;
+    deliveryCost?: number;
+    system?: string; // Description for system transactions e.g., 'Recarga de Saldo'
   };
 };
 

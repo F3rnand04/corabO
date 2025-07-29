@@ -239,8 +239,17 @@ export const initialTransactions: Transaction[] = [
         breakdown: 'Instalación de lavadora y secadora.',
         total: 150.00,
       },
-       delivery: false,
-       deliveryCost: 0,
+    },
+  },
+    {
+    id: 'txn3',
+    type: 'Sistema',
+    status: 'Recarga',
+    date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+    amount: 50.00,
+    clientId: 'client1',
+    details: {
+      system: 'Recarga de saldo a través de la plataforma.',
     },
   },
 ];

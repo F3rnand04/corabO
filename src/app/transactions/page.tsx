@@ -14,6 +14,7 @@ import TransactionsPieChart from "@/components/charts/TransactionsPieChart";
 import { TransactionDetailsDialog } from "@/components/TransactionDetailsDialog";
 import type { Transaction } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { TransactionHistory } from "@/components/TransactionHistory";
 
 
 function TransactionsHeader({ onSettingsClick }: { onSettingsClick: () => void }) {
@@ -62,7 +63,7 @@ const TransactionItem = ({ label, count, color, onClick }: { label: string; coun
 
 
 export default function TransactionsPage() {
-    const { transactions } = useCorabo();
+    const { transactions, currentUser } = useCorabo();
     const [isModuleActive, setIsModuleActive] = useState(false);
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
     const [chartType, setChartType] = useState<'bar' | 'pie'>('bar');
@@ -70,11 +71,8 @@ export default function TransactionsPage() {
     const pendingCount = transactions.filter(t => t.status === 'Solicitud Pendiente').length;
     const paymentCommitmentsCount = transactions.filter(t => t.status === 'Acuerdo Aceptado - Pendiente de Ejecución').length;
 
-    const handleTransactionClick = (status: Transaction['status']) => {
-        const transaction = transactions.find(t => t.status === status);
-        if (transaction) {
-            setSelectedTransaction(transaction);
-        }
+    const handleTransactionClick = (transaction: Transaction) => {
+        setSelectedTransaction(transaction);
     }
     
     return (
@@ -140,22 +138,36 @@ export default function TransactionsPage() {
                                     label="Lista de Pendientes"
                                     count={pendingCount}
                                     color="bg-red-500"
-                                    onClick={() => handleTransactionClick('Solicitud Pendiente')}
+                                    onClick={() => {
+                                        const tx = transactions.find(t => t.status === 'Solicitud Pendiente');
+                                        if(tx) handleTransactionClick(tx);
+                                    }}
                                 />
                                 <TransactionItem
                                     label="Transacciones"
                                     count={0}
                                     color="bg-cyan-400"
-                                    onClick={() => handleTransactionClick('Pagado')}
+                                    onClick={() => {
+                                        const tx = transactions.find(t => t.status === 'Pagado');
+                                        if(tx) handleTransactionClick(tx);
+                                    }}
                                 />
                                 <TransactionItem
                                     label="Compromisos de Pagos"
                                     count={paymentCommitmentsCount}
                                     color="bg-red-500"
-                                    onClick={() => handleTransactionClick('Acuerdo Aceptado - Pendiente de Ejecución')}
+                                    onClick={() => {
+                                        const tx = transactions.find(t => t.status === 'Acuerdo Aceptado - Pendiente de Ejecución');
+                                        if(tx) handleTransactionClick(tx);
+                                    }}
                                 />
                             </CardContent>
                         </Card>
+                         <TransactionHistory 
+                            transactions={transactions} 
+                            currentUserId={currentUser.id} 
+                            onTransactionClick={handleTransactionClick} 
+                        />
                     </div>
                 ) : (
                     <div className="text-center py-20">
