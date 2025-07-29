@@ -146,5 +146,3 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, image, isOwnerView = 
     </Dialog>
   );
 }
-
-    
