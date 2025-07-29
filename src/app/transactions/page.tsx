@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { Home, Settings, Wallet, ShoppingCart, TrendingUp, Circle, Calendar, Bell, PieChart, Eye, EyeOff, Info, FileText, Banknote, ShieldAlert, Power, LogOut } from "lucide-react";
+import { Home, Settings, Wallet, ShoppingCart, TrendingUp, Circle, Calendar, Bell, PieChart, Eye, EyeOff, Info, FileText, Banknote, ShieldAlert, Power, LogOut, Star } from "lucide-react";
 import { useRouter } from "next/navigation";
 import TransactionsLineChart from "@/components/charts/TransactionsLineChart";
 import TransactionsPieChart from "@/components/charts/TransactionsPieChart";
@@ -22,14 +22,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuPortal,
-  DropdownMenuSubContent,
-  DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Switch } from "@/components/ui/switch";
+import { SubscriptionDialog } from "@/components/SubscriptionDialog";
+
 
 function TransactionsHeader() {
     const router = useRouter();
@@ -149,6 +145,8 @@ export default function TransactionsPage() {
     const [chartType, setChartType] = useState<'line' | 'pie'>('line');
     const [showSensitiveData, setShowSensitiveData] = useState(true);
     const { toast } = useToast();
+    const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
+
 
     const pendingCount = transactions.filter(t => t.status === 'Solicitud Pendiente').length;
     const paymentCommitmentsCount = transactions.filter(t => t.status === 'Acuerdo Aceptado - Pendiente de Ejecución').length;
@@ -260,6 +258,16 @@ export default function TransactionsPage() {
                                 />
                             </CardContent>
                         </Card>
+                        <Card>
+                            <CardContent className="p-4 text-center">
+                                <h3 className="font-bold text-lg">¡Lleva tu perfil al siguiente nivel!</h3>
+                                <p className="text-sm text-muted-foreground mt-1">Obtén tu insignia de verificado, mayor visibilidad, más crédito y mejores facilidades de pago.</p>
+                                <Button className="mt-4" onClick={() => setIsSubscriptionDialogOpen(true)}>
+                                    <Star className="mr-2 h-4 w-4"/>
+                                    Ver Planes de Suscripción
+                                </Button>
+                            </CardContent>
+                        </Card>
                     </div>
                 ) : (
                     <div className="text-center py-20 cursor-pointer">
@@ -280,6 +288,7 @@ export default function TransactionsPage() {
                 onOpenChange={() => setSelectedTransaction(null)}
                 transaction={selectedTransaction}
             />
+            <SubscriptionDialog isOpen={isSubscriptionDialogOpen} onOpenChange={setIsSubscriptionDialogOpen} />
         </div>
     );
 }
