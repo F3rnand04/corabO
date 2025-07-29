@@ -120,9 +120,9 @@ export default function TransactionsPage() {
                         <div className="space-y-2">
                             <div className="flex justify-between items-center text-sm font-semibold">
                                 <p>NIVEL 1</p>
-                                <p className="text-primary">ALFHA</p>
+                                <p className="text-muted-foreground">ALFHA</p>
                             </div>
-                            <Progress value={33} />
+                            <Progress value={0} />
                         </div>
                         
                         <Card className="bg-card">
@@ -130,10 +130,10 @@ export default function TransactionsPage() {
                                 <div className="flex justify-between items-start">
                                     <CardTitle className="text-lg">CREDICORA</CardTitle>
                                     <div className="text-right">
-                                        <p className="text-xl font-bold">{showSensitiveData ? '150,00$' : '$***,**'}</p>
+                                        <p className="text-xl font-bold">{showSensitiveData ? '0,00$' : '$***,**'}</p>
                                     </div>
                                     <div className="flex items-center">
-                                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowSensitiveData(!showSensitiveData)}>
+                                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setShowSensitiveData(!showSensitiveData); }}>
                                             {showSensitiveData ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                                         </Button>
                                         <Calendar className="w-5 h-5 text-muted-foreground ml-1" />
@@ -141,11 +141,11 @@ export default function TransactionsPage() {
                                 </div>
                                 <div className="flex justify-between text-xs pt-2">
                                     <div className="text-muted-foreground">USADO</div>
-                                    <div className="font-semibold">{showSensitiveData ? '00,00$' : '$**,**'}</div>
+                                    <div className="font-semibold">{showSensitiveData ? '0,00$' : '$**,**'}</div>
                                 </div>
                                 <div className="flex justify-between text-xs">
                                     <div className="text-muted-foreground">DISPONIBLE</div>
-                                    <div className="font-semibold">{showSensitiveData ? '150,00$' : '$***,**'}</div>
+                                    <div className="font-semibold">{showSensitiveData ? '0,00$' : '$***,**'}</div>
                                 </div>
                             </CardHeader>
                             <Separator />
@@ -187,7 +187,7 @@ export default function TransactionsPage() {
                         <p className="mt-2 text-muted-foreground">
                             Para ver tu registro de transacciones, activa el módulo desde el menú de Ajustes.
                         </p>
-                        <Button className="mt-6" onClick={() => setIsModuleActive(true)}>
+                        <Button className="mt-6" onClick={(e) => { e.stopPropagation(); setIsModuleActive(true); }}>
                             <Info className="w-4 h-4 mr-2"/>
                             Activar Módulo
                         </Button>
@@ -202,5 +202,3 @@ export default function TransactionsPage() {
         </div>
     );
 }
-
-    
