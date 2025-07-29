@@ -6,6 +6,8 @@ import type { User, Product, Service, CartItem, Transaction, TransactionStatus, 
 import { users as initialUsers, products, services as initialServices, initialTransactions } from '@/lib/mock-data';
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from 'next/navigation';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 type FeedView = 'servicios' | 'empresas';
 
@@ -48,7 +50,9 @@ interface CoraboState {
   setFeedView: (view: FeedView) => void;
   updateFullProfile: (userId: string, data: ProfileSetupData) => void;
   subscribeUser: (userId: string) => void;
-  activateTransactions: (userId: string, creditLimit: number) => void;
+  activateTransactions: (userId: string, creditLimit: number) => User;
+  deactivateTransactions: (userId: string) => void;
+  downloadTransactionsPDF: () => void;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -302,13 +306,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
-  const updateUser = (userId: string, updates: Partial<User> | ((user: User) => Partial<User>)) => {
+  const updateUser = (userId: string, updates: Partial<User> | ((user: User) => Partial<User>)): User => {
+    let updatedUser: User | null = null;
     setUsers(prevUsers =>
       prevUsers.map(u => {
         if (u.id === userId) {
           const userToUpdate = users.find(u => u.id === userId)!;
           const finalUpdates = typeof updates === 'function' ? updates(userToUpdate) : updates;
-          const updatedUser = { ...u, ...finalUpdates };
+          updatedUser = { ...u, ...finalUpdates };
           
           if (currentUser.id === userId) {
             setCurrentUser(updatedUser);
@@ -318,6 +323,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         return u;
       })
     );
+    return updatedUser!;
   };
 
   const updateUserProfileImage = (userId: string, imageUrl: string) => {
@@ -376,8 +382,63 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     });
   }
 
-  const activateTransactions = (userId: string, creditLimit: number) => {
-    updateUser(userId, { isTransactionsActive: true, credicoraLimit: creditLimit });
+  const activateTransactions = (userId: string, creditLimit: number): User => {
+    const updatedUser = updateUser(userId, { isTransactionsActive: true, credicoraLimit: creditLimit });
+    return updatedUser;
+  }
+  
+  const deactivateTransactions = (userId: string) => {
+    updateUser(userId, { isTransactionsActive: false, credicoraLimit: 0 });
+    toast({
+        title: "Registro de Transacciones Desactivado",
+        description: "Tu módulo ha sido desactivado. Puedes volver a activarlo desde los ajustes."
+    });
+  }
+
+  const downloadTransactionsPDF = () => {
+    const doc = new jsPDF();
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+
+    const filteredTransactions = transactions.filter(tx => new Date(tx.date) >= threeMonthsAgo);
+
+    if (filteredTransactions.length === 0) {
+        toast({ title: "No hay transacciones", description: "No hay transacciones en los últimos 3 meses para imprimir." });
+        return;
+    }
+
+    doc.setFontSize(18);
+    doc.text(`Registro de Transacciones - ${currentUser.name}`, 14, 22);
+    doc.setFontSize(11);
+    doc.text(`Desde ${threeMonthsAgo.toLocaleDateString()} hasta ${new Date().toLocaleDateString()}`, 14, 30);
+
+    const tableColumn = ["Fecha", "Tipo", "Descripción", "Monto"];
+    const tableRows: (string|number)[][] = [];
+
+    filteredTransactions.forEach(tx => {
+        const description = tx.type === 'Servicio' 
+            ? tx.details.serviceName
+            : tx.type === 'Compra' 
+                ? tx.details.items?.map(i => `${i.quantity}x ${i.product.name}`).join(', ')
+                : tx.details.system;
+
+        const txData = [
+            new Date(tx.date).toLocaleDateString(),
+            tx.type,
+            description || '',
+            `$${tx.amount.toFixed(2)}`
+        ];
+        tableRows.push(txData);
+    });
+
+    (doc as any).autoTable({
+        head: [tableColumn],
+        body: tableRows,
+        startY: 35,
+    });
+
+    doc.save(`transacciones_${currentUser.id}_${new Date().toISOString().split('T')[0]}.pdf`);
+     toast({ title: "Descarga Iniciada", description: "Tu reporte de transacciones se está descargando." });
   }
 
   const value = {
@@ -415,6 +476,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     updateFullProfile,
     subscribeUser,
     activateTransactions,
+    deactivateTransactions,
+    downloadTransactionsPDF,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;

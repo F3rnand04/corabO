@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { ChevronLeft, Settings, Wallet, ShoppingCart, TrendingUp, Circle, Calendar, Bell, PieChart, Eye, EyeOff, Info } from "lucide-react";
+import { ChevronLeft, Settings, Wallet, ShoppingCart, TrendingUp, Circle, Calendar, Bell, PieChart, Eye, EyeOff, Info, FileText, Banknote, ShieldAlert, Power, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import TransactionsLineChart from "@/components/charts/TransactionsLineChart";
 import TransactionsPieChart from "@/components/charts/TransactionsPieChart";
@@ -15,10 +15,37 @@ import { TransactionDetailsDialog } from "@/components/TransactionDetailsDialog"
 import type { Transaction } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
+  DropdownMenuSubContent,
+  DropdownMenuGroup,
+} from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Switch } from "@/components/ui/switch";
 
-
-function TransactionsHeader({ onSettingsClick, isModuleActive }: { onSettingsClick: () => void; isModuleActive: boolean }) {
+function TransactionsHeader() {
     const router = useRouter();
+    const { currentUser, deactivateTransactions, downloadTransactionsPDF } = useCorabo();
+    const isModuleActive = currentUser.isTransactionsActive ?? false;
+    const [isDeactivationAlertOpen, setIsDeactivationAlertOpen] = useState(false);
+
+    const handleDeactivation = () => {
+        deactivateTransactions(currentUser.id);
+        setIsDeactivationAlertOpen(false);
+    };
+
+    const navigateToSettings = () => {
+        router.push('/transactions/settings');
+    }
+
     return (
         <header className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
             <div className="container px-4 sm:px-6">
@@ -34,9 +61,61 @@ function TransactionsHeader({ onSettingsClick, isModuleActive }: { onSettingsCli
                        <Button variant="ghost" size="icon">
                             <ShoppingCart className="h-6 w-6 text-muted-foreground" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={onSettingsClick}>
-                            <Settings className={cn("h-6 w-6 text-muted-foreground transition-colors", !isModuleActive && "text-green-500 animate-pulse")} />
-                        </Button>
+                        
+                        {isModuleActive ? (
+                            <AlertDialog open={isDeactivationAlertOpen} onOpenChange={setIsDeactivationAlertOpen}>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon">
+                                            <Settings className="h-6 w-6 text-muted-foreground" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Ajustes de Registro</DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={downloadTransactionsPDF}>
+                                            <FileText className="mr-2 h-4 w-4" />
+                                            <span>Imprimir Registro (PDF)</span>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={navigateToSettings}>
+                                            <Banknote className="mr-2 h-4 w-4" />
+                                            <span>Modificar Datos de Pago</span>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem>
+                                            <ShieldAlert className="mr-2 h-4 w-4" />
+                                            <span>Ver Políticas de Registro</span>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <AlertDialogTrigger asChild>
+                                             <DropdownMenuItem 
+                                                className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                                onSelect={(e) => e.preventDefault()}
+                                            >
+                                                <LogOut className="mr-2 h-4 w-4" />
+                                                <span>Desactivar Registro</span>
+                                            </DropdownMenuItem>
+                                        </AlertDialogTrigger>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>¿Estás seguro de desactivar tu registro?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Al desactivar el módulo de transacciones, se pausará el cálculo de tu reputación y efectividad. Podrás reactivarlo en cualquier momento, pero deberás completar el proceso de verificación de nuevo.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleDeactivation} className="bg-destructive hover:bg-destructive/90">Desactivar</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        ) : (
+                            <Button variant="ghost" size="icon" onClick={navigateToSettings}>
+                                <Settings className="h-6 w-6 text-green-500 animate-pulse" />
+                            </Button>
+                        )}
+
                     </div>
                 </div>
             </div>
@@ -94,10 +173,7 @@ export default function TransactionsPage() {
     
     return (
         <div className="bg-muted/20 min-h-screen">
-            <TransactionsHeader 
-                onSettingsClick={navigateToSettings}
-                isModuleActive={isModuleActive}
-            />
+            <TransactionsHeader />
             
             <main className="container py-6" onClick={handleInactiveClick}>
                  {isModuleActive ? (
@@ -131,7 +207,7 @@ export default function TransactionsPage() {
                         </div>
                         
                         <Card className="bg-card">
-                           <CardHeader className="py-4">
+                           <CardHeader className="py-4 px-4">
                                 <div className="flex justify-between items-start">
                                     <CardTitle className="text-lg">CREDICORA</CardTitle>
                                     <div className="text-right">
@@ -144,7 +220,7 @@ export default function TransactionsPage() {
                                         <Calendar className="w-5 h-5 text-muted-foreground ml-1" />
                                     </div>
                                 </div>
-                                <div className="flex justify-between text-xs pt-2">
+                                <div className="flex justify-between text-xs pt-1">
                                     <div className="text-muted-foreground">USADO</div>
                                     <div className="font-semibold">{showSensitiveData ? '$0.00' : '$**,**'}</div>
                                 </div>
