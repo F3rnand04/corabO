@@ -65,7 +65,7 @@ const TransactionItem = ({ label, count, color, onClick }: { label: string; coun
 export default function TransactionsPage() {
     const { transactions, currentUser } = useCorabo();
     const router = useRouter();
-    const [isModuleActive, setIsModuleActive] = useState(false);
+    const isModuleActive = currentUser.isTransactionsActive ?? false;
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
     const [chartType, setChartType] = useState<'line' | 'pie'>('line');
     const [showSensitiveData, setShowSensitiveData] = useState(true);
@@ -135,7 +135,7 @@ export default function TransactionsPage() {
                                 <div className="flex justify-between items-start">
                                     <CardTitle className="text-lg">CREDICORA</CardTitle>
                                     <div className="text-right">
-                                        <p className="text-xl font-bold">{showSensitiveData ? '0,00$' : '$***,**'}</p>
+                                        <p className="text-xl font-bold">{showSensitiveData ? `$${(currentUser.credicoraLimit || 0).toFixed(2)}` : '$***,**'}</p>
                                     </div>
                                     <div className="flex items-center">
                                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setShowSensitiveData(!showSensitiveData); }}>
@@ -146,11 +146,11 @@ export default function TransactionsPage() {
                                 </div>
                                 <div className="flex justify-between text-xs pt-2">
                                     <div className="text-muted-foreground">USADO</div>
-                                    <div className="font-semibold">{showSensitiveData ? '0,00$' : '$**,**'}</div>
+                                    <div className="font-semibold">{showSensitiveData ? '$0.00' : '$**,**'}</div>
                                 </div>
                                 <div className="flex justify-between text-xs">
                                     <div className="text-muted-foreground">DISPONIBLE</div>
-                                    <div className="font-semibold">{showSensitiveData ? '0,00$' : '$***,**'}</div>
+                                    <div className="font-semibold">{showSensitiveData ? `$${(currentUser.credicoraLimit || 0).toFixed(2)}` : '$***,**'}</div>
                                 </div>
                             </CardHeader>
                             <Separator />

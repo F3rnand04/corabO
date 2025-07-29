@@ -52,7 +52,7 @@ const banks = [
 
 
 export default function TransactionsSettingsPage() {
-    const { currentUser } = useCorabo();
+    const { currentUser, activateTransactions } = useCorabo();
     const { toast } = useToast();
     const router = useRouter();
     const [step, setStep] = useState(1);
@@ -131,7 +131,7 @@ export default function TransactionsSettingsPage() {
                     description: "Tus datos de pago han sido guardados exitosamente. Tu módulo de transacciones está activo.",
                     className: "bg-green-100 border-green-300 text-green-800",
                 });
-                // In a real app, you would save the data and enable the module
+                activateTransactions(currentUser.id, 150);
                 router.push('/transactions');
             }
             setIsVerifyingAccount(false);

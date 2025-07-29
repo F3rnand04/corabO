@@ -47,6 +47,7 @@ interface CoraboState {
   setFeedView: (view: FeedView) => void;
   updateFullProfile: (userId: string, data: ProfileSetupData) => void;
   subscribeUser: (userId: string) => void;
+  activateTransactions: (userId: string, creditLimit: number) => void;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -377,6 +378,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     });
   }
 
+  const activateTransactions = (userId: string, creditLimit: number) => {
+    updateUser(userId, { isTransactionsActive: true, credicoraLimit: creditLimit });
+  }
+
   const value = {
     currentUser,
     users,
@@ -411,6 +416,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     validatePhone,
     updateFullProfile,
     subscribeUser,
+    activateTransactions,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;

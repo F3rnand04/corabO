@@ -49,6 +49,8 @@ export type User = {
   phoneValidated: boolean;
   verified?: boolean;
   isSubscribed?: boolean;
+  isTransactionsActive?: boolean;
+  credicoraLimit?: number;
   promotion?: {
     text: string;
     expires: string;
