@@ -58,7 +58,8 @@ function QuotesProHeader() {
             <Zap className="w-5 h-5"/>
             <h1 className="text-xl">Cotización PRO</h1>
           </div>
-          <Button variant="ghost" size="icon">
+          {/* Help Icon Button */}
+          <Button variant="ghost" size="icon" disabled>
             <AlertCircle className="h-6 w-6 text-muted-foreground" />
           </Button>
         </div>
