@@ -13,6 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { useState, TouchEvent } from 'react';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
 import type { User } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
 
 type GalleryImage = NonNullable<User['gallery']>[0];
 
@@ -20,6 +21,7 @@ type GalleryImage = NonNullable<User['gallery']>[0];
 export default function CompanyProfilePage() {
   const params = useParams();
   const { users } = useCorabo();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('comentarios');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -31,7 +33,12 @@ export default function CompanyProfilePage() {
 
   // Find the specific provider by id from the URL
   const provider = users.find(u => u.id === params.id);
-  const [starCount, setStarCount] = useState(8934.5);
+  
+  // Local state for interactions
+  const [starCount, setStarCount] = useState(8934);
+  const [isLiked, setIsLiked] = useState(false);
+  const [shareCount, setShareCount] = useState(4567);
+  const [messageCount, setMessageCount] = useState(1234);
 
 
   if (!provider) {
@@ -56,8 +63,6 @@ export default function CompanyProfilePage() {
     distance: "2.5 km",
     profileImage: provider.profileImage,
     mainImage: gallery.length > 0 ? gallery[currentImageIndex].src : "https://placehold.co/600x400.png",
-    shareCount: 4567,
-    messageCount: 1234,
     gallery: gallery
   };
 
@@ -99,13 +104,48 @@ export default function CompanyProfilePage() {
   };
 
   const handleImageDoubleClick = (image: GalleryImage) => {
-    setSelectedImage(image);
-    setIsDetailsDialogOpen(true);
+    handleStarClick();
   };
 
+  const openDetailsDialog = (image: GalleryImage) => {
+    setSelectedImage(image);
+    setIsDetailsDialogOpen(true);
+  }
+
   const handleStarClick = () => {
-    setStarCount(prevCount => prevCount + 1);
+    if (isLiked) {
+      setStarCount(prev => prev - 1);
+    } else {
+      setStarCount(prev => prev + 1);
+    }
+    setIsLiked(prev => !prev);
   };
+
+  const handleShareClick = async () => {
+    const currentImage = gallery.length > 0 ? gallery[currentImageIndex] : null;
+    if (!currentImage) return;
+
+    const shareData = {
+      title: `Mira esta publicación de ${provider.name}`,
+      text: `${currentImage.alt}: ${currentImage.description}`,
+      url: window.location.href, // Shares the URL of the current profile page
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        setShareCount(prev => prev + 1);
+      } else {
+        throw new Error("Share API not supported");
+      }
+    } catch (error) {
+       navigator.clipboard.writeText(shareData.url);
+       toast({
+         title: "Enlace Copiado",
+         description: "El enlace al perfil ha sido copiado a tu portapapeles.",
+       });
+    }
+  }
   
   const currentImage = gallery.length > 0 ? gallery[currentImageIndex] : null;
 
@@ -199,21 +239,21 @@ export default function CompanyProfilePage() {
                   <div className="absolute bottom-2 right-2 flex flex-col items-end gap-2 text-white">
                       <div className="flex flex-col items-center">
                           <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={handleStarClick}>
-                              <Star className="w-5 h-5" />
+                              <Star className={cn("w-5 h-5", isLiked && "fill-yellow-400 text-yellow-400")} />
                           </Button>
                           <span className="text-xs font-bold mt-1 drop-shadow-md">{(starCount / 1000).toFixed(1)}k</span>
                       </div>
                        <div className="flex flex-col items-center">
-                          <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10">
+                          <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={() => openDetailsDialog(currentImage)}>
                               <MessageCircle className="w-5 h-5" />
                           </Button>
-                          <span className="text-xs font-bold mt-1 drop-shadow-md">{(profileData.messageCount / 1000).toFixed(1)}k</span>
+                          <span className="text-xs font-bold mt-1 drop-shadow-md">{(messageCount / 1000).toFixed(1)}k</span>
                       </div>
                       <div className="flex flex-col items-center">
-                          <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10">
+                          <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={handleShareClick}>
                               <Send className="w-5 h-5" />
                           </Button>
-                          <span className="text-xs font-bold mt-1 drop-shadow-md">{profileData.shareCount}</span>
+                          <span className="text-xs font-bold mt-1 drop-shadow-md">{shareCount}</span>
                       </div>
                   </div>
 
@@ -248,7 +288,7 @@ export default function CompanyProfilePage() {
                           key={index} 
                           className="relative aspect-square cursor-pointer group"
                           onClick={() => setCurrentImageIndex(index)}
-                          onDoubleClick={() => handleImageDoubleClick(thumb)}
+                          onDoubleClick={() => openDetailsDialog(thumb)}
                       >
                       <Image
                           src={thumb.src}
@@ -276,6 +316,7 @@ export default function CompanyProfilePage() {
           onOpenChange={setIsDetailsDialogOpen}
           image={selectedImage}
           isOwnerView={false}
+          onCommentSubmit={() => setMessageCount(prev => prev + 1)}
         />
       )}
     </>

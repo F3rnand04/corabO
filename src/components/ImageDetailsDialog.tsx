@@ -11,17 +11,15 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from './ui/scroll-area';
-import { Trash2, MessageSquare } from 'lucide-react';
+import { Trash2, MessageSquare, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Input } from './ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Separator } from './ui/separator';
 import type { GalleryImage } from '@/lib/types';
 import { useCorabo } from '@/contexts/CoraboContext';
+import { useState } from 'react';
 
-type Comment = {
-  author: string;
-  text: string;
-};
+type Comment = NonNullable<GalleryImage['comments']>[0];
 
 interface ImageDetailsDialogProps {
   isOpen: boolean;
@@ -29,10 +27,13 @@ interface ImageDetailsDialogProps {
   image: GalleryImage | null;
   isOwnerView?: boolean;
   onDelete?: (imageId: string) => void;
+  onCommentSubmit?: () => void;
 }
 
-export function ImageDetailsDialog({ isOpen, onOpenChange, image, isOwnerView = false, onDelete }: ImageDetailsDialogProps) {
+export function ImageDetailsDialog({ isOpen, onOpenChange, image, isOwnerView = false, onDelete, onCommentSubmit }: ImageDetailsDialogProps) {
   const { currentUser } = useCorabo();
+  const [newComment, setNewComment] = useState("");
+  const [comments, setComments] = useState(image?.comments || []);
 
   if (!image) return null;
 
@@ -40,6 +41,22 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, image, isOwnerView = 
     if(onDelete && image) {
       onDelete(image.id);
       onOpenChange(false);
+    }
+  }
+
+  const handlePostComment = () => {
+    if (newComment.trim()) {
+      const commentToAdd = {
+        author: currentUser.name,
+        text: newComment,
+        likes: 0,
+        dislikes: 0
+      };
+      setComments(prev => [...prev, commentToAdd]);
+      setNewComment("");
+      if (onCommentSubmit) {
+        onCommentSubmit();
+      }
     }
   }
 
@@ -83,28 +100,41 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, image, isOwnerView = 
                 <div className="mt-6">
                     <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                         <MessageSquare className="w-5 h-5" />
-                        Comentarios ({image.comments?.length || 0})
+                        Comentarios ({comments.length || 0})
                     </h3>
                     <div className="space-y-4">
-                        {image.comments?.map((comment, index) => (
+                        {comments?.map((comment, index) => (
                            <div key={index} className="flex items-start gap-3">
                                <Avatar className="w-8 h-8 shrink-0">
                                    <AvatarFallback>{comment.author.charAt(0)}</AvatarFallback>
                                </Avatar>
-                               <div>
+                               <div className="flex-grow">
                                    <p className="font-semibold text-sm">{comment.author}</p>
                                    <p className="text-sm text-muted-foreground">{comment.text}</p>
+                                   <div className="flex items-center gap-4 mt-2 text-muted-foreground">
+                                      <Button variant="ghost" size="icon" className="w-6 h-6">
+                                          <ThumbsUp className="w-4 h-4"/>
+                                      </Button>
+                                      <Button variant="ghost" size="icon" className="w-6 h-6">
+                                          <ThumbsDown className="w-4 h-4"/>
+                                      </Button>
+                                   </div>
                                </div>
                            </div>
                         ))}
-                         {!image.comments?.length && (
+                         {!comments?.length && (
                              <p className="text-sm text-muted-foreground text-center py-4">No hay comentarios aún. ¡Sé el primero!</p>
                          )}
                     </div>
-                     {!isOwnerView && currentUser.type === 'client' && (
+                     {!isOwnerView && (
                           <div className="mt-6 flex items-center gap-2">
-                              <Input placeholder="Añade un comentario..." />
-                              <Button>Comentar</Button>
+                              <Input 
+                                placeholder="Añade un comentario..." 
+                                value={newComment}
+                                onChange={(e) => setNewComment(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handlePostComment()}
+                              />
+                              <Button onClick={handlePostComment}>Comentar</Button>
                           </div>
                       )}
                 </div>

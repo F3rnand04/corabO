@@ -1,14 +1,18 @@
 
 
+export type GalleryImageComment = {
+  author: string;
+  text: string;
+  likes?: number;
+  dislikes?: number;
+};
+
 export type GalleryImage = {
   id: string;
   src: string;
   alt: string;
   description: string;
-  comments?: {
-    author: string;
-    text: string;
-  }[];
+  comments?: GalleryImageComment[];
   promotion?: {
     text: string;
     expires: string;
