@@ -13,6 +13,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 
 function SettingsHeader() {
     const router = useRouter();
@@ -38,6 +40,16 @@ const MOCKED_ID_DATA = {
     age: 28,
 };
 
+const banks = [
+    "Banco de Venezuela",
+    "Banesco",
+    "Banco Mercantil",
+    "Banco Provincial",
+    "Bancamiga",
+    "Banco Nacional de Crédito (BNC)",
+    "Otro"
+];
+
 
 export default function TransactionsSettingsPage() {
     const { currentUser } = useCorabo();
@@ -54,6 +66,7 @@ export default function TransactionsSettingsPage() {
     // Step 2 state
     const [paymentMethod, setPaymentMethod] = useState<'account' | 'mobile'>('account');
     const [bankAccount, setBankAccount] = useState('');
+    const [bankName, setBankName] = useState('');
     const [mobilePaymentPhone, setMobilePaymentPhone] = useState('');
     const [isVerifyingAccount, setIsVerifyingAccount] = useState(false);
     const [accountVerificationError, setAccountVerificationError] = useState<string | null>(null);
@@ -232,6 +245,17 @@ export default function TransactionsSettingsPage() {
                                         <Input id="account-name" value={currentUser.name} readOnly disabled />
                                     </div>
                                     <div className="space-y-2">
+                                        <Label htmlFor="bank-name">Entidad Bancaria</Label>
+                                        <Select onValueChange={setBankName} value={bankName}>
+                                            <SelectTrigger id="bank-name">
+                                                <SelectValue placeholder="Selecciona un banco" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {banks.map(bank => <SelectItem key={bank} value={bank}>{bank}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
                                         <Label htmlFor="account-number">Número de Cuenta (20 dígitos)</Label>
                                         <Input id="account-number" placeholder="0102..." value={bankAccount} onChange={(e) => setBankAccount(e.target.value)} maxLength={20} />
                                     </div>
@@ -241,6 +265,17 @@ export default function TransactionsSettingsPage() {
                                     <div className="space-y-2">
                                         <Label htmlFor="mobile-id">Cédula</Label>
                                         <Input id="mobile-id" value={MOCKED_ID_DATA.idNumber} readOnly disabled />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="mobile-bank-name">Entidad Bancaria</Label>
+                                        <Select onValueChange={setBankName} value={bankName}>
+                                            <SelectTrigger id="mobile-bank-name">
+                                                <SelectValue placeholder="Selecciona un banco" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {banks.map(bank => <SelectItem key={bank} value={bank}>{bank}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="mobile-phone">Número de Teléfono</Label>
