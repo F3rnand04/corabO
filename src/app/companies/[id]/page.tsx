@@ -18,7 +18,7 @@ import { ReportDialog } from '@/components/ReportDialog';
 
 export default function CompanyProfilePage() {
   const params = useParams();
-  const { users, addContact } = useCorabo();
+  const { users, addContact, isGpsActive } = useCorabo();
   const { toast } = useToast();
   
   const provider = users.find(u => u.id === params.id);
@@ -183,7 +183,7 @@ export default function CompanyProfilePage() {
             <div className="flex items-center gap-2">
                 <Button variant="ghost" size="icon"><Calendar className="w-5 h-5 text-muted-foreground" /></Button>
                  <div className="flex flex-col items-center">
-                    <MapPin className="w-5 h-5 text-green-500" />
+                    <MapPin className={cn("w-5 h-5", isGpsActive ? "text-green-500" : "text-muted-foreground")} />
                     <span className="text-xs text-muted-foreground">{profileData.distance}</span>
                  </div>
             </div>
