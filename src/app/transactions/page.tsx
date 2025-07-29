@@ -14,7 +14,6 @@ import TransactionsPieChart from "@/components/charts/TransactionsPieChart";
 import { TransactionDetailsDialog } from "@/components/TransactionDetailsDialog";
 import type { Transaction } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { TransactionHistory } from "@/components/TransactionHistory";
 
 
 function TransactionsHeader({ onSettingsClick }: { onSettingsClick: () => void }) {
@@ -163,11 +162,6 @@ export default function TransactionsPage() {
                                 />
                             </CardContent>
                         </Card>
-                         <TransactionHistory 
-                            transactions={transactions} 
-                            currentUserId={currentUser.id} 
-                            onTransactionClick={handleTransactionClick} 
-                        />
                     </div>
                 ) : (
                     <div className="text-center py-20">
