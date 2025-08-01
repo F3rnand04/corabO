@@ -18,10 +18,13 @@ import { ReportDialog } from '@/components/ReportDialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { useRouter } from 'next/navigation';
+import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 export default function CompanyProfilePage() {
   const params = useParams();
-  const { users, addContact, isGpsActive, transactions } = useCorabo();
+  const { users, addContact, isGpsActive, transactions, createAppointmentRequest, currentUser } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
   
@@ -33,6 +36,8 @@ export default function CompanyProfilePage() {
   const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+  const [isAppointmentSuccess, setIsAppointmentSuccess] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   
   const minSwipeDistance = 50;
 
@@ -52,11 +57,31 @@ export default function CompanyProfilePage() {
       </main>
     );
   }
-
-  const paymentCommitmentDates = transactions
-    .filter(tx => (tx.providerId === provider.id || tx.clientId === provider.id) && tx.status === 'Acuerdo Aceptado - Pendiente de Ejecución')
-    .map(tx => new Date(tx.date));
   
+  const disabledDays = Object.entries(provider.profileSetupData?.schedule || {})
+    .filter(([, dayDetails]) => !dayDetails.active)
+    .map(([dayName]) => {
+        // Map day name to day of the week index (0=Sunday, 6=Saturday)
+        const dayMap: { [key: string]: number } = {
+            'Domingo': 0, 'Lunes': 1, 'Martes': 2, 'Miércoles': 3,
+            'Jueves': 4, 'Viernes': 5, 'Sábado': 6
+        };
+        return dayMap[dayName];
+    });
+
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date && provider) {
+        createAppointmentRequest({
+            providerId: provider.id,
+            date: date,
+            details: `Solicitud de cita desde perfil para el ${format(date, "dd/MM/yyyy")}`
+        });
+        setSelectedDate(date);
+        setIsAppointmentSuccess(true);
+    }
+  }
+
+
   const gallery: GalleryImage[] = provider.gallery || [];
   
   const displayDistance = provider.profileSetupData?.showExactLocation ? "2.5 km" : "500m - 1km";
@@ -199,13 +224,16 @@ export default function CompanyProfilePage() {
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
                     <CalendarComponent
-                      mode="multiple"
-                      selected={paymentCommitmentDates}
-                      disabled={(date) => date < new Date("1900-01-01")}
+                      mode="single"
+                      onSelect={handleDateSelect}
+                      disabled={[
+                          { dayOfWeek: disabledDays },
+                          { before: new Date() }
+                      ]}
                       initialFocus
                     />
                      <div className="p-2 border-t text-center text-xs text-muted-foreground">
-                        Días con compromisos de pago resaltados.
+                        Días no laborales desactivados.
                      </div>
                   </PopoverContent>
                 </Popover>
@@ -253,7 +281,7 @@ export default function CompanyProfilePage() {
                    <Button 
                       variant="ghost" 
                       size="icon" 
-                      className="absolute top-2 left-2 z-10 text-white bg-black/20 hover:bg-black/40 rounded-full h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-2 left-2 z-10 text-white bg-black/20 rounded-full"
                       onClick={() => setIsReportDialogOpen(true)}
                     >
                       <Flag className="w-4 h-4" />
@@ -262,7 +290,7 @@ export default function CompanyProfilePage() {
                       onClick={handlePrev}
                       variant="ghost" 
                       size="icon" 
-                      className="absolute top-1/2 left-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-1/2 left-2 -translate-y-1/2 bg-black/20 text-white rounded-full h-8 w-8 z-10"
                   >
                       <ChevronLeft className="h-5 w-5" />
                   </Button>
@@ -270,7 +298,7 @@ export default function CompanyProfilePage() {
                       onClick={handleNext}
                       variant="ghost" 
                       size="icon" 
-                      className="absolute top-1/2 right-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 z-10 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-1/2 right-2 -translate-y-1/2 bg-black/20 text-white rounded-full h-8 w-8 z-10"
                   >
                       <ChevronRight className="h-5 w-5" />
                   </Button>
@@ -279,19 +307,19 @@ export default function CompanyProfilePage() {
                           <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={handleStarClick}>
                               <Star className={cn("w-5 h-5", isLiked && "fill-yellow-400 text-yellow-400")} />
                           </Button>
-                          <span className="text-xs font-bold mt-1 drop-shadow-md">{(starCount / 1000).toFixed(1)}k</span>
+                          <span className="text-xs font-bold mt-1">{(starCount / 1000).toFixed(1)}k</span>
                       </div>
                        <div className="flex flex-col items-center">
                           <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={() => openDetailsDialog(currentImage)}>
                               <MessageCircle className="w-5 h-5" />
                           </Button>
-                          <span className="text-xs font-bold mt-1 drop-shadow-md">{(messageCount / 1000).toFixed(1)}k</span>
+                          <span className="text-xs font-bold mt-1">{(messageCount / 1000).toFixed(1)}k</span>
                       </div>
                       <div className="flex flex-col items-center">
                           <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={handleShareClick}>
                               <Send className="w-5 h-5" />
                           </Button>
-                          <span className="text-xs font-bold mt-1 drop-shadow-md">{shareCount}</span>
+                          <span className="text-xs font-bold mt-1">{shareCount}</span>
                       </div>
                   </div>
 
@@ -347,6 +375,19 @@ export default function CompanyProfilePage() {
           </Card>
         </main>
       </div>
+       <AlertDialog open={isAppointmentSuccess} onOpenChange={setIsAppointmentSuccess}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>¡Solicitud de Cita Enviada!</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Hemos notificado a <strong>{provider.name}</strong> sobre tu interés en agendar una cita para el día <strong>{selectedDate && format(selectedDate, "dd 'de' MMMM", { locale: es })}</strong>. Recibirás una notificación o un mensaje directo para confirmar los detalles.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogAction onClick={() => setIsAppointmentSuccess(false)}>Entendido</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
       <ReportDialog 
             isOpen={isReportDialogOpen} 
             onOpenChange={setIsReportDialogOpen} 
@@ -365,3 +406,5 @@ export default function CompanyProfilePage() {
     </>
   );
 }
+
+    
