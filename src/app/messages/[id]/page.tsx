@@ -15,6 +15,8 @@ import { es } from 'date-fns/locale';
 import type { Message, User } from '@/lib/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { BusinessHoursStatus } from '@/components/BusinessHoursStatus';
+import { Separator } from '@/components/ui/separator';
 
 
 function ChatHeader({ 
@@ -27,6 +29,8 @@ function ChatHeader({
     isGpsActive: boolean 
 }) {
   const router = useRouter();
+  const [businessStatus, setBusinessStatus] = useState<'open' | 'closed'>('closed');
+
 
   const disabledDays = Object.entries(participant.profileSetupData?.schedule || {})
     .filter(([, dayDetails]) => !dayDetails.active)
@@ -63,10 +67,17 @@ function ChatHeader({
          <Popover>
             <PopoverTrigger asChild>
                 <Button variant="ghost" size="icon">
-                    <Calendar className="h-5 w-5 text-muted-foreground" />
+                    <Calendar className={cn("h-5 w-5", {
+                        "text-green-500": businessStatus === 'open',
+                        "text-red-500": businessStatus === 'closed'
+                    })} />
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
+                <div className="p-3 flex items-center justify-between">
+                    <BusinessHoursStatus schedule={participant.profileSetupData?.schedule} onStatusChange={setBusinessStatus} />
+                </div>
+                <Separator />
                 <CalendarComponent
                     mode="single"
                     onSelect={(date) => {
