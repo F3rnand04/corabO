@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { SubscriptionDialog } from "@/components/SubscriptionDialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 
 
 function TransactionsHeader() {
@@ -150,6 +152,10 @@ export default function TransactionsPage() {
 
     const pendingCount = transactions.filter(t => t.status === 'Solicitud Pendiente').length;
     const paymentCommitmentsCount = transactions.filter(t => t.status === 'Acuerdo Aceptado - Pendiente de Ejecución').length;
+    
+    const paymentCommitmentDates = transactions
+    .filter((tx: Transaction) => (tx.providerId === currentUser.id || tx.clientId === currentUser.id) && tx.status === 'Acuerdo Aceptado - Pendiente de Ejecución')
+    .map((tx: Transaction) => new Date(tx.date));
 
     const handleTransactionClick = (transaction: Transaction) => {
         setSelectedTransaction(transaction);
@@ -211,11 +217,28 @@ export default function TransactionsPage() {
                                     <div className="text-right">
                                         <p className="text-xl font-bold">{showSensitiveData ? `$${(currentUser.credicoraLimit || 0).toFixed(2)}` : '$***,**'}</p>
                                     </div>
-                                    <div className="flex items-center">
+                                    <div className="flex items-center gap-1">
                                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setShowSensitiveData(!showSensitiveData); }}>
                                             {showSensitiveData ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                                         </Button>
-                                        <Calendar className="w-5 h-5 text-muted-foreground ml-1" />
+                                         <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-7 w-7">
+                                                <Calendar className="w-4 h-4" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0">
+                                                <CalendarComponent
+                                                mode="multiple"
+                                                selected={paymentCommitmentDates}
+                                                disabled={(date) => date < new Date("1900-01-01")}
+                                                initialFocus
+                                                />
+                                                <div className="p-2 border-t text-center text-xs text-muted-foreground">
+                                                    Días con compromisos de pago resaltados.
+                                                </div>
+                                            </PopoverContent>
+                                        </Popover>
                                     </div>
                                 </div>
                                 <div className="flex justify-between text-xs pt-1">
@@ -224,7 +247,7 @@ export default function TransactionsPage() {
                                 </div>
                                 <div className="flex justify-between text-xs">
                                     <div className="text-muted-foreground">DISPONIBLE</div>
-                                    <div className="font-semibold">{showSensitiveData ? `$${(currentUser.credicoraLimit || 0).toFixed(2)}` : '$***,**'}</div>
+                                    <div className="font-semibold">{showSensitiveData ? `$${(currentUser.credicoraLimit || 0).toFixed(2)}` : '$***,**'}</p>
                                 </div>
                             </CardHeader>
                             <Separator />
@@ -292,3 +315,5 @@ export default function TransactionsPage() {
         </div>
     );
 }
+
+    
