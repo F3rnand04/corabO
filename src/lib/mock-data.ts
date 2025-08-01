@@ -80,6 +80,19 @@ export const users: User[] = [
     phone: '04149876543',
     emailValidated: true,
     phoneValidated: false,
+    profileSetupData: {
+      hasPhysicalLocation: true,
+      showExactLocation: false,
+      schedule: {
+        'Lunes': { from: '09:00', to: '17:00', active: true },
+        'Martes': { from: '09:00', to: '17:00', active: true },
+        'Miércoles': { from: '09:00', to: '17:00', active: true },
+        'Jueves': { from: '09:00', to: '17:00', active: true },
+        'Viernes': { from: '09:00', to: '17:00', active: true },
+        'Sábado': { from: '10:00', to: '14:00', active: true },
+        'Domingo': { from: '00:00', to: '00:00', active: false },
+      }
+    },
     gallery: [
       { 
         id: 'provider2-img1',
