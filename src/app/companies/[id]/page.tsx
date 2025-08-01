@@ -12,13 +12,15 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useState, TouchEvent } from 'react';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
-import type { User, GalleryImage } from '@/lib/types';
+import type { User, GalleryImage, Transaction } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { ReportDialog } from '@/components/ReportDialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 
 export default function CompanyProfilePage() {
   const params = useParams();
-  const { users, addContact, isGpsActive } = useCorabo();
+  const { users, addContact, isGpsActive, transactions } = useCorabo();
   const { toast } = useToast();
   
   const provider = users.find(u => u.id === params.id);
@@ -48,6 +50,10 @@ export default function CompanyProfilePage() {
       </main>
     );
   }
+
+  const paymentCommitmentDates = transactions
+    .filter((tx: Transaction) => (tx.providerId === provider.id || tx.clientId === provider.id) && tx.status === 'Acuerdo Aceptado - Pendiente de Ejecución')
+    .map((tx: Transaction) => new Date(tx.date));
   
   const gallery: GalleryImage[] = provider.gallery || [];
   
@@ -181,7 +187,24 @@ export default function CompanyProfilePage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon"><Calendar className="w-5 h-5 text-muted-foreground" /></Button>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <Calendar className="w-5 h-5 text-muted-foreground" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <CalendarComponent
+                      mode="multiple"
+                      selected={paymentCommitmentDates}
+                      disabled={(date) => date < new Date("1900-01-01")}
+                      initialFocus
+                    />
+                     <div className="p-2 border-t text-center text-xs text-muted-foreground">
+                        Días con compromisos de pago resaltados.
+                     </div>
+                  </PopoverContent>
+                </Popover>
                  <div className="flex flex-col items-center">
                     <MapPin className={cn("w-5 h-5", isGpsActive ? "text-green-500" : "text-muted-foreground")} />
                     <span className="text-xs text-muted-foreground">{profileData.distance}</span>
