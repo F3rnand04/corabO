@@ -129,4 +129,9 @@ export type Conversation = {
     unreadCount?: number;
 };
 
+export type AppointmentRequest = {
+    providerId: string;
+    date: Date;
+    details: string;
+};
     

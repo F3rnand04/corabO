@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData, Conversation, Message } from '@/lib/types';
+import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData, Conversation, Message, AppointmentRequest } from '@/lib/types';
 import { users as initialUsers, products, services as initialServices, initialTransactions, initialConversations } from '@/lib/mock-data';
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from 'next/navigation';
@@ -55,6 +55,7 @@ interface CoraboState {
   deactivateTransactions: (userId: string) => void;
   downloadTransactionsPDF: () => void;
   sendMessage: (conversationId: string, text: string) => void;
+  createAppointmentRequest: (request: AppointmentRequest) => void;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -462,6 +463,26 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         })
     );
   };
+  
+  const createAppointmentRequest = (request: AppointmentRequest) => {
+    const newTx: Transaction = {
+      id: `txn-${Date.now()}`,
+      type: 'Servicio',
+      status: 'Acuerdo Aceptado - Pendiente de Ejecución',
+      date: request.date.toISOString(),
+      amount: 0, // Assume 0 cost for now, could be updated later
+      clientId: currentUser.id,
+      providerId: request.providerId,
+      details: {
+        serviceName: request.details,
+      },
+    };
+    setTransactions(prev => [newTx, ...prev]);
+    toast({
+        title: "Cita Agendada",
+        description: `Se ha creado un compromiso de pago para el ${request.date.toLocaleDateString()}.`
+    })
+  }
 
 
   const value = {
@@ -503,6 +524,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     deactivateTransactions,
     downloadTransactionsPDF,
     sendMessage,
+    createAppointmentRequest,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;

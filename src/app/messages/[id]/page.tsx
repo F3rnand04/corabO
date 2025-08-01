@@ -7,14 +7,38 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChevronLeft, Send, Paperclip, CheckCheck } from 'lucide-react';
+import { ChevronLeft, Send, Paperclip, CheckCheck, MapPin, Calendar, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format } from 'date-fns';
-import type { Message } from '@/lib/types';
+import { es } from 'date-fns/locale';
+import type { Message, User } from '@/lib/types';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 
-function ChatHeader({ name, profileImage }: { name: string, profileImage: string }) {
+
+function ChatHeader({ 
+    participant, 
+    onDateSelect, 
+    isGpsActive 
+}: { 
+    participant: User, 
+    onDateSelect: (date: Date) => void,
+    isGpsActive: boolean 
+}) {
   const router = useRouter();
+
+  const disabledDays = Object.entries(participant.profileSetupData?.schedule || {})
+    .filter(([, dayDetails]) => !dayDetails.active)
+    .map(([dayName]) => {
+        // Map day name to day of the week index (0=Sunday, 6=Saturday)
+        const dayMap: { [key: string]: number } = {
+            'Domingo': 0, 'Lunes': 1, 'Martes': 2, 'Miércoles': 3,
+            'Jueves': 4, 'Viernes': 5, 'Sábado': 6
+        };
+        return dayMap[dayName];
+    });
+
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between p-2 border-b bg-background/95 backdrop-blur">
       <div className="flex items-center gap-2">
@@ -22,10 +46,46 @@ function ChatHeader({ name, profileImage }: { name: string, profileImage: string
           <ChevronLeft className="h-6 w-6" />
         </Button>
         <Avatar className="w-10 h-10">
-          <AvatarImage src={profileImage} alt={name} />
-          <AvatarFallback>{name.charAt(0)}</AvatarFallback>
+          <AvatarImage src={participant.profileImage} alt={participant.name} />
+          <AvatarFallback>{participant.name.charAt(0)}</AvatarFallback>
         </Avatar>
-        <h2 className="font-semibold">{name}</h2>
+        <h2 className="font-semibold">{participant.name}</h2>
+      </div>
+      <div className="flex items-center gap-1">
+        <Button 
+            variant="ghost" 
+            size="icon" 
+            disabled={!participant.profileSetupData?.hasPhysicalLocation}
+            onClick={() => router.push('/map')}
+        >
+            <MapPin className={cn("h-5 w-5", isGpsActive ? "text-green-500" : "text-muted-foreground")} />
+        </Button>
+         <Popover>
+            <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon">
+                    <Calendar className="h-5 w-5 text-muted-foreground" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+                <CalendarComponent
+                    mode="single"
+                    onSelect={(date) => {
+                        if (date) onDateSelect(date);
+                    }}
+                    disabled={[
+                        { dayOfWeek: disabledDays },
+                        { before: new Date() }
+                    ]}
+                    initialFocus
+                />
+                <div className="p-2 border-t text-center text-xs text-muted-foreground">
+                    Días no laborales desactivados.
+                </div>
+            </PopoverContent>
+        </Popover>
+        <Button variant="ghost" size="icon" onClick={() => router.push('/quotes')}>
+            <FileText className="h-5 w-5 text-muted-foreground" />
+        </Button>
       </div>
     </header>
   );
@@ -72,7 +132,7 @@ function MessageBubble({ msg, isCurrentUser }: { msg: Message, isCurrentUser: bo
 export default function ChatPage() {
   const params = useParams();
   const router = useRouter();
-  const { conversations, users, currentUser, sendMessage } = useCorabo();
+  const { conversations, users, currentUser, sendMessage, createAppointmentRequest, isGpsActive } = useCorabo();
   const [newMessage, setNewMessage] = useState('');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   
@@ -109,9 +169,30 @@ export default function ChatPage() {
     }
   };
 
+  const handleDateSelect = (date: Date) => {
+    const formattedDate = format(date, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: es });
+    const messageText = `¡Hola! Me gustaría solicitar una cita para el ${formattedDate}. ¿Estás disponible?`;
+    sendMessage(conversationId, messageText);
+    
+    // Simulate provider accepting and creating the commitment
+    setTimeout(() => {
+        const appointmentMessage = `¡Claro! Confirmado. He agendado nuestra cita para el ${formattedDate}. ¡Nos vemos!`;
+        sendMessage(conversationId, appointmentMessage);
+        createAppointmentRequest({
+            providerId: otherParticipant.id,
+            date: date,
+            details: `Cita acordada por chat para el ${formattedDate}`
+        })
+    }, 1500)
+  }
+
   return (
     <div className="flex flex-col h-screen bg-muted/30">
-      <ChatHeader name={otherParticipant.name} profileImage={otherParticipant.profileImage} />
+      <ChatHeader 
+        participant={otherParticipant} 
+        onDateSelect={handleDateSelect}
+        isGpsActive={!!otherParticipant.profileSetupData?.hasPhysicalLocation && isGpsActive}
+      />
       
       <div className="flex-grow bg-[url('/doodle-bg.png')] bg-repeat">
         <ScrollArea className="h-full" ref={scrollAreaRef}>
