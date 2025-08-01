@@ -7,9 +7,10 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChevronLeft, Send, Paperclip } from 'lucide-react';
+import { ChevronLeft, Send, Paperclip, CheckCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { format } from 'date-fns';
 
 function ChatHeader({ name, profileImage }: { name: string, profileImage: string }) {
   const router = useRouter();
@@ -73,47 +74,56 @@ export default function ChatPage() {
     <div className="flex flex-col h-screen bg-muted/30">
       <ChatHeader name={otherParticipant.name} profileImage={otherParticipant.profileImage} />
       
-      <ScrollArea className="flex-grow p-4" ref={scrollAreaRef}>
-        <div className="space-y-4">
-          {conversation.messages.map((msg, index) => (
-            <div
-              key={index}
-              className={cn(
-                "flex items-end gap-2 max-w-[80%]",
-                msg.senderId === currentUser.id ? "ml-auto flex-row-reverse" : "mr-auto"
-              )}
-            >
-              <Avatar className="w-8 h-8">
-                <AvatarImage src={msg.senderId === currentUser.id ? currentUser.profileImage : otherParticipant.profileImage} />
-                <AvatarFallback>{msg.senderId === currentUser.id ? currentUser.name.charAt(0) : otherParticipant.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <div
-                className={cn(
-                  "p-3 rounded-2xl",
-                  msg.senderId === currentUser.id
-                    ? "bg-primary text-primary-foreground rounded-br-none"
-                    : "bg-background rounded-bl-none"
-                )}
-              >
-                <p className="text-sm">{msg.text}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </ScrollArea>
+      <div className="flex-grow bg-[url('/doodle-bg.png')] bg-repeat">
+        <ScrollArea className="h-full" ref={scrollAreaRef}>
+          <div className="p-4 space-y-2">
+            {conversation.messages.map((msg, index) => {
+              const isCurrentUser = msg.senderId === currentUser.id;
+              return (
+                <div
+                  key={index}
+                  className={cn(
+                    "flex items-end gap-2 max-w-[85%] w-fit",
+                    isCurrentUser ? "ml-auto" : "mr-auto"
+                  )}
+                >
+                  <div
+                    className={cn(
+                      "p-2 rounded-lg shadow-md",
+                      isCurrentUser
+                        ? "bg-primary text-primary-foreground rounded-br-none"
+                        : "bg-background rounded-bl-none"
+                    )}
+                  >
+                    <p className="text-sm pr-8">{msg.text}</p>
+                    <div className="flex items-center justify-end gap-1 mt-1">
+                      <p className={cn("text-xs", isCurrentUser ? "text-primary-foreground/70" : "text-muted-foreground/70")}>
+                        {format(new Date(msg.timestamp), 'HH:mm')}
+                      </p>
+                       {isCurrentUser && (
+                          <CheckCheck className="w-4 h-4 text-blue-400" />
+                       )}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </ScrollArea>
+      </div>
       
-      <footer className="p-2 border-t bg-background">
+      <footer className="p-2 border-t bg-transparent">
         <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-           <Button variant="ghost" size="icon">
+           <Button variant="ghost" size="icon" className="bg-background rounded-full shadow-md">
                 <Paperclip className="h-5 w-5 text-muted-foreground" />
             </Button>
           <Input
             placeholder="Escribe un mensaje..."
-            className="flex-grow rounded-full"
+            className="flex-grow rounded-full shadow-md"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
           />
-          <Button type="submit" size="icon" className="rounded-full">
+          <Button type="submit" size="icon" className="rounded-full shadow-md">
             <Send className="h-5 w-5" />
           </Button>
         </form>
