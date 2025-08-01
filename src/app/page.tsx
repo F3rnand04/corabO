@@ -7,7 +7,6 @@ import { ServiceCard } from "@/components/ServiceCard";
 import { ProviderCard } from "@/components/ProviderCard";
 import { ProductCard } from "@/components/ProductCard";
 import type { Service, User, Product } from "@/lib/types";
-import { CompaniesCarousel } from "@/components/CompaniesCarousel";
 
 type FeedItem = (Service & { type: 'service' }) | (Product & { type: 'product' });
 
@@ -63,9 +62,7 @@ export default function HomePage() {
         );
      }
     
-    // This logic now applies mostly to the 'servicios' view when searching
-    // or as a fallback.
-    const serviceProviders = providers.filter(p => p.profileSetupData?.providerType !== 'company');
+    const serviceProviders = providers.filter(p => p.profileSetupData?.providerType === 'professional');
     
     if (lowerCaseQuery.trim() === '') {
         return serviceProviders;
@@ -103,12 +100,6 @@ export default function HomePage() {
 
   return (
     <main className="container py-4 space-y-6">
-       {feedView === 'empresas' && (
-        <div>
-          <h2 className="text-xl font-bold mb-4">Empresas Destacadas</h2>
-          <CompaniesCarousel />
-        </div>
-      )}
       <div className="space-y-4">
         {feedView === 'servicios' ? (
           filteredItems.length > 0 ? (
@@ -122,7 +113,11 @@ export default function HomePage() {
               return null;
             })
           ) : (
-            <p className="text-center text-muted-foreground">No se encontraron servicios ni productos.</p>
+            filteredProviders.length > 0 ? (
+              filteredProviders.map(provider => <ProviderCard key={provider.id} provider={provider} />)
+            ) : (
+               <p className="text-center text-muted-foreground">No se encontraron servicios ni productos.</p>
+            )
           )
         ) : (
           filteredProviders.length > 0 ? (
