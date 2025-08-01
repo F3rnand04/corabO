@@ -12,7 +12,7 @@ import { CompanyCard } from "./CompanyCard";
 
 export function CompaniesCarousel() {
   const { users } = useCorabo();
-  const companies = users.filter(u => u.type === 'provider');
+  const companies = users.filter(u => u.type === 'provider' && u.profileSetupData?.providerType === 'company');
 
   return (
     <Carousel

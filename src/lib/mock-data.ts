@@ -21,6 +21,7 @@ export const users: User[] = [
       expires: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(), // Expires in 12 hours
     },
     profileSetupData: {
+      providerType: 'company',
       hasPhysicalLocation: true,
       showExactLocation: true,
       schedule: {
@@ -71,7 +72,7 @@ export const users: User[] = [
   },
   { 
     id: 'provider2', 
-    name: 'Hogar Feliz Servicios', 
+    name: 'Ana Rivas - Plomería', 
     type: 'provider', 
     reputation: 4.2,
     isGpsActive: false,
@@ -81,6 +82,7 @@ export const users: User[] = [
     emailValidated: true,
     phoneValidated: false,
     profileSetupData: {
+      providerType: 'professional',
       hasPhysicalLocation: true,
       showExactLocation: false,
       schedule: {
@@ -146,6 +148,9 @@ export const users: User[] = [
     phone: '04241112233',
     emailValidated: true,
     phoneValidated: true,
+    profileSetupData: {
+      providerType: 'professional',
+    },
     gallery: [
       { 
         id: 'provider3-img1',
@@ -164,6 +169,62 @@ export const users: User[] = [
         comments: []
       },
     ]
+  },
+  { 
+    id: 'provider4', 
+    name: 'Auto Fix Express', 
+    type: 'provider', 
+    reputation: 4.7, 
+    verified: true,
+    isGpsActive: true,
+    profileImage: `https://placehold.co/150x150.png`,
+    email: 'info@autofix.com',
+    phone: '04125556677',
+    emailValidated: true,
+    phoneValidated: true,
+    profileSetupData: {
+      providerType: 'company',
+      hasPhysicalLocation: true,
+      showExactLocation: true,
+      schedule: {
+        'Lunes': { from: '08:00', to: '18:00', active: true },
+        'Martes': { from: '08:00', to: '18:00', active: true },
+        'Miércoles': { from: '08:00', to: '18:00', active: true },
+        'Jueves': { from: '08:00', to: '18:00', active: true },
+        'Viernes': { from: '08:00', to: '18:00', active: true },
+        'Sábado': { from: '09:00', to: '13:00', active: true },
+        'Domingo': { from: '00:00', to: '00:00', active: false },
+      }
+    },
+    gallery: []
+  },
+    { 
+    id: 'provider5', 
+    name: 'Gastro Bar El Sabor', 
+    type: 'provider', 
+    reputation: 4.9, 
+    verified: true,
+    isGpsActive: true,
+    profileImage: `https://placehold.co/150x150.png`,
+    email: 'reservas@elsabor.com',
+    phone: '02123334455',
+    emailValidated: true,
+    phoneValidated: true,
+    profileSetupData: {
+      providerType: 'company',
+      hasPhysicalLocation: true,
+      showExactLocation: true,
+      schedule: {
+        'Lunes': { from: '12:00', to: '23:00', active: false },
+        'Martes': { from: '12:00', to: '23:00', active: true },
+        'Miércoles': { from: '12:00', to: '23:00', active: true },
+        'Jueves': { from: '12:00', to: '23:00', active: true },
+        'Viernes': { from: '12:00', to: '01:00', active: true },
+        'Sábado': { from: '12:00', to: '01:00', active: true },
+        'Domingo': { from: '12:00', to: '22:00', active: true },
+      }
+    },
+    gallery: []
   },
 ];
 

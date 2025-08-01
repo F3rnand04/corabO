@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useCorabo } from "@/contexts/CoraboContext";
@@ -6,6 +7,7 @@ import { ServiceCard } from "@/components/ServiceCard";
 import { ProviderCard } from "@/components/ProviderCard";
 import { ProductCard } from "@/components/ProductCard";
 import type { Service, User, Product } from "@/lib/types";
+import { CompaniesCarousel } from "@/components/CompaniesCarousel";
 
 type FeedItem = (Service & { type: 'service' }) | (Product & { type: 'product' });
 
@@ -61,8 +63,19 @@ export default function HomePage() {
         );
      }
     
-    return providers.filter(provider => {
-        const providerName = provider.profileSetupData?.useUsername ? provider.profileSetupData.username : provider.name;
+    // This logic now applies mostly to the 'servicios' view when searching
+    // or as a fallback.
+    const serviceProviders = providers.filter(p => p.profileSetupData?.providerType !== 'company');
+    
+    if (lowerCaseQuery.trim() === '') {
+        return serviceProviders;
+    }
+
+    return serviceProviders.filter(provider => {
+        const providerName = provider.profileSetupData?.useUsername 
+            ? provider.profileSetupData.username 
+            : provider.name;
+            
         const providerNameMatch = providerName?.toLowerCase().includes(lowerCaseQuery);
         
         const specialtyMatch = provider.profileSetupData?.specialty?.toLowerCase().includes(lowerCaseQuery);
@@ -89,7 +102,13 @@ export default function HomePage() {
   const filteredProviders = getFilteredProviders();
 
   return (
-    <main className="container py-4">
+    <main className="container py-4 space-y-6">
+       {feedView === 'empresas' && (
+        <div>
+          <h2 className="text-xl font-bold mb-4">Empresas Destacadas</h2>
+          <CompaniesCarousel />
+        </div>
+      )}
       <div className="space-y-4">
         {feedView === 'servicios' ? (
           filteredItems.length > 0 ? (
