@@ -1,9 +1,85 @@
 
-export default function MessagesPage() {
+'use client';
+
+import { useState } from 'react';
+import { useCorabo } from '@/contexts/CoraboContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ChevronLeft, Search, SquarePen } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ConversationCard } from '@/components/ConversationCard';
+import type { Conversation } from '@/lib/types';
+import Footer from '@/components/Footer';
+
+
+function MessagesHeader() {
+  const router = useRouter();
   return (
-    <main className="container py-8">
-      <h1 className="text-3xl font-bold">Mensajes</h1>
-      <p className="text-muted-foreground">Esta página está en construcción.</p>
-    </main>
+    <header className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+      <div className="container px-4 sm:px-6">
+        <div className="flex h-16 items-center justify-between">
+          <Button variant="ghost" size="icon" onClick={() => router.push('/')}>
+            <ChevronLeft className="h-6 w-6" />
+          </Button>
+          <h1 className="text-xl font-semibold">Mensajes</h1>
+          <Button variant="ghost" size="icon">
+            <SquarePen className="h-6 w-6 text-muted-foreground" />
+          </Button>
+        </div>
+      </div>
+    </header>
   );
 }
+
+
+export default function MessagesPage() {
+    const { conversations, users, currentUser } = useCorabo();
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const filteredConversations = conversations.filter(convo => {
+        const otherParticipantId = convo.participantIds.find(pId => pId !== currentUser.id);
+        const otherParticipant = users.find(u => u.id === otherParticipantId);
+        if (!otherParticipant) return false;
+
+        const lastMessage = convo.messages[convo.messages.length - 1];
+        
+        const lowerCaseQuery = searchQuery.toLowerCase();
+
+        const nameMatch = otherParticipant.name.toLowerCase().includes(lowerCaseQuery);
+        const messageMatch = lastMessage?.text.toLowerCase().includes(lowerCaseQuery);
+
+        return nameMatch || messageMatch;
+    });
+
+    return (
+        <div className="flex flex-col h-screen bg-muted/20">
+            <MessagesHeader />
+             <div className="container py-4 px-4">
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input 
+                        placeholder="Buscar chat o mensaje..." 
+                        className="pl-10 rounded-full bg-background"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                </div>
+            </div>
+            <main className="flex-1 overflow-y-auto">
+                <div className="container space-y-2 px-4 pb-24">
+                    {filteredConversations.length > 0 ? (
+                        filteredConversations.map(convo => (
+                            <ConversationCard key={convo.id} conversation={convo} />
+                        ))
+                    ) : (
+                         <div className="text-center py-20">
+                            <p className="text-muted-foreground">No se encontraron conversaciones.</p>
+                        </div>
+                    )}
+                </div>
+            </main>
+            <Footer />
+        </div>
+    );
+}
+

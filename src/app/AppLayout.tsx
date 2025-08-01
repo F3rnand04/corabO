@@ -20,10 +20,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isQuotesProPage = pathname === '/quotes/pro';
   const isTransactionsPage = pathname === '/transactions';
   const isTransactionsSettingsPage = pathname === '/transactions/settings';
+  const isMessagesPage = pathname === '/messages';
 
 
-  const shouldShowMainHeader = !isProfilePage && !isCompanyProfilePage && !isVideosPage && !isProfileSetupPage && !isQuotesPage && !isContactsPage && !isSearchPage && !isMapPage && !isQuotesPaymentPage && !isQuotesProPage && !isTransactionsPage && !isTransactionsSettingsPage;
-  const shouldShowFooter = !isProfilePage && !isProfileSetupPage && !isQuotesPage && !isContactsPage && !isSearchPage && !isMapPage && !isQuotesPaymentPage && !isQuotesProPage && !isTransactionsPage && !isTransactionsSettingsPage;
+  const shouldShowMainHeader = !isProfilePage && !isCompanyProfilePage && !isVideosPage && !isProfileSetupPage && !isQuotesPage && !isContactsPage && !isSearchPage && !isMapPage && !isQuotesPaymentPage && !isQuotesProPage && !isTransactionsPage && !isTransactionsSettingsPage && !isMessagesPage;
+  const shouldShowFooter = !isProfilePage && !isProfileSetupPage && !isQuotesPage && !isContactsPage && !isSearchPage && !isMapPage && !isQuotesPaymentPage && !isQuotesProPage && !isTransactionsPage && !isTransactionsSettingsPage && !isMessagesPage;
   
   return (
     <div className="flex flex-col min-h-screen">

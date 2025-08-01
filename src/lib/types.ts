@@ -116,4 +116,17 @@ export type Transaction = {
   };
 };
 
+export type Message = {
+    senderId: string;
+    text: string;
+    timestamp: string;
+};
+
+export type Conversation = {
+    id: string;
+    participantIds: string[];
+    messages: Message[];
+    unreadCount?: number;
+};
+
     

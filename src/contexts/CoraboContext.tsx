@@ -2,8 +2,8 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData } from '@/lib/types';
-import { users as initialUsers, products, services as initialServices, initialTransactions } from '@/lib/mock-data';
+import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData, Conversation } from '@/lib/types';
+import { users as initialUsers, products, services as initialServices, initialTransactions, initialConversations } from '@/lib/mock-data';
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from 'next/navigation';
 import jsPDF from 'jspdf';
@@ -23,6 +23,7 @@ interface CoraboState {
   services: Service[];
   cart: CartItem[];
   transactions: Transaction[];
+  conversations: Conversation[];
   searchQuery: string;
   contacts: User[];
   isGpsActive: boolean;
@@ -65,6 +66,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<User>(users[0]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
+  const [conversations, setConversations] = useState<Conversation[]>(initialConversations);
   const [searchQuery, setSearchQuery] = useState('');
   const [contacts, setContacts] = useState<User[]>([]);
   const [isGpsActive, setIsGpsActive] = useState(false);
@@ -446,6 +448,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     services,
     cart,
     transactions,
+    conversations,
     searchQuery,
     contacts,
     isGpsActive,

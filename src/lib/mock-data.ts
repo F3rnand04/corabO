@@ -1,6 +1,6 @@
 
 
-import type { User, Product, Service, Transaction } from './types';
+import type { User, Product, Service, Transaction, Conversation } from './types';
 
 export const users: User[] = [
   { id: 'client1', name: 'Juan Cliente', type: 'client', reputation: 4.5, profileImage: `https://i.pravatar.cc/150?u=client1`, email: 'juan.cliente@email.com', phone: '04121234567', emailValidated: true, phoneValidated: false, gallery: [] },
@@ -252,4 +252,35 @@ export const initialTransactions: Transaction[] = [
       system: 'Recarga de saldo a través de la plataforma.',
     },
   },
+];
+
+export const initialConversations: Conversation[] = [
+    {
+        id: 'convo1',
+        participantIds: ['client1', 'provider1'],
+        messages: [
+            { senderId: 'provider1', text: 'Hola Juan, gracias por tu compra. Tu Laptop Pro 15" ha sido enviada.', timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() },
+            { senderId: 'client1', text: '¡Excelente! Muchas gracias por la rapidez.', timestamp: new Date(Date.now() - 2 * 24 * 59 * 60 * 1000).toISOString() },
+        ],
+        unreadCount: 0,
+    },
+    {
+        id: 'convo2',
+        participantIds: ['client1', 'provider2'],
+        messages: [
+            { senderId: 'provider2', text: 'Buenos días, te escribo para confirmar la cotización de la instalación. ¿Procedemos?', timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString() },
+            { senderId: 'client1', text: 'Sí, por favor. ¿Cuándo podrían venir?', timestamp: new Date(Date.now() - 5 * 24 * 55 * 60 * 1000).toISOString() },
+            { senderId: 'provider2', text: 'Podemos ir mañana a las 10am. ¿Te parece bien?', timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString() },
+        ],
+        unreadCount: 1,
+    },
+    {
+        id: 'convo3',
+        participantIds: ['client1', 'provider3'],
+        messages: [
+            { senderId: 'client1', text: 'Hola, estoy interesado en un logo para mi nuevo emprendimiento. ¿Me podrías dar más información?', timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString() },
+            { senderId: 'provider3', text: '¡Claro que sí! Cuéntame un poco sobre tu idea y te preparo una propuesta sin compromiso.', timestamp: new Date(Date.now() - 23 * 60 * 60 * 1000).toISOString() },
+        ],
+        unreadCount: 0,
+    }
 ];
