@@ -11,6 +11,7 @@ import { ChevronLeft, Send, Paperclip, CheckCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format } from 'date-fns';
+import type { Message } from '@/lib/types';
 
 function ChatHeader({ name, profileImage }: { name: string, profileImage: string }) {
   const router = useRouter();
@@ -29,6 +30,44 @@ function ChatHeader({ name, profileImage }: { name: string, profileImage: string
     </header>
   );
 }
+
+function MessageBubble({ msg, isCurrentUser }: { msg: Message, isCurrentUser: boolean }) {
+    const [formattedTime, setFormattedTime] = useState('');
+
+    useEffect(() => {
+        // Format time on the client to avoid hydration mismatch
+        setFormattedTime(format(new Date(msg.timestamp), 'HH:mm'));
+    }, [msg.timestamp]);
+
+    return (
+        <div
+            className={cn(
+                "flex items-end gap-2 max-w-[85%] w-fit",
+                isCurrentUser ? "ml-auto" : "mr-auto"
+            )}
+        >
+            <div
+                className={cn(
+                    "p-2 rounded-lg shadow-md",
+                    isCurrentUser
+                        ? "bg-primary text-primary-foreground rounded-br-none"
+                        : "bg-background rounded-bl-none"
+                )}
+            >
+                <p className="text-sm pr-8">{msg.text}</p>
+                <div className="flex items-center justify-end gap-1 mt-1 h-4">
+                    <p className={cn("text-xs", isCurrentUser ? "text-primary-foreground/70" : "text-muted-foreground/70")}>
+                        {formattedTime || '...'}
+                    </p>
+                    {isCurrentUser && (
+                        <CheckCheck className="w-4 h-4 text-blue-400" />
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 
 export default function ChatPage() {
   const params = useParams();
@@ -80,32 +119,7 @@ export default function ChatPage() {
             {conversation.messages.map((msg, index) => {
               const isCurrentUser = msg.senderId === currentUser.id;
               return (
-                <div
-                  key={index}
-                  className={cn(
-                    "flex items-end gap-2 max-w-[85%] w-fit",
-                    isCurrentUser ? "ml-auto" : "mr-auto"
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "p-2 rounded-lg shadow-md",
-                      isCurrentUser
-                        ? "bg-primary text-primary-foreground rounded-br-none"
-                        : "bg-background rounded-bl-none"
-                    )}
-                  >
-                    <p className="text-sm pr-8">{msg.text}</p>
-                    <div className="flex items-center justify-end gap-1 mt-1">
-                      <p className={cn("text-xs", isCurrentUser ? "text-primary-foreground/70" : "text-muted-foreground/70")}>
-                        {format(new Date(msg.timestamp), 'HH:mm')}
-                      </p>
-                       {isCurrentUser && (
-                          <CheckCheck className="w-4 h-4 text-blue-400" />
-                       )}
-                    </div>
-                  </div>
-                </div>
+                <MessageBubble key={index} msg={msg} isCurrentUser={isCurrentUser} />
               )
             })}
           </div>
