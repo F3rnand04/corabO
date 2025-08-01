@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { differenceInMinutes, parse, getDay, addDays, formatDistanceToNowStrict } from 'date-fns';
+import { getDay, format, parse, isWithinInterval, addDays, formatDistanceToNowStrict } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import type { ProfileSetupData } from '@/lib/types';
@@ -39,7 +39,7 @@ export function BusinessHoursStatus({ schedule, onStatusChange }: BusinessHoursS
         const fromTime = parse(todaySchedule.from, 'HH:mm', now);
         const toTime = parse(todaySchedule.to, 'HH:mm', now);
 
-        if (now >= fromTime && now <= toTime) {
+        if (isWithinInterval(now, { start: fromTime, end: toTime })) {
           setStatus('open');
           const timeToClose = formatDistanceToNowStrict(toTime, { locale: es, unit: 'minute' });
           setMessage(`Cierra en ${timeToClose}`);
@@ -49,29 +49,30 @@ export function BusinessHoursStatus({ schedule, onStatusChange }: BusinessHoursS
       }
 
       // If closed, find next opening time
-      let nextOpeningTime: Date | null = null;
       for (let i = 0; i < 7; i++) {
-        const checkDayIndex = (currentDayIndex + i) % 7;
-        const checkDayName = dayMap[checkDayIndex];
-        const daySchedule = schedule[checkDayName];
-        
-        if (daySchedule && daySchedule.active) {
-          const openingTimeToday = parse(daySchedule.from, 'HH:mm', addDays(now, i));
-          if (now < openingTimeToday) {
-            nextOpeningTime = openingTimeToday;
-            break;
-          }
+        const dayIndex = (currentDayIndex + i) % 7;
+        const nextDayName = dayMap[dayIndex];
+        const nextDaySchedule = schedule[nextDayName];
+
+        if (nextDaySchedule && nextDaySchedule.active) {
+            const potentialOpening = parse(nextDaySchedule.from, 'HH:mm', addDays(now, i));
+            // If we are looking at today but the time has passed
+            if (i === 0 && now > potentialOpening) {
+                continue; // Look for the next available day
+            }
+            
+            setStatus('closed');
+            const timeToOpen = formatDistanceToNowStrict(potentialOpening, { locale: es });
+            const dayName = format(potentialOpening, 'eeee', { locale: es });
+            setMessage(`Abre en ${timeToOpen} (${dayName})`);
+            if (onStatusChange) onStatusChange('closed');
+            return;
         }
       }
       
+      // Default fallback if no schedule is found in the next 7 days
       setStatus('closed');
-      if (nextOpeningTime) {
-         const timeToOpen = formatDistanceToNowStrict(nextOpeningTime, { locale: es });
-         const dayName = format(nextOpeningTime, 'eeee', { locale: es });
-         setMessage(`Abre en ${timeToOpen} (${dayName})`);
-      } else {
-        setMessage('Cerrado temporalmente');
-      }
+      setMessage('Cerrado temporalmente');
       if (onStatusChange) onStatusChange('closed');
     };
 
