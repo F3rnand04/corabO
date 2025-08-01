@@ -22,7 +22,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 
 export default function ProfilePage() {
   const { toast } = useToast();
-  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, isGpsActive, transactions } = useCorabo();
+  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, isGpsActive, transactions } from useCorabo();
   const router = useRouter();
   
   const [gallery, setGallery] = useState<GalleryImage[]>(currentUser.gallery || []);
@@ -56,8 +56,8 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const paymentCommitmentDates = transactions
-    .filter((tx: Transaction) => (tx.providerId === currentUser.id || tx.clientId === currentUser.id) && tx.status === 'Acuerdo Aceptado - Pendiente de Ejecución')
-    .map((tx: Transaction) => new Date(tx.date));
+    .filter(tx => (tx.providerId === currentUser.id || tx.clientId === currentUser.id) && tx.status === 'Acuerdo Aceptado - Pendiente de Ejecución')
+    .map(tx => new Date(tx.date));
 
 
   useEffect(() => {

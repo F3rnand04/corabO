@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useState, TouchEvent } from 'react';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
-import type { User, GalleryImage, Transaction } from '@/lib/types';
+import type { User, GalleryImage } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { ReportDialog } from '@/components/ReportDialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -54,8 +54,8 @@ export default function CompanyProfilePage() {
   }
 
   const paymentCommitmentDates = transactions
-    .filter((tx: Transaction) => (tx.providerId === provider.id || tx.clientId === provider.id) && tx.status === 'Acuerdo Aceptado - Pendiente de Ejecución')
-    .map((tx: Transaction) => new Date(tx.date));
+    .filter(tx => (tx.providerId === provider.id || tx.clientId === provider.id) && tx.status === 'Acuerdo Aceptado - Pendiente de Ejecución')
+    .map(tx => new Date(tx.date));
   
   const gallery: GalleryImage[] = provider.gallery || [];
   

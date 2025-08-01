@@ -13,6 +13,7 @@ import Link from "next/link";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { useState } from "react";
 import { ReportDialog } from "./ReportDialog";
+import { cn } from "@/lib/utils";
 
 
 interface ProviderCardProps {
@@ -70,7 +71,7 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                             </div>
                         </div>
                          <div className="flex flex-col items-center gap-1 text-muted-foreground">
-                            <MapPin className={`w-5 h-5 ${isGpsActive ? 'text-green-500' : 'text-muted-foreground'}`} />
+                            <MapPin className={cn("w-5 h-5", isGpsActive ? "text-green-500" : "text-muted-foreground")} />
                             <span className="text-xs font-semibold">{displayDistance}</span>
                         </div>
                     </div>
