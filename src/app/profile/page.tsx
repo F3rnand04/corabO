@@ -13,15 +13,16 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useCorabo } from '@/contexts/CoraboContext';
-import type { GalleryImage } from '@/lib/types';
+import type { GalleryImage, Transaction } from '@/lib/types';
 import ProfileFooter from '@/components/ProfileFooter';
 import { useRouter } from 'next/navigation';
 import { ReportDialog } from '@/components/ReportDialog';
-
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 
 export default function ProfilePage() {
   const { toast } = useToast();
-  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, isGpsActive } = useCorabo();
+  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, isGpsActive, transactions } = useCorabo();
   const router = useRouter();
   
   const [gallery, setGallery] = useState<GalleryImage[]>(currentUser.gallery || []);
@@ -53,6 +54,10 @@ export default function ProfilePage() {
   const [_, setForceRerender] = useState(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const paymentCommitmentDates = transactions
+    .filter((tx: Transaction) => (tx.providerId === currentUser.id || tx.clientId === currentUser.id) && tx.status === 'Acuerdo Aceptado - Pendiente de Ejecución')
+    .map((tx: Transaction) => new Date(tx.date));
 
 
   useEffect(() => {
@@ -279,7 +284,24 @@ export default function ProfilePage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon"><Calendar className="w-5 h-5 text-muted-foreground" /></Button>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <Calendar className="w-5 h-5 text-muted-foreground" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <CalendarComponent
+                      mode="multiple"
+                      selected={paymentCommitmentDates}
+                      disabled={(date) => date < new Date("1900-01-01")}
+                      initialFocus
+                    />
+                     <div className="p-2 border-t text-center text-xs text-muted-foreground">
+                        Días con compromisos de pago resaltados.
+                     </div>
+                  </PopoverContent>
+                </Popover>
                 <Button variant="ghost" size="icon" onClick={() => router.push('/transactions')}><Wallet className="w-5 h-5 text-muted-foreground" /></Button>
                 <Button variant="ghost" size="icon" onClick={toggleGps} onDoubleClick={() => router.push('/map')}>
                     <MapPin className={cn("w-5 h-5 text-muted-foreground", isGpsActive && "text-green-500")} />

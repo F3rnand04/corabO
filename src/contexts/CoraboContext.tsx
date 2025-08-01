@@ -50,7 +50,7 @@ interface CoraboState {
   setFeedView: (view: FeedView) => void;
   updateFullProfile: (userId: string, data: ProfileSetupData) => void;
   subscribeUser: (userId: string) => void;
-  activateTransactions: (userId: string, creditLimit: number) => User;
+  activateTransactions: (userId: string, creditLimit: number) => void;
   deactivateTransactions: (userId: string) => void;
   downloadTransactionsPDF: () => void;
 }
@@ -306,14 +306,13 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
   };
   
-  const updateUser = (userId: string, updates: Partial<User> | ((user: User) => Partial<User>)): User => {
-    let updatedUser: User | null = null;
+  const updateUser = (userId: string, updates: Partial<User> | ((user: User) => Partial<User>)) => {
     setUsers(prevUsers =>
       prevUsers.map(u => {
         if (u.id === userId) {
           const userToUpdate = users.find(u => u.id === userId)!;
           const finalUpdates = typeof updates === 'function' ? updates(userToUpdate) : updates;
-          updatedUser = { ...u, ...finalUpdates };
+          const updatedUser = { ...u, ...finalUpdates };
           
           if (currentUser.id === userId) {
             setCurrentUser(updatedUser);
@@ -323,7 +322,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         return u;
       })
     );
-    return updatedUser!;
   };
 
   const updateUserProfileImage = (userId: string, imageUrl: string) => {
@@ -382,9 +380,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     });
   }
 
-  const activateTransactions = (userId: string, creditLimit: number): User => {
-    const updatedUser = updateUser(userId, { isTransactionsActive: true, credicoraLimit: creditLimit });
-    return updatedUser;
+  const activateTransactions = (userId: string, creditLimit: number) => {
+    updateUser(userId, { isTransactionsActive: true, credicoraLimit: creditLimit });
+    router.push('/transactions');
   }
   
   const deactivateTransactions = (userId: string) => {
@@ -490,3 +488,4 @@ export const useCorabo = () => {
   }
   return context;
 };
+export type { Transaction };
