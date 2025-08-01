@@ -19,6 +19,19 @@ export const users: User[] = [
       text: 'HOY 10% OFF',
       expires: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(), // Expires in 12 hours
     },
+    profileSetupData: {
+      hasPhysicalLocation: true,
+      showExactLocation: true,
+      schedule: {
+        'Lunes': { from: '00:00', to: '23:59', active: true },
+        'Martes': { from: '00:00', to: '23:59', active: true },
+        'Miércoles': { from: '00:00', to: '23:59', active: true },
+        'Jueves': { from: '00:00', to: '23:59', active: true },
+        'Viernes': { from: '00:00', to: '23:59', active: true },
+        'Sábado': { from: '00:00', to: '23:59', active: true },
+        'Domingo': { from: '00:00', to: '23:59', active: true },
+      }
+    },
     gallery: [
       { 
         id: 'provider1-img1',

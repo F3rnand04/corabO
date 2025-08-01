@@ -71,7 +71,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [conversations, setConversations] = useState<Conversation[]>(initialConversations);
   const [searchQuery, setSearchQuery] = useState('');
   const [contacts, setContacts] = useState<User[]>([]);
-  const [isGpsActive, setIsGpsActive] = useState(false);
+  const [isGpsActive, setIsGpsActive] = useState(true);
   const [feedView, setFeedView] = useState<FeedView>('servicios');
   const [dailyQuotes, setDailyQuotes] = useState<Record<string, DailyQuote[]>>({});
 
