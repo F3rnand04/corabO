@@ -52,17 +52,7 @@ export default function CompanyProfilePage() {
   const [gpsReady, setGpsReady] = useState(false);
   
   useEffect(() => {
-    // Update business status periodically
-    const interval = setInterval(() => {
-      // Logic to determine status is inside BusinessHoursStatus component,
-      // this effect is just to trigger a re-render if needed to update the icon color.
-      // A more robust solution might use a shared state or context for this.
-    }, 60000); // Check every minute
-
-    return () => clearInterval(interval);
-  }, [provider?.profileSetupData?.schedule]);
-  
-  useEffect(() => {
+    // This effect helps avoid hydration mismatches for client-specific logic like GPS status
     setGpsReady(true);
   }, []);
 
@@ -105,11 +95,16 @@ export default function CompanyProfilePage() {
 
   const gallery: GalleryImage[] = provider.gallery || [];
   
+  const displayName = provider.profileSetupData?.useUsername 
+        ? provider.profileSetupData.username || provider.name 
+        : provider.name;
+    const specialty = provider.profileSetupData?.specialty || "Especialidad de la Empresa";
+  
   const displayDistance = provider.profileSetupData?.showExactLocation ? "A menos de 1km" : "500m - 1km";
   
   const profileData = {
-    name: provider.name,
-    specialty: provider.profileSetupData?.specialty || "Especialidad de la Empresa",
+    name: displayName,
+    specialty: specialty,
     rating: provider.reputation || 4.9,
     efficiency: "99.9%",
     otherStat: "00 | 05",
