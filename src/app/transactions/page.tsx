@@ -247,7 +247,7 @@ export default function TransactionsPage() {
                                 </div>
                                 <div className="flex justify-between text-xs">
                                     <div className="text-muted-foreground">DISPONIBLE</div>
-                                    <div className="font-semibold">{showSensitiveData ? `$${(currentUser.credicoraLimit || 0).toFixed(2)}` : '$***,**'}</p>
+                                    <div className="font-semibold">{showSensitiveData ? `$${(currentUser.credicoraLimit || 0).toFixed(2)}` : '$***,**'}</div>
                                 </div>
                             </CardHeader>
                             <Separator />
@@ -315,5 +315,3 @@ export default function TransactionsPage() {
         </div>
     );
 }
-
-    
