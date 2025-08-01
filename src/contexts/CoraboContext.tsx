@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData, Conversation } from '@/lib/types';
+import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData, Conversation, Message } from '@/lib/types';
 import { users as initialUsers, products, services as initialServices, initialTransactions, initialConversations } from '@/lib/mock-data';
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from 'next/navigation';
@@ -54,6 +54,7 @@ interface CoraboState {
   activateTransactions: (userId: string, creditLimit: number) => void;
   deactivateTransactions: (userId: string) => void;
   downloadTransactionsPDF: () => void;
+  sendMessage: (conversationId: string, text: string) => void;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -441,6 +442,28 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
      toast({ title: "Descarga Iniciada", description: "Tu reporte de transacciones se está descargando." });
   }
 
+  const sendMessage = (conversationId: string, text: string) => {
+    const newMessage: Message = {
+        senderId: currentUser.id,
+        text,
+        timestamp: new Date().toISOString(),
+    };
+
+    setConversations(prevConvos => 
+        prevConvos.map(convo => {
+            if (convo.id === conversationId) {
+                return {
+                    ...convo,
+                    messages: [...convo.messages, newMessage],
+                    unreadCount: 0, // Reset unread count on send
+                };
+            }
+            return convo;
+        })
+    );
+  };
+
+
   const value = {
     currentUser,
     users,
@@ -479,6 +502,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     activateTransactions,
     deactivateTransactions,
     downloadTransactionsPDF,
+    sendMessage,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;

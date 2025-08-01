@@ -21,10 +21,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isTransactionsPage = pathname === '/transactions';
   const isTransactionsSettingsPage = pathname === '/transactions/settings';
   const isMessagesPage = pathname === '/messages';
+  const isChatPage = /^\/messages\/.+/.test(pathname);
 
 
-  const shouldShowMainHeader = !isProfilePage && !isCompanyProfilePage && !isVideosPage && !isProfileSetupPage && !isQuotesPage && !isContactsPage && !isSearchPage && !isMapPage && !isQuotesPaymentPage && !isQuotesProPage && !isTransactionsPage && !isTransactionsSettingsPage && !isMessagesPage;
-  const shouldShowFooter = !isProfilePage && !isProfileSetupPage && !isQuotesPage && !isContactsPage && !isSearchPage && !isMapPage && !isQuotesPaymentPage && !isQuotesProPage && !isTransactionsPage && !isTransactionsSettingsPage && !isMessagesPage;
+  const shouldShowMainHeader = !isProfilePage && !isCompanyProfilePage && !isVideosPage && !isProfileSetupPage && !isQuotesPage && !isContactsPage && !isSearchPage && !isMapPage && !isQuotesPaymentPage && !isQuotesProPage && !isTransactionsPage && !isTransactionsSettingsPage && !isMessagesPage && !isChatPage;
+  const shouldShowFooter = !isProfilePage && !isProfileSetupPage && !isQuotesPage && !isContactsPage && !isSearchPage && !isMapPage && !isQuotesPaymentPage && !isQuotesProPage && !isTransactionsPage && !isTransactionsSettingsPage && !isMessagesPage && !isChatPage;
   
   return (
     <div className="flex flex-col min-h-screen">

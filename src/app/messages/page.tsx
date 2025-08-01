@@ -9,7 +9,6 @@ import { ChevronLeft, Search, SquarePen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ConversationCard } from '@/components/ConversationCard';
 import type { Conversation } from '@/lib/types';
-import Footer from '@/components/Footer';
 
 
 function MessagesHeader() {
@@ -78,8 +77,6 @@ export default function MessagesPage() {
                     )}
                 </div>
             </main>
-            <Footer />
         </div>
     );
 }
-
