@@ -17,7 +17,7 @@ La aplicación está diseñada como una plataforma de conexión entre **clientes
 
 La aplicación se rige por un conjunto de tipos de datos bien definidos:
 
--   **`User`**: Representa tanto a clientes (`client`) como a proveedores (`provider`). Contiene información como `id`, `name`, `profileImage`, `reputation` y, para los proveedores, una `gallery` de publicaciones.
+-   **`User`**: Representa tanto a clientes (`client`) como a proveedores (`provider`). Contiene información como `id`, `name`, `profileImage`, `reputation` y, para los proveedores, una `gallery` de publicaciones. Incluye campos para el estado de suscripción y la activación del módulo de transacciones.
 -   **`Product`**: Define un producto con `id`, `name`, `price`, `providerId`, etc.
 -   **`Service`**: Define un servicio ofrecido por un proveedor.
 -   **`GalleryImage`**: Representa una publicación en la galería de un proveedor, incluyendo imagen, descripción y comentarios.
@@ -41,81 +41,81 @@ El `CoraboContext` es el corazón de la aplicación. Centraliza toda la lógica 
 ### 4.1. Navegación Principal y Feed (Home)
 
 -   **Página Principal (`src/app/page.tsx`):**
-    -   Muestra un feed dinámico de `ServiceCard` o `ProviderCard`.
+    -   Muestra un feed dinámico de `ServiceCard`, `ProviderCard` o `ProductCard`.
     -   La vista del feed se controla con los botones "Servicios" y "Empresas" del `Header`.
     -   El contenido se filtra en tiempo real según el `searchQuery` introducido en el `Header`.
 -   **Encabezado (`src/components/Header.tsx`):**
     -   Contiene los botones para cambiar entre las vistas "Servicios" y "Empresas" (`feedView`).
     -   Incluye la barra de búsqueda que actualiza el `searchQuery` en el `CoraboContext`.
+    -   Ofrece accesos directos al GPS, cotizaciones, transacciones y un menú desplegable con más opciones.
 -   **Pie de Página (`src/components/Footer.tsx`):**
     -   Proporciona la navegación principal entre las vistas: Home, Videos, Búsqueda por Categorías, Mensajes y Perfil.
 
-### 4.2. Búsqueda y Exploración por Categorías
+### 4.2. Configuración de Perfil (`src/app/profile-setup/page.tsx`)
 
--   **Botón Central de Búsqueda (Footer):** El botón de la lupa abre la página de exploración.
--   **Página de Exploración (`src/app/search/page.tsx`):**
-    -   Muestra un `CategoryHub` con las principales categorías de servicios.
-    -   **No tiene barra de búsqueda.** Su propósito es la navegación visual.
-    -   **Botón "Ver Todo":** Permite al usuario volver al feed principal sin filtros.
-    -   **Lógica de Clic en Categoría:** Al seleccionar una categoría, la aplicación:
-        1.  Redirige al usuario a la página principal (`/`).
-        2.  Establece `feedView` en `'empresas'`.
-        3.  Establece `searchQuery` con el nombre de la categoría seleccionada.
-        -   El resultado es que el feed principal muestra solo las empresas que pertenecen a ese grupo.
+-   **Asistente de 6 Pasos:** Guía al usuario a través de la configuración completa de su perfil.
+    -   **Paso 1:** Selección de tipo de perfil (Cliente o Proveedor).
+    -   **Paso 2:** Elección y validación de nombre de usuario.
+    -   **Paso 3:** Selección de categorías de servicio (para proveedores).
+    -   **Paso 4:** Validación de email y teléfono.
+    -   **Paso 5:** Detalles específicos como ubicación, radio de acción y horarios (para proveedores).
+    -   **Paso 6:** Revisión final de toda la información antes de guardar.
+-   **Lógica Dinámica:** Los pasos se adaptan según el tipo de perfil seleccionado (los clientes omiten los pasos 3 y 5).
 
-### 4.3. Solicitud de Cotizaciones (`src/app/quotes/page.tsx`)
-
--   **Formulario Dinámico:** La interfaz permite a los usuarios cotizar **productos** o **servicios**. Utiliza `react-hook-form` y `zod` para la gestión y validación. Los campos mostrados se adaptan a la selección (producto o servicio) para mantener la interfaz limpia.
--   **Campos Obligatorios:** La selección de un "Grupo" y la introducción de un término en la barra de "Búsqueda" son obligatorios para garantizar que las cotizaciones estén bien dirigidas.
--   **Carga de Archivos:** Incluye una opción para adjuntar archivos (PDF o imágenes) para proporcionar más contexto a los proveedores.
--   **Mensaje de Éxito:** Al enviar el formulario, el usuario recibe una notificación de confirmación ("¡Felicidades! Recibirás hasta 3 cotizaciones personalizadas."). Si se alcanza el límite diario de cotizaciones para el mismo ítem, se muestra una notificación de error con una invitación a suscribirse.
--   **Búsqueda Avanzada y Monetización (`4.3.1`):**
-
-#### 4.3.1. Flujo de Búsqueda Avanzada
-
-Este flujo está diseñado para ofrecer opciones premium a los usuarios, creando un embudo de conversión hacia el pago por uso o la suscripción.
-
-1.  **Componente `AdvancedSearchOptions.tsx`:**
-    -   En la página de cotizaciones, un botón desplegable de "Búsqueda Avanzada" revela opciones premium (ej: "Usuarios Verificados", "Mejor Reputación").
-    -   Estas opciones aparecen visualmente "bloqueadas", indicando su exclusividad.
-
-2.  **Diálogo de Oferta (`AdvancedQuoteDialog.tsx`):**
-    -   Al hacer clic en una opción bloqueada, se abre un diálogo modal.
-    -   Este diálogo presenta dos rutas al usuario con mensajes comerciales:
-        -   **Pago por Uso:** "Llega a más de 10 cotizaciones personalizadas" con un rango de precio dinámico (ej: $3.00 - $5.00). Al seleccionar esta opción, se redirige al usuario a la página de pago.
-        -   **Suscripción:** "O suscríbete y cotiza sin límites según tu nivel". Esta opción utiliza la función `subscribeUser` del `CoraboContext`.
-
-3.  **Página de Pago (`src/app/quotes/payment/page.tsx`):**
-    -   **Layout Aislado:** Esta página no muestra el `Header` ni el `Footer` principal para minimizar distracciones. Incluye su propia cabecera con un botón para volver atrás.
-    -   **Selector de Monto Interactivo:** El usuario puede ajustar el monto a pagar (ej: $3, $4, $5) con botones de `+` y `-`.
-    -   **Información Dinámica:** La interfaz muestra el monto equivalente en la moneda local (Bs.) y un mensaje comercial que detalla el beneficio de cada nivel de precio (ej: "Recibe hasta 10 cotizaciones").
-    -   **Selección de Método de Pago:** Al seleccionar un método ("Pago Móvil" o "Transferencia"), la interfaz se expande para mostrar los detalles del pago y un formulario para subir el comprobante.
-    -   **Funcionalidad de Copiado:** Se incluyen botones para copiar individualmente cada dato de pago (número de cuenta, RIF, etc.) y un botón para copiar todos los datos a la vez, mejorando la usabilidad.
-    -   **Carga de Comprobante:** El usuario puede seleccionar un archivo de imagen como comprobante. El botón final de "Confirmar Pago" solo se activa cuando se ha subido un archivo y se ha introducido una referencia.
-    -   **Redirección a Formulario PRO:** Tras un pago exitoso, el usuario es redirigido a `src/app/quotes/pro/page.tsx`.
-
-4.  **Página de Cotización PRO (`src/app/quotes/pro/page.tsx`):**
-    -   **Experiencia Mejorada:** Es una versión premium del formulario de cotización.
-    -   **Retroalimentación Visual:** La opción de búsqueda avanzada por la que el usuario pagó ahora aparece desbloqueada y resaltada en verde, confirmando el beneficio.
-    -   **Capacidades Ampliadas:** Permite añadir más productos (hasta 5) y ofrece un área de descripción más grande.
-    -   **Llamada a la Acción Comercial:** Muestra un mensaje para incentivar la suscripción y evitar pagos futuros.
-    -   **Mensaje de Éxito Dinámico:** Al enviar la cotización, muestra un mensaje de felicitación que refuerza el valor de la compra, mencionando la cantidad y calidad de los proveedores a los que se ha enviado la solicitud.
-
-### 4.4. Perfiles de Usuario y Empresa
+### 4.3. Perfiles de Usuario y Empresa
 
 -   **Perfil del Propio Usuario (`src/app/profile/page.tsx`):**
     -   Muestra la información del `currentUser`.
     -   Permite al proveedor ver y gestionar su galería de publicaciones.
     -   El pie de página (`ProfileFooter`) es específico para esta vista y contiene un botón central para subir nuevas publicaciones (`UploadDialog`).
-    -   **Consistencia de UI:** El icono de GPS (`MapPin`) en esta página replica la funcionalidad del `Header`: un clic para activar/desactivar y doble clic para ir a la página del mapa.
+    -   Los proveedores pueden gestionar la "Promoción del Día" para destacar una publicación.
 -   **Perfil de Empresa (`src/app/companies/[id]/page.tsx`):**
     -   Muestra el perfil público de un proveedor.
     -   Permite a los clientes ver la galería, la reputación y la información de contacto de la empresa.
     -   La interacción con la galería (cambiar de imagen, ver detalles) está gestionada localmente con `useState`.
--   **Gestión de Imágenes:**
-    -   **`UploadDialog.tsx`**: Modal para que los proveedores suban nuevas imágenes a su galería.
-    -   **`ImageDetailsDialog.tsx`**: Modal para ver los detalles de una imagen, incluyendo descripción y comentarios. Tiene una vista para el propietario (con opción de borrar) y una para el cliente.
+
+### 4.4. Registro de Transacciones (`src/app/transactions/*`)
+
+Este es un módulo financiero clave para que los proveedores gestionen sus operaciones.
+
+1.  **Página de Activación (`src/app/transactions/settings/page.tsx`):**
+    -   **Flujo de Verificación en 2 Pasos:** Antes de poder usar el módulo, el proveedor debe activarlo.
+    -   **Paso 1: Verificación de Identidad:** El usuario debe subir una foto de su cédula. El sistema simula una lectura y valida que los datos coincidan con los de la cuenta Corabo. Si no coinciden, se muestra un error informativo.
+    -   **Paso 2: Registro de Cuenta de Pago:** Una vez verificada la identidad, el usuario debe registrar una cuenta bancaria o pago móvil. El sistema valida (de forma simulada) que el titular de la cuenta sea el mismo usuario.
+    -   **Activación y Redirección:** Tras una verificación exitosa, el módulo se activa, se asigna un límite de crédito "CREDICORA" de $150 y el usuario es redirigido automáticamente a la página principal de transacciones.
+
+2.  **Panel de Control de Transacciones (`src/app/transactions/page.tsx`):**
+    -   **Estado Inactivo:** Si el módulo no está activo, muestra una pantalla que invita al usuario a activarlo, con un botón que lleva a la página de ajustes (`/transactions/settings`).
+    -   **Estado Activo:** Cuando el módulo está activo, la página muestra:
+        -   Gráficos de ingresos y egresos (lineal o de tarta).
+        -   Una tarjeta "CREDICORA" con el límite de crédito disponible.
+        -   Accesos directos a "Lista de Pendientes", "Transacciones" y "Compromisos de Pagos".
+        -   Una tarjeta de llamado a la acción para suscribirse y obtener más beneficios.
+        -   Un **menú de ajustes (engranaje)** que permite:
+            -   Imprimir un registro en PDF de los últimos 3 meses.
+            -   Modificar los datos de pago.
+            -   Desactivar el registro (con un diálogo de advertencia previo).
+
+### 4.5. Flujo de Cotizaciones y Monetización
+
+1.  **Formulario de Cotización (`src/app/quotes/page.tsx`):**
+    -   Permite a los usuarios solicitar cotizaciones para productos o servicios.
+    -   Incluye un componente de "Búsqueda Avanzada" (`AdvancedSearchOptions.tsx`) con opciones premium bloqueadas (ej: "Usuarios Verificados").
+
+2.  **Diálogo de Oferta (`AdvancedQuoteDialog.tsx`):**
+    -   Al hacer clic en una opción bloqueada, se abre un modal que ofrece dos rutas:
+        -   **Pago por Uso:** Para enviar una cotización a más proveedores. Redirige a la página de pago.
+        -   **Suscripción:** Invita al usuario a suscribirse para obtener beneficios ilimitados.
+
+3.  **Página de Pago (`src/app/quotes/payment/page.tsx`):**
+    -   Presenta una interfaz de pago aislada (sin header/footer principal).
+    -   Permite al usuario seleccionar un monto a pagar, el cual desbloquea diferentes niveles de alcance para su cotización.
+    -   Muestra los datos para realizar un pago móvil o transferencia y permite subir un comprobante.
+
+4.  **Formulario de Cotización PRO (`src/app/quotes/pro/page.tsx`):**
+    -   Tras un pago exitoso, el usuario es redirigido a esta versión mejorada del formulario.
+    -   La opción de búsqueda avanzada que pagó aparece desbloqueada y resaltada, confirmando el beneficio.
 
 ## 5. Conclusión
 
-El prototipo actual tiene una base sólida y una lógica bien definida. El `CoraboContext` actúa eficazmente como un motor de estado central, y los flujos de usuario están optimizados para la búsqueda, conexión y monetización. Los futuros desarrollos deben seguir estos patrones para mantener la coherencia y la escalabilidad del proyecto.
+El prototipo actual tiene una base sólida y una lógica bien definida. El `CoraboContext` actúa eficazmente como un motor de estado central, y los flujos de usuario están optimizados para la búsqueda, conexión, gestión financiera y monetización. Los futuros desarrollos deben seguir estos patrones para mantener la coherencia y la escalabilidad del proyecto.
