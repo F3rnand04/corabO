@@ -26,7 +26,6 @@ interface CoraboState {
   conversations: Conversation[];
   searchQuery: string;
   contacts: User[];
-  isGpsActive: boolean;
   feedView: FeedView;
   switchUser: (userId: string) => void;
   addToCart: (product: Product, quantity: number) => void;
@@ -42,7 +41,7 @@ interface CoraboState {
   setSearchQuery: (query: string) => void;
   addContact: (user: User) => void;
   removeContact: (userId: string) => void;
-  toggleGps: () => void;
+  toggleGps: (userId: string) => void;
   updateUserProfileImage: (userId: string, imageUrl: string) => void;
   updateUserProfileAndGallery: (userId: string, newGalleryImage: GalleryImage) => void;
   removeGalleryImage: (userId: string, imageId: string) => void;
@@ -65,13 +64,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [services, setServices] = useState<Service[]>(initialServices);
-  const [currentUser, setCurrentUser] = useState<User>(users[0]);
+  const [currentUser, setCurrentUser] = useState<User>(users.find(u => u.id === 'client1')!);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
   const [conversations, setConversations] = useState<Conversation[]>(initialConversations);
   const [searchQuery, setSearchQuery] = useState('');
   const [contacts, setContacts] = useState<User[]>([]);
-  const [isGpsActive, setIsGpsActive] = useState(true);
   const [feedView, setFeedView] = useState<FeedView>('servicios');
   const [dailyQuotes, setDailyQuotes] = useState<Record<string, DailyQuote[]>>({});
 
@@ -292,23 +290,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     setContacts(prev => prev.filter(c => c.id !== userId));
     toast({ variant: "destructive", title: "Contacto eliminado", description: "El contacto ha sido eliminado." });
   };
-
-  const toggleGps = () => {
-    const willBeActive = !isGpsActive;
-    setIsGpsActive(willBeActive);
-    
-    if (willBeActive) {
-      toast({
-        title: "GPS Activado",
-        description: "Ahora eres visible según la ubicación de tu perfil.",
-      });
-    } else {
-       toast({
-        title: "GPS Desactivado",
-        description: "Has dejado de ser visible para otros usuarios.",
-      });
-    }
-  };
   
   const updateUser = (userId: string, updates: Partial<User> | ((user: User) => Partial<User>)) => {
     setUsers(prevUsers =>
@@ -326,6 +307,28 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         return u;
       })
     );
+  };
+
+  const toggleGps = (userId: string) => {
+    const userToToggle = users.find(u => u.id === userId);
+    if (!userToToggle) return;
+
+    const willBeActive = !userToToggle.isGpsActive;
+    updateUser(userId, { isGpsActive: willBeActive });
+    
+    if (userId === currentUser.id) {
+        if (willBeActive) {
+          toast({
+            title: "GPS Activado",
+            description: "Ahora eres visible según la ubicación de tu perfil.",
+          });
+        } else {
+           toast({
+            title: "GPS Desactivado",
+            description: "Has dejado de ser visible para otros usuarios.",
+          });
+        }
+    }
   };
 
   const updateUserProfileImage = (userId: string, imageUrl: string) => {
@@ -495,7 +498,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     conversations,
     searchQuery,
     contacts,
-    isGpsActive,
     feedView,
     setFeedView,
     switchUser,

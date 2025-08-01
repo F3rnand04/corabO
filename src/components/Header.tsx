@@ -17,7 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export function Header() {
-  const { searchQuery, setSearchQuery, feedView, setFeedView, currentUser, toggleGps, isGpsActive } = useCorabo();
+  const { searchQuery, setSearchQuery, feedView, setFeedView, currentUser, toggleGps } = useCorabo();
   const router = useRouter();
   
   const hasCompletedProfileSetup = !!currentUser?.profileSetupData;
@@ -38,8 +38,8 @@ export function Header() {
 
           <div className="flex items-center space-x-1 sm:space-x-2">
             
-            <Button variant="ghost" size="icon" onClick={toggleGps} onDoubleClick={() => router.push('/map')}>
-              <MapPin className={cn("h-5 w-5", isGpsActive && "text-green-500")} />
+            <Button variant="ghost" size="icon" onClick={() => toggleGps(currentUser.id)} onDoubleClick={() => router.push('/map')}>
+              <MapPin className={cn("h-5 w-5", currentUser.isGpsActive && "text-green-500")} />
             </Button>
             <Link href="/quotes" passHref>
               <Button variant="ghost" size="icon">

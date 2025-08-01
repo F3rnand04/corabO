@@ -22,7 +22,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 
 export default function ProfilePage() {
   const { toast } = useToast();
-  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, isGpsActive, transactions } from useCorabo();
+  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, transactions } = useCorabo();
   const router = useRouter();
   
   const [gallery, setGallery] = useState<GalleryImage[]>(currentUser.gallery || []);
@@ -303,8 +303,8 @@ export default function ProfilePage() {
                   </PopoverContent>
                 </Popover>
                 <Button variant="ghost" size="icon" onClick={() => router.push('/transactions')}><Wallet className="w-5 h-5 text-muted-foreground" /></Button>
-                <Button variant="ghost" size="icon" onClick={toggleGps} onDoubleClick={() => router.push('/map')}>
-                    <MapPin className={cn("w-5 h-5 text-muted-foreground", isGpsActive && "text-green-500")} />
+                <Button variant="ghost" size="icon" onClick={() => toggleGps(currentUser.id)} onDoubleClick={() => router.push('/map')}>
+                    <MapPin className={cn("w-5 h-5 text-muted-foreground", currentUser.isGpsActive && "text-green-500")} />
                 </Button>
             </div>
           </div>

@@ -21,7 +21,7 @@ interface ServiceCardProps {
 }
 
 export function ServiceCard({ service }: ServiceCardProps) {
-  const { users, isGpsActive, addContact } = useCorabo();
+  const { users, addContact } = useCorabo();
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
 
   const provider = users.find(u => u.id === service.providerId);
@@ -38,7 +38,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
   
   const isPromotionActive = provider.promotion && new Date(provider.promotion.expires) > new Date();
 
-  const displayDistance = provider.profileSetupData?.showExactLocation ? "2.5 km" : "500m - 1km";
+  const displayDistance = provider.profileSetupData?.showExactLocation ? "A menos de 1km" : "500m - 1km";
 
 
   return (
@@ -74,7 +74,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
               </div>
             </div>
             <div className="flex flex-col items-center gap-1 text-muted-foreground">
-              <MapPin className={cn("w-5 h-5", isGpsActive ? "text-green-500" : "text-muted-foreground")} />
+              <MapPin className={cn("w-5 h-5", provider.isGpsActive ? "text-green-500" : "text-muted-foreground")} />
               <span className="text-xs font-semibold">{displayDistance}</span>
             </div>
           </div>

@@ -3,13 +3,14 @@
 import type { User, Product, Service, Transaction, Conversation } from './types';
 
 export const users: User[] = [
-  { id: 'client1', name: 'Juan Cliente', type: 'client', reputation: 4.5, profileImage: `https://i.pravatar.cc/150?u=client1`, email: 'juan.cliente@email.com', phone: '04121234567', emailValidated: true, phoneValidated: false, gallery: [] },
+  { id: 'client1', name: 'Juan Cliente', type: 'client', reputation: 4.5, profileImage: `https://i.pravatar.cc/150?u=client1`, email: 'juan.cliente@email.com', phone: '04121234567', emailValidated: true, phoneValidated: false, isGpsActive: true, gallery: [] },
   { 
     id: 'provider1', 
     name: 'Tecno Soluciones S.A.', 
     type: 'provider', 
     reputation: 4.8, 
     verified: true,
+    isGpsActive: true,
     profileImage: `https://placehold.co/150x150.png`,
     email: 'contacto@tecnosoluciones.com',
     phone: '02129876543',
@@ -72,7 +73,8 @@ export const users: User[] = [
     id: 'provider2', 
     name: 'Hogar Feliz Servicios', 
     type: 'provider', 
-    reputation: 4.2 ,
+    reputation: 4.2,
+    isGpsActive: false,
     profileImage: `https://placehold.co/150x150.png`,
     email: 'servicios@hogarfeliz.com',
     phone: '04149876543',
@@ -125,6 +127,7 @@ export const users: User[] = [
     type: 'provider', 
     reputation: 4.9, 
     verified: true,
+    isGpsActive: false,
     profileImage: `https://placehold.co/150x150.png`,
     email: 'hola@disenocreativo.net',
     phone: '04241112233',

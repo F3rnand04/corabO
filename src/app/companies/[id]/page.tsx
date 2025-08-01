@@ -25,7 +25,7 @@ import { BusinessHoursStatus } from '@/components/BusinessHoursStatus';
 
 export default function CompanyProfilePage() {
   const params = useParams();
-  const { users, addContact, isGpsActive, transactions, createAppointmentRequest, currentUser } = useCorabo();
+  const { users, addContact, transactions, createAppointmentRequest, currentUser } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
   
@@ -105,7 +105,7 @@ export default function CompanyProfilePage() {
 
   const gallery: GalleryImage[] = provider.gallery || [];
   
-  const displayDistance = provider.profileSetupData?.showExactLocation ? "2.5 km" : "500m - 1km";
+  const displayDistance = provider.profileSetupData?.showExactLocation ? "A menos de 1km" : "500m - 1km";
   
   const profileData = {
     name: provider.name,
@@ -273,7 +273,7 @@ export default function CompanyProfilePage() {
                   </PopoverContent>
                 </Popover>
                  <div className="flex flex-col items-center cursor-pointer" onClick={() => provider.profileSetupData?.hasPhysicalLocation && router.push('/map')}>
-                    <MapPin className={cn("w-5 h-5", gpsReady && isGpsActive ? "text-green-500" : "text-muted-foreground")} />
+                    <MapPin className={cn("w-5 h-5", provider.isGpsActive ? "text-green-500" : "text-muted-foreground")} />
                     <span className="text-xs text-muted-foreground">{profileData.distance}</span>
                  </div>
             </div>

@@ -21,7 +21,7 @@ interface ProviderCardProps {
 }
 
 export function ProviderCard({ provider }: ProviderCardProps) {
-    const { addContact, isGpsActive } = useCorabo();
+    const { addContact } = useCorabo();
     const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
     const profileLink = provider.type === 'provider' ? `/companies/${provider.id}` : '#';
 
@@ -36,7 +36,7 @@ export function ProviderCard({ provider }: ProviderCardProps) {
         : provider.name;
     const specialty = provider.profileSetupData?.specialty || "Especialidad del Proveedor";
     
-    const displayDistance = provider.profileSetupData?.showExactLocation ? "2.5 km" : "500m - 1km";
+    const displayDistance = provider.profileSetupData?.showExactLocation ? "A menos de 1km" : "500m - 1km";
 
     return (
         <>
@@ -71,7 +71,7 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                             </div>
                         </div>
                          <div className="flex flex-col items-center gap-1 text-muted-foreground">
-                            <MapPin className={cn("w-5 h-5", isGpsActive ? "text-green-500" : "text-muted-foreground")} />
+                            <MapPin className={cn("w-5 h-5", provider.isGpsActive ? "text-green-500" : "text-muted-foreground")} />
                             <span className="text-xs font-semibold">{displayDistance}</span>
                         </div>
                     </div>

@@ -47,6 +47,7 @@ export type User = {
   phone: string;
   emailValidated: boolean;
   phoneValidated: boolean;
+  isGpsActive: boolean;
   verified?: boolean;
   isSubscribed?: boolean;
   isTransactionsActive?: boolean;

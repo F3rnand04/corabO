@@ -21,12 +21,10 @@ import { Separator } from '@/components/ui/separator';
 
 function ChatHeader({ 
     participant, 
-    onDateSelect, 
-    isGpsActive 
+    onDateSelect
 }: { 
     participant: User, 
-    onDateSelect: (date: Date) => void,
-    isGpsActive: boolean 
+    onDateSelect: (date: Date) => void
 }) {
   const router = useRouter();
   const [businessStatus, setBusinessStatus] = useState<'open' | 'closed'>('closed');
@@ -62,7 +60,7 @@ function ChatHeader({
             disabled={!participant.profileSetupData?.hasPhysicalLocation}
             onClick={() => router.push('/map')}
         >
-            <MapPin className={cn("h-5 w-5", isGpsActive && participant.profileSetupData?.hasPhysicalLocation ? "text-green-500" : "text-muted-foreground")} />
+            <MapPin className={cn("h-5 w-5", participant.isGpsActive && participant.profileSetupData?.hasPhysicalLocation ? "text-green-500" : "text-muted-foreground")} />
         </Button>
          <Popover>
             <PopoverTrigger asChild>
@@ -143,7 +141,7 @@ function MessageBubble({ msg, isCurrentUser }: { msg: Message, isCurrentUser: bo
 export default function ChatPage() {
   const params = useParams();
   const router = useRouter();
-  const { conversations, users, currentUser, sendMessage, createAppointmentRequest, isGpsActive } = useCorabo();
+  const { conversations, users, currentUser, sendMessage, createAppointmentRequest } = useCorabo();
   const [newMessage, setNewMessage] = useState('');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   
@@ -202,7 +200,6 @@ export default function ChatPage() {
       <ChatHeader 
         participant={otherParticipant} 
         onDateSelect={handleDateSelect}
-        isGpsActive={isGpsActive}
       />
       
       <div className="flex-grow bg-[url('/doodle-bg.png')] bg-repeat">
