@@ -6,36 +6,38 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { cn } from "@/lib/utils";
 import { User, Briefcase, Building } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
+import type { ProfileSetupData } from '@/lib/types';
 
 interface Step1_ProfileTypeProps {
-  onSelect: (type: 'client' | 'provider') => void;
+  onSelect: (type: 'client' | 'provider', providerType?: ProfileSetupData['providerType']) => void;
   currentType: 'client' | 'provider';
 }
 
 const profileTypes = [
-  { id: 'client', name: 'Cliente', description: 'Busca servicios y productos.', icon: User },
-  { id: 'provider_service', name: 'Servicio', description: 'Ofrece tus habilidades como profesional.', icon: Briefcase },
-  { id: 'provider_company', name: 'Empresa', description: 'Registra tu negocio y ofrece servicios/productos.', icon: Building },
+  { id: 'client', name: 'Cliente', description: 'Busca servicios y productos.', icon: User, providerType: undefined },
+  { id: 'provider_service', name: 'Servicio', description: 'Ofrece tus habilidades como profesional.', icon: Briefcase, providerType: 'professional' as const },
+  { id: 'provider_company', name: 'Empresa', description: 'Registra tu negocio y ofrece servicios/productos.', icon: Building, providerType: 'company' as const },
 ];
 
 export default function Step1_ProfileType({ onSelect, currentType }: Step1_ProfileTypeProps) {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const [nextType, setNextType] = useState<'client' | 'provider' | null>(null);
+  const [nextSelection, setNextSelection] = useState<{ type: 'client' | 'provider', providerType?: ProfileSetupData['providerType'] } | null>(null);
 
   const handleSelection = (typeId: string) => {
+    const selected = profileTypes.find(t => t.id === typeId)!;
     const newTypeForBackend = typeId.startsWith('provider') ? 'provider' : 'client';
     
     if (currentType && newTypeForBackend !== currentType) {
-        setNextType(newTypeForBackend);
+        setNextSelection({ type: newTypeForBackend, providerType: selected.providerType });
         setIsAlertOpen(true);
     } else {
-        onSelect(newTypeForBackend);
+        onSelect(newTypeForBackend, selected.providerType);
     }
   };
 
   const handleConfirmChange = () => {
-    if (nextType) {
-      onSelect(nextType);
+    if (nextSelection) {
+      onSelect(nextSelection.type, nextSelection.providerType);
     }
     setIsAlertOpen(false);
   }
@@ -46,7 +48,7 @@ export default function Step1_ProfileType({ onSelect, currentType }: Step1_Profi
       return currentType === 'client' ? 'client' : 'provider_service';
   }
   
-  const isChangingToProvider = currentType === 'client' && nextType === 'provider';
+  const isChangingToProvider = currentType === 'client' && nextSelection?.type === 'provider';
 
 
   return (

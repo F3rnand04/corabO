@@ -45,6 +45,7 @@ export default function ProfileSetupPage() {
       email: currentUser.email || '',
       phone: currentUser.phone || '',
       specialty: '',
+      providerType: 'professional',
       offerType: 'service',
       hasPhysicalLocation: true,
       location: '',
@@ -84,8 +85,9 @@ export default function ProfileSetupPage() {
     }
   };
 
-  const handleProfileTypeSelect = (type: 'client' | 'provider') => {
+  const handleProfileTypeSelect = (type: 'client' | 'provider', providerType?: ProfileSetupData['providerType']) => {
     setProfileType(type);
+    setFormData(prev => ({...prev, providerType: providerType || 'professional'}));
     handleNext();
   }
 
@@ -134,5 +136,3 @@ export default function ProfileSetupPage() {
     </main>
   );
 }
-
-    

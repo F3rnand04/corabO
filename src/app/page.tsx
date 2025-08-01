@@ -19,7 +19,7 @@ export default function HomePage() {
         if (feedView === 'servicios') {
             return services.map(s => ({ ...s, type: 'service' as const }));
         }
-        return []; // No search query and in 'empresas' view, show only providers based on filter below
+        return [];
     }
 
     const servicesWithProvider = services.map(service => {
@@ -50,9 +50,16 @@ export default function HomePage() {
   const getFilteredProviders = () => {
      const lowerCaseQuery = searchQuery.toLowerCase();
      
-     if (lowerCaseQuery.trim() === '' && feedView === 'empresas') {
-        return providers;
-    }
+     if (feedView === 'empresas') {
+        const companyProviders = providers.filter(p => p.profileSetupData?.providerType === 'company');
+        if (lowerCaseQuery.trim() === '') {
+            return companyProviders;
+        }
+        return companyProviders.filter(provider => 
+            provider.name.toLowerCase().includes(lowerCaseQuery) ||
+            provider.profileSetupData?.specialty?.toLowerCase().includes(lowerCaseQuery)
+        );
+     }
     
     return providers.filter(provider => {
         const providerName = provider.profileSetupData?.useUsername ? provider.profileSetupData.username : provider.name;

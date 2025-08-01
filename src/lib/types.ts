@@ -26,6 +26,7 @@ export type ProfileSetupData = {
   categories?: string[];
   primaryCategory?: string | null;
   specialty?: string;
+  providerType?: 'professional' | 'company';
   offerType?: 'product' | 'service';
   hasPhysicalLocation?: boolean;
   location?: string;
@@ -135,4 +136,3 @@ export type AppointmentRequest = {
     date: Date;
     details: string;
 };
-    
