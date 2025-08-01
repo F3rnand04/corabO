@@ -17,11 +17,13 @@ import { useToast } from '@/hooks/use-toast';
 import { ReportDialog } from '@/components/ReportDialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { useRouter } from 'next/navigation';
 
 export default function CompanyProfilePage() {
   const params = useParams();
   const { users, addContact, isGpsActive, transactions } = useCorabo();
   const { toast } = useToast();
+  const router = useRouter();
   
   const provider = users.find(u => u.id === params.id);
   
@@ -57,6 +59,8 @@ export default function CompanyProfilePage() {
   
   const gallery: GalleryImage[] = provider.gallery || [];
   
+  const displayDistance = provider.profileSetupData?.showExactLocation ? "2.5 km" : "500m - 1km";
+  
   const profileData = {
     name: provider.name,
     specialty: provider.profileSetupData?.specialty || "Especialidad de la Empresa",
@@ -65,7 +69,7 @@ export default function CompanyProfilePage() {
     otherStat: "00 | 05",
     publications: gallery.length,
     completedJobs: 15,
-    distance: "2.5 km",
+    distance: displayDistance,
     profileImage: provider.profileImage,
     mainImage: gallery.length > 0 ? gallery[currentImageIndex].src : "https://placehold.co/600x400.png",
     gallery: gallery
@@ -205,7 +209,7 @@ export default function CompanyProfilePage() {
                      </div>
                   </PopoverContent>
                 </Popover>
-                 <div className="flex flex-col items-center">
+                 <div className="flex flex-col items-center cursor-pointer" onClick={() => router.push('/map')}>
                     <MapPin className={cn("w-5 h-5", isGpsActive ? "text-green-500" : "text-muted-foreground")} />
                     <span className="text-xs text-muted-foreground">{profileData.distance}</span>
                  </div>

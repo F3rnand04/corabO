@@ -58,7 +58,7 @@ function ChatHeader({
             disabled={!participant.profileSetupData?.hasPhysicalLocation}
             onClick={() => router.push('/map')}
         >
-            <MapPin className={cn("h-5 w-5", isGpsActive ? "text-green-500" : "text-muted-foreground")} />
+            <MapPin className={cn("h-5 w-5", isGpsActive && participant.profileSetupData?.hasPhysicalLocation ? "text-green-500" : "text-muted-foreground")} />
         </Button>
          <Popover>
             <PopoverTrigger asChild>
@@ -191,7 +191,7 @@ export default function ChatPage() {
       <ChatHeader 
         participant={otherParticipant} 
         onDateSelect={handleDateSelect}
-        isGpsActive={!!otherParticipant.profileSetupData?.hasPhysicalLocation && isGpsActive}
+        isGpsActive={isGpsActive}
       />
       
       <div className="flex-grow bg-[url('/doodle-bg.png')] bg-repeat">

@@ -34,6 +34,8 @@ export function ProviderCard({ provider }: ProviderCardProps) {
         ? provider.profileSetupData.username || provider.name 
         : provider.name;
     const specialty = provider.profileSetupData?.specialty || "Especialidad del Proveedor";
+    
+    const displayDistance = provider.profileSetupData?.showExactLocation ? "2.5 km" : "500m - 1km";
 
     return (
         <>
@@ -69,7 +71,7 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                         </div>
                          <div className="flex flex-col items-center gap-1 text-muted-foreground">
                             <MapPin className={`w-5 h-5 ${isGpsActive ? 'text-green-500' : 'text-muted-foreground'}`} />
-                            <span className="text-xs font-semibold">2.5 km</span>
+                            <span className="text-xs font-semibold">{displayDistance}</span>
                         </div>
                     </div>
                 </div>

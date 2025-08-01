@@ -37,6 +37,8 @@ export function ServiceCard({ service }: ServiceCardProps) {
   
   const isPromotionActive = provider.promotion && new Date(provider.promotion.expires) > new Date();
 
+  const displayDistance = provider.profileSetupData?.showExactLocation ? "2.5 km" : "500m - 1km";
+
 
   return (
     <>
@@ -72,7 +74,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
             </div>
             <div className="flex flex-col items-center gap-1 text-muted-foreground">
               <MapPin className={`w-5 h-5 ${isGpsActive ? 'text-green-500' : 'text-muted-foreground'}`} />
-              <span className="text-xs font-semibold">2.5 km</span>
+              <span className="text-xs font-semibold">{displayDistance}</span>
             </div>
           </div>
         </div>
