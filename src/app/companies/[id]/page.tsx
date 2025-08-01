@@ -49,6 +49,7 @@ export default function CompanyProfilePage() {
   const [shareCount, setShareCount] = useState(4567);
   const [messageCount, setMessageCount] = useState(1234);
   const [activeTab, setActiveTab] = useState('comentarios');
+  const [gpsReady, setGpsReady] = useState(false);
   
   useEffect(() => {
     // Update business status periodically
@@ -60,6 +61,10 @@ export default function CompanyProfilePage() {
 
     return () => clearInterval(interval);
   }, [provider?.profileSetupData?.schedule]);
+  
+  useEffect(() => {
+    setGpsReady(true);
+  }, []);
 
 
   if (!provider) {
@@ -267,8 +272,8 @@ export default function CompanyProfilePage() {
                      </div>
                   </PopoverContent>
                 </Popover>
-                 <div className="flex flex-col items-center cursor-pointer" onClick={() => router.push('/map')}>
-                    <MapPin className={cn("w-5 h-5", isGpsActive ? "text-green-500" : "text-muted-foreground")} />
+                 <div className="flex flex-col items-center cursor-pointer" onClick={() => provider.profileSetupData?.hasPhysicalLocation && router.push('/map')}>
+                    <MapPin className={cn("w-5 h-5", gpsReady && isGpsActive ? "text-green-500" : "text-muted-foreground")} />
                     <span className="text-xs text-muted-foreground">{profileData.distance}</span>
                  </div>
             </div>
