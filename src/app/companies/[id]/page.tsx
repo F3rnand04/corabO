@@ -10,7 +10,7 @@ import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, Mess
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { useState, TouchEvent } from 'react';
+import { useState, TouchEvent, useEffect } from 'react';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
 import type { User, GalleryImage } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -18,9 +18,10 @@ import { ReportDialog } from '@/components/ReportDialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { useRouter } from 'next/navigation';
-import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogFooter, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { BusinessHoursStatus } from '@/components/BusinessHoursStatus';
 
 export default function CompanyProfilePage() {
   const params = useParams();
@@ -38,6 +39,7 @@ export default function CompanyProfilePage() {
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [isAppointmentSuccess, setIsAppointmentSuccess] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [businessStatus, setBusinessStatus] = useState<'open' | 'closed'>('closed');
   
   const minSwipeDistance = 50;
 
@@ -47,6 +49,17 @@ export default function CompanyProfilePage() {
   const [shareCount, setShareCount] = useState(4567);
   const [messageCount, setMessageCount] = useState(1234);
   const [activeTab, setActiveTab] = useState('comentarios');
+  
+  useEffect(() => {
+    // Update business status periodically
+    const interval = setInterval(() => {
+      // Logic to determine status is inside BusinessHoursStatus component,
+      // this effect is just to trigger a re-render if needed to update the icon color.
+      // A more robust solution might use a shared state or context for this.
+    }, 60000); // Check every minute
+
+    return () => clearInterval(interval);
+  }, [provider?.profileSetupData?.schedule]);
 
 
   if (!provider) {
@@ -58,10 +71,13 @@ export default function CompanyProfilePage() {
     );
   }
   
+  const paymentCommitmentDates = transactions
+    .filter(tx => tx.providerId === provider.id && tx.status === 'Acuerdo Aceptado - Pendiente de Ejecución')
+    .map(tx => new Date(tx.date));
+
   const disabledDays = Object.entries(provider.profileSetupData?.schedule || {})
     .filter(([, dayDetails]) => !dayDetails.active)
     .map(([dayName]) => {
-        // Map day name to day of the week index (0=Sunday, 6=Saturday)
         const dayMap: { [key: string]: number } = {
             'Domingo': 0, 'Lunes': 1, 'Martes': 2, 'Miércoles': 3,
             'Jueves': 4, 'Viernes': 5, 'Sábado': 6
@@ -219,17 +235,31 @@ export default function CompanyProfilePage() {
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="ghost" size="icon">
-                      <Calendar className="w-5 h-5 text-muted-foreground" />
+                      <Calendar className={cn("w-5 h-5", {
+                        "text-green-500": businessStatus === 'open',
+                        "text-red-500": businessStatus === 'closed'
+                      })} />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
+                  <PopoverContent className="w-auto p-0" align="end">
+                     <div className="p-3 flex items-center justify-between">
+                         <BusinessHoursStatus schedule={provider.profileSetupData?.schedule} onStatusChange={setBusinessStatus} />
+                     </div>
+                     <Separator />
                     <CalendarComponent
                       mode="single"
                       onSelect={handleDateSelect}
                       disabled={[
                           { dayOfWeek: disabledDays },
-                          { before: new Date() }
+                          { before: new Date() },
+                          ...paymentCommitmentDates
                       ]}
+                      modifiers={{
+                        paymentCommitment: paymentCommitmentDates,
+                      }}
+                      modifiersClassNames={{
+                        paymentCommitment: 'bg-yellow-200 text-yellow-900 rounded-full',
+                      }}
                       initialFocus
                     />
                      <div className="p-2 border-t text-center text-xs text-muted-foreground">
@@ -406,5 +436,3 @@ export default function CompanyProfilePage() {
     </>
   );
 }
-
-    
