@@ -238,6 +238,7 @@ export default function TransactionsPage() {
                     <div className="space-y-6">
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                <CardTitle>Resumen de Movimientos</CardTitle>
                                 <div className="flex items-center gap-2">
                                      <Button size="icon" variant={chartType === 'line' ? 'default' : 'secondary'} onClick={() => setChartType('line')}>
                                         <TrendingUp className="w-5 h-5"/>
@@ -373,3 +374,4 @@ export default function TransactionsPage() {
     
 
     
+
