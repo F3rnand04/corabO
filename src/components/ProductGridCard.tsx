@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Heart, MessageCircle } from "lucide-react";
 import { useCorabo } from "@/contexts/CoraboContext";
 import type { Product } from "@/lib/types";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
 interface ProductGridCardProps {
@@ -16,11 +16,16 @@ interface ProductGridCardProps {
 
 export function ProductGridCard({ product, onDoubleClick }: ProductGridCardProps) {
     const { addToCart } = useCorabo();
-    const [likeCount, setLikeCount] = useState(Math.floor(Math.random() * 100));
+    const [likeCount, setLikeCount] = useState<number | null>(null);
     const [isLiked, setIsLiked] = useState(false);
 
+    useEffect(() => {
+        // Generate random number only on the client side to avoid hydration mismatch
+        setLikeCount(Math.floor(Math.random() * 100));
+    }, []);
+
     const handleLike = () => {
-        setLikeCount(prev => isLiked ? prev - 1 : prev + 1);
+        setLikeCount(prev => (prev !== null ? (isLiked ? prev - 1 : prev + 1) : 0));
         setIsLiked(prev => !prev);
     }
 
@@ -54,7 +59,7 @@ export function ProductGridCard({ product, onDoubleClick }: ProductGridCardProps
                     <div className="flex items-center gap-3">
                         <div className="flex items-center gap-1">
                             <Heart className={cn("w-4 h-4 cursor-pointer", isLiked && "text-red-500 fill-red-500")} onClick={handleLike} />
-                            <span className="text-xs">{likeCount}</span>
+                            <span className="text-xs">{likeCount ?? '...'}</span>
                         </div>
                          <div className="flex items-center gap-1">
                             <MessageCircle className="w-4 h-4"/>
