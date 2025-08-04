@@ -383,12 +383,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         clientComment: comment,
       }
     }));
-    // In a real app, you would show payment details here
     toast({ title: "¡Pago Registrado!", description: "Se ha notificado al proveedor para que confirme la recepción." });
-    // This timeout simulates the provider confirming the payment
-    setTimeout(() => {
-        confirmPaymentReceived(transactionId);
-    }, 5000)
   };
 
   const confirmPaymentReceived = (transactionId: string) => {

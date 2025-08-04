@@ -17,11 +17,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "./ui/badge";
 import type { Transaction } from "@/lib/types";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert, Truck, Banknote, ClipboardCheck, CalendarCheck, Contact, Star } from "lucide-react";
+import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert, Truck, Banknote, ClipboardCheck, CalendarCheck, Contact, Star, Calendar as CalendarIcon, Upload } from "lucide-react";
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 import { Label } from './ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Calendar } from './ui/calendar';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+
 
 interface TransactionDetailsDialogProps {
   transaction: Transaction | null;
@@ -54,6 +59,12 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   const [showRatingScreen, setShowRatingScreen] = useState(false);
   const [showPaymentScreen, setShowPaymentScreen] = useState(false);
   const [hasConfirmedReception, setHasConfirmedReception] = useState(false);
+  
+  // State for payment form
+  const [paymentBank, setPaymentBank] = useState('');
+  const [paymentDate, setPaymentDate] = useState<Date | undefined>(new Date());
+  const [paymentReference, setPaymentReference] = useState('');
+  const [paymentVoucher, setPaymentVoucher] = useState<File | null>(null);
 
   if (!transaction) return null;
 
@@ -79,7 +90,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   };
 
   const handlePayCommitment = () => {
-    if (!hasConfirmedReception) return;
+    if (!paymentReference || !paymentVoucher) return;
     payCommitment(transaction.id, rating, comment);
     handleClose();
   }
@@ -131,26 +142,66 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   if (showPaymentScreen) {
     return (
         <Dialog open={isOpen} onOpenChange={handleClose}>
-            <DialogContent>
+            <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
-                    <DialogTitle>Realizar Pago</DialogTitle>
+                    <DialogTitle>Registrar Pago</DialogTitle>
                     <DialogDescription>
-                        Realiza el pago a los siguientes datos y registra el comprobante.
+                        Realiza el pago a los datos del proveedor y luego registra los detalles aquí para confirmar.
                     </DialogDescription>
                 </DialogHeader>
                  <div className="text-sm bg-muted p-4 rounded-lg border space-y-2">
                     <p className="font-bold mb-2">Datos para Pago Móvil</p>
-                    <div className="flex justify-between"><span>Banco:</span><span className="font-mono">Banco de Corabo</span></div>
+                    <div className="flex justify-between"><span>Banco:</span><span className="font-mono">{otherParty?.name || "Banco de Corabo"}</span></div>
                     <div className="flex justify-between"><span>Teléfono:</span><span className="font-mono">0412-1234567</span></div>
                     <div className="flex justify-between"><span>RIF:</span><span className="font-mono">J-12345678-9</span></div>
                  </div>
-                 <div className="py-4 space-y-2">
-                    <Label htmlFor="ref">Número de Referencia</Label>
-                    <Input id="ref" placeholder="Escribe el número de referencia aquí..." />
+                 <div className="py-4 space-y-4">
+                     <div className="space-y-2">
+                         <Label htmlFor="payment-bank">Banco de Origen</Label>
+                         <Input id="payment-bank" placeholder="Ej: Banco Mercantil" value={paymentBank} onChange={(e) => setPaymentBank(e.target.value)} />
+                     </div>
+                     <div className="space-y-2">
+                         <Label>Fecha del Pago</Label>
+                         <Popover>
+                             <PopoverTrigger asChild>
+                                 <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !paymentDate && "text-muted-foreground")}>
+                                     <CalendarIcon className="mr-2 h-4 w-4" />
+                                     {paymentDate ? format(paymentDate, "PPP") : <span>Elige una fecha</span>}
+                                 </Button>
+                             </PopoverTrigger>
+                             <PopoverContent className="w-auto p-0">
+                                 <Calendar mode="single" selected={paymentDate} onSelect={setPaymentDate} initialFocus />
+                             </PopoverContent>
+                         </Popover>
+                     </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="ref">Número de Referencia</Label>
+                        <Input id="ref" placeholder="Escribe el número de referencia aquí..." value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)}/>
+                    </div>
+                     <div className="space-y-2">
+                         <Label htmlFor="voucher-upload">Comprobante (Capture)</Label>
+                         <div className="flex items-center gap-2">
+                             <Label htmlFor="voucher-upload" className="cursor-pointer flex-shrink-0">
+                                 <Button asChild variant="outline">
+                                     <span><Upload className="h-4 w-4 mr-2"/>Subir Capture</span>
+                                 </Button>
+                             </Label>
+                             <Input 
+                                 id="voucher-upload" 
+                                 type="file" 
+                                 className="hidden" 
+                                 accept="image/*"
+                                 onChange={(e) => setPaymentVoucher(e.target.files ? e.target.files[0] : null)}
+                                 />
+                             <span className={cn("text-sm text-muted-foreground truncate", paymentVoucher && "text-foreground font-medium")}>
+                                 {paymentVoucher ? paymentVoucher.name : 'Ningún archivo...'}
+                             </span>
+                         </div>
+                     </div>
                  </div>
                  <DialogFooter>
                     <Button variant="outline" onClick={() => setShowPaymentScreen(false)}>Volver</Button>
-                    <Button onClick={handlePayCommitment}>Confirmar y Enviar Pago</Button>
+                    <Button onClick={handlePayCommitment} disabled={!paymentReference || !paymentVoucher}>Confirmar y Enviar Pago</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
