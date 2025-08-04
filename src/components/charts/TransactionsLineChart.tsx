@@ -71,18 +71,20 @@ export default function TransactionsLineChart({ transactions }: TransactionsLine
   return (
     <div className="w-full aspect-video">
         <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
-            <LineChart accessibilityLayer data={chartData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+            <LineChart accessibilityLayer data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                 <CartesianGrid vertical={false} />
                 <XAxis
                     dataKey="name"
                     tickLine={false}
                     tickMargin={10}
                     axisLine={false}
+                    stroke=""
                 />
                 <YAxis
                     tickLine={false}
                     axisLine={false}
                     tickMargin={10}
+                    stroke=""
                     tickFormatter={(value) => `$${value}`}
                 />
                 <Tooltip 

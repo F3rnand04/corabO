@@ -365,7 +365,7 @@ export const initialTransactions: Transaction[] = [
   {
     id: 'txn5',
     type: 'Compra',
-    status: 'Acuerdo Aceptado - Pendiente de Ejecución',
+    status: 'Finalizado - Pendiente de Pago',
     date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
     amount: 1200,
     clientId: 'client1',

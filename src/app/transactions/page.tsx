@@ -311,7 +311,7 @@ export default function TransactionsPage() {
     const pendingTx = transactions.filter(t => 
         isProvider ? 
         (t.providerId === currentUser.id && (t.status === 'Solicitud Pendiente' || t.status === 'Acuerdo Aceptado - Pendiente de Ejecución')) :
-        (t.clientId === currentUser.id && (t.status === 'Cotización Recibida' || t.status === 'Finalizado - Pendiente de Pago'))
+        (t.clientId === currentUser.id && (t.status === 'Cotización Recibida' || t.status === 'Finalizado - Pendiente de Pago' || t.status === 'Cita Solicitada'))
     );
     const historyTx = transactions.filter(t => (t.providerId === currentUser.id || t.clientId === currentUser.id) && (t.status === 'Pagado' || t.status === 'Resuelto'));
     
@@ -364,7 +364,7 @@ export default function TransactionsPage() {
                                     </Button>
                                 </div>
                             </CardHeader>
-                            <CardContent className="h-[250px]">
+                            <CardContent className="h-[250px] flex items-center justify-center">
                                 {chartType === 'line' ? (
                                     <TransactionsLineChart transactions={transactions} />
                                 ) : (
