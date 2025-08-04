@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { Home, Settings, Wallet, ShoppingCart, TrendingUp, Circle, Calendar, Bell, PieChart, Eye, EyeOff, Info, FileText, Banknote, ShieldAlert, Power, LogOut, Star, Plus, Minus, X, Truck } from "lucide-react";
+import { Home, Settings, Wallet, ShoppingCart, TrendingUp, Circle, Calendar, Bell, PieChart, Eye, EyeOff, Info, FileText, Banknote, ShieldAlert, Power, LogOut, Star, Plus, Minus, X, Truck, ListChecks, History, CalendarClock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from 'next/link';
 import TransactionsLineChart from "@/components/charts/TransactionsLineChart";
@@ -173,7 +173,7 @@ function TransactionsHeader() {
                                 {providerAcceptsCredicora && (
                                      <div className="flex items-center justify-between pt-2 border-t mt-2">
                                         <Label htmlFor="credicora-switch" className="flex items-center gap-2 text-blue-600 font-semibold">
-                                            <Star className="h-4 w-4 fill-current"/>
+                                            <Star className="w-4 h-4 fill-current"/>
                                             Pagar con Credicora
                                         </Label>
                                         <Switch
@@ -263,21 +263,12 @@ function TransactionsHeader() {
     );
 }
 
-const TransactionItem = ({ label, count, color, onClick }: { label: string; count: number; color: string; onClick: () => void; }) => (
-    <div className="flex items-center justify-between hover:bg-muted/50 p-2 rounded-md cursor-pointer" onClick={onClick}>
-        <div className="flex items-center gap-3">
-            <span className={`w-3 h-3 rounded-full ${color}`}></span>
-            <p className="font-medium">{label}</p>
-        </div>
-        <div className="flex items-center gap-3">
-            {count > 0 && (
-                <div className="w-6 h-6 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
-                    {count}
-                </div>
-            )}
-            <Bell className="w-5 h-5 text-muted-foreground" />
-        </div>
-    </div>
+const ActionButton = ({ icon: Icon, label, count, onClick }: { icon: React.ElementType, label: string, count: number, onClick: () => void }) => (
+    <Button variant="outline" className="flex flex-col h-24 w-full items-center justify-center gap-1 relative" onClick={onClick}>
+        {count > 0 && <Badge variant="destructive" className="absolute top-2 right-2">{count}</Badge>}
+        <Icon className="w-8 h-8 text-primary" />
+        <span className="text-xs text-center">{label}</span>
+    </Button>
 );
 
 
@@ -394,34 +385,36 @@ export default function TransactionsPage() {
                                 </div>
                             </CardHeader>
                             <Separator />
-                            <CardContent className="p-4 space-y-2">
-                                <TransactionItem
-                                    label="Lista de Pendientes"
-                                    count={pendingCount}
-                                    color="bg-red-500"
-                                    onClick={() => {
-                                        const tx = transactions.find(t => t.status === 'Solicitud Pendiente');
-                                        if(tx) handleTransactionClick(tx);
-                                    }}
-                                />
-                                <TransactionItem
-                                    label="Transacciones"
-                                    count={0}
-                                    color="bg-cyan-400"
-                                    onClick={() => {
-                                        const tx = transactions.find(t => t.status === 'Pagado');
-                                        if(tx) handleTransactionClick(tx);
-                                    }}
-                                />
-                                <TransactionItem
-                                    label="Compromisos de Pagos"
-                                    count={paymentCommitmentsCount}
-                                    color="bg-red-500"
-                                    onClick={() => {
-                                        const tx = transactions.find(t => t.status === 'Acuerdo Aceptado - Pendiente de Ejecución');
-                                        if(tx) handleTransactionClick(tx);
-                                    }}
-                                />
+                            <CardContent className="p-2">
+                                <div className="grid grid-cols-3 gap-2">
+                                    <ActionButton 
+                                        icon={ListChecks} 
+                                        label="Lista de Pendientes"
+                                        count={pendingCount}
+                                        onClick={() => {
+                                            const tx = transactions.find(t => t.status === 'Solicitud Pendiente');
+                                            if(tx) handleTransactionClick(tx);
+                                        }}
+                                    />
+                                    <ActionButton 
+                                        icon={History} 
+                                        label="Transacciones"
+                                        count={0}
+                                        onClick={() => {
+                                            const tx = transactions.find(t => t.status === 'Pagado');
+                                            if(tx) handleTransactionClick(tx);
+                                        }}
+                                    />
+                                    <ActionButton 
+                                        icon={CalendarClock} 
+                                        label="Compromisos de Pagos"
+                                        count={paymentCommitmentsCount}
+                                        onClick={() => {
+                                            const tx = transactions.find(t => t.status === 'Acuerdo Aceptado - Pendiente de Ejecución');
+                                            if(tx) handleTransactionClick(tx);
+                                        }}
+                                    />
+                                </div>
                             </CardContent>
                         </Card>
                         <Card>
