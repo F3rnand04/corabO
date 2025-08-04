@@ -327,63 +327,62 @@ export default function CompanyProfilePage() {
                 </Popover>
 
                 {isProductProvider && (
-                  <AlertDialog open={isCheckoutAlertOpen} onOpenChange={setIsCheckoutAlertOpen}>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon" className="relative">
-                          <ShoppingCart className="w-5 h-5 text-muted-foreground" />
-                          {totalCartItems > 0 && (
-                            <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs rounded-full">{totalCartItems}</Badge>
-                          )}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-80">
-                        <div className="grid gap-4">
-                          <div className="space-y-2">
-                            <h4 className="font-medium leading-none">Carrito de Compras</h4>
-                            <p className="text-sm text-muted-foreground">
-                              Resumen de tu pedido a {provider.name}.
-                            </p>
-                          </div>
-                          {cart.length > 0 ? (
-                            <>
-                              <div className="grid gap-2 max-h-64 overflow-y-auto">
-                                {cart.map(item => (
-                                  <div key={item.product.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-2">
-                                    <div className="cursor-pointer hover:underline">
-                                      <p className="font-medium text-sm truncate">{item.product.name}</p>
-                                      <p className="text-xs text-muted-foreground">${item.product.price.toFixed(2)}</p>
-                                    </div>
-                                    <div className="flex items-center gap-1 border rounded-md">
-                                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateCartQuantity(item.product.id, item.quantity - 1)}>
-                                        <Minus className="h-3 w-3" />
-                                      </Button>
-                                      <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
-                                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateCartQuantity(item.product.id, item.quantity + 1)}>
-                                        <Plus className="h-3 w-3" />
-                                      </Button>
-                                    </div>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => updateCartQuantity(item.product.id, 0)}>
-                                      <X className="h-4 w-4" />
+                  <>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="ghost" size="icon" className="relative">
+                        <ShoppingCart className="w-5 h-5 text-muted-foreground" />
+                        {totalCartItems > 0 && (
+                          <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs rounded-full">{totalCartItems}</Badge>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80">
+                      <div className="grid gap-4">
+                        <div className="space-y-2">
+                          <h4 className="font-medium leading-none">Carrito de Compras</h4>
+                          <p className="text-sm text-muted-foreground">
+                            Resumen de tu pedido a {provider.name}.
+                          </p>
+                        </div>
+                        {cart.length > 0 ? (
+                          <>
+                            <div className="grid gap-2 max-h-64 overflow-y-auto">
+                              {cart.map(item => (
+                                <div key={item.product.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-2">
+                                  <div className="cursor-pointer hover:underline">
+                                    <p className="font-medium text-sm truncate">{item.product.name}</p>
+                                    <p className="text-xs text-muted-foreground">${item.product.price.toFixed(2)}</p>
+                                  </div>
+                                  <div className="flex items-center gap-1 border rounded-md">
+                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateCartQuantity(item.product.id, item.quantity - 1)}>
+                                      <Minus className="h-3 w-3" />
+                                    </Button>
+                                    <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateCartQuantity(item.product.id, item.quantity + 1)}>
+                                      <Plus className="h-3 w-3" />
                                     </Button>
                                   </div>
-                                ))}
-                              </div>
-                              <Separator />
-                              <div className="flex justify-between font-bold text-sm">
-                                <span>Total:</span>
-                                <span>${getCartTotal().toFixed(2)}</span>
-                              </div>
-                              <AlertDialogTrigger asChild>
-                                <Button className="w-full">Ver Pre-factura</Button>
-                              </AlertDialogTrigger>
-                            </>
-                          ) : (
-                            <p className="text-sm text-center text-muted-foreground py-4">Tu carrito está vacío.</p>
-                          )}
-                        </div>
-                      </PopoverContent>
-                    </Popover>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => updateCartQuantity(item.product.id, 0)}>
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                            <Separator />
+                            <div className="flex justify-between font-bold text-sm">
+                              <span>Total:</span>
+                              <span>${getCartTotal().toFixed(2)}</span>
+                            </div>
+                            <Button className="w-full" onClick={() => setIsCheckoutAlertOpen(true)}>Ver Pre-factura</Button>
+                          </>
+                        ) : (
+                          <p className="text-sm text-center text-muted-foreground py-4">Tu carrito está vacío.</p>
+                        )}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  <AlertDialog open={isCheckoutAlertOpen} onOpenChange={setIsCheckoutAlertOpen}>
                     <AlertDialogContent>
                       <AlertDialogHeader>
                           <AlertDialogTitle>Confirmar Compra</AlertDialogTitle>
@@ -445,6 +444,7 @@ export default function CompanyProfilePage() {
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
+                  </>
                 )}
                 
                  <div className="flex flex-col items-center cursor-pointer" onClick={() => provider.profileSetupData?.hasPhysicalLocation && router.push('/map')}>
@@ -671,3 +671,5 @@ export default function CompanyProfilePage() {
     </>
   );
 }
+
+    
