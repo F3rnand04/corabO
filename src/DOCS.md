@@ -21,7 +21,9 @@ La aplicación se rige por un conjunto de tipos de datos bien definidos:
 -   **`Product`**: Define un producto con `id`, `name`, `price`, `providerId`, etc.
 -   **`Service`**: Define un servicio ofrecido por un proveedor.
 -   **`GalleryImage`**: Representa una publicación en la galería de un proveedor, incluyendo imagen, descripción y comentarios.
--   **`Transaction`**: Modela una transacción desde su inicio (`Carrito Activo`, `Solicitud Pendiente`) hasta su finalización (`Pagado`, `Resuelto`).
+-   **`Transaction`**: Modela una transacción desde su inicio (`Carrito Activo`, `Solicitud Pendiente`) hasta su finalización (`Pagado`, `Resuelto`). Incluye nuevos estados como `Cita Solicitada` y `Pago Enviado - Esperando Confirmación` para un seguimiento más detallado.
+-   **`AgreementProposal`**: Estructura para las propuestas de acuerdo enviadas en el chat.
+-   **`Message`**: Ahora puede contener opcionalmente una `proposal` para mostrarla como una cápsula interactiva.
 
 ## 3. Lógica de Negocio y Estado (`src/contexts/CoraboContext.tsx`)
 
@@ -31,87 +33,60 @@ El `CoraboContext` es el corazón de la aplicación. Centraliza toda la lógica 
 -   **Acciones del Usuario:** Expone funciones para realizar todas las operaciones clave:
     -   `switchUser`: Cambia entre perfiles de usuario (para simulación).
     -   `addToCart`, `updateCartQuantity`: Gestionan el carrito de compras global.
-    -   `setSearchQuery`, `setFeedView`: Controla los filtros del feed principal.
-    -   `requestQuoteFromGroup`, `sendQuote`, `acceptQuote`: Gestiona el flujo de cotizaciones.
+    -   `checkout`: Procesa el pago, incluyendo la opción de usar **Credicora**, que calcula un pago inicial y genera cuotas futuras como transacciones separadas.
+    -   `requestQuoteFromGroup`, `sendQuote`: Gestionan el flujo de cotizaciones.
     -   `addContact`, `removeContact`: Administra la lista de contactos del usuario.
-    -   `updateUserProfileAndGallery`: Permite a los proveedores añadir nuevas publicaciones a su perfil.
+    -   **Flujo de Citas y Acuerdos:** Nuevas funciones como `createAppointmentRequest`, `sendProposalMessage` y `acceptProposal` gestionan un flujo de negociación completo desde el chat.
+    -   **Flujo de Finalización de Servicio:** Lógica mejorada con `completeWork` y `confirmWorkReceived` para asegurar que el cliente confirma la recepción y califica antes de pagar, y el proveedor confirma el pago.
     -   **Límite de Cotizaciones:** Implementa una regla de negocio que limita a los usuarios no suscritos a cotizar el mismo producto/servicio a un máximo de 3 proveedores distintos por día.
 
 ## 4. Flujos de Usuario y Componentes Clave
 
 ### 4.1. Navegación Principal y Feed (Home)
 
--   **Página Principal (`src/app/page.tsx`):**
-    -   Muestra un feed dinámico de `ServiceCard` o `ProviderCard`.
-    -   La vista del feed se controla con los botones "Servicios" y "Empresas" del `Header`.
-    -   El contenido se filtra en tiempo real según el `searchQuery` introducido en el `Header`.
--   **Encabezado (`src/components/Header.tsx`):**
-    -   Contiene los botones para cambiar entre las vistas "Servicios" y "Empresas" (`feedView`).
-    -   Incluye la barra de búsqueda que actualiza el `searchQuery` en el `CoraboContext`.
-    -   Ofrece accesos directos al **GPS**, **cotizaciones**, **registro de transacciones (icono de billetera)** y un **carrito de compras global**.
--   **Tarjetas de Contenido (`ProviderCard.tsx`, `ServiceCard.tsx`):**
-    -   Muestran la información del proveedor.
-    -   El **nombre del proveedor** es un enlace directo a su perfil para una navegación intuitiva.
--   **Pie de Página (`src/components/Footer.tsx`):**
-    -   Proporciona la navegación principal entre las vistas: Home, Videos, Búsqueda por Categorías, Mensajes y Perfil.
+-   **Página Principal (`src/app/page.tsx`):** Muestra un feed dinámico de `ServiceCard` o `ProviderCard` que se filtra en tiempo real.
+-   **Encabezado (`src/components/Header.tsx`):** Contiene la barra de búsqueda y accesos directos, incluyendo un **carrito de compras global** que ahora abre un diálogo de pre-factura completo.
+-   **Tarjetas de Contenido (`ProviderCard.tsx`, `ServiceCard.tsx`):** Muestran la información del proveedor con un enlace directo a su perfil.
 
 ### 4.2. Configuración de Perfil (`src/app/profile-setup/page.tsx`)
 
--   **Asistente de 6 Pasos:** Guía al usuario a través de la configuración completa de su perfil.
-    -   **Paso 1:** Selección de tipo de perfil (Cliente o Proveedor).
-    -   **Paso 2:** Elección y validación de nombre de usuario.
-    -   **Paso 3:** Selección de categorías de servicio (para proveedores).
-    -   **Paso 4:** Validación de email y teléfono.
-    -   **Paso 5:** Detalles específicos como ubicación, radio de acción y horarios (para proveedores).
-    -   **Paso 6:** Revisión final de toda la información antes de guardar.
--   **Lógica Dinámica:** Los pasos se adaptan según el tipo de perfil seleccionado (los clientes omiten los pasos 3 y 5).
+-   **Asistente de 6 Pasos:** Guía al usuario a través de la configuración completa de su perfil, incluyendo opciones para que los proveedores definan si aceptan Credicora y el costo de sus citas.
 
 ### 4.3. Perfiles de Usuario y Empresa
 
 -   **Perfil del Propio Usuario (`src/app/profile/page.tsx`):**
-    -   Muestra la información del `currentUser`.
-    -   Permite al proveedor ver y gestionar su galería de publicaciones.
-    -   El pie de página (`ProfileFooter`) es específico para esta vista y contiene un botón central para subir nuevas publicaciones (`UploadDialog`).
-    -   Los proveedores pueden gestionar la "Promoción del Día" para destacar una publicación.
+    -   Permite al proveedor gestionar su galería de publicaciones y la "Promoción del Día".
 -   **Perfil de Empresa (`src/app/companies/[id]/page.tsx`):**
     -   Muestra el perfil público de un proveedor.
-    -   Permite a los clientes ver la galería, reputación e información de la empresa.
-    -   Incluye un **botón de Mensaje Directo** para facilitar la comunicación privada.
-    -   Para proveedores de productos, se muestra una **cuadrícula de productos**.
-    -   **Interacción con Productos (`ProductDetailsDialog`):** Al hacer doble clic en un producto, se abre un modal con detalles, comentarios y acciones (like, compartir, añadir al carrito).
-    -   **Indicador de Horario (`BusinessHoursStatus.tsx`):** Muestra si el negocio está abierto o cerrado y el tiempo restante en formato `Xh Ym`, basado en cálculos precisos de la fecha/hora actual.
+    -   **Agendamiento de Citas:** Al hacer clic en una fecha del calendario, se abre un diálogo para que el cliente escriba un resumen de su solicitud. Esto inicia un proceso de negociación en lugar de crear un compromiso automático.
+    -   **Carrito de Compras Mejorado:** El carrito de compras de la cabecera ahora también abre un diálogo de pre-factura completo, permitiendo añadir delivery y usar Credicora si el proveedor lo acepta.
 
-### 4.4. Registro de Transacciones (`src/app/transactions/*`)
+### 4.4. Chat y Negociación de Acuerdos (`src/app/messages/[id]/page.tsx`)
+
+-   El chat ha sido transformado en una herramienta de negociación.
+-   **Botón de Propuesta:** Los proveedores tienen un botón (+) para abrir un diálogo y **"Establecer Acuerdo de Servicio"**.
+-   **Formulario de Acuerdo:** Permite definir título, descripción, fecha de entrega/cita, costo y si se acepta Credicora.
+-   **Cápsula de Propuesta:** La propuesta se envía como una tarjeta interactiva en el chat. El cliente la ve y puede aceptarla directamente.
+-   **Creación de Compromiso:** Al aceptar, se crea automáticamente una transacción con el estado "Acuerdo Aceptado - Pendiente de Ejecución", formalizando el trato.
+
+### 4.5. Registro de Transacciones (`src/app/transactions/*`)
 
 Este es un módulo financiero clave para que los proveedores gestionen sus operaciones.
 
-1.  **Página de Activación (`src/app/transactions/settings/page.tsx`):**
-    -   **Flujo de Verificación en 2 Pasos:** Antes de poder usar el módulo, el proveedor debe activarlo.
-    -   **Paso 1: Verificación de Identidad:** El usuario debe subir una foto de su cédula. El sistema simula una lectura y valida que los datos coincidan con los de la cuenta Corabo.
-    -   **Paso 2: Registro de Cuenta de Pago:** Una vez verificada la identidad, el usuario debe registrar una cuenta bancaria o pago móvil.
-    -   **Activación y Redirección:** Tras una verificación exitosa, el módulo se activa y el usuario es redirigido a la página principal de transacciones.
+1.  **Activación y Panel de Control:** El flujo de activación y el panel principal se mantienen, con gráficos de ingresos/egresos y la tarjeta Credicora.
 
-2.  **Panel de Control de Transacciones (`src/app/transactions/page.tsx`):**
-    -   **Estado Inactivo:** Muestra una pantalla que invita al usuario a activarlo.
-    -   **Estado Activo:** Cuando el módulo está activo, la página muestra:
-        -   **Gráficos Responsivos:** Gráficos de ingresos y egresos (lineal o de tarta) que se ajustan correctamente al tamaño del contenedor sin superponerse.
-        -   **Tarjeta CREDICORA con privacidad:** Muestra el límite de crédito disponible, con un **botón de ojo** para ocultar/mostrar los montos.
-        -   Accesos directos a "Lista de Pendientes", "Transacciones" y "Compromisos de Pagos".
-        -   Un menú de ajustes (engranaje) que permite imprimir reportes, modificar datos o desactivar el módulo.
-        -   Un **carrito de compras global** y funcional en la cabecera.
+2.  **Flujo de Finalización de Servicio Mejorado (`TransactionDetailsDialog`):**
+    -   **Escenario 1 (Iniciado por Proveedor):** El proveedor marca un trabajo como finalizado (`Pendiente de Confirmación del Cliente`).
+    -   **Escenario 2 (Iniciado por Cliente):** Un cliente puede ir a un compromiso de pago pendiente y hacer clic en "Pagar Ahora".
+    -   **Confirmación del Cliente:** En ambos casos, el cliente debe primero confirmar que ha recibido el servicio satisfactoriamente.
+    -   **Calificación Integrada:** Inmediatamente después de confirmar, se le pide al cliente que califique el servicio (con estrellas) y deje un comentario opcional.
+    -   **Paso de Pago:** Luego de calificar, el cliente procede a la pantalla de pago para registrar su transferencia o pago móvil.
+    -   **Confirmación del Proveedor:** El estado cambia a `Pago Enviado - Esperando Confirmación`. El proveedor debe ahora confirmar la recepción del pago para que la transacción se marque como `Pagado` y se complete el ciclo.
 
-### 4.5. Flujo de Cotizaciones y Monetización
+### 4.6. Flujo de Cotizaciones y Monetización
 
-1.  **Formulario de Cotización (`src/app/quotes/page.tsx`):**
-    -   Permite a los usuarios solicitar cotizaciones para productos o servicios.
-    -   Incluye un componente de "Búsqueda Avanzada" (`AdvancedSearchOptions.tsx`) con opciones premium bloqueadas.
-2.  **Diálogo de Oferta (`AdvancedQuoteDialog.tsx`):**
-    -   Al hacer clic en una opción bloqueada, se abre un modal que ofrece dos rutas: pago por uso o suscripción.
-3.  **Página de Pago (`src/app/quotes/payment/page.tsx`):**
-    -   Presenta una interfaz de pago aislada para desbloquear beneficios de cotización.
-4.  **Formulario de Cotización PRO (`src/app/quotes/pro/page.tsx`):**
-    -   Versión mejorada del formulario que se habilita tras un pago exitoso, con la opción avanzada desbloqueada.
+-   El flujo se mantiene, permitiendo a los usuarios hacer cotizaciones normales o pagar para acceder a opciones de "Búsqueda Avanzada" en el formulario PRO.
 
 ## 5. Conclusión
 
-El prototipo actual tiene una base sólida y una lógica bien definida. El `CoraboContext` actúa eficazmente como un motor de estado central, y los flujos de usuario están optimizados para la búsqueda, conexión, gestión financiera y monetización, con una interfaz de usuario coherente y funcional. Los futuros desarrollos deben seguir estos patrones para mantener la escalabilidad del proyecto.
+El prototipo actual tiene una base sólida y una lógica bien definida. El `CoraboContext` actúa eficazmente como un motor de estado central. Los flujos de usuario han sido optimizados para reflejar procesos de negocio más realistas, especialmente en la negociación de acuerdos a través del chat y en el ciclo de vida de finalización de una transacción, mejorando la transparencia y seguridad para ambas partes. Los futuros desarrollos deben seguir estos patrones para mantener la escalabilidad del proyecto.
