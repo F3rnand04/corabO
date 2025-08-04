@@ -3,7 +3,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData, Conversation, Message, AppointmentRequest } from '@/lib/types';
+import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData, Conversation, Message, AppointmentRequest, AgreementProposal } from '@/lib/types';
 import { users as initialUsers, products, services as initialServices, initialTransactions, initialConversations } from '@/lib/mock-data';
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from 'next/navigation';
@@ -61,6 +61,8 @@ interface CoraboState {
   deactivateTransactions: (userId: string) => void;
   downloadTransactionsPDF: () => void;
   sendMessage: (recipientId: string, text: string, createOnly?: boolean) => string;
+  sendProposalMessage: (conversationId: string, proposal: AgreementProposal) => void;
+  acceptProposal: (conversationId: string, messageId: string) => void;
   createAppointmentRequest: (request: AppointmentRequest) => void;
   getAgendaEvents: () => { date: Date; type: 'payment' | 'task'; description: string, transactionId: string }[];
 }
@@ -483,12 +485,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const activateTransactions = (userId: string, creditLimit: number) => {
     updateUser(userId, { isTransactionsActive: true, credicoraLimit: creditLimit });
-    router.push('/transactions');
     toast({
         title: "¡Módulo de Transacciones Activado!",
         description: "Ya puedes empezar a gestionar tus finanzas.",
         className: "bg-green-100 border-green-300 text-green-800",
     });
+    router.push('/transactions');
   }
   
   const deactivateTransactions = (userId: string) => {
@@ -564,9 +566,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const newMessage: Message = {
+        id: `msg-${Date.now()}`,
         senderId: currentUser.id,
         text,
         timestamp: new Date().toISOString(),
+        type: 'text',
     };
 
     setConversations(prevConvos => 
@@ -585,6 +589,68 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return conversation.id;
   };
   
+  const sendProposalMessage = (conversationId: string, proposal: AgreementProposal) => {
+    const newMessage: Message = {
+        id: `msg-${Date.now()}`,
+        senderId: currentUser.id,
+        timestamp: new Date().toISOString(),
+        type: 'proposal',
+        proposal: proposal,
+        isProposalAccepted: false,
+    };
+    setConversations(prevConvos => 
+        prevConvos.map(convo => {
+            if (convo.id === conversationId) {
+                return { ...convo, messages: [...convo.messages, newMessage] };
+            }
+            return convo;
+        })
+    );
+    toast({ title: "Propuesta Enviada", description: "Tu propuesta ha sido enviada al cliente."});
+  };
+
+  const acceptProposal = (conversationId: string, messageId: string) => {
+    let transaction: Transaction | null = null;
+
+    setConversations(prevConvos => 
+        prevConvos.map(convo => {
+            if (convo.id === conversationId) {
+                const newMessages = convo.messages.map(msg => {
+                    if (msg.id === messageId && msg.proposal) {
+                        const providerId = msg.senderId;
+                        const clientId = convo.participantIds.find(p => p !== providerId)!;
+
+                        transaction = {
+                            id: `txn-${Date.now()}`,
+                            type: 'Servicio',
+                            status: 'Acuerdo Aceptado - Pendiente de Ejecución',
+                            date: msg.proposal.deliveryDate,
+                            amount: msg.proposal.amount,
+                            clientId: clientId,
+                            providerId: providerId,
+                            details: {
+                                serviceName: msg.proposal.title,
+                                proposal: msg.proposal
+                            },
+                        };
+
+                        return { ...msg, isProposalAccepted: true };
+                    }
+                    return msg;
+                });
+                return { ...convo, messages: newMessages };
+            }
+            return convo;
+        })
+    );
+    
+    if (transaction) {
+      setTransactions(prev => [transaction!, ...prev]);
+      toast({ title: "Acuerdo Aceptado", description: "Se ha creado un nuevo compromiso de pago."});
+    }
+  };
+
+
   const createAppointmentRequest = (request: AppointmentRequest) => {
     const newTx: Transaction = {
       id: `txn-${Date.now()}`,
@@ -681,6 +747,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     deactivateTransactions,
     downloadTransactionsPDF,
     sendMessage,
+    sendProposalMessage,
+    acceptProposal,
     createAppointmentRequest,
     getAgendaEvents,
   };

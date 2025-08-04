@@ -7,16 +7,17 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChevronLeft, Send, Paperclip, CheckCheck, MapPin, Calendar, FileText } from 'lucide-react';
+import { ChevronLeft, Send, Paperclip, CheckCheck, MapPin, Calendar, FileText, PlusCircle, Handshake, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { Message, User } from '@/lib/types';
+import type { Message, User, AgreementProposal } from '@/lib/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { BusinessHoursStatus } from '@/components/BusinessHoursStatus';
 import { Separator } from '@/components/ui/separator';
+import { ProposalDialog } from '@/components/ProposalDialog';
 
 
 function ChatHeader({ 
@@ -97,13 +98,66 @@ function ChatHeader({
   );
 }
 
-function MessageBubble({ msg, isCurrentUser }: { msg: Message, isCurrentUser: boolean }) {
+function ProposalBubble({ msg, onAccept }: { msg: Message, onAccept: (messageId: string) => void }) {
+    if (!msg.proposal) return null;
+    const { currentUser } = useCorabo();
+    const isClient = currentUser.type === 'client';
+    const isAccepted = msg.isProposalAccepted;
+
+    return (
+        <div className="flex justify-center w-full my-2">
+            <div className="w-full max-w-sm rounded-lg border bg-background shadow-lg p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                    <Handshake className="w-6 h-6 text-primary" />
+                    <h3 className="font-bold text-lg">{msg.proposal.title}</h3>
+                </div>
+                <p className="text-sm text-muted-foreground line-clamp-3">{msg.proposal.description}</p>
+                <Separator />
+                <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Fecha:</span>
+                    <span className="font-semibold">{format(new Date(msg.proposal.deliveryDate), "dd/MM/yyyy 'a las' HH:mm")}</span>
+                </div>
+                 <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Costo:</span>
+                    <span className="font-bold text-lg">${msg.proposal.amount.toFixed(2)}</span>
+                </div>
+                 {msg.proposal.acceptsCredicora && (
+                     <div className="flex items-center gap-2 text-blue-600">
+                        <Star className="w-4 h-4 fill-current"/>
+                        <span className="text-sm font-semibold">Acepta Credicora</span>
+                     </div>
+                 )}
+                 <div className="pt-2">
+                    {isClient && !isAccepted && (
+                        <Button className="w-full" onClick={() => onAccept(msg.id)}>Revisar y Aceptar</Button>
+                    )}
+                    {isAccepted && (
+                        <div className="text-center font-semibold text-green-600 p-2 bg-green-50 border border-green-200 rounded-md">
+                            Acuerdo Aceptado
+                        </div>
+                    )}
+                     {!isClient && !isAccepted && (
+                         <div className="text-center font-semibold text-yellow-600 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
+                            Propuesta Enviada - Esperando Cliente
+                        </div>
+                     )}
+                 </div>
+            </div>
+        </div>
+    )
+}
+
+function MessageBubble({ msg, isCurrentUser, onAccept }: { msg: Message, isCurrentUser: boolean, onAccept: (messageId: string) => void }) {
     const [formattedTime, setFormattedTime] = useState('');
 
     useEffect(() => {
         // Format time on the client to avoid hydration mismatch
         setFormattedTime(format(new Date(msg.timestamp), 'HH:mm'));
     }, [msg.timestamp]);
+
+    if (msg.type === 'proposal') {
+        return <ProposalBubble msg={msg} onAccept={onAccept} />;
+    }
 
     return (
         <div
@@ -138,12 +192,14 @@ function MessageBubble({ msg, isCurrentUser }: { msg: Message, isCurrentUser: bo
 export default function ChatPage() {
   const params = useParams();
   const router = useRouter();
-  const { conversations, users, currentUser, sendMessage, createAppointmentRequest } = useCorabo();
+  const { conversations, users, currentUser, sendMessage, createAppointmentRequest, acceptProposal } = useCorabo();
   const [newMessage, setNewMessage] = useState('');
+  const [isProposalDialogOpen, setIsProposalDialogOpen] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   
   const conversationId = params.id as string;
   const conversation = conversations.find(c => c.id === conversationId);
+  const isProvider = currentUser.type === 'provider';
 
   const otherParticipantId = conversation?.participantIds.find(pId => pId !== currentUser.id);
   const otherParticipant = users.find(u => u.id === otherParticipantId);
@@ -182,17 +238,13 @@ export default function ChatPage() {
     
     // Simulate provider accepting and creating the commitment
     setTimeout(() => {
-        const appointmentMessage = `¡Claro! Confirmado. He agendado nuestra cita para el ${formattedDate}. ¡Nos vemos!`;
+        const appointmentMessage = `¡Claro! Te enviaré una propuesta formal para que la aceptes y creemos el compromiso.`;
         sendMessage(conversationId, appointmentMessage);
-        createAppointmentRequest({
-            providerId: otherParticipant.id,
-            date: date,
-            details: `Cita acordada por chat para el ${formattedDate}`
-        })
     }, 1500)
   }
 
   return (
+    <>
     <div className="flex flex-col h-screen bg-muted/30">
       <ChatHeader 
         participant={otherParticipant} 
@@ -202,10 +254,10 @@ export default function ChatPage() {
       <div className="flex-grow bg-[url('/doodle-bg.png')] bg-repeat">
         <ScrollArea className="h-full" ref={scrollAreaRef}>
           <div className="p-4 space-y-2">
-            {conversation.messages.map((msg, index) => {
+            {conversation.messages.map((msg) => {
               const isCurrentUser = msg.senderId === currentUser.id;
               return (
-                <MessageBubble key={index} msg={msg} isCurrentUser={isCurrentUser} />
+                <MessageBubble key={msg.id} msg={msg} isCurrentUser={isCurrentUser} onAccept={acceptProposal.bind(null, conversationId)} />
               )
             })}
           </div>
@@ -217,6 +269,11 @@ export default function ChatPage() {
            <Button variant="ghost" size="icon" className="bg-background rounded-full shadow-md">
                 <Paperclip className="h-5 w-5 text-muted-foreground" />
             </Button>
+            {isProvider && (
+              <Button type="button" variant="ghost" size="icon" className="bg-background rounded-full shadow-md" onClick={() => setIsProposalDialogOpen(true)}>
+                  <PlusCircle className="h-5 w-5 text-muted-foreground" />
+              </Button>
+            )}
           <Input
             placeholder="Escribe un mensaje..."
             className="flex-grow rounded-full shadow-md"
@@ -229,5 +286,11 @@ export default function ChatPage() {
         </form>
       </footer>
     </div>
+    <ProposalDialog 
+        isOpen={isProposalDialogOpen} 
+        onOpenChange={setIsProposalDialogOpen} 
+        conversationId={conversationId}
+    />
+    </>
   );
 }

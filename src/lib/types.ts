@@ -100,6 +100,14 @@ export type TransactionStatus =
   | 'Resuelto'
   | 'Recarga';
 
+export type AgreementProposal = {
+    title: string;
+    description: string;
+    amount: number;
+    deliveryDate: string;
+    acceptsCredicora: boolean;
+};
+
 export type Transaction = {
   id: string;
   type: 'Compra' | 'Servicio' | 'Sistema';
@@ -115,6 +123,7 @@ export type Transaction = {
       breakdown: string;
       total: number;
     };
+    proposal?: AgreementProposal;
     quoteItems?: string[];
     delivery?: boolean;
     deliveryCost?: number;
@@ -125,9 +134,13 @@ export type Transaction = {
 };
 
 export type Message = {
+    id: string;
     senderId: string;
-    text: string;
+    text?: string;
     timestamp: string;
+    type?: 'text' | 'proposal';
+    proposal?: AgreementProposal;
+    isProposalAccepted?: boolean;
 };
 
 export type Conversation = {
