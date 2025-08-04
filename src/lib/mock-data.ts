@@ -1,6 +1,6 @@
 
 
-import type { User, Product, Service, Transaction, Conversation } from './types';
+import type { User, Product, Service, Transaction, Conversation, AgreementProposal } from './types';
 
 export const users: User[] = [
   { id: 'client1', name: 'Juan Cliente', type: 'client', reputation: 4.5, profileImage: `https://i.pravatar.cc/150?u=client1`, email: 'juan.cliente@email.com', phone: '04121234567', emailValidated: true, phoneValidated: false, isGpsActive: true, gallery: [] },
@@ -384,8 +384,22 @@ export const initialConversations: Conversation[] = [
         messages: [
             { id: 'msg1', senderId: 'provider1', text: 'Hola Juan, gracias por tu compra. Tu Laptop Pro 15" ha sido enviada.', timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), type: 'text' },
             { id: 'msg2', senderId: 'client1', text: '¡Excelente! Muchas gracias por la rapidez.', timestamp: new Date(Date.now() - 2 * 24 * 59 * 60 * 1000).toISOString(), type: 'text' },
+            { 
+              id: 'msg-proposal-1', 
+              senderId: 'provider1', 
+              timestamp: new Date().toISOString(), 
+              type: 'proposal',
+              proposal: {
+                title: 'Mantenimiento Preventivo Anual PC',
+                description: 'Limpieza interna de hardware, optimización de software y revisión de seguridad para 1 equipo de escritorio. Se realizará en nuestro local.',
+                amount: 50,
+                deliveryDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+                acceptsCredicora: true,
+              },
+              isProposalAccepted: false,
+            },
         ],
-        unreadCount: 0,
+        unreadCount: 1,
     },
     {
         id: 'convo2',
