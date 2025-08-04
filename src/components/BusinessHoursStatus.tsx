@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getDay, format, parse, isWithinInterval, addDays, formatDistanceToNowStrict } from 'date-fns';
+import { getDay, format, parse, isWithinInterval, addDays, formatDistanceToNowStrict, differenceInMilliseconds } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import type { ProfileSetupData } from '@/lib/types';
@@ -16,6 +16,12 @@ const dayMap: { [key: number]: string } = {
   0: 'Domingo', 1: 'Lunes', 2: 'Martes', 3: 'Miércoles',
   4: 'Jueves', 5: 'Viernes', 6: 'Sábado'
 };
+
+const formatTimeDifference = (ms: number) => {
+    const hours = Math.floor(ms / (1000 * 60 * 60));
+    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+    return `${hours}h ${minutes}m`;
+}
 
 export function BusinessHoursStatus({ schedule, onStatusChange }: BusinessHoursStatusProps) {
   const [status, setStatus] = useState<'open' | 'closed'>('closed');
@@ -41,7 +47,7 @@ export function BusinessHoursStatus({ schedule, onStatusChange }: BusinessHoursS
 
         if (isWithinInterval(now, { start: fromTime, end: toTime })) {
           setStatus('open');
-          const timeToClose = formatDistanceToNowStrict(toTime, { locale: es, unit: 'minute' });
+          const timeToClose = formatTimeDifference(differenceInMilliseconds(toTime, now));
           setMessage(`Cierra en ${timeToClose}`);
           if (onStatusChange) onStatusChange('open');
           return;
