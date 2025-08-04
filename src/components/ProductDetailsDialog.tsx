@@ -25,7 +25,7 @@ interface ProductDetailsDialogProps {
 }
 
 export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductDetailsDialogProps) {
-  const { currentUser, addToCart } = useCorabo();
+  const { currentUser, addToCart, cart } = useCorabo();
   const [newComment, setNewComment] = useState("");
   // Comments would be fetched or part of product data
   const [comments, setComments] = useState<GalleryImageComment[]>([
@@ -34,6 +34,9 @@ export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductD
   ]);
 
   if (!product) return null;
+
+  const itemInCart = cart.find(item => item.product.id === product.id);
+  const quantityInCart = itemInCart ? itemInCart.quantity : 0;
 
   const handlePostComment = () => {
     if (newComment.trim()) {
@@ -88,7 +91,7 @@ export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductD
                 <div className="flex flex-wrap gap-2 mb-6">
                     <Button onClick={() => addToCart(product, 1)}>
                         <Plus className="mr-2 h-4 w-4"/>
-                        Añadir al Carrito
+                        Añadir al Carrito {quantityInCart > 0 && `(${quantityInCart} en carrito)`}
                     </Button>
                     <Button variant="secondary" onClick={() => onOpenChange(false)} className="ml-auto">Cerrar</Button>
                 </div>
