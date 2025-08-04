@@ -53,10 +53,12 @@ export function ServiceCard({ service }: ServiceCardProps) {
             </Avatar>
             <div className="flex-grow">
               <div className="flex justify-between items-start">
-                  <div className="flex items-center gap-2">
-                      <p className="font-bold text-base">{provider.name}</p>
-                      {provider.verified && <CheckCircle className="w-4 h-4 text-blue-500" />}
-                  </div>
+                  <Link href={profileLink} passHref>
+                    <div className="flex items-center gap-2 cursor-pointer group">
+                        <p className="font-bold text-base group-hover:underline">{provider.name}</p>
+                        {provider.verified && <CheckCircle className="w-4 h-4 text-blue-500" />}
+                    </div>
+                  </Link>
                   <Button variant="ghost" size="icon" className="shrink-0 text-muted-foreground hover:text-primary" onClick={handleSaveContact}>
                       <Bookmark className="w-5 h-5" />
                   </Button>
