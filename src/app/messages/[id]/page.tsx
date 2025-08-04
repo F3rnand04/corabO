@@ -92,9 +92,6 @@ function ChatHeader({
                 </div>
             </PopoverContent>
         </Popover>
-        <Button variant="ghost" size="icon" onClick={() => router.push('/quotes')}>
-            <FileText className="h-5 w-5 text-muted-foreground" />
-        </Button>
       </div>
     </header>
   );
