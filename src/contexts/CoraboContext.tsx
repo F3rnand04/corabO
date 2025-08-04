@@ -27,6 +27,7 @@ interface CoraboState {
   searchQuery: string;
   contacts: User[];
   feedView: FeedView;
+  isGpsActive: boolean;
   switchUser: (userId: string) => void;
   addToCart: (product: Product, quantity: number) => void;
   updateCartQuantity: (productId: string, quantity: number) => void;
@@ -71,6 +72,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [contacts, setContacts] = useState<User[]>([]);
   const [feedView, setFeedView] = useState<FeedView>('servicios');
+  const [isGpsActive, setIsGpsActive] = useState(true);
   const [dailyQuotes, setDailyQuotes] = useState<Record<string, DailyQuote[]>>({});
 
   const findOrCreateCartTransaction = (): Transaction => {
@@ -310,23 +312,22 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const toggleGps = (userId: string) => {
-    const userToToggle = users.find(u => u.id === userId);
-    if (!userToToggle) return;
-
-    const willBeActive = !userToToggle.isGpsActive;
-    updateUser(userId, { isGpsActive: willBeActive });
+    updateUser(userId, user => ({ isGpsActive: !user.isGpsActive }));
     
     if (userId === currentUser.id) {
-        if (willBeActive) {
-          toast({
-            title: "GPS Activado",
-            description: "Ahora eres visible según la ubicación de tu perfil.",
-          });
-        } else {
-           toast({
-            title: "GPS Desactivado",
-            description: "Has dejado de ser visible para otros usuarios.",
-          });
+        const user = users.find(u => u.id === userId);
+        if (user) {
+            if (!user.isGpsActive) {
+                toast({
+                    title: "GPS Activado",
+                    description: "Ahora eres visible según la ubicación de tu perfil.",
+                });
+            } else {
+                toast({
+                    title: "GPS Desactivado",
+                    description: "Has dejado de ser visible para otros usuarios.",
+                });
+            }
         }
     }
   };
@@ -499,6 +500,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     searchQuery,
     contacts,
     feedView,
+    isGpsActive,
     setFeedView,
     switchUser,
     addToCart,
