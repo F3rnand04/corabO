@@ -103,6 +103,13 @@ function ProposalBubble({ msg, onAccept }: { msg: Message, onAccept: (messageId:
     const { currentUser } = useCorabo();
     const isClient = currentUser.type === 'client';
     const isAccepted = msg.isProposalAccepted;
+    const [formattedDate, setFormattedDate] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (msg.proposal?.deliveryDate) {
+            setFormattedDate(format(new Date(msg.proposal.deliveryDate), "dd/MM/yyyy 'a las' HH:mm"));
+        }
+    }, [msg.proposal?.deliveryDate]);
 
     return (
         <div className="flex justify-center w-full my-2">
@@ -115,7 +122,7 @@ function ProposalBubble({ msg, onAccept }: { msg: Message, onAccept: (messageId:
                 <Separator />
                 <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Fecha:</span>
-                    <span className="font-semibold">{format(new Date(msg.proposal.deliveryDate), "dd/MM/yyyy 'a las' HH:mm")}</span>
+                    <span className="font-semibold">{formattedDate || '...'}</span>
                 </div>
                  <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Costo:</span>
