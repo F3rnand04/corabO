@@ -28,7 +28,7 @@ import { ProductDetailsDialog } from '@/components/ProductDetailsDialog';
 
 export default function CompanyProfilePage() {
   const params = useParams();
-  const { users, products, addContact, transactions, createAppointmentRequest, currentUser, cart, updateCartQuantity, getCartTotal } = useCorabo();
+  const { users, products, addContact, transactions, createAppointmentRequest, currentUser, cart, updateCartQuantity, getCartTotal, sendMessage } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
   
@@ -73,6 +73,12 @@ export default function CompanyProfilePage() {
     );
   }
   
+  const handleDirectMessage = () => {
+    if (!provider) return;
+    const conversationId = sendMessage(provider.id, '', true);
+    router.push(`/messages/${conversationId}`);
+  };
+
   const isProductProvider = provider.profileSetupData?.offerType === 'product';
 
   const paymentCommitmentDates = transactions
@@ -346,7 +352,7 @@ export default function CompanyProfilePage() {
             </div>
           </div>
           
-          <div className="flex justify-around text-center text-xs text-muted-foreground -mt-2">
+          <div className="relative flex justify-around text-center text-xs text-muted-foreground -mt-2">
             <div className="flex-1">
                   <p className="font-semibold text-foreground">{isProductProvider ? providerProducts.length : profileData.publications}</p>
                   <p>{isProductProvider ? 'Productos' : 'Publicaciones'}</p>
@@ -357,6 +363,9 @@ export default function CompanyProfilePage() {
                   <p>Trab. Realizados</p>
               </div>
              )}
+             <Button variant="ghost" size="icon" className="absolute -top-3 right-0" onClick={handleDirectMessage}>
+                <MessageCircle className="h-5 w-5 text-muted-foreground" />
+             </Button>
           </div>
 
           {/* Main Content Card */}

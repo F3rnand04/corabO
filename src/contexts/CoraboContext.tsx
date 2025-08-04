@@ -54,7 +54,7 @@ interface CoraboState {
   activateTransactions: (userId: string, creditLimit: number) => void;
   deactivateTransactions: (userId: string) => void;
   downloadTransactionsPDF: () => void;
-  sendMessage: (conversationId: string, text: string) => void;
+  sendMessage: (recipientId: string, text: string, createOnly?: boolean) => string;
   createAppointmentRequest: (request: AppointmentRequest) => void;
 }
 
@@ -447,7 +447,24 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
      toast({ title: "Descarga Iniciada", description: "Tu reporte de transacciones se está descargando." });
   }
 
-  const sendMessage = (conversationId: string, text: string) => {
+  const sendMessage = (recipientId: string, text: string, createOnly: boolean = false): string => {
+    let conversation = conversations.find(c => 
+        c.participantIds.includes(currentUser.id) && c.participantIds.includes(recipientId)
+    );
+
+    if (!conversation) {
+        conversation = {
+            id: `convo-${Date.now()}`,
+            participantIds: [currentUser.id, recipientId],
+            messages: [],
+        };
+        setConversations(prev => [conversation!, ...prev]);
+    }
+    
+    if (createOnly && !text) {
+      return conversation.id;
+    }
+
     const newMessage: Message = {
         senderId: currentUser.id,
         text,
@@ -456,16 +473,18 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
     setConversations(prevConvos => 
         prevConvos.map(convo => {
-            if (convo.id === conversationId) {
+            if (convo.id === conversation!.id) {
                 return {
                     ...convo,
-                    messages: [...convo.messages, newMessage],
-                    unreadCount: 0, // Reset unread count on send
+                    messages: text ? [...convo.messages, newMessage] : convo.messages,
+                    unreadCount: 0,
                 };
             }
             return convo;
         })
     );
+    
+    return conversation.id;
   };
   
   const createAppointmentRequest = (request: AppointmentRequest) => {
