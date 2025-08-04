@@ -32,7 +32,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { TransactionList } from "@/components/TransactionList";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import type { DayPicker, DayProps } from 'react-day-picker';
+import { DayPicker, type DayProps } from 'react-day-picker';
 import { cn } from "@/lib/utils";
 
 
@@ -296,7 +296,14 @@ export default function TransactionsPage() {
         );
         if (eventOnDay) {
             const tx = transactions.find(t => t.id === eventOnDay.transactionId);
-            if (tx) setSelectedTransaction(tx);
+            if(tx){
+              if (eventOnDay.type === 'payment') {
+                  setView('commitments');
+              } else {
+                  setView('pending');
+              }
+              setSelectedTransaction(tx);
+            }
         }
     };
 
