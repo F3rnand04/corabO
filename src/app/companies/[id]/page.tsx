@@ -25,6 +25,7 @@ import { BusinessHoursStatus } from '@/components/BusinessHoursStatus';
 import { ProductGridCard } from '@/components/ProductGridCard';
 import { Badge } from '@/components/ui/badge';
 import { ProductDetailsDialog } from '@/components/ProductDetailsDialog';
+import Link from 'next/link';
 
 export default function CompanyProfilePage() {
   const params = useParams();
