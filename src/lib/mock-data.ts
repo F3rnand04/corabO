@@ -22,6 +22,7 @@ export const users: User[] = [
     },
     profileSetupData: {
       providerType: 'company',
+      offerType: 'product',
       hasPhysicalLocation: true,
       showExactLocation: true,
       schedule: {
@@ -83,6 +84,7 @@ export const users: User[] = [
     phoneValidated: false,
     profileSetupData: {
       providerType: 'professional',
+      offerType: 'service',
       hasPhysicalLocation: true,
       showExactLocation: false,
       schedule: {
