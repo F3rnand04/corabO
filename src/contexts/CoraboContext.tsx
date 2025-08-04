@@ -38,7 +38,7 @@ interface CoraboState {
   sendQuote: (transactionId: string, quote: { breakdown: string; total: number }) => void;
   acceptQuote: (transactionId: string) => void;
   startDispute: (transactionId: string) => void;
-  checkout: (withDelivery: boolean) => void;
+  checkout: (transactionId: string, withDelivery: boolean) => void;
   setSearchQuery: (query: string) => void;
   addContact: (user: User) => void;
   removeContact: (userId: string) => void;
@@ -105,9 +105,21 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const addToCart = (product: Product, quantity: number) => {
-    let cartTx = findOrCreateCartTransaction();
-
     setCart((prevCart) => {
+      const isFirstItem = prevCart.length === 0;
+      let cartTx = findOrCreateCartTransaction();
+      
+      if (isFirstItem) {
+          cartTx.providerId = product.providerId;
+      } else if (cartTx.providerId !== product.providerId) {
+          toast({
+              variant: "destructive",
+              title: "Carrito Multi-empresa",
+              description: "No puedes añadir productos de diferentes empresas en el mismo carrito. Finaliza esta compra primero."
+          });
+          return prevCart;
+      }
+
       const existingItem = prevCart.find((item) => item.product.id === product.id);
       let newCart;
       if (existingItem) {
@@ -123,11 +135,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         details: { ...tx.details, items: newCart },
         amount: newCart.reduce((sum, item) => sum + item.product.price * item.quantity, 0),
       }));
-
+      
+      toast({ title: "Producto añadido", description: `${product.name} fue añadido al carrito.` });
       return newCart;
     });
 
-    toast({ title: "Producto añadido", description: `${product.name} fue añadido al carrito.` });
   };
   
   const updateCartQuantity = (productId: string, quantity: number) => {
@@ -141,6 +153,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         updateTransaction(cartTx.id, tx => ({
             details: { ...tx.details, items: newCart },
             amount: newCart.reduce((sum, item) => sum + item.product.price * item.quantity, 0),
+             // Reset provider if cart is empty
+            providerId: newCart.length > 0 ? tx.providerId : '',
         }))
 
         return newCart;
@@ -160,11 +174,13 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const checkout = (withDelivery: boolean) => {
-    const cartTx = transactions.find(tx => tx.clientId === currentUser.id && tx.status === 'Carrito Activo');
+  const checkout = (transactionId: string, withDelivery: boolean) => {
+    const cartTx = transactions.find(tx => tx.id === transactionId);
     if (!cartTx) return;
     
-    const deliveryCost = withDelivery ? Math.round(Math.random() * 10 + 5) * 1.5 : 0;
+    // Simulate distance and cost
+    const distanceInKm = Math.floor(Math.random() * 20) + 1; // 1 to 20 km
+    const deliveryCost = withDelivery ? distanceInKm * 1.5 : 0;
     const finalAmount = cartTx.amount + deliveryCost;
 
     updateTransaction(cartTx.id, {

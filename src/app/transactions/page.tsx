@@ -7,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { Home, Settings, Wallet, ShoppingCart, TrendingUp, Circle, Calendar, Bell, PieChart, Eye, EyeOff, Info, FileText, Banknote, ShieldAlert, Power, LogOut, Star, Plus, Minus, X } from "lucide-react";
+import { Home, Settings, Wallet, ShoppingCart, TrendingUp, Circle, Calendar, Bell, PieChart, Eye, EyeOff, Info, FileText, Banknote, ShieldAlert, Power, LogOut, Star, Plus, Minus, X, Truck } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Link from 'next/link';
 import TransactionsLineChart from "@/components/charts/TransactionsLineChart";
 import TransactionsPieChart from "@/components/charts/TransactionsPieChart";
 import { TransactionDetailsDialog } from "@/components/TransactionDetailsDialog";
@@ -28,13 +29,21 @@ import { SubscriptionDialog } from "@/components/SubscriptionDialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 
 function TransactionsHeader() {
     const router = useRouter();
-    const { currentUser, deactivateTransactions, downloadTransactionsPDF, cart, updateCartQuantity, getCartTotal } = useCorabo();
+    const { currentUser, users, deactivateTransactions, downloadTransactionsPDF, cart, updateCartQuantity, getCartTotal, checkout } = useCorabo();
     const isModuleActive = currentUser.isTransactionsActive ?? false;
     const [isDeactivationAlertOpen, setIsDeactivationAlertOpen] = useState(false);
+    const [isCheckoutAlertOpen, setIsCheckoutAlertOpen] = useState(false);
+    const [includeDelivery, setIncludeDelivery] = useState(false);
+    
+    const cartTransaction = cart.length > 0 ? currentUser.transactions?.find(tx => tx.status === 'Carrito Activo') : undefined;
+    const provider = users.find(u => u.id === cartTransaction?.providerId);
+    const isDeliveryOnly = provider?.profileSetupData?.isOnlyDelivery || false;
     
     const totalCartItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -46,6 +55,17 @@ function TransactionsHeader() {
     const navigateToSettings = () => {
         router.push('/transactions/settings');
     }
+
+    const handleCheckout = () => {
+      if (cartTransaction) {
+          checkout(cartTransaction.id, includeDelivery || isDeliveryOnly);
+          setIsCheckoutAlertOpen(false);
+      }
+    };
+    
+    // Simulate distance cost
+    const deliveryCost = 15; // Example cost
+
 
     return (
         <header className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
@@ -59,6 +79,7 @@ function TransactionsHeader() {
                         <h1 className="text-lg font-semibold">Registro de Transacciones</h1>
                     </div>
                     <div className="flex items-center">
+                       <AlertDialog open={isCheckoutAlertOpen} onOpenChange={setIsCheckoutAlertOpen}>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button variant="ghost" size="icon" className="relative">
@@ -81,10 +102,10 @@ function TransactionsHeader() {
                                     <div className="grid gap-2 max-h-64 overflow-y-auto">
                                     {cart.map(item => (
                                         <div key={item.product.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-2">
-                                            <div>
-                                            <p className="font-medium text-sm truncate">{item.product.name}</p>
-                                            <p className="text-xs text-muted-foreground">${item.product.price.toFixed(2)}</p>
-                                            </div>
+                                            <Link href={`/companies/${item.product.providerId}`} className="cursor-pointer hover:underline">
+                                                <p className="font-medium text-sm truncate">{item.product.name}</p>
+                                                <p className="text-xs text-muted-foreground">${item.product.price.toFixed(2)}</p>
+                                            </Link>
                                             <div className="flex items-center gap-1 border rounded-md">
                                             <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateCartQuantity(item.product.id, item.quantity - 1)}>
                                                 <Minus className="h-3 w-3" />
@@ -105,7 +126,9 @@ function TransactionsHeader() {
                                         <span>Total:</span>
                                         <span>${getCartTotal().toFixed(2)}</span>
                                     </div>
-                                    <Button className="w-full">Ver Pre-factura</Button>
+                                    <AlertDialogTrigger asChild>
+                                      <Button className="w-full">Ver Pre-factura</Button>
+                                    </AlertDialogTrigger>
                                     </>
                                     ) : (
                                     <p className="text-sm text-center text-muted-foreground py-4">Tu carrito está vacío.</p>
@@ -113,6 +136,47 @@ function TransactionsHeader() {
                                 </div>
                             </PopoverContent>
                         </Popover>
+                         <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Confirmar Compra</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Revisa tu pedido. Puedes incluir el costo de envío si el proveedor lo ofrece.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <div className="py-4 space-y-4">
+                               <div className="flex justify-between text-sm">
+                                   <span>Subtotal:</span>
+                                   <span className="font-semibold">${getCartTotal().toFixed(2)}</span>
+                               </div>
+                                <div className="flex items-center justify-between">
+                                    <Label htmlFor="delivery-switch" className="flex items-center gap-2">
+                                        <Truck className="h-4 w-4" />
+                                        Incluir Delivery
+                                    </Label>
+                                    <Switch
+                                        id="delivery-switch"
+                                        checked={includeDelivery || isDeliveryOnly}
+                                        onCheckedChange={setIncludeDelivery}
+                                        disabled={isDeliveryOnly}
+                                    />
+                                </div>
+                                {isDeliveryOnly && <p className="text-xs text-muted-foreground -mt-2">Este proveedor solo trabaja con delivery.</p>}
+                                <div className="flex justify-between text-sm">
+                                   <span>Costo de envío (aprox):</span>
+                                   <span className="font-semibold">${(includeDelivery || isDeliveryOnly) ? deliveryCost.toFixed(2) : '0.00'}</span>
+                               </div>
+                               <Separator />
+                               <div className="flex justify-between text-lg font-bold">
+                                   <span>Total a Pagar:</span>
+                                   <span>${((includeDelivery || isDeliveryOnly) ? getCartTotal() + deliveryCost : getCartTotal()).toFixed(2)}</span>
+                               </div>
+                            </div>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleCheckout}>Pagar Ahora</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                       </AlertDialog>
                         
                         {isModuleActive ? (
                             <AlertDialog open={isDeactivationAlertOpen} onOpenChange={setIsDeactivationAlertOpen}>
@@ -204,8 +268,8 @@ export default function TransactionsPage() {
     const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
 
 
-    const pendingCount = transactions.filter(t => t.status === 'Solicitud Pendiente').length;
-    const paymentCommitmentsCount = transactions.filter(t => t.status === 'Acuerdo Aceptado - Pendiente de Ejecución').length;
+    const pendingCount = transactions.filter(t => t.providerId === currentUser.id && t.status === 'Solicitud Pendiente').length;
+    const paymentCommitmentsCount = transactions.filter(t => (t.providerId === currentUser.id || t.clientId === currentUser.id) && t.status === 'Acuerdo Aceptado - Pendiente de Ejecución').length;
     
     const paymentCommitmentDates = transactions
     .filter((tx: Transaction) => (tx.providerId === currentUser.id || tx.clientId === currentUser.id) && tx.status === 'Acuerdo Aceptado - Pendiente de Ejecución')
