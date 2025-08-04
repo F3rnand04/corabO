@@ -7,14 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { Home, Settings, Wallet, ShoppingCart, TrendingUp, Circle, Calendar, Bell, PieChart, Eye, EyeOff, Info, FileText, Banknote, ShieldAlert, Power, LogOut, Star, Plus, Minus, X, Truck, ListChecks, History, CalendarClock } from "lucide-react";
+import { Home, Settings, Wallet, ShoppingCart, TrendingUp, PieChart, Eye, EyeOff, Calendar, Info, FileText, Banknote, ShieldAlert, LogOut, Star, Plus, Minus, X, Truck, ListChecks, History, CalendarClock, ChevronLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from 'next/link';
 import TransactionsLineChart from "@/components/charts/TransactionsLineChart";
 import TransactionsPieChart from "@/components/charts/TransactionsPieChart";
 import { TransactionDetailsDialog } from "@/components/TransactionDetailsDialog";
 import type { Transaction } from "@/lib/types";
-import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
@@ -31,9 +30,10 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { TransactionList } from "@/components/TransactionList";
 
 
-function TransactionsHeader() {
+function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary: () => void, currentView: string }) {
     const router = useRouter();
     const { currentUser, users, deactivateTransactions, downloadTransactionsPDF, cart, updateCartQuantity, getCartTotal, checkout, getDeliveryCost } = useCorabo();
     const isModuleActive = currentUser.isTransactionsActive ?? false;
@@ -75,8 +75,8 @@ function TransactionsHeader() {
         <header className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
             <div className="container px-4 sm:px-6">
                 <div className="flex h-16 items-center justify-between">
-                    <Button variant="ghost" size="icon" onClick={() => router.push('/')}>
-                        <Home className="h-6 w-6" />
+                    <Button variant="ghost" size="icon" onClick={() => currentView !== 'summary' ? onBackToSummary() : router.push('/')}>
+                        {currentView !== 'summary' ? <ChevronLeft className="h-6 w-6" /> : <Home className="h-6 w-6" />}
                     </Button>
                     <div className="flex items-center gap-2">
                         <Wallet className="h-6 w-6 text-muted-foreground" />
@@ -281,10 +281,12 @@ export default function TransactionsPage() {
     const [showSensitiveData, setShowSensitiveData] = useState(true);
     const { toast } = useToast();
     const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
+    const [view, setView] = useState<'summary' | 'pending' | 'history' | 'commitments'>('summary');
 
 
-    const pendingCount = transactions.filter(t => t.providerId === currentUser.id && t.status === 'Solicitud Pendiente').length;
-    const paymentCommitmentsCount = transactions.filter(t => (t.providerId === currentUser.id || t.clientId === currentUser.id) && t.status === 'Acuerdo Aceptado - Pendiente de Ejecución').length;
+    const pendingTx = transactions.filter(t => t.providerId === currentUser.id && t.status === 'Solicitud Pendiente');
+    const historyTx = transactions.filter(t => (t.providerId === currentUser.id || t.clientId === currentUser.id) && (t.status === 'Pagado' || t.status === 'Resuelto'));
+    const commitmentTx = transactions.filter(t => (t.providerId === currentUser.id || t.clientId === currentUser.id) && t.status === 'Acuerdo Aceptado - Pendiente de Ejecución');
     
     const paymentCommitmentDates = transactions
     .filter((tx: Transaction) => (tx.providerId === currentUser.id || tx.clientId === currentUser.id) && tx.status === 'Acuerdo Aceptado - Pendiente de Ejecución')
@@ -307,13 +309,18 @@ export default function TransactionsPage() {
     const navigateToSettings = () => {
         router.push('/transactions/settings');
     }
-    
-    return (
-        <div className="bg-muted/20 min-h-screen">
-            <TransactionsHeader />
-            
-            <main className="container py-6" onClick={handleInactiveClick}>
-                 {isModuleActive ? (
+
+    const renderContent = () => {
+        switch (view) {
+            case 'pending':
+                return <TransactionList title="Lista de Pendientes" transactions={pendingTx} onTransactionClick={handleTransactionClick} />;
+            case 'history':
+                return <TransactionList title="Historial de Transacciones" transactions={historyTx} onTransactionClick={handleTransactionClick} />;
+            case 'commitments':
+                return <TransactionList title="Compromisos de Pago" transactions={commitmentTx} onTransactionClick={handleTransactionClick} />;
+            case 'summary':
+            default:
+                return (
                     <div className="space-y-6">
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -390,29 +397,20 @@ export default function TransactionsPage() {
                                     <ActionButton 
                                         icon={ListChecks} 
                                         label="Lista de Pendientes"
-                                        count={pendingCount}
-                                        onClick={() => {
-                                            const tx = transactions.find(t => t.status === 'Solicitud Pendiente');
-                                            if(tx) handleTransactionClick(tx);
-                                        }}
+                                        count={pendingTx.length}
+                                        onClick={() => setView('pending')}
                                     />
                                     <ActionButton 
                                         icon={History} 
                                         label="Transacciones"
                                         count={0}
-                                        onClick={() => {
-                                            const tx = transactions.find(t => t.status === 'Pagado');
-                                            if(tx) handleTransactionClick(tx);
-                                        }}
+                                        onClick={() => setView('history')}
                                     />
                                     <ActionButton 
                                         icon={CalendarClock} 
                                         label="Compromisos de Pagos"
-                                        count={paymentCommitmentsCount}
-                                        onClick={() => {
-                                            const tx = transactions.find(t => t.status === 'Acuerdo Aceptado - Pendiente de Ejecución');
-                                            if(tx) handleTransactionClick(tx);
-                                        }}
+                                        count={commitmentTx.length}
+                                        onClick={() => setView('commitments')}
                                     />
                                 </div>
                             </CardContent>
@@ -428,7 +426,16 @@ export default function TransactionsPage() {
                             </CardContent>
                         </Card>
                     </div>
-                ) : (
+                )
+        }
+    }
+    
+    return (
+        <div className="bg-muted/20 min-h-screen">
+            <TransactionsHeader onBackToSummary={() => setView('summary')} currentView={view} />
+            
+            <main className="container py-6" onClick={handleInactiveClick}>
+                 {isModuleActive ? renderContent() : (
                     <div className="text-center py-20 cursor-pointer">
                         <Wallet className="mx-auto h-16 w-16 text-muted-foreground" />
                         <h2 className="mt-4 text-2xl font-semibold">Módulo Desactivado</h2>
@@ -451,12 +458,3 @@ export default function TransactionsPage() {
         </div>
     );
 }
-
-    
-
-    
-
-
-
-
-    

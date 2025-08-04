@@ -347,6 +347,32 @@ export const initialTransactions: Transaction[] = [
       system: 'Recarga de saldo a través de la plataforma.',
     },
   },
+  {
+    id: 'txn4',
+    type: 'Servicio',
+    status: 'Solicitud Pendiente',
+    date: new Date().toISOString(),
+    amount: 0,
+    clientId: 'client1',
+    providerId: 'provider3',
+    details: {
+        serviceName: 'Diseño de Logo para App',
+        quoteItems: ['Logo', 'Branding'],
+    },
+  },
+  {
+    id: 'txn5',
+    type: 'Compra',
+    status: 'Acuerdo Aceptado - Pendiente de Ejecución',
+    date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
+    amount: 1200,
+    clientId: 'client1',
+    providerId: 'provider1',
+    details: {
+        items: [{ product: products[0], quantity: 1 }],
+        paymentMethod: 'credicora',
+    },
+  },
 ];
 
 export const initialConversations: Conversation[] = [
