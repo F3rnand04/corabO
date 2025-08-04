@@ -389,23 +389,22 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const toggleGps = (userId: string) => {
-    updateUser(userId, user => ({ isGpsActive: !user.isGpsActive }));
-    
-    if (userId === currentUser.id) {
-        const user = users.find(u => u.id === userId);
-        if (user) {
-            if (!user.isGpsActive) {
-                toast({
-                    title: "GPS Activado",
-                    description: "Ahora eres visible según la ubicación de tu perfil.",
-                });
-            } else {
-                toast({
-                    title: "GPS Desactivado",
-                    description: "Has dejado de ser visible para otros usuarios.",
-                });
-            }
-        }
+    const user = users.find(u => u.id === userId);
+    if(user){
+      updateUser(userId, { isGpsActive: !user.isGpsActive });
+      if (userId === currentUser.id) {
+          if (!user.isGpsActive) {
+              toast({
+                  title: "GPS Activado",
+                  description: "Ahora eres visible según la ubicación de tu perfil.",
+              });
+          } else {
+              toast({
+                  title: "GPS Desactivado",
+                  description: "Has dejado de ser visible para otros usuarios.",
+              });
+          }
+      }
     }
   };
 
@@ -417,6 +416,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     updateUser(userId, (user) => ({
         gallery: [{...newGalleryImage, id: newGalleryImage.src}, ...(user.gallery || [])]
     }));
+     toast({
+      title: "¡Publicación Exitosa!",
+      description: "Tu nueva imagen ya está en tu vitrina y tu perfil ha sido actualizado.",
+    });
   };
   
   const removeGalleryImage = (userId: string, imageId: string) => {
@@ -451,6 +454,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       }
     }));
     setFeedView(newType);
+    toast({
+      title: "¡Perfil Actualizado!",
+      description: "Recuerda que datos como tu nombre de usuario y tipo de perfil solo pueden cambiarse dos veces al año para mantener la confianza en la comunidad."
+    });
   }
 
   const subscribeUser = (userId: string) => {
@@ -464,6 +471,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const activateTransactions = (userId: string, creditLimit: number) => {
     updateUser(userId, { isTransactionsActive: true, credicoraLimit: creditLimit });
     router.push('/transactions');
+     toast({
+        title: "¡Módulo de Transacciones Activado!",
+        description: "Ya puedes empezar a gestionar tus finanzas.",
+        className: "bg-green-100 border-green-300 text-green-800",
+    });
   }
   
   const deactivateTransactions = (userId: string) => {
@@ -659,3 +671,5 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
+
+    
