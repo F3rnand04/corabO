@@ -31,6 +31,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { TransactionList } from "@/components/TransactionList";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 
 function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary: () => void, currentView: string }) {
@@ -273,7 +274,7 @@ const ActionButton = ({ icon: Icon, label, count, onClick }: { icon: React.Eleme
 
 
 export default function TransactionsPage() {
-    const { transactions, currentUser } = useCorabo();
+    const { transactions, currentUser, getAgendaEvents } = useCorabo();
     const router = useRouter();
     const isModuleActive = currentUser.isTransactionsActive ?? false;
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
@@ -284,6 +285,18 @@ export default function TransactionsPage() {
     const [view, setView] = useState<'summary' | 'pending' | 'history' | 'commitments'>('summary');
 
     const isProvider = currentUser.type === 'provider';
+    
+    const agendaEvents = getAgendaEvents();
+    
+    const onDayDoubleClick = (day: Date) => {
+        const eventOnDay = agendaEvents.find(
+            e => new Date(e.date).toDateString() === day.toDateString()
+        );
+        if (eventOnDay) {
+            setView(eventOnDay.type === 'payment' ? 'commitments' : 'pending');
+        }
+    };
+
 
     const pendingTx = transactions.filter(t => 
         isProvider ? 
@@ -295,9 +308,9 @@ export default function TransactionsPage() {
     const commitmentTx = transactions.filter(t => (t.providerId === currentUser.id || t.clientId === currentUser.id) && 
         (t.status === 'Acuerdo Aceptado - Pendiente de Ejecución'));
     
-    const paymentCommitmentDates = transactions
-    .filter((tx: Transaction) => (tx.providerId === currentUser.id || tx.clientId === currentUser.id) && tx.status === 'Acuerdo Aceptado - Pendiente de Ejecución')
-    .map((tx: Transaction) => new Date(tx.date));
+    const paymentCommitmentDates = agendaEvents.filter(e => e.type === 'payment').map(e => e.date);
+    const taskDates = agendaEvents.filter(e => e.type === 'task').map(e => e.date);
+
 
     const handleTransactionClick = (transaction: Transaction) => {
         setSelectedTransaction(transaction);
@@ -376,19 +389,45 @@ export default function TransactionsPage() {
                                                 </Button>
                                             </PopoverTrigger>
                                             <PopoverContent className="w-auto p-0">
-                                                <CalendarComponent
-                                                mode="multiple"
-                                                selected={paymentCommitmentDates}
-                                                modifiers={{ paymentCommitment: paymentCommitmentDates }}
-                                                modifiersClassNames={{
-                                                    paymentCommitment: 'bg-yellow-200 text-yellow-900 rounded-full',
-                                                }}
-                                                disabled={(date) => date < new Date("1900-01-01")}
-                                                initialFocus
-                                                />
-                                                <div className="p-2 border-t text-center text-xs text-muted-foreground">
-                                                    Días con compromisos de pago resaltados.
-                                                </div>
+                                                <TooltipProvider>
+                                                    <CalendarComponent
+                                                        mode="multiple"
+                                                        onDayDoubleClick={onDayDoubleClick}
+                                                        modifiers={{
+                                                            paymentCommitment: paymentCommitmentDates,
+                                                            task: taskDates,
+                                                        }}
+                                                        modifiersClassNames={{
+                                                            paymentCommitment: 'bg-yellow-200 text-yellow-900 rounded-full',
+                                                            task: 'bg-blue-200 text-blue-900 rounded-full'
+                                                        }}
+                                                        disabled={(date) => date < new Date("1900-01-01")}
+                                                        initialFocus
+                                                        components={{
+                                                            DayContent: (props) => {
+                                                                const event = agendaEvents.find(e => new Date(e.date).toDateString() === props.date.toDateString());
+                                                                if (event) {
+                                                                    return (
+                                                                        <Tooltip>
+                                                                            <TooltipTrigger asChild>
+                                                                                <div className="relative flex items-center justify-center h-full w-full">
+                                                                                    {props.children}
+                                                                                </div>
+                                                                            </TooltipTrigger>
+                                                                            <TooltipContent>
+                                                                                <p>{event.description}</p>
+                                                                            </TooltipContent>
+                                                                        </Tooltip>
+                                                                    );
+                                                                }
+                                                                return <div className="relative flex items-center justify-center h-full w-full">{props.children}</div>;
+                                                            }
+                                                        }}
+                                                    />
+                                                </TooltipProvider>
+                                                 <div className="p-2 border-t text-center text-xs text-muted-foreground">
+                                                     Doble clic en un día para ver detalles.
+                                                 </div>
                                             </PopoverContent>
                                         </Popover>
                                     </div>

@@ -60,6 +60,7 @@ interface CoraboState {
   downloadTransactionsPDF: () => void;
   sendMessage: (recipientId: string, text: string, createOnly?: boolean) => string;
   createAppointmentRequest: (request: AppointmentRequest) => void;
+  getAgendaEvents: () => { date: Date; type: 'payment' | 'task'; description: string }[];
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -579,6 +580,24 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     })
   }
 
+  const getAgendaEvents = () => {
+    const events: { date: Date, type: 'payment' | 'task', description: string }[] = [];
+    transactions.forEach(tx => {
+        if (tx.status === 'Acuerdo Aceptado - Pendiente de Ejecución') {
+             const description = tx.type === 'Sistema' 
+                ? tx.details.system || 'Compromiso de Pago'
+                : tx.details.serviceName || tx.details.items?.map(i => i.product.name).join(', ') || 'Tarea Pendiente';
+
+            events.push({
+                date: new Date(tx.date),
+                type: tx.type === 'Sistema' ? 'payment' : 'task',
+                description: `${tx.type === 'Sistema' ? 'Pago' : 'Entrega'}: ${description}`
+            });
+        }
+    });
+    return events;
+  };
+
 
   const value = {
     currentUser,
@@ -623,6 +642,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     downloadTransactionsPDF,
     sendMessage,
     createAppointmentRequest,
+    getAgendaEvents,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;
