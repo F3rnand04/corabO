@@ -69,7 +69,7 @@ export default function TransactionsLineChart({ transactions }: TransactionsLine
   }
 
   return (
-    <div className="w-full h-[300px]">
+    <div className="w-full h-[250px]">
         <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
             <LineChart accessibilityLayer data={chartData} margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
                 <CartesianGrid vertical={false} />
@@ -103,3 +103,5 @@ export default function TransactionsLineChart({ transactions }: TransactionsLine
     </div>
   )
 }
+
+    

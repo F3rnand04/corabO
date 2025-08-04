@@ -53,7 +53,7 @@ export default function TransactionsPieChart({ transactions }: TransactionsPieCh
   }
 
   return (
-    <div className="w-full h-[300px]">
+    <div className="w-full h-[250px]">
         <ChartContainer config={chartConfig} className="min-h-[200px] w-full">
             <PieChart>
                 <Tooltip 
@@ -81,3 +81,5 @@ export default function TransactionsPieChart({ transactions }: TransactionsPieCh
     </div>
   )
 }
+
+    
