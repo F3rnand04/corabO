@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
@@ -185,9 +186,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const generatePaymentCommitments = (originalTx: Transaction) => {
-      const remainingAmount = originalTx.amount - (originalTx.details.initialPayment || 0);
+      if (!originalTx.details.initialPayment) return;
+      const remainingAmount = originalTx.amount - originalTx.details.initialPayment;
       const isShortTerm = originalTx.amount < 15;
-      const numberOfInstallments = isShortTerm ? 2 : 3;
+      const numberOfInstallments = isShortTerm ? 1 : 3;
       const installmentAmount = remainingAmount / numberOfInstallments;
       
       const commitments: Transaction[] = [];
@@ -221,22 +223,27 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const paymentMethod = useCredicora ? 'credicora' : 'direct';
     const initialPayment = useCredicora ? finalAmount * 0.25 : finalAmount;
 
-    updateTransaction(cartTx.id, {
-        status: 'Acuerdo Aceptado - Pendiente de Ejecución',
-        amount: finalAmount,
-        details: { 
-            ...cartTx.details, 
-            delivery: withDelivery, 
-            deliveryCost,
-            paymentMethod,
-            initialPayment,
-        },
-        date: new Date().toISOString(),
-    });
+    updateTransaction(cartTx.id, (tx) => {
+        const updatedTx = {
+            ...tx,
+            status: 'Acuerdo Aceptado - Pendiente de Ejecución',
+            amount: finalAmount,
+            details: { 
+                ...tx.details, 
+                delivery: withDelivery, 
+                deliveryCost,
+                paymentMethod,
+                initialPayment,
+            },
+            date: new Date().toISOString(),
+        };
 
-    if (useCredicora) {
-        generatePaymentCommitments(transactions.find(tx => tx.id === transactionId)!);
-    }
+        if (useCredicora) {
+            generatePaymentCommitments(updatedTx);
+        }
+
+        return updatedTx;
+    });
 
     setCart([]);
     toast({ title: "Acuerdo de Pago Creado", description: "El compromiso de pago ha sido registrado. Puedes verlo en tu sección de transacciones." });
@@ -346,6 +353,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       status: 'Pagado',
       date: new Date().toISOString(),
     });
+    router.push('/transactions');
     toast({ title: "¡Pago Realizado!", description: "El pago ha sido registrado exitosamente." });
   };
 
@@ -410,20 +418,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const updateUserProfileImage = (userId: string, imageUrl: string) => {
     updateUser(userId, { profileImage: imageUrl });
-    toast({
-        title: "¡Foto de Perfil Actualizada!",
-        description: "Tu nueva foto de perfil está visible.",
-    });
   };
   
   const updateUserProfileAndGallery = (userId: string, newGalleryImage: GalleryImage) => {
     updateUser(userId, (user) => ({
         gallery: [{...newGalleryImage, id: newGalleryImage.src}, ...(user.gallery || [])]
     }));
-     toast({
-      title: "¡Publicación Exitosa!",
-      description: "Tu nueva imagen ya está en tu vitrina y tu perfil ha sido actualizado.",
-    });
   };
   
   const removeGalleryImage = (userId: string, imageId: string) => {
@@ -474,12 +474,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const activateTransactions = (userId: string, creditLimit: number) => {
     updateUser(userId, { isTransactionsActive: true, credicoraLimit: creditLimit });
+    router.push('/transactions');
     toast({
         title: "¡Módulo de Transacciones Activado!",
         description: "Ya puedes empezar a gestionar tus finanzas.",
         className: "bg-green-100 border-green-300 text-green-800",
     });
-    router.push('/transactions');
   }
   
   const deactivateTransactions = (userId: string) => {

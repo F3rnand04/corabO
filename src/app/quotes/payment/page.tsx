@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -62,12 +63,6 @@ export default function QuotePaymentPage() {
 
         if (commitmentId) {
             payCommitment(commitmentId);
-            toast({
-                title: "¡Pago Registrado!",
-                description: `Tu pago de $${amount.toFixed(2)} ha sido registrado y está en proceso de verificación.`,
-                className: "bg-green-100 border-green-300 text-green-800",
-            });
-            router.push('/transactions');
         } else {
             toast({
                 title: "¡Pago Confirmado!",
