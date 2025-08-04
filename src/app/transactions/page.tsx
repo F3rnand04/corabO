@@ -26,13 +26,13 @@ import {
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { SubscriptionDialog } from "@/components/SubscriptionDialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarComponent, CalendarProps } from "@/components/ui/calendar";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { TransactionList } from "@/components/TransactionList";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { DayPicker, DayContent } from 'react-day-picker';
+import type { DayPicker, DayProps } from 'react-day-picker';
 import { cn } from "@/lib/utils";
 
 
@@ -295,7 +295,8 @@ export default function TransactionsPage() {
             e => new Date(e.date).toDateString() === day.toDateString()
         );
         if (eventOnDay) {
-            setView(eventOnDay.type === 'payment' ? 'commitments' : 'pending');
+            const tx = transactions.find(t => t.id === eventOnDay.transactionId);
+            if (tx) setSelectedTransaction(tx);
         }
     };
 
@@ -308,10 +309,10 @@ export default function TransactionsPage() {
     const historyTx = transactions.filter(t => (t.providerId === currentUser.id || t.clientId === currentUser.id) && (t.status === 'Pagado' || t.status === 'Resuelto'));
     
     const commitmentTx = transactions.filter(t => (t.providerId === currentUser.id || t.clientId === currentUser.id) && 
-        (t.status === 'Acuerdo Aceptado - Pendiente de Ejecución'));
+        (t.status === 'Acuerdo Aceptado - Pendiente de Ejecución' || t.status === 'Finalizado - Pendiente de Pago'));
     
-    const paymentCommitmentDates = agendaEvents.filter(e => e.type === 'payment').map(e => e.date);
-    const taskDates = agendaEvents.filter(e => e.type === 'task').map(e => e.date);
+    const paymentCommitmentDates = agendaEvents.filter(e => e.type === 'payment').map(e => new Date(e.date));
+    const taskDates = agendaEvents.filter(e => e.type === 'task').map(e => new Date(e.date));
 
 
     const handleTransactionClick = (transaction: Transaction) => {
@@ -399,7 +400,7 @@ export default function TransactionsPage() {
                                                         disabled={(date) => date < new Date("1900-01-01")}
                                                         initialFocus
                                                         components={{
-                                                            Day: (props: CalendarProps) => {
+                                                            Day: (props: DayProps) => {
                                                                 const eventOnDay = agendaEvents.find(
                                                                     (e) => new Date(e.date).toDateString() === props.date.toDateString()
                                                                 );
@@ -408,7 +409,7 @@ export default function TransactionsPage() {
                                                                     <Tooltip>
                                                                         <TooltipTrigger asChild>
                                                                             <div className="relative w-full h-full flex items-center justify-center">
-                                                                                <DayContent {...props} />
+                                                                                <DayPicker.Day {...props} />
                                                                                 {eventOnDay && (
                                                                                     <div className={cn(
                                                                                         "absolute bottom-1 left-1/2 -translate-x-1/2 h-1.5 w-1.5 rounded-full",

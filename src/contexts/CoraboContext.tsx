@@ -60,7 +60,7 @@ interface CoraboState {
   downloadTransactionsPDF: () => void;
   sendMessage: (recipientId: string, text: string, createOnly?: boolean) => string;
   createAppointmentRequest: (request: AppointmentRequest) => void;
-  getAgendaEvents: () => { date: Date; type: 'payment' | 'task'; description: string }[];
+  getAgendaEvents: () => { date: Date; type: 'payment' | 'task'; description: string, transactionId: string }[];
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -581,17 +581,20 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const getAgendaEvents = () => {
-    const events: { date: Date, type: 'payment' | 'task', description: string }[] = [];
+    const events: { date: Date; type: 'payment' | 'task'; description: string, transactionId: string }[] = [];
     transactions.forEach(tx => {
-        if (tx.status === 'Acuerdo Aceptado - Pendiente de Ejecución') {
-             const description = tx.type === 'Sistema' 
+        if (tx.status === 'Acuerdo Aceptado - Pendiente de Ejecución' || tx.status === 'Finalizado - Pendiente de Pago') {
+             const baseDescription = tx.type === 'Sistema' 
                 ? tx.details.system || 'Compromiso de Pago'
                 : tx.details.serviceName || tx.details.items?.map(i => i.product.name).join(', ') || 'Tarea Pendiente';
+            
+            const isPayment = tx.type === 'Sistema' || tx.status === 'Finalizado - Pendiente de Pago';
 
             events.push({
                 date: new Date(tx.date),
-                type: tx.type === 'Sistema' ? 'payment' : 'task',
-                description: `${tx.type === 'Sistema' ? 'Pago' : 'Entrega'}: ${description}`
+                type: isPayment ? 'payment' : 'task',
+                description: `${isPayment ? 'Por Pagar' : 'Entrega'}: ${baseDescription}`,
+                transactionId: tx.id
             });
         }
     });

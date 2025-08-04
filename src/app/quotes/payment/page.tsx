@@ -19,7 +19,7 @@ export default function QuotePaymentPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { toast } = useToast();
-    const { payCommitment } = useCorabo();
+    const { payCommitment, users, transactions } = useCorabo();
 
     const commitmentId = searchParams.get('commitmentId');
     const commitmentAmount = searchParams.get('amount');
@@ -30,6 +30,9 @@ export default function QuotePaymentPage() {
     const [voucherFile, setVoucherFile] = useState<File | null>(null);
     const [reference, setReference] = useState('');
     const advancedOption = searchParams.get('option');
+
+    const transaction = transactions.find(t => t.id === commitmentId);
+    const provider = users.find(u => u.id === transaction?.providerId);
 
 
     useEffect(() => {
@@ -59,6 +62,11 @@ export default function QuotePaymentPage() {
 
         if (commitmentId) {
             payCommitment(commitmentId);
+            toast({
+                title: "¡Pago Registrado!",
+                description: `Tu pago de $${amount.toFixed(2)} ha sido registrado y está en proceso de verificación.`,
+                className: "bg-green-100 border-green-300 text-green-800",
+            });
             router.push('/transactions');
         } else {
             toast({
@@ -87,7 +95,7 @@ export default function QuotePaymentPage() {
     
     const paymentData = {
         'mobile': { bank: "Banco de Corabo", phone: "0412-1234567", rif: "J-12345678-9", title: "Datos para Pago Móvil" },
-        'transfer': { bank: "Banco de Corabo", account: "0102-0123-4567-8901-2345", rif: "J-12345678-9", holder: "Corabo C.A.", title: "Datos para Transferencia" },
+        'transfer': { bank: "Banco de Corabo", account: "0102-0123-4567-8901-2345", rif: "J-12345678-9", holder: provider?.name || "Corabo C.A.", title: "Datos para Transferencia" },
     }
     
     const selectedData = selectedPaymentMethod ? paymentData[selectedPaymentMethod as keyof typeof paymentData] : null;
