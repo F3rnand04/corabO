@@ -25,6 +25,7 @@ export const users: User[] = [
       offerType: 'product',
       hasPhysicalLocation: true,
       showExactLocation: true,
+      acceptsCredicora: true,
       schedule: {
         'Lunes': { from: '00:00', to: '23:59', active: true },
         'Martes': { from: '00:00', to: '23:59', active: true },
@@ -87,6 +88,7 @@ export const users: User[] = [
       offerType: 'service',
       hasPhysicalLocation: true,
       showExactLocation: false,
+      acceptsCredicora: false,
       schedule: {
         'Lunes': { from: '09:00', to: '17:00', active: true },
         'Martes': { from: '09:00', to: '17:00', active: true },
@@ -152,6 +154,7 @@ export const users: User[] = [
     phoneValidated: true,
     profileSetupData: {
       providerType: 'professional',
+      acceptsCredicora: true,
     },
     gallery: [
       { 

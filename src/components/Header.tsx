@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MapPin, FileText, Menu, Search, LogOut, User, ShoppingCart, Plus, Minus, X, Wallet, Truck } from "lucide-react";
+import { MapPin, FileText, Menu, Search, LogOut, User, ShoppingCart, Plus, Minus, X, Wallet, Truck, Star } from "lucide-react";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -24,27 +24,32 @@ import { Switch } from "./ui/switch";
 import { Label } from "./ui/label";
 
 export function Header() {
-  const { searchQuery, setSearchQuery, feedView, setFeedView, currentUser, users, toggleGps, cart, updateCartQuantity, getCartTotal, checkout } = useCorabo();
+  const { searchQuery, setSearchQuery, feedView, setFeedView, currentUser, users, toggleGps, cart, updateCartQuantity, getCartTotal, checkout, getDeliveryCost } = useCorabo();
   const router = useRouter();
   
   const hasCompletedProfileSetup = !!currentUser?.profileSetupData;
   const totalCartItems = cart.reduce((sum, item) => sum + item.quantity, 0);
   const [isCheckoutAlertOpen, setIsCheckoutAlertOpen] = useState(false);
   const [includeDelivery, setIncludeDelivery] = useState(false);
+  const [useCredicora, setUseCredicora] = useState(false);
 
   const cartTransaction = cart.length > 0 ? currentUser.transactions?.find(tx => tx.status === 'Carrito Activo') : undefined;
   const provider = users.find(u => u.id === cartTransaction?.providerId);
   const isDeliveryOnly = provider?.profileSetupData?.isOnlyDelivery || false;
+  const providerAcceptsCredicora = provider?.profileSetupData?.acceptsCredicora || false;
 
   const handleCheckout = () => {
     if (cartTransaction) {
-        checkout(cartTransaction.id, includeDelivery || isDeliveryOnly);
+        checkout(cartTransaction.id, includeDelivery || isDeliveryOnly, useCredicora);
         setIsCheckoutAlertOpen(false);
+        setUseCredicora(false);
     }
   };
   
-  // Simulate distance cost
-  const deliveryCost = 15; // Example cost
+  const deliveryCost = getDeliveryCost();
+  const subtotal = getCartTotal();
+  const totalAmount = subtotal + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
+  const credicoraInitialPayment = totalAmount * 0.25;
 
 
   return (
@@ -137,13 +142,13 @@ export function Header() {
                   <AlertDialogHeader>
                       <AlertDialogTitle>Confirmar Compra</AlertDialogTitle>
                       <AlertDialogDescription>
-                          Revisa tu pedido. Puedes incluir el costo de envío si el proveedor lo ofrece.
+                         Revisa tu pedido. Puedes incluir el costo de envío y pagar con Credicora si está disponible.
                       </AlertDialogDescription>
                   </AlertDialogHeader>
                   <div className="py-4 space-y-4">
                       <div className="flex justify-between text-sm">
                           <span>Subtotal:</span>
-                          <span className="font-semibold">${getCartTotal().toFixed(2)}</span>
+                          <span className="font-semibold">${subtotal.toFixed(2)}</span>
                       </div>
                       <div className="flex items-center justify-between">
                           <Label htmlFor="delivery-switch-header" className="flex items-center gap-2">
@@ -162,11 +167,29 @@ export function Header() {
                           <span>Costo de envío (aprox):</span>
                           <span className="font-semibold">${(includeDelivery || isDeliveryOnly) ? deliveryCost.toFixed(2) : '0.00'}</span>
                       </div>
+                       {providerAcceptsCredicora && (
+                           <div className="flex items-center justify-between pt-2 border-t mt-2">
+                              <Label htmlFor="credicora-switch-header" className="flex items-center gap-2 text-blue-600 font-semibold">
+                                  <Star className="h-4 w-4 fill-current"/>
+                                  Pagar con Credicora
+                              </Label>
+                              <Switch
+                                  id="credicora-switch-header"
+                                  checked={useCredicora}
+                                  onCheckedChange={setUseCredicora}
+                              />
+                          </div>
+                      )}
                       <Separator />
                       <div className="flex justify-between text-lg font-bold">
-                          <span>Total a Pagar:</span>
-                          <span>${((includeDelivery || isDeliveryOnly) ? getCartTotal() + deliveryCost : getCartTotal()).toFixed(2)}</span>
+                          <span>Total a Pagar{useCredicora && " Hoy"}:</span>
+                           <span>${useCredicora ? credicoraInitialPayment.toFixed(2) : totalAmount.toFixed(2)}</span>
                       </div>
+                      {useCredicora && (
+                          <p className="text-xs text-muted-foreground -mt-2 text-right">
+                              y {totalAmount > 15 ? "3 cuotas" : "1 cuota"} de ${( (totalAmount - credicoraInitialPayment) / (totalAmount > 15 ? 3 : 1) ).toFixed(2)}
+                          </p>
+                      )}
                   </div>
                   <AlertDialogFooter>
                       <AlertDialogCancel>Cancelar</AlertDialogCancel>

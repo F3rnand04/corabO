@@ -35,6 +35,7 @@ export type ProfileSetupData = {
   isOnlyDelivery?: boolean;
   website?: string;
   schedule?: Record<string, { from: string; to: string; active: boolean }>;
+  acceptsCredicora?: boolean;
 };
 
 
@@ -115,6 +116,8 @@ export type Transaction = {
     delivery?: boolean;
     deliveryCost?: number;
     system?: string; // Description for system transactions e.g., 'Recarga de Saldo'
+    paymentMethod?: 'direct' | 'credicora';
+    initialPayment?: number;
   };
 };
 

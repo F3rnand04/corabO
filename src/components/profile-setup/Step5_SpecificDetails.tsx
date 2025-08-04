@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from '../ui/textarea';
-import { MapPin, Building, AlertCircle, Package, Hand } from 'lucide-react';
+import { MapPin, Building, AlertCircle, Package, Hand, Star } from 'lucide-react';
 import { Switch } from '../ui/switch';
 import { Slider } from '../ui/slider';
 import { Badge } from '../ui/badge';
@@ -34,6 +34,7 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
   const [schedule, setSchedule] = useState(formData.schedule);
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
   const [offerType, setOfferType] = useState(formData.offerType || 'service');
+  const [acceptsCredicora, setAcceptsCredicora] = useState(formData.acceptsCredicora || false);
 
   useEffect(() => {
     setFormData({ 
@@ -47,8 +48,9 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
       website,
       schedule,
       offerType,
+      acceptsCredicora,
     });
-  }, [specialty, location, serviceRadius, hasPhysicalLocation, showExactLocation, isOnlyDelivery, website, schedule, offerType, setFormData]);
+  }, [specialty, location, serviceRadius, hasPhysicalLocation, showExactLocation, isOnlyDelivery, website, schedule, offerType, acceptsCredicora, setFormData]);
 
   const MAX_RADIUS_FREE = 10;
   const isOverFreeRadius = serviceRadius > MAX_RADIUS_FREE && !formData.isSubscribed;
@@ -95,6 +97,24 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
             </div>
         </RadioGroup>
       </div>
+      
+      <div className="space-y-3">
+          <Label>Opciones de Pago</Label>
+           <div className="space-y-4 rounded-md border p-4">
+            <div className="flex items-center justify-between">
+                <Label htmlFor="accepts-credicora" className="flex items-center gap-2 font-medium text-blue-600">
+                    <Star className="w-5 h-5 fill-current"/>
+                    Aceptar Pagos con Credicora
+                </Label>
+                <Switch 
+                    id="accepts-credicora" 
+                    checked={acceptsCredicora}
+                    onCheckedChange={setAcceptsCredicora}
+                />
+            </div>
+          </div>
+      </div>
+
 
       <div className="space-y-4">
         <Label>Ubicación y Área de Cobertura</Label>

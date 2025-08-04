@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useRouter } from 'next/navigation';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { add } from 'date-fns';
 
 type FeedView = 'servicios' | 'empresas';
 
@@ -33,12 +34,13 @@ interface CoraboState {
   updateCartQuantity: (productId: string, quantity: number) => void;
   removeFromCart: (productId: string) => void;
   getCartTotal: () => number;
+  getDeliveryCost: () => number;
   requestService: (service: Service) => void;
   requestQuoteFromGroup: (serviceName: string, items: string[], groupOrProvider: string) => boolean;
   sendQuote: (transactionId: string, quote: { breakdown: string; total: number }) => void;
   acceptQuote: (transactionId: string) => void;
   startDispute: (transactionId: string) => void;
-  checkout: (transactionId: string, withDelivery: boolean) => void;
+  checkout: (transactionId: string, withDelivery: boolean, useCredicora: boolean) => void;
   setSearchQuery: (query: string) => void;
   addContact: (user: User) => void;
   removeContact: (userId: string) => void;
@@ -106,12 +108,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const addToCart = (product: Product, quantity: number) => {
     setCart((prevCart) => {
-      const isFirstItem = prevCart.length === 0;
       let cartTx = findOrCreateCartTransaction();
       
-      if (isFirstItem) {
-          cartTx.providerId = product.providerId;
-      } else if (cartTx.providerId !== product.providerId) {
+      const provider = users.find(u => u.id === product.providerId);
+      if (!provider) return prevCart; // Should not happen
+
+      if (prevCart.length > 0 && cartTx.providerId !== product.providerId) {
           toast({
               variant: "destructive",
               title: "Carrito Multi-empresa",
@@ -153,7 +155,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         updateTransaction(cartTx.id, tx => ({
             details: { ...tx.details, items: newCart },
             amount: newCart.reduce((sum, item) => sum + item.product.price * item.quantity, 0),
-             // Reset provider if cart is empty
             providerId: newCart.length > 0 ? tx.providerId : '',
         }))
 
@@ -166,6 +167,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getCartTotal = () => cart.reduce((total, item) => total + item.product.price * item.quantity, 0);
+  
+  const getDeliveryCost = () => {
+    const distanceInKm = Math.floor(Math.random() * 20) + 1;
+    return distanceInKm * 1.5;
+  }
 
   const switchUser = (userId: string) => {
     const user = users.find((u) => u.id === userId);
@@ -174,24 +180,62 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const checkout = (transactionId: string, withDelivery: boolean) => {
+  const generatePaymentCommitments = (originalTx: Transaction) => {
+      const remainingAmount = originalTx.amount - (originalTx.details.initialPayment || 0);
+      const isShortTerm = originalTx.amount < 15;
+      const numberOfInstallments = isShortTerm ? 2 : 3;
+      const installmentAmount = remainingAmount / numberOfInstallments;
+      
+      const commitments: Transaction[] = [];
+
+      for (let i = 1; i <= numberOfInstallments; i++) {
+        const commitment: Transaction = {
+          id: `commitment-${originalTx.id}-${i}`,
+          type: 'Sistema',
+          status: 'Acuerdo Aceptado - Pendiente de Ejecución',
+          date: add(new Date(), { months: i }).toISOString(),
+          amount: installmentAmount,
+          clientId: originalTx.clientId,
+          providerId: originalTx.providerId,
+          details: {
+            system: `Cuota ${i}/${numberOfInstallments} de compra ${originalTx.id}`,
+          },
+        };
+        commitments.push(commitment);
+      }
+      setTransactions(prev => [...prev, ...commitments]);
+  };
+
+
+  const checkout = (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {
     const cartTx = transactions.find(tx => tx.id === transactionId);
     if (!cartTx) return;
-    
-    // Simulate distance and cost
-    const distanceInKm = Math.floor(Math.random() * 20) + 1; // 1 to 20 km
-    const deliveryCost = withDelivery ? distanceInKm * 1.5 : 0;
+
+    const deliveryCost = withDelivery ? getDeliveryCost() : 0;
     const finalAmount = cartTx.amount + deliveryCost;
 
+    const paymentMethod = useCredicora ? 'credicora' : 'direct';
+    const initialPayment = useCredicora ? finalAmount * 0.25 : finalAmount;
+
     updateTransaction(cartTx.id, {
-        status: 'Pagado',
+        status: 'Acuerdo Aceptado - Pendiente de Ejecución',
         amount: finalAmount,
-        details: { ...cartTx.details, delivery: withDelivery, deliveryCost },
+        details: { 
+            ...cartTx.details, 
+            delivery: withDelivery, 
+            deliveryCost,
+            paymentMethod,
+            initialPayment,
+        },
         date: new Date().toISOString(),
     });
 
+    if (useCredicora) {
+        generatePaymentCommitments(transactions.find(tx => tx.id === transactionId)!);
+    }
+
     setCart([]);
-    toast({ title: "Compra realizada", description: "Tu pedido ha sido procesado con éxito." });
+    toast({ title: "Acuerdo de Pago Creado", description: "El compromiso de pago ha sido registrado. Puedes verlo en tu sección de transacciones." });
   }
 
   const requestService = (service: Service) => {
@@ -542,6 +586,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     updateCartQuantity,
     removeFromCart,
     getCartTotal,
+    getDeliveryCost,
     checkout,
     requestService,
     requestQuoteFromGroup,
