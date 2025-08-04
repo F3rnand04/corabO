@@ -410,6 +410,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const updateUserProfileImage = (userId: string, imageUrl: string) => {
     updateUser(userId, { profileImage: imageUrl });
+    toast({
+        title: "¡Foto de Perfil Actualizada!",
+        description: "Tu nueva foto de perfil está visible.",
+    });
   };
   
   const updateUserProfileAndGallery = (userId: string, newGalleryImage: GalleryImage) => {
@@ -671,5 +675,3 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
-
-    
