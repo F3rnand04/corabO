@@ -28,7 +28,6 @@ import Link from 'next/link';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogClose } from '@/components/ui/dialog';
 
 export default function CompanyProfilePage() {
   const params = useParams();
@@ -120,7 +119,7 @@ export default function CompanyProfilePage() {
     .map(([dayName]) => {
         const dayMap: { [key: string]: number } = {
             'Domingo': 0, 'Lunes': 1, 'Martes': 2, 'Miércoles': 3,
-            'Jueves': 4, 'Viernes': 5, 'Sábado': 6
+            'Jueves': 4, 'Viernes': 5, Sábado: 6
         };
         return dayMap[dayName];
     });
@@ -327,62 +326,63 @@ export default function CompanyProfilePage() {
                 </Popover>
 
                 {isProductProvider && (
-                  <>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="ghost" size="icon" className="relative">
-                        <ShoppingCart className="w-5 h-5 text-muted-foreground" />
-                        {totalCartItems > 0 && (
-                          <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs rounded-full">{totalCartItems}</Badge>
-                        )}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80">
-                      <div className="grid gap-4">
-                        <div className="space-y-2">
-                          <h4 className="font-medium leading-none">Carrito de Compras</h4>
-                          <p className="text-sm text-muted-foreground">
-                            Resumen de tu pedido a {provider.name}.
-                          </p>
+                  <AlertDialog>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="ghost" size="icon" className="relative">
+                          <ShoppingCart className="w-5 h-5 text-muted-foreground" />
+                          {totalCartItems > 0 && (
+                            <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs rounded-full">{totalCartItems}</Badge>
+                          )}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80">
+                        <div className="grid gap-4">
+                          <div className="space-y-2">
+                            <h4 className="font-medium leading-none">Carrito de Compras</h4>
+                            <p className="text-sm text-muted-foreground">
+                              Resumen de tu pedido a {provider.name}.
+                            </p>
+                          </div>
+                          {cart.length > 0 ? (
+                            <>
+                              <div className="grid gap-2 max-h-64 overflow-y-auto">
+                                {cart.map(item => (
+                                  <div key={item.product.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-2">
+                                    <div className="cursor-pointer hover:underline">
+                                      <p className="font-medium text-sm truncate">{item.product.name}</p>
+                                      <p className="text-xs text-muted-foreground">${item.product.price.toFixed(2)}</p>
+                                    </div>
+                                    <div className="flex items-center gap-1 border rounded-md">
+                                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateCartQuantity(item.product.id, item.quantity - 1)}>
+                                        <Minus className="h-3 w-3" />
+                                      </Button>
+                                      <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
+                                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateCartQuantity(item.product.id, item.quantity + 1)}>
+                                        <Plus className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => updateCartQuantity(item.product.id, 0)}>
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                              <Separator />
+                              <div className="flex justify-between font-bold text-sm">
+                                <span>Total:</span>
+                                <span>${getCartTotal().toFixed(2)}</span>
+                              </div>
+                              <AlertDialogTrigger asChild>
+                                <Button className="w-full">Ver Pre-factura</Button>
+                              </AlertDialogTrigger>
+                            </>
+                          ) : (
+                            <p className="text-sm text-center text-muted-foreground py-4">Tu carrito está vacío.</p>
+                          )}
                         </div>
-                        {cart.length > 0 ? (
-                          <>
-                            <div className="grid gap-2 max-h-64 overflow-y-auto">
-                              {cart.map(item => (
-                                <div key={item.product.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-2">
-                                  <div className="cursor-pointer hover:underline">
-                                    <p className="font-medium text-sm truncate">{item.product.name}</p>
-                                    <p className="text-xs text-muted-foreground">${item.product.price.toFixed(2)}</p>
-                                  </div>
-                                  <div className="flex items-center gap-1 border rounded-md">
-                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateCartQuantity(item.product.id, item.quantity - 1)}>
-                                      <Minus className="h-3 w-3" />
-                                    </Button>
-                                    <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
-                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateCartQuantity(item.product.id, item.quantity + 1)}>
-                                      <Plus className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                  <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => updateCartQuantity(item.product.id, 0)}>
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              ))}
-                            </div>
-                            <Separator />
-                            <div className="flex justify-between font-bold text-sm">
-                              <span>Total:</span>
-                              <span>${getCartTotal().toFixed(2)}</span>
-                            </div>
-                            <Button className="w-full" onClick={() => setIsCheckoutAlertOpen(true)}>Ver Pre-factura</Button>
-                          </>
-                        ) : (
-                          <p className="text-sm text-center text-muted-foreground py-4">Tu carrito está vacío.</p>
-                        )}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                  <AlertDialog open={isCheckoutAlertOpen} onOpenChange={setIsCheckoutAlertOpen}>
+                      </PopoverContent>
+                    </Popover>
                     <AlertDialogContent>
                       <AlertDialogHeader>
                           <AlertDialogTitle>Confirmar Compra</AlertDialogTitle>
@@ -444,7 +444,6 @@ export default function CompanyProfilePage() {
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
-                  </>
                 )}
                 
                  <div className="flex flex-col items-center cursor-pointer" onClick={() => provider.profileSetupData?.hasPhysicalLocation && router.push('/map')}>
@@ -612,40 +611,40 @@ export default function CompanyProfilePage() {
           </Card>
         </main>
       </div>
-       <Dialog open={isAppointmentDialogOpen} onOpenChange={setIsAppointmentDialogOpen}>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Solicitar Cita</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        Estás solicitando una cita con <strong>{provider.name}</strong> para el día <strong>{appointmentDate && format(appointmentDate, "dd 'de' MMMM", { locale: es })}</strong>.
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <div className="py-4 space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="appointment-details">Motivo o resumen (opcional)</Label>
-                        <Textarea
-                            id="appointment-details"
-                            placeholder="Ej: Revisión general de plomería, tengo una pequeña fuga en el baño."
-                            value={appointmentDetails}
-                            onChange={(e) => setAppointmentDetails(e.target.value)}
-                        />
-                    </div>
-                    {provider.profileSetupData?.appointmentCost && provider.profileSetupData.appointmentCost > 0 ? (
-                        <div className="p-3 bg-muted rounded-md text-sm">
-                            El costo de esta consulta es de <span className="font-bold">${provider.profileSetupData.appointmentCost.toFixed(2)}</span>. Se creará un compromiso de pago al ser aceptada.
-                        </div>
-                    ) : (
-                         <div className="p-3 bg-muted rounded-md text-sm">
-                            Esta consulta no tiene un costo fijo inicial. El proveedor te enviará una cotización si es necesario.
-                        </div>
-                    )}
+      <AlertDialog open={isAppointmentDialogOpen} onOpenChange={setIsAppointmentDialogOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Solicitar Cita</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Estás solicitando una cita con <strong>{provider.name}</strong> para el día <strong>{appointmentDate && format(appointmentDate, "dd 'de' MMMM", { locale: es })}</strong>.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="py-4 space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="appointment-details">Motivo o resumen (opcional)</Label>
+                    <Textarea
+                        id="appointment-details"
+                        placeholder="Ej: Revisión general de plomería, tengo una pequeña fuga en el baño."
+                        value={appointmentDetails}
+                        onChange={(e) => setAppointmentDetails(e.target.value)}
+                    />
                 </div>
-                <AlertDialogFooter>
-                    <AlertDialogCancel onClick={() => setAppointmentDetails('')}>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleConfirmAppointment}>Enviar Solicitud</AlertDialogAction>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        </Dialog>
+                {provider.profileSetupData?.appointmentCost && provider.profileSetupData.appointmentCost > 0 ? (
+                    <div className="p-3 bg-muted rounded-md text-sm">
+                        El costo de esta consulta es de <span className="font-bold">${provider.profileSetupData.appointmentCost.toFixed(2)}</span>. Se creará un compromiso de pago al ser aceptada.
+                    </div>
+                ) : (
+                     <div className="p-3 bg-muted rounded-md text-sm">
+                        Esta consulta no tiene un costo fijo inicial. El proveedor te enviará una cotización si es necesario.
+                    </div>
+                )}
+            </div>
+            <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setAppointmentDetails('')}>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmAppointment}>Enviar Solicitud</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <ReportDialog 
             isOpen={isReportDialogOpen} 
             onOpenChange={setIsReportDialogOpen} 
