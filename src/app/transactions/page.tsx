@@ -215,7 +215,7 @@ export default function TransactionsPage() {
                                 <div className="flex justify-between items-start">
                                     <CardTitle className="text-lg">CREDICORA</CardTitle>
                                     <div className="text-right">
-                                        <p className="text-xl font-bold">{showSensitiveData ? `$${(currentUser.credicoraLimit || 0).toFixed(2)}` : '$***,**'}</p>
+                                        <p className="text-xl font-bold">{showSensitiveData ? `$${(currentUser.credicoraLimit || 0).toFixed(2)}` : '$***.**'}</p>
                                     </div>
                                     <div className="flex items-center gap-1">
                                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setShowSensitiveData(!showSensitiveData); }}>
@@ -243,11 +243,11 @@ export default function TransactionsPage() {
                                 </div>
                                 <div className="flex justify-between text-xs pt-1">
                                     <div className="text-muted-foreground">USADO</div>
-                                    <div className="font-semibold">{showSensitiveData ? '$0.00' : '$**,**'}</div>
+                                    <div className="font-semibold">{showSensitiveData ? '$0.00' : '$**.**'}</div>
                                 </div>
                                 <div className="flex justify-between text-xs">
                                     <div className="text-muted-foreground">DISPONIBLE</div>
-                                    <div className="font-semibold">{showSensitiveData ? `$${(currentUser.credicoraLimit || 0).toFixed(2)}` : '$***,**'}</div>
+                                    <div className="font-semibold">{showSensitiveData ? `$${(currentUser.credicoraLimit || 0).toFixed(2)}` : '$***.**'}</div>
                                 </div>
                             </CardHeader>
                             <Separator />
