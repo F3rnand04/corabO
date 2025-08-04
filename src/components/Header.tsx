@@ -33,7 +33,7 @@ export function Header() {
   const [includeDelivery, setIncludeDelivery] = useState(false);
   const [useCredicora, setUseCredicora] = useState(false);
 
-  const cartTransaction = cart.length > 0 ? currentUser.transactions?.find(tx => tx.status === 'Carrito Activo') : undefined;
+  const cartTransaction = cart.length > 0 ? currentUser.transactions?.find(tx => tx.status === 'Carrito Activo' && tx.clientId === currentUser.id) : undefined;
   const provider = users.find(u => u.id === cartTransaction?.providerId);
   const isDeliveryOnly = provider?.profileSetupData?.isOnlyDelivery || false;
   const providerAcceptsCredicora = provider?.profileSetupData?.acceptsCredicora || false;
@@ -263,3 +263,5 @@ export function Header() {
     </header>
   );
 }
+
+    

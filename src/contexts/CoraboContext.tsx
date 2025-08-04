@@ -113,7 +113,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       const provider = users.find(u => u.id === product.providerId);
       if (!provider) return prevCart; // Should not happen
 
-      if (prevCart.length > 0 && cartTx.providerId !== product.providerId) {
+      // If cart is not empty and new product is from a different provider
+      if (prevCart.length > 0 && cartTx.providerId && cartTx.providerId !== product.providerId) {
           toast({
               variant: "destructive",
               title: "Carrito Multi-empresa",
@@ -169,8 +170,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const getCartTotal = () => cart.reduce((total, item) => total + item.product.price * item.quantity, 0);
   
   const getDeliveryCost = () => {
-    const distanceInKm = Math.floor(Math.random() * 20) + 1;
-    return distanceInKm * 1.5;
+    // Simulate a distance between 1 and 10 km
+    const distanceInKm = Math.floor(Math.random() * 10) + 1;
+    return distanceInKm * 1.5; 
   }
 
   const switchUser = (userId: string) => {
@@ -400,10 +402,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     updateUser(userId, (user) => ({
         gallery: [{...newGalleryImage, id: newGalleryImage.src}, ...(user.gallery || [])]
     }));
-    toast({
-      title: "¡Publicación Exitosa!",
-      description: "Tu nueva imagen ya está en tu vitrina y tu perfil ha sido actualizado.",
-    });
   };
   
   const removeGalleryImage = (userId: string, imageId: string) => {
@@ -622,3 +620,5 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
+
+    
