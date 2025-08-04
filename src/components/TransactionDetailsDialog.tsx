@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Dialog,
   DialogContent,
@@ -25,7 +26,8 @@ interface TransactionDetailsDialogProps {
 }
 
 export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: TransactionDetailsDialogProps) {
-  const { currentUser, sendQuote, acceptQuote, startDispute, payCommitment, completeWork } = useCorabo();
+  const { currentUser, sendQuote, acceptQuote, startDispute, completeWork } = useCorabo();
+  const router = useRouter();
   const [quoteBreakdown, setQuoteBreakdown] = useState('');
   const [quoteTotal, setQuoteTotal] = useState(0);
 
@@ -42,8 +44,8 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   };
 
   const handlePayCommitment = () => {
-      payCommitment(transaction.id);
-      onOpenChange(false);
+    onOpenChange(false);
+    router.push(`/quotes/payment?commitmentId=${transaction.id}&amount=${transaction.amount}`);
   }
 
   const handleCompleteWork = () => {

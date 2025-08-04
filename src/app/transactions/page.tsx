@@ -288,12 +288,12 @@ export default function TransactionsPage() {
     const pendingTx = transactions.filter(t => 
         isProvider ? 
         (t.providerId === currentUser.id && (t.status === 'Solicitud Pendiente' || t.status === 'Acuerdo Aceptado - Pendiente de Ejecución')) :
-        (t.clientId === currentUser.id && t.status === 'Cotización Recibida')
+        (t.clientId === currentUser.id && (t.status === 'Cotización Recibida' || t.status === 'Finalizado - Pendiente de Pago'))
     );
     const historyTx = transactions.filter(t => (t.providerId === currentUser.id || t.clientId === currentUser.id) && (t.status === 'Pagado' || t.status === 'Resuelto'));
     
     const commitmentTx = transactions.filter(t => (t.providerId === currentUser.id || t.clientId === currentUser.id) && 
-        (t.status === 'Acuerdo Aceptado - Pendiente de Ejecución' || t.status === 'Finalizado - Pendiente de Pago'));
+        (t.status === 'Acuerdo Aceptado - Pendiente de Ejecución'));
     
     const paymentCommitmentDates = transactions
     .filter((tx: Transaction) => (tx.providerId === currentUser.id || tx.clientId === currentUser.id) && tx.status === 'Acuerdo Aceptado - Pendiente de Ejecución')

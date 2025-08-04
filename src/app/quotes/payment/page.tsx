@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useCorabo } from '@/contexts/CoraboContext';
 
 const EXCHANGE_RATE = 130; // 130 Bs per dollar
 
@@ -18,7 +19,12 @@ export default function QuotePaymentPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { toast } = useToast();
-    const [amount, setAmount] = useState(3); // Default amount in dollars
+    const { payCommitment } = useCorabo();
+
+    const commitmentId = searchParams.get('commitmentId');
+    const commitmentAmount = searchParams.get('amount');
+    
+    const [amount, setAmount] = useState(commitmentAmount ? parseFloat(commitmentAmount) : 3);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
     const [step, setStep] = useState(1);
     const [voucherFile, setVoucherFile] = useState<File | null>(null);
@@ -50,17 +56,26 @@ export default function QuotePaymentPage() {
             });
             return;
         }
-        toast({
-            title: "¡Pago Confirmado!",
-            description: `Tu búsqueda por $${amount.toFixed(2)} ha sido activada.`,
-            className: "bg-green-100 border-green-300 text-green-800",
-        });
-        router.push(`/quotes/pro?unlocked=${advancedOption}`);
+
+        if (commitmentId) {
+            payCommitment(commitmentId);
+            router.push('/transactions');
+        } else {
+            toast({
+                title: "¡Pago Confirmado!",
+                description: `Tu búsqueda por $${amount.toFixed(2)} ha sido activada.`,
+                className: "bg-green-100 border-green-300 text-green-800",
+            });
+            router.push(`/quotes/pro?unlocked=${advancedOption}`);
+        }
     };
 
     const bolivaresAmount = (amount * EXCHANGE_RATE).toFixed(2);
     
     const getBenefitMessage = () => {
+        if (commitmentId) {
+            return `Estás a punto de pagar un compromiso por **$${amount.toFixed(2)}**.`;
+        }
         if (amount <= 3) {
             return "Recibe hasta **10 cotizaciones** de nuestra red de proveedores.";
         }
@@ -113,11 +128,11 @@ export default function QuotePaymentPage() {
                             <CardContent className="p-6">
                                 <div className="text-center space-y-2 py-8">
                                     <div className="flex items-center justify-center gap-4">
-                                        <Button variant="outline" size="icon" onClick={() => setAmount(Math.max(1, amount - 1))} className="rounded-full w-10 h-10">
+                                        <Button variant="outline" size="icon" onClick={() => setAmount(Math.max(1, amount - 1))} className="rounded-full w-10 h-10" disabled={!!commitmentId}>
                                             <Minus className="w-5 h-5"/>
                                         </Button>
                                         <h1 className="text-5xl font-bold text-teal-500">${amount.toFixed(2)}</h1>
-                                        <Button variant="outline" size="icon" onClick={() => setAmount(amount + 1)} className="rounded-full w-10 h-10">
+                                        <Button variant="outline" size="icon" onClick={() => setAmount(amount + 1)} className="rounded-full w-10 h-10" disabled={!!commitmentId}>
                                             <Plus className="w-5 h-5"/>
                                         </Button>
                                     </div>
@@ -152,14 +167,16 @@ export default function QuotePaymentPage() {
                                 </div>
                                 </div>
                                 
-                                <div className="p-4 border rounded-lg bg-muted/50 mt-4">
-                                    <h3 className="font-semibold text-center">O suscríbete y cotiza sin límites según tu nivel</h3>
-                                    <p className="text-sm text-muted-foreground text-center mt-1">Disfruta de búsquedas avanzadas ilimitadas, insignia de verificado y más.</p>
-                                    <Button className="w-full mt-4" variant="outline" onClick={() => router.push('/contacts')}>
-                                        <Star className="mr-2 h-4 w-4"/>
-                                        Suscribirme ahora
-                                    </Button>
-                                </div>
+                                {!commitmentId && (
+                                    <div className="p-4 border rounded-lg bg-muted/50 mt-4">
+                                        <h3 className="font-semibold text-center">O suscríbete y cotiza sin límites según tu nivel</h3>
+                                        <p className="text-sm text-muted-foreground text-center mt-1">Disfruta de búsquedas avanzadas ilimitadas, insignia de verificado y más.</p>
+                                        <Button className="w-full mt-4" variant="outline" onClick={() => router.push('/contacts')}>
+                                            <Star className="mr-2 h-4 w-4"/>
+                                            Suscribirme ahora
+                                        </Button>
+                                    </div>
+                                )}
                             </CardContent>
                         </div>
                         
