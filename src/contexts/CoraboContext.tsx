@@ -40,6 +40,7 @@ interface CoraboState {
   sendQuote: (transactionId: string, quote: { breakdown: string; total: number }) => void;
   acceptQuote: (transactionId: string) => void;
   payCommitment: (transactionId: string) => void;
+  completeWork: (transactionId: string) => void;
   startDispute: (transactionId: string) => void;
   checkout: (transactionId: string, withDelivery: boolean, useCredicora: boolean) => void;
   setSearchQuery: (query: string) => void;
@@ -333,6 +334,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     });
     toast({ title: "Acuerdo Aceptado", description: "El servicio ha comenzado." });
   };
+
+  const completeWork = (transactionId: string) => {
+    updateTransaction(transactionId, { status: 'Finalizado - Pendiente de Pago' });
+    toast({ title: "Trabajo Finalizado", description: "Se ha notificado al cliente para que realice el pago." });
+  };
   
   const payCommitment = (transactionId: string) => {
     updateTransaction(transactionId, {
@@ -598,6 +604,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     requestQuoteFromGroup,
     sendQuote,
     acceptQuote,
+    completeWork,
     payCommitment,
     startDispute,
     setSearchQuery,

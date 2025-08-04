@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "./ui/badge";
 import type { Transaction } from "@/lib/types";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert, Truck, Banknote } from "lucide-react";
+import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert, Truck, Banknote, ClipboardCheck } from "lucide-react";
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 
@@ -25,7 +25,7 @@ interface TransactionDetailsDialogProps {
 }
 
 export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: TransactionDetailsDialogProps) {
-  const { currentUser, sendQuote, acceptQuote, startDispute, payCommitment } = useCorabo();
+  const { currentUser, sendQuote, acceptQuote, startDispute, payCommitment, completeWork } = useCorabo();
   const [quoteBreakdown, setQuoteBreakdown] = useState('');
   const [quoteTotal, setQuoteTotal] = useState(0);
 
@@ -46,6 +46,11 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
       onOpenChange(false);
   }
 
+  const handleCompleteWork = () => {
+      completeWork(transaction.id);
+      onOpenChange(false);
+  }
+
   const statusInfo = {
     'Solicitud Pendiente': { icon: MessageSquare, color: 'bg-yellow-500' },
     'Cotización Recibida': { icon: Send, color: 'bg-blue-500' },
@@ -54,7 +59,8 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
     'Pagado': { icon: CheckCircle, color: 'bg-green-500' },
     'Carrito Activo': { icon: AlertTriangle, color: 'bg-gray-500' },
     'Pre-factura Pendiente': { icon: AlertTriangle, color: 'bg-gray-500' },
-    'Acuerdo Aceptado - Pendiente de Ejecución': { icon: Handshake, color: 'bg-green-500' },
+    'Acuerdo Aceptado - Pendiente de Ejecución': { icon: Handshake, color: 'bg-cyan-500' },
+    'Finalizado - Pendiente de Pago': { icon: ClipboardCheck, color: 'bg-orange-500' },
     'Resuelto': { icon: CheckCircle, color: 'bg-green-500' },
   };
 
@@ -123,8 +129,10 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
             </Button>
             <div className="flex gap-2">
                 {isProvider && transaction.status === 'Solicitud Pendiente' && <Button onClick={handleSendQuote}>Enviar Cotización</Button>}
+                {isProvider && transaction.status === 'Acuerdo Aceptado - Pendiente de Ejecución' && <Button onClick={handleCompleteWork}><ClipboardCheck className="mr-2 h-4 w-4" />Marcar como Entregado/Finalizado</Button>}
+                
                 {isClient && transaction.status === 'Cotización Recibida' && <Button onClick={() => acceptQuote(transaction.id)}>Aceptar y Pagar</Button>}
-                {isClient && transaction.status === 'Acuerdo Aceptado - Pendiente de Ejecución' && (
+                {(isClient && (transaction.status === 'Acuerdo Aceptado - Pendiente de Ejecución' || transaction.status === 'Finalizado - Pendiente de Pago')) && (
                     <Button onClick={handlePayCommitment}>
                         <Banknote className="mr-2 h-4 w-4" />
                         Pagar Ahora

@@ -283,10 +283,17 @@ export default function TransactionsPage() {
     const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
     const [view, setView] = useState<'summary' | 'pending' | 'history' | 'commitments'>('summary');
 
+    const isProvider = currentUser.type === 'provider';
 
-    const pendingTx = transactions.filter(t => t.providerId === currentUser.id && t.status === 'Solicitud Pendiente');
+    const pendingTx = transactions.filter(t => 
+        isProvider ? 
+        (t.providerId === currentUser.id && (t.status === 'Solicitud Pendiente' || t.status === 'Acuerdo Aceptado - Pendiente de Ejecución')) :
+        (t.clientId === currentUser.id && t.status === 'Cotización Recibida')
+    );
     const historyTx = transactions.filter(t => (t.providerId === currentUser.id || t.clientId === currentUser.id) && (t.status === 'Pagado' || t.status === 'Resuelto'));
-    const commitmentTx = transactions.filter(t => (t.providerId === currentUser.id || t.clientId === currentUser.id) && t.status === 'Acuerdo Aceptado - Pendiente de Ejecución');
+    
+    const commitmentTx = transactions.filter(t => (t.providerId === currentUser.id || t.clientId === currentUser.id) && 
+        (t.status === 'Acuerdo Aceptado - Pendiente de Ejecución' || t.status === 'Finalizado - Pendiente de Pago'));
     
     const paymentCommitmentDates = transactions
     .filter((tx: Transaction) => (tx.providerId === currentUser.id || tx.clientId === currentUser.id) && tx.status === 'Acuerdo Aceptado - Pendiente de Ejecución')

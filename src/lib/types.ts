@@ -92,6 +92,7 @@ export type TransactionStatus =
   | 'Solicitud Pendiente'
   | 'Cotización Recibida'
   | 'Acuerdo Aceptado - Pendiente de Ejecución'
+  | 'Finalizado - Pendiente de Pago'
   | 'Servicio en Curso'
   | 'En Disputa'
   | 'Resuelto'
