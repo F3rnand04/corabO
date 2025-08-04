@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MapPin, FileText, Wallet, Menu, Search, LogOut, User } from "lucide-react";
+import { MapPin, FileText, Menu, Search, LogOut, User, ShoppingCart, Plus, Minus, X } from "lucide-react";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -15,12 +15,16 @@ import {
   DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { Popover, PopoverTrigger, PopoverContent } from "./ui/popover";
+import { Badge } from "./ui/badge";
+import { Separator } from "./ui/separator";
 
 export function Header() {
-  const { searchQuery, setSearchQuery, feedView, setFeedView, currentUser, toggleGps } = useCorabo();
+  const { searchQuery, setSearchQuery, feedView, setFeedView, currentUser, toggleGps, cart, updateCartQuantity, getCartTotal } = useCorabo();
   const router = useRouter();
   
   const hasCompletedProfileSetup = !!currentUser?.profileSetupData;
+  const totalCartItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
     <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm sticky top-0 z-40">
@@ -46,9 +50,60 @@ export function Header() {
                 <FileText className="h-5 w-5" />
               </Button>
             </Link>
-            <Button variant="ghost" size="icon" onClick={() => router.push('/transactions')}>
-              <Wallet className="h-5 w-5" />
-            </Button>
+             <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative">
+                  <ShoppingCart className="w-5 h-5 text-muted-foreground" />
+                  {totalCartItems > 0 && (
+                      <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs rounded-full">{totalCartItems}</Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80">
+                <div className="grid gap-4">
+                  <div className="space-y-2">
+                    <h4 className="font-medium leading-none">Carrito de Compras</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Resumen de tu pedido global.
+                    </p>
+                  </div>
+                    {cart.length > 0 ? (
+                      <>
+                      <div className="grid gap-2 max-h-64 overflow-y-auto">
+                      {cart.map(item => (
+                          <div key={item.product.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-2">
+                            <div>
+                              <p className="font-medium text-sm truncate">{item.product.name}</p>
+                              <p className="text-xs text-muted-foreground">${item.product.price.toFixed(2)}</p>
+                            </div>
+                            <div className="flex items-center gap-1 border rounded-md">
+                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateCartQuantity(item.product.id, item.quantity - 1)}>
+                                <Minus className="h-3 w-3" />
+                              </Button>
+                              <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
+                              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateCartQuantity(item.product.id, item.quantity + 1)}>
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => updateCartQuantity(item.product.id, 0)}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                      ))}
+                      </div>
+                      <Separator />
+                      <div className="flex justify-between font-bold text-sm">
+                          <span>Total:</span>
+                          <span>${getCartTotal().toFixed(2)}</span>
+                      </div>
+                      <Button className="w-full">Ver Pre-factura</Button>
+                      </>
+                    ) : (
+                      <p className="text-sm text-center text-muted-foreground py-4">Tu carrito está vacío.</p>
+                    )}
+                </div>
+              </PopoverContent>
+            </Popover>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon">
@@ -64,6 +119,10 @@ export function Header() {
                       </DropdownMenuItem>
                     </Link>
                 )}
+                <DropdownMenuItem onClick={() => router.push('/transactions')}>
+                  <FileText className="mr-2 h-4 w-4" />
+                  <span>Mis Transacciones</span>
+                </DropdownMenuItem>
                 <DropdownMenuItem>Historial de Búsquedas</DropdownMenuItem>
                 <DropdownMenuItem>Modo Oscuro</DropdownMenuItem>
                 <DropdownMenuItem>Políticas de la Empresa</DropdownMenuItem>
