@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MapPin, FileText, Menu, Search, LogOut, User, ShoppingCart, Plus, Minus, X } from "lucide-react";
+import { MapPin, FileText, Menu, Search, LogOut, User, ShoppingCart, Plus, Minus, X, Wallet } from "lucide-react";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -48,6 +48,11 @@ export function Header() {
             <Link href="/quotes" passHref>
               <Button variant="ghost" size="icon">
                 <FileText className="h-5 w-5" />
+              </Button>
+            </Link>
+            <Link href="/transactions" passHref>
+              <Button variant="ghost" size="icon">
+                <Wallet className="h-5 w-5" />
               </Button>
             </Link>
              <Popover>
@@ -119,10 +124,6 @@ export function Header() {
                       </DropdownMenuItem>
                     </Link>
                 )}
-                <DropdownMenuItem onClick={() => router.push('/transactions')}>
-                  <FileText className="mr-2 h-4 w-4" />
-                  <span>Mis Transacciones</span>
-                </DropdownMenuItem>
                 <DropdownMenuItem>Historial de Búsquedas</DropdownMenuItem>
                 <DropdownMenuItem>Modo Oscuro</DropdownMenuItem>
                 <DropdownMenuItem>Políticas de la Empresa</DropdownMenuItem>
