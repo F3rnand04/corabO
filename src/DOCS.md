@@ -27,9 +27,10 @@ La aplicación se rige por un conjunto de tipos de datos bien definidos:
 
 El `CoraboContext` es el corazón de la aplicación. Centraliza toda la lógica y los datos:
 
--   **Gestión de Estado:** Utiliza `useState` para manejar `users`, `products`, `services`, `transactions`, `currentUser`, `searchQuery` y `feedView`.
+-   **Gestión de Estado:** Utiliza `useState` para manejar `users`, `products`, `services`, `transactions`, `currentUser`, `searchQuery`, `feedView` y el `cart` global.
 -   **Acciones del Usuario:** Expone funciones para realizar todas las operaciones clave:
     -   `switchUser`: Cambia entre perfiles de usuario (para simulación).
+    -   `addToCart`, `updateCartQuantity`: Gestionan el carrito de compras global.
     -   `setSearchQuery`, `setFeedView`: Controla los filtros del feed principal.
     -   `requestQuoteFromGroup`, `sendQuote`, `acceptQuote`: Gestiona el flujo de cotizaciones.
     -   `addContact`, `removeContact`: Administra la lista de contactos del usuario.
@@ -41,13 +42,16 @@ El `CoraboContext` es el corazón de la aplicación. Centraliza toda la lógica 
 ### 4.1. Navegación Principal y Feed (Home)
 
 -   **Página Principal (`src/app/page.tsx`):**
-    -   Muestra un feed dinámico de `ServiceCard`, `ProviderCard` o `ProductCard`.
+    -   Muestra un feed dinámico de `ServiceCard` o `ProviderCard`.
     -   La vista del feed se controla con los botones "Servicios" y "Empresas" del `Header`.
     -   El contenido se filtra en tiempo real según el `searchQuery` introducido en el `Header`.
 -   **Encabezado (`src/components/Header.tsx`):**
     -   Contiene los botones para cambiar entre las vistas "Servicios" y "Empresas" (`feedView`).
     -   Incluye la barra de búsqueda que actualiza el `searchQuery` en el `CoraboContext`.
-    -   Ofrece accesos directos al GPS, cotizaciones, transacciones y un menú desplegable con más opciones.
+    -   Ofrece accesos directos al **GPS**, **cotizaciones**, **registro de transacciones (icono de billetera)** y un **carrito de compras global**.
+-   **Tarjetas de Contenido (`ProviderCard.tsx`, `ServiceCard.tsx`):**
+    -   Muestran la información del proveedor.
+    -   El **nombre del proveedor** es un enlace directo a su perfil para una navegación intuitiva.
 -   **Pie de Página (`src/components/Footer.tsx`):**
     -   Proporciona la navegación principal entre las vistas: Home, Videos, Búsqueda por Categorías, Mensajes y Perfil.
 
@@ -71,8 +75,11 @@ El `CoraboContext` es el corazón de la aplicación. Centraliza toda la lógica 
     -   Los proveedores pueden gestionar la "Promoción del Día" para destacar una publicación.
 -   **Perfil de Empresa (`src/app/companies/[id]/page.tsx`):**
     -   Muestra el perfil público de un proveedor.
-    -   Permite a los clientes ver la galería, la reputación y la información de contacto de la empresa.
-    -   La interacción con la galería (cambiar de imagen, ver detalles) está gestionada localmente con `useState`.
+    -   Permite a los clientes ver la galería, reputación e información de la empresa.
+    -   Incluye un **botón de Mensaje Directo** para facilitar la comunicación privada.
+    -   Para proveedores de productos, se muestra una **cuadrícula de productos**.
+    -   **Interacción con Productos (`ProductDetailsDialog`):** Al hacer doble clic en un producto, se abre un modal con detalles, comentarios y acciones (like, compartir, añadir al carrito).
+    -   **Indicador de Horario (`BusinessHoursStatus.tsx`):** Muestra si el negocio está abierto o cerrado y el tiempo restante en formato `Xh Ym`, basado en cálculos precisos de la fecha/hora actual.
 
 ### 4.4. Registro de Transacciones (`src/app/transactions/*`)
 
@@ -80,42 +87,31 @@ Este es un módulo financiero clave para que los proveedores gestionen sus opera
 
 1.  **Página de Activación (`src/app/transactions/settings/page.tsx`):**
     -   **Flujo de Verificación en 2 Pasos:** Antes de poder usar el módulo, el proveedor debe activarlo.
-    -   **Paso 1: Verificación de Identidad:** El usuario debe subir una foto de su cédula. El sistema simula una lectura y valida que los datos coincidan con los de la cuenta Corabo. Si no coinciden, se muestra un error informativo.
-    -   **Paso 2: Registro de Cuenta de Pago:** Una vez verificada la identidad, el usuario debe registrar una cuenta bancaria o pago móvil. El sistema valida (de forma simulada) que el titular de la cuenta sea el mismo usuario.
-    -   **Activación y Redirección:** Tras una verificación exitosa, el módulo se activa, se asigna un límite de crédito "CREDICORA" de $150 y el usuario es redirigido automáticamente a la página principal de transacciones.
+    -   **Paso 1: Verificación de Identidad:** El usuario debe subir una foto de su cédula. El sistema simula una lectura y valida que los datos coincidan con los de la cuenta Corabo.
+    -   **Paso 2: Registro de Cuenta de Pago:** Una vez verificada la identidad, el usuario debe registrar una cuenta bancaria o pago móvil.
+    -   **Activación y Redirección:** Tras una verificación exitosa, el módulo se activa y el usuario es redirigido a la página principal de transacciones.
 
 2.  **Panel de Control de Transacciones (`src/app/transactions/page.tsx`):**
-    -   **Estado Inactivo:** Si el módulo no está activo, muestra una pantalla que invita al usuario a activarlo, con un botón que lleva a la página de ajustes (`/transactions/settings`).
+    -   **Estado Inactivo:** Muestra una pantalla que invita al usuario a activarlo.
     -   **Estado Activo:** Cuando el módulo está activo, la página muestra:
-        -   Gráficos de ingresos y egresos (lineal o de tarta).
-        -   Una tarjeta "CREDICORA" con el límite de crédito disponible.
+        -   **Gráficos Responsivos:** Gráficos de ingresos y egresos (lineal o de tarta) que se ajustan correctamente al tamaño del contenedor sin superponerse.
+        -   **Tarjeta CREDICORA con privacidad:** Muestra el límite de crédito disponible, con un **botón de ojo** para ocultar/mostrar los montos.
         -   Accesos directos a "Lista de Pendientes", "Transacciones" y "Compromisos de Pagos".
-        -   Una tarjeta de llamado a la acción para suscribirse y obtener más beneficios.
-        -   Un **menú de ajustes (engranaje)** que permite:
-            -   Imprimir un registro en PDF de los últimos 3 meses.
-            -   Modificar los datos de pago.
-            -   Desactivar el registro (con un diálogo de advertencia previo).
+        -   Un menú de ajustes (engranaje) que permite imprimir reportes, modificar datos o desactivar el módulo.
+        -   Un **carrito de compras global** y funcional en la cabecera.
 
 ### 4.5. Flujo de Cotizaciones y Monetización
 
 1.  **Formulario de Cotización (`src/app/quotes/page.tsx`):**
     -   Permite a los usuarios solicitar cotizaciones para productos o servicios.
-    -   Incluye un componente de "Búsqueda Avanzada" (`AdvancedSearchOptions.tsx`) con opciones premium bloqueadas (ej: "Usuarios Verificados").
-
+    -   Incluye un componente de "Búsqueda Avanzada" (`AdvancedSearchOptions.tsx`) con opciones premium bloqueadas.
 2.  **Diálogo de Oferta (`AdvancedQuoteDialog.tsx`):**
-    -   Al hacer clic en una opción bloqueada, se abre un modal que ofrece dos rutas:
-        -   **Pago por Uso:** Para enviar una cotización a más proveedores. Redirige a la página de pago.
-        -   **Suscripción:** Invita al usuario a suscribirse para obtener beneficios ilimitados.
-
+    -   Al hacer clic en una opción bloqueada, se abre un modal que ofrece dos rutas: pago por uso o suscripción.
 3.  **Página de Pago (`src/app/quotes/payment/page.tsx`):**
-    -   Presenta una interfaz de pago aislada (sin header/footer principal).
-    -   Permite al usuario seleccionar un monto a pagar, el cual desbloquea diferentes niveles de alcance para su cotización.
-    -   Muestra los datos para realizar un pago móvil o transferencia y permite subir un comprobante.
-
+    -   Presenta una interfaz de pago aislada para desbloquear beneficios de cotización.
 4.  **Formulario de Cotización PRO (`src/app/quotes/pro/page.tsx`):**
-    -   Tras un pago exitoso, el usuario es redirigido a esta versión mejorada del formulario.
-    -   La opción de búsqueda avanzada que pagó aparece desbloqueada y resaltada, confirmando el beneficio.
+    -   Versión mejorada del formulario que se habilita tras un pago exitoso, con la opción avanzada desbloqueada.
 
 ## 5. Conclusión
 
-El prototipo actual tiene una base sólida y una lógica bien definida. El `CoraboContext` actúa eficazmente como un motor de estado central, y los flujos de usuario están optimizados para la búsqueda, conexión, gestión financiera y monetización. Los futuros desarrollos deben seguir estos patrones para mantener la coherencia y la escalabilidad del proyecto.
+El prototipo actual tiene una base sólida y una lógica bien definida. El `CoraboContext` actúa eficazmente como un motor de estado central, y los flujos de usuario están optimizados para la búsqueda, conexión, gestión financiera y monetización, con una interfaz de usuario coherente y funcional. Los futuros desarrollos deben seguir estos patrones para mantener la escalabilidad del proyecto.
