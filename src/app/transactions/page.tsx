@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { Home, Settings, Wallet, ShoppingCart, TrendingUp, Circle, Calendar, Bell, PieChart, Eye, EyeOff, Info, FileText, Banknote, ShieldAlert, Power, LogOut, Star } from "lucide-react";
+import { Home, Settings, Wallet, ShoppingCart, TrendingUp, Circle, Calendar, Bell, PieChart, Eye, EyeOff, Info, FileText, Banknote, ShieldAlert, Power, LogOut, Star, Plus, Minus, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import TransactionsLineChart from "@/components/charts/TransactionsLineChart";
 import TransactionsPieChart from "@/components/charts/TransactionsPieChart";
@@ -27,13 +27,16 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { SubscriptionDialog } from "@/components/SubscriptionDialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Badge } from "@/components/ui/badge";
 
 
 function TransactionsHeader() {
     const router = useRouter();
-    const { currentUser, deactivateTransactions, downloadTransactionsPDF } = useCorabo();
+    const { currentUser, deactivateTransactions, downloadTransactionsPDF, cart, updateCartQuantity, getCartTotal } = useCorabo();
     const isModuleActive = currentUser.isTransactionsActive ?? false;
     const [isDeactivationAlertOpen, setIsDeactivationAlertOpen] = useState(false);
+    
+    const totalCartItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
     const handleDeactivation = () => {
         deactivateTransactions(currentUser.id);
@@ -56,9 +59,60 @@ function TransactionsHeader() {
                         <h1 className="text-lg font-semibold">Registro de Transacciones</h1>
                     </div>
                     <div className="flex items-center">
-                       <Button variant="ghost" size="icon">
-                            <ShoppingCart className="h-6 w-6 text-muted-foreground" />
-                        </Button>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="ghost" size="icon" className="relative">
+                                <ShoppingCart className="w-5 h-5 text-muted-foreground" />
+                                {totalCartItems > 0 && (
+                                    <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs rounded-full">{totalCartItems}</Badge>
+                                )}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80">
+                                <div className="grid gap-4">
+                                <div className="space-y-2">
+                                    <h4 className="font-medium leading-none">Carrito de Compras</h4>
+                                    <p className="text-sm text-muted-foreground">
+                                    Resumen de tu pedido global.
+                                    </p>
+                                </div>
+                                    {cart.length > 0 ? (
+                                    <>
+                                    <div className="grid gap-2 max-h-64 overflow-y-auto">
+                                    {cart.map(item => (
+                                        <div key={item.product.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-2">
+                                            <div>
+                                            <p className="font-medium text-sm truncate">{item.product.name}</p>
+                                            <p className="text-xs text-muted-foreground">${item.product.price.toFixed(2)}</p>
+                                            </div>
+                                            <div className="flex items-center gap-1 border rounded-md">
+                                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateCartQuantity(item.product.id, item.quantity - 1)}>
+                                                <Minus className="h-3 w-3" />
+                                            </Button>
+                                            <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
+                                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateCartQuantity(item.product.id, item.quantity + 1)}>
+                                                <Plus className="h-3 w-3" />
+                                            </Button>
+                                            </div>
+                                            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => updateCartQuantity(item.product.id, 0)}>
+                                            <X className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                    </div>
+                                    <Separator />
+                                    <div className="flex justify-between font-bold text-sm">
+                                        <span>Total:</span>
+                                        <span>${getCartTotal().toFixed(2)}</span>
+                                    </div>
+                                    <Button className="w-full">Ver Pre-factura</Button>
+                                    </>
+                                    ) : (
+                                    <p className="text-sm text-center text-muted-foreground py-4">Tu carrito está vacío.</p>
+                                    )}
+                                </div>
+                            </PopoverContent>
+                        </Popover>
                         
                         {isModuleActive ? (
                             <AlertDialog open={isDeactivationAlertOpen} onOpenChange={setIsDeactivationAlertOpen}>
@@ -315,5 +369,7 @@ export default function TransactionsPage() {
         </div>
     );
 }
+
+    
 
     
