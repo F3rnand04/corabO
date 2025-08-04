@@ -372,6 +372,10 @@ export default function TransactionsPage() {
                                                 <CalendarComponent
                                                 mode="multiple"
                                                 selected={paymentCommitmentDates}
+                                                modifiers={{ paymentCommitment: paymentCommitmentDates }}
+                                                modifiersClassNames={{
+                                                    paymentCommitment: 'bg-yellow-200 text-yellow-900 rounded-full',
+                                                }}
                                                 disabled={(date) => date < new Date("1900-01-01")}
                                                 initialFocus
                                                 />

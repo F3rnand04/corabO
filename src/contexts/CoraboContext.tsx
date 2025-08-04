@@ -39,6 +39,7 @@ interface CoraboState {
   requestQuoteFromGroup: (serviceName: string, items: string[], groupOrProvider: string) => boolean;
   sendQuote: (transactionId: string, quote: { breakdown: string; total: number }) => void;
   acceptQuote: (transactionId: string) => void;
+  payCommitment: (transactionId: string) => void;
   startDispute: (transactionId: string) => void;
   checkout: (transactionId: string, withDelivery: boolean, useCredicora: boolean) => void;
   setSearchQuery: (query: string) => void;
@@ -170,7 +171,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const getCartTotal = () => cart.reduce((total, item) => total + item.product.price * item.quantity, 0);
   
   const getDeliveryCost = () => {
-    // Simulate a distance between 1 and 10 km
     const distanceInKm = Math.floor(Math.random() * 10) + 1;
     return distanceInKm * 1.5; 
   }
@@ -328,12 +328,20 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const acceptQuote = (transactionId: string) => {
     updateTransaction(transactionId, {
-        status: 'Servicio en Curso',
+        status: 'Acuerdo Aceptado - Pendiente de Ejecución',
         date: new Date().toISOString(),
     });
     toast({ title: "Acuerdo Aceptado", description: "El servicio ha comenzado." });
   };
   
+  const payCommitment = (transactionId: string) => {
+    updateTransaction(transactionId, {
+      status: 'Pagado',
+      date: new Date().toISOString(),
+    });
+    toast({ title: "¡Pago Realizado!", description: "El pago ha sido registrado exitosamente." });
+  };
+
   const startDispute = (transactionId: string) => {
     updateTransaction(transactionId, { status: 'En Disputa' });
     toast({ variant: 'destructive', title: "Disputa Iniciada", description: "La transacción está ahora en disputa." });
@@ -590,6 +598,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     requestQuoteFromGroup,
     sendQuote,
     acceptQuote,
+    payCommitment,
     startDispute,
     setSearchQuery,
     addContact,
@@ -620,5 +629,3 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
-
-    

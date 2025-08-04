@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "./ui/badge";
 import type { Transaction } from "@/lib/types";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert, Truck } from "lucide-react";
+import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert, Truck, Banknote } from "lucide-react";
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 
@@ -25,7 +25,7 @@ interface TransactionDetailsDialogProps {
 }
 
 export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: TransactionDetailsDialogProps) {
-  const { currentUser, sendQuote, acceptQuote, startDispute } = useCorabo();
+  const { currentUser, sendQuote, acceptQuote, startDispute, payCommitment } = useCorabo();
   const [quoteBreakdown, setQuoteBreakdown] = useState('');
   const [quoteTotal, setQuoteTotal] = useState(0);
 
@@ -40,6 +40,11 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
       onOpenChange(false);
     }
   };
+
+  const handlePayCommitment = () => {
+      payCommitment(transaction.id);
+      onOpenChange(false);
+  }
 
   const statusInfo = {
     'Solicitud Pendiente': { icon: MessageSquare, color: 'bg-yellow-500' },
@@ -87,7 +92,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
               {transaction.details.delivery && (
                 <div className="flex items-center gap-2 mt-2 text-green-600">
                     <Truck className="h-4 w-4" />
-                    <span>Incluye delivery (${transaction.details.deliveryCost.toFixed(2)})</span>
+                    <span>Incluye delivery (${transaction.details.deliveryCost?.toFixed(2) || '0.00'})</span>
                 </div>
               )}
             </div>
@@ -116,9 +121,15 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
             <Button variant="outline" onClick={() => startDispute(transaction.id)} disabled={transaction.status === 'En Disputa'}>
               <ShieldAlert className="mr-2 h-4 w-4" /> Iniciar Disputa
             </Button>
-            <div>
+            <div className="flex gap-2">
                 {isProvider && transaction.status === 'Solicitud Pendiente' && <Button onClick={handleSendQuote}>Enviar Cotización</Button>}
                 {isClient && transaction.status === 'Cotización Recibida' && <Button onClick={() => acceptQuote(transaction.id)}>Aceptar y Pagar</Button>}
+                {isClient && transaction.status === 'Acuerdo Aceptado - Pendiente de Ejecución' && (
+                    <Button onClick={handlePayCommitment}>
+                        <Banknote className="mr-2 h-4 w-4" />
+                        Pagar Ahora
+                    </Button>
+                )}
                  <Button variant="secondary" onClick={() => onOpenChange(false)}>Cerrar</Button>
             </div>
         </DialogFooter>

@@ -295,6 +295,10 @@ export default function ProfilePage() {
                       mode="multiple"
                       selected={paymentCommitmentDates}
                       disabled={(date) => date < new Date("1900-01-01")}
+                      modifiers={{ paymentCommitment: paymentCommitmentDates }}
+                      modifiersClassNames={{
+                        paymentCommitment: 'bg-yellow-200 text-yellow-900 rounded-full',
+                      }}
                       initialFocus
                     />
                      <div className="p-2 border-t text-center text-xs text-muted-foreground">

@@ -82,8 +82,9 @@ export default function CompanyProfilePage() {
   const isProductProvider = provider.profileSetupData?.offerType === 'product';
 
   const paymentCommitmentDates = transactions
-    .filter(tx => tx.providerId === provider.id && tx.status === 'Acuerdo Aceptado - Pendiente de Ejecución')
+    .filter(tx => (tx.providerId === provider.id || tx.clientId === provider.id) && tx.status === 'Acuerdo Aceptado - Pendiente de Ejecución')
     .map(tx => new Date(tx.date));
+
 
   const disabledDays = Object.entries(provider.profileSetupData?.schedule || {})
     .filter(([, dayDetails]) => !dayDetails.active)
@@ -272,7 +273,6 @@ export default function CompanyProfilePage() {
                       disabled={[
                           { dayOfWeek: disabledDays },
                           { before: new Date() },
-                          ...paymentCommitmentDates
                       ]}
                       modifiers={{
                         paymentCommitment: paymentCommitmentDates,
@@ -283,7 +283,7 @@ export default function CompanyProfilePage() {
                       initialFocus
                     />
                      <div className="p-2 border-t text-center text-xs text-muted-foreground">
-                        Días no laborales desactivados.
+                        Días no laborales y con pagos están desactivados.
                      </div>
                   </PopoverContent>
                 </Popover>
@@ -311,10 +311,10 @@ export default function CompanyProfilePage() {
                            <div className="grid gap-2 max-h-64 overflow-y-auto">
                             {cart.map(item => (
                                <div key={item.product.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-2">
-                                  <div>
+                                  <Link href={`/companies/${item.product.providerId}`} className="cursor-pointer hover:underline">
                                     <p className="font-medium text-sm truncate">{item.product.name}</p>
                                     <p className="text-xs text-muted-foreground">${item.product.price.toFixed(2)}</p>
-                                  </div>
+                                  </Link>
                                   <div className="flex items-center gap-1 border rounded-md">
                                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateCartQuantity(item.product.id, item.quantity - 1)}>
                                       <Minus className="h-3 w-3" />
