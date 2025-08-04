@@ -11,9 +11,10 @@ import { cn } from "@/lib/utils";
 
 interface ProductGridCardProps {
     product: Product;
+    onDoubleClick?: () => void;
 }
 
-export function ProductGridCard({ product }: ProductGridCardProps) {
+export function ProductGridCard({ product, onDoubleClick }: ProductGridCardProps) {
     const { addToCart } = useCorabo();
     const [likeCount, setLikeCount] = useState(Math.floor(Math.random() * 100));
     const [isLiked, setIsLiked] = useState(false);
@@ -24,24 +25,27 @@ export function ProductGridCard({ product }: ProductGridCardProps) {
     }
 
     return (
-        <div className="relative aspect-square rounded-lg overflow-hidden group border shadow-sm">
+        <div 
+            className="relative aspect-square rounded-lg overflow-hidden group border shadow-sm"
+            onDoubleClick={onDoubleClick}
+        >
             <Image
                 src={product.imageUrl}
                 alt={product.name}
                 fill
-                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                className="object-cover transition-transform duration-300 group-hover:scale-105 cursor-pointer"
                 data-ai-hint="product image"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
             <div className="absolute inset-0 flex flex-col justify-end p-3 text-white">
                  <div className="absolute top-2 right-2">
                     <Button 
-                        size="icon" 
-                        variant="ghost"
-                        className="w-10 h-10 rounded-full bg-black/30 hover:bg-black/50 text-white hover:text-white" 
+                        size="sm"
+                        className="h-8 rounded-full bg-black/40 hover:bg-black/60 text-white hover:text-white border-none shadow-md"
                         onClick={() => addToCart(product, 1)}
                     >
-                        <Plus className="w-5 h-5" />
+                        <Plus className="w-4 h-4 mr-1" />
+                        Añadir
                     </Button>
                 </div>
                 <h4 className="font-bold text-sm leading-tight drop-shadow-md">{product.name}</h4>

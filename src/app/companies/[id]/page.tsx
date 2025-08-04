@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useState, TouchEvent, useEffect } from 'react';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
-import type { User, GalleryImage } from '@/lib/types';
+import type { User, GalleryImage, Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { ReportDialog } from '@/components/ReportDialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -24,6 +24,7 @@ import { es } from 'date-fns/locale';
 import { BusinessHoursStatus } from '@/components/BusinessHoursStatus';
 import { ProductGridCard } from '@/components/ProductGridCard';
 import { Badge } from '@/components/ui/badge';
+import { ProductDetailsDialog } from '@/components/ProductDetailsDialog';
 
 export default function CompanyProfilePage() {
   const params = useParams();
@@ -38,7 +39,9 @@ export default function CompanyProfilePage() {
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [isProductDetailsDialogOpen, setIsProductDetailsDialogOpen] = useState(false);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [isAppointmentSuccess, setIsAppointmentSuccess] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -167,6 +170,11 @@ export default function CompanyProfilePage() {
     setSelectedImage(image);
     setIsDetailsDialogOpen(true);
   }
+
+  const openProductDetailsDialog = (product: Product) => {
+    setSelectedProduct(product);
+    setIsProductDetailsDialogOpen(true);
+  };
 
   const handleStarClick = () => {
     if (isLiked) {
@@ -366,7 +374,11 @@ export default function CompanyProfilePage() {
                     {providerProducts.length > 0 ? (
                       <div className='p-2 grid grid-cols-2 gap-2'>
                         {providerProducts.map(product => (
-                          <ProductGridCard key={product.id} product={product} />
+                          <ProductGridCard 
+                            key={product.id} 
+                            product={product}
+                            onDoubleClick={() => openProductDetailsDialog(product)}
+                           />
                         ))}
                       </div>
                     ) : (
@@ -518,6 +530,13 @@ export default function CompanyProfilePage() {
           image={selectedImage}
           isOwnerView={false}
           onCommentSubmit={() => setMessageCount(prev => prev + 1)}
+        />
+      )}
+      {selectedProduct && (
+        <ProductDetailsDialog
+            isOpen={isProductDetailsDialogOpen}
+            onOpenChange={setIsProductDetailsDialogOpen}
+            product={selectedProduct}
         />
       )}
     </>
