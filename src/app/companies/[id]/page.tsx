@@ -6,7 +6,7 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, MessageCircle, CheckCircle, ThumbsUp, Flag, Package, Hand } from 'lucide-react';
+import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, MessageCircle, CheckCircle, Flag, Package, Hand, ShoppingCart, Plus, Minus, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
@@ -22,11 +22,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogFooter, AlertDialogContent, 
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { BusinessHoursStatus } from '@/components/BusinessHoursStatus';
-import { ProfileProductCard } from '@/components/ProfileProductCard';
+import { ProductGridCard } from '@/components/ProductGridCard';
+import { Badge } from '@/components/ui/badge';
 
 export default function CompanyProfilePage() {
   const params = useParams();
-  const { users, products, addContact, transactions, createAppointmentRequest, currentUser } = useCorabo();
+  const { users, products, addContact, transactions, createAppointmentRequest, currentUser, cart, updateCartQuantity, getCartTotal } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
   
@@ -58,6 +59,7 @@ export default function CompanyProfilePage() {
     setGpsReady(true);
   }, []);
 
+  const totalCartItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   if (!provider) {
     return (
@@ -271,6 +273,64 @@ export default function CompanyProfilePage() {
                      </div>
                   </PopoverContent>
                 </Popover>
+
+                {isProductProvider && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="ghost" size="icon" className="relative">
+                        <ShoppingCart className="w-5 h-5 text-muted-foreground" />
+                        {totalCartItems > 0 && (
+                           <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs rounded-full">{totalCartItems}</Badge>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80">
+                      <div className="grid gap-4">
+                        <div className="space-y-2">
+                          <h4 className="font-medium leading-none">Carrito de Compras</h4>
+                          <p className="text-sm text-muted-foreground">
+                            Resumen de tu pedido a {provider.name}.
+                          </p>
+                        </div>
+                         {cart.length > 0 ? (
+                           <>
+                           <div className="grid gap-2 max-h-64 overflow-y-auto">
+                            {cart.map(item => (
+                               <div key={item.product.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-2">
+                                  <div>
+                                    <p className="font-medium text-sm truncate">{item.product.name}</p>
+                                    <p className="text-xs text-muted-foreground">${item.product.price.toFixed(2)}</p>
+                                  </div>
+                                  <div className="flex items-center gap-1 border rounded-md">
+                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateCartQuantity(item.product.id, item.quantity - 1)}>
+                                      <Minus className="h-3 w-3" />
+                                    </Button>
+                                    <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateCartQuantity(item.product.id, item.quantity + 1)}>
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => updateCartQuantity(item.product.id, 0)}>
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                               </div>
+                            ))}
+                           </div>
+                           <Separator />
+                           <div className="flex justify-between font-bold text-sm">
+                              <span>Total:</span>
+                              <span>${getCartTotal().toFixed(2)}</span>
+                           </div>
+                           <Button className="w-full">Ver Pre-factura</Button>
+                           </>
+                         ) : (
+                           <p className="text-sm text-center text-muted-foreground py-4">Tu carrito está vacío.</p>
+                         )}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                )}
+                
                  <div className="flex flex-col items-center cursor-pointer" onClick={() => provider.profileSetupData?.hasPhysicalLocation && router.push('/map')}>
                     <MapPin className={cn("w-5 h-5", gpsReady && provider.isGpsActive ? "text-green-500" : "text-muted-foreground")} />
                     <span className="text-xs text-muted-foreground">{profileData.distance}</span>
@@ -283,10 +343,12 @@ export default function CompanyProfilePage() {
                   <p className="font-semibold text-foreground">{isProductProvider ? providerProducts.length : profileData.publications}</p>
                   <p>{isProductProvider ? 'Productos' : 'Publicaciones'}</p>
             </div>
-              <div className="flex-1">
+             {!isProductProvider && (
+               <div className="flex-1">
                   <p className="font-semibold text-foreground">{profileData.completedJobs}</p>
                   <p>Trab. Realizados</p>
               </div>
+             )}
           </div>
 
           {/* Main Content Card */}
@@ -297,12 +359,17 @@ export default function CompanyProfilePage() {
             <CardContent className="p-0">
              {isProductProvider ? (
                 // PRODUCT VIEW
-                <div className='p-4 space-y-4'>
-                    <h3 className="text-lg font-semibold text-center flex items-center justify-center gap-2"><Package className='w-5 h-5'/> Productos</h3>
-                    {providerProducts.map(product => (
-                      <ProfileProductCard key={product.id} product={product} />
-                    ))}
-                    {providerProducts.length === 0 && (
+                <div>
+                    <div className="p-4 border-b">
+                      <h3 className="text-lg font-semibold text-center flex items-center justify-center gap-2"><Package className='w-5 h-5'/> Productos</h3>
+                    </div>
+                    {providerProducts.length > 0 ? (
+                      <div className='p-2 grid grid-cols-2 gap-2'>
+                        {providerProducts.map(product => (
+                          <ProductGridCard key={product.id} product={product} />
+                        ))}
+                      </div>
+                    ) : (
                       <p className='text-center text-muted-foreground py-8'>Este proveedor aún no ha publicado productos.</p>
                     )}
                 </div>
