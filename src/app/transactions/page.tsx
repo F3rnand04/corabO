@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from "react";
@@ -276,7 +277,7 @@ const ActionButton = ({ icon: Icon, label, count, onClick }: { icon: React.Eleme
 
 
 export default function TransactionsPage() {
-    const { transactions, currentUser, getAgendaEvents } = useCorabo();
+    const { transactions, currentUser, getAgendaEvents, confirmPaymentReceived } = useCorabo();
     const router = useRouter();
     const isModuleActive = currentUser.isTransactionsActive ?? false;
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
@@ -308,11 +309,23 @@ export default function TransactionsPage() {
     };
 
 
-    const pendingTx = transactions.filter(t => 
-        isProvider ? 
-        (t.providerId === currentUser.id && (t.status === 'Solicitud Pendiente' || t.status === 'Acuerdo Aceptado - Pendiente de Ejecución')) :
-        (t.clientId === currentUser.id && (t.status === 'Cotización Recibida' || t.status === 'Finalizado - Pendiente de Pago' || t.status === 'Cita Solicitada'))
-    );
+    const pendingTx = transactions.filter(t => {
+        if (isProvider) {
+            return (t.providerId === currentUser.id && (
+                t.status === 'Solicitud Pendiente' || 
+                t.status === 'Acuerdo Aceptado - Pendiente de Ejecución' ||
+                t.status === 'Cita Solicitada' ||
+                t.status === 'Pago Enviado - Esperando Confirmación'
+            ));
+        } else { // isClient
+            return (t.clientId === currentUser.id && (
+                t.status === 'Cotización Recibida' || 
+                t.status === 'Finalizado - Pendiente de Pago' ||
+                t.status === 'Pendiente de Confirmación del Cliente'
+            ));
+        }
+    });
+
     const historyTx = transactions.filter(t => (t.providerId === currentUser.id || t.clientId === currentUser.id) && (t.status === 'Pagado' || t.status === 'Resuelto'));
     
     const commitmentTx = transactions.filter(t => (t.providerId === currentUser.id || t.clientId === currentUser.id) && 
@@ -323,7 +336,14 @@ export default function TransactionsPage() {
 
 
     const handleTransactionClick = (transaction: Transaction) => {
-        setSelectedTransaction(transaction);
+        // Provider specific action
+        if (isProvider && transaction.status === 'Pago Enviado - Esperando Confirmación') {
+            confirmPaymentReceived(transaction.id);
+            setSelectedTransaction(null); // Close dialog if open
+            toast({ title: "Pago Confirmado", description: "Has confirmado la recepción del pago." });
+        } else {
+            setSelectedTransaction(transaction);
+        }
     }
 
     const handleInactiveClick = () => {

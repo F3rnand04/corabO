@@ -98,7 +98,9 @@ export type TransactionStatus =
   | 'Servicio en Curso'
   | 'En Disputa'
   | 'Resuelto'
-  | 'Recarga';
+  | 'Recarga'
+  | 'Pendiente de Confirmación del Cliente'
+  | 'Pago Enviado - Esperando Confirmación';
 
 export type AgreementProposal = {
     title: string;
@@ -130,6 +132,8 @@ export type Transaction = {
     system?: string; // Description for system transactions e.g., 'Recarga de Saldo'
     paymentMethod?: 'direct' | 'credicora';
     initialPayment?: number;
+    clientRating?: number;
+    clientComment?: string;
   };
 };
 
@@ -156,4 +160,5 @@ export type AppointmentRequest = {
     details: string;
     amount: number;
 };
+
 

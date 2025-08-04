@@ -11,14 +11,17 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "./ui/badge";
 import type { Transaction } from "@/lib/types";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert, Truck, Banknote, ClipboardCheck, CalendarCheck, Contact } from "lucide-react";
+import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert, Truck, Banknote, ClipboardCheck, CalendarCheck, Contact, Star } from "lucide-react";
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
+import { Label } from './ui/label';
 
 interface TransactionDetailsDialogProps {
   transaction: Transaction | null;
@@ -26,11 +29,31 @@ interface TransactionDetailsDialogProps {
   onOpenChange: (isOpen: boolean) => void;
 }
 
+function RatingInput({ rating, setRating }: { rating: number, setRating: (r: number) => void }) {
+    return (
+        <div className="flex justify-center gap-2">
+            {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                    key={star}
+                    className={`w-8 h-8 cursor-pointer ${rating >= star ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
+                    onClick={() => setRating(star)}
+                />
+            ))}
+        </div>
+    );
+}
+
+
 export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: TransactionDetailsDialogProps) {
-  const { currentUser, users, sendQuote, acceptQuote, startDispute, completeWork, acceptAppointment, sendMessage } = useCorabo();
+  const { currentUser, users, sendQuote, acceptQuote, startDispute, completeWork, confirmWorkReceived, acceptAppointment, payCommitment, sendMessage } = useCorabo();
   const router = useRouter();
   const [quoteBreakdown, setQuoteBreakdown] = useState('');
   const [quoteTotal, setQuoteTotal] = useState(0);
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [showRatingScreen, setShowRatingScreen] = useState(false);
+  const [showPaymentScreen, setShowPaymentScreen] = useState(false);
+  const [hasConfirmedReception, setHasConfirmedReception] = useState(false);
 
   if (!transaction) return null;
 
@@ -39,33 +62,50 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   const otherPartyId = transaction.providerId === currentUser.id ? transaction.clientId : transaction.providerId;
   const otherParty = users.find(u => u.id === otherPartyId);
 
+  const handleClose = () => {
+    setShowRatingScreen(false);
+    setShowPaymentScreen(false);
+    setHasConfirmedReception(false);
+    setRating(0);
+    setComment("");
+    onOpenChange(false);
+  }
+
   const handleSendQuote = () => {
     if (quoteTotal > 0 && quoteBreakdown) {
       sendQuote(transaction.id, { breakdown: quoteBreakdown, total: quoteTotal });
-      onOpenChange(false);
+      handleClose();
     }
   };
 
   const handlePayCommitment = () => {
-    onOpenChange(false);
-    router.push(`/quotes/payment?commitmentId=${transaction.id}&amount=${transaction.amount}`);
+    if (!hasConfirmedReception) return;
+    payCommitment(transaction.id, rating, comment);
+    handleClose();
   }
 
   const handleCompleteWork = () => {
       completeWork(transaction.id);
-      onOpenChange(false);
+      handleClose();
+  }
+
+  const handleConfirmWorkReceived = () => {
+      if (rating === 0) return;
+      confirmWorkReceived(transaction.id, rating, comment);
+      setShowRatingScreen(false);
+      setShowPaymentScreen(true);
   }
 
   const handleAcceptAppointment = () => {
     acceptAppointment(transaction.id);
-    onOpenChange(false);
+    handleClose();
   }
 
   const handleContactToReschedule = () => {
      if(otherPartyId) {
        const conversationId = sendMessage(otherPartyId, `Hola, he visto tu solicitud de cita para el ${new Date(transaction.date).toLocaleDateString()}. Quisiera discutir otro horario.`, false);
        router.push(`/messages/${conversationId}`);
-       onOpenChange(false);
+       handleClose();
      }
   }
 
@@ -80,14 +120,73 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
     'Pre-factura Pendiente': { icon: AlertTriangle, color: 'bg-gray-500' },
     'Acuerdo Aceptado - Pendiente de Ejecución': { icon: Handshake, color: 'bg-cyan-500' },
     'Finalizado - Pendiente de Pago': { icon: ClipboardCheck, color: 'bg-orange-500' },
+    'Pendiente de Confirmación del Cliente': { icon: ClipboardCheck, color: 'bg-yellow-500' },
+    'Pago Enviado - Esperando Confirmación': { icon: Banknote, color: 'bg-blue-500' },
     'Resuelto': { icon: CheckCircle, color: 'bg-green-500' },
   };
 
   const CurrentIcon = statusInfo[transaction.status]?.icon || AlertTriangle;
   const iconColor = statusInfo[transaction.status]?.color || 'bg-gray-500';
 
+  if (showPaymentScreen) {
+    return (
+        <Dialog open={isOpen} onOpenChange={handleClose}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Realizar Pago</DialogTitle>
+                    <DialogDescription>
+                        Realiza el pago a los siguientes datos y registra el comprobante.
+                    </DialogDescription>
+                </DialogHeader>
+                 <div className="text-sm bg-muted p-4 rounded-lg border space-y-2">
+                    <p className="font-bold mb-2">Datos para Pago Móvil</p>
+                    <div className="flex justify-between"><span>Banco:</span><span className="font-mono">Banco de Corabo</span></div>
+                    <div className="flex justify-between"><span>Teléfono:</span><span className="font-mono">0412-1234567</span></div>
+                    <div className="flex justify-between"><span>RIF:</span><span className="font-mono">J-12345678-9</span></div>
+                 </div>
+                 <div className="py-4 space-y-2">
+                    <Label htmlFor="ref">Número de Referencia</Label>
+                    <Input id="ref" placeholder="Escribe el número de referencia aquí..." />
+                 </div>
+                 <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowPaymentScreen(false)}>Volver</Button>
+                    <Button onClick={handlePayCommitment}>Confirmar y Enviar Pago</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+  }
+
+  if (showRatingScreen) {
+    return (
+        <Dialog open={isOpen} onOpenChange={handleClose}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Califica el Servicio</DialogTitle>
+                    <DialogDescription>
+                        Tu opinión es importante para la comunidad.
+                    </DialogDescription>
+                </DialogHeader>
+                 <div className="py-6 space-y-6">
+                    <RatingInput rating={rating} setRating={setRating} />
+                    <Textarea
+                        placeholder="Añade un comentario opcional sobre tu experiencia..."
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value)}
+                        rows={4}
+                    />
+                 </div>
+                 <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowRatingScreen(false)}>Volver</Button>
+                    <Button onClick={handleConfirmWorkReceived} disabled={rating === 0}>Continuar a Pagar</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+  }
+
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
@@ -165,17 +264,37 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
                   </>
                 )}
                 
-                {isProvider && transaction.status === 'Acuerdo Aceptado - Pendiente de Ejecución' && <Button onClick={handleCompleteWork}><ClipboardCheck className="mr-2 h-4 w-4" />Marcar como Entregado/Finalizado</Button>}
+                {isProvider && transaction.status === 'Acuerdo Aceptado - Pendiente de Ejecución' && <Button onClick={handleCompleteWork}><ClipboardCheck className="mr-2 h-4 w-4" />Marcar como Finalizado</Button>}
                 
                 {isClient && transaction.status === 'Cotización Recibida' && <Button onClick={() => acceptQuote(transaction.id)}>Aceptar y Pagar</Button>}
                 
-                {(isClient && (transaction.status === 'Acuerdo Aceptado - Pendiente de Ejecución' || transaction.status === 'Finalizado - Pendiente de Pago')) && (
-                    <Button onClick={handlePayCommitment}>
-                        <Banknote className="mr-2 h-4 w-4" />
-                        Pagar Ahora
-                    </Button>
+                {isClient && transaction.status === 'Pendiente de Confirmación del Cliente' && <Button onClick={() => setShowRatingScreen(true)}>Confirmar Recepción y Calificar</Button>}
+
+                {isClient && transaction.status === 'Finalizado - Pendiente de Pago' && <Button onClick={() => setShowPaymentScreen(true)}>Realizar Pago</Button>}
+                
+                {isClient && transaction.status === 'Acuerdo Aceptado - Pendiente de Ejecución' && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button>
+                          <Banknote className="mr-2 h-4 w-4" />
+                          Pagar Ahora
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                          <AlertDialogTitle>¿Confirmas que recibiste el servicio?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                              Estás a punto de pagar, pero primero necesitamos confirmar que el trabajo fue completado a tu satisfacción.
+                          </AlertDialogDescription>
+                      </AlertDialogHeader>
+                       <AlertDialogFooter>
+                           <AlertDialogCancel>No, aún no</AlertDialogCancel>
+                           <AlertDialogAction onClick={() => { setHasConfirmedReception(true); setShowRatingScreen(true); }}>Sí, confirmar y continuar</AlertDialogAction>
+                       </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 )}
-                 <Button variant="secondary" onClick={() => onOpenChange(false)}>Cerrar</Button>
+                 <Button variant="secondary" onClick={handleClose}>Cerrar</Button>
             </div>
         </DialogFooter>
       </DialogContent>

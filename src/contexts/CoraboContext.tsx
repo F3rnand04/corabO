@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData, Conversation, Message, AppointmentRequest, AgreementProposal } from '@/lib/types';
 import { users as initialUsers, products, services as initialServices, initialTransactions, initialConversations } from '@/lib/mock-data';
 import { useToast } from "@/hooks/use-toast"
@@ -41,8 +41,10 @@ interface CoraboState {
   sendQuote: (transactionId: string, quote: { breakdown: string; total: number }) => void;
   acceptQuote: (transactionId: string) => void;
   acceptAppointment: (transactionId: string) => void;
-  payCommitment: (transactionId: string) => void;
+  payCommitment: (transactionId: string, rating?: number, comment?: string) => void;
+  confirmPaymentReceived: (transactionId: string) => void;
   completeWork: (transactionId: string) => void;
+  confirmWorkReceived: (transactionId: string, rating: number, comment?: string) => void;
   startDispute: (transactionId: string) => void;
   checkout: (transactionId: string, withDelivery: boolean, useCredicora: boolean) => void;
   setSearchQuery: (query: string) => void;
@@ -355,17 +357,43 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const completeWork = (transactionId: string) => {
-    updateTransaction(transactionId, { status: 'Finalizado - Pendiente de Pago' });
-    toast({ title: "Trabajo Finalizado", description: "Se ha notificado al cliente para que realice el pago." });
+    updateTransaction(transactionId, { status: 'Pendiente de Confirmación del Cliente' });
+    toast({ title: "Trabajo Marcado como Finalizado", description: "Se ha notificado al cliente para que confirme la recepción." });
+  };
+
+  const confirmWorkReceived = (transactionId: string, rating: number, comment?: string) => {
+    updateTransaction(transactionId, tx => ({
+      status: 'Finalizado - Pendiente de Pago',
+      details: {
+        ...tx.details,
+        clientRating: rating,
+        clientComment: comment,
+      }
+    }));
+    toast({ title: "Trabajo Confirmado", description: "Gracias por tu feedback. Ahora puedes proceder con el pago." });
   };
   
-  const payCommitment = (transactionId: string) => {
-    updateTransaction(transactionId, {
-      status: 'Pagado',
+  const payCommitment = (transactionId: string, rating?: number, comment?: string) => {
+    updateTransaction(transactionId, tx => ({
+      status: 'Pago Enviado - Esperando Confirmación',
       date: new Date().toISOString(),
-    });
-    router.push('/transactions');
-    toast({ title: "¡Pago Realizado!", description: "El pago ha sido registrado exitosamente." });
+      details: {
+        ...tx.details,
+        clientRating: rating,
+        clientComment: comment,
+      }
+    }));
+    // In a real app, you would show payment details here
+    toast({ title: "¡Pago Registrado!", description: "Se ha notificado al proveedor para que confirme la recepción." });
+    // This timeout simulates the provider confirming the payment
+    setTimeout(() => {
+        confirmPaymentReceived(transactionId);
+    }, 5000)
+  };
+
+  const confirmPaymentReceived = (transactionId: string) => {
+    updateTransaction(transactionId, { status: 'Pagado' });
+    toast({ title: "¡Pago Confirmado por el Proveedor!", description: "La transacción ha sido completada exitosamente." });
   };
 
   const startDispute = (transactionId: string) => {
@@ -730,7 +758,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     acceptQuote,
     acceptAppointment,
     completeWork,
+    confirmWorkReceived,
     payCommitment,
+    confirmPaymentReceived,
     startDispute,
     setSearchQuery,
     addContact,
