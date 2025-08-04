@@ -40,6 +40,7 @@ interface CoraboState {
   requestQuoteFromGroup: (serviceName: string, items: string[], groupOrProvider: string) => boolean;
   sendQuote: (transactionId: string, quote: { breakdown: string; total: number }) => void;
   acceptQuote: (transactionId: string) => void;
+  acceptAppointment: (transactionId: string) => void;
   payCommitment: (transactionId: string) => void;
   completeWork: (transactionId: string) => void;
   startDispute: (transactionId: string) => void;
@@ -343,6 +344,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     toast({ title: "Acuerdo Aceptado", description: "El servicio ha comenzado." });
   };
 
+  const acceptAppointment = (transactionId: string) => {
+    updateTransaction(transactionId, {
+      status: 'Acuerdo Aceptado - Pendiente de Ejecución',
+      date: new Date().toISOString(),
+    });
+    toast({ title: "Cita Confirmada", description: "Se ha creado un compromiso de pago para el cliente." });
+  }
+
   const completeWork = (transactionId: string) => {
     updateTransaction(transactionId, { status: 'Finalizado - Pendiente de Pago' });
     toast({ title: "Trabajo Finalizado", description: "Se ha notificado al cliente para que realice el pago." });
@@ -580,9 +589,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const newTx: Transaction = {
       id: `txn-${Date.now()}`,
       type: 'Servicio',
-      status: 'Acuerdo Aceptado - Pendiente de Ejecución',
+      status: 'Cita Solicitada',
       date: request.date.toISOString(),
-      amount: 0, // Assume 0 cost for now, could be updated later
+      amount: request.amount,
       clientId: currentUser.id,
       providerId: request.providerId,
       details: {
@@ -591,25 +600,36 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     };
     setTransactions(prev => [newTx, ...prev]);
     toast({
-        title: "Cita Agendada",
-        description: `Se ha creado un compromiso de pago para el ${request.date.toLocaleDateString()}.`
+        title: "¡Solicitud de Cita Enviada!",
+        description: `Se ha notificado a tu proveedor. Recibirás una respuesta pronto.`
     })
   }
 
   const getAgendaEvents = () => {
     const events: { date: Date; type: 'payment' | 'task'; description: string, transactionId: string }[] = [];
     transactions.forEach(tx => {
-        if (tx.status === 'Acuerdo Aceptado - Pendiente de Ejecución' || tx.status === 'Finalizado - Pendiente de Pago') {
+        if (tx.status === 'Acuerdo Aceptado - Pendiente de Ejecución' || tx.status === 'Finalizado - Pendiente de Pago' || tx.status === 'Cita Solicitada') {
              const baseDescription = tx.type === 'Sistema' 
                 ? tx.details.system || 'Compromiso de Pago'
                 : tx.details.serviceName || tx.details.items?.map(i => i.product.name).join(', ') || 'Tarea Pendiente';
             
             const isPayment = tx.type === 'Sistema' || tx.status === 'Finalizado - Pendiente de Pago';
 
+            let eventType: 'payment' | 'task' = 'task';
+            let eventDescription = `Entrega: ${baseDescription}`;
+
+            if(isPayment) {
+              eventType = 'payment';
+              eventDescription = `Por Pagar: ${baseDescription}`;
+            } else if (tx.status === 'Cita Solicitada') {
+              eventDescription = `Cita solicitada: ${baseDescription}`;
+            }
+
+
             events.push({
                 date: new Date(tx.date),
-                type: isPayment ? 'payment' : 'task',
-                description: `${isPayment ? 'Por Pagar' : 'Entrega'}: ${baseDescription}`,
+                type: eventType,
+                description: eventDescription,
                 transactionId: tx.id
             });
         }
@@ -642,6 +662,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     requestQuoteFromGroup,
     sendQuote,
     acceptQuote,
+    acceptAppointment,
     completeWork,
     payCommitment,
     startDispute,

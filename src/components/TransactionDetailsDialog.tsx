@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState } from 'react';
@@ -15,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "./ui/badge";
 import type { Transaction } from "@/lib/types";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert, Truck, Banknote, ClipboardCheck } from "lucide-react";
+import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert, Truck, Banknote, ClipboardCheck, CalendarCheck, Contact } from "lucide-react";
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 
@@ -26,7 +27,7 @@ interface TransactionDetailsDialogProps {
 }
 
 export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: TransactionDetailsDialogProps) {
-  const { currentUser, sendQuote, acceptQuote, startDispute, completeWork } = useCorabo();
+  const { currentUser, users, sendQuote, acceptQuote, startDispute, completeWork, acceptAppointment, sendMessage } = useCorabo();
   const router = useRouter();
   const [quoteBreakdown, setQuoteBreakdown] = useState('');
   const [quoteTotal, setQuoteTotal] = useState(0);
@@ -35,6 +36,8 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
 
   const isProvider = currentUser.type === 'provider';
   const isClient = currentUser.type === 'client';
+  const otherPartyId = transaction.providerId === currentUser.id ? transaction.clientId : transaction.providerId;
+  const otherParty = users.find(u => u.id === otherPartyId);
 
   const handleSendQuote = () => {
     if (quoteTotal > 0 && quoteBreakdown) {
@@ -53,9 +56,23 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
       onOpenChange(false);
   }
 
+  const handleAcceptAppointment = () => {
+    acceptAppointment(transaction.id);
+    onOpenChange(false);
+  }
+
+  const handleContactToReschedule = () => {
+     if(otherPartyId) {
+       const conversationId = sendMessage(otherPartyId, `Hola, he visto tu solicitud de cita para el ${new Date(transaction.date).toLocaleDateString()}. Quisiera discutir otro horario.`, false);
+       router.push(`/messages/${conversationId}`);
+       onOpenChange(false);
+     }
+  }
+
   const statusInfo = {
     'Solicitud Pendiente': { icon: MessageSquare, color: 'bg-yellow-500' },
     'Cotización Recibida': { icon: Send, color: 'bg-blue-500' },
+    'Cita Solicitada': { icon: CalendarCheck, color: 'bg-orange-500' },
     'Servicio en Curso': { icon: Handshake, color: 'bg-green-500' },
     'En Disputa': { icon: ShieldAlert, color: 'bg-red-500' },
     'Pagado': { icon: CheckCircle, color: 'bg-green-500' },
@@ -87,6 +104,8 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
             <div><span className="font-semibold">Fecha:</span> {new Date(transaction.date).toLocaleDateString()}</div>
             <div><span className="font-semibold">Tipo:</span> {transaction.type}</div>
             <div><span className="font-semibold">Monto:</span> ${transaction.amount.toFixed(2)}</div>
+             <div><span className="font-semibold">Cliente:</span> {isClient ? "Tú" : (users.find(u => u.id === transaction.clientId)?.name)}</div>
+             <div><span className="font-semibold">Proveedor:</span> {isProvider ? "Tú" : (users.find(u => u.id === transaction.providerId)?.name)}</div>
           </div>
           <hr/>
           {transaction.type === 'Compra' && transaction.details.items && (
@@ -107,9 +126,12 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
           )}
            {transaction.type === 'Servicio' && (
             <div>
-                <h4 className="font-semibold mb-2">Servicio: {transaction.details.serviceName}</h4>
+                <h4 className="font-semibold mb-2">Detalles:</h4>
+                 <div className="p-3 bg-muted rounded-md text-muted-foreground">
+                   {transaction.details.serviceName}
+                 </div>
                 {transaction.details.quote && (
-                    <div className="p-3 bg-muted rounded-md">
+                    <div className="p-3 bg-muted rounded-md mt-2">
                         <p className="font-semibold">Detalles de cotización:</p>
                         <p className="text-muted-foreground">{transaction.details.quote.breakdown}</p>
                     </div>
@@ -131,9 +153,22 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
             </Button>
             <div className="flex gap-2">
                 {isProvider && transaction.status === 'Solicitud Pendiente' && <Button onClick={handleSendQuote}>Enviar Cotización</Button>}
+                
+                {isProvider && transaction.status === 'Cita Solicitada' && (
+                  <>
+                    <Button onClick={handleAcceptAppointment}>
+                      <CalendarCheck className="mr-2 h-4 w-4" /> Aceptar Cita y Crear Compromiso
+                    </Button>
+                     <Button variant="secondary" onClick={handleContactToReschedule}>
+                       <Contact className="mr-2 h-4 w-4" /> Contactar para Reagendar
+                    </Button>
+                  </>
+                )}
+                
                 {isProvider && transaction.status === 'Acuerdo Aceptado - Pendiente de Ejecución' && <Button onClick={handleCompleteWork}><ClipboardCheck className="mr-2 h-4 w-4" />Marcar como Entregado/Finalizado</Button>}
                 
                 {isClient && transaction.status === 'Cotización Recibida' && <Button onClick={() => acceptQuote(transaction.id)}>Aceptar y Pagar</Button>}
+                
                 {(isClient && (transaction.status === 'Acuerdo Aceptado - Pendiente de Ejecución' || transaction.status === 'Finalizado - Pendiente de Pago')) && (
                     <Button onClick={handlePayCommitment}>
                         <Banknote className="mr-2 h-4 w-4" />

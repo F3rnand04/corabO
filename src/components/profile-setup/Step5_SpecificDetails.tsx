@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -35,6 +36,7 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
   const [offerType, setOfferType] = useState(formData.offerType || 'service');
   const [acceptsCredicora, setAcceptsCredicora] = useState(formData.acceptsCredicora || false);
+  const [appointmentCost, setAppointmentCost] = useState(formData.appointmentCost || 0);
 
   useEffect(() => {
     setFormData({ 
@@ -49,8 +51,9 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
       schedule,
       offerType,
       acceptsCredicora,
+      appointmentCost,
     });
-  }, [specialty, location, serviceRadius, hasPhysicalLocation, showExactLocation, isOnlyDelivery, website, schedule, offerType, acceptsCredicora, setFormData]);
+  }, [specialty, location, serviceRadius, hasPhysicalLocation, showExactLocation, isOnlyDelivery, website, schedule, offerType, acceptsCredicora, appointmentCost, setFormData]);
 
   const MAX_RADIUS_FREE = 10;
   const isOverFreeRadius = serviceRadius > MAX_RADIUS_FREE && !formData.isSubscribed;
@@ -99,7 +102,7 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
       </div>
       
       <div className="space-y-3">
-          <Label>Opciones de Pago</Label>
+          <Label>Opciones de Pago y Citas</Label>
            <div className="space-y-4 rounded-md border p-4">
             <div className="flex items-center justify-between">
                 <Label htmlFor="accepts-credicora" className="flex items-center gap-2 font-medium text-blue-600">
@@ -112,6 +115,24 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
                     onCheckedChange={setAcceptsCredicora}
                 />
             </div>
+            {offerType === 'service' && (
+              <div className="flex items-center justify-between pt-4 border-t">
+                  <Label htmlFor="appointment-cost">
+                      Costo por Consulta/Cita
+                      <span className="block text-xs text-muted-foreground">Dejar en 0 si es gratis o variable.</span>
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                    <Input 
+                        id="appointment-cost"
+                        type="number"
+                        className="w-28 pl-6"
+                        value={appointmentCost}
+                        onChange={(e) => setAppointmentCost(parseFloat(e.target.value))}
+                    />
+                  </div>
+              </div>
+            )}
           </div>
       </div>
 

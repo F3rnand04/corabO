@@ -36,6 +36,7 @@ export type ProfileSetupData = {
   website?: string;
   schedule?: Record<string, { from: string; to: string; active: boolean }>;
   acceptsCredicora?: boolean;
+  appointmentCost?: number;
 };
 
 
@@ -91,6 +92,7 @@ export type TransactionStatus =
   | 'Pagado'
   | 'Solicitud Pendiente'
   | 'Cotización Recibida'
+  | 'Cita Solicitada'
   | 'Acuerdo Aceptado - Pendiente de Ejecución'
   | 'Finalizado - Pendiente de Pago'
   | 'Servicio en Curso'
@@ -139,4 +141,6 @@ export type AppointmentRequest = {
     providerId: string;
     date: Date;
     details: string;
+    amount: number;
 };
+

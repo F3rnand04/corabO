@@ -26,6 +26,7 @@ export const users: User[] = [
       hasPhysicalLocation: true,
       showExactLocation: true,
       acceptsCredicora: true,
+      appointmentCost: 50,
       schedule: {
         'Lunes': { from: '00:00', to: '23:59', active: true },
         'Martes': { from: '00:00', to: '23:59', active: true },
@@ -89,6 +90,7 @@ export const users: User[] = [
       hasPhysicalLocation: true,
       showExactLocation: false,
       acceptsCredicora: false,
+      appointmentCost: 0,
       schedule: {
         'Lunes': { from: '09:00', to: '17:00', active: true },
         'Martes': { from: '09:00', to: '17:00', active: true },
