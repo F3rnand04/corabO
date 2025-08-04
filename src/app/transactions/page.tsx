@@ -32,7 +32,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { TransactionList } from "@/components/TransactionList";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { DayPicker, type DayProps } from 'react-day-picker';
+import { Day, type DayProps } from 'react-day-picker';
 import { cn } from "@/lib/utils";
 
 
@@ -416,7 +416,7 @@ export default function TransactionsPage() {
                                                                     <Tooltip>
                                                                         <TooltipTrigger asChild>
                                                                             <div className="relative w-full h-full flex items-center justify-center">
-                                                                                <DayPicker.Day {...props} />
+                                                                                <Day {...props} />
                                                                                 {eventOnDay && (
                                                                                     <div className={cn(
                                                                                         "absolute bottom-1 left-1/2 -translate-x-1/2 h-1.5 w-1.5 rounded-full",
