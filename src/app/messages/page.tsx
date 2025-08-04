@@ -45,7 +45,8 @@ export default function MessagesPage() {
         const lowerCaseQuery = searchQuery.toLowerCase();
 
         const nameMatch = otherParticipant.name.toLowerCase().includes(lowerCaseQuery);
-        const messageMatch = lastMessage?.text.toLowerCase().includes(lowerCaseQuery);
+        
+        const messageMatch = lastMessage?.text ? lastMessage.text.toLowerCase().includes(lowerCaseQuery) : false;
 
         return nameMatch || messageMatch;
     });
