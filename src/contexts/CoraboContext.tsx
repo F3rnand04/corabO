@@ -110,22 +110,22 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const addToCart = (product: Product, quantity: number) => {
+    let cartTx = findOrCreateCartTransaction();
+    
+    const provider = users.find(u => u.id === product.providerId);
+    if (!provider) return; // Should not happen
+
+    // If cart is not empty and new product is from a different provider
+    if (cart.length > 0 && cartTx.providerId && cartTx.providerId !== product.providerId) {
+        toast({
+            variant: "destructive",
+            title: "Carrito Multi-empresa",
+            description: "No puedes añadir productos de diferentes empresas en el mismo carrito. Finaliza esta compra primero."
+        });
+        return;
+    }
+
     setCart((prevCart) => {
-      let cartTx = findOrCreateCartTransaction();
-      
-      const provider = users.find(u => u.id === product.providerId);
-      if (!provider) return prevCart; // Should not happen
-
-      // If cart is not empty and new product is from a different provider
-      if (prevCart.length > 0 && cartTx.providerId && cartTx.providerId !== product.providerId) {
-          toast({
-              variant: "destructive",
-              title: "Carrito Multi-empresa",
-              description: "No puedes añadir productos de diferentes empresas en el mismo carrito. Finaliza esta compra primero."
-          });
-          return prevCart;
-      }
-
       const existingItem = prevCart.find((item) => item.product.id === product.id);
       let newCart;
       if (existingItem) {
@@ -142,10 +142,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         amount: newCart.reduce((sum, item) => sum + item.product.price * item.quantity, 0),
       }));
       
-      toast({ title: "Producto añadido", description: `${product.name} fue añadido al carrito.` });
       return newCart;
     });
 
+    toast({ title: "Producto añadido", description: `${product.name} fue añadido al carrito.` });
   };
   
   const updateCartQuantity = (productId: string, quantity: number) => {
@@ -474,12 +474,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const activateTransactions = (userId: string, creditLimit: number) => {
     updateUser(userId, { isTransactionsActive: true, credicoraLimit: creditLimit });
-    router.push('/transactions');
-     toast({
+    toast({
         title: "¡Módulo de Transacciones Activado!",
         description: "Ya puedes empezar a gestionar tus finanzas.",
         className: "bg-green-100 border-green-300 text-green-800",
     });
+    router.push('/transactions');
   }
   
   const deactivateTransactions = (userId: string) => {
