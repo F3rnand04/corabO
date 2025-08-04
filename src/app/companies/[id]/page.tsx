@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useCorabo } from '@/contexts/CoraboContext';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,12 +12,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useState, TouchEvent, useEffect } from 'react';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
-import type { User, GalleryImage, Product, Transaction } from '@/lib/types';
+import type { User, GalleryImage, Product, Transaction, AppointmentRequest } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { ReportDialog } from '@/components/ReportDialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { useRouter } from 'next/navigation';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogFooter, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -28,6 +27,8 @@ import { ProductDetailsDialog } from '@/components/ProductDetailsDialog';
 import Link from 'next/link';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogClose } from '@/components/ui/dialog';
 
 export default function CompanyProfilePage() {
   const params = useParams();
@@ -46,7 +47,11 @@ export default function CompanyProfilePage() {
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [isProductDetailsDialogOpen, setIsProductDetailsDialogOpen] = useState(false);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
-  const [isAppointmentSuccess, setIsAppointmentSuccess] = useState(false);
+  
+  const [isAppointmentDialogOpen, setIsAppointmentDialogOpen] = useState(false);
+  const [appointmentDate, setAppointmentDate] = useState<Date | null>(null);
+  const [appointmentDetails, setAppointmentDetails] = useState('');
+
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [businessStatus, setBusinessStatus] = useState<'open' | 'closed'>('closed');
   
@@ -120,17 +125,26 @@ export default function CompanyProfilePage() {
         return dayMap[dayName];
     });
 
-  const handleDateSelect = (date: Date | undefined) => {
-    if (date && provider) {
-        createAppointmentRequest({
-            providerId: provider.id,
-            date: date,
-            details: `Solicitud de cita desde perfil para el ${format(date, "dd/MM/yyyy")}`
-        });
-        setSelectedDate(date);
-        setIsAppointmentSuccess(true);
-    }
-  }
+    const handleDateSelect = (date: Date | undefined) => {
+        if (date && provider) {
+            setAppointmentDate(date);
+            setIsAppointmentDialogOpen(true);
+        }
+    };
+
+    const handleConfirmAppointment = () => {
+        if (appointmentDate && provider) {
+            const request: AppointmentRequest = {
+                providerId: provider.id,
+                date: appointmentDate,
+                details: appointmentDetails,
+                amount: provider.profileSetupData?.appointmentCost || 0,
+            };
+            createAppointmentRequest(request);
+            setIsAppointmentDialogOpen(false);
+            setAppointmentDetails('');
+        }
+    };
 
 
   const gallery: GalleryImage[] = provider.gallery || [];
@@ -440,7 +454,7 @@ export default function CompanyProfilePage() {
             </div>
           </div>
           
-          <div className="relative flex justify-around text-center text-xs text-muted-foreground -mt-2">
+          <div className="flex justify-around text-center text-xs text-muted-foreground -mt-2">
             <div className="flex-1">
                   <p className="font-semibold text-foreground">{isProductProvider ? providerProducts.length : profileData.publications}</p>
                   <p>{isProductProvider ? 'Productos' : 'Publicaciones'}</p>
@@ -451,9 +465,6 @@ export default function CompanyProfilePage() {
                   <p>Trab. Realizados</p>
               </div>
              )}
-             <Button variant="ghost" size="icon" className="absolute -top-3 right-0" onClick={handleDirectMessage}>
-                <MessageCircle className="h-5 w-5 text-muted-foreground" />
-             </Button>
           </div>
 
           {/* Main Content Card */}
@@ -601,19 +612,40 @@ export default function CompanyProfilePage() {
           </Card>
         </main>
       </div>
-       <AlertDialog open={isAppointmentSuccess} onOpenChange={setIsAppointmentSuccess}>
+       <Dialog open={isAppointmentDialogOpen} onOpenChange={setIsAppointmentDialogOpen}>
             <AlertDialogContent>
                 <AlertDialogHeader>
-                    <AlertDialogTitle>¡Solicitud de Cita Enviada!</AlertDialogTitle>
+                    <AlertDialogTitle>Solicitar Cita</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Hemos notificado a <strong>{provider.name}</strong> sobre tu interés en agendar una cita para el día <strong>{selectedDate && format(selectedDate, "dd 'de' MMMM", { locale: es })}</strong>. Recibirás una notificación o un mensaje directo para confirmar los detalles.
+                        Estás solicitando una cita con <strong>{provider.name}</strong> para el día <strong>{appointmentDate && format(appointmentDate, "dd 'de' MMMM", { locale: es })}</strong>.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
+                <div className="py-4 space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="appointment-details">Motivo o resumen (opcional)</Label>
+                        <Textarea
+                            id="appointment-details"
+                            placeholder="Ej: Revisión general de plomería, tengo una pequeña fuga en el baño."
+                            value={appointmentDetails}
+                            onChange={(e) => setAppointmentDetails(e.target.value)}
+                        />
+                    </div>
+                    {provider.profileSetupData?.appointmentCost && provider.profileSetupData.appointmentCost > 0 ? (
+                        <div className="p-3 bg-muted rounded-md text-sm">
+                            El costo de esta consulta es de <span className="font-bold">${provider.profileSetupData.appointmentCost.toFixed(2)}</span>. Se creará un compromiso de pago al ser aceptada.
+                        </div>
+                    ) : (
+                         <div className="p-3 bg-muted rounded-md text-sm">
+                            Esta consulta no tiene un costo fijo inicial. El proveedor te enviará una cotización si es necesario.
+                        </div>
+                    )}
+                </div>
                 <AlertDialogFooter>
-                    <AlertDialogAction onClick={() => setIsAppointmentSuccess(false)}>Entendido</AlertDialogAction>
+                    <AlertDialogCancel onClick={() => setAppointmentDetails('')}>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleConfirmAppointment}>Enviar Solicitud</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
-        </AlertDialog>
+        </Dialog>
       <ReportDialog 
             isOpen={isReportDialogOpen} 
             onOpenChange={setIsReportDialogOpen} 
