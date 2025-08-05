@@ -5,105 +5,133 @@ import Image from 'next/image';
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from './ui/scroll-area';
-import { Trash2, MessageSquare, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Trash2, MessageSquare, ThumbsUp, ThumbsDown, X, Send } from 'lucide-react';
 import { Input } from './ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Separator } from './ui/separator';
-import type { GalleryImage, GalleryImageComment } from '@/lib/types';
+import type { GalleryImage, GalleryImageComment, User } from '@/lib/types';
 import { useCorabo } from '@/contexts/CoraboContext';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
+import { cn } from '@/lib/utils';
+
 
 interface ImageDetailsDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  image: GalleryImage | null;
-  isOwnerView?: boolean;
-  onDelete?: (imageId: string) => void;
-  onCommentSubmit?: () => void;
+  gallery: GalleryImage[];
+  startIndex?: number;
+  owner?: User;
 }
 
-export function ImageDetailsDialog({ isOpen, onOpenChange, image, isOwnerView = false, onDelete, onCommentSubmit }: ImageDetailsDialogProps) {
-  const { currentUser } = useCorabo();
+export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex = 0, owner }: ImageDetailsDialogProps) {
+  const { currentUser, updateUserProfileAndGallery, addCommentToImage, removeCommentFromImage } = useCorabo();
+  const [api, setApi] = useState<CarouselApi>();
+  const [currentImageIndex, setCurrentImageIndex] = useState(startIndex);
   const [newComment, setNewComment] = useState("");
-  const [comments, setComments] = useState(image?.comments || []);
 
-  if (!image) return null;
+  const isOwnerView = currentUser.id === owner?.id;
+  const currentImage = gallery[currentImageIndex];
 
-  const handleDelete = () => {
-    if(onDelete && image) {
-      onDelete(image.id);
+  useEffect(() => {
+    if (!api) return;
+    
+    api.on("select", () => {
+      setCurrentImageIndex(api.selectedScrollSnap());
+    });
+    
+    // Go to initial slide
+    if(api.selectedScrollSnap() !== startIndex) {
+        api.scrollTo(startIndex, true);
+    }
+
+  }, [api, startIndex]);
+  
+  const handlePostComment = () => {
+    if (newComment.trim() && currentImage && owner) {
+        addCommentToImage(owner.id, currentImage.id, newComment);
+        setNewComment("");
+    }
+  }
+  
+  const handleDeleteComment = (commentIndex: number) => {
+    if (currentImage && owner) {
+        removeCommentFromImage(owner.id, currentImage.id, commentIndex);
+    }
+  }
+
+  const handleDeletePublication = (imageId: string) => {
+    if (owner) {
+      updateUserProfileAndGallery(owner.id, imageId, true);
       onOpenChange(false);
     }
   }
 
-  const handlePostComment = () => {
-    if (newComment.trim()) {
-      const commentToAdd: GalleryImageComment = {
-        author: currentUser.name,
-        text: newComment,
-        likes: 0,
-        dislikes: 0,
-        profileImage: currentUser.profileImage,
-      };
-      setComments(prev => [...prev, commentToAdd]);
-      setNewComment("");
-      if (onCommentSubmit) {
-        onCommentSubmit();
-      }
-    }
-  }
+
+  if (!gallery || gallery.length === 0) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl p-0 flex flex-col max-h-[90vh]">
-        <div className="relative aspect-video flex-shrink-0">
-             <Image
-                src={image.src}
-                alt={image.alt}
-                fill
-                className="object-cover rounded-t-lg"
-                data-ai-hint="product detail"
-            />
+      <DialogContent className="max-w-4xl w-[95vw] h-[90vh] flex flex-col p-0 gap-0">
+         <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="absolute top-2 right-2 z-50 bg-black/30 text-white hover:bg-black/50 hover:text-white rounded-full">
+            <X className="h-5 w-5"/>
+         </Button>
+
+        <div className="w-full h-3/5 bg-black flex-shrink-0 relative">
+            <Carousel setApi={setApi} className="w-full h-full">
+                <CarouselContent>
+                    {gallery.map((image, index) => (
+                    <CarouselItem key={index}>
+                        <div className="w-full h-full relative">
+                        <Image
+                            src={image.src}
+                            alt={image.alt}
+                            fill
+                            className="object-contain"
+                            data-ai-hint="product detail"
+                        />
+                        </div>
+                    </CarouselItem>
+                    ))}
+                </CarouselContent>
+                <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 z-10" />
+                <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 z-10" />
+            </Carousel>
         </div>
-        <ScrollArea className="flex-grow overflow-y-auto">
+
+        <ScrollArea className="flex-grow overflow-y-auto bg-background">
             <div className="p-6">
-                <DialogHeader className="text-left mb-4">
-                    <DialogTitle className="text-2xl">{image.alt}</DialogTitle>
-                </DialogHeader>
-
-                <DialogDescription className="text-base text-foreground mb-6">
-                    {image.description}
-                </DialogDescription>
-
-                <div className="flex flex-wrap gap-2 mb-6">
+                <div className="flex justify-between items-start">
+                    <div>
+                        <h2 className="text-xl font-bold">{currentImage.alt}</h2>
+                        <p className="text-sm text-muted-foreground mt-1">
+                            Publicado por <span className="font-semibold text-foreground">{owner?.name}</span>
+                        </p>
+                    </div>
                     {isOwnerView && (
-                      <>
-                        <Button variant="outline">Editar Descripción</Button>
-                        <Button variant="destructive" size="icon" onClick={handleDelete}>
-                            <Trash2 className="h-4 w-4"/>
+                        <Button variant="destructive" size="sm" onClick={() => handleDeletePublication(currentImage.id)}>
+                            <Trash2 className="h-4 w-4 mr-2"/>
+                            Eliminar Publicación
                         </Button>
-                      </>
                     )}
-                    <Button variant="secondary" onClick={() => onOpenChange(false)} className="ml-auto">Cerrar</Button>
                 </div>
-
+                
+                <p className="text-sm text-foreground my-4">{currentImage.description}</p>
+                
                 <Separator />
 
                 {/* Comments Section */}
-                <div className="mt-6">
+                <div className="mt-4">
                     <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                         <MessageSquare className="w-5 h-5" />
-                        Comentarios ({comments.length || 0})
+                        Comentarios ({currentImage.comments?.length || 0})
                     </h3>
                     <div className="space-y-4">
-                        {comments?.map((comment, index) => (
-                           <div key={index} className="flex items-start gap-3">
+                        {currentImage.comments?.map((comment, index) => (
+                           <div key={index} className="flex items-start gap-3 group">
                                <Avatar className="w-8 h-8 shrink-0">
                                    <AvatarImage src={comment.profileImage} alt={comment.author} />
                                    <AvatarFallback>{comment.author.charAt(0)}</AvatarFallback>
@@ -111,32 +139,39 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, image, isOwnerView = 
                                <div className="flex-grow">
                                    <p className="font-semibold text-sm">{comment.author}</p>
                                    <p className="text-sm text-muted-foreground">{comment.text}</p>
-                                   <div className="flex items-center gap-4 mt-2 text-muted-foreground">
-                                      <Button variant="ghost" size="icon" className="w-6 h-6">
-                                          <ThumbsUp className="w-4 h-4"/>
-                                      </Button>
-                                      <Button variant="ghost" size="icon" className="w-6 h-6">
-                                          <ThumbsDown className="w-4 h-4"/>
-                                      </Button>
+                                   <div className="flex items-center gap-2 mt-1 text-muted-foreground">
+                                      <Button variant="ghost" size="icon" className="w-6 h-6"><ThumbsUp className="w-4 h-4"/></Button>
+                                      <span className="text-xs">{comment.likes || 0}</span>
+                                      <Button variant="ghost" size="icon" className="w-6 h-6"><ThumbsDown className="w-4 h-4"/></Button>
+                                      <span className="text-xs">{comment.dislikes || 0}</span>
                                    </div>
                                </div>
+                                {comment.author === currentUser.name && (
+                                   <Button variant="ghost" size="icon" className="w-7 h-7 shrink-0 opacity-0 group-hover:opacity-100" onClick={() => handleDeleteComment(index)}>
+                                        <Trash2 className="w-4 h-4 text-destructive" />
+                                   </Button>
+                                )}
                            </div>
                         ))}
-                         {!comments?.length && (
+                         {!currentImage.comments?.length && (
                              <p className="text-sm text-muted-foreground text-center py-4">No hay comentarios aún. ¡Sé el primero!</p>
                          )}
                     </div>
-                     {!isOwnerView && (
-                          <div className="mt-6 flex items-center gap-2">
-                              <Input 
-                                placeholder="Añade un comentario..." 
-                                value={newComment}
-                                onChange={(e) => setNewComment(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handlePostComment()}
-                              />
-                              <Button onClick={handlePostComment} disabled={!newComment.trim()}>Comentar</Button>
-                          </div>
-                      )}
+                     <div className="mt-6 flex items-center gap-2">
+                        <Avatar className="w-8 h-8 shrink-0">
+                            <AvatarImage src={currentUser.profileImage} />
+                            <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <Input 
+                        placeholder="Añade un comentario..." 
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handlePostComment()}
+                        />
+                        <Button onClick={handlePostComment} disabled={!newComment.trim()} size="icon">
+                            <Send className="h-4 w-4" />
+                        </Button>
+                    </div>
                 </div>
             </div>
         </ScrollArea>

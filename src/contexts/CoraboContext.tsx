@@ -51,7 +51,7 @@ interface CoraboState {
   removeContact: (userId: string) => void;
   toggleGps: (userId: string) => void;
   updateUserProfileImage: (userId: string, imageUrl: string) => void;
-  updateUserProfileAndGallery: (userId: string, newGalleryImage: GalleryImage) => void;
+  updateUserProfileAndGallery: (userId: string, imageOrId: GalleryImage | string, isDelete?: boolean) => void;
   removeGalleryImage: (userId: string, imageId: string) => void;
   validateEmail: (userId: string) => void;
   validatePhone: (userId: string) => void;
@@ -66,6 +66,8 @@ interface CoraboState {
   acceptProposal: (conversationId: string, messageId: string) => void;
   createAppointmentRequest: (request: AppointmentRequest) => void;
   getAgendaEvents: () => { date: Date; type: 'payment' | 'task'; description: string, transactionId: string }[];
+  addCommentToImage: (ownerId: string, imageId: string, commentText: string) => void;
+  removeCommentFromImage: (ownerId: string, imageId: string, commentIndex: number) => void;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -476,10 +478,22 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     updateUser(userId, { profileImage: imageUrl });
   };
   
-  const updateUserProfileAndGallery = (userId: string, newGalleryImage: GalleryImage) => {
-    updateUser(userId, (user) => ({
-        gallery: [{...newGalleryImage, id: newGalleryImage.src}, ...(user.gallery || [])]
-    }));
+  const updateUserProfileAndGallery = (userId: string, imageOrId: GalleryImage | string, isDelete: boolean = false) => {
+    updateUser(userId, (user) => {
+      const currentGallery = user.gallery || [];
+      let newGallery;
+
+      if (isDelete) {
+        newGallery = currentGallery.filter(image => image.id !== imageOrId);
+        toast({ title: "Publicación Eliminada", description: "La imagen ha sido eliminada de tu galería." });
+      } else {
+        const newImage = imageOrId as GalleryImage;
+        newGallery = [{ ...newImage, id: newImage.src }, ...currentGallery];
+        toast({ title: "¡Publicación Exitosa!", description: "Tu nueva imagen ya está en tu vitrina." });
+      }
+
+      return { gallery: newGallery };
+    });
   };
   
   const removeGalleryImage = (userId: string, imageId: string) => {
@@ -492,6 +506,42 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         description: "La imagen ha sido eliminada de tu galería."
     });
   };
+
+  const addCommentToImage = (ownerId: string, imageId: string, commentText: string) => {
+     updateUser(ownerId, (user) => {
+        const newGallery = (user.gallery || []).map(img => {
+            if (img.id === imageId) {
+                const newComment = {
+                    author: currentUser.name,
+                    text: commentText,
+                    profileImage: currentUser.profileImage,
+                    likes: 0,
+                    dislikes: 0,
+                };
+                return {
+                    ...img,
+                    comments: [...(img.comments || []), newComment]
+                };
+            }
+            return img;
+        });
+        return { gallery: newGallery };
+    });
+  }
+
+  const removeCommentFromImage = (ownerId: string, imageId: string, commentIndex: number) => {
+     updateUser(ownerId, (user) => {
+        const newGallery = (user.gallery || []).map(img => {
+            if (img.id === imageId) {
+                const newComments = [...(img.comments || [])];
+                newComments.splice(commentIndex, 1);
+                return { ...img, comments: newComments };
+            }
+            return img;
+        });
+        return { gallery: newGallery };
+    });
+  }
 
   const validateEmail = (userId: string) => {
     updateUser(userId, { emailValidated: true });
@@ -797,6 +847,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     acceptProposal,
     createAppointmentRequest,
     getAgendaEvents,
+    addCommentToImage,
+    removeCommentFromImage,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;

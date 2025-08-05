@@ -41,9 +41,9 @@ export default function CompanyProfilePage() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
-  const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [detailsDialogStartIndex, setDetailsDialogStartIndex] = useState(0);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isProductDetailsDialogOpen, setIsProductDetailsDialogOpen] = useState(false);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   
@@ -207,11 +207,11 @@ export default function CompanyProfilePage() {
   };
 
   const handleImageDoubleClick = () => {
-    handleStarClick();
+    openDetailsDialog(currentImageIndex);
   };
-
-  const openDetailsDialog = (image: GalleryImage) => {
-    setSelectedImage(image);
+  
+  const openDetailsDialog = (index: number) => {
+    setDetailsDialogStartIndex(index);
     setIsDetailsDialogOpen(true);
   }
 
@@ -544,7 +544,7 @@ export default function CompanyProfilePage() {
                               <span className="text-xs font-bold mt-1">{(starCount / 1000).toFixed(1)}k</span>
                           </div>
                            <div className="flex flex-col items-center">
-                              <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={() => openDetailsDialog(currentImage)}>
+                              <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={() => openDetailsDialog(currentImageIndex)}>
                                   <MessageCircle className="w-5 h-5" />
                               </Button>
                               <span className="text-xs font-bold mt-1">{(messageCount / 1000).toFixed(1)}k</span>
@@ -588,7 +588,7 @@ export default function CompanyProfilePage() {
                               key={index} 
                               className="relative aspect-square cursor-pointer group"
                               onClick={() => setCurrentImageIndex(index)}
-                              onDoubleClick={() => openDetailsDialog(thumb)}
+                              onDoubleClick={() => openDetailsDialog(index)}
                           >
                           <Image
                               src={thumb.src}
@@ -651,13 +651,13 @@ export default function CompanyProfilePage() {
             providerId={provider.id} 
             publicationId={currentImage?.id || 'provider-img'} 
         />
-       {selectedImage && (
+       {gallery.length > 0 && (
         <ImageDetailsDialog
           isOpen={isDetailsDialogOpen}
           onOpenChange={setIsDetailsDialogOpen}
-          image={selectedImage}
-          isOwnerView={false}
-          onCommentSubmit={() => setMessageCount(prev => prev + 1)}
+          gallery={gallery}
+          startIndex={detailsDialogStartIndex}
+          owner={provider}
         />
       )}
       {selectedProduct && (
