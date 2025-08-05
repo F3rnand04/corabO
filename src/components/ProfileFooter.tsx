@@ -9,16 +9,28 @@ import { cn } from '@/lib/utils';
 import { useState } from 'react';
 import { UploadDialog } from './UploadDialog';
 import { useRouter } from 'next/navigation';
+import { useCorabo } from '@/contexts/CoraboContext';
 
 export default function ProfileFooter() {
   const pathname = usePathname();
   const router = useRouter();
+  const { currentUser } = useCorabo();
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+
+  const isProvider = currentUser.type === 'provider';
+
+  const handleCentralButtonClick = () => {
+    if (isProvider) {
+      setIsUploadOpen(true);
+    } else {
+      router.push('/emprende');
+    }
+  };
 
   const navItems = [
     { href: '/', icon: Home, label: 'Inicio' },
     { href: '/videos', icon: PlaySquare, label: 'Videos' },
-    { href: '#upload', icon: Upload, label: 'Añadir', isCentral: true, action: () => setIsUploadOpen(true) },
+    { href: '#upload', icon: Upload, label: 'Añadir', isCentral: true, action: handleCentralButtonClick },
     { href: '/messages', icon: MessageSquare, label: 'Mensajes' },
     { href: '/profile-setup', icon: Settings, label: 'Ajustes' },
   ];

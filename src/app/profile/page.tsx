@@ -477,7 +477,7 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
         </main>
-        {isProvider && <ProfileFooter />}
+        <ProfileFooter />
       </div>
        <ReportDialog 
             isOpen={isReportDialogOpen} 
