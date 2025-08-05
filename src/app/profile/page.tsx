@@ -318,14 +318,17 @@ export default function ProfilePage() {
                   <p className="font-semibold text-foreground">{gallery.length}</p>
                   <p>Publicaciones</p>
             </div>
+            {isProvider && (
               <div className="flex-1">
                   <p className="font-semibold text-foreground">{providerProfile.completedJobs}</p>
                   <p>Trab. Realizados</p>
               </div>
+            )}
           </div>
 
 
           {/* Campaign Management Button */}
+          {isProvider && (
           <div className="flex justify-end">
              <Button 
               variant="secondary" 
@@ -335,6 +338,7 @@ export default function ProfilePage() {
               GESTIÓN DE CAMPAÑAS
             </Button>
           </div>
+          )}
 
           {/* Main Content Card */}
           <Card className="rounded-2xl overflow-hidden shadow-lg">
@@ -423,6 +427,7 @@ export default function ProfilePage() {
               </div>
 
               {/* Tabs */}
+              {isProvider && (
               <div className="flex justify-around font-semibold text-center border-b">
                 <div
                   className={cn(
@@ -449,6 +454,7 @@ export default function ProfilePage() {
                   Editar Descripción
                 </div>
               </div>
+              )}
 
               {/* Thumbnails Grid */}
               <div className="p-4 grid grid-cols-3 gap-2">
@@ -488,7 +494,7 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
         </main>
-        <ProfileFooter />
+        {isProvider && <ProfileFooter />}
       </div>
        <ReportDialog 
             isOpen={isReportDialogOpen} 
@@ -500,10 +506,8 @@ export default function ProfilePage() {
         <ImageDetailsDialog
           isOpen={isDetailsDialogOpen}
           onOpenChange={setIsDetailsDialogOpen}
-          image={selectedImage}
-          isOwnerView={true}
-          onDelete={handleDeleteImage}
-          onCommentSubmit={() => setMessageCount(prev => prev + 1)}
+          gallery={[selectedImage]}
+          owner={currentUser}
         />
       )}
       {currentImage && isProvider &&
