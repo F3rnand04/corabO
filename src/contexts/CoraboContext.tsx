@@ -184,8 +184,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const getCartTotal = () => cart.reduce((total, item) => total + item.product.price * item.quantity, 0);
   
   const getDeliveryCost = () => {
-    // Simulate distance between 1 and 10 km for demo purposes
-    const distanceInKm = Math.floor(Math.random() * 10) + 1;
+    // Simulate distance between 1 and 5 km for demo purposes
+    const distanceInKm = Math.floor(Math.random() * 5) + 1;
     return distanceInKm * 1.5; 
   }
 
