@@ -78,11 +78,38 @@ export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogP
   }
 
   const getPlanKey = (): keyof typeof plans => {
-    if (currentUser.type === 'client') return 'personal';
-    if (currentUser.profileSetupData?.providerType === 'company') return 'company';
-    if (getCompletedJobs() <= 15) return 'personal';
-    return 'professional';
+    const professionalCategories = ['Salud y Bienestar', 'Educación'];
+    
+    // Rule 1: Companies always get the Empresarial plan
+    if (currentUser.profileSetupData?.providerType === 'company') {
+      return 'company';
+    }
+
+    // Rule 2: Clients always get the Personal plan
+    if (currentUser.type === 'client') {
+      return 'personal';
+    }
+
+    // At this point, user is a provider but not a company
+    if (currentUser.type === 'provider') {
+      const completedJobs = getCompletedJobs();
+      const primaryCategory = currentUser.profileSetupData?.primaryCategory || '';
+      const offerType = currentUser.profileSetupData?.offerType;
+
+      // Rule 3: Providers selling products or in professional categories start at Profesional
+      if (
+        offerType === 'product' ||
+        professionalCategories.includes(primaryCategory) ||
+        completedJobs > 15
+      ) {
+        return 'professional';
+      }
+    }
+
+    // Default for basic service providers with 15 or fewer jobs
+    return 'personal';
   }
+
 
   const currentPlanKey = getPlanKey();
   const currentPlan = plans[currentPlanKey];
