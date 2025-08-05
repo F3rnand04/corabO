@@ -21,21 +21,27 @@ export default function TransactionsPieChart({ transactions }: TransactionsPieCh
   const processDataForChart = (txs: Transaction[]) => {
     let totalIngresos = 0;
     let totalEgresos = 0;
+    let totalIngresosPendientes = 0;
+    let totalEgresosPendientes = 0;
 
     txs.forEach(tx => {
-      if (tx.status !== 'Pagado' && tx.status !== 'Resuelto') {
-        return;
-      }
+      const isCompleted = ['Pagado', 'Resuelto', 'Recarga'].includes(tx.status);
+      const isPending = ['Acuerdo Aceptado - Pendiente de Ejecución', 'Finalizado - Pendiente de Pago'].includes(tx.status);
+
       if (tx.type === 'Compra' || tx.type === 'Servicio') {
-        totalEgresos += tx.amount;
-      } else {
-        totalIngresos += tx.amount;
+        if (isCompleted) totalEgresos += tx.amount;
+        if (isPending) totalEgresosPendientes += tx.amount;
+      } else { // Sistema
+        if (isCompleted) totalIngresos += tx.amount;
+        if (isPending) totalIngresosPendientes += tx.amount;
       }
     });
 
     return [
-      { name: 'Ingresos', value: totalIngresos, fill: 'var(--color-ingresos)' },
-      { name: 'Egresos', value: totalEgresos, fill: 'var(--color-egresos)' },
+      { name: 'Ingresos', value: totalIngresos, fill: 'hsl(var(--chart-2))' },
+      { name: 'Egresos', value: totalEgresos, fill: 'hsl(var(--chart-1))' },
+      { name: 'Pendiente por Cobrar', value: totalIngresosPendientes, fill: 'hsl(var(--chart-2), 0.5)' },
+      { name: 'Pendiente por Pagar', value: totalEgresosPendientes, fill: 'hsl(var(--chart-1), 0.5)' },
     ].filter(item => item.value > 0);
   };
   
@@ -44,12 +50,20 @@ export default function TransactionsPieChart({ transactions }: TransactionsPieCh
   const chartConfig = {
     ingresos: {
       label: "Ingresos",
-      color: "hsl(var(--chart-1))",
+      color: "hsl(var(--chart-2))",
     },
     egresos: {
       label: "Egresos",
-      color: "hsl(var(--chart-2))",
+      color: "hsl(var(--chart-1))",
     },
+    ingresosPendientes: {
+      label: "Pend. Cobrar",
+      color: "hsl(var(--chart-2))"
+    },
+    egresosPendientes: {
+      label: "Pend. Pagar",
+      color: "hsl(var(--chart-1))"
+    }
   }
 
   return (
@@ -81,5 +95,3 @@ export default function TransactionsPieChart({ transactions }: TransactionsPieCh
     </div>
   )
 }
-
-    

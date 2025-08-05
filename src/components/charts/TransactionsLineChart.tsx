@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { Line, LineChart, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts"
+import { Line, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from "recharts"
 
 import {
   ChartContainer,
@@ -17,28 +17,30 @@ interface TransactionsLineChartProps {
 export default function TransactionsLineChart({ transactions }: TransactionsLineChartProps) {
 
   const processDataForChart = (txs: Transaction[]) => {
-    const monthlyData: { [key: string]: { ingresos: number; egresos: number } } = {};
+    const monthlyData: { [key: string]: { ingresos: number; egresos: number; ingresosPendientes: number; egresosPendientes: number; } } = {};
 
     txs.forEach(tx => {
-      // Usar solo transacciones completadas (Pagado o Resuelto o Recarga) para el gráfico
-      if (!['Pagado', 'Resuelto', 'Recarga'].includes(tx.status)) {
-        return;
-      }
-
       const date = new Date(tx.date);
-      const month = date.toLocaleString('default', { month: 'short' });
+      // For pending transactions, we consider their future date. For past, their historical date.
+      const monthDate = tx.status === 'Pagado' || tx.status === 'Resuelto' ? date : new Date();
+      const month = monthDate.toLocaleString('default', { month: 'short' });
       
       if (!monthlyData[month]) {
-        monthlyData[month] = { ingresos: 0, egresos: 0 };
+        monthlyData[month] = { ingresos: 0, egresos: 0, ingresosPendientes: 0, egresosPendientes: 0 };
       }
+
+      const isCompleted = tx.status === 'Pagado' || tx.status === 'Resuelto' || tx.status === 'Recarga';
+      const isPending = ['Acuerdo Aceptado - Pendiente de Ejecución', 'Finalizado - Pendiente de Pago'].includes(tx.status);
 
       if (tx.type === 'Compra' || tx.type === 'Servicio') {
-        monthlyData[month].egresos += tx.amount;
-      } else if (tx.type === 'Sistema' && tx.status === 'Recarga') {
-        monthlyData[month].ingresos += tx.amount;
+        if (isCompleted) monthlyData[month].egresos += tx.amount;
+        if (isPending) monthlyData[month].egresosPendientes += tx.amount;
+      } else if (tx.type === 'Sistema') {
+         if (isCompleted) monthlyData[month].ingresos += tx.amount;
+         if (isPending) monthlyData[month].ingresosPendientes += tx.amount;
       }
     });
-
+    
     // Asegurarse de tener al menos datos para los últimos meses
     const lastSixMonths = Array.from({ length: 6 }, (_, i) => {
         const d = new Date();
@@ -48,7 +50,7 @@ export default function TransactionsLineChart({ transactions }: TransactionsLine
 
     lastSixMonths.forEach(month => {
         if (!monthlyData[month]) {
-            monthlyData[month] = { ingresos: 0, egresos: 0 };
+            monthlyData[month] = { ingresos: 0, egresos: 0, ingresosPendientes: 0, egresosPendientes: 0 };
         }
     });
 
@@ -64,6 +66,14 @@ export default function TransactionsLineChart({ transactions }: TransactionsLine
     },
     egresos: {
       label: "Egresos",
+      color: "hsl(var(--chart-1))",
+    },
+     ingresosPendientes: {
+      label: "Ing. Pendientes",
+      color: "hsl(var(--chart-2))",
+    },
+    egresosPendientes: {
+      label: "Egr. Pendientes",
       color: "hsl(var(--chart-1))",
     },
   }
@@ -87,7 +97,7 @@ export default function TransactionsLineChart({ transactions }: TransactionsLine
                     stroke=""
                     tickFormatter={(value) => `$${value}`}
                 />
-                <Tooltip 
+                 <Tooltip 
                     cursor={true} 
                     content={<ChartTooltipContent 
                         labelClassName="font-bold"
@@ -99,12 +109,13 @@ export default function TransactionsLineChart({ transactions }: TransactionsLine
                         )}
                     />} 
                 />
+                <Legend />
                 <Line type="monotone" dataKey="ingresos" stroke="var(--color-ingresos)" strokeWidth={3} dot={false} />
                 <Line type="monotone" dataKey="egresos" stroke="var(--color-egresos)" strokeWidth={3} dot={false} />
+                <Line type="monotone" dataKey="ingresosPendientes" name="Ing. Pendientes" stroke="var(--color-ingresos)" strokeWidth={2} strokeDasharray="3 3" dot={false} />
+                <Line type="monotone" dataKey="egresosPendientes" name="Egr. Pendientes" stroke="var(--color-egresos)" strokeWidth={2} strokeDasharray="3 3" dot={false} />
             </LineChart>
         </ChartContainer>
     </div>
   )
 }
-
-    
