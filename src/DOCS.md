@@ -17,76 +17,59 @@ La aplicación está diseñada como una plataforma de conexión entre **clientes
 
 La aplicación se rige por un conjunto de tipos de datos bien definidos:
 
--   **`User`**: Representa tanto a clientes (`client`) como a proveedores (`provider`). Contiene información como `id`, `name`, `profileImage`, `reputation` y, para los proveedores, una `gallery` de publicaciones. Incluye campos para el estado de suscripción y la activación del módulo de transacciones.
+-   **`User`**: Representa tanto a clientes (`client`) como a proveedores (`provider`). Contiene información como `id`, `name`, `profileImage`, `reputation` y, para los proveedores, una `gallery` de publicaciones. Incluye campos para el estado de suscripción (`isSubscribed`), la activación del módulo de transacciones (`isTransactionsActive`) y su nivel y límite en el sistema **Credicora**.
 -   **`Product`**: Define un producto con `id`, `name`, `price`, `providerId`, etc.
 -   **`Service`**: Define un servicio ofrecido por un proveedor.
 -   **`GalleryImage`**: Representa una publicación en la galería de un proveedor, incluyendo imagen, descripción y comentarios.
--   **`Transaction`**: Modela una transacción desde su inicio (`Carrito Activo`, `Solicitud Pendiente`) hasta su finalización (`Pagado`, `Resuelto`). Incluye nuevos estados como `Cita Solicitada` y `Pago Enviado - Esperando Confirmación` para un seguimiento más detallado.
+-   **`Transaction`**: Modela una transacción desde su inicio (`Carrito Activo`, `Solicitud Pendiente`) hasta su finalización (`Pagado`, `Resuelto`). Incluye estados detallados para el ciclo de vida completo del pago y la entrega.
 -   **`AgreementProposal`**: Estructura para las propuestas de acuerdo enviadas en el chat.
 -   **`Message`**: Ahora puede contener opcionalmente una `proposal` para mostrarla como una cápsula interactiva.
+-   **`CredicoraLevel`**: Define la estructura de los niveles del sistema Credicora (Alfa, Delta, Lambda, Sigma, Omega), especificando límite de crédito, porcentaje de pago inicial requerido y número de cuotas.
 
 ## 3. Lógica de Negocio y Estado (`src/contexts/CoraboContext.tsx`)
 
 El `CoraboContext` es el corazón de la aplicación. Centraliza toda la lógica y los datos:
 
 -   **Gestión de Estado:** Utiliza `useState` para manejar `users`, `products`, `services`, `transactions`, `currentUser`, `searchQuery`, `feedView` y el `cart` global.
--   **Acciones del Usuario:** Expone funciones para realizar todas las operaciones clave:
+-   **Acciones Clave:**
     -   `switchUser`: Cambia entre perfiles de usuario (para simulación).
     -   `addToCart`, `updateCartQuantity`: Gestionan el carrito de compras global.
-    -   `checkout`: Procesa el pago, incluyendo la opción de usar **Credicora**, que calcula un pago inicial y genera cuotas futuras como transacciones separadas.
-    -   `requestQuoteFromGroup`, `sendQuote`: Gestionan el flujo de cotizaciones.
-    -   `addContact`, `removeContact`: Administra la lista de contactos del usuario.
-    -   **Flujo de Citas y Acuerdos:** Nuevas funciones como `createAppointmentRequest`, `sendProposalMessage` y `acceptProposal` gestionan un flujo de negociación completo desde el chat.
-    -   **Flujo de Finalización de Servicio:** Lógica mejorada con `completeWork` y `confirmWorkReceived` para asegurar que el cliente confirma la recepción y califica antes de pagar, y el proveedor confirma el pago.
-    -   **Límite de Cotizaciones:** Implementa una regla de negocio que limita a los usuarios no suscritos a cotizar el mismo producto/servicio a un máximo de 3 proveedores distintos por día.
+    -   **Clasificación Automática de Empresas:** Implementa una función (`checkIfShouldBeEnterprise`) que reclasifica a un proveedor de productos como "Empresa" si demuestra un alto volumen de ventas (5 o más transacciones diarias durante 30 días consecutivos), asegurando que se le ofrezca el plan de suscripción correcto.
+    -   **Flujo de Suscripción Seguro:**
+        1.  Al suscribirse, la función `subscribeUser` **no activa la verificación inmediatamente**. En su lugar, crea un **compromiso de pago** (una transacción de sistema) por el monto del plan seleccionado (mensual/anual).
+        2.  El usuario es redirigido a la página de pago para saldar este compromiso.
+        3.  Una vez confirmado el pago, `confirmPaymentReceived` envía un **mensaje personalizado por DM** al usuario, solicitando la carga de documentos para la revisión manual. La insignia de "Verificado" solo se activa (simuladamente) tras este proceso.
+    -   **Sistema Credicora Mejorado:**
+        -   **Lógica de "Ayuda" en Compras:** `checkout` ahora implementa una lógica de financiación avanzada. Si una compra excede el límite de crédito del usuario, Credicora no bloquea la transacción. En su lugar, utiliza el **límite de crédito** para financiar una porción de la compra (ej. 40% del límite de $150), reduciendo significativamente el pago inicial que el cliente debe realizar. El monto financiado se divide en cuotas según el nivel del usuario.
+        -   **Comisión para Proveedores:** Por cada venta realizada con Credicora, se genera automáticamente una transacción de sistema que representa una **comisión del 4.99%** para la plataforma, adeudada por el proveedor.
+    -   **Flujo de Pago Seguro:**
+        -   `confirmPaymentReceived` ahora acepta un parámetro booleano (`fromThirdParty`).
+        -   Cuando un proveedor va a confirmar un pago, `TransactionDetailsDialog` le presenta un diálogo intermedio donde puede **reportar explícitamente si el pago proviene de un tercero**.
+        -   Si se reporta, la transacción se marca con una advertencia visible en el historial.
 
 ## 4. Flujos de Usuario y Componentes Clave
 
-### 4.1. Navegación Principal y Feed (Home)
+### 4.1. Configuración de Perfil Obligatoria (`src/app/profile-setup/*`)
 
--   **Página Principal (`src/app/page.tsx`):** Muestra un feed dinámico de `ServiceCard` o `ProviderCard` que se filtra en tiempo real.
--   **Encabezado (`src/components/Header.tsx`):** Contiene la barra de búsqueda y accesos directos, incluyendo un **carrito de compras global** que ahora abre un diálogo de pre-factura completo.
--   **Tarjetas de Contenido (`ProviderCard.tsx`, `ServiceCard.tsx`):** Muestran la información del proveedor con un enlace directo a su perfil.
+-   **Activación como Paso Final:** El asistente de configuración de perfil ahora es un flujo obligatorio para los proveedores. El último paso (`Step6_Review`) ya no finaliza el proceso, sino que **redirige al usuario a la página de activación de transacciones** (`/transactions/settings`). Esto asegura que **ningún proveedor pueda ofertar productos o servicios sin tener su registro de transacciones activo y verificado**.
+-   **Eliminación de Alertas:** Como resultado del flujo obligatorio, se han eliminado las alertas que advertían a los clientes sobre proveedores no activos, ya que este escenario ya no es posible.
 
-### 4.2. Configuración de Perfil (`src/app/profile-setup/page.tsx`)
+### 4.2. Chat y Negociación de Acuerdos (`src/app/messages/[id]/page.tsx`)
 
--   **Asistente de 6 Pasos:** Guía al usuario a través de la configuración completa de su perfil, incluyendo opciones para que los proveedores definan si aceptan Credicora y el costo de sus citas.
+-   El chat funciona como una herramienta de negociación clave.
+-   Los proveedores pueden enviar **propuestas de acuerdo** formales directamente en el chat, que los clientes pueden aceptar para crear un compromiso de pago automático.
 
-### 4.3. Perfiles de Usuario y Empresa
+### 4.3. Registro de Transacciones (`src/app/transactions/*`)
 
--   **Perfil del Propio Usuario (`src/app/profile/page.tsx`):**
-    -   Permite al proveedor gestionar su galería de publicaciones y la "Promoción del Día".
--   **Perfil de Empresa (`src/app/companies/[id]/page.tsx`):**
-    -   Muestra el perfil público de un proveedor.
-    -   **Agendamiento de Citas:** Al hacer clic en una fecha del calendario, se abre un diálogo para que el cliente escriba un resumen de su solicitud. Esto inicia un proceso de negociación en lugar de crear un compromiso automático.
-    -   **Carrito de Compras Mejorado:** El carrito de compras de la cabecera ahora también abre un diálogo de pre-factura completo, permitiendo añadir delivery y usar Credicora si el proveedor lo acepta.
+-   Es el centro financiero donde proveedores y clientes gestionan sus operaciones.
+-   El panel principal (`transactions/page.tsx`) muestra gráficos de ingresos/egresos y la tarjeta de estado de **Credicora**, que refleja el nivel actual del usuario (Alfa, Delta, etc.) y su límite de crédito.
+-   **Confirmación de Pago Segura:** El diálogo `TransactionDetailsDialog` ha sido modificado para incluir el nuevo flujo de reporte de pagos de terceros, añadiendo una capa de seguridad y transparencia al proceso.
 
-### 4.4. Chat y Negociación de Acuerdos (`src/app/messages/[id]/page.tsx`)
+### 4.4. Flujo de Videos Inmersivo (`src/app/videos/page.tsx`)
 
--   El chat ha sido transformado en una herramienta de negociación.
--   **Botón de Propuesta:** Los proveedores tienen un botón (+) para abrir un diálogo y **"Establecer Acuerdo de Servicio"**.
--   **Formulario de Acuerdo:** Permite definir título, descripción, fecha de entrega/cita, costo y si se acepta Credicora.
--   **Cápsula de Propuesta:** La propuesta se envía como una tarjeta interactiva en el chat. El cliente la ve y puede aceptarla directamente.
--   **Creación de Compromiso:** Al aceptar, se crea automáticamente una transacción con el estado "Acuerdo Aceptado - Pendiente de Ejecución", formalizando el trato.
-
-### 4.5. Registro de Transacciones (`src/app/transactions/*`)
-
-Este es un módulo financiero clave para que los proveedores gestionen sus operaciones.
-
-1.  **Activación y Panel de Control:** El flujo de activación y el panel principal se mantienen, con gráficos de ingresos/egresos y la tarjeta Credicora.
-
-2.  **Flujo de Finalización de Servicio Mejorado (`TransactionDetailsDialog`):**
-    -   **Escenario 1 (Iniciado por Proveedor):** El proveedor marca un trabajo como finalizado (`Pendiente de Confirmación del Cliente`).
-    -   **Escenario 2 (Iniciado por Cliente):** Un cliente puede ir a un compromiso de pago pendiente y hacer clic en "Pagar Ahora".
-    -   **Confirmación del Cliente:** En ambos casos, el cliente debe primero confirmar que ha recibido el servicio satisfactoriamente.
-    -   **Calificación Integrada:** Inmediatamente después de confirmar, se le pide al cliente que califique el servicio (con estrellas) y deje un comentario opcional.
-    -   **Paso de Pago:** Luego de calificar, el cliente procede a la pantalla de pago para registrar su transferencia o pago móvil.
-    -   **Confirmación del Proveedor:** El estado cambia a `Pago Enviado - Esperando Confirmación`. El proveedor debe ahora confirmar la recepción del pago para que la transacción se marque como `Pagado` y se complete el ciclo.
-
-### 4.6. Flujo de Cotizaciones y Monetización
-
--   El flujo se mantiene, permitiendo a los usuarios hacer cotizaciones normales o pagar para acceder a opciones de "Búsqueda Avanzada" en el formulario PRO.
+-   **Interfaz Limpia:** Se ha eliminado el header principal y los botones de acción inferiores para crear una experiencia de visualización sin distracciones.
+-   **Navegación Directa:** El nombre y la imagen de perfil del creador del video ahora son enlaces directos a su perfil de empresa, facilitando la conexión.
 
 ## 5. Conclusión
 
-El prototipo actual tiene una base sólida y una lógica bien definida. El `CoraboContext` actúa eficazmente como un motor de estado central. Los flujos de usuario han sido optimizados para reflejar procesos de negocio más realistas, especialmente en la negociación de acuerdos a través del chat y en el ciclo de vida de finalización de una transacción, mejorando la transparencia y seguridad para ambas partes. Los futuros desarrollos deben seguir estos patrones para mantener la escalabilidad del proyecto.
+El prototipo ha evolucionado hacia un modelo de negocio más robusto y seguro. La obligatoriedad de activar el registro de transacciones para proveedores, junto con el sofisticado sistema de niveles y financiación de **Credicora**, crea un ecosistema de alta confianza. El flujo de suscripción en dos pasos (pago y verificación documental) y el mecanismo de reporte de pagos de terceros fortalecen aún más la integridad de la plataforma. La documentación actual refleja fielmente esta lógica avanzada, sentando las bases para un desarrollo futuro coherente y escalable.
