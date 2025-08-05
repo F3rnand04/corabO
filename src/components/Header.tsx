@@ -50,7 +50,7 @@ export function Header() {
   const deliveryCost = getDeliveryCost();
   const subtotal = getCartTotal();
   const totalAmount = subtotal + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
-  const credicoraInitialPayment = totalAmount * 0.25;
+  const credicoraInitialPayment = totalAmount * 0.60;
 
 
   return (
@@ -188,7 +188,7 @@ export function Header() {
                       </div>
                       {useCredicora && (
                           <p className="text-xs text-muted-foreground -mt-2 text-right">
-                              y {totalAmount > 15 ? "3 cuotas" : "1 cuota"} de ${( (totalAmount - credicoraInitialPayment) / (totalAmount > 15 ? 3 : 1) ).toFixed(2)}
+                              y 3 cuotas de ${( (totalAmount - credicoraInitialPayment) / 3 ).toFixed(2)}
                           </p>
                       )}
                   </div>

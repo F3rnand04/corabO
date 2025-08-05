@@ -380,14 +380,14 @@ export const initialTransactions: Transaction[] = [
     type: 'Compra',
     status: 'Acuerdo Aceptado - Pendiente de Ejecución',
     date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    amount: 300,
+    amount: 720, // 60% of 1200
     clientId: 'client1',
     providerId: 'provider1',
     details: {
         items: [{ product: products[0], quantity: 1 }],
         serviceName: "Compra Laptop Pro 15\" (Inicial Credicora)",
         paymentMethod: 'credicora',
-        initialPayment: 300,
+        initialPayment: 720,
         totalAmount: 1200,
     },
   },
@@ -396,7 +396,7 @@ export const initialTransactions: Transaction[] = [
     type: 'Sistema',
     status: 'Acuerdo Aceptado - Pendiente de Ejecución',
     date: add(new Date(), { days: 15 }).toISOString(),
-    amount: 300,
+    amount: 160, // 480 / 3
     clientId: 'client1',
     providerId: 'provider1',
     details: {
@@ -408,7 +408,7 @@ export const initialTransactions: Transaction[] = [
     type: 'Sistema',
     status: 'Acuerdo Aceptado - Pendiente de Ejecución',
     date: add(new Date(), { days: 30 }).toISOString(),
-    amount: 300,
+    amount: 160, // 480 / 3
     clientId: 'client1',
     providerId: 'provider1',
     details: {
@@ -420,7 +420,7 @@ export const initialTransactions: Transaction[] = [
     type: 'Sistema',
     status: 'Acuerdo Aceptado - Pendiente de Ejecución',
     date: add(new Date(), { days: 45 }).toISOString(),
-    amount: 300,
+    amount: 160, // 480 / 3
     clientId: 'client1',
     providerId: 'provider1',
     details: {
