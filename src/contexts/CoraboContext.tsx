@@ -590,7 +590,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     });
 
     doc.save(`transacciones_${currentUser.id}_${new Date().toISOString().split('T')[0]}.pdf`);
-     toast({ title: "Descarga Iniciada", description: "Tu reporte de transacciones se está descargando." });
   }
 
   const sendMessage = (recipientId: string, text: string, createOnly: boolean = false): string => {
