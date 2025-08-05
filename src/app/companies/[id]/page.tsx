@@ -121,7 +121,7 @@ export default function CompanyProfilePage() {
     .map(([dayName]) => {
         const dayMap: { [key: string]: number } = {
             'Domingo': 0, 'Lunes': 1, 'Martes': 2, 'Miércoles': 3,
-            'Jueves': 4, 'Viernes': 5, Sábado: 6
+            'Jueves': 4, 'Viernes': 5, 'Sábado': 6
         };
         return dayMap[dayName];
     });
@@ -463,10 +463,15 @@ export default function CompanyProfilePage() {
           
           <div className="flex justify-around text-center text-xs text-muted-foreground -mt-2">
             <div className="flex-1">
-                  <p className="font-semibold text-foreground">{isProductProvider ? providerProducts.length : profileData.publications}</p>
-                  <p>{isProductProvider ? 'Productos' : 'Publicaciones'}</p>
+                  <p className="font-semibold text-foreground">{profileData.publications}</p>
+                  <p>Publicaciones</p>
             </div>
-             {!isProductProvider && (
+             {isProductProvider ? (
+               <div className="flex-1">
+                  <p className="font-semibold text-foreground">{providerProducts.length}</p>
+                  <p>Productos</p>
+              </div>
+             ) : (
                <div className="flex-1">
                   <p className="font-semibold text-foreground">{profileData.completedJobs}</p>
                   <p>Trab. Realizados</p>

@@ -87,8 +87,8 @@ export default function Step1_ProfileType({ onSelect, currentType }: Step1_Profi
             </AlertDialogTitle>
             <AlertDialogDescription>
               {isChangingToProvider
-                ? "Al convertirte en proveedor, podrás crear tu propia vitrina de servicios o productos. ¿Estás listo para empezar a ofrecer tus talentos?"
-                : "La información específica de tu perfil actual (como tu portafolio) podría no ser visible en el nuevo tipo. ¿Deseas continuar?"}
+                ? "Al convertirte en proveedor, podrás crear tu propia vitrina de servicios o productos. ¿Estás listo para empezar a ofrecer tus talentos? (Este cambio solo puede realizarse una vez cada 6 meses)."
+                : "La información específica de tu perfil actual podría no ser visible en el nuevo tipo. En la versión real, este cambio solo puede realizarse una vez cada 6 meses. ¿Deseas continuar?"}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

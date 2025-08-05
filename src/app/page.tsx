@@ -13,7 +13,7 @@ type FeedItem = (Service & { type: 'service' }) | (Product & { type: 'product' }
 export default function HomePage() {
   const { services, users, products, searchQuery, feedView } = useCorabo();
 
-  const providers = users.filter(u => u.type === 'provider');
+  const providers = users.filter(u => u.type === 'provider' && !u.isPaused);
 
   const getFilteredItems = () => {
     if (searchQuery.trim() === '') {

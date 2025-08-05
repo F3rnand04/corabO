@@ -116,6 +116,8 @@ export type User = {
   };
   gallery?: GalleryImage[];
   profileSetupData?: ProfileSetupData;
+  isPaused?: boolean;
+  pauseReason?: string;
 };
 
 export type Product = {
