@@ -1,11 +1,10 @@
 
 
-
 import type { User, Product, Service, Transaction, Conversation, AgreementProposal } from './types';
 import { add } from 'date-fns';
 
 export const users: User[] = [
-  { id: 'client1', name: 'Juan Cliente', type: 'client', reputation: 4.5, profileImage: `https://i.pravatar.cc/150?u=client1`, email: 'juan.cliente@email.com', phone: '04121234567', emailValidated: true, phoneValidated: false, isGpsActive: true, gallery: [], credicoraLevel: 1 },
+  { id: 'client1', name: 'Juan Cliente', type: 'client', reputation: 4.5, profileImage: `https://i.pravatar.cc/150?u=client1`, email: 'juan.cliente@email.com', phone: '04121234567', emailValidated: true, phoneValidated: false, isGpsActive: true, gallery: [], credicoraLevel: 1, credicoraLimit: 150 },
   { 
     id: 'provider1', 
     name: 'Tecno Soluciones S.A.', 
@@ -13,6 +12,7 @@ export const users: User[] = [
     reputation: 4.8, 
     verified: true,
     isGpsActive: true,
+    isTransactionsActive: true,
     profileImage: `https://placehold.co/150x150.png`,
     email: 'contacto@tecnosoluciones.com',
     phone: '02129876543',
@@ -82,6 +82,7 @@ export const users: User[] = [
     type: 'provider', 
     reputation: 4.2,
     isGpsActive: false,
+    isTransactionsActive: true,
     profileImage: `https://placehold.co/150x150.png`,
     email: 'servicios@hogarfeliz.com',
     phone: '04149876543',
@@ -153,11 +154,6 @@ export const users: User[] = [
     reputation: 4.9, 
     verified: true,
     isGpsActive: false,
-    profileImage: `https://placehold.co/150x150.png`,
-    email: 'hola@disenocreativo.net',
-    phone: '04241112233',
-    emailValidated: true,
-    phoneValidated: true,
     profileSetupData: {
       providerType: 'professional',
       acceptsCredicora: true,
@@ -188,11 +184,6 @@ export const users: User[] = [
     reputation: 4.7, 
     verified: true,
     isGpsActive: true,
-    profileImage: `https://placehold.co/150x150.png`,
-    email: 'info@autofix.com',
-    phone: '04125556677',
-    emailValidated: true,
-    phoneValidated: true,
     profileSetupData: {
       providerType: 'company',
       hasPhysicalLocation: true,
@@ -384,14 +375,14 @@ export const initialTransactions: Transaction[] = [
     type: 'Compra',
     status: 'Acuerdo Aceptado - Pendiente de Ejecución',
     date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    amount: 720, // 60% of 1200
+    amount: 1140, // Costo total (1200) - Ayuda de Credicora (60)
     clientId: 'client1',
     providerId: 'provider1',
     details: {
         items: [{ product: products[0], quantity: 1 }],
-        serviceName: 'Laptop Pro 15"',
+        serviceName: 'Inicial de Compra: Laptop Pro 15"',
         paymentMethod: 'credicora',
-        initialPayment: 720,
+        initialPayment: 1140,
         totalAmount: 1200,
     },
   },
@@ -400,7 +391,7 @@ export const initialTransactions: Transaction[] = [
     type: 'Sistema',
     status: 'Acuerdo Aceptado - Pendiente de Ejecución',
     date: add(new Date(), { days: 15 }).toISOString(),
-    amount: 160, // 480 / 3
+    amount: 20, // 60 / 3
     clientId: 'client1',
     providerId: 'provider1',
     details: {
@@ -412,7 +403,7 @@ export const initialTransactions: Transaction[] = [
     type: 'Sistema',
     status: 'Acuerdo Aceptado - Pendiente de Ejecución',
     date: add(new Date(), { days: 30 }).toISOString(),
-    amount: 160, // 480 / 3
+    amount: 20, // 60 / 3
     clientId: 'client1',
     providerId: 'provider1',
     details: {
@@ -424,7 +415,7 @@ export const initialTransactions: Transaction[] = [
     type: 'Sistema',
     status: 'Acuerdo Aceptado - Pendiente de Ejecución',
     date: add(new Date(), { days: 45 }).toISOString(),
-    amount: 160, // 480 / 3
+    amount: 20, // 60 / 3
     clientId: 'client1',
     providerId: 'provider1',
     details: {
