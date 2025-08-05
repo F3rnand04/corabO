@@ -69,9 +69,11 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
     }
 
     const newGalleryImage: GalleryImage = {
+      id: `img-${Date.now()}`,
       src: imagePreview,
       alt: `Imagen de ${currentUser.name}`,
       description: description,
+      comments: [],
     };
 
     updateUserProfileAndGallery(currentUser.id, newGalleryImage);
