@@ -86,7 +86,7 @@ export function PromotionDialog({ isOpen, onOpenChange }: PromotionDialogProps) 
     onOpenChange(false);
   };
 
-  const handleActivate = () => {
+  const handleConfirmAndActivate = () => {
     if (!reference || !voucherFile) {
         toast({ variant: "destructive", title: "Faltan datos de pago", description: "Sube el comprobante y añade la referencia." });
         return;
@@ -96,6 +96,7 @@ export function PromotionDialog({ isOpen, onOpenChange }: PromotionDialogProps) 
 
     if (isProviderWithGallery) {
       if (!selectedImage) {
+        // This case should not happen if button logic is correct, but for safety
         toast({ variant: "destructive", title: "Selecciona una imagen", description: "Debes elegir una de tus publicaciones para promocionar." });
         setIsSubmitting(false);
         return;
@@ -132,10 +133,12 @@ export function PromotionDialog({ isOpen, onOpenChange }: PromotionDialogProps) 
 
   const activePromotion = currentUser.gallery?.find(g => g.promotion && new Date(g.promotion.expires) > new Date());
   
+  const isOfferDefined = isProviderWithGallery ? !!selectedImage : (!!tempImageFile && !!tempDescription.trim());
+
   if (!isOpen) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md flex flex-col max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -222,50 +225,40 @@ export function PromotionDialog({ isOpen, onOpenChange }: PromotionDialogProps) 
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Button 
-                    variant="default" 
-                    className="w-full" 
-                    disabled={activePromotion}
-                    onClick={() => setIsPaymentSectionOpen(!isPaymentSectionOpen)}
-                >
-                    <span>Activar por ${promotionCost.toFixed(2)}</span>
-                    <ChevronDown className={cn("h-4 w-4 ml-2 transition-transform", isPaymentSectionOpen && "rotate-180")} />
-                </Button>
-
-                {isPaymentSectionOpen && (
-                     <div className="py-4 px-3 mt-2 border rounded-md bg-muted/50">
-                       <div className="space-y-4">
-                         <p className="text-sm font-semibold text-foreground">Realiza el pago a los siguientes datos:</p>
-                         <div className="text-sm text-muted-foreground bg-background p-3 rounded-md space-y-1">
-                            <p><strong>Banco:</strong> Banco de Corabo</p>
-                            <p><strong>Teléfono:</strong> 0412-1234567</p>
-                            <p><strong>RIF:</strong> J-12345678-9</p>
-                         </div>
-                         <p className="text-sm font-semibold text-foreground pt-2">Luego, registra tu pago aquí:</p>
-                         <div className="space-y-2">
-                            <Label htmlFor="voucher-upload">Comprobante de Pago</Label>
-                            <div className="flex items-center gap-2">
-                              <Button asChild variant="outline" size="icon"><Label htmlFor="voucher-upload" className="cursor-pointer"><Upload className="h-4 w-4"/></Label></Button>
-                               <Input 
-                                  id="voucher-upload" 
-                                  type="file" 
-                                  className="hidden" 
-                                  onChange={(e) => setVoucherFile(e.target.files ? e.target.files[0] : null)}
-                                />
-                               <span className={cn("text-sm text-muted-foreground", voucherFile && "text-foreground font-medium")}>
-                                 {voucherFile ? voucherFile.name : 'Seleccionar archivo...'}
-                               </span>
-                            </div>
-                         </div>
-                         <div className="space-y-2">
-                           <Label htmlFor="reference">Número de Referencia</Label>
-                           <Input id="reference" placeholder="00012345" value={reference} onChange={(e) => setReference(e.target.value)} />
-                         </div>
+              {isPaymentSectionOpen && (
+                   <div className="py-4 px-3 mt-4 border rounded-md bg-muted/50 space-y-6">
+                     <div className="space-y-2">
+                       <p className="text-sm font-semibold text-foreground">Realiza el pago a los siguientes datos:</p>
+                       <div className="text-sm text-muted-foreground bg-background p-3 rounded-md space-y-1">
+                          <p><strong>Banco:</strong> Banco de Corabo</p>
+                          <p><strong>Teléfono:</strong> 0412-1234567</p>
+                          <p><strong>RIF:</strong> J-12345678-9</p>
                        </div>
                      </div>
-                )}
-              </div>
+                     <div className="space-y-2">
+                       <p className="text-sm font-semibold text-foreground">Luego, registra tu pago aquí:</p>
+                       <div className="space-y-2">
+                          <Label htmlFor="voucher-upload">Comprobante de Pago</Label>
+                          <div className="flex items-center gap-2">
+                            <Button asChild variant="outline" size="icon"><Label htmlFor="voucher-upload" className="cursor-pointer"><Upload className="h-4 w-4"/></Label></Button>
+                             <Input 
+                                id="voucher-upload" 
+                                type="file" 
+                                className="hidden" 
+                                onChange={(e) => setVoucherFile(e.target.files ? e.target.files[0] : null)}
+                              />
+                             <span className={cn("text-sm text-muted-foreground", voucherFile && "text-foreground font-medium")}>
+                               {voucherFile ? voucherFile.name : 'Seleccionar archivo...'}
+                             </span>
+                          </div>
+                       </div>
+                       <div className="space-y-2">
+                         <Label htmlFor="reference">Número de Referencia</Label>
+                         <Input id="reference" placeholder="00012345" value={reference} onChange={(e) => setReference(e.target.value)} />
+                       </div>
+                     </div>
+                   </div>
+              )}
             </div>
           )}
         </ScrollArea>
@@ -275,10 +268,18 @@ export function PromotionDialog({ isOpen, onOpenChange }: PromotionDialogProps) 
             {activePromotion ? 'Cerrar' : 'Cancelar'}
           </Button>
           {!activePromotion && (
-            <Button onClick={handleActivate} disabled={!isPaymentSectionOpen || isSubmitting}>
-              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Check className="mr-2 h-4 w-4" />}
-              {isSubmitting ? 'Procesando...' : 'Confirmar y Activar'}
-            </Button>
+            <>
+              {!isPaymentSectionOpen ? (
+                 <Button onClick={() => setIsPaymentSectionOpen(true)} disabled={!isOfferDefined}>
+                    Activar por ${promotionCost.toFixed(2)}
+                 </Button>
+              ) : (
+                <Button onClick={handleConfirmAndActivate} disabled={!reference || !voucherFile || isSubmitting}>
+                   {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Check className="mr-2 h-4 w-4" />}
+                   {isSubmitting ? 'Procesando...' : 'Confirmar y Activar'}
+                </Button>
+              )}
+            </>
           )}
         </DialogFooter>
       </DialogContent>
