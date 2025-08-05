@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useRouter } from 'next/navigation';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { add } from 'date-fns';
+import { add, subDays, startOfDay } from 'date-fns';
 
 type FeedView = 'servicios' | 'empresas';
 
@@ -41,7 +41,7 @@ interface CoraboState {
   acceptQuote: (transactionId: string) => void;
   acceptAppointment: (transactionId: string) => void;
   payCommitment: (transactionId: string, rating?: number, comment?: string) => void;
-  confirmPaymentReceived: (transactionId: string) => void;
+  confirmPaymentReceived: (transactionId: string, fromThirdParty: boolean) => void;
   completeWork: (transactionId: string) => void;
   confirmWorkReceived: (transactionId: string, rating: number, comment?: string) => void;
   startDispute: (transactionId: string) => void;
@@ -69,6 +69,7 @@ interface CoraboState {
   addCommentToImage: (ownerId: string, imageId: string, commentText: string) => void;
   removeCommentFromImage: (ownerId: string, imageId: string, commentIndex: number) => void;
   getCartItemQuantity: (productId: string) => number;
+  checkIfShouldBeEnterprise: (providerId: string) => boolean;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -118,12 +119,15 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const addToCart = (product: Product, quantity: number) => {
+    if (!currentUser.isTransactionsActive) {
+        toast({ variant: 'destructive', title: "Acción Requerida", description: "Debes activar tu registro de transacciones para poder comprar." });
+        return;
+    }
     let cartTx = findOrCreateCartTransaction();
     
     const provider = users.find(u => u.id === product.providerId);
-    if (!provider) return; // Should not happen
+    if (!provider) return; 
 
-    // If cart is not empty and new product is from a different provider
     if (cart.length > 0 && cartTx.providerId && cartTx.providerId !== product.providerId) {
         toast({
             variant: "destructive",
@@ -155,6 +159,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const updateCartQuantity = (productId: string, quantity: number) => {
+    if (!currentUser.isTransactionsActive) {
+        toast({ variant: 'destructive', title: "Acción Requerida", description: "Debes activar tu registro de transacciones para poder comprar." });
+        return;
+    }
     let cartTx = findOrCreateCartTransaction();
 
     setCart((prevCart) => {
@@ -184,8 +192,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const getCartTotal = () => cart.reduce((total, item) => total + item.product.price * item.quantity, 0);
   
   const getDeliveryCost = () => {
-    // Simulate distance between 1 and 5 km for demo purposes
-    const distanceInKm = Math.floor(Math.random() * 5) + 1;
+    const distanceInKm = Math.floor(Math.random() * 5) + 1; // Simulate 1 to 5 km
     return distanceInKm * 1.5; 
   }
 
@@ -410,18 +417,28 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     toast({ title: "¡Pago Registrado!", description: "Se ha notificado al proveedor para que confirme la recepción." });
   };
 
-  const confirmPaymentReceived = (transactionId: string) => {
+  const confirmPaymentReceived = (transactionId: string, fromThirdParty: boolean) => {
     const originalTx = transactions.find(tx => tx.id === transactionId);
     if (!originalTx) return;
 
-    updateTransaction(transactionId, { status: 'Pagado' });
+    updateTransaction(transactionId, tx => ({
+        status: 'Pagado',
+        details: {
+            ...tx.details,
+            paymentFromThirdParty: fromThirdParty
+        }
+    }));
+
+    if (fromThirdParty) {
+        toast({ variant: 'destructive', title: "Pago de Tercero Reportado", description: "La transacción ha sido marcada. Gracias por tu colaboración." });
+    } else {
+        toast({ title: "¡Pago Confirmado!", description: "Gracias por tu pago. ¡Has sumado puntos a tu reputación!" });
+    }
 
     // Activate Credicora plan only after initial payment is confirmed
     if (originalTx.details.paymentMethod === 'credicora' && originalTx.details.initialPayment) {
         generatePaymentCommitments(originalTx);
     }
-
-    toast({ title: "¡Pago Confirmado!", description: "Gracias por tu pago. ¡Has sumado puntos a tu reputación!" });
   };
 
   const startDispute = (transactionId: string) => {
@@ -718,6 +735,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const acceptProposal = (conversationId: string, messageId: string) => {
+    if (!currentUser.isTransactionsActive) {
+        toast({ variant: 'destructive', title: "Acción Requerida", description: "Debes activar tu registro de transacciones para aceptar propuestas." });
+        return;
+    }
+
     let transaction: Transaction | null = null;
 
     setConversations(prevConvos => 
@@ -811,6 +833,44 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return events;
   };
 
+  const checkIfShouldBeEnterprise = (providerId: string): boolean => {
+    const provider = users.find(u => u.id === providerId);
+    if (!provider || provider.profileSetupData?.offerType !== 'product') {
+        return false;
+    }
+    
+    const providerTransactions = transactions.filter(
+        tx => tx.providerId === providerId && (tx.status === 'Pagado' || tx.status === 'Resuelto')
+    );
+
+    const dailyCounts: { [key: string]: number } = {};
+    const thirtyDaysAgo = startOfDay(subDays(new Date(), 30));
+
+    providerTransactions.forEach(tx => {
+        const txDate = startOfDay(new Date(tx.date));
+        if (txDate >= thirtyDaysAgo) {
+            const dateString = txDate.toISOString().split('T')[0];
+            dailyCounts[dateString] = (dailyCounts[dateString] || 0) + 1;
+        }
+    });
+
+    let consecutiveDays = 0;
+    for (let i = 0; i < 30; i++) {
+        const dateToCheck = startOfDay(subDays(new Date(), i));
+        const dateString = dateToCheck.toISOString().split('T')[0];
+        if ((dailyCounts[dateString] || 0) >= 5) {
+            consecutiveDays++;
+        } else {
+            // Reset if the chain is broken
+            if (i > 0) { // Don't reset on the first day
+                consecutiveDays = 0;
+            }
+        }
+    }
+
+    return consecutiveDays >= 30;
+};
+
 
   const value = {
     currentUser,
@@ -864,6 +924,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     addCommentToImage,
     removeCommentFromImage,
     getCartItemQuantity,
+    checkIfShouldBeEnterprise,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;

@@ -48,9 +48,29 @@ function RatingInput({ rating, setRating }: { rating: number, setRating: (r: num
     );
 }
 
+function ConfirmPaymentDialog({ onConfirm, onReportThirdParty, onCancel }: { onConfirm: () => void, onReportThirdParty: () => void, onCancel: () => void }) {
+    return (
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Confirmar Recepción de Pago</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Por favor, confirma que has recibido el pago. Si el pago proviene de una cuenta que no pertenece al titular de la cuenta CorabO, repórtalo para mantener la seguridad de la comunidad.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="gap-2">
+                <Button variant="destructive" onClick={onReportThirdParty}>Reportar Pago de Tercero</Button>
+                <div className="flex w-full sm:w-auto flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
+                    <AlertDialogCancel onClick={onCancel}>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={onConfirm}>Confirmar Pago del Titular</AlertDialogAction>
+                </div>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    );
+}
+
 
 export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: TransactionDetailsDialogProps) {
-  const { currentUser, users, sendQuote, acceptQuote, startDispute, completeWork, confirmWorkReceived, acceptAppointment, payCommitment, sendMessage } = useCorabo();
+  const { currentUser, users, sendQuote, acceptQuote, startDispute, completeWork, confirmWorkReceived, acceptAppointment, payCommitment, confirmPaymentReceived, sendMessage } = useCorabo();
   const router = useRouter();
   const [quoteBreakdown, setQuoteBreakdown] = useState('');
   const [quoteTotal, setQuoteTotal] = useState(0);
@@ -59,6 +79,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   const [showRatingScreen, setShowRatingScreen] = useState(false);
   const [showPaymentScreen, setShowPaymentScreen] = useState(false);
   const [hasConfirmedReception, setHasConfirmedReception] = useState(false);
+  const [showConfirmPaymentDialog, setShowConfirmPaymentDialog] = useState(false);
   
   // State for payment form
   const [paymentBank, setPaymentBank] = useState('');
@@ -77,6 +98,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
     setShowRatingScreen(false);
     setShowPaymentScreen(false);
     setHasConfirmedReception(false);
+    setShowConfirmPaymentDialog(false);
     setRating(0);
     setComment("");
     onOpenChange(false);
@@ -119,6 +141,11 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
        handleClose();
      }
   }
+
+  const handleConfirmPayment = (fromThirdParty: boolean) => {
+    confirmPaymentReceived(transaction.id, fromThirdParty);
+    handleClose();
+  };
 
   const statusInfo = {
     'Solicitud Pendiente': { icon: MessageSquare, color: 'bg-yellow-500' },
@@ -235,6 +262,19 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
         </Dialog>
     );
   }
+  
+  if (showConfirmPaymentDialog) {
+    return (
+       <AlertDialog open={showConfirmPaymentDialog} onOpenChange={setShowConfirmPaymentDialog}>
+            <ConfirmPaymentDialog 
+                onConfirm={() => handleConfirmPayment(false)}
+                onReportThirdParty={() => handleConfirmPayment(true)}
+                onCancel={handleClose}
+            />
+       </AlertDialog>
+    )
+  }
+
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -256,6 +296,14 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
             <div><span className="font-semibold">Monto:</span> ${transaction.amount.toFixed(2)}</div>
              <div><span className="font-semibold">Cliente:</span> {isClient ? "Tú" : (users.find(u => u.id === transaction.clientId)?.name)}</div>
              <div><span className="font-semibold">Proveedor:</span> {isProvider ? "Tú" : (users.find(u => u.id === transaction.providerId)?.name)}</div>
+             {transaction.details.paymentFromThirdParty && (
+                <div className="col-span-2">
+                    <Badge variant="destructive">
+                        <AlertTriangle className="mr-1 h-3 w-3" />
+                        Pago recibido de tercero
+                    </Badge>
+                </div>
+            )}
           </div>
           <hr/>
           {transaction.type === 'Compra' && transaction.details.items && (
@@ -304,6 +352,8 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
             <div className="flex gap-2">
                 {isProvider && transaction.status === 'Solicitud Pendiente' && <Button onClick={handleSendQuote}>Enviar Cotización</Button>}
                 
+                {isProvider && transaction.status === 'Pago Enviado - Esperando Confirmación' && <Button onClick={() => setShowConfirmPaymentDialog(true)}>Confirmar Pago</Button>}
+
                 {isProvider && transaction.status === 'Cita Solicitada' && (
                   <>
                     <Button onClick={handleAcceptAppointment}>

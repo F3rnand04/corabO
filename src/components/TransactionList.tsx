@@ -71,7 +71,12 @@ const TransactionItem = ({ transaction, onClick, otherParty }: { transaction: Tr
                 <AvatarFallback>{otherParty?.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="flex-grow">
-                <p className="font-semibold text-sm">{otherParty?.name || 'Sistema'}</p>
+                <div className="flex items-center gap-2">
+                    <p className="font-semibold text-sm">{otherParty?.name || 'Sistema'}</p>
+                    {transaction.details.paymentFromThirdParty && (
+                        <Badge variant="destructive" className="h-5 text-xs">!</Badge>
+                    )}
+                </div>
                  <p className="text-xs text-muted-foreground truncate max-w-[200px]">
                     {descriptionPrefix && <span className="font-bold text-foreground">{descriptionPrefix}: </span>}
                     {description}

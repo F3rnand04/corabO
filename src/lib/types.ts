@@ -135,6 +135,7 @@ export type Transaction = {
     totalAmount?: number;
     clientRating?: number;
     clientComment?: string;
+    paymentFromThirdParty?: boolean;
   };
 };
 

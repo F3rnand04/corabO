@@ -63,7 +63,7 @@ const plans = {
 
 
 export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogProps) {
-  const { currentUser, transactions, subscribeUser } = useCorabo();
+  const { currentUser, transactions, subscribeUser, checkIfShouldBeEnterprise } = useCorabo();
 
   const handleSubscribe = () => {
     subscribeUser(currentUser.id);
@@ -78,10 +78,10 @@ export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogP
   }
 
   const getPlanKey = (): keyof typeof plans => {
-    const professionalCategories = ['Salud y Bienestar', 'Educación'];
+    const professionalCategories = ['Salud y Bienestar', 'Educación', 'Automotriz y Repuestos', 'Alimentos y Restaurantes'];
     
-    // Rule 1: Companies always get the Empresarial plan
-    if (currentUser.profileSetupData?.providerType === 'company') {
+    // Rule 1: Auto-classified companies
+    if (checkIfShouldBeEnterprise(currentUser.id)) {
       return 'company';
     }
 
@@ -90,13 +90,13 @@ export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogP
       return 'personal';
     }
 
-    // At this point, user is a provider but not a company
+    // At this point, user is a provider
     if (currentUser.type === 'provider') {
       const completedJobs = getCompletedJobs();
       const primaryCategory = currentUser.profileSetupData?.primaryCategory || '';
       const offerType = currentUser.profileSetupData?.offerType;
 
-      // Rule 3: Providers selling products or in professional categories start at Profesional
+      // Rule 3: Providers selling products or in professional categories get Profesional plan
       if (
         offerType === 'product' ||
         professionalCategories.includes(primaryCategory) ||
