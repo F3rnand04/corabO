@@ -43,7 +43,7 @@ export function PromotionDialog({ isOpen, onOpenChange }: PromotionDialogProps) 
   const [tempDescription, setTempDescription] = useState('');
 
   // Common state
-  const [promotionText, setPromotionText] = useState('HOY 10% OFF');
+  const [promotionText, setPromotionText] = useState('');
   const [reference, setReference] = useState('');
   const [voucherFile, setVoucherFile] = useState<File | null>(null);
   const [isPaymentSectionOpen, setIsPaymentSectionOpen] = useState(false);
@@ -78,7 +78,7 @@ export function PromotionDialog({ isOpen, onOpenChange }: PromotionDialogProps) 
     setTempImageFile(null);
     setTempImagePreview(null);
     setTempDescription('');
-    setPromotionText('HOY 10% OFF');
+    setPromotionText('');
     setReference('');
     setVoucherFile(null);
     setIsPaymentSectionOpen(false);
@@ -192,13 +192,15 @@ export function PromotionDialog({ isOpen, onOpenChange }: PromotionDialogProps) 
                 ) : (
                     <div className="flex items-center justify-center h-full text-muted-foreground text-sm">Elige o sube una imagen</div>
                 )}
-                <Badge variant="destructive" className="absolute top-2 left-2 shadow-lg">
-                  {promotionText || "Tu Oferta Aquí"}
-                </Badge>
+                {promotionText && (
+                  <Badge variant="destructive" className="absolute top-2 left-2 shadow-lg">
+                    {promotionText}
+                  </Badge>
+                )}
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="promotion-text">Texto de la Oferta</Label>
+                <Label htmlFor="promotion-text">Texto de la Oferta (Opcional)</Label>
                 <Input
                   id="promotion-text"
                   value={promotionText}
@@ -224,7 +226,7 @@ export function PromotionDialog({ isOpen, onOpenChange }: PromotionDialogProps) 
                 <Button 
                     variant="default" 
                     className="w-full" 
-                    disabled={!promotionText.trim() || activePromotion}
+                    disabled={activePromotion}
                     onClick={() => setIsPaymentSectionOpen(!isPaymentSectionOpen)}
                 >
                     <span>Activar por ${promotionCost.toFixed(2)}</span>
