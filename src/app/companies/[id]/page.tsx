@@ -6,7 +6,7 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, MessageCircle, CheckCircle, Flag, Package, Hand, ShoppingCart, Plus, Minus, X, Truck } from 'lucide-react';
+import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, MessageCircle, CheckCircle, Flag, Package, Hand, ShoppingCart, Plus, Minus, X, Truck, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
@@ -28,6 +28,7 @@ import Link from 'next/link';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function CompanyProfilePage() {
   const params = useParams();
@@ -79,6 +80,10 @@ export default function CompanyProfilePage() {
   const isDeliveryOnly = provider?.profileSetupData?.isOnlyDelivery || false;
   const providerAcceptsCredicora = provider?.profileSetupData?.acceptsCredicora || false;
 
+  // Security check for transaction readiness
+  const isCurrentUserTransactionReady = currentUser.isTransactionsActive;
+  const isProviderTransactionReady = provider?.isTransactionsActive;
+
   const handleCheckout = () => {
     if (cartTransaction) {
         checkout(cartTransaction.id, includeDelivery || isDeliveryOnly, useCredicora);
@@ -125,14 +130,20 @@ export default function CompanyProfilePage() {
     });
 
     const handleDateSelect = (date: Date | undefined) => {
-        if (date && provider) {
+        if (date && provider && isCurrentUserTransactionReady) {
             setAppointmentDate(date);
             setIsAppointmentDialogOpen(true);
+        } else if (!isCurrentUserTransactionReady) {
+             toast({
+                variant: 'destructive',
+                title: "Acción Requerida",
+                description: "Por favor, activa tu registro de transacciones para poder agendar citas.",
+             });
         }
     };
 
     const handleConfirmAppointment = () => {
-        if (appointmentDate && provider) {
+        if (appointmentDate && provider && isCurrentUserTransactionReady) {
             const request: AppointmentRequest = {
                 providerId: provider.id,
                 date: appointmentDate,
@@ -292,7 +303,7 @@ export default function CompanyProfilePage() {
             <div className="flex items-center gap-2">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon" disabled={!isProviderTransactionReady}>
                       <Calendar className={cn("w-5 h-5", {
                         "text-green-500": businessStatus === 'open',
                         "text-red-500": businessStatus === 'closed'
@@ -329,7 +340,7 @@ export default function CompanyProfilePage() {
                   <AlertDialog open={isCheckoutAlertOpen} onOpenChange={setIsCheckoutAlertOpen}>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon" className="relative">
+                        <Button variant="ghost" size="icon" className="relative" disabled={!isProviderTransactionReady}>
                           <ShoppingCart className="w-5 h-5 text-muted-foreground" />
                           {totalCartItems > 0 && (
                             <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs rounded-full">{totalCartItems}</Badge>
@@ -465,6 +476,17 @@ export default function CompanyProfilePage() {
               </div>
              )}
           </div>
+          
+          {!isProviderTransactionReady && (
+             <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>¡Una recomendación para tu seguridad!</AlertTitle>
+                <AlertDescription>
+                    Este proveedor aún no ha activado su registro de transacciones. Te sugerimos contactarlo y recordarle que active su registro para que ambos puedan disfrutar de la seguridad, el seguimiento y las garantías que ofrece nuestra plataforma.
+                </AlertDescription>
+            </Alert>
+          )}
+
 
           {/* Main Content Card */}
           <Card className="rounded-2xl overflow-hidden shadow-lg relative">

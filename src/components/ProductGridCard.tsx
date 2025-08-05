@@ -8,6 +8,7 @@ import { useCorabo } from "@/contexts/CoraboContext";
 import type { Product } from "@/lib/types";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProductGridCardProps {
     product: Product;
@@ -15,12 +16,14 @@ interface ProductGridCardProps {
 }
 
 export function ProductGridCard({ product, onDoubleClick }: ProductGridCardProps) {
-    const { addToCart, updateCartQuantity, cart } = useCorabo();
+    const { currentUser, addToCart, updateCartQuantity, cart } = useCorabo();
+    const { toast } = useToast();
     const [likeCount, setLikeCount] = useState<number | null>(null);
     const [isLiked, setIsLiked] = useState(false);
 
     const cartItem = cart.find(item => item.product.id === product.id);
     const quantityInCart = cartItem?.quantity || 0;
+    const isTransactionReady = currentUser.isTransactionsActive;
 
     useEffect(() => {
         // Generate random number only on the client side to avoid hydration mismatch
@@ -31,6 +34,24 @@ export function ProductGridCard({ product, onDoubleClick }: ProductGridCardProps
         setLikeCount(prev => (prev !== null ? (isLiked ? prev - 1 : prev + 1) : 0));
         setIsLiked(prev => !prev);
     }
+    
+    const handleAddToCart = () => {
+        if (!isTransactionReady) {
+            toast({
+                variant: "destructive",
+                title: "Acción Requerida",
+                description: "Por favor, activa tu registro de transacciones para poder comprar.",
+            });
+            return;
+        }
+        addToCart(product, 1);
+    }
+    
+    const handleUpdateQuantity = (newQuantity: number) => {
+        if (!isTransactionReady) return;
+        updateCartQuantity(product.id, newQuantity);
+    }
+
 
     return (
         <div 
@@ -51,18 +72,19 @@ export function ProductGridCard({ product, onDoubleClick }: ProductGridCardProps
                         <Button 
                             size="sm"
                             className="h-8 rounded-full bg-black/40 hover:bg-black/60 text-white hover:text-white border-none shadow-md"
-                            onClick={() => addToCart(product, 1)}
+                            onClick={handleAddToCart}
+                            disabled={!isTransactionReady}
                         >
                             <Plus className="w-4 h-4 mr-1" />
                             Añadir
                         </Button>
                     ) : (
                         <div className="flex items-center gap-1 bg-background text-foreground rounded-full h-8 shadow-md">
-                            <Button variant="ghost" size="icon" className="h-full w-8 rounded-full" onClick={() => updateCartQuantity(product.id, quantityInCart - 1)}>
+                            <Button variant="ghost" size="icon" className="h-full w-8 rounded-full" onClick={() => handleUpdateQuantity(quantityInCart - 1)}>
                                 <Minus className="h-4 w-4" />
                             </Button>
                             <span className="text-sm font-bold w-4 text-center">{quantityInCart}</span>
-                             <Button variant="ghost" size="icon" className="h-full w-8 rounded-full" onClick={() => updateCartQuantity(product.id, quantityInCart + 1)}>
+                             <Button variant="ghost" size="icon" className="h-full w-8 rounded-full" onClick={() => handleUpdateQuantity(quantityInCart + 1)}>
                                 <Plus className="h-4 w-4" />
                             </Button>
                         </div>

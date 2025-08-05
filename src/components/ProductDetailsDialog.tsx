@@ -10,13 +10,14 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from './ui/scroll-area';
-import { MessageSquare, ThumbsUp, ThumbsDown, Star, Send, Plus, Minus } from 'lucide-react';
+import { MessageSquare, ThumbsUp, ThumbsDown, Star, Send, Plus, Minus, X } from 'lucide-react';
 import { Input } from './ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Separator } from './ui/separator';
 import type { Product, GalleryImageComment } from '@/lib/types';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { useState, useEffect } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProductDetailsDialogProps {
   isOpen: boolean;
@@ -26,6 +27,7 @@ interface ProductDetailsDialogProps {
 
 export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductDetailsDialogProps) {
   const { currentUser, addToCart, cart, updateCartQuantity } = useCorabo();
+  const { toast } = useToast();
   const [newComment, setNewComment] = useState("");
   // Comments would be fetched or part of product data
   const [comments, setComments] = useState<GalleryImageComment[]>([
@@ -44,6 +46,31 @@ export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductD
 
   const itemInCart = cart.find(item => item.product.id === product.id);
   const quantityInCart = itemInCart ? itemInCart.quantity : 0;
+  const isTransactionReady = currentUser.isTransactionsActive;
+
+  const handleAddToCart = () => {
+      if (!isTransactionReady) {
+          toast({
+              variant: "destructive",
+              title: "Acción Requerida",
+              description: "Por favor, activa tu registro de transacciones para poder añadir productos al carrito.",
+          });
+          return;
+      }
+      addToCart(product, 1);
+  }
+
+  const handleUpdateQuantity = (newQuantity: number) => {
+      if (!isTransactionReady) {
+           toast({
+              variant: "destructive",
+              title: "Acción Requerida",
+              description: "Tu registro de transacciones debe estar activo.",
+          });
+          return;
+      }
+      updateCartQuantity(product.id, newQuantity);
+  }
 
   const handlePostComment = () => {
     if (newComment.trim()) {
@@ -121,18 +148,21 @@ export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductD
 
                 <div className="flex flex-wrap gap-2 mb-6">
                     {quantityInCart === 0 ? (
-                         <Button onClick={() => addToCart(product, 1)}>
+                         <Button onClick={handleAddToCart} disabled={!isTransactionReady}>
                             <Plus className="mr-2 h-4 w-4"/>
                             Añadir al Carrito
                         </Button>
                     ) : (
                         <div className="flex items-center gap-2">
-                           <Button variant="outline" size="icon" onClick={() => updateCartQuantity(product.id, quantityInCart - 1)}>
+                           <Button variant="outline" size="icon" onClick={() => handleUpdateQuantity(quantityInCart - 1)} disabled={!isTransactionReady}>
                                 <Minus className="h-4 w-4" />
                            </Button>
                            <span className="font-bold text-lg w-10 text-center">{quantityInCart}</span>
-                           <Button variant="outline" size="icon" onClick={() => updateCartQuantity(product.id, quantityInCart + 1)}>
+                           <Button variant="outline" size="icon" onClick={() => handleUpdateQuantity(quantityInCart + 1)} disabled={!isTransactionReady}>
                                 <Plus className="h-4 w-4" />
+                           </Button>
+                            <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleUpdateQuantity(0)} disabled={!isTransactionReady}>
+                                <X className="h-5 w-5" />
                            </Button>
                         </div>
                     )}

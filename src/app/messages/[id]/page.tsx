@@ -7,7 +7,7 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChevronLeft, Send, Paperclip, CheckCheck, MapPin, Calendar, FileText, PlusCircle, Handshake, Star } from 'lucide-react';
+import { ChevronLeft, Send, Paperclip, CheckCheck, MapPin, Calendar, FileText, PlusCircle, Handshake, Star, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format } from 'date-fns';
@@ -19,6 +19,7 @@ import { BusinessHoursStatus } from '@/components/BusinessHoursStatus';
 import { Separator } from '@/components/ui/separator';
 import { ProposalDialog } from '@/components/ProposalDialog';
 import Link from 'next/link';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 
 function ChatHeader({ 
@@ -101,7 +102,7 @@ function ChatHeader({
   );
 }
 
-function ProposalBubble({ msg, onAccept }: { msg: Message, onAccept: (messageId: string) => void }) {
+function ProposalBubble({ msg, onAccept, canAccept }: { msg: Message, onAccept: (messageId: string) => void, canAccept: boolean }) {
     if (!msg.proposal) return null;
     const { currentUser } = useCorabo();
     const isClient = currentUser.type === 'client';
@@ -139,7 +140,7 @@ function ProposalBubble({ msg, onAccept }: { msg: Message, onAccept: (messageId:
                  )}
                  <div className="pt-2">
                     {isClient && !isAccepted && (
-                        <Button className="w-full" onClick={() => onAccept(msg.id)}>Revisar y Aceptar</Button>
+                        <Button className="w-full" onClick={() => onAccept(msg.id)} disabled={!canAccept}>Revisar y Aceptar</Button>
                     )}
                     {isAccepted && (
                         <div className="text-center font-semibold text-green-600 p-2 bg-green-50 border border-green-200 rounded-md">
@@ -157,7 +158,7 @@ function ProposalBubble({ msg, onAccept }: { msg: Message, onAccept: (messageId:
     )
 }
 
-function MessageBubble({ msg, isCurrentUser, onAccept }: { msg: Message, isCurrentUser: boolean, onAccept: (messageId: string) => void }) {
+function MessageBubble({ msg, isCurrentUser, onAccept, canAcceptProposal }: { msg: Message, isCurrentUser: boolean, onAccept: (messageId: string) => void, canAcceptProposal: boolean }) {
     const [formattedTime, setFormattedTime] = useState('');
 
     useEffect(() => {
@@ -166,7 +167,7 @@ function MessageBubble({ msg, isCurrentUser, onAccept }: { msg: Message, isCurre
     }, [msg.timestamp]);
 
     if (msg.type === 'proposal') {
-        return <ProposalBubble msg={msg} onAccept={onAccept} />;
+        return <ProposalBubble msg={msg} onAccept={onAccept} canAccept={canAcceptProposal} />;
     }
 
     return (
@@ -209,10 +210,14 @@ export default function ChatPage() {
   
   const conversationId = params.id as string;
   const conversation = conversations.find(c => c.id === conversationId);
-  const isProvider = currentUser.type === 'provider';
-
+  
   const otherParticipantId = conversation?.participantIds.find(pId => pId !== currentUser.id);
   const otherParticipant = users.find(u => u.id === otherParticipantId);
+
+  const isProvider = currentUser.type === 'provider';
+  const canAcceptProposal = currentUser.isTransactionsActive ?? false;
+
+  const showProviderWarning = isProvider && (!otherParticipant?.isTransactionsActive);
   
   useEffect(() => {
     // Scroll to the bottom when messages change
@@ -261,13 +266,23 @@ export default function ChatPage() {
         onDateSelect={handleDateSelect}
       />
       
+      {showProviderWarning && (
+          <Alert variant="destructive" className="rounded-none border-x-0">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Recomendación de Seguridad</AlertTitle>
+              <AlertDescription>
+                 Este usuario aún no ha activado su registro de transacciones. Sugiérele activarlo para disfrutar de la seguridad y garantías de la plataforma.
+              </AlertDescription>
+          </Alert>
+      )}
+
       <div className="flex-grow bg-[url('/doodle-bg.png')] bg-repeat">
         <ScrollArea className="h-full" ref={scrollAreaRef}>
           <div className="p-4 space-y-2">
             {conversation.messages.map((msg) => {
               const isCurrentUser = msg.senderId === currentUser.id;
               return (
-                <MessageBubble key={msg.id} msg={msg} isCurrentUser={isCurrentUser} onAccept={acceptProposal.bind(null, conversationId)} />
+                <MessageBubble key={msg.id} msg={msg} isCurrentUser={isCurrentUser} onAccept={acceptProposal.bind(null, conversationId)} canAcceptProposal={canAcceptProposal} />
               )
             })}
           </div>
