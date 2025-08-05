@@ -223,6 +223,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         date: add(new Date(), { days: 1 }).toISOString(),
         amount: commissionAmount,
         clientId: originalTx.providerId, // The provider owes the commission
+        providerId: undefined, // Commission is owed to the app
         details: {
           system: `Comisión (5%) por venta Credicora #${originalTx.id}`
         }
