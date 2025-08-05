@@ -149,8 +149,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       
       return newCart;
     });
-
-    toast({ title: "Producto añadido", description: `${product.name} fue añadido al carrito.` });
   };
   
   const updateCartQuantity = (productId: string, quantity: number) => {
