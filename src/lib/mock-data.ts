@@ -366,13 +366,63 @@ export const initialTransactions: Transaction[] = [
     id: 'txn5',
     type: 'Compra',
     status: 'Finalizado - Pendiente de Pago',
-    date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
+    date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
     amount: 1200,
     clientId: 'client1',
     providerId: 'provider1',
     details: {
         items: [{ product: products[0], quantity: 1 }],
+    },
+  },
+  {
+    id: 'txn6-credicora-main',
+    type: 'Compra',
+    status: 'Acuerdo Aceptado - Pendiente de Ejecución',
+    date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+    amount: 300,
+    clientId: 'client1',
+    providerId: 'provider1',
+    details: {
+        items: [{ product: products[0], quantity: 1 }],
         paymentMethod: 'credicora',
+        initialPayment: 300,
+        serviceName: "Compra Laptop Pro 15\" (Inicial Credicora)"
+    },
+  },
+  {
+    id: 'txn6-credicora-fee1',
+    type: 'Sistema',
+    status: 'Acuerdo Aceptado - Pendiente de Ejecución',
+    date: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString(),
+    amount: 300,
+    clientId: 'client1',
+    providerId: 'provider1',
+    details: {
+      system: 'Cuota 1/3 de compra Laptop Pro 15"'
+    },
+  },
+   {
+    id: 'txn6-credicora-fee2',
+    type: 'Sistema',
+    status: 'Acuerdo Aceptado - Pendiente de Ejecución',
+    date: new Date(new Date().setMonth(new Date().getMonth() + 2)).toISOString(),
+    amount: 300,
+    clientId: 'client1',
+    providerId: 'provider1',
+    details: {
+      system: 'Cuota 2/3 de compra Laptop Pro 15"'
+    },
+  },
+   {
+    id: 'txn6-credicora-fee3',
+    type: 'Sistema',
+    status: 'Acuerdo Aceptado - Pendiente de Ejecución',
+    date: new Date(new Date().setMonth(new Date().getMonth() + 3)).toISOString(),
+    amount: 300,
+    clientId: 'client1',
+    providerId: 'provider1',
+    details: {
+      system: 'Cuota 3/3 de compra Laptop Pro 15"'
     },
   },
 ];
@@ -387,7 +437,7 @@ export const initialConversations: Conversation[] = [
             { 
               id: 'msg-proposal-1', 
               senderId: 'provider1', 
-              timestamp: new Date().toISOString(), 
+              timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
               type: 'proposal',
               proposal: {
                 title: 'Mantenimiento Preventivo Anual PC',
