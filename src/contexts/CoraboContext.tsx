@@ -229,9 +229,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const initialPayment = useCredicora ? finalAmount * 0.60 : finalAmount;
 
     updateTransaction(cartTx.id, (tx) => {
-        const newTx = {
-            ...tx,
-            status: 'Acuerdo Aceptado - Pendiente de Ejecución',
+        const newTx: Partial<Transaction> = {
+            status: 'Finalizado - Pendiente de Pago',
             amount: initialPayment,
             details: { 
                 ...tx.details, 
@@ -243,12 +242,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             },
             date: new Date().toISOString(),
         };
-        
-        // If not using credicora, we can move directly to payment.
-        if (!useCredicora) {
-            newTx.status = 'Finalizado - Pendiente de Pago';
-        }
-        
         return newTx;
     });
 
@@ -394,6 +387,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
     updateTransaction(transactionId, { status: 'Pagado' });
 
+    // Activate Credicora plan only after initial payment is confirmed
     if (originalTx.details.paymentMethod === 'credicora' && originalTx.details.initialPayment) {
         generatePaymentCommitments(originalTx);
         toast({ title: "Credicora Activado", description: "Tu plan de pagos ha comenzado. Revisa tus compromisos."});
