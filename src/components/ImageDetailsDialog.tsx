@@ -30,27 +30,40 @@ interface ImageDetailsDialogProps {
 }
 
 export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex = 0, owner }: ImageDetailsDialogProps) {
-  const { currentUser, updateUserProfileAndGallery, addCommentToImage, removeCommentFromImage } = useCorabo();
+  const { currentUser, addCommentToImage, removeCommentFromImage, removeGalleryImage } = useCorabo();
   const [api, setApi] = useState<CarouselApi>();
   const [currentImageIndex, setCurrentImageIndex] = useState(startIndex);
   const [newComment, setNewComment] = useState("");
 
   const isOwnerView = currentUser.id === owner?.id;
-  const currentImage = gallery[currentImageIndex];
+  
+  useEffect(() => {
+    if (!isOpen) {
+      setCurrentImageIndex(startIndex); // Reset index when dialog closes
+    }
+  }, [isOpen, startIndex]);
 
   useEffect(() => {
     if (!api) return;
     
-    api.on("select", () => {
-      setCurrentImageIndex(api.selectedScrollSnap());
-    });
-    
-    // Go to initial slide
-    if(api.selectedScrollSnap() !== startIndex) {
-        api.scrollTo(startIndex, true);
+    // Synchronize the carousel with the current image index state
+    if(api.selectedScrollSnap() !== currentImageIndex) {
+        api.scrollTo(currentImageIndex, true);
     }
 
-  }, [api, startIndex]);
+    const onSelect = () => {
+      setCurrentImageIndex(api.selectedScrollSnap());
+    };
+    
+    api.on("select", onSelect);
+    
+    return () => {
+      api.off("select", onSelect);
+    };
+
+  }, [api, currentImageIndex]);
+
+  const currentImage = gallery[currentImageIndex];
   
   const handlePostComment = () => {
     if (newComment.trim() && currentImage && owner) {
@@ -67,7 +80,7 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex =
 
   const handleDeletePublication = (imageId: string) => {
     if (owner) {
-      updateUserProfileAndGallery(owner.id, imageId, true);
+      removeGalleryImage(owner.id, imageId);
       onOpenChange(false);
     }
   }
@@ -79,7 +92,7 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex =
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl w-[95vw] h-[90vh] flex flex-col p-0 gap-0">
         <DialogHeader>
-            <DialogTitle className="sr-only">{currentImage.alt}</DialogTitle>
+            <DialogTitle className="sr-only">{currentImage?.alt}</DialogTitle>
         </DialogHeader>
          <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="absolute top-2 right-2 z-50 bg-black/30 text-white hover:bg-black/50 hover:text-white rounded-full">
             <X className="h-5 w-5"/>
@@ -108,6 +121,7 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex =
         </div>
 
         <ScrollArea className="flex-grow overflow-y-auto bg-background">
+           {currentImage && (
             <div className="p-6">
                 <div className="flex justify-between items-start">
                     <div>
@@ -179,6 +193,7 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex =
                     </div>
                 </div>
             </div>
+            )}
         </ScrollArea>
       </DialogContent>
     </Dialog>

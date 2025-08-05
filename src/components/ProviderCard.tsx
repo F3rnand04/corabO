@@ -15,6 +15,7 @@ import { useState } from "react";
 import { ReportDialog } from "./ReportDialog";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { ImageDetailsDialog } from "./ImageDetailsDialog";
 
 
 interface ProviderCardProps {
@@ -25,6 +26,7 @@ export function ProviderCard({ provider }: ProviderCardProps) {
     const { addContact, sendMessage } = useCorabo();
     const router = useRouter();
     const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+    const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
     const profileLink = provider.type === 'provider' ? `/companies/${provider.id}` : '#';
 
     const handleSaveContact = () => {
@@ -44,6 +46,9 @@ export function ProviderCard({ provider }: ProviderCardProps) {
     const specialty = provider.profileSetupData?.specialty || "Especialidad del Proveedor";
     
     const displayDistance = provider.profileSetupData?.showExactLocation ? "A menos de 1km" : "500m - 1km";
+
+    const mainImage = provider.gallery && provider.gallery.length > 0 ? provider.gallery[0].src : "https://placehold.co/600x400.png";
+    const mainImageAlt = provider.gallery && provider.gallery.length > 0 ? provider.gallery[0].alt : displayName;
 
     return (
         <>
@@ -86,8 +91,8 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                     </div>
                 </div>
 
-                <div className="relative aspect-video w-full group">
-                    <Image src="https://placehold.co/600x400.png" alt="Provider content" layout="fill" objectFit="cover" data-ai-hint="service person working" />
+                <div className="relative aspect-video w-full group" onDoubleClick={() => setIsDetailsDialogOpen(true)}>
+                    <Image src={mainImage} alt={mainImageAlt} layout="fill" objectFit="cover" data-ai-hint="service person working" />
                     
                     <Button 
                         variant="ghost" 
@@ -109,7 +114,7 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                             <span className="text-xs font-bold mt-1 drop-shadow-md">4.5k</span>
                         </div>
                         <div className="flex flex-col items-center">
-                             <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">
+                             <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10" onClick={() => setIsDetailsDialogOpen(true)}>
                                 <MessageCircle className="w-5 h-5" />
                              </Button>
                             <span className="text-xs font-bold mt-1 drop-shadow-md">8.9k</span>
@@ -138,6 +143,15 @@ export function ProviderCard({ provider }: ProviderCardProps) {
             providerId={provider.id} 
             publicationId="provider-img" 
         />
+        {provider.gallery && provider.gallery.length > 0 && (
+            <ImageDetailsDialog
+                isOpen={isDetailsDialogOpen}
+                onOpenChange={setIsDetailsDialogOpen}
+                gallery={provider.gallery}
+                owner={provider}
+                startIndex={0}
+            />
+        )}
         </>
     )
 }
