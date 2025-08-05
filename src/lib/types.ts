@@ -24,6 +24,7 @@ export type GalleryImage = {
 export type CredicoraLevel = {
     level: number;
     name: string;
+    creditLimit: number;
     initialPaymentPercentage: number;
     installments: number;
 };
@@ -31,21 +32,38 @@ export type CredicoraLevel = {
 export const credicoraLevels: Record<string, CredicoraLevel> = {
     '1': {
         level: 1,
-        name: 'Alfha',
+        name: 'Alfa',
+        creditLimit: 150,
         initialPaymentPercentage: 0.60,
         installments: 3,
     },
     '2': {
         level: 2,
-        name: 'Bhettha',
+        name: 'Delta',
+        creditLimit: 200,
         initialPaymentPercentage: 0.50,
-        installments: 4,
+        installments: 6,
     },
      '3': {
         level: 3,
-        name: 'Gammma',
+        name: 'Lambda',
+        creditLimit: 300,
         initialPaymentPercentage: 0.40,
-        installments: 6,
+        installments: 9,
+    },
+    '4': {
+        level: 4,
+        name: 'Sigma',
+        creditLimit: 600,
+        initialPaymentPercentage: 0.30,
+        installments: 12,
+    },
+    '5': {
+        level: 5,
+        name: 'Omega',
+        creditLimit: 1000,
+        initialPaymentPercentage: 0.0,
+        installments: 18,
     },
 };
 

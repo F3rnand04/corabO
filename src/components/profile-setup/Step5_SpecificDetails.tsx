@@ -1,5 +1,6 @@
 
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -120,10 +121,9 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
             {acceptsCredicora && (
                 <Alert className="bg-blue-50 border-blue-200 text-blue-800">
                     <Info className="h-4 w-4 !text-current" />
-                    <AlertTitle className="font-bold">¡Felicidades por este gran paso!</AlertTitle>
+                    <AlertTitle className="font-bold">¡Amplía tu Horizonte de Clientes con CrediCora!</AlertTitle>
                     <AlertDescription>
-                        Al aceptar Credicora, atraerás a más clientes y aumentarás tus ventas. 
-                        Nota: Se aplicará una comisión del 5% sobre el valor total de cada factura pagada con este método.
+                        Al aceptar pagos con CrediCora, no solo aseguras recibir tu dinero de forma segura, sino que abres las puertas a un universo de clientes que valoran la flexibilidad. Tus ingresos se multiplicarán.
                     </AlertDescription>
                 </Alert>
             )}

@@ -216,9 +216,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       if (!levelDetails) return;
       
       const totalAmount = originalTx.details.totalAmount || originalTx.amount;
-      const remainingAmount = totalAmount - originalTx.details.initialPayment;
+      const financingPercentage = 1 - levelDetails.initialPaymentPercentage;
+      const financedAmount = Math.min(totalAmount * financingPercentage, currentUser.credicoraLimit || 0);
+
       const numberOfInstallments = levelDetails.installments;
-      const installmentAmount = remainingAmount / numberOfInstallments;
+      const installmentAmount = financedAmount / numberOfInstallments;
       
       const commitments: Transaction[] = [];
 
@@ -238,7 +240,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         commitments.push(commitment);
       }
 
-      const commissionAmount = totalAmount * 0.05;
+      const commissionAmount = totalAmount * 0.0499; // 4.99% commission
       const commissionTx: Transaction = {
         id: `commission-${originalTx.id}`,
         type: 'Sistema',
@@ -246,9 +248,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         date: add(new Date(), { days: 1 }).toISOString(),
         amount: commissionAmount,
         clientId: originalTx.providerId, // The provider owes the commission
-        providerId: undefined, // Commission is owed to the app
+        providerId: 'corabo-app', // Commission is owed to the app
         details: {
-          system: `Comisión (5%) por venta Credicora #${originalTx.id}`
+          system: `Comisión (4.99%) por venta Credicora #${originalTx.id}`
         }
       };
 
@@ -261,38 +263,59 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     if (!cartTx) return;
 
     const deliveryCost = withDelivery ? getDeliveryCost() : 0;
-    const finalAmount = cartTx.amount + deliveryCost;
-
-    if (useCredicora && finalAmount > (currentUser.credicoraLimit || 0)) {
-        toast({ variant: 'destructive', title: "Límite de Credicora Excedido", description: "El monto de la compra supera tu crédito disponible."});
-        return;
-    }
-    
-    const userLevel = currentUser.credicoraLevel || 1;
-    const levelDetails = credicoraLevels[userLevel.toString()];
-
-    const paymentMethod = useCredicora ? 'credicora' : 'direct';
-    const initialPayment = useCredicora ? finalAmount * levelDetails.initialPaymentPercentage : finalAmount;
+    const totalAmount = cartTx.amount + deliveryCost;
     
     let finalTx: Transaction | undefined;
+    
+    if (useCredicora) {
+        const userLevel = currentUser.credicoraLevel || 1;
+        const levelDetails = credicoraLevels[userLevel.toString()];
+        const creditLimit = currentUser.credicoraLimit || 0;
+        
+        // Calculate the amount financed by Credicora
+        const financingPercentage = 1 - levelDetails.initialPaymentPercentage;
+        const potentialFinancing = totalAmount * financingPercentage;
+        const financedAmount = Math.min(potentialFinancing, creditLimit);
+        
+        const initialPayment = totalAmount - financedAmount;
 
-    updateTransaction(cartTx.id, (tx) => {
-        const newTxDetails: Partial<Transaction> = {
-            status: 'Finalizado - Pendiente de Pago',
-            amount: initialPayment,
-            details: { 
-                ...tx.details, 
-                delivery: withDelivery, 
-                deliveryCost,
-                paymentMethod,
-                initialPayment: initialPayment,
-                totalAmount: finalAmount, 
-            },
-            date: new Date().toISOString(),
-        };
-        finalTx = { ...tx, ...newTxDetails };
-        return newTxDetails;
-    });
+        updateTransaction(cartTx.id, tx => {
+            const newTxDetails: Partial<Transaction> = {
+                status: 'Finalizado - Pendiente de Pago',
+                amount: initialPayment,
+                details: {
+                    ...tx.details,
+                    delivery: withDelivery,
+                    deliveryCost,
+                    paymentMethod: 'credicora',
+                    initialPayment: initialPayment,
+                    totalAmount: totalAmount,
+                },
+                date: new Date().toISOString(),
+            };
+            finalTx = { ...tx, ...newTxDetails };
+            return newTxDetails;
+        });
+
+    } else { // Direct Payment
+        updateTransaction(cartTx.id, tx => {
+            const newTxDetails: Partial<Transaction> = {
+                status: 'Finalizado - Pendiente de Pago',
+                amount: totalAmount,
+                details: {
+                    ...tx.details,
+                    delivery: withDelivery,
+                    deliveryCost,
+                    paymentMethod: 'direct',
+                    initialPayment: totalAmount,
+                    totalAmount: totalAmount,
+                },
+                date: new Date().toISOString(),
+            };
+            finalTx = { ...tx, ...newTxDetails };
+            return newTxDetails;
+        });
+    }
 
     setCart([]);
     toast({ title: "Acuerdo de Pago Creado", description: "El compromiso de pago ha sido registrado. Serás redirigido para completar el pago." });
