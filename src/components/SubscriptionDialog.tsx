@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -13,6 +14,9 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Check, CheckCircle, Star, Info } from 'lucide-react';
 import { useCorabo } from "@/contexts/CoraboContext";
+import { RadioGroup, RadioGroupItem } from './ui/radio-group';
+import { Label } from './ui/label';
+import { cn } from '@/lib/utils';
 
 interface SubscriptionDialogProps {
   isOpen: boolean;
@@ -23,8 +27,8 @@ const plans = {
   personal: {
     title: "Plan Personal",
     description: "Ideal para Clientes y prestadores básicos que buscan establecer una base sólida de confianza y credibilidad.",
-    price: "$5 USD/mes",
-    annualPrice: "$40 USD/año",
+    price: 5,
+    annualPrice: 40,
     annualDiscount: "ahorra 33%",
     features: [
       "Verificación de Identidad Rigurosa",
@@ -36,8 +40,8 @@ const plans = {
   professional: {
     title: "Plan Profesional",
     description: "Dirigido a profesionales con un mayor volumen de trabajo o que desean mayor visibilidad.",
-    price: "$12 USD/mes",
-    annualPrice: "$95 USD/año",
+    price: 12,
+    annualPrice: 95,
     annualDiscount: "ahorra 33%",
     features: [
       "Todos los beneficios del Plan Personal",
@@ -49,8 +53,8 @@ const plans = {
   company: {
     title: "Plan Empresarial",
     description: "Diseñado para empresas y entidades jurídicas que necesitan proyectar una imagen de máxima confianza.",
-    price: "$25 USD/mes",
-    annualPrice: "$190 USD/año",
+    price: 25,
+    annualPrice: 190,
     annualDiscount: "ahorra 37.5%",
     features: [
       "Todos los beneficios del Plan Profesional",
@@ -64,39 +68,27 @@ const plans = {
 
 export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogProps) {
   const { currentUser, transactions, subscribeUser, checkIfShouldBeEnterprise } = useCorabo();
-
-  const handleSubscribe = () => {
-    subscribeUser(currentUser.id);
-    onOpenChange(false);
-  }
-  
-  const getCompletedJobs = () => {
-    if (currentUser.type !== 'provider') return 0;
-    return transactions.filter(
-      tx => tx.providerId === currentUser.id && (tx.status === 'Pagado' || tx.status === 'Resuelto')
-    ).length;
-  }
+  const [paymentCycle, setPaymentCycle] = useState<'monthly' | 'annually'>('monthly');
 
   const getPlanKey = (): keyof typeof plans => {
     const professionalCategories = ['Salud y Bienestar', 'Educación', 'Automotriz y Repuestos', 'Alimentos y Restaurantes'];
     
-    // Rule 1: Auto-classified companies
     if (checkIfShouldBeEnterprise(currentUser.id)) {
       return 'company';
     }
-
-    // Rule 2: Clients always get the Personal plan
+    
     if (currentUser.type === 'client') {
       return 'personal';
     }
 
-    // At this point, user is a provider
     if (currentUser.type === 'provider') {
-      const completedJobs = getCompletedJobs();
+      const completedJobs = transactions.filter(
+        tx => tx.providerId === currentUser.id && (tx.status === 'Pagado' || tx.status === 'Resuelto')
+      ).length;
+      
       const primaryCategory = currentUser.profileSetupData?.primaryCategory || '';
       const offerType = currentUser.profileSetupData?.offerType;
 
-      // Rule 3: Providers selling products or in professional categories get Profesional plan
       if (
         offerType === 'product' ||
         professionalCategories.includes(primaryCategory) ||
@@ -105,14 +97,17 @@ export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogP
         return 'professional';
       }
     }
-
-    // Default for basic service providers with 15 or fewer jobs
     return 'personal';
   }
 
-
   const currentPlanKey = getPlanKey();
   const currentPlan = plans[currentPlanKey];
+
+  const handleSubscribe = () => {
+    const amount = paymentCycle === 'monthly' ? currentPlan.price : currentPlan.annualPrice;
+    subscribeUser(currentUser.id, `Plan ${currentPlan.title} (${paymentCycle === 'monthly' ? 'Mensual' : 'Anual'})`, amount);
+    onOpenChange(false);
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -145,9 +140,22 @@ export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogP
                     </li>
                     ))}
                 </ul>
-                <div className="text-center pt-2">
-                  <p className="font-bold text-lg">{currentPlan.price}</p>
-                  <p className="text-sm font-semibold">{currentPlan.annualPrice} <span className="text-green-600 font-bold">({currentPlan.annualDiscount})</span></p>
+                <div className="pt-2">
+                    <RadioGroup value={paymentCycle} onValueChange={(value: 'monthly' | 'annually') => setPaymentCycle(value)}>
+                      <div className={cn("flex items-center space-x-2 rounded-lg p-3 border-2 transition-all", paymentCycle === 'monthly' ? 'border-primary bg-primary/5' : 'border-border')}>
+                          <RadioGroupItem value="monthly" id="monthly" />
+                          <Label htmlFor="monthly" className="flex-grow cursor-pointer">
+                              <p className="font-bold text-base">{`$${currentPlan.price}`}<span className="font-normal text-sm"> / mes</span></p>
+                          </Label>
+                      </div>
+                      <div className={cn("flex items-center space-x-2 rounded-lg p-3 border-2 transition-all", paymentCycle === 'annually' ? 'border-primary bg-primary/5' : 'border-border')}>
+                          <RadioGroupItem value="annually" id="annually" />
+                          <Label htmlFor="annually" className="flex-grow cursor-pointer">
+                             <p className="font-bold text-base">{`$${currentPlan.annualPrice}`}<span className="font-normal text-sm"> / año</span></p>
+                             <p className="font-semibold text-green-600 text-xs">{currentPlan.annualDiscount}</p>
+                          </Label>
+                      </div>
+                    </RadioGroup>
                 </div>
             </div>
         )}
@@ -167,7 +175,7 @@ export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogP
           {!currentUser.isSubscribed && (
             <Button onClick={handleSubscribe}>
                 <Check className="mr-2 h-4 w-4" />
-                Confirmar Suscripción
+                Suscribirme ahora
             </Button>
           )}
         </DialogFooter>
