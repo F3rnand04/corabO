@@ -23,6 +23,7 @@ import { Separator } from "./ui/separator";
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "./ui/alert-dialog";
 import { Switch } from "./ui/switch";
 import { Label } from "./ui/label";
+import Image from "next/image";
 
 export function Header() {
   const { searchQuery, setSearchQuery, feedView, setFeedView, currentUser, users, toggleGps, cart, updateCartQuantity, getCartTotal, checkout, getDeliveryCost } = useCorabo();
@@ -60,10 +61,7 @@ export function Header() {
           
           <Link href="/contacts" passHref>
             <div className="flex items-center space-x-2 cursor-pointer">
-              <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center">
-                <span className="text-lg font-bold text-primary">C</span>
-              </div>
-              <span className="font-bold text-xl">corabO</span>
+              <Image src="https://i.postimg.cc/8zWvkhxS/Sin-t-tulo-3.png" alt="Corabo Logo" width={120} height={40} className="object-contain" />
             </div>
           </Link>
 
@@ -264,5 +262,3 @@ export function Header() {
     </header>
   );
 }
-
-    
