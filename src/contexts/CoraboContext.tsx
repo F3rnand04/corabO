@@ -432,7 +432,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const removeContact = (userId: string) => {
     setContacts(prev => prev.filter(c => c.id !== userId));
-    toast({ variant: "destructive", title: "Contacto eliminado", description: "El contacto ha sido eliminado." });
   };
   
   const updateUser = (userId: string, updates: Partial<User> | ((user: User) => Partial<User>)) => {
