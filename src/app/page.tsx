@@ -51,30 +51,12 @@ export default function HomePage() {
   const getFilteredProviders = () => {
      const lowerCaseQuery = searchQuery.toLowerCase();
      
-     if (feedView === 'empresas') {
-        const companyProviders = providers.filter(p => p.profileSetupData?.providerType === 'company');
-        if (lowerCaseQuery.trim() === '') {
-            return companyProviders;
-        }
-        return companyProviders.filter(provider => 
-            provider.name.toLowerCase().includes(lowerCaseQuery) ||
-            provider.profileSetupData?.specialty?.toLowerCase().includes(lowerCaseQuery)
-        );
-     }
-    
-    const serviceProviders = providers.filter(p => p.profileSetupData?.providerType === 'professional');
-    
-    if (lowerCaseQuery.trim() === '') {
-        return serviceProviders;
-    }
-
-    return serviceProviders.filter(provider => {
+     const filterLogic = (provider: User) => {
         const providerName = provider.profileSetupData?.useUsername 
             ? provider.profileSetupData.username 
             : provider.name;
             
         const providerNameMatch = providerName?.toLowerCase().includes(lowerCaseQuery);
-        
         const specialtyMatch = provider.profileSetupData?.specialty?.toLowerCase().includes(lowerCaseQuery);
 
         const productMatch = products.some(product => 
@@ -92,7 +74,17 @@ export default function HomePage() {
         );
 
         return providerNameMatch || productMatch || serviceMatch || specialtyMatch;
-    });
+     }
+     
+     const targetProviders = feedView === 'empresas' 
+        ? providers.filter(p => p.profileSetupData?.providerType === 'company')
+        : providers;
+        
+    if (lowerCaseQuery.trim() === '') {
+        return targetProviders;
+    }
+
+    return targetProviders.filter(filterLogic);
   }
 
   const filteredItems = getFilteredItems();
@@ -101,29 +93,27 @@ export default function HomePage() {
   return (
     <main className="container py-4 space-y-6">
       <div className="space-y-4">
-        {feedView === 'servicios' ? (
-          filteredItems.length > 0 ? (
-            filteredItems.map(item => {
-              if (item.type === 'service') {
-                return <ServiceCard key={`service-${item.id}`} service={item} />;
-              }
-              if (item.type === 'product') {
-                return <ProductCard key={`product-${item.id}`} product={item} />;
-              }
-              return null;
-            })
+        {searchQuery.trim() !== '' ? (
+           // Vista de búsqueda: mostrar proveedores que coincidan
+           filteredProviders.length > 0 ? (
+            filteredProviders.map(provider => <ProviderCard key={provider.id} provider={provider} />)
+          ) : (
+            <p className="text-center text-muted-foreground">No se encontraron proveedores.</p>
+          )
+        ) : (
+          // Vista por defecto: mostrar según la pestaña
+          feedView === 'servicios' ? (
+            filteredProviders.length > 0 ? (
+              filteredProviders.filter(p => p.profileSetupData?.offerType !== 'product').map(provider => <ProviderCard key={provider.id} provider={provider} />)
+            ) : (
+               <p className="text-center text-muted-foreground">No se encontraron servicios.</p>
+            )
           ) : (
             filteredProviders.length > 0 ? (
               filteredProviders.map(provider => <ProviderCard key={provider.id} provider={provider} />)
             ) : (
-               <p className="text-center text-muted-foreground">No se encontraron servicios ni productos.</p>
+              <p className="text-center text-muted-foreground">No se encontraron empresas.</p>
             )
-          )
-        ) : (
-          filteredProviders.length > 0 ? (
-            filteredProviders.map(provider => <ProviderCard key={provider.id} provider={provider} />)
-          ) : (
-            <p className="text-center text-muted-foreground">No se encontraron empresas.</p>
           )
         )}
       </div>

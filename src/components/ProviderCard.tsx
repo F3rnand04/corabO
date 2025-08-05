@@ -23,7 +23,7 @@ interface ProviderCardProps {
 }
 
 export function ProviderCard({ provider }: ProviderCardProps) {
-    const { addContact, sendMessage } = useCorabo();
+    const { addContact, sendMessage, products } = useCorabo();
     const router = useRouter();
     const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
     const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
@@ -49,6 +49,9 @@ export function ProviderCard({ provider }: ProviderCardProps) {
 
     const mainImage = provider.gallery && provider.gallery.length > 0 ? provider.gallery[0].src : "https://placehold.co/600x400.png";
     const mainImageAlt = provider.gallery && provider.gallery.length > 0 ? provider.gallery[0].alt : displayName;
+    
+    const providerProductsCount = products.filter(p => p.providerId === provider.id).length;
+
 
     return (
         <>
