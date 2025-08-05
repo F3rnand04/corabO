@@ -43,6 +43,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     '/transactions',
     '/transactions/settings',
     '/messages',
+    '/videos',
   ].some(path => pathname.startsWith(path) && path !== '/messages');
   
   const shouldShowFooter = ![
@@ -54,7 +55,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-col min-h-screen">
        {shouldShowMainHeader && <Header />}
-       {isClientWithInactiveTransactions && !isTransactionsPage && (
+       {isClientWithInactiveTransactions && !isTransactionsPage && !isTransactionsSettingsPage && (
          <div className="bg-yellow-100 border-b border-yellow-300 text-yellow-900 text-sm">
             <div className="container p-2 flex items-center justify-center text-center gap-2">
                  <AlertCircle className="h-5 w-5 shrink-0" />

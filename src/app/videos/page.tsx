@@ -69,25 +69,15 @@ export default function VideosPage() {
 
             {/* Bottom info */}
             <div className="mb-16">
-                <div className="flex items-center gap-2">
-                    <p className="font-bold text-base drop-shadow-md">{user!.name}</p>
-                </div>
+                <Link href={`/companies/${user!.id}`} passHref>
+                    <a className="font-bold text-base drop-shadow-md hover:underline">{user!.name}</a>
+                </Link>
                 <p className="text-sm drop-shadow-md mt-1">
                     Descripción del video o servicio que se está mostrando... #hashtag #servicio
                 </p>
                 <p className="text-xs font-semibold mt-2 drop-shadow-md">Ver traducción</p>
             </div>
             
-            {/* Bottom action bar */}
-            <div className="absolute bottom-0 left-0 right-0">
-                <div className="flex justify-around items-center p-2 text-center text-sm font-semibold bg-black/30">
-                    <Button variant="ghost" className="flex-1 text-white text-base">Servicio</Button>
-                    <Separator orientation="vertical" className="h-6 bg-white/50" />
-                     <Link href={`/quotes`} passHref className="flex-1">
-                        <Button variant="ghost" className="w-full text-white text-base">Cotizar</Button>
-                    </Link>
-                </div>
-            </div>
           </div>
         </div>
       ))}
