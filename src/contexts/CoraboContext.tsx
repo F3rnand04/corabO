@@ -191,7 +191,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const generatePaymentCommitments = (originalTx: Transaction) => {
-      if (!originalTx.details.initialPayment) return;
+      if (!originalTx.details.initialPayment || !originalTx.providerId) return;
+      
       const totalAmount = originalTx.details.totalAmount || originalTx.amount;
       const remainingAmount = totalAmount - originalTx.details.initialPayment;
       const numberOfInstallments = 3; // For Level 1
@@ -204,7 +205,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
           id: `commitment-${originalTx.id}-${i}`,
           type: 'Sistema',
           status: 'Acuerdo Aceptado - Pendiente de Ejecución',
-          date: add(new Date(), { days: i * 15 }).toISOString(), // Cuotas quincenales
+          date: add(new Date(), { days: i * 15 }).toISOString(),
           amount: installmentAmount,
           clientId: originalTx.clientId,
           providerId: originalTx.providerId,
@@ -214,7 +215,21 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         };
         commitments.push(commitment);
       }
-      setTransactions(prev => [...prev, ...commitments]);
+
+      const commissionAmount = totalAmount * 0.05;
+      const commissionTx: Transaction = {
+        id: `commission-${originalTx.id}`,
+        type: 'Sistema',
+        status: 'Acuerdo Aceptado - Pendiente de Ejecución',
+        date: add(new Date(), { days: 1 }).toISOString(),
+        amount: commissionAmount,
+        clientId: originalTx.providerId, // The provider owes the commission
+        details: {
+          system: `Comisión (5%) por venta Credicora #${originalTx.id}`
+        }
+      };
+
+      setTransactions(prev => [...prev, ...commitments, commissionTx]);
   };
 
 
@@ -387,7 +402,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
     updateTransaction(transactionId, { status: 'Pagado' });
 
-    // Activate Credicora plan only after initial payment is confirmed
     if (originalTx.details.paymentMethod === 'credicora' && originalTx.details.initialPayment) {
         generatePaymentCommitments(originalTx);
         toast({ title: "Credicora Activado", description: "Tu plan de pagos ha comenzado. Revisa tus compromisos."});

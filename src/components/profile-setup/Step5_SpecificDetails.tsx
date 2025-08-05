@@ -7,13 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from '../ui/textarea';
-import { MapPin, Building, AlertCircle, Package, Hand, Star } from 'lucide-react';
+import { MapPin, Building, AlertCircle, Package, Hand, Star, Info } from 'lucide-react';
 import { Switch } from '../ui/switch';
 import { Slider } from '../ui/slider';
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
 import { SubscriptionDialog } from '../SubscriptionDialog';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 interface Step5_SpecificDetailsProps {
   onBack: () => void;
@@ -115,6 +116,18 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
                     onCheckedChange={setAcceptsCredicora}
                 />
             </div>
+
+            {acceptsCredicora && (
+                <Alert className="bg-blue-50 border-blue-200 text-blue-800">
+                    <Info className="h-4 w-4 !text-current" />
+                    <AlertTitle className="font-bold">¡Felicidades por este gran paso!</AlertTitle>
+                    <AlertDescription>
+                        Al aceptar Credicora, atraerás a más clientes y aumentarás tus ventas. 
+                        Nota: Se aplicará una comisión del 5% sobre el valor total de cada factura pagada con este método.
+                    </AlertDescription>
+                </Alert>
+            )}
+
             {offerType === 'service' && (
               <div className="flex items-center justify-between pt-4 border-t">
                   <Label htmlFor="appointment-cost">
