@@ -3,7 +3,7 @@
 
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { Plus, Heart, MessageCircle } from "lucide-react";
+import { Plus, Heart, MessageCircle, Minus } from "lucide-react";
 import { useCorabo } from "@/contexts/CoraboContext";
 import type { Product } from "@/lib/types";
 import { useState, useEffect } from "react";
@@ -15,9 +15,12 @@ interface ProductGridCardProps {
 }
 
 export function ProductGridCard({ product, onDoubleClick }: ProductGridCardProps) {
-    const { addToCart } = useCorabo();
+    const { addToCart, updateCartQuantity, cart } = useCorabo();
     const [likeCount, setLikeCount] = useState<number | null>(null);
     const [isLiked, setIsLiked] = useState(false);
+
+    const cartItem = cart.find(item => item.product.id === product.id);
+    const quantityInCart = cartItem?.quantity || 0;
 
     useEffect(() => {
         // Generate random number only on the client side to avoid hydration mismatch
@@ -44,14 +47,26 @@ export function ProductGridCard({ product, onDoubleClick }: ProductGridCardProps
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
             <div className="absolute inset-0 flex flex-col justify-end p-3 text-white">
                  <div className="absolute top-2 right-2">
-                    <Button 
-                        size="sm"
-                        className="h-8 rounded-full bg-black/40 hover:bg-black/60 text-white hover:text-white border-none shadow-md"
-                        onClick={() => addToCart(product, 1)}
-                    >
-                        <Plus className="w-4 h-4 mr-1" />
-                        Añadir
-                    </Button>
+                    {quantityInCart === 0 ? (
+                        <Button 
+                            size="sm"
+                            className="h-8 rounded-full bg-black/40 hover:bg-black/60 text-white hover:text-white border-none shadow-md"
+                            onClick={() => addToCart(product, 1)}
+                        >
+                            <Plus className="w-4 h-4 mr-1" />
+                            Añadir
+                        </Button>
+                    ) : (
+                        <div className="flex items-center gap-1 bg-background text-foreground rounded-full h-8 shadow-md">
+                            <Button variant="ghost" size="icon" className="h-full w-8 rounded-full" onClick={() => updateCartQuantity(product.id, quantityInCart - 1)}>
+                                <Minus className="h-4 w-4" />
+                            </Button>
+                            <span className="text-sm font-bold w-4 text-center">{quantityInCart}</span>
+                             <Button variant="ghost" size="icon" className="h-full w-8 rounded-full" onClick={() => updateCartQuantity(product.id, quantityInCart + 1)}>
+                                <Plus className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    )}
                 </div>
                 <h4 className="font-bold text-sm leading-tight drop-shadow-md">{product.name}</h4>
                 <div className="flex items-center justify-between mt-2">
