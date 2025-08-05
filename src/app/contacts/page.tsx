@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { ValidationItem } from '@/components/ValidationItem';
 import { SubscriptionDialog } from '@/components/SubscriptionDialog';
 import { useState } from 'react';
+import Link from 'next/link';
 
 function ContactsHeader({ onSubscribeClick }: { onSubscribeClick: () => void }) {
   const router = useRouter();
@@ -39,8 +40,14 @@ function ContactsHeader({ onSubscribeClick }: { onSubscribeClick: () => void }) 
 
 
 export default function ContactsPage() {
-  const { currentUser, contacts, removeContact, validateEmail, validatePhone } = useCorabo();
+  const { currentUser, contacts, removeContact, validateEmail, validatePhone, sendMessage } = useCorabo();
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
+  const router = useRouter();
+
+  const handleDirectMessage = (contactId: string) => {
+    const conversationId = sendMessage(contactId, '', true);
+    router.push(`/messages/${conversationId}`);
+  };
 
   return (
     <>
@@ -90,18 +97,18 @@ export default function ContactsPage() {
             contacts.map((contact) => (
               <Card key={contact.id} className="rounded-full shadow-sm">
                 <CardContent className="p-2 flex items-center justify-between">
-                    <div className='flex items-center gap-3'>
+                    <Link href={`/companies/${contact.id}`} className="flex items-center gap-3 group">
                         <Avatar className="w-12 h-12">
                             <AvatarImage src={contact.profileImage} alt={contact.name} />
                             <AvatarFallback>{contact.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div>
-                            <p className="font-semibold text-sm">{contact.name}</p>
-                            <p className="text-xs text-muted-foreground">Especialidad</p>
+                            <p className="font-semibold text-sm group-hover:underline">{contact.name}</p>
+                            <p className="text-xs text-muted-foreground">{contact.profileSetupData?.specialty || "Especialidad"}</p>
                         </div>
-                    </div>
+                    </Link>
                     <div className="flex items-center gap-2 pr-2">
-                        <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full">
+                        <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full" onClick={() => handleDirectMessage(contact.id)}>
                             <MessageSquare className="w-5 h-5" />
                         </Button>
                         <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full" onClick={() => removeContact(contact.id)}>
