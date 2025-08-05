@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Star, Send, Plus, Calendar, Wallet, MapPin, ChevronLeft, ChevronRight, ImageIcon, Settings, MessageCircle, Flag, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
-import { PromotionDialog } from '@/components/PromotionDialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
@@ -49,7 +48,6 @@ export default function ProfilePage() {
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
-  const [isPromotionDialogOpen, setIsPromotionDialogOpen] = useState(false);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [_, setForceRerender] = useState(0);
 
@@ -199,7 +197,7 @@ export default function ProfilePage() {
       });
       return;
     }
-    setIsPromotionDialogOpen(true);
+    router.push('/emprende');
   };
 
   const currentImage = gallery.length > 0 ? gallery[currentImageIndex] : null;
@@ -451,12 +449,6 @@ export default function ProfilePage() {
           owner={currentUser}
         />
       )}
-      {
-        <PromotionDialog
-          isOpen={isPromotionDialogOpen}
-          onOpenChange={setIsPromotionDialogOpen}
-        />
-      }
     </>
   );
 }
