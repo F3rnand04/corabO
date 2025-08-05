@@ -30,18 +30,36 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const isClientWithInactiveTransactions = currentUser.type === 'client' && !currentUser.isTransactionsActive;
 
-  const shouldShowMainHeader = !isProfilePage && !isCompanyProfilePage && !isVideosPage && !isProfileSetupPage && !isQuotesPage && !isContactsPage && !isSearchPage && !isMapPage && !isQuotesPaymentPage && !isQuotesProPage && !isTransactionsPage && !isTransactionsSettingsPage && !isMessagesPage && !isChatPage;
-  const shouldShowFooter = !isProfilePage && !isProfileSetupPage && !isQuotesPage && !isContactsPage && !isSearchPage && !isMapPage && !isQuotesPaymentPage && !isQuotesProPage && !isTransactionsPage && !isTransactionsSettingsPage && !isMessagesPage && !isChatPage;
+  // El header principal se oculta en páginas de flujo completo o con headers personalizados.
+  const shouldShowMainHeader = ![
+    '/profile',
+    '/profile-setup',
+    '/quotes',
+    '/quotes/payment',
+    '/quotes/pro',
+    '/contacts',
+    '/search',
+    '/map',
+    '/transactions',
+    '/transactions/settings',
+    '/messages',
+  ].some(path => pathname.startsWith(path) && path !== '/messages');
+  
+  const shouldShowFooter = ![
+    '/profile-setup',
+    '/map',
+    '/messages',
+  ].some(path => pathname.startsWith(path)) && !isChatPage;
   
   return (
     <div className="flex flex-col min-h-screen">
-      {shouldShowMainHeader && <Header />}
-      {isClientWithInactiveTransactions && !isTransactionsPage && (
+       {shouldShowMainHeader && <Header />}
+       {isClientWithInactiveTransactions && !isTransactionsPage && (
          <div className="bg-yellow-100 border-b border-yellow-300 text-yellow-900 text-sm">
             <div className="container p-2 flex items-center justify-center text-center gap-2">
                  <AlertCircle className="h-5 w-5 shrink-0" />
                  <p className="flex-grow">
-                     ¡Activa tu registro de transacciones para una experiencia de compra segura y con seguimiento!
+                    ¡Activa tu registro de transacciones para una experiencia de compra segura y con seguimiento!
                  </p>
                  <Button variant="ghost" size="sm" asChild className="text-current hover:bg-yellow-200 hover:text-current">
                     <Link href="/transactions">Activar ahora <ArrowRight className="h-4 w-4 ml-2"/></Link>
@@ -50,7 +68,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       )}
       <main className="flex-grow">
-        <div className={!isSearchPage && !isMapPage && !isQuotesPaymentPage && !isQuotesProPage ? "pb-20" : ""}>
+        <div className={shouldShowFooter ? "pb-20" : ""}>
           {children}
         </div>
       </main>
