@@ -22,6 +22,7 @@ export const users: User[] = [
       expires: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(), // Expires in 12 hours
     },
     profileSetupData: {
+      specialty: 'Expertos en Tecnología',
       providerType: 'company',
       offerType: 'product',
       hasPhysicalLocation: true,
@@ -86,6 +87,7 @@ export const users: User[] = [
     emailValidated: true,
     phoneValidated: false,
     profileSetupData: {
+      specialty: 'Plomería y reparaciones del hogar',
       providerType: 'professional',
       offerType: 'service',
       hasPhysicalLocation: true,

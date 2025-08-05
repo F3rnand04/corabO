@@ -104,7 +104,7 @@ export default function ContactsPage() {
                         </Avatar>
                         <div>
                             <p className="font-semibold text-sm group-hover:underline">{contact.name}</p>
-                            <p className="text-xs text-muted-foreground">{contact.profileSetupData?.specialty || "Especialidad"}</p>
+                            <p className="text-xs text-muted-foreground">{contact.profileSetupData?.specialty || "Sin especialidad"}</p>
                         </div>
                     </Link>
                     <div className="flex items-center gap-2 pr-2">
