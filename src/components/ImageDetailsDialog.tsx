@@ -5,6 +5,8 @@ import Image from 'next/image';
 import {
   Dialog,
   DialogContent,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from './ui/scroll-area';
@@ -76,6 +78,9 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex =
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl w-[95vw] h-[90vh] flex flex-col p-0 gap-0">
+        <DialogHeader>
+            <DialogTitle className="sr-only">{currentImage.alt}</DialogTitle>
+        </DialogHeader>
          <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="absolute top-2 right-2 z-50 bg-black/30 text-white hover:bg-black/50 hover:text-white rounded-full">
             <X className="h-5 w-5"/>
          </Button>
