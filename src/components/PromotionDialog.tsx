@@ -140,10 +140,10 @@ export function PromotionDialog({ isOpen, onOpenChange }: PromotionDialogProps) 
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Zap className="text-yellow-500" />
-            Impulsa tu Venta por 24h
+            Lanza tu Prueba de Mercado por 24h
           </DialogTitle>
           <DialogDescription>
-            Destaca un producto o servicio en el feed principal durante 24 horas para probar su impacto y alcanzar nuevos clientes.
+            ¿Tienes una nueva idea? Lanza un producto o servicio por 24 horas y mide el interés del mercado. Ideal para validar conceptos antes de un lanzamiento completo.
           </DialogDescription>
         </DialogHeader>
 
