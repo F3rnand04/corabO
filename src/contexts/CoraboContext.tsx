@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
@@ -405,7 +404,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     // Activate Credicora plan only after initial payment is confirmed
     if (originalTx.details.paymentMethod === 'credicora' && originalTx.details.initialPayment) {
         generatePaymentCommitments(originalTx);
-        toast({ title: "Credicora Activado", description: "Tu plan de pagos ha comenzado. Revisa tus compromisos."});
     }
 
     toast({ title: "¡Pago Confirmado!", description: "Gracias por tu pago. ¡Has sumado puntos a tu reputación!" });
@@ -809,3 +807,5 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
+
+    
