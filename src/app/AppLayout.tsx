@@ -52,7 +52,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     '/messages',
     '/videos',
     '/emprende',
-  ].includes(pathname);
+  ].includes(pathname) && !isChatPage;
   
   const shouldShowFooter = ![
     '/profile-setup',
