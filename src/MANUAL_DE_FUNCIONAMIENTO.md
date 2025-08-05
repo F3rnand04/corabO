@@ -89,8 +89,8 @@ CrediCora no es solo un sistema de crédito, es una herramienta de crecimiento.
 ### 4.2. Registro de Transacciones (`/transactions`)
 Es el centro financiero del usuario.
 - **Panel Principal (Resumen):**
-  - **Gráficos:** Muestra gráficos de Ingresos vs. Egresos (líneas o tarta).
-  - **Tarjeta CrediCora:** Muestra el nivel actual (Alfa, Delta, etc.), el límite de crédito y el disponible. El ojo permite ocultar/mostrar cifras.
+  - **Gráficos:** Muestra gráficos de Ingresos vs. Egresos (líneas o tarta), incluyendo datos de transacciones pendientes.
+  - **Tarjeta CrediCora:** Muestra el nivel actual (Alfa, Delta, etc.), el límite de crédito y el disponible. El ojo permite ocultar/mostrar cifras. Incluye una sección desplegable de "Ver Progresión" con estadísticas para alcanzar el siguiente nivel.
   - **Calendario de Agenda:** El icono de calendario abre un popover con un calendario que resalta los días con compromisos de pago o tareas pendientes.
   - **Botones de Acción:**
     - `Lista de Pendientes`: Muestra transacciones que requieren una acción (ej. cotizaciones por enviar, pagos por confirmar).
