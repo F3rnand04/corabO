@@ -87,8 +87,6 @@ export default function CompanyProfilePage() {
   const handleCheckout = () => {
     if (cartTransaction) {
         checkout(cartTransaction.id, includeDelivery || isDeliveryOnly, useCredicora);
-        setIsCheckoutAlertOpen(false);
-        setUseCredicora(false);
     }
   };
   
@@ -480,9 +478,9 @@ export default function CompanyProfilePage() {
           {!isProviderTransactionReady && (
              <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>¡Una recomendación para tu seguridad!</AlertTitle>
+                <AlertTitle>Para una compra segura</AlertTitle>
                 <AlertDescription>
-                    Este proveedor aún no ha activado su registro de transacciones. Te sugerimos contactarlo y recordarle que active su registro para que ambos puedan disfrutar de la seguridad, el seguimiento y las garantías que ofrece nuestra plataforma.
+                    Este proveedor aún no ha activado su registro de transacciones. ¡Anímale a hacerlo para que ambos operen con la seguridad y el respaldo de CorabO!
                 </AlertDescription>
             </Alert>
           )}
