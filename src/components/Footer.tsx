@@ -19,21 +19,23 @@ export default function Footer() {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
 
   const isProvider = currentUser.type === 'provider';
+  const isProfilePage = pathname === '/profile';
 
   const handleCentralButtonClick = () => {
-    if (pathname === '/profile' && isProvider) {
-      setIsUploadOpen(true);
-    } else if (pathname === '/profile' && !isProvider) {
-       router.push('/emprende');
-    }
-     else {
+    if (isProfilePage) {
+        if (isProvider) {
+          setIsUploadOpen(true);
+        } else {
+          router.push('/emprende');
+        }
+    } else {
       router.push('/search');
     }
   };
 
   const getCentralButton = () => {
       let Icon = Search;
-      if (pathname === '/profile') {
+      if (isProfilePage) {
           Icon = Upload;
       }
       return (
@@ -46,6 +48,29 @@ export default function Footer() {
             <Icon className="w-8 h-8" />
         </Button>
       )
+  }
+
+  const getProfileOrSettingsButton = () => {
+    if (isProfilePage) {
+      return (
+         <Link href="/profile-setup" passHref>
+            <Button variant="ghost" className={cn("flex-col h-auto p-1 text-muted-foreground hover:text-primary", pathname.startsWith('/profile-setup') && "text-primary")}>
+              <Settings className="w-6 h-6" />
+            </Button>
+        </Link>
+      );
+    }
+    
+    return (
+       <Link href="/profile" passHref>
+          <Button variant="ghost" className={cn("flex-col h-auto p-1 text-muted-foreground hover:text-primary")}>
+            <Avatar className={cn("w-7 h-7", isProfilePage && "ring-2 ring-primary")}>
+                <AvatarImage src={currentUser.profileImage} alt={currentUser.name} />
+                <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+            </Avatar>
+          </Button>
+      </Link>
+    );
   }
 
   return (
@@ -71,11 +96,7 @@ export default function Footer() {
                 </Button>
             </Link>
 
-            <Link href="/profile-setup" passHref>
-                <Button variant="ghost" className={cn("flex-col h-auto p-1 text-muted-foreground hover:text-primary", pathname === '/profile-setup' && "text-primary")}>
-                    <Settings className="w-6 h-6" />
-                </Button>
-            </Link>
+            {getProfileOrSettingsButton()}
         </div>
       </footer>
       <UploadDialog isOpen={isUploadOpen} onOpenChange={setIsUploadOpen} />
