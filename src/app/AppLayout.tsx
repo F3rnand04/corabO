@@ -44,7 +44,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     '/transactions/settings',
     '/messages',
     '/videos',
-  ].some(path => pathname.startsWith(path) && path !== '/messages');
+  ].includes(pathname);
   
   const shouldShowFooter = ![
     '/profile-setup',
