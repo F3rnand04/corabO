@@ -4,80 +4,97 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Home, PlaySquare, Search, MessageSquare, CircleUser } from 'lucide-react';
+import { Home, PlaySquare, Search, MessageSquare, CircleUser, Upload, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { useState } from 'react';
+import { UploadDialog } from './UploadDialog';
+import { useRouter } from 'next/navigation';
 
 export default function Footer() {
   const pathname = usePathname();
+  const router = useRouter();
   const { currentUser } = useCorabo();
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
+
+  const isProvider = currentUser.type === 'provider';
+
+  const handleCentralButtonClick = () => {
+    if (isProvider) {
+      setIsUploadOpen(true);
+    } else {
+      router.push('/emprende');
+    }
+  };
 
   const navItems = [
     { href: '/', icon: Home, label: 'Inicio' },
     { href: '/videos', icon: PlaySquare, label: 'Videos' },
     { href: '/search', icon: Search, label: 'Buscar', isCentral: true },
     { href: '/messages', icon: MessageSquare, label: 'Mensajes' },
-    { href: '/profile', icon: CircleUser, label: 'Perfil' },
+    { href: '/profile-setup', icon: Settings, label: 'Ajustes' },
   ];
+  
+  const getCentralButton = () => {
+      if (pathname === '/profile') {
+           return (
+            <Button
+              key="profile-action"
+              onClick={handleCentralButtonClick}
+              size="icon"
+              className="relative -top-4 w-16 h-16 rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              <Upload className="w-8 h-8" />
+            </Button>
+           )
+      }
+      return (
+         <Link key="/search" href="/search" passHref>
+            <Button
+            size="icon"
+            className="relative -top-4 w-16 h-16 rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+                <Search className="w-8 h-8" />
+            </Button>
+        </Link>
+      )
+  }
 
   return (
     <>
       <footer className="fixed bottom-0 left-0 right-0 bg-background border-t z-50">
         <div className="container h-16 flex justify-around items-center px-2">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href;
-
-            if (item.isCentral) {
-              return (
-                 <Link key={item.href} href={item.href} passHref>
-                    <Button
-                    size="icon"
-                    className={cn(
-                        "relative -top-4 w-16 h-16 rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90",
-                    )}
-                    >
-                        <item.icon className="w-8 h-8" />
-                    </Button>
-                </Link>
-              );
-            }
-
-            if (item.href === '/profile') {
-              return (
-                 <Link key={item.href} href={item.href} passHref>
-                    <Button
-                    variant="ghost"
-                    className={cn(
-                        "flex-col h-auto p-0 rounded-full text-muted-foreground hover:text-primary w-8 h-8",
-                        isActive && "ring-2 ring-primary"
-                    )}
-                    >
-                        <Avatar className="w-8 h-8">
-                            <AvatarImage src={currentUser.profileImage} alt={currentUser.name} />
-                            <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                    </Button>
-                </Link>
-              )
-            }
-            
-            return (
-              <Link key={item.href} href={item.href} passHref>
-                <Button
-                  variant="ghost"
-                  className={cn(
-                    "flex-col h-auto p-1 text-muted-foreground hover:text-primary",
-                    isActive && "text-primary"
-                  )}
-                >
-                  <item.icon className="w-6 h-6" />
+            <Link href="/" passHref>
+                <Button variant="ghost" className={cn("flex-col h-auto p-1 text-muted-foreground hover:text-primary", pathname === '/' && "text-primary")}>
+                    <Home className="w-6 h-6" />
                 </Button>
-              </Link>
-            );
-          })}
+            </Link>
+             <Link href="/videos" passHref>
+                <Button variant="ghost" className={cn("flex-col h-auto p-1 text-muted-foreground hover:text-primary", pathname === '/videos' && "text-primary")}>
+                    <PlaySquare className="w-6 h-6" />
+                </Button>
+            </Link>
+
+            {getCentralButton()}
+            
+            <Link href="/messages" passHref>
+                <Button variant="ghost" className={cn("flex-col h-auto p-1 text-muted-foreground hover:text-primary", pathname.startsWith('/messages') && "text-primary")}>
+                    <MessageSquare className="w-6 h-6" />
+                </Button>
+            </Link>
+
+            <Link href="/profile" passHref>
+                <Button variant="ghost" className={cn( "flex-col h-auto p-0 rounded-full text-muted-foreground hover:text-primary w-8 h-8", pathname === '/profile' && "ring-2 ring-primary")}>
+                    <Avatar className="w-8 h-8">
+                        <AvatarImage src={currentUser.profileImage} alt={currentUser.name} />
+                        <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                </Button>
+            </Link>
         </div>
       </footer>
+      <UploadDialog isOpen={isUploadOpen} onOpenChange={setIsUploadOpen} />
     </>
   );
 }

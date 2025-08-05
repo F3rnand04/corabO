@@ -13,7 +13,6 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useCorabo } from '@/contexts/CoraboContext';
 import type { GalleryImage, Transaction } from '@/lib/types';
-import ProfileFooter from '@/components/ProfileFooter';
 import { useRouter } from 'next/navigation';
 import { ReportDialog } from '@/components/ReportDialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -477,7 +476,6 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
         </main>
-        <ProfileFooter />
       </div>
        <ReportDialog 
             isOpen={isReportDialogOpen} 
