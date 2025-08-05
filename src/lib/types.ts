@@ -1,6 +1,7 @@
 
 
 
+
 export type GalleryImageComment = {
   author: string;
   text: string;
@@ -27,6 +28,7 @@ export type CredicoraLevel = {
     creditLimit: number;
     initialPaymentPercentage: number;
     installments: number;
+    transactionsForNextLevel: number;
 };
 
 export const credicoraLevels: Record<string, CredicoraLevel> = {
@@ -36,6 +38,7 @@ export const credicoraLevels: Record<string, CredicoraLevel> = {
         creditLimit: 150,
         initialPaymentPercentage: 0.60,
         installments: 3,
+        transactionsForNextLevel: 25,
     },
     '2': {
         level: 2,
@@ -43,6 +46,7 @@ export const credicoraLevels: Record<string, CredicoraLevel> = {
         creditLimit: 200,
         initialPaymentPercentage: 0.50,
         installments: 6,
+        transactionsForNextLevel: 40,
     },
      '3': {
         level: 3,
@@ -50,6 +54,7 @@ export const credicoraLevels: Record<string, CredicoraLevel> = {
         creditLimit: 300,
         initialPaymentPercentage: 0.40,
         installments: 9,
+        transactionsForNextLevel: 60,
     },
     '4': {
         level: 4,
@@ -57,6 +62,7 @@ export const credicoraLevels: Record<string, CredicoraLevel> = {
         creditLimit: 600,
         initialPaymentPercentage: 0.30,
         installments: 12,
+        transactionsForNextLevel: 80,
     },
     '5': {
         level: 5,
@@ -64,6 +70,7 @@ export const credicoraLevels: Record<string, CredicoraLevel> = {
         creditLimit: 1000,
         initialPaymentPercentage: 0.0,
         installments: 18,
+        transactionsForNextLevel: 150,
     },
 };
 

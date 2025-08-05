@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { Home, Settings, Wallet, ShoppingCart, TrendingUp, PieChart, Eye, EyeOff, Calendar, Info, FileText, Banknote, ShieldAlert, LogOut, Star, Plus, Minus, X, Truck, ListChecks, History, CalendarClock, ChevronLeft } from "lucide-react";
+import { Home, Settings, Wallet, ShoppingCart, TrendingUp, PieChart, Eye, EyeOff, Calendar, Info, FileText, Banknote, ShieldAlert, LogOut, Star, Plus, Minus, X, Truck, ListChecks, History, CalendarClock, ChevronLeft, ChevronDown, CheckCircle, TrendingDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from 'next/link';
 import TransactionsLineChart from "@/components/charts/TransactionsLineChart";
@@ -37,6 +37,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Day, type DayProps } from 'react-day-picker';
 import { cn } from "@/lib/utils";
 import { credicoraLevels } from "@/lib/types";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 
 function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary: () => void, currentView: string }) {
@@ -69,11 +70,8 @@ function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary:
     const totalAmount = subtotal + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
 
     const credicoraLimit = currentUser.credicoraLimit || 0;
-    const credicoraAvailable = totalAmount <= credicoraLimit;
     const userCredicoraLevel = currentUser.credicoraLevel || 1;
     const credicoraDetails = credicoraLevels[userCredicoraLevel.toString()];
-    const credicoraInitialPayment = totalAmount * (credicoraDetails?.initialPaymentPercentage || 1);
-    const credicoraInstallmentAmount = (totalAmount - credicoraInitialPayment) / (credicoraDetails?.installments || 1);
 
 
     const handleCheckout = () => {
@@ -83,6 +81,10 @@ function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary:
           setUseCredicora(false);
       }
     };
+    
+    const financingHelp = useCredicora ? Math.min((credicoraDetails.creditLimit * (1 - credicoraDetails.initialPaymentPercentage)), totalAmount) : 0;
+    const finalAmountToday = totalAmount - financingHelp;
+    const installmentAmount = financingHelp > 0 ? financingHelp / credicoraDetails.installments : 0;
 
     return (
         <header className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
@@ -185,7 +187,7 @@ function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary:
 
                                 {providerAcceptsCredicora && (
                                      <div className="flex items-center justify-between pt-2 border-t mt-2">
-                                        <Label htmlFor="credicora-switch" className="flex items-center gap-2 text-blue-600 font-semibold disabled:text-muted-foreground">
+                                        <Label htmlFor="credicora-switch" className="flex items-center gap-2 text-blue-600 font-semibold">
                                             <Star className="w-4 h-4 fill-current"/>
                                             Pagar con Credicora
                                         </Label>
@@ -193,24 +195,18 @@ function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary:
                                             id="credicora-switch"
                                             checked={useCredicora}
                                             onCheckedChange={setUseCredicora}
-                                            disabled={!credicoraAvailable}
                                         />
                                     </div>
-                                )}
-                                {!credicoraAvailable && providerAcceptsCredicora && (
-                                    <p className="text-xs text-destructive -mt-2 text-right">
-                                        El monto excede tu límite de Credicora de ${credicoraLimit.toFixed(2)}.
-                                    </p>
                                 )}
                                
                                 <Separator />
                                 <div className="flex justify-between text-lg font-bold">
                                    <span>Total a Pagar{useCredicora && " Hoy"}:</span>
-                                   <span>${useCredicora ? credicoraInitialPayment.toFixed(2) : totalAmount.toFixed(2)}</span>
+                                   <span>${finalAmountToday.toFixed(2)}</span>
                                </div>
                                 {useCredicora && credicoraDetails && (
                                     <p className="text-xs text-muted-foreground -mt-2 text-right">
-                                        y {credicoraDetails.installments} cuotas de ${credicoraInstallmentAmount.toFixed(2)}
+                                        y {credicoraDetails.installments} cuotas de ${installmentAmount.toFixed(2)}
                                     </p>
                                 )}
                             </div>
@@ -301,12 +297,17 @@ export default function TransactionsPage() {
     const { toast } = useToast();
     const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
     const [view, setView] = useState<'summary' | 'pending' | 'history' | 'commitments'>('summary');
+    const [isProgressionOpen, setIsProgressionOpen] = useState(false);
 
     const isProvider = currentUser.type === 'provider';
     
     const agendaEvents = getAgendaEvents();
     const userCredicoraLevel = currentUser.credicoraLevel || 1;
     const credicoraDetails = credicoraLevels[userCredicoraLevel.toString()];
+
+    // Placeholder data for progression
+    const completedTransactions = transactions.filter(t => (t.clientId === currentUser.id || t.providerId === currentUser.id) && (t.status === 'Pagado' || t.status === 'Resuelto')).length;
+    const transactionsForNextLevel = credicoraDetails.transactionsForNextLevel || 25;
     
     const onDayDoubleClick = (day: Date) => {
         const eventOnDay = agendaEvents.find(
@@ -408,13 +409,48 @@ export default function TransactionsPage() {
                             </CardContent>
                         </Card>
 
-                        <div className="space-y-2">
-                            <div className="flex justify-between items-center text-sm font-semibold">
-                                <p>NIVEL {credicoraDetails.level}</p>
-                                <p className="text-muted-foreground">{credicoraDetails.name.toUpperCase()}</p>
-                            </div>
-                            <Progress value={0} />
-                        </div>
+                        <Collapsible open={isProgressionOpen} onOpenChange={setIsProgressionOpen}>
+                            <Card>
+                                <CollapsibleTrigger asChild>
+                                    <div className="flex justify-between items-center p-4 cursor-pointer">
+                                        <div className="space-y-1">
+                                            <p className="text-sm font-semibold">NIVEL {credicoraDetails.level} - {credicoraDetails.name.toUpperCase()}</p>
+                                            <Progress value={(completedTransactions / transactionsForNextLevel) * 100} className="w-40 h-2" />
+                                        </div>
+                                        <Button variant="ghost" size="sm">
+                                            Ver Progresión
+                                            <ChevronDown className={cn("h-4 w-4 ml-2 transition-transform", isProgressionOpen && "rotate-180")} />
+                                        </Button>
+                                    </div>
+                                </CollapsibleTrigger>
+                                <CollapsibleContent>
+                                    <div className="p-4 pt-0 space-y-4">
+                                        <Separator/>
+                                        <div className="space-y-3">
+                                            <div className="space-y-1">
+                                                <div className="flex justify-between text-xs font-medium"><span>Reputación</span><span>{currentUser.reputation}/5.0</span></div>
+                                                <Progress value={(currentUser.reputation / 5) * 100} />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <div className="flex justify-between text-xs font-medium"><span>Efectividad</span><span>99%</span></div>
+                                                <Progress value={99} />
+                                            </div>
+                                            <div className="space-y-1">
+                                                 <div className="flex justify-between text-xs font-medium"><span>Transacciones para Nivel {credicoraDetails.level + 1}</span><span>{completedTransactions}/{transactionsForNextLevel}</span></div>
+                                                <Progress value={(completedTransactions / transactionsForNextLevel) * 100} />
+                                            </div>
+                                        </div>
+                                        <div className="p-3 bg-muted/50 rounded-md text-center">
+                                             <p className="text-sm font-semibold">¡Sigue así para desbloquear más crédito y mejores beneficios!</p>
+                                             <Button size="sm" className="mt-2" onClick={() => setIsSubscriptionDialogOpen(true)}>
+                                                <Star className="w-4 h-4 mr-2"/>
+                                                Suscríbete para acelerar
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </CollapsibleContent>
+                            </Card>
+                        </Collapsible>
                         
                         <Card className="bg-card">
                            <CardHeader className="py-4 px-4">
@@ -511,16 +547,7 @@ export default function TransactionsPage() {
                                 </div>
                             </CardContent>
                         </Card>
-                        <Card>
-                            <CardContent className="p-4 text-center">
-                                <h3 className="font-bold text-lg">¡Lleva tu perfil al siguiente nivel!</h3>
-                                <p className="text-sm text-muted-foreground mt-1">Obtén tu insignia de verificado, mayor visibilidad, más crédito y mejores facilidades de pago.</p>
-                                <Button className="mt-4" onClick={() => setIsSubscriptionDialogOpen(true)}>
-                                    <Star className="mr-2 h-4 w-4"/>
-                                    Ver Planes de Suscripción
-                                </Button>
-                            </CardContent>
-                        </Card>
+                        
                     </div>
                 )
         }
