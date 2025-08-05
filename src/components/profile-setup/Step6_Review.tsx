@@ -62,13 +62,15 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
   const handleFinish = () => {
     updateFullProfile(currentUser.id, formData);
     
-    if (isProvider) {
+    // Check if the user is a provider and if their transactions are already active.
+    if (isProvider && !currentUser.isTransactionsActive) {
       toast({
         title: "¡Perfil Guardado!",
         description: "Ahora, activa tu registro de transacciones para empezar a vender."
       });
       router.push('/transactions/settings');
     } else {
+      // If client or an already active provider, just go to the profile.
       router.push('/profile');
       toast({
         title: "¡Perfil Actualizado!",
@@ -193,7 +195,7 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
       <div className="flex justify-between">
         <Button variant="outline" onClick={onBack}>Atrás</Button>
         <Button onClick={handleFinish}>
-            {isProvider ? 'Continuar a Activación' : 'Finalizar Configuración'}
+            {isProvider && !currentUser.isTransactionsActive ? 'Continuar a Activación' : 'Finalizar Configuración'}
         </Button>
       </div>
     </div>
