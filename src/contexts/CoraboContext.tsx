@@ -742,7 +742,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const downloadTransactionsPDF = () => {
-    const doc = new jsPDF();
     const threeMonthsAgo = new Date();
     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
 
@@ -753,6 +752,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         return;
     }
 
+    const doc = new jsPDF();
     doc.setFontSize(18);
     doc.text(`Registro de Transacciones - ${currentUser.name}`, 14, 22);
     doc.setFontSize(11);
@@ -1052,5 +1052,7 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
+
+    
 
     
