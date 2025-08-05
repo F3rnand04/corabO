@@ -126,7 +126,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     let cartTx = findOrCreateCartTransaction();
     
     const provider = users.find(u => u.id === product.providerId);
-    if (!provider) return; 
+    if (!provider || !provider.isTransactionsActive) {
+      toast({ variant: 'destructive', title: "Proveedor no disponible", description: "Este proveedor no tiene activas las transacciones en este momento."});
+      return;
+    }
 
     if (cart.length > 0 && cartTx.providerId && cartTx.providerId !== product.providerId) {
         toast({
@@ -449,10 +452,17 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
     // Activate subscription after payment is confirmed
     if(originalTx.details.system?.includes('Plan')) {
-        updateUser(originalTx.clientId, { isSubscribed: true, verified: true });
+        const user = users.find(u => u.id === originalTx.clientId);
+        if (!user) return;
+        
+        updateUser(originalTx.clientId, { isSubscribed: true, verified: false }); // Don't mark as verified yet
+
+        const messageForProvider = "¡Felicidades por dar el siguiente paso! Hemos recibido tu pago y tu perfil ya está en proceso de revisión. Si todo está en orden, tu insignia de **Verificado** brillará en tu perfil en menos de 24 horas. ¡Prepárate para una lluvia de nuevas oportunidades, mayor visibilidad y la confianza que mereces! El éxito te espera.";
+        const messageForClient = "¡Excelente decisión! Hemos recibido tu pago y tu perfil ya está en proceso de revisión. En menos de 24 horas, tu insignia de **Verificado** estará activa, dándote acceso a transacciones más seguras y a los proveedores más confiables de la plataforma. ¡Prepárate para una experiencia de compra con total tranquilidad y confianza!";
+
         sendMessage(
             originalTx.clientId, 
-            "¡Tu pago de suscripción ha sido confirmado! Para completar tu verificación, por favor responde a este mensaje con una foto de tu documento de identidad y un selfie sosteniéndolo. Nuestro equipo lo revisará en las próximas 24 horas."
+            user.type === 'provider' ? messageForProvider : messageForClient
         );
         toast({ title: "¡Verificación en Proceso!", description: "Revisa tus mensajes para ver los siguientes pasos."});
     }
@@ -808,6 +818,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
 
   const createAppointmentRequest = (request: AppointmentRequest) => {
+    const provider = users.find(u => u.id === request.providerId);
+    if (!provider || !provider.isTransactionsActive) {
+      toast({ variant: 'destructive', title: "Proveedor no disponible", description: "Este proveedor no tiene activas las transacciones en este momento."});
+      return;
+    }
+
     const newTx: Transaction = {
       id: `txn-${Date.now()}`,
       type: 'Servicio',
@@ -868,44 +884,27 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const providerTransactions = transactions.filter(
         tx => tx.providerId === providerId && (tx.status === 'Pagado' || tx.status === 'Resuelto')
     );
-
-    const thirtyDaysAgo = startOfDay(subDays(new Date(), 30));
-    let consecutiveDaysCount = 0;
     
+    // Check for 30 consecutive days with 5 or more transactions
     for (let i = 0; i < 30; i++) {
-        const dateToCheck = startOfDay(subDays(new Date(), i));
+        let hasEnoughSales = false;
+        const targetDay = startOfDay(subDays(new Date(), i));
         
-        const transactionsOnDay = providerTransactions.filter(tx => {
+        const salesOnDay = providerTransactions.filter(tx => {
             const txDate = startOfDay(new Date(tx.date));
-            return txDate.getTime() === dateToCheck.getTime();
+            return txDate.getTime() === targetDay.getTime();
         }).length;
-
-        if (transactionsOnDay >= 5) {
-            consecutiveDaysCount++;
-        } else {
-            consecutiveDaysCount = 0; // Reset count if the chain is broken
-        }
         
-        // No need to check further if a long enough chain is found, but for this simple loop it's fine.
+        if (salesOnDay >= 5) {
+            hasEnoughSales = true;
+        }
+
+        if (!hasEnoughSales) {
+            return false; // Break the chain, not an enterprise
+        }
     }
     
-    // This logic is tricky. A simpler interpretation might be "did they have >= 5 sales on 30 distinct days in the last month period?"
-    // The current logic checks for 30 CONSECUTIVE days of >= 5 sales. Let's stick to the prompt's spirit.
-    // Let's refine: Count days with >= 5 transactions in the last 30 days.
-    const dailyCounts: { [key: string]: number } = {};
-    providerTransactions.forEach(tx => {
-        const txDate = startOfDay(new Date(tx.date));
-        if (txDate >= thirtyDaysAgo) {
-            const dateString = txDate.toISOString().split('T')[0];
-            dailyCounts[dateString] = (dailyCounts[dateString] || 0) + 1;
-        }
-    });
-
-    const daysWithHighVolume = Object.values(dailyCounts).filter(count => count >= 5).length;
-
-    // For the demo, let's say if they had high volume on 15 of the last 30 days, they are enterprise.
-    // 30 consecutive days is too strict for a demo.
-    return daysWithHighVolume >= 15;
+    return true; // 30 consecutive days of high sales
 };
 
 
