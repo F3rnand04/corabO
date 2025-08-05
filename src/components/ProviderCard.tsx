@@ -14,6 +14,7 @@ import { useCorabo } from "@/contexts/CoraboContext";
 import { useState } from "react";
 import { ReportDialog } from "./ReportDialog";
 import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
 
 interface ProviderCardProps {
@@ -21,12 +22,18 @@ interface ProviderCardProps {
 }
 
 export function ProviderCard({ provider }: ProviderCardProps) {
-    const { addContact } = useCorabo();
+    const { addContact, sendMessage } = useCorabo();
+    const router = useRouter();
     const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
     const profileLink = provider.type === 'provider' ? `/companies/${provider.id}` : '#';
 
     const handleSaveContact = () => {
         addContact(provider);
+    };
+
+    const handleDirectMessage = () => {
+      const conversationId = sendMessage(provider.id, '', true);
+      router.push(`/messages/${conversationId}`);
     };
 
     const isPromotionActive = provider.promotion && new Date(provider.promotion.expires) > new Date();
@@ -117,7 +124,7 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                 </div>
 
                 <div className="flex justify-around items-center p-2 border-t">
-                    <Button variant="ghost" className="text-muted-foreground font-semibold text-sm">Mensaje</Button>
+                    <Button variant="ghost" className="text-muted-foreground font-semibold text-sm" onClick={handleDirectMessage}>Mensaje</Button>
                     <Separator orientation="vertical" className="h-6" />
                     <Link href={profileLink} passHref>
                         <Button variant="ghost" className="text-muted-foreground font-semibold text-sm">Ver Perfil</Button>

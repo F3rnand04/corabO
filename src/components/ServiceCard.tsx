@@ -14,6 +14,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { ReportDialog } from "./ReportDialog";
 import { cn } from "@/lib/utils";
+import { useRouter } from 'next/navigation';
 
 
 interface ServiceCardProps {
@@ -21,7 +22,8 @@ interface ServiceCardProps {
 }
 
 export function ServiceCard({ service }: ServiceCardProps) {
-  const { users, addContact } = useCorabo();
+  const { users, addContact, sendMessage } = useCorabo();
+  const router = useRouter();
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
 
   const provider = users.find(u => u.id === service.providerId);
@@ -36,6 +38,11 @@ export function ServiceCard({ service }: ServiceCardProps) {
     addContact(provider);
   };
   
+  const handleDirectMessage = () => {
+      const conversationId = sendMessage(provider.id, '', true);
+      router.push(`/messages/${conversationId}`);
+  };
+
   const isPromotionActive = provider.promotion && new Date(provider.promotion.expires) > new Date();
 
   const displayDistance = provider.profileSetupData?.showExactLocation ? "A menos de 1km" : "500m - 1km";
@@ -120,7 +127,7 @@ export function ServiceCard({ service }: ServiceCardProps) {
         </div>
         
         <div className="flex justify-around items-center border-t">
-          <Button variant="ghost" className="flex-1 text-muted-foreground font-semibold text-sm rounded-none h-12">
+          <Button variant="ghost" className="flex-1 text-muted-foreground font-semibold text-sm rounded-none h-12" onClick={handleDirectMessage}>
             Mensaje
           </Button>
           <Separator orientation="vertical" className="h-6" />
