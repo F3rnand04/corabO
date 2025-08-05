@@ -17,8 +17,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useCorabo } from '@/contexts/CoraboContext';
 import { useToast } from '@/hooks/use-toast';
-import { UploadCloud, X } from 'lucide-react';
-import type { GalleryImage } from '@/lib/types';
+import { UploadCloud, X, Image as ImageIcon, Video, PackagePlus } from 'lucide-react';
+import type { GalleryImage, Product } from '@/lib/types';
+import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 
 interface UploadDialogProps {
   isOpen: boolean;
@@ -26,98 +27,173 @@ interface UploadDialogProps {
 }
 
 export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
-  const { currentUser, updateUserProfileAndGallery } = useCorabo();
+  const { currentUser, updateUserProfileAndGallery, addProduct } = useCorabo();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [description, setDescription] = useState('');
-  const [file, setFile] = useState<File | null>(null);
+  const [view, setView] = useState<'selection' | 'upload_gallery' | 'upload_product'>('selection');
+  
+  // Gallery state
+  const [galleryImagePreview, setGalleryImagePreview] = useState<string | null>(null);
+  const [galleryDescription, setGalleryDescription] = useState('');
+  const [galleryFile, setGalleryFile] = useState<File | null>(null);
+  const [isVideofile, setIsVideoFile] = useState(false);
 
-  const handleFileSelect = () => {
+  // Product state
+  const [productImagePreview, setProductImagePreview] = useState<string | null>(null);
+  const [productFile, setProductFile] = useState<File | null>(null);
+  const [productName, setProductName] = useState('');
+  const [productDescription, setProductDescription] = useState('');
+  const [productPrice, setProductPrice] = useState('');
+
+
+  const isProductProvider = currentUser.profileSetupData?.offerType === 'product';
+
+  const handleFileSelect = (type: 'gallery' | 'product') => {
     fileInputRef.current?.click();
+    if(type === 'gallery') {
+        fileInputRef.current?.setAttribute('accept', 'image/*,video/*');
+    } else {
+        fileInputRef.current?.setAttribute('accept', 'image/*');
+    }
   };
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const selectedFile = event.target.files?.[0];
     if (selectedFile) {
-      setFile(selectedFile);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(selectedFile);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            const result = reader.result as string;
+            if (view === 'upload_gallery') {
+                setGalleryFile(selectedFile);
+                setGalleryImagePreview(result);
+                setIsVideoFile(selectedFile.type.startsWith('video/'));
+            } else if (view === 'upload_product') {
+                setProductFile(selectedFile);
+                setProductImagePreview(result);
+            }
+        };
+        reader.readAsDataURL(selectedFile);
     }
   };
 
+  const resetState = () => {
+    setView('selection');
+    setGalleryImagePreview(null);
+    setGalleryDescription('');
+    setGalleryFile(null);
+    setIsVideoFile(false);
+    setProductImagePreview(null);
+    setProductFile(null);
+    setProductName('');
+    setProductDescription('');
+    setProductPrice('');
+  };
+
   const handleClose = () => {
-    // Reset state when closing
-    setImagePreview(null);
-    setDescription('');
-    setFile(null);
+    resetState();
     onOpenChange(false);
   };
   
-  const handlePublish = () => {
-    if (!file || !imagePreview || !description.trim()) {
+  const handlePublishGallery = () => {
+    if (!galleryFile || !galleryImagePreview || !galleryDescription.trim()) {
       toast({
         variant: "destructive",
         title: "Faltan datos",
-        description: "Por favor, selecciona una imagen y añade una descripción.",
+        description: "Por favor, selecciona un archivo y añade una descripción.",
       });
       return;
     }
 
-    const newGalleryImage: GalleryImage = {
-      id: `img-${Date.now()}`,
-      src: imagePreview,
-      alt: `Imagen de ${currentUser.name}`,
-      description: description,
+    const newGalleryItem: GalleryImage = {
+      id: `gal-${Date.now()}`,
+      type: isVideofile ? 'video' : 'image',
+      src: galleryImagePreview,
+      alt: `Publicación de ${currentUser.name}`,
+      description: galleryDescription,
       comments: [],
     };
 
-    updateUserProfileAndGallery(currentUser.id, newGalleryImage);
+    updateUserProfileAndGallery(currentUser.id, newGalleryItem);
 
     toast({
       title: "¡Publicación Exitosa!",
-      description: "Tu nueva imagen ya está en tu vitrina y tu perfil ha sido actualizado.",
+      description: "Tu nuevo contenido ya está en tu galería.",
     });
 
     handleClose();
   };
 
+  const handlePublishProduct = () => {
+    if (!productFile || !productImagePreview || !productName.trim() || !productDescription.trim() || !productPrice) {
+        toast({ variant: "destructive", title: "Faltan datos", description: "Completa todos los campos del producto." });
+        return;
+    }
+    const newProduct: Product = {
+      id: `prod-${Date.now()}`,
+      name: productName,
+      description: productDescription,
+      price: parseFloat(productPrice),
+      category: currentUser.profileSetupData?.primaryCategory || 'General',
+      providerId: currentUser.id,
+      imageUrl: productImagePreview,
+    };
+    addProduct(newProduct);
+    toast({ title: "¡Producto Añadido!", description: `${productName} ya está en tu catálogo.` });
+    handleClose();
+  }
+  
+  const renderSelectionView = () => (
+    <>
+      <DialogHeader>
+        <DialogTitle>¿Qué quieres añadir?</DialogTitle>
+        <DialogDescription>
+          Elige si quieres subir una publicación a tu galería o añadir un nuevo producto a tu catálogo.
+        </DialogDescription>
+      </DialogHeader>
+      <div className="grid grid-cols-2 gap-4 py-4">
+        <Button variant="outline" className="h-28 flex-col gap-2" onClick={() => setView('upload_gallery')}>
+          <ImageIcon className="w-8 h-8" />
+          Publicar en Galería
+        </Button>
+        <Button variant="outline" className="h-28 flex-col gap-2" onClick={() => setView('upload_product')}>
+          <PackagePlus className="w-8 h-8" />
+          Añadir Producto
+        </Button>
+      </div>
+    </>
+  );
 
-  return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+  const renderGalleryUploadView = () => (
+     <>
         <DialogHeader>
           <DialogTitle>Crear Nueva Publicación</DialogTitle>
           <DialogDescription>
-            Sube una imagen y compártela en tu vitrina.
+            Sube una imagen o video y compártelo en tu vitrina para atraer clientes.
           </DialogDescription>
         </DialogHeader>
-
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label>Imagen</Label>
+            <Label>Archivo (Imagen o Video)</Label>
             <Input 
               type="file" 
               ref={fileInputRef} 
               onChange={handleFileChange}
               className="hidden"
-              accept="image/*"
+              accept="image/*,video/*"
             />
-            {imagePreview ? (
-              <div className="relative group w-full aspect-video rounded-md overflow-hidden">
-                <Image src={imagePreview} alt="Vista previa" layout="fill" objectFit="cover" />
+            {galleryImagePreview ? (
+              <div className="relative group w-full aspect-video rounded-md overflow-hidden bg-black">
+                {isVideofile ? (
+                    <video src={galleryImagePreview} className="w-full h-full object-contain" controls />
+                ) : (
+                    <Image src={galleryImagePreview} alt="Vista previa" layout="fill" objectFit="cover" />
+                )}
                 <Button 
                   variant="destructive" 
                   size="icon" 
                   className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={() => {
-                    setImagePreview(null);
-                    setFile(null);
-                  }}
+                  onClick={() => { setGalleryImagePreview(null); setGalleryFile(null); }}
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -125,11 +201,11 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
             ) : (
               <div 
                 className="w-full aspect-video border-2 border-dashed border-muted-foreground rounded-md flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/50 cursor-pointer transition-colors"
-                onClick={handleFileSelect}
+                onClick={() => handleFileSelect('gallery')}
               >
                 <UploadCloud className="w-10 h-10 mb-2" />
-                <p className="text-sm font-semibold">Haz clic para seleccionar una imagen</p>
-                <p className="text-xs">PNG, JPG, etc.</p>
+                <p className="text-sm font-semibold">Haz clic para seleccionar un archivo</p>
+                <p className="text-xs">PNG, JPG, MP4, etc.</p>
               </div>
             )}
           </div>
@@ -137,22 +213,89 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
             <Label htmlFor="description">Descripción</Label>
             <Textarea
               id="description"
-              placeholder="Añade una descripción para tu imagen..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Añade una descripción para tu publicación..."
+              value={galleryDescription}
+              onChange={(e) => setGalleryDescription(e.target.value)}
               rows={4}
             />
           </div>
         </div>
-
         <DialogFooter>
           <Button variant="outline" onClick={handleClose}>
             Cancelar
           </Button>
-          <Button onClick={handlePublish} disabled={!imagePreview || !description.trim()}>
-            Publicar
+          <Button onClick={handlePublishGallery} disabled={!galleryImagePreview || !galleryDescription.trim()}>
+            Publicar en Galería
           </Button>
         </DialogFooter>
+     </>
+  );
+
+  const renderProductUploadView = () => (
+     <>
+        <DialogHeader>
+            <DialogTitle>Añadir Nuevo Producto</DialogTitle>
+            <DialogDescription>Completa los datos para añadir un producto a tu catálogo de venta.</DialogDescription>
+        </DialogHeader>
+         <div className="space-y-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
+             <Alert>
+                <AlertTitle className='text-sm'>Sugerencia de Imagen</AlertTitle>
+                <AlertDescription className='text-xs'>Para una mejor visualización, te sugerimos usar imágenes con fondo blanco.</AlertDescription>
+            </Alert>
+             <div className="space-y-2">
+                <Label>Imagen del Producto</Label>
+                 <Input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+                 {productImagePreview ? (
+                    <div className="relative group w-full aspect-square rounded-md overflow-hidden">
+                        <Image src={productImagePreview} alt="Vista previa" layout="fill" objectFit="cover" />
+                        <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => setProductImagePreview(null)}>
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </div>
+                ) : (
+                    <div className="w-full aspect-square border-2 border-dashed rounded-md flex items-center justify-center cursor-pointer" onClick={() => handleFileSelect('product')}>
+                        <UploadCloud className="w-10 h-10 text-muted-foreground" />
+                    </div>
+                )}
+             </div>
+             <div className="space-y-2">
+                <Label htmlFor="product-name">Nombre del Producto</Label>
+                <Input id="product-name" value={productName} onChange={(e) => setProductName(e.target.value)} />
+             </div>
+             <div className="space-y-2">
+                <Label htmlFor="product-desc">Descripción</Label>
+                <Textarea id="product-desc" value={productDescription} onChange={(e) => setProductDescription(e.target.value)} />
+             </div>
+             <div className="space-y-2">
+                <Label htmlFor="product-price">Precio (USD)</Label>
+                <Input id="product-price" type="number" value={productPrice} onChange={(e) => setProductPrice(e.target.value)} />
+             </div>
+         </div>
+        <DialogFooter>
+            <Button variant="outline" onClick={handleClose}>Cancelar</Button>
+            <Button onClick={handlePublishProduct} disabled={!productImagePreview || !productName.trim()}>Añadir Producto</Button>
+        </DialogFooter>
+     </>
+  );
+
+  const renderSingleView = () => {
+    if (isProductProvider) {
+        switch(view) {
+            case 'upload_gallery': return renderGalleryUploadView();
+            case 'upload_product': return renderProductUploadView();
+            case 'selection':
+            default:
+              return renderSelectionView();
+        }
+    }
+    // For service providers, only allow gallery uploads
+    return renderGalleryUploadView();
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-md">
+        {renderSingleView()}
       </DialogContent>
     </Dialog>
   );

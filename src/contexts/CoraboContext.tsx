@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData, Conversation, Message, AppointmentRequest, AgreementProposal, CredicoraLevel } from '@/lib/types';
-import { users as initialUsers, products, services as initialServices, initialTransactions, initialConversations } from '@/lib/mock-data';
+import { users as initialUsers, products as initialProducts, services as initialServices, initialTransactions, initialConversations } from '@/lib/mock-data';
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from 'next/navigation';
 import jsPDF from 'jspdf';
@@ -32,6 +32,7 @@ interface CoraboState {
   isGpsActive: boolean;
   switchUser: (userId: string) => void;
   addToCart: (product: Product, quantity: number) => void;
+  addProduct: (product: Product) => void;
   updateCartQuantity: (productId: string, quantity: number) => void;
   removeFromCart: (productId: string) => void;
   getCartTotal: () => number;
@@ -80,6 +81,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
   const router = useRouter();
   const [users, setUsers] = useState<User[]>(initialUsers);
+  const [products, setProducts] = useState<Product[]>(initialProducts);
   const [services, setServices] = useState<Service[]>(initialServices);
   const [currentUser, setCurrentUser] = useState<User>(users.find(u => u.id === 'client1')!);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -118,6 +120,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const updateTransaction = (txId: string, updates: Partial<Transaction> | ((tx: Transaction) => Partial<Transaction>)) => {
     setTransactions(prevTxs => prevTxs.map(tx => tx.id === txId ? { ...tx, ...(typeof updates === 'function' ? updates(tx) : updates) } : tx));
+  };
+
+  const addProduct = (product: Product) => {
+    setProducts(prev => [...prev, product]);
   };
   
   const addToCart = (product: Product, quantity: number) => {
@@ -591,7 +597,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       } else {
         const newImage = imageOrId as GalleryImage;
         newGallery = [{ ...newImage, id: newImage.id || newImage.src }, ...currentGallery];
-        toast({ title: "¡Publicación Exitosa!", description: "Tu nueva imagen ya está en tu vitrina." });
+        toast({ title: "¡Publicación Exitosa!", description: "Tu nuevo contenido ya está en tu vitrina." });
       }
 
       return { gallery: newGallery };
@@ -664,10 +670,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         ...data,
       }
     }));
-    toast({
-      title: "¡Perfil Actualizado!",
-      description: "Tu información ha sido guardada."
-    });
   }
 
   const subscribeUser = (userId: string, planName: string, amount: number) => {
@@ -1000,6 +1002,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     setFeedView,
     switchUser,
     addToCart,
+    addProduct,
     updateCartQuantity,
     removeFromCart,
     getCartTotal,
@@ -1052,7 +1055,3 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
-
-    
-
-    

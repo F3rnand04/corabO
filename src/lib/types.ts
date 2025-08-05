@@ -1,9 +1,5 @@
 
 
-
-
-
-
 export type GalleryImageComment = {
   author: string;
   text: string;
@@ -14,6 +10,7 @@ export type GalleryImageComment = {
 
 export type GalleryImage = {
   id: string;
+  type: 'image' | 'video';
   src: string;
   alt: string;
   description: string;
@@ -221,5 +218,3 @@ export type AppointmentRequest = {
     details: string;
     amount: number;
 };
-
-    
