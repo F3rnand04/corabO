@@ -373,6 +373,7 @@ export const initialTransactions: Transaction[] = [
     providerId: 'provider1',
     details: {
         items: [{ product: products[0], quantity: 1 }],
+        serviceName: 'Laptop Pro 15"'
     },
   },
   {
@@ -385,7 +386,7 @@ export const initialTransactions: Transaction[] = [
     providerId: 'provider1',
     details: {
         items: [{ product: products[0], quantity: 1 }],
-        serviceName: "Compra Laptop Pro 15\" (Inicial Credicora)",
+        serviceName: 'Laptop Pro 15"',
         paymentMethod: 'credicora',
         initialPayment: 720,
         totalAmount: 1200,

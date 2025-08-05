@@ -210,7 +210,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
           clientId: originalTx.clientId,
           providerId: originalTx.providerId,
           details: {
-            system: `Cuota ${i}/${numberOfInstallments} de compra ${originalTx.id}`,
+            system: `Cuota ${i}/${numberOfInstallments} de compra ${originalTx.details.serviceName}`,
           },
         };
         commitments.push(commitment);
@@ -402,12 +402,13 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
     updateTransaction(transactionId, { status: 'Pagado' });
 
+    // Activate Credicora plan only after initial payment is confirmed
     if (originalTx.details.paymentMethod === 'credicora' && originalTx.details.initialPayment) {
         generatePaymentCommitments(originalTx);
         toast({ title: "Credicora Activado", description: "Tu plan de pagos ha comenzado. Revisa tus compromisos."});
     }
 
-    toast({ title: "¡Pago Confirmado por el Proveedor!", description: "La transacción ha sido completada exitosamente." });
+    toast({ title: "¡Pago Confirmado!", description: "Gracias por tu pago. ¡Has sumado puntos a tu reputación!" });
   };
 
   const startDispute = (transactionId: string) => {

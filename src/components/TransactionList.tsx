@@ -35,11 +35,31 @@ const TransactionItem = ({ transaction, onClick, otherParty }: { transaction: Tr
     
     const Icon = statusInfo[transaction.status]?.icon || AlertTriangle;
     const iconColor = statusInfo[transaction.status]?.color || 'text-gray-500';
-    const description = transaction.type === 'Servicio' 
+
+    let description = '';
+    let descriptionPrefix = '';
+
+    if (transaction.type === 'Sistema' && transaction.details.system) {
+        const quotaMatch = transaction.details.system.match(/Cuota (\d+)\/(\d+)/);
+        if (quotaMatch) {
+            const current = parseInt(quotaMatch[1], 10);
+            const total = parseInt(quotaMatch[2], 10);
+            descriptionPrefix = current === total ? 'Última Cuota' : `Cuota ${current}/${total}`;
+            description = transaction.details.system.replace(/Cuota \d+\/\d+ de /, '');
+        } else {
+            description = transaction.details.system;
+        }
+    } else if (transaction.details.paymentMethod === 'credicora' && transaction.details.initialPayment) {
+        descriptionPrefix = 'Inicial de Compra';
+        description = transaction.details.serviceName || transaction.details.items?.map(i => i.product.name).join(', ') || '';
+    } else {
+        description = transaction.type === 'Servicio' 
             ? transaction.details.serviceName
             : transaction.type === 'Compra' 
                 ? transaction.details.items?.map(i => `${i.quantity}x ${i.product.name}`).join(', ')
-                : transaction.details.system;
+                : 'Transacción del sistema';
+    }
+
 
     return (
         <div 
@@ -52,7 +72,10 @@ const TransactionItem = ({ transaction, onClick, otherParty }: { transaction: Tr
             </Avatar>
             <div className="flex-grow">
                 <p className="font-semibold text-sm">{otherParty?.name || 'Sistema'}</p>
-                <p className="text-xs text-muted-foreground truncate max-w-[200px]">{description}</p>
+                 <p className="text-xs text-muted-foreground truncate max-w-[200px]">
+                    {descriptionPrefix && <span className="font-bold text-foreground">{descriptionPrefix}: </span>}
+                    {description}
+                </p>
             </div>
             <div className="text-right">
                 <p className="font-bold text-sm">${transaction.amount.toFixed(2)}</p>
