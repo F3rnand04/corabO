@@ -68,6 +68,7 @@ interface CoraboState {
   getAgendaEvents: () => { date: Date; type: 'payment' | 'task'; description: string, transactionId: string }[];
   addCommentToImage: (ownerId: string, imageId: string, commentText: string) => void;
   removeCommentFromImage: (ownerId: string, imageId: string, commentIndex: number) => void;
+  getCartItemQuantity: (productId: string) => number;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -171,6 +172,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const getCartItemQuantity = (productId: string) => {
+    const item = cart.find(item => item.product.id === productId);
+    return item ? item.quantity : 0;
+  };
+
   const removeFromCart = (productId: string) => {
     updateCartQuantity(productId, 0);
   };
@@ -178,6 +184,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const getCartTotal = () => cart.reduce((total, item) => total + item.product.price * item.quantity, 0);
   
   const getDeliveryCost = () => {
+    // Simulate distance between 1 and 10 km for demo purposes
     const distanceInKm = Math.floor(Math.random() * 10) + 1;
     return distanceInKm * 1.5; 
   }
@@ -849,6 +856,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     getAgendaEvents,
     addCommentToImage,
     removeCommentFromImage,
+    getCartItemQuantity,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;

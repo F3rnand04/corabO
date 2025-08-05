@@ -326,7 +326,7 @@ export default function CompanyProfilePage() {
                 </Popover>
 
                 {isProductProvider && (
-                  <AlertDialog>
+                  <AlertDialog open={isCheckoutAlertOpen} onOpenChange={setIsCheckoutAlertOpen}>
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button variant="ghost" size="icon" className="relative">
@@ -670,5 +670,3 @@ export default function CompanyProfilePage() {
     </>
   );
 }
-
-    
