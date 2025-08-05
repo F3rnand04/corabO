@@ -18,6 +18,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { BusinessHoursStatus } from '@/components/BusinessHoursStatus';
 import { Separator } from '@/components/ui/separator';
 import { ProposalDialog } from '@/components/ProposalDialog';
+import Link from 'next/link';
 
 
 function ChatHeader({ 
@@ -48,11 +49,13 @@ function ChatHeader({
         <Button variant="ghost" size="icon" onClick={() => router.push('/messages')}>
           <ChevronLeft className="h-6 w-6" />
         </Button>
-        <Avatar className="w-10 h-10">
-          <AvatarImage src={participant.profileImage} alt={participant.name} />
-          <AvatarFallback>{participant.name.charAt(0)}</AvatarFallback>
-        </Avatar>
-        <h2 className="font-semibold">{participant.name}</h2>
+        <Link href={`/companies/${participant.id}`} className="flex items-center gap-2 cursor-pointer group">
+          <Avatar className="w-10 h-10">
+            <AvatarImage src={participant.profileImage} alt={participant.name} />
+            <AvatarFallback>{participant.name.charAt(0)}</AvatarFallback>
+          </Avatar>
+          <h2 className="font-semibold group-hover:underline">{participant.name}</h2>
+        </Link>
       </div>
       <div className="flex items-center gap-1">
         <Button 
