@@ -69,8 +69,8 @@ export default function VideosPage() {
 
             {/* Bottom info */}
             <div className="mb-16">
-                <Link href={`/companies/${user!.id}`} passHref>
-                    <a className="font-bold text-base drop-shadow-md hover:underline">{user!.name}</a>
+                <Link href={`/companies/${user!.id}`} className="font-bold text-base drop-shadow-md hover:underline">
+                    {user!.name}
                 </Link>
                 <p className="text-sm drop-shadow-md mt-1">
                     Descripción del video o servicio que se está mostrando... #hashtag #servicio
