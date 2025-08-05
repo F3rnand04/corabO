@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Home, PlaySquare, Search, MessageSquare, CircleUser, Upload, Settings } from 'lucide-react';
+import { Home, PlaySquare, Search, MessageSquare, Upload, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -21,43 +21,30 @@ export default function Footer() {
   const isProvider = currentUser.type === 'provider';
 
   const handleCentralButtonClick = () => {
-    if (isProvider) {
+    if (pathname === '/profile' && isProvider) {
       setIsUploadOpen(true);
-    } else {
-      router.push('/emprende');
+    } else if (pathname === '/profile' && !isProvider) {
+       router.push('/emprende');
+    }
+     else {
+      router.push('/search');
     }
   };
 
-  const navItems = [
-    { href: '/', icon: Home, label: 'Inicio' },
-    { href: '/videos', icon: PlaySquare, label: 'Videos' },
-    { href: '/search', icon: Search, label: 'Buscar', isCentral: true },
-    { href: '/messages', icon: MessageSquare, label: 'Mensajes' },
-    { href: '/profile-setup', icon: Settings, label: 'Ajustes' },
-  ];
-  
   const getCentralButton = () => {
+      let Icon = Search;
       if (pathname === '/profile') {
-           return (
-            <Button
-              key="profile-action"
-              onClick={handleCentralButtonClick}
-              size="icon"
-              className="relative -top-4 w-16 h-16 rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              <Upload className="w-8 h-8" />
-            </Button>
-           )
+          Icon = Upload;
       }
       return (
-         <Link key="/search" href="/search" passHref>
-            <Button
+        <Button
+            key="central-action"
+            onClick={handleCentralButtonClick}
             size="icon"
             className="relative -top-4 w-16 h-16 rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-                <Search className="w-8 h-8" />
-            </Button>
-        </Link>
+        >
+            <Icon className="w-8 h-8" />
+        </Button>
       )
   }
 
@@ -84,12 +71,9 @@ export default function Footer() {
                 </Button>
             </Link>
 
-            <Link href="/profile" passHref>
-                <Button variant="ghost" className={cn( "flex-col h-auto p-0 rounded-full text-muted-foreground hover:text-primary w-8 h-8", pathname === '/profile' && "ring-2 ring-primary")}>
-                    <Avatar className="w-8 h-8">
-                        <AvatarImage src={currentUser.profileImage} alt={currentUser.name} />
-                        <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
+            <Link href="/profile-setup" passHref>
+                <Button variant="ghost" className={cn("flex-col h-auto p-1 text-muted-foreground hover:text-primary", pathname === '/profile-setup' && "text-primary")}>
+                    <Settings className="w-6 h-6" />
                 </Button>
             </Link>
         </div>
