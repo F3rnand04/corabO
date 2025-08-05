@@ -32,7 +32,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function CompanyProfilePage() {
   const params = useParams();
-  const { users, products, addContact, transactions, createAppointmentRequest, currentUser, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, sendMessage } from useCorabo();
+  const { users, products, addContact, transactions, createAppointmentRequest, currentUser, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, sendMessage } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
   
@@ -82,7 +82,6 @@ export default function CompanyProfilePage() {
 
   // Security check for transaction readiness
   const isCurrentUserTransactionReady = currentUser.isTransactionsActive;
-  const isProviderTransactionReady = provider?.isTransactionsActive;
 
   const handleCheckout = () => {
     if (cartTransaction) {
@@ -301,7 +300,7 @@ export default function CompanyProfilePage() {
             <div className="flex items-center gap-2">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" disabled={!isProviderTransactionReady}>
+                    <Button variant="ghost" size="icon" disabled={!isCurrentUserTransactionReady}>
                       <Calendar className={cn("w-5 h-5", {
                         "text-green-500": businessStatus === 'open',
                         "text-red-500": businessStatus === 'closed'
@@ -338,7 +337,7 @@ export default function CompanyProfilePage() {
                   <AlertDialog open={isCheckoutAlertOpen} onOpenChange={setIsCheckoutAlertOpen}>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon" className="relative" disabled={!isProviderTransactionReady}>
+                        <Button variant="ghost" size="icon" className="relative" disabled={!isCurrentUserTransactionReady}>
                           <ShoppingCart className="w-5 h-5 text-muted-foreground" />
                           {totalCartItems > 0 && (
                             <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs rounded-full">{totalCartItems}</Badge>
