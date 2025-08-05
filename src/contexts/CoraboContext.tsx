@@ -249,9 +249,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
     const paymentMethod = useCredicora ? 'credicora' : 'direct';
     const initialPayment = useCredicora ? finalAmount * 0.60 : finalAmount;
+    
+    let finalTx: Transaction | undefined;
 
     updateTransaction(cartTx.id, (tx) => {
-        const newTx: Partial<Transaction> = {
+        const newTxDetails: Partial<Transaction> = {
             status: 'Finalizado - Pendiente de Pago',
             amount: initialPayment,
             details: { 
@@ -264,11 +266,16 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             },
             date: new Date().toISOString(),
         };
-        return newTx;
+        finalTx = { ...tx, ...newTxDetails };
+        return newTxDetails;
     });
 
     setCart([]);
-    toast({ title: "Acuerdo de Pago Creado", description: "El compromiso de pago ha sido registrado. Puedes verlo en tu sección de transacciones." });
+    toast({ title: "Acuerdo de Pago Creado", description: "El compromiso de pago ha sido registrado. Serás redirigido para completar el pago." });
+    
+    if (finalTx) {
+        router.push(`/quotes/payment?commitmentId=${finalTx.id}&amount=${finalTx.amount}`);
+    }
   }
 
   const requestService = (service: Service) => {

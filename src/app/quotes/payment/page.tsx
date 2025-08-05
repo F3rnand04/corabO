@@ -63,6 +63,7 @@ export default function QuotePaymentPage() {
 
         if (commitmentId) {
             payCommitment(commitmentId);
+            router.push('/transactions');
         } else {
             toast({
                 title: "¡Pago Confirmado!",
