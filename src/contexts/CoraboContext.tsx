@@ -416,10 +416,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const addContact = (user: User) => {
     setContacts(prev => {
         if (prev.find(c => c.id === user.id)) {
-            toast({ variant: "default", title: "Contacto ya existe", description: `${user.name} ya está en tus contactos.` });
             return prev;
         }
-        toast({ title: "Contacto añadido", description: `${user.name} fue añadido a tus contactos.` });
         return [...prev, user];
     });
   };
