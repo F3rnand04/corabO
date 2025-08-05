@@ -10,13 +10,13 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from './ui/scroll-area';
-import { MessageSquare, ThumbsUp, ThumbsDown, Star, Send, Plus } from 'lucide-react';
+import { MessageSquare, ThumbsUp, ThumbsDown, Star, Send, Plus, Minus } from 'lucide-react';
 import { Input } from './ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Separator } from './ui/separator';
 import type { Product, GalleryImageComment } from '@/lib/types';
 import { useCorabo } from '@/contexts/CoraboContext';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface ProductDetailsDialogProps {
   isOpen: boolean;
@@ -25,13 +25,20 @@ interface ProductDetailsDialogProps {
 }
 
 export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductDetailsDialogProps) {
-  const { currentUser, addToCart, cart } = useCorabo();
+  const { currentUser, addToCart, cart, updateCartQuantity } = useCorabo();
   const [newComment, setNewComment] = useState("");
   // Comments would be fetched or part of product data
   const [comments, setComments] = useState<GalleryImageComment[]>([
-    { author: "Ana P.", text: "¡Me encantó! Llegó súper rápido y es de buena calidad.", profileImage: `https://i.pravatar.cc/150?u=ana` },
-    { author: "Carlos M.", text: "¿Tienen disponible en otro color?", profileImage: `https://i.pravatar.cc/150?u=carlos` },
+    { author: "Ana P.", text: "¡Me encantó! Llegó súper rápido y es de buena calidad.", profileImage: `https://i.pravatar.cc/150?u=ana`, likes: 5, dislikes: 0 },
+    { author: "Carlos M.", text: "¿Tienen disponible en otro color?", profileImage: `https://i.pravatar.cc/150?u=carlos`, likes: 1, dislikes: 1 },
   ]);
+
+  const [commentVotes, setCommentVotes] = useState<Record<number, 'like' | 'dislike' | null>>({});
+
+  useEffect(() => {
+    // Reset votes when product changes
+    setCommentVotes({});
+  }, [product]);
 
   if (!product) return null;
 
@@ -44,11 +51,35 @@ export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductD
         author: currentUser.name,
         text: newComment,
         profileImage: currentUser.profileImage,
+        likes: 0,
+        dislikes: 0,
       };
       setComments(prev => [...prev, commentToAdd]);
       setNewComment("");
     }
   }
+
+  const handleVote = (index: number, voteType: 'like' | 'dislike') => {
+    const currentVote = commentVotes[index];
+    const newComments = [...comments];
+    const comment = newComments[index];
+
+    // Annul previous vote if any
+    if (currentVote === 'like') comment.likes = (comment.likes || 0) - 1;
+    if (currentVote === 'dislike') comment.dislikes = (comment.dislikes || 0) - 1;
+
+    // Apply new vote
+    if (currentVote === voteType) { // User is annulling their vote
+      setCommentVotes(prev => ({ ...prev, [index]: null }));
+    } else { // User is casting a new vote
+      if (voteType === 'like') comment.likes = (comment.likes || 0) + 1;
+      if (voteType === 'dislike') comment.dislikes = (comment.dislikes || 0) + 1;
+      setCommentVotes(prev => ({ ...prev, [index]: voteType }));
+    }
+
+    setComments(newComments);
+  };
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -89,10 +120,22 @@ export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductD
                 </p>
 
                 <div className="flex flex-wrap gap-2 mb-6">
-                    <Button onClick={() => addToCart(product, 1)}>
-                        <Plus className="mr-2 h-4 w-4"/>
-                        Añadir al Carrito {quantityInCart > 0 && `(${quantityInCart} en carrito)`}
-                    </Button>
+                    {quantityInCart === 0 ? (
+                         <Button onClick={() => addToCart(product, 1)}>
+                            <Plus className="mr-2 h-4 w-4"/>
+                            Añadir al Carrito
+                        </Button>
+                    ) : (
+                        <div className="flex items-center gap-2">
+                           <Button variant="outline" size="icon" onClick={() => updateCartQuantity(product.id, quantityInCart - 1)}>
+                                <Minus className="h-4 w-4" />
+                           </Button>
+                           <span className="font-bold text-lg w-10 text-center">{quantityInCart}</span>
+                           <Button variant="outline" size="icon" onClick={() => updateCartQuantity(product.id, quantityInCart + 1)}>
+                                <Plus className="h-4 w-4" />
+                           </Button>
+                        </div>
+                    )}
                     <Button variant="secondary" onClick={() => onOpenChange(false)} className="ml-auto">Cerrar</Button>
                 </div>
 
@@ -114,13 +157,15 @@ export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductD
                                <div className="flex-grow">
                                    <p className="font-semibold text-sm">{comment.author}</p>
                                    <p className="text-sm text-muted-foreground">{comment.text}</p>
-                                   <div className="flex items-center gap-4 mt-2 text-muted-foreground">
-                                      <Button variant="ghost" size="icon" className="w-6 h-6">
-                                          <ThumbsUp className="w-4 h-4"/>
+                                   <div className="flex items-center gap-2 mt-1 text-muted-foreground">
+                                      <Button variant="ghost" size="icon" className="w-6 h-6" onClick={() => handleVote(index, 'like')}>
+                                          <ThumbsUp className={`w-4 h-4 ${commentVotes[index] === 'like' ? 'text-primary fill-primary' : ''}`}/>
                                       </Button>
-                                      <Button variant="ghost" size="icon" className="w-6 h-6">
-                                          <ThumbsDown className="w-4 h-4"/>
+                                       <span className="text-xs min-w-[1ch]">{comment.likes || 0}</span>
+                                      <Button variant="ghost" size="icon" className="w-6 h-6" onClick={() => handleVote(index, 'dislike')}>
+                                          <ThumbsDown className={`w-4 h-4 ${commentVotes[index] === 'dislike' ? 'text-destructive fill-destructive' : ''}`}/>
                                       </Button>
+                                       <span className="text-xs min-w-[1ch]">{comment.dislikes || 0}</span>
                                    </div>
                                </div>
                            </div>
