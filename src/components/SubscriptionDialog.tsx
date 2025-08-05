@@ -19,6 +19,43 @@ interface SubscriptionDialogProps {
   onOpenChange: (isOpen: boolean) => void;
 }
 
+const plans = {
+  client: {
+    title: "Plan Cliente Seguro",
+    description: "Maximiza la seguridad y el control en todas tus compras y transacciones.",
+    price: "$1.99 / mes",
+    features: [
+      { text: "Registro de Transacciones Seguro:", description: "Activa tu historial para compras seguras y con seguimiento." },
+      { text: "Acceso a Credicora:", description: "Opta por facilidades de pago en comercios afiliados (sujeto a aprobación)." },
+      { text: "Reputación de Comprador:", description: "Construye un historial como comprador confiable en la plataforma." },
+      { text: "Soporte Prioritario:", description: "Recibe ayuda más rápido cuando la necesites." },
+    ],
+  },
+  professional: {
+    title: "Plan Profesional Verificado",
+    description: "Obtén la insignia de verificado, amplía tu alcance y genera más confianza.",
+    price: "$9.99 / mes",
+    features: [
+      { text: "Insignia de Perfil Verificado:", description: "Aumenta la confianza de tus clientes potenciales." },
+      { text: "Mayor Visibilidad:", description: "Aparece en más resultados de búsqueda." },
+      { text: "Alcance sin Límites:", description: "Ofrece tus servicios o busca sin restricciones de distancia." },
+      { text: "Soporte Prioritario:", description: "Recibe ayuda más rápido cuando la necesites." },
+    ],
+  },
+  company: {
+    title: "Plan Empresa Plus",
+    description: "Potencia tu negocio con herramientas avanzadas y máxima visibilidad.",
+    price: "$19.99 / mes",
+    features: [
+      { text: "Todos los beneficios del Plan Profesional.", description: "" },
+      { text: "Gestión de Múltiples Usuarios:", description: "Permite que varios miembros de tu equipo gestionen el perfil (próximamente)." },
+      { text: "Estadísticas Avanzadas:", description: "Analiza el rendimiento de tu perfil y publicaciones." },
+      { text: "Promociones Destacadas:", description: "Accede a mejores opciones para destacar tus ofertas en el feed principal." },
+    ],
+  }
+};
+
+
 export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogProps) {
   const { currentUser, subscribeUser } = useCorabo();
 
@@ -27,16 +64,24 @@ export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogP
     onOpenChange(false);
   }
 
+  const getPlanKey = () => {
+    if (currentUser.type === 'client') return 'client';
+    if (currentUser.profileSetupData?.providerType === 'company') return 'company';
+    return 'professional';
+  }
+
+  const currentPlan = plans[getPlanKey()];
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Star className="text-yellow-500" />
-            Plan de Suscripción Verificado
+            {currentPlan.title}
           </DialogTitle>
           <DialogDescription>
-            Obtén la insignia de verificado, amplía tu alcance y genera más confianza.
+            {currentPlan.description}
           </DialogDescription>
         </DialogHeader>
 
@@ -45,31 +90,24 @@ export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogP
                 <CheckCircle className="h-4 w-4 !text-green-800" />
                 <AlertTitle>¡Ya estás suscrito!</AlertTitle>
                 <AlertDescription>
-                 Disfrutas de todos los beneficios, incluyendo la insignia de verificado y un radio de búsqueda ampliado.
+                 Disfrutas de todos los beneficios de tu plan actual.
                 </AlertDescription>
             </Alert>
         ) : (
             <div className="space-y-4 py-4">
                 <p>Conviértete en un miembro verificado de la comunidad Corabo y disfruta de beneficios exclusivos:</p>
                 <ul className="space-y-2 list-inside text-sm text-muted-foreground">
-                    <li className="flex items-start gap-3">
+                    {currentPlan.features.map(feature => (
+                       <li key={feature.text} className="flex items-start gap-3">
                         <CheckCircle className="w-4 h-4 text-green-500 mt-1 shrink-0"/> 
-                        <span><span className="font-semibold text-foreground">Insignia de Perfil Verificado:</span> Aumenta la confianza de tus clientes potenciales.</span>
+                        <span>
+                            <span className="font-semibold text-foreground">{feature.text}</span>
+                            {feature.description && ` ${feature.description}`}
+                        </span>
                     </li>
-                    <li className="flex items-start gap-3">
-                        <CheckCircle className="w-4 h-4 text-green-500 mt-1 shrink-0"/> 
-                         <span><span className="font-semibold text-foreground">Mayor Visibilidad:</span> Aparece en más resultados de búsqueda.</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                        <CheckCircle className="w-4 h-4 text-green-500 mt-1 shrink-0"/>
-                         <span><span className="font-semibold text-foreground">Alcance sin Límites:</span> Ofrece tus servicios o busca sin restricciones de distancia.</span>
-                    </li>
-                    <li className="flex items-start gap-3">
-                        <CheckCircle className="w-4 h-4 text-green-500 mt-1 shrink-0"/>
-                         <span><span className="font-semibold text-foreground">Soporte Prioritario:</span> Recibe ayuda más rápido cuando la necesites.</span>
-                    </li>
+                    ))}
                 </ul>
-                <p className="font-bold text-center text-lg pt-2">Precio: $9.99 / mes</p>
+                <p className="font-bold text-center text-lg pt-2">Precio: {currentPlan.price}</p>
             </div>
         )}
 
