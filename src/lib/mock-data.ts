@@ -1,6 +1,7 @@
 
 
 import type { User, Product, Service, Transaction, Conversation, AgreementProposal } from './types';
+import { add } from 'date-fns';
 
 export const users: User[] = [
   { id: 'client1', name: 'Juan Cliente', type: 'client', reputation: 4.5, profileImage: `https://i.pravatar.cc/150?u=client1`, email: 'juan.cliente@email.com', phone: '04121234567', emailValidated: true, phoneValidated: false, isGpsActive: true, gallery: [] },
@@ -384,16 +385,17 @@ export const initialTransactions: Transaction[] = [
     providerId: 'provider1',
     details: {
         items: [{ product: products[0], quantity: 1 }],
+        serviceName: "Compra Laptop Pro 15\" (Inicial Credicora)",
         paymentMethod: 'credicora',
         initialPayment: 300,
-        serviceName: "Compra Laptop Pro 15\" (Inicial Credicora)"
+        totalAmount: 1200,
     },
   },
   {
     id: 'txn6-credicora-fee1',
     type: 'Sistema',
     status: 'Acuerdo Aceptado - Pendiente de Ejecución',
-    date: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString(),
+    date: add(new Date(), { days: 15 }).toISOString(),
     amount: 300,
     clientId: 'client1',
     providerId: 'provider1',
@@ -405,7 +407,7 @@ export const initialTransactions: Transaction[] = [
     id: 'txn6-credicora-fee2',
     type: 'Sistema',
     status: 'Acuerdo Aceptado - Pendiente de Ejecución',
-    date: new Date(new Date().setMonth(new Date().getMonth() + 2)).toISOString(),
+    date: add(new Date(), { days: 30 }).toISOString(),
     amount: 300,
     clientId: 'client1',
     providerId: 'provider1',
@@ -417,7 +419,7 @@ export const initialTransactions: Transaction[] = [
     id: 'txn6-credicora-fee3',
     type: 'Sistema',
     status: 'Acuerdo Aceptado - Pendiente de Ejecución',
-    date: new Date(new Date().setMonth(new Date().getMonth() + 3)).toISOString(),
+    date: add(new Date(), { days: 45 }).toISOString(),
     amount: 300,
     clientId: 'client1',
     providerId: 'provider1',

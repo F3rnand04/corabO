@@ -132,6 +132,7 @@ export type Transaction = {
     system?: string; // Description for system transactions e.g., 'Recarga de Saldo'
     paymentMethod?: 'direct' | 'credicora';
     initialPayment?: number;
+    totalAmount?: number;
     clientRating?: number;
     clientComment?: string;
   };
@@ -160,5 +161,3 @@ export type AppointmentRequest = {
     details: string;
     amount: number;
 };
-
-
