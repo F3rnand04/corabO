@@ -373,9 +373,9 @@ export const initialTransactions: Transaction[] = [
   {
     id: 'txn6-credicora-main',
     type: 'Compra',
-    status: 'Acuerdo Aceptado - Pendiente de Ejecución',
+    status: 'Pagado', // The initial payment is paid
     date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    amount: 1140, // Costo total (1200) - Ayuda de Credicora (60)
+    amount: 1140, // Total (1200) - Financed Amount (60)
     clientId: 'client1',
     providerId: 'provider1',
     details: {
@@ -384,6 +384,7 @@ export const initialTransactions: Transaction[] = [
         paymentMethod: 'credicora',
         initialPayment: 1140,
         totalAmount: 1200,
+        financedAmount: 60,
     },
   },
   {
@@ -468,3 +469,5 @@ export const initialConversations: Conversation[] = [
         unreadCount: 0,
     }
 ];
+
+    

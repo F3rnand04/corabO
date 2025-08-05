@@ -305,6 +305,16 @@ export default function TransactionsPage() {
     const userCredicoraLevel = currentUser.credicoraLevel || 1;
     const credicoraDetails = credicoraLevels[userCredicoraLevel.toString()];
 
+    // Calculate used credit
+    const usedCredit = transactions.filter(tx => 
+        tx.clientId === currentUser.id && 
+        tx.status === 'Acuerdo Aceptado - Pendiente de Ejecución' && 
+        tx.details.system?.includes('Cuota')
+    ).reduce((sum, tx) => sum + tx.amount, 0);
+
+    const availableCredit = (currentUser.credicoraLimit || 0) - usedCredit;
+
+
     // Placeholder data for progression
     const completedTransactions = transactions.filter(t => (t.clientId === currentUser.id || t.providerId === currentUser.id) && (t.status === 'Pagado' || t.status === 'Resuelto')).length;
     const transactionsForNextLevel = credicoraDetails.transactionsForNextLevel || 25;
@@ -516,11 +526,11 @@ export default function TransactionsPage() {
                                 </div>
                                 <div className="flex justify-between text-xs pt-1">
                                     <div className="text-muted-foreground">USADO</div>
-                                    <div className="font-semibold">{showSensitiveData ? '$0.00' : '$**.**'}</div>
+                                    <div className="font-semibold">{showSensitiveData ? `$${usedCredit.toFixed(2)}` : '$**.**'}</div>
                                 </div>
                                 <div className="flex justify-between text-xs">
                                     <div className="text-muted-foreground">DISPONIBLE</div>
-                                    <div className="font-semibold">{showSensitiveData ? `$${(currentUser.credicoraLimit || 0).toFixed(2)}` : '$***.**'}</div>
+                                    <div className="font-semibold">{showSensitiveData ? `$${availableCredit.toFixed(2)}` : '$***.**'}</div>
                                 </div>
                             </CardHeader>
                             <Separator />
@@ -581,3 +591,5 @@ export default function TransactionsPage() {
         </div>
     );
 }
+
+    

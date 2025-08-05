@@ -2,6 +2,7 @@
 
 
 
+
 export type GalleryImageComment = {
   author: string;
   text: string;
@@ -188,6 +189,7 @@ export type Transaction = {
     paymentMethod?: 'direct' | 'credicora';
     initialPayment?: number;
     totalAmount?: number;
+    financedAmount?: number;
     clientRating?: number;
     clientComment?: string;
     paymentFromThirdParty?: boolean;
@@ -217,3 +219,5 @@ export type AppointmentRequest = {
     details: string;
     amount: number;
 };
+
+    

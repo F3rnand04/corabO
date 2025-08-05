@@ -210,14 +210,19 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const generatePaymentCommitments = (originalTx: Transaction) => {
       if (!originalTx.details.initialPayment || !originalTx.providerId) return;
 
-      const userLevel = currentUser.credicoraLevel || 1;
+      const client = users.find(u => u.id === originalTx.clientId);
+      if(!client) return;
+
+      const userLevel = client.credicoraLevel || 1;
       const levelDetails = credicoraLevels[userLevel.toString()];
 
       if (!levelDetails) return;
       
       const totalAmount = originalTx.details.totalAmount || originalTx.amount;
+      
       const financingPercentage = 1 - levelDetails.initialPaymentPercentage;
-      const financedAmount = Math.min(totalAmount * financingPercentage, currentUser.credicoraLimit || 0);
+      const potentialFinancing = totalAmount * financingPercentage;
+      const financedAmount = Math.min(potentialFinancing, client.credicoraLimit || 0);
 
       const numberOfInstallments = levelDetails.installments;
       const installmentAmount = financedAmount / numberOfInstallments;
@@ -290,6 +295,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
                     paymentMethod: 'credicora',
                     initialPayment: initialPayment,
                     totalAmount: totalAmount,
+                    financedAmount: financedAmount,
                 },
                 date: new Date().toISOString(),
             };
@@ -1008,3 +1014,5 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
+
+    
