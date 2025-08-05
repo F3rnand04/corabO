@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Check, CheckCircle, Star } from 'lucide-react';
+import { Check, CheckCircle, Star, Info } from 'lucide-react';
 import { useCorabo } from "@/contexts/CoraboContext";
 
 interface SubscriptionDialogProps {
@@ -20,57 +20,72 @@ interface SubscriptionDialogProps {
 }
 
 const plans = {
-  client: {
-    title: "Plan Cliente Seguro",
-    description: "Maximiza la seguridad y el control en todas tus compras y transacciones.",
-    price: "$1.99 / mes",
+  personal: {
+    title: "Plan Personal",
+    description: "Ideal para Clientes y prestadores básicos que buscan establecer una base sólida de confianza y credibilidad.",
+    price: "$5 USD/mes",
+    annualPrice: "$40 USD/año",
+    annualDiscount: "ahorra 33%",
     features: [
-      { text: "Registro de Transacciones Seguro:", description: "Activa tu historial para compras seguras y con seguimiento." },
-      { text: "Acceso a Credicora:", description: "Opta por facilidades de pago en comercios afiliados (sujeto a aprobación)." },
-      { text: "Reputación de Comprador:", description: "Construye un historial como comprador confiable en la plataforma." },
-      { text: "Soporte Prioritario:", description: "Recibe ayuda más rápido cuando la necesites." },
+      "Verificación de Identidad Rigurosa",
+      "Insignia de Perfil Verificado",
+      "Construye una reputación sólida",
+      "Soporte Prioritario",
     ],
   },
   professional: {
-    title: "Plan Profesional Verificado",
-    description: "Obtén la insignia de verificado, amplía tu alcance y genera más confianza.",
-    price: "$9.99 / mes",
+    title: "Plan Profesional",
+    description: "Dirigido a profesionales con un mayor volumen de trabajo o que desean mayor visibilidad.",
+    price: "$12 USD/mes",
+    annualPrice: "$95 USD/año",
+    annualDiscount: "ahorra 33%",
     features: [
-      { text: "Insignia de Perfil Verificado:", description: "Aumenta la confianza de tus clientes potenciales." },
-      { text: "Mayor Visibilidad:", description: "Aparece en más resultados de búsqueda." },
-      { text: "Alcance sin Límites:", description: "Ofrece tus servicios o busca sin restricciones de distancia." },
-      { text: "Soporte Prioritario:", description: "Recibe ayuda más rápido cuando la necesites." },
+      "Todos los beneficios del Plan Personal",
+      "Mayor visibilidad en búsquedas",
+      "Acceso a oportunidades de negocio prioritarias",
+      "Estadísticas de rendimiento básicas",
     ],
   },
   company: {
-    title: "Plan Empresa Plus",
-    description: "Potencia tu negocio con herramientas avanzadas y máxima visibilidad.",
-    price: "$19.99 / mes",
+    title: "Plan Empresarial",
+    description: "Diseñado para empresas y entidades jurídicas que necesitan proyectar una imagen de máxima confianza.",
+    price: "$25 USD/mes",
+    annualPrice: "$190 USD/año",
+    annualDiscount: "ahorra 37.5%",
     features: [
-      { text: "Todos los beneficios del Plan Profesional.", description: "" },
-      { text: "Gestión de Múltiples Usuarios:", description: "Permite que varios miembros de tu equipo gestionen el perfil (próximamente)." },
-      { text: "Estadísticas Avanzadas:", description: "Analiza el rendimiento de tu perfil y publicaciones." },
-      { text: "Promociones Destacadas:", description: "Accede a mejores opciones para destacar tus ofertas en el feed principal." },
+      "Todos los beneficios del Plan Profesional",
+      "Gestión de Múltiples Usuarios (Próximamente)",
+      "Estadísticas Avanzadas de Perfil",
+      "Opciones de Promoción Destacadas",
     ],
   }
 };
 
 
 export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogProps) {
-  const { currentUser, subscribeUser } = useCorabo();
+  const { currentUser, transactions, subscribeUser } = useCorabo();
 
   const handleSubscribe = () => {
     subscribeUser(currentUser.id);
     onOpenChange(false);
   }
+  
+  const getCompletedJobs = () => {
+    if (currentUser.type !== 'provider') return 0;
+    return transactions.filter(
+      tx => tx.providerId === currentUser.id && (tx.status === 'Pagado' || tx.status === 'Resuelto')
+    ).length;
+  }
 
-  const getPlanKey = () => {
-    if (currentUser.type === 'client') return 'client';
+  const getPlanKey = (): keyof typeof plans => {
+    if (currentUser.type === 'client') return 'personal';
     if (currentUser.profileSetupData?.providerType === 'company') return 'company';
+    if (getCompletedJobs() <= 15) return 'personal';
     return 'professional';
   }
 
-  const currentPlan = plans[getPlanKey()];
+  const currentPlanKey = getPlanKey();
+  const currentPlan = plans[currentPlanKey];
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -95,21 +110,28 @@ export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogP
             </Alert>
         ) : (
             <div className="space-y-4 py-4">
-                <p>Conviértete en un miembro verificado de la comunidad Corabo y disfruta de beneficios exclusivos:</p>
                 <ul className="space-y-2 list-inside text-sm text-muted-foreground">
                     {currentPlan.features.map(feature => (
-                       <li key={feature.text} className="flex items-start gap-3">
+                       <li key={feature} className="flex items-start gap-3">
                         <CheckCircle className="w-4 h-4 text-green-500 mt-1 shrink-0"/> 
-                        <span>
-                            <span className="font-semibold text-foreground">{feature.text}</span>
-                            {feature.description && ` ${feature.description}`}
-                        </span>
+                        <span>{feature}</span>
                     </li>
                     ))}
                 </ul>
-                <p className="font-bold text-center text-lg pt-2">Precio: {currentPlan.price}</p>
+                <div className="text-center pt-2">
+                  <p className="font-bold text-lg">{currentPlan.price}</p>
+                  <p className="text-sm font-semibold">{currentPlan.annualPrice} <span className="text-green-600 font-bold">({currentPlan.annualDiscount})</span></p>
+                </div>
             </div>
         )}
+        
+        <Alert>
+            <Info className="h-4 w-4" />
+            <AlertTitle>¡Invierte en tu tranquilidad!</AlertTitle>
+            <AlertDescription>
+                En CorabO, siempre recomendamos realizar transacciones con usuarios verificados. La insignia azul de 'Verificado' es tu confirmación de que ese usuario ha completado un proceso de validación riguroso, proporcionando una capa adicional de seguridad y confianza en todas tus interacciones.
+            </AlertDescription>
+        </Alert>
 
         <DialogFooter className="mt-auto pt-4 flex-shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
