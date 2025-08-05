@@ -140,10 +140,10 @@ export function PromotionDialog({ isOpen, onOpenChange }: PromotionDialogProps) 
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Zap className="text-yellow-500" />
-            Promoción del Día
+            Impulsa tu Venta por 24h
           </DialogTitle>
           <DialogDescription>
-            Destaca un producto o servicio en el feed principal por 24 horas.
+            Destaca un producto o servicio en el feed principal durante 24 horas para probar su impacto y alcanzar nuevos clientes.
           </DialogDescription>
         </DialogHeader>
 

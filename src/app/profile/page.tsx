@@ -307,7 +307,7 @@ export default function ProfilePage() {
               onClick={handlePromotionClick}
             >
               <Zap className="w-4 h-4 mr-2 text-yellow-500"/>
-              Promoción del Día
+              Impulsa tu Venta
             </Button>
           </div>
 
