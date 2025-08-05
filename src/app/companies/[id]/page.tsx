@@ -32,7 +32,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function CompanyProfilePage() {
   const params = useParams();
-  const { users, products, addContact, transactions, createAppointmentRequest, currentUser, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, sendMessage } = useCorabo();
+  const { users, products, addContact, transactions, createAppointmentRequest, currentUser, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, sendMessage } from useCorabo();
   const { toast } = useToast();
   const router = useRouter();
   
@@ -474,17 +474,6 @@ export default function CompanyProfilePage() {
               </div>
              )}
           </div>
-          
-          {!isProviderTransactionReady && (
-             <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Para una compra segura</AlertTitle>
-                <AlertDescription>
-                    Este proveedor aún no ha activado su registro de transacciones. ¡Anímale a hacerlo para que ambos operen con la seguridad y el respaldo de CorabO!
-                </AlertDescription>
-            </Alert>
-          )}
-
 
           {/* Main Content Card */}
           <Card className="rounded-2xl overflow-hidden shadow-lg relative">

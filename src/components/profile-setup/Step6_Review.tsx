@@ -61,11 +61,20 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
 
   const handleFinish = () => {
     updateFullProfile(currentUser.id, formData);
-    router.push('/profile');
-    toast({
-      title: "¡Perfil Actualizado!",
-      description: "Recuerda que datos como tu nombre de usuario y tipo de perfil solo pueden cambiarse dos veces al año para mantener la confianza en la comunidad."
-    });
+    
+    if (isProvider) {
+      toast({
+        title: "¡Perfil Guardado!",
+        description: "Ahora, activa tu registro de transacciones para empezar a vender."
+      });
+      router.push('/transactions/settings');
+    } else {
+      router.push('/profile');
+      toast({
+        title: "¡Perfil Actualizado!",
+        description: "Tu información ha sido guardada."
+      });
+    }
   }
   
   const isOverFreeRadius = serviceRadius > MAX_RADIUS_FREE && !currentUser.isSubscribed;
@@ -183,7 +192,9 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
 
       <div className="flex justify-between">
         <Button variant="outline" onClick={onBack}>Atrás</Button>
-        <Button onClick={handleFinish}>Finalizar Configuración</Button>
+        <Button onClick={handleFinish}>
+            {isProvider ? 'Continuar a Activación' : 'Finalizar Configuración'}
+        </Button>
       </div>
     </div>
     <SubscriptionDialog isOpen={isSubscriptionDialogOpen} onOpenChange={setIsSubscriptionDialogOpen} />
