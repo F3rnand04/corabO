@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, ChangeEvent, useEffect } from 'react';
 import Image from 'next/image';
 import {
   Dialog,
@@ -16,49 +16,123 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from './ui/badge';
-import { Zap, Clock, ChevronDown, Upload, Check } from 'lucide-react';
+import { Zap, Clock, ChevronDown, Upload, Check, Loader2 } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
-import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { cn } from '@/lib/utils';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
-
-type GalleryImage = {
-  src: string;
-  alt: string;
-  description: string;
-  promotion?: {
-    text: string;
-    expires: string;
-  };
-};
+import { useCorabo } from '@/contexts/CoraboContext';
+import { useToast } from '@/hooks/use-toast';
+import { Textarea } from './ui/textarea';
 
 interface PromotionDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onActivate: (promotionText: string) => void;
-  image: GalleryImage | null;
-  isPromotionActive: boolean;
 }
 
 const promotionSuggestions = ["10% OFF", "2x1 Hoy", "Envío Gratis", "Oferta Especial", "Nuevo"];
-const costPerDay = 2.50;
 
-export function PromotionDialog({ isOpen, onOpenChange, onActivate, image, isPromotionActive }: PromotionDialogProps) {
+export function PromotionDialog({ isOpen, onOpenChange }: PromotionDialogProps) {
+  const { currentUser, activatePromotion, updateUserProfileAndGallery } = useCorabo();
+  const { toast } = useToast();
+  
+  // State for provider view
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  
+  // State for client/temporary view
+  const [tempImageFile, setTempImageFile] = useState<File | null>(null);
+  const [tempImagePreview, setTempImagePreview] = useState<string | null>(null);
+  const [tempDescription, setTempDescription] = useState('');
+
+  // Common state
   const [promotionText, setPromotionText] = useState('HOY 10% OFF');
-  const [duration, setDuration] = useState<"24" | "48" | "72">("24");
   const [reference, setReference] = useState('');
   const [voucherFile, setVoucherFile] = useState<File | null>(null);
   const [isPaymentSectionOpen, setIsPaymentSectionOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (!image) return null;
+  const isProviderWithGallery = currentUser.type === 'provider' && currentUser.gallery && currentUser.gallery.length > 0;
+  
+  const getPromotionCost = () => {
+    switch (currentUser.type) {      
+      case 'provider':
+        return 8;
+      case 'client':
+      default:
+        return 5;
+    }
+  }
+  const promotionCost = getPromotionCost();
 
-  const handleActivate = () => {
-    if (promotionText.trim() && reference && voucherFile) {
-      onActivate(promotionText);
+  const handleTempFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setTempImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setTempImagePreview(reader.result as string);
+      reader.readAsDataURL(file);
     }
   };
+
+  const handleClose = () => {
+    // Reset all state
+    setSelectedImage(null);
+    setTempImageFile(null);
+    setTempImagePreview(null);
+    setTempDescription('');
+    setPromotionText('HOY 10% OFF');
+    setReference('');
+    setVoucherFile(null);
+    setIsPaymentSectionOpen(false);
+    setIsSubmitting(false);
+    onOpenChange(false);
+  };
+
+  const handleActivate = () => {
+    if (!reference || !voucherFile) {
+        toast({ variant: "destructive", title: "Faltan datos de pago", description: "Sube el comprobante y añade la referencia." });
+        return;
+    }
+
+    setIsSubmitting(true);
+
+    if (isProviderWithGallery) {
+      if (!selectedImage) {
+        toast({ variant: "destructive", title: "Selecciona una imagen", description: "Debes elegir una de tus publicaciones para promocionar." });
+        setIsSubmitting(false);
+        return;
+      }
+      activatePromotion({ imageId: selectedImage, promotionText, cost: promotionCost });
+    } else {
+      if (!tempImageFile || !tempDescription.trim()) {
+        toast({ variant: "destructive", title: "Falta información", description: "Por favor, sube una imagen y añade una descripción para tu oferta." });
+        setIsSubmitting(false);
+        return;
+      }
+      // For clients, we first create the temporary publication, then promote it.
+      const newTempImage = {
+        id: `temp-${Date.now()}`,
+        src: tempImagePreview!,
+        alt: tempDescription.slice(0, 30),
+        description: tempDescription,
+        comments: [],
+        isTemporary: true,
+      };
+      updateUserProfileAndGallery(currentUser.id, newTempImage);
+      activatePromotion({ imageId: newTempImage.id, promotionText, cost: promotionCost });
+    }
+
+    setTimeout(() => { // Simulate processing time
+        toast({ title: "¡Promoción Activada!", description: "Tu oferta destacará por 24 horas." });
+        handleClose();
+    }, 1500);
+  };
+
+  const currentImageToDisplay = isProviderWithGallery
+    ? currentUser.gallery?.find(img => img.id === selectedImage)?.src
+    : tempImagePreview;
+
+  const activePromotion = currentUser.gallery?.find(g => g.promotion && new Date(g.promotion.expires) > new Date());
   
-  const promotionCost = (parseInt(duration) / 24) * costPerDay;
+  if (!isOpen) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -69,27 +143,55 @@ export function PromotionDialog({ isOpen, onOpenChange, onActivate, image, isPro
             Promoción del Día
           </DialogTitle>
           <DialogDescription>
-            Destaca esta imagen en el feed principal.
+            Destaca un producto o servicio en el feed principal por 24 horas.
           </DialogDescription>
         </DialogHeader>
 
         <ScrollArea className="flex-grow pr-4 -mr-4">
-          {isPromotionActive && image.promotion ? (
+          {activePromotion ? (
             <div className="py-4">
               <Alert variant="default" className="bg-green-50 text-green-800 border-green-200">
                 <Clock className="h-4 w-4 !text-green-800" />
-                <AlertTitle>Promoción Activa</AlertTitle>
+                <AlertTitle>¡Ya tienes una promoción activa!</AlertTitle>
                 <AlertDescription>
-                  Esta imagen ya está promocionada. La oferta
-                  <Badge variant="secondary" className="mx-1">{image.promotion.text}</Badge>
-                  expirará en menos de 24 horas.
+                  La oferta <Badge variant="secondary" className="mx-1">{activePromotion.promotion?.text}</Badge> expirará pronto. Solo se puede tener una promoción activa a la vez.
                 </AlertDescription>
               </Alert>
             </div>
           ) : (
             <div className="space-y-6 py-4">
-              <div className="relative aspect-video w-full rounded-md overflow-hidden">
-                <Image src={image.src} alt={image.alt} layout="fill" objectFit="cover" data-ai-hint="promotional image"/>
+              
+              {/* Image Selection / Upload */}
+              {isProviderWithGallery ? (
+                <div>
+                  <Label className="mb-2 block">Elige qué promocionar</Label>
+                  <ScrollArea className="h-32">
+                    <div className="flex gap-2 pr-2">
+                      {currentUser.gallery?.map(img => (
+                        <div key={img.id} className="relative shrink-0 w-28 h-28 cursor-pointer rounded-md overflow-hidden" onClick={() => setSelectedImage(img.id)}>
+                          <Image src={img.src} alt={img.alt} fill className="object-cover" />
+                          {selectedImage === img.id && <div className="absolute inset-0 bg-black/50 flex items-center justify-center"><Check className="text-white w-10 h-10"/></div>}
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="temp-desc">Describe tu oferta</Label>
+                  <Textarea id="temp-desc" placeholder="Ej: Vendo deliciosas tortas de chocolate por encargo..." value={tempDescription} onChange={(e) => setTempDescription(e.target.value)} />
+                  <Label htmlFor="temp-img">Sube una imagen</Label>
+                  <Input id="temp-img" type="file" accept="image/*" onChange={handleTempFileChange} />
+                </div>
+              )}
+
+              {/* Promotion Preview */}
+              <div className="relative aspect-video w-full rounded-md overflow-hidden bg-muted">
+                {currentImageToDisplay ? (
+                    <Image src={currentImageToDisplay} alt="Vista previa" layout="fill" objectFit="cover" data-ai-hint="promotional image"/>
+                ) : (
+                    <div className="flex items-center justify-center h-full text-muted-foreground text-sm">Elige o sube una imagen</div>
+                )}
                 <Badge variant="destructive" className="absolute top-2 left-2 shadow-lg">
                   {promotionText || "Tu Oferta Aquí"}
                 </Badge>
@@ -118,29 +220,11 @@ export function PromotionDialog({ isOpen, onOpenChange, onActivate, image, isPro
                 </div>
               </div>
 
-               <div className="space-y-3">
-                 <Label>Duración y Costo</Label>
-                 <RadioGroup value={duration} onValueChange={(value: "24" | "48" | "72") => setDuration(value)}>
-                    <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="24" id="d24" />
-                        <Label htmlFor="d24">24 horas - <span className="font-bold">${(costPerDay).toFixed(2)}</span></Label>
-                    </div>
-                     <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="48" id="d48" />
-                        <Label htmlFor="d48">48 horas - <span className="font-bold">${(costPerDay * 2).toFixed(2)}</span></Label>
-                    </div>
-                     <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="72" id="d72" />
-                        <Label htmlFor="d72">72 horas - <span className="font-bold">${(costPerDay * 3).toFixed(2)}</span></Label>
-                    </div>
-                </RadioGroup>
-              </div>
-
               <div className="space-y-2">
                 <Button 
                     variant="default" 
                     className="w-full" 
-                    disabled={!promotionText.trim() || isPromotionActive}
+                    disabled={!promotionText.trim() || activePromotion}
                     onClick={() => setIsPaymentSectionOpen(!isPaymentSectionOpen)}
                 >
                     <span>Activar por ${promotionCost.toFixed(2)}</span>
@@ -176,10 +260,6 @@ export function PromotionDialog({ isOpen, onOpenChange, onActivate, image, isPro
                            <Label htmlFor="reference">Número de Referencia</Label>
                            <Input id="reference" placeholder="00012345" value={reference} onChange={(e) => setReference(e.target.value)} />
                          </div>
-                         <Button onClick={handleActivate} disabled={!reference || !voucherFile} className="w-full">
-                           <Check className="mr-2 h-4 w-4" />
-                           Confirmar Pago
-                         </Button>
                        </div>
                      </div>
                 )}
@@ -189,9 +269,15 @@ export function PromotionDialog({ isOpen, onOpenChange, onActivate, image, isPro
         </ScrollArea>
 
         <DialogFooter className="mt-auto pt-4 flex-shrink-0">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {isPromotionActive ? 'Cerrar' : 'Cancelar'}
+          <Button variant="outline" onClick={handleClose}>
+            {activePromotion ? 'Cerrar' : 'Cancelar'}
           </Button>
+          {!activePromotion && (
+            <Button onClick={handleActivate} disabled={!isPaymentSectionOpen || isSubmitting}>
+              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Check className="mr-2 h-4 w-4" />}
+              {isSubmitting ? 'Procesando...' : 'Confirmar y Activar'}
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

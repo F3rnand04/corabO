@@ -71,6 +71,7 @@ interface CoraboState {
   removeCommentFromImage: (ownerId: string, imageId: string, commentIndex: number) => void;
   getCartItemQuantity: (productId: string) => number;
   checkIfShouldBeEnterprise: (providerId: string) => boolean;
+  activatePromotion: (details: { imageId: string, promotionText: string, cost: number }) => void;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -589,7 +590,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         toast({ title: "Publicación Eliminada", description: "La imagen ha sido eliminada de tu galería." });
       } else {
         const newImage = imageOrId as GalleryImage;
-        newGallery = [{ ...newImage, id: newImage.src }, ...currentGallery];
+        newGallery = [{ ...newImage, id: newImage.id || newImage.src }, ...currentGallery];
         toast({ title: "¡Publicación Exitosa!", description: "Tu nueva imagen ya está en tu vitrina." });
       }
 
@@ -703,6 +704,42 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         description: "Tu módulo ha sido desactivado. Puedes volver a activarlo desde los ajustes."
     });
   }
+  
+  const activatePromotion = (details: { imageId: string, promotionText: string, cost: number }) => {
+    const { imageId, promotionText, cost } = details;
+    
+    // 1. Create system transaction for the payment
+    const promotionTx: Transaction = {
+        id: `promo-tx-${Date.now()}`,
+        type: 'Sistema',
+        status: 'Pagado', // Assume payment is confirmed by the dialog flow
+        date: new Date().toISOString(),
+        amount: cost,
+        clientId: currentUser.id,
+        providerId: 'corabo-app',
+        details: {
+            system: `Pago por Promoción de 24h: "${promotionText}"`
+        }
+    };
+    setTransactions(prev => [...prev, promotionTx]);
+
+    // 2. Update the user's gallery item with promotion details
+    updateUser(currentUser.id, user => {
+        const newGallery = (user.gallery || []).map(img => {
+            if (img.id === imageId) {
+                return {
+                    ...img,
+                    promotion: {
+                        text: promotionText,
+                        expires: add(new Date(), { hours: 24 }).toISOString()
+                    }
+                };
+            }
+            return img;
+        });
+        return { gallery: newGallery };
+    });
+  };
 
   const downloadTransactionsPDF = () => {
     const doc = new jsPDF();
@@ -1001,6 +1038,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     removeCommentFromImage,
     getCartItemQuantity,
     checkIfShouldBeEnterprise,
+    activatePromotion,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;

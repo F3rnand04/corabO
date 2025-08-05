@@ -5,7 +5,7 @@ import { useState, TouchEvent, useEffect, useRef, ChangeEvent } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Send, Plus, Calendar, Wallet, MapPin, ChevronLeft, ChevronRight, ImageIcon, Settings, MessageCircle, Flag } from 'lucide-react';
+import { Star, Send, Plus, Calendar, Wallet, MapPin, ChevronLeft, ChevronRight, ImageIcon, Settings, MessageCircle, Flag, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
 import { PromotionDialog } from '@/components/PromotionDialog';
@@ -190,48 +190,20 @@ export default function ProfilePage() {
   }
 
 
-  const handlePromotionTabClick = () => {
-    if (!isProvider) return;
-    if(gallery.length > 0) {
-      setIsPromotionDialogOpen(true);
-    } else {
+  const handlePromotionClick = () => {
+    if (!currentUser.isTransactionsActive) {
       toast({
         variant: "destructive",
-        title: "No hay imágenes",
-        description: "Añade una imagen a tu galería para poder promocionarla."
-      })
+        title: "Registro de Transacciones Inactivo",
+        description: "Debes activar tu registro de transacciones para poder usar las promociones."
+      });
+      return;
     }
-  };
-
-  const handleActivatePromotion = (promotionText: string) => {
-    if (!isProvider) return;
-    const now = new Date();
-    const expiryDate = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 24 hours from now
-
-    const newGallery = [...gallery];
-    newGallery[currentImageIndex].promotion = {
-        text: promotionText,
-        expires: expiryDate.toISOString(),
-    };
-    // This part is tricky. We are modifying a copy of the user's gallery
-    // but we need a way to persist this back to the main user state in the context.
-    // For now, let's just update the local state to see the effect.
-    // A proper implementation would call a function from the context like `updateUserGallery`.
-    setGallery(newGallery);
-    
-    setIsPromotionDialogOpen(false);
+    setIsPromotionDialogOpen(true);
   };
 
   const currentImage = gallery.length > 0 ? gallery[currentImageIndex] : null;
-  const isPromotionActive = currentImage?.promotion && new Date(currentImage.promotion.expires) > new Date();
-
-  const getPromotionTimeRemaining = () => {
-    if (!isPromotionActive || !currentImage?.promotion) return "";
-    const diff = new Date(currentImage.promotion.expires).getTime() - new Date().getTime();
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    return `Activa (${hours}h ${minutes}m restantes)`;
-  };
+  const isPromotionActiveOnCurrentImage = currentImage?.promotion && new Date(currentImage.promotion.expires) > new Date();
 
   if (!currentUser) {
       return (
@@ -328,17 +300,16 @@ export default function ProfilePage() {
 
 
           {/* Campaign Management Button */}
-          {isProvider && (
           <div className="flex justify-end">
              <Button 
               variant="secondary" 
               className="rounded-full text-xs h-8 px-4 font-bold"
-              disabled={!isProvider}
+              onClick={handlePromotionClick}
             >
-              GESTIÓN DE CAMPAÑAS
+              <Zap className="w-4 h-4 mr-2 text-yellow-500"/>
+              Promoción del Día
             </Button>
           </div>
-          )}
 
           {/* Main Content Card */}
           <Card className="rounded-2xl overflow-hidden shadow-lg">
@@ -370,7 +341,7 @@ export default function ProfilePage() {
                     >
                       <Flag className="w-4 h-4" />
                     </Button>
-                    {isProvider && isPromotionActive && currentImage.promotion && (
+                    {isProvider && isPromotionActiveOnCurrentImage && currentImage.promotion && (
                         <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-md shadow-lg">
                             {currentImage.promotion.text}
                         </div>
@@ -426,36 +397,6 @@ export default function ProfilePage() {
                 )}
               </div>
 
-              {/* Tabs */}
-              {isProvider && (
-              <div className="flex justify-around font-semibold text-center border-b">
-                <div
-                  className={cn(
-                    "flex-1 p-3 cursor-pointer",
-                    !isProvider ? "cursor-not-allowed text-muted-foreground/50" : "",
-                    isPromotionActive && isProvider
-                        ? "text-green-600 border-b-2 border-green-600" 
-                        : isProvider 
-                            ? "border-b-2 border-primary text-primary" 
-                            : "text-muted-foreground"
-                  )}
-                  onClick={handlePromotionTabClick}
-                  aria-disabled={!isProvider}
-                >
-                  {isPromotionActive && isProvider ? getPromotionTimeRemaining() : "Promoción del Día"}
-                </div>
-                <div
-                  className={cn(
-                    "flex-1 p-3 cursor-pointer",
-                    !currentImage ? "text-muted-foreground/50 cursor-not-allowed" : "text-muted-foreground"
-                  )}
-                  onClick={() => currentImage && openDetailsDialog(currentImage)}
-                >
-                  Editar Descripción
-                </div>
-              </div>
-              )}
-
               {/* Thumbnails Grid */}
               <div className="p-4 grid grid-cols-3 gap-2">
                   {gallery.length > 0 ? (
@@ -510,13 +451,10 @@ export default function ProfilePage() {
           owner={currentUser}
         />
       )}
-      {currentImage && isProvider &&
+      {
         <PromotionDialog
           isOpen={isPromotionDialogOpen}
           onOpenChange={setIsPromotionDialogOpen}
-          onActivate={handleActivatePromotion}
-          image={currentImage}
-          isPromotionActive={!!isPromotionActive}
         />
       }
     </>

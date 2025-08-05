@@ -3,6 +3,7 @@
 
 
 
+
 export type GalleryImageComment = {
   author: string;
   text: string;
@@ -17,6 +18,7 @@ export type GalleryImage = {
   alt: string;
   description: string;
   comments?: GalleryImageComment[];
+  isTemporary?: boolean; // Flag for promotions from clients
   promotion?: {
     text: string;
     expires: string;
