@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState } from "react";
@@ -60,8 +59,8 @@ export function Header() {
         <div className="flex h-16 items-center justify-between">
           
           <Link href="/contacts" passHref>
-            <div className="flex items-center space-x-2 cursor-pointer">
-              <Image src="https://i.postimg.cc/8zWvkhxS/Sin-t-tulo-3.png" alt="Corabo Logo" width={120} height={40} className="object-contain" />
+            <div className="flex items-center w-24 h-10 relative cursor-pointer">
+              <Image src="https://i.postimg.cc/8zWvkhxS/Sin-t-tulo-3.png" alt="Corabo Logo" layout="fill" objectFit="contain" />
             </div>
           </Link>
 
