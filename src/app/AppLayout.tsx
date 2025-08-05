@@ -44,6 +44,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     '/transactions/settings',
     '/messages',
     '/videos',
+    '/emprende',
   ].includes(pathname);
   
   const shouldShowFooter = ![
