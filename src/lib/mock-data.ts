@@ -1,10 +1,11 @@
 
 
+
 import type { User, Product, Service, Transaction, Conversation, AgreementProposal } from './types';
 import { add } from 'date-fns';
 
 export const users: User[] = [
-  { id: 'client1', name: 'Juan Cliente', type: 'client', reputation: 4.5, profileImage: `https://i.pravatar.cc/150?u=client1`, email: 'juan.cliente@email.com', phone: '04121234567', emailValidated: true, phoneValidated: false, isGpsActive: true, gallery: [] },
+  { id: 'client1', name: 'Juan Cliente', type: 'client', reputation: 4.5, profileImage: `https://i.pravatar.cc/150?u=client1`, email: 'juan.cliente@email.com', phone: '04121234567', emailValidated: true, phoneValidated: false, isGpsActive: true, gallery: [], credicoraLevel: 1 },
   { 
     id: 'provider1', 
     name: 'Tecno Soluciones S.A.', 

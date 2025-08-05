@@ -1,5 +1,6 @@
 
 
+
 'use client';
 
 import { useState } from "react";
@@ -35,6 +36,7 @@ import { TransactionList } from "@/components/TransactionList";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Day, type DayProps } from 'react-day-picker';
 import { cn } from "@/lib/utils";
+import { credicoraLevels } from "@/lib/types";
 
 
 function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary: () => void, currentView: string }) {
@@ -62,6 +64,18 @@ function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary:
         router.push('/transactions/settings');
     }
 
+    const subtotal = getCartTotal();
+    const deliveryCost = getDeliveryCost();
+    const totalAmount = subtotal + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
+
+    const credicoraLimit = currentUser.credicoraLimit || 0;
+    const credicoraAvailable = totalAmount <= credicoraLimit;
+    const userCredicoraLevel = currentUser.credicoraLevel || 1;
+    const credicoraDetails = credicoraLevels[userCredicoraLevel.toString()];
+    const credicoraInitialPayment = totalAmount * (credicoraDetails?.initialPaymentPercentage || 1);
+    const credicoraInstallmentAmount = (totalAmount - credicoraInitialPayment) / (credicoraDetails?.installments || 1);
+
+
     const handleCheckout = () => {
       if (cartTransaction) {
           checkout(cartTransaction.id, includeDelivery || isDeliveryOnly, useCredicora);
@@ -69,11 +83,6 @@ function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary:
           setUseCredicora(false);
       }
     };
-    
-    const deliveryCost = getDeliveryCost();
-    const subtotal = getCartTotal();
-    const totalAmount = subtotal + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
-    const credicoraInitialPayment = totalAmount * 0.60;
 
     return (
         <header className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
@@ -124,7 +133,7 @@ function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary:
                                             </Button>
                                             </div>
                                             <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => updateCartQuantity(item.product.id, 0)}>
-                                            <X className="h-4 w-4" />
+                                              <X className="h-4 w-4" />
                                             </Button>
                                         </div>
                                     ))}
@@ -176,7 +185,7 @@ function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary:
 
                                 {providerAcceptsCredicora && (
                                      <div className="flex items-center justify-between pt-2 border-t mt-2">
-                                        <Label htmlFor="credicora-switch" className="flex items-center gap-2 text-blue-600 font-semibold">
+                                        <Label htmlFor="credicora-switch" className="flex items-center gap-2 text-blue-600 font-semibold disabled:text-muted-foreground">
                                             <Star className="w-4 h-4 fill-current"/>
                                             Pagar con Credicora
                                         </Label>
@@ -184,8 +193,14 @@ function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary:
                                             id="credicora-switch"
                                             checked={useCredicora}
                                             onCheckedChange={setUseCredicora}
+                                            disabled={!credicoraAvailable}
                                         />
                                     </div>
+                                )}
+                                {!credicoraAvailable && providerAcceptsCredicora && (
+                                    <p className="text-xs text-destructive -mt-2 text-right">
+                                        El monto excede tu límite de Credicora de ${credicoraLimit.toFixed(2)}.
+                                    </p>
                                 )}
                                
                                 <Separator />
@@ -193,9 +208,9 @@ function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary:
                                    <span>Total a Pagar{useCredicora && " Hoy"}:</span>
                                    <span>${useCredicora ? credicoraInitialPayment.toFixed(2) : totalAmount.toFixed(2)}</span>
                                </div>
-                                {useCredicora && (
+                                {useCredicora && credicoraDetails && (
                                     <p className="text-xs text-muted-foreground -mt-2 text-right">
-                                        y 3 cuotas de ${( (totalAmount - credicoraInitialPayment) / 3 ).toFixed(2)}
+                                        y {credicoraDetails.installments} cuotas de ${credicoraInstallmentAmount.toFixed(2)}
                                     </p>
                                 )}
                             </div>
@@ -290,6 +305,8 @@ export default function TransactionsPage() {
     const isProvider = currentUser.type === 'provider';
     
     const agendaEvents = getAgendaEvents();
+    const userCredicoraLevel = currentUser.credicoraLevel || 1;
+    const credicoraDetails = credicoraLevels[userCredicoraLevel.toString()];
     
     const onDayDoubleClick = (day: Date) => {
         const eventOnDay = agendaEvents.find(
@@ -338,9 +355,7 @@ export default function TransactionsPage() {
     const handleTransactionClick = (transaction: Transaction) => {
         // Provider specific action
         if (isProvider && transaction.status === 'Pago Enviado - Esperando Confirmación') {
-            confirmPaymentReceived(transaction.id);
-            setSelectedTransaction(null); // Close dialog if open
-            toast({ title: "Pago Confirmado", description: "Has confirmado la recepción del pago." });
+            setSelectedTransaction(transaction); // Open dialog to confirm
         } else {
             setSelectedTransaction(transaction);
         }
@@ -395,8 +410,8 @@ export default function TransactionsPage() {
 
                         <div className="space-y-2">
                             <div className="flex justify-between items-center text-sm font-semibold">
-                                <p>NIVEL 1</p>
-                                <p className="text-muted-foreground">ALFHA</p>
+                                <p>NIVEL {credicoraDetails.level}</p>
+                                <p className="text-muted-foreground">{credicoraDetails.name.toUpperCase()}</p>
                             </div>
                             <Progress value={0} />
                         </div>

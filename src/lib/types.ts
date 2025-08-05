@@ -1,5 +1,6 @@
 
 
+
 export type GalleryImageComment = {
   author: string;
   text: string;
@@ -18,6 +19,34 @@ export type GalleryImage = {
     text: string;
     expires: string;
   };
+};
+
+export type CredicoraLevel = {
+    level: number;
+    name: string;
+    initialPaymentPercentage: number;
+    installments: number;
+};
+
+export const credicoraLevels: Record<string, CredicoraLevel> = {
+    '1': {
+        level: 1,
+        name: 'Alfha',
+        initialPaymentPercentage: 0.60,
+        installments: 3,
+    },
+    '2': {
+        level: 2,
+        name: 'Bhettha',
+        initialPaymentPercentage: 0.50,
+        installments: 4,
+    },
+     '3': {
+        level: 3,
+        name: 'Gammma',
+        initialPaymentPercentage: 0.40,
+        installments: 6,
+    },
 };
 
 export type ProfileSetupData = {
@@ -55,6 +84,7 @@ export type User = {
   isSubscribed?: boolean;
   isTransactionsActive?: boolean;
   credicoraLimit?: number;
+  credicoraLevel?: number;
   promotion?: {
     text: string;
     expires: string;

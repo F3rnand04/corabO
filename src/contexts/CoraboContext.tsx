@@ -2,13 +2,14 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData, Conversation, Message, AppointmentRequest, AgreementProposal } from '@/lib/types';
+import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData, Conversation, Message, AppointmentRequest, AgreementProposal, CredicoraLevel } from '@/lib/types';
 import { users as initialUsers, products, services as initialServices, initialTransactions, initialConversations } from '@/lib/mock-data';
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from 'next/navigation';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { add, subDays, startOfDay } from 'date-fns';
+import { credicoraLevels } from '@/lib/types';
 
 type FeedView = 'servicios' | 'empresas';
 
@@ -208,10 +209,15 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const generatePaymentCommitments = (originalTx: Transaction) => {
       if (!originalTx.details.initialPayment || !originalTx.providerId) return;
+
+      const userLevel = currentUser.credicoraLevel || 1;
+      const levelDetails = credicoraLevels[userLevel.toString()];
+
+      if (!levelDetails) return;
       
       const totalAmount = originalTx.details.totalAmount || originalTx.amount;
       const remainingAmount = totalAmount - originalTx.details.initialPayment;
-      const numberOfInstallments = 3; // For Level 1
+      const numberOfInstallments = levelDetails.installments;
       const installmentAmount = remainingAmount / numberOfInstallments;
       
       const commitments: Transaction[] = [];
@@ -257,8 +263,16 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const deliveryCost = withDelivery ? getDeliveryCost() : 0;
     const finalAmount = cartTx.amount + deliveryCost;
 
+    if (useCredicora && finalAmount > (currentUser.credicoraLimit || 0)) {
+        toast({ variant: 'destructive', title: "Límite de Credicora Excedido", description: "El monto de la compra supera tu crédito disponible."});
+        return;
+    }
+    
+    const userLevel = currentUser.credicoraLevel || 1;
+    const levelDetails = credicoraLevels[userLevel.toString()];
+
     const paymentMethod = useCredicora ? 'credicora' : 'direct';
-    const initialPayment = useCredicora ? finalAmount * 0.60 : finalAmount;
+    const initialPayment = useCredicora ? finalAmount * levelDetails.initialPaymentPercentage : finalAmount;
     
     let finalTx: Transaction | undefined;
 
@@ -610,10 +624,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const updateFullProfile = (userId: string, data: ProfileSetupData) => {
-    const newType = data.offerType === 'service' ? 'servicios' : 'empresas';
     updateUser(userId, user => ({
       ...user,
-      type: data.categories?.length ? 'provider' : 'client',
+      type: 'provider',
       email: data.email || user.email,
       phone: data.phone || user.phone,
       profileSetupData: {
@@ -621,10 +634,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         ...data,
       }
     }));
-    setFeedView(newType);
     toast({
       title: "¡Perfil Actualizado!",
-      description: "Recuerda que datos como tu nombre de usuario y tipo de perfil solo pueden cambiarse dos veces al año para mantener la confianza en la comunidad."
+      description: "Tu información ha sido guardada."
     });
   }
 
@@ -646,7 +658,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const activateTransactions = (userId: string, creditLimit: number) => {
-    updateUser(userId, { isTransactionsActive: true, credicoraLimit: creditLimit });
+    updateUser(userId, { isTransactionsActive: true, credicoraLimit: creditLimit, credicoraLevel: 1 });
     toast({
         title: "¡Módulo de Transacciones Activado!",
         description: "Ya puedes empezar a gestionar tus finanzas.",
@@ -884,8 +896,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const providerTransactions = transactions.filter(
         tx => tx.providerId === providerId && (tx.status === 'Pagado' || tx.status === 'Resuelto')
     );
-    
-    // Check for 30 consecutive days with 5 or more transactions
+
     for (let i = 0; i < 30; i++) {
         let hasEnoughSales = false;
         const targetDay = startOfDay(subDays(new Date(), i));
@@ -900,11 +911,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         }
 
         if (!hasEnoughSales) {
-            return false; // Break the chain, not an enterprise
+            return false;
         }
     }
     
-    return true; // 30 consecutive days of high sales
+    return true;
 };
 
 
