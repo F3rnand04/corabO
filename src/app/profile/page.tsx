@@ -18,10 +18,13 @@ import { useRouter } from 'next/navigation';
 import { ReportDialog } from '@/components/ReportDialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Day, type DayProps } from 'react-day-picker';
+
 
 export default function ProfilePage() {
   const { toast } = useToast();
-  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, transactions } = useCorabo();
+  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, transactions, getAgendaEvents, setFeedView } = useCorabo();
   const router = useRouter();
   
   const [gallery, setGallery] = useState<GalleryImage[]>(currentUser.gallery || []);
@@ -52,10 +55,23 @@ export default function ProfilePage() {
   const [_, setForceRerender] = useState(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const agendaEvents = getAgendaEvents();
+  const paymentCommitmentDates = agendaEvents.filter(e => e.type === 'payment').map(e => new Date(e.date));
+  const taskDates = agendaEvents.filter(e => e.type === 'task').map(e => new Date(e.date));
 
-  const paymentCommitmentDates = transactions
-    .filter(tx => (tx.providerId === currentUser.id || tx.clientId === currentUser.id) && tx.status === 'Acuerdo Aceptado - Pendiente de Ejecución')
-    .map(tx => new Date(tx.date));
+  const onDayDoubleClick = (day: Date) => {
+    const eventOnDay = agendaEvents.find(
+      e => new Date(e.date).toDateString() === day.toDateString()
+    );
+    if (eventOnDay) {
+      if (eventOnDay.type === 'payment') {
+        router.push('/transactions?view=commitments');
+      } else {
+        router.push('/transactions?view=pending');
+      }
+    }
+  };
 
 
   useEffect(() => {
@@ -255,26 +271,54 @@ export default function ProfilePage() {
             </div>
             <div className="flex items-center gap-2">
                 <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <Calendar className="w-5 h-5 text-muted-foreground" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <CalendarComponent
-                      mode="multiple"
-                      selected={paymentCommitmentDates}
-                      disabled={(date) => date < new Date("1900-01-01")}
-                      modifiers={{ paymentCommitment: paymentCommitmentDates }}
-                      modifiersClassNames={{
-                        paymentCommitment: 'bg-yellow-200 text-yellow-900 rounded-full',
-                      }}
-                      initialFocus
-                    />
-                     <div className="p-2 border-t text-center text-xs text-muted-foreground">
-                        Días con compromisos de pago resaltados.
-                     </div>
-                  </PopoverContent>
+                    <PopoverTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <Calendar className="w-5 h-5 text-muted-foreground" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                       <TooltipProvider>
+                          <CalendarComponent
+                              mode="multiple"
+                              selected={[...paymentCommitmentDates, ...taskDates]}
+                              onDayDoubleClick={onDayDoubleClick}
+                              disabled={(date) => date < new Date("1900-01-01")}
+                              initialFocus
+                              components={{
+                                Day: (props: DayProps) => {
+                                  const eventOnDay = agendaEvents.find(
+                                    (e) => new Date(e.date).toDateString() === props.date.toDateString()
+                                  );
+                                  return (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <div className="relative w-full h-full flex items-center justify-center">
+                                          <Day {...props} />
+                                          {eventOnDay && (
+                                            <div
+                                              className={cn(
+                                                "absolute bottom-1 left-1/2 -translate-x-1/2 h-1.5 w-1.5 rounded-full",
+                                                eventOnDay.type === 'payment' ? 'bg-yellow-400' : 'bg-blue-400'
+                                              )}
+                                            />
+                                          )}
+                                        </div>
+                                      </TooltipTrigger>
+                                      {eventOnDay && (
+                                        <TooltipContent>
+                                          <p>{eventOnDay.description}</p>
+                                        </TooltipContent>
+                                      )}
+                                    </Tooltip>
+                                  );
+                                },
+                              }}
+                          />
+                      </TooltipProvider>
+                       <div className="p-2 border-t text-center text-xs text-muted-foreground">
+                          Doble clic para ver detalles.
+                       </div>
+                    </PopoverContent>
                 </Popover>
                 <Button variant="ghost" size="icon" onClick={() => router.push('/transactions')}><Wallet className="w-5 h-5 text-muted-foreground" /></Button>
                 <Button variant="ghost" size="icon" onClick={() => toggleGps(currentUser.id)} onDoubleClick={() => router.push('/map')}>
@@ -298,7 +342,7 @@ export default function ProfilePage() {
 
 
           {/* Campaign Management Button */}
-          <div className="flex justify-end">
+           <div className="flex justify-end">
              <Button 
               variant="secondary" 
               className="rounded-full text-xs h-8 px-4 font-bold"
