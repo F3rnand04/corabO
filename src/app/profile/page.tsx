@@ -24,7 +24,7 @@ import { CampaignDialog } from '@/components/CampaignDialog';
 
 export default function ProfilePage() {
   const { toast } = useToast();
-  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, transactions, getAgendaEvents, products } from useCorabo();
+  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, transactions, getAgendaEvents, products } = useCorabo();
   const router = useRouter();
   
   const [gallery, setGallery] = useState<GalleryImage[]>(currentUser.gallery || []);
