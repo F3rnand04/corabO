@@ -23,12 +23,14 @@ import { Day, type DayProps } from 'react-day-picker';
 
 export default function ProfilePage() {
   const { toast } = useToast();
-  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, transactions, getAgendaEvents, setFeedView } = useCorabo();
+  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, transactions, getAgendaEvents, products } = useCorabo();
   const router = useRouter();
   
   const [gallery, setGallery] = useState<GalleryImage[]>(currentUser.gallery || []);
 
   const isProvider = currentUser.type === 'provider';
+  const isProductProvider = isProvider && currentUser.profileSetupData?.offerType === 'product';
+  const providerProductsCount = isProductProvider ? products.filter(p => p.providerId === currentUser.id).length : 0;
 
   // Local state for interactions
   const [starCount, setStarCount] = useState(8934);
@@ -328,14 +330,21 @@ export default function ProfilePage() {
 
           <div className="flex justify-around text-center text-xs text-muted-foreground -mt-2">
             <div className="flex-1">
-                  <p className="font-semibold text-foreground">{gallery.length}</p>
-                  <p>Publicaciones</p>
+                <p className="font-semibold text-foreground">{gallery.length}</p>
+                <p>Publicaciones</p>
             </div>
-            {isProvider && (
-              <div className="flex-1">
-                  <p className="font-semibold text-foreground">{providerProfile.completedJobs}</p>
-                  <p>Trab. Realizados</p>
-              </div>
+             {isProvider && (
+                 isProductProvider ? (
+                    <div className="flex-1">
+                        <p className="font-semibold text-foreground">{providerProductsCount}</p>
+                        <p>Productos</p>
+                    </div>
+                 ) : (
+                    <div className="flex-1">
+                        <p className="font-semibold text-foreground">{providerProfile.completedJobs}</p>
+                        <p>Trab. Realizados</p>
+                    </div>
+                 )
             )}
           </div>
 
