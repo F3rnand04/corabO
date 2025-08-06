@@ -104,13 +104,13 @@ export default function HomePage() {
           // Vista por defecto: mostrar según la pestaña
           feedView === 'servicios' ? (
             filteredProviders.length > 0 ? (
-              filteredProviders.filter(p => p.profileSetupData?.offerType !== 'product').map(provider => <ProviderCard key={provider.id} provider={provider} />)
+              filteredProviders.map(provider => <ProviderCard key={provider.id} provider={provider} />)
             ) : (
                <p className="text-center text-muted-foreground">No se encontraron servicios.</p>
             )
           ) : (
             filteredProviders.length > 0 ? (
-              filteredProviders.map(provider => <ProviderCard key={provider.id} provider={provider} />)
+              filteredProviders.filter(p => p.profileSetupData?.providerType === 'company').map(provider => <ProviderCard key={provider.id} provider={provider} />)
             ) : (
               <p className="text-center text-muted-foreground">No se encontraron empresas.</p>
             )
