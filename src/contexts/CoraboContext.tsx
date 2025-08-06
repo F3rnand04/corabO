@@ -215,7 +215,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const generatePaymentCommitments = (originalTx: Transaction) => {
-      if (!originalTx.details.initialPayment || !originalTx.providerId) return;
+      if (!originalTx.providerId) return;
 
       const client = users.find(u => u.id === originalTx.clientId);
       if(!client) return;
@@ -223,14 +223,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       const userLevel = client.credicoraLevel || 1;
       const levelDetails = credicoraLevels[userLevel.toString()];
 
-      if (!levelDetails) return;
+      if (!levelDetails || !originalTx.details.financedAmount) return;
       
-      const totalAmount = originalTx.details.totalAmount || originalTx.amount;
-      
-      const financingPercentage = 1 - levelDetails.initialPaymentPercentage;
-      const potentialFinancing = totalAmount * financingPercentage;
-      const financedAmount = Math.min(potentialFinancing, client.credicoraLimit || 0);
-
+      const financedAmount = originalTx.details.financedAmount;
       const numberOfInstallments = levelDetails.installments;
       const installmentAmount = financedAmount / numberOfInstallments;
       
@@ -252,7 +247,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         commitments.push(commitment);
       }
 
-      const commissionAmount = totalAmount * 0.0499; // 4.99% commission
+      const commissionAmount = originalTx.amount * 0.0499; // 4.99% commission on the total value of products
       const commissionTx: Transaction = {
         id: `commission-${originalTx.id}`,
         type: 'Sistema',
@@ -275,7 +270,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     if (!cartTx) return;
 
     const deliveryCost = withDelivery ? getDeliveryCost() : 0;
-    const totalAmount = cartTx.amount + deliveryCost;
+    const subtotal = cartTx.amount;
     
     let finalTx: Transaction | undefined;
     
@@ -284,12 +279,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         const levelDetails = credicoraLevels[userLevel.toString()];
         const creditLimit = currentUser.credicoraLimit || 0;
         
-        // Calculate the amount financed by Credicora
         const financingPercentage = 1 - levelDetails.initialPaymentPercentage;
-        const potentialFinancing = totalAmount * financingPercentage;
+        const potentialFinancing = subtotal * financingPercentage; // Finance only on subtotal
         const financedAmount = Math.min(potentialFinancing, creditLimit);
         
-        const initialPayment = totalAmount - financedAmount;
+        const initialPayment = (subtotal - financedAmount) + deliveryCost; // Initial payment includes full delivery cost
 
         updateTransaction(cartTx.id, tx => {
             const newTxDetails: Partial<Transaction> = {
@@ -301,7 +295,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
                     deliveryCost,
                     paymentMethod: 'credicora',
                     initialPayment: initialPayment,
-                    totalAmount: totalAmount,
+                    totalAmount: subtotal + deliveryCost,
                     financedAmount: financedAmount,
                 },
                 date: new Date().toISOString(),
@@ -314,14 +308,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         updateTransaction(cartTx.id, tx => {
             const newTxDetails: Partial<Transaction> = {
                 status: 'Finalizado - Pendiente de Pago',
-                amount: totalAmount,
+                amount: subtotal + deliveryCost,
                 details: {
                     ...tx.details,
                     delivery: withDelivery,
                     deliveryCost,
                     paymentMethod: 'direct',
-                    initialPayment: totalAmount,
-                    totalAmount: totalAmount,
+                    initialPayment: subtotal + deliveryCost,
+                    totalAmount: subtotal + deliveryCost,
                 },
                 date: new Date().toISOString(),
             };

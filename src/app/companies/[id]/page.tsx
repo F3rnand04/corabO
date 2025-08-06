@@ -29,6 +29,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { credicoraLevels } from '@/lib/types';
 
 export default function CompanyProfilePage() {
   const params = useParams();
@@ -91,8 +92,19 @@ export default function CompanyProfilePage() {
   
   const deliveryCost = getDeliveryCost();
   const subtotal = getCartTotal();
-  const totalAmount = subtotal + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
-  const credicoraInitialPayment = totalAmount * 0.60;
+  const totalWithDelivery = subtotal + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
+
+  const userCredicoraLevel = currentUser.credicoraLevel || 1;
+  const credicoraDetails = credicoraLevels[userCredicoraLevel.toString()];
+  const creditLimit = currentUser.credicoraLimit || 0;
+
+  // New calculation logic
+  const financingPercentage = 1 - credicoraDetails.initialPaymentPercentage;
+  const potentialFinancing = subtotal * financingPercentage; // Financing only on products
+  const financedAmount = useCredicora ? Math.min(potentialFinancing, creditLimit) : 0;
+  const productInitialPayment = subtotal - financedAmount;
+  const totalToPayToday = productInitialPayment + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
+  const installmentAmount = financedAmount > 0 ? financedAmount / credicoraDetails.installments : 0;
 
   if (!provider) {
     return (
@@ -437,12 +449,12 @@ export default function CompanyProfilePage() {
                           
                           <Separator />
                           <div className="flex justify-between text-lg font-bold">
-                              <span>Total a Pagar{useCredicora && " Hoy"}:</span>
-                              <span>${useCredicora ? credicoraInitialPayment.toFixed(2) : totalAmount.toFixed(2)}</span>
+                              <span>Total a Pagar Hoy:</span>
+                              <span>${useCredicora ? totalToPayToday.toFixed(2) : totalWithDelivery.toFixed(2)}</span>
                           </div>
-                          {useCredicora && (
+                          {useCredicora && financedAmount > 0 && (
                               <p className="text-xs text-muted-foreground -mt-2 text-right">
-                                  y 3 cuotas de ${( (totalAmount - credicoraInitialPayment) / 3 ).toFixed(2)}
+                                  y {credicoraDetails.installments} cuotas de ${installmentAmount.toFixed(2)}
                               </p>
                           )}
                       </div>

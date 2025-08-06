@@ -1,6 +1,5 @@
 
 
-
 'use client';
 
 import { useState } from "react";
@@ -67,11 +66,19 @@ function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary:
 
     const subtotal = getCartTotal();
     const deliveryCost = getDeliveryCost();
-    const totalAmount = subtotal + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
+    const totalWithDelivery = subtotal + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
 
-    const credicoraLimit = currentUser.credicoraLimit || 0;
     const userCredicoraLevel = currentUser.credicoraLevel || 1;
     const credicoraDetails = credicoraLevels[userCredicoraLevel.toString()];
+    const creditLimit = currentUser.credicoraLimit || 0;
+    
+    // New calculation logic
+    const financingPercentage = 1 - credicoraDetails.initialPaymentPercentage;
+    const potentialFinancing = subtotal * financingPercentage; // Financing only on products
+    const financedAmount = useCredicora ? Math.min(potentialFinancing, creditLimit) : 0;
+    const productInitialPayment = subtotal - financedAmount;
+    const totalToPayToday = productInitialPayment + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
+    const installmentAmount = financedAmount > 0 ? financedAmount / credicoraDetails.installments : 0;
 
 
     const handleCheckout = () => {
@@ -82,10 +89,6 @@ function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary:
       }
     };
     
-    const financingHelp = useCredicora ? Math.min((credicoraDetails.creditLimit * (1 - credicoraDetails.initialPaymentPercentage)), totalAmount) : 0;
-    const finalAmountToday = totalAmount - financingHelp;
-    const installmentAmount = financingHelp > 0 ? financingHelp / credicoraDetails.installments : 0;
-
     return (
         <header className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
             <div className="container px-4 sm:px-6">
@@ -201,10 +204,10 @@ function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary:
                                
                                 <Separator />
                                 <div className="flex justify-between text-lg font-bold">
-                                   <span>Total a Pagar{useCredicora && " Hoy"}:</span>
-                                   <span>${finalAmountToday.toFixed(2)}</span>
+                                   <span>Total a Pagar Hoy:</span>
+                                   <span>${useCredicora ? totalToPayToday.toFixed(2) : totalWithDelivery.toFixed(2)}</span>
                                </div>
-                                {useCredicora && credicoraDetails && (
+                                {useCredicora && financedAmount > 0 && (
                                     <p className="text-xs text-muted-foreground -mt-2 text-right">
                                         y {credicoraDetails.installments} cuotas de ${installmentAmount.toFixed(2)}
                                     </p>
