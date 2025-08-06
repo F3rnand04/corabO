@@ -64,7 +64,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="flex flex-col min-h-screen">
        {shouldShowMainHeader && <Header />}
        {isMounted && isClientWithInactiveTransactions && !isTransactionsPage && !isTransactionsSettingsPage && (
-         <div className="bg-yellow-100 border-b border-yellow-300 text-yellow-900 text-sm">
+         <div className="bg-yellow-100 border-b border-yellow-300 text-yellow-900 text-sm sticky top-16 z-30">
             <div className="container p-2 flex items-center justify-center text-center gap-2">
                  <AlertCircle className="h-5 w-5 shrink-0" />
                  <p className="flex-grow">
