@@ -5,7 +5,7 @@ import { useState, TouchEvent, useEffect, useRef, ChangeEvent } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Send, Plus, Calendar, Wallet, MapPin, ChevronLeft, ChevronRight, ImageIcon, Settings, MessageCircle, Flag, Zap } from 'lucide-react';
+import { Star, Send, Plus, Calendar, Wallet, MapPin, ChevronLeft, ChevronRight, ImageIcon, Settings, MessageCircle, Flag, Zap, Megaphone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -19,6 +19,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Day, type DayProps } from 'react-day-picker';
+import { CampaignDialog } from '@/components/CampaignDialog';
 
 
 export default function ProfilePage() {
@@ -53,6 +54,7 @@ export default function ProfilePage() {
   const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+  const [isCampaignDialogOpen, setIsCampaignDialogOpen] = useState(false);
   const [_, setForceRerender] = useState(0);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -217,6 +219,18 @@ export default function ProfilePage() {
     router.push('/emprende');
   };
 
+  const handleCampaignClick = () => {
+     if (!currentUser.isTransactionsActive) {
+      toast({
+        variant: "destructive",
+        title: "Registro de Transacciones Inactivo",
+        description: "Debes activar tu registro para poder gestionar campañas."
+      });
+      return;
+    }
+    setIsCampaignDialogOpen(true);
+  }
+
   const currentImage = gallery.length > 0 ? gallery[currentImageIndex] : null;
   const isPromotionActiveOnCurrentImage = currentImage?.promotion && new Date(currentImage.promotion.expires) > new Date();
 
@@ -350,7 +364,15 @@ export default function ProfilePage() {
 
 
           {/* Campaign Management Button */}
-           <div className="flex justify-end">
+           <div className="flex justify-end gap-2">
+             <Button 
+              variant="outline" 
+              className="rounded-full text-xs h-8 px-4 font-bold"
+              onClick={handleCampaignClick}
+            >
+              <Megaphone className="w-4 h-4 mr-2 text-purple-500"/>
+              Gestionar Campañas
+            </Button>
              <Button 
               variant="secondary" 
               className="rounded-full text-xs h-8 px-4 font-bold"
@@ -474,6 +496,11 @@ export default function ProfilePage() {
                              PROMO
                            </div>
                          )}
+                          {isProvider && thumb.campaignId && (
+                           <div className="absolute top-1 right-1 bg-purple-500 text-white text-[10px] font-bold px-1 rounded-sm shadow-lg">
+                             <Megaphone className="w-3 h-3"/>
+                           </div>
+                         )}
                         </div>
                     ))
                   ) : (
@@ -499,6 +526,12 @@ export default function ProfilePage() {
           gallery={[selectedImage]}
           owner={currentUser}
         />
+      )}
+      {isProvider && (
+          <CampaignDialog 
+            isOpen={isCampaignDialogOpen}
+            onOpenChange={setIsCampaignDialogOpen}
+          />
       )}
     </>
   );

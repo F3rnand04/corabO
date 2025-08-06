@@ -1,5 +1,30 @@
 
 
+export type Campaign = {
+  id: string;
+  providerId: string;
+  publicationId: string; // La imagen de la galería que se promociona
+  budget: number; // El dinero invertido
+  durationDays: number;
+  startDate: string;
+  endDate: string;
+  status: 'pending_payment' | 'active' | 'completed' | 'cancelled';
+  stats: {
+    impressions: number; // Veces que se mostró
+    reach: number;       // Usuarios únicos alcanzados
+    clicks: number;      // Clics al perfil
+    messages: number;    // Mensajes iniciados desde la campaña
+  };
+  budgetLevel: 'basic' | 'advanced' | 'premium';
+  dailyBudget: number;
+  segmentation: {
+    geographic?: string[];
+    interests?: string[];
+  };
+  appliedSubscriptionDiscount?: number; // Ej: 0.10 para 10%
+  financedWithCredicora: boolean;
+};
+
 export type GalleryImageComment = {
   author: string;
   text: string;
@@ -20,6 +45,7 @@ export type GalleryImage = {
     text: string;
     expires: string;
   };
+  campaignId?: string;
 };
 
 export type CredicoraLevel = {
@@ -118,6 +144,7 @@ export type User = {
   profileSetupData?: ProfileSetupData;
   isPaused?: boolean;
   pauseReason?: string;
+  activeCampaignIds?: string[];
 };
 
 export type Product = {
