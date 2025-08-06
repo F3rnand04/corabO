@@ -24,7 +24,7 @@ import { CampaignDialog } from '@/components/CampaignDialog';
 
 export default function ProfilePage() {
   const { toast } = useToast();
-  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, transactions, getAgendaEvents, products } = useCorabo();
+  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, transactions, getAgendaEvents, products } from useCorabo();
   const router = useRouter();
   
   const [gallery, setGallery] = useState<GalleryImage[]>(currentUser.gallery || []);
@@ -248,8 +248,7 @@ export default function ProfilePage() {
       <div className="bg-background min-h-screen">
         <div className="container mx-auto px-2 max-w-2xl pb-24">
           
-          {/* Sticky Profile Header */}
-          <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm pt-4">
+          <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm pt-4">
             <div className="flex items-center space-x-4">
               <div className="relative shrink-0">
                 <input 
@@ -383,13 +382,11 @@ export default function ProfilePage() {
                 Emprende por Hoy
               </Button>
             </div>
-          </div>
+          </header>
           
           <main className="space-y-4">
-            {/* Main Content Card */}
             <Card className="rounded-2xl overflow-hidden shadow-lg">
               <CardContent className="p-0">
-                {/* Main Image */}
                 <div 
                   className="relative group cursor-pointer"
                   onTouchStart={gallery.length > 0 ? onTouchStart : undefined}
@@ -472,7 +469,6 @@ export default function ProfilePage() {
                   )}
                 </div>
 
-                {/* Thumbnails Grid */}
                 <div className="p-4 grid grid-cols-3 gap-2">
                     {gallery.length > 0 ? (
                       gallery.map((thumb, index) => (
