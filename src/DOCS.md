@@ -48,6 +48,7 @@ El `CoraboContext` es el corazón de la aplicación. Centraliza toda la lógica 
     -   **Botón Derecho:**
         -   En la mayoría de las páginas, es el **Avatar del usuario**, que funciona como un atajo a su perfil (`/profile`).
         -   Cuando el usuario está en su propio perfil, se transforma en un **Engranaje de Ajustes**, que lleva a la página de configuración (`/profile-setup`).
+-   **Header Principal:** El header con el logo y accesos directos se oculta automáticamente en páginas que tienen su propia cabecera (como un chat individual) o que son parte de un flujo (como la configuración de perfil), para evitar redundancia y mejorar el enfoque.
 
 ### 4.2. Perfil de Proveedor de Productos
 

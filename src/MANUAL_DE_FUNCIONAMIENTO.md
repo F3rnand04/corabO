@@ -38,6 +38,8 @@ La barra de navegación inferior es el centro de control principal y su comporta
     -   **En la mayoría de las páginas:** Es tu **avatar de perfil**, un atajo para ir a `/profile`.
     -   **En tu propio perfil (`/profile`):** Se transforma en un **engranaje de Ajustes**, que te lleva a la página de configuración (`/profile-setup`).
 
+**Nota sobre Headers:** El header principal (con logo, búsqueda, etc.) se oculta automáticamente en páginas que tienen su propia cabecera, como las **pantallas de chat individuales**, o en flujos de pantalla completa como la configuración de perfil.
+
 ### 3.2. Perfil de Proveedor de Productos: Galería vs. Catálogo
 Cuando un proveedor configura su perfil para **ofrecer principalmente productos**, la plataforma se adapta:
 
