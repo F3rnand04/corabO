@@ -143,7 +143,7 @@ export type CartItem = {
   quantity: number;
 };
 
-export type TransactionStatus = 
+export type TransactionStatus =
   | 'Carrito Activo'
   | 'Pre-factura Pendiente'
   | 'Pagado'
@@ -157,7 +157,8 @@ export type TransactionStatus =
   | 'Resuelto'
   | 'Recarga'
   | 'Pendiente de Confirmación del Cliente'
-  | 'Pago Enviado - Esperando Confirmación';
+  | 'Pago Enviado - Esperando Confirmación'
+  | 'En Reparto'; // New status for delivery
 
 export type AgreementProposal = {
     title: string;
@@ -169,7 +170,7 @@ export type AgreementProposal = {
 
 export type Transaction = {
   id: string;
-  type: 'Compra' | 'Servicio' | 'Sistema';
+  type: 'Compra' | 'Servicio' | 'Sistema' | 'Delivery';
   status: TransactionStatus;
   date: string;
   amount: number;
@@ -186,6 +187,7 @@ export type Transaction = {
     quoteItems?: string[];
     delivery?: boolean;
     deliveryCost?: number;
+    deliveryProviderId?: string; // To link the delivery provider
     system?: string; // Description for system transactions e.g., 'Recarga de Saldo'
     paymentMethod?: 'direct' | 'credicora';
     initialPayment?: number;
@@ -194,6 +196,8 @@ export type Transaction = {
     clientRating?: number;
     clientComment?: string;
     paymentFromThirdParty?: boolean;
+    originAddress?: string; // For delivery
+    destinationAddress?: string; // For delivery
   };
 };
 

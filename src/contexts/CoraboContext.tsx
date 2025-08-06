@@ -264,6 +264,42 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       setTransactions(prev => [...prev, ...commitments, commissionTx]);
   };
 
+  const assignDelivery = (mainTransactionId: string) => {
+    const mainTx = transactions.find(tx => tx.id === mainTransactionId);
+    if (!mainTx || !mainTx.details.delivery) return;
+
+    // Simulate finding the nearest delivery provider
+    const deliveryProvider = users.find(u => u.profileSetupData?.primaryCategory === 'Fletes y Delivery');
+
+    if (!deliveryProvider) {
+        toast({ variant: "destructive", title: "Sin Repartidores", description: "No hay repartidores disponibles en este momento. Intenta más tarde." });
+        return;
+    }
+
+    const deliveryTx: Transaction = {
+        id: `delivery-tx-${mainTx.id}`,
+        type: 'Delivery',
+        status: 'Acuerdo Aceptado - Pendiente de Ejecución',
+        date: new Date().toISOString(),
+        amount: mainTx.details.deliveryCost || 0,
+        clientId: mainTx.providerId!, // The seller pays the delivery guy
+        providerId: deliveryProvider.id,
+        details: {
+            serviceName: `Entrega para Pedido #${mainTx.id}`,
+            originAddress: 'Dirección del Vendedor (simulada)',
+            destinationAddress: 'Dirección del Cliente (simulada)',
+        }
+    };
+
+    setTransactions(prev => [...prev, deliveryTx]);
+    updateTransaction(mainTransactionId, { 
+        status: 'En Reparto',
+        details: { ...mainTx.details, deliveryProviderId: deliveryProvider.id }
+    });
+
+    toast({ title: "¡En Camino!", description: `El repartidor ${deliveryProvider.name} va en camino a retirar tu pedido.` });
+  };
+
 
   const checkout = (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {
     const cartTx = transactions.find(tx => tx.id === transactionId);
@@ -419,19 +455,30 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const acceptQuote = (transactionId: string) => {
+    const client = users.find(u => u.id === currentUser.id);
+    const newStatus = client?.isSubscribed ? 'Acuerdo Aceptado - Pendiente de Ejecución' : 'Finalizado - Pendiente de Pago';
+    const toastTitle = client?.isSubscribed ? "Acuerdo Aceptado" : "Acuerdo Aceptado - Pago Requerido";
+    const toastDescription = client?.isSubscribed ? "El servicio ha comenzado." : "Debes realizar el pago por adelantado para continuar.";
+
     updateTransaction(transactionId, {
-        status: 'Acuerdo Aceptado - Pendiente de Ejecución',
+        status: newStatus,
         date: new Date().toISOString(),
     });
-    toast({ title: "Acuerdo Aceptado", description: "El servicio ha comenzado." });
+
+    toast({ title: toastTitle, description: toastDescription });
   };
 
   const acceptAppointment = (transactionId: string) => {
+    const client = users.find(u => u.id === currentUser.id);
+    const newStatus = client?.isSubscribed ? 'Acuerdo Aceptado - Pendiente de Ejecución' : 'Finalizado - Pendiente de Pago';
+    const toastTitle = client?.isSubscribed ? "Cita Confirmada" : "Cita Confirmada - Pago Requerido";
+    const toastDescription = client?.isSubscribed ? "Se ha creado un compromiso de pago para el cliente." : "El cliente debe pagar por adelantado para confirmar la cita.";
+
     updateTransaction(transactionId, {
-      status: 'Acuerdo Aceptado - Pendiente de Ejecución',
+      status: newStatus,
       date: new Date().toISOString(),
     });
-    toast({ title: "Cita Confirmada", description: "Se ha creado un compromiso de pago para el cliente." });
+    toast({ title: toastTitle, description: toastDescription });
   }
 
   const completeWork = (transactionId: string) => {
@@ -489,7 +536,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         toast({ title: "¡Pago Confirmado!", description: "Gracias por tu pago. ¡Has sumado puntos a tu reputación!" });
     }
 
-    // Activate Credicora plan only after initial payment is confirmed
+    if (originalTx.details.delivery) {
+        assignDelivery(transactionId);
+    }
+    
     if (originalTx.details.paymentMethod === 'credicora' && originalTx.details.initialPayment) {
         generatePaymentCommitments(originalTx);
     }
@@ -851,6 +901,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
 
     let transaction: Transaction | null = null;
+    let clientIsSubscribed = false;
 
     setConversations(prevConvos => 
         prevConvos.map(convo => {
@@ -859,11 +910,13 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
                     if (msg.id === messageId && msg.proposal) {
                         const providerId = msg.senderId;
                         const clientId = convo.participantIds.find(p => p !== providerId)!;
+                        const clientUser = users.find(u => u.id === clientId);
+                        clientIsSubscribed = clientUser?.isSubscribed ?? false;
 
                         transaction = {
                             id: `txn-${Date.now()}`,
                             type: 'Servicio',
-                            status: 'Acuerdo Aceptado - Pendiente de Ejecución',
+                            status: clientIsSubscribed ? 'Acuerdo Aceptado - Pendiente de Ejecución' : 'Finalizado - Pendiente de Pago',
                             date: msg.proposal.deliveryDate,
                             amount: msg.proposal.amount,
                             clientId: clientId,
@@ -886,7 +939,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     
     if (transaction) {
       setTransactions(prev => [transaction!, ...prev]);
-      toast({ title: "Acuerdo Aceptado", description: "Se ha creado un nuevo compromiso de pago."});
+      const toastDescription = clientIsSubscribed ? "Se ha creado un nuevo compromiso de pago." : "Debes pagar por adelantado para confirmar el servicio.";
+      toast({ title: "Acuerdo Aceptado", description: toastDescription });
     }
   };
 

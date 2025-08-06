@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { cn } from "@/lib/utils";
-import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert, ClipboardCheck, Banknote } from "lucide-react";
+import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert, ClipboardCheck, Banknote, Truck } from "lucide-react";
 
 interface TransactionListProps {
   title: string;
@@ -29,6 +29,7 @@ const statusInfo: { [key: string]: { icon: React.ElementType, color: string, lab
     'Finalizado - Pendiente de Pago': { icon: ClipboardCheck, color: 'text-orange-500', label: 'Por Pagar' },
     'Pendiente de Confirmación del Cliente': { icon: ClipboardCheck, color: 'text-yellow-600', label: 'Por Confirmar' },
     'Pago Enviado - Esperando Confirmación': { icon: Banknote, color: 'text-blue-500', label: 'Pago Enviado' },
+    'En Reparto': { icon: Truck, color: 'text-blue-500', label: 'En Reparto' },
   };
 
 const TransactionItem = ({ transaction, onClick, otherParty }: { transaction: Transaction, onClick: (transaction: Transaction) => void, otherParty?: User }) => {

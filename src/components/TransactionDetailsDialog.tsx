@@ -93,6 +93,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   const isClient = currentUser.type === 'client';
   const otherPartyId = transaction.providerId === currentUser.id ? transaction.clientId : transaction.providerId;
   const otherParty = users.find(u => u.id === otherPartyId);
+  const deliveryProvider = users.find(u => u.id === transaction.details.deliveryProviderId);
 
   const handleClose = () => {
     setShowRatingScreen(false);
@@ -160,6 +161,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
     'Finalizado - Pendiente de Pago': { icon: ClipboardCheck, color: 'bg-orange-500' },
     'Pendiente de Confirmación del Cliente': { icon: ClipboardCheck, color: 'bg-yellow-500' },
     'Pago Enviado - Esperando Confirmación': { icon: Banknote, color: 'bg-blue-500' },
+    'En Reparto': { icon: Truck, color: 'bg-blue-500' },
     'Resuelto': { icon: CheckCircle, color: 'bg-green-500' },
   };
 
@@ -315,9 +317,10 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
                 ))}
               </ul>
               {transaction.details.delivery && (
-                <div className="flex items-center gap-2 mt-2 text-green-600">
-                    <Truck className="h-4 w-4" />
-                    <span>Incluye delivery (${transaction.details.deliveryCost?.toFixed(2) || '0.00'})</span>
+                <div className="p-3 bg-muted rounded-md mt-2">
+                    <p className="font-semibold flex items-center gap-2"><Truck className="h-4 w-4" /> Detalles de Envío</p>
+                    <p className="text-muted-foreground text-xs mt-1">Costo: ${transaction.details.deliveryCost?.toFixed(2) || '0.00'}</p>
+                    <p className="text-muted-foreground text-xs">Repartidor: {deliveryProvider?.name || 'Buscando...'}</p>
                 </div>
               )}
             </div>
