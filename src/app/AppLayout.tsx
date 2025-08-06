@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { AlertCircle, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { cn } from '@/lib/utils';
 
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -62,9 +63,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   
   return (
     <div className="flex flex-col min-h-screen">
-       {shouldShowMainHeader && <Header />}
+      {shouldShowMainHeader && <Header />}
        {isMounted && isClientWithInactiveTransactions && !isTransactionsPage && !isTransactionsSettingsPage && (
-         <div className="bg-yellow-100 border-b border-yellow-300 text-yellow-900 text-sm sticky top-16 z-30">
+         <div className={cn("bg-yellow-100 border-b border-yellow-300 text-yellow-900 text-sm z-30", shouldShowMainHeader ? 'sticky top-16' : 'sticky top-0')}>
             <div className="container p-2 flex items-center justify-center text-center gap-2">
                  <AlertCircle className="h-5 w-5 shrink-0" />
                  <p className="flex-grow">
