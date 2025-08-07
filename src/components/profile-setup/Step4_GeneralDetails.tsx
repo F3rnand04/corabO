@@ -1,12 +1,14 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Info, MessageSquare } from "lucide-react";
+import { Info, MessageSquare, User, ScanLine, Cake } from "lucide-react";
 import { ValidationItem } from "@/components/ValidationItem";
 import { useCorabo } from "@/contexts/CoraboContext";
+import { Label } from '../ui/label';
+import { Input } from '../ui/input';
 
 interface Step4_GeneralDetailsProps {
   onBack: () => void;
@@ -18,50 +20,63 @@ interface Step4_GeneralDetailsProps {
 export default function Step4_GeneralDetails({ onBack, onNext, formData, setFormData }: Step4_GeneralDetailsProps) {
   const { currentUser, validateEmail, validatePhone } = useCorabo();
 
-  const handleValueChange = (field: 'email' | 'phone', value: string) => {
+  const handleValueChange = (field: 'name' | 'lastName' | 'idNumber' | 'birthDate' | 'phone' | 'email', value: string) => {
     setFormData({ ...formData, [field]: value });
   };
   
   useEffect(() => {
-    // Sync with currentUser's validation status
     setFormData({
       ...formData,
+      name: currentUser.name,
+      lastName: currentUser.lastName || '',
+      idNumber: currentUser.idNumber || '',
+      birthDate: currentUser.birthDate || '',
       email: currentUser.email,
       phone: currentUser.phone
     });
-  }, [currentUser.email, currentUser.phone]);
+  }, [currentUser]);
+  
+  const isDataComplete = formData.lastName && formData.idNumber && formData.birthDate;
 
   return (
     <div className="space-y-6">
-        <h2 className="text-xl font-semibold">Paso 4: Detalles Generales</h2>
+        <h2 className="text-xl font-semibold">Paso 4: Datos Personales</h2>
         
         <div className="space-y-4">
-            <div className="p-4 bg-muted/50 rounded-lg border">
-                <div className="flex justify-between items-start">
-                    <div>
-                        <p className="font-semibold text-lg">{currentUser.name}</p>
-                        <p className="text-sm text-muted-foreground mt-1">Este es el nombre asociado a tu cuenta. Para cambios, contáctanos con una justificación y con gusto te ayudaremos.</p>
-                    </div>
-                    <Button variant="outline" size="sm" className="ml-4">
-                        <MessageSquare className="w-4 h-4 mr-2"/>
-                        Contactar
-                    </Button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                    <Label htmlFor="name">Nombre</Label>
+                    <Input id="name" value={formData.name || ''} readOnly disabled />
+                </div>
+                 <div className="space-y-1.5">
+                    <Label htmlFor="lastName">Apellido</Label>
+                    <Input id="lastName" placeholder="Tu apellido" value={formData.lastName || ''} onChange={(e) => handleValueChange('lastName', e.target.value)} />
+                </div>
+                 <div className="space-y-1.5">
+                    <Label htmlFor="idNumber">Cédula de Identidad</Label>
+                    <Input id="idNumber" placeholder="V-12345678" value={formData.idNumber || ''} onChange={(e) => handleValueChange('idNumber', e.target.value)} />
+                </div>
+                 <div className="space-y-1.5">
+                    <Label htmlFor="birthDate">Fecha de Nacimiento</Label>
+                    <Input id="birthDate" type="date" value={formData.birthDate || ''} onChange={(e) => handleValueChange('birthDate', e.target.value)} />
                 </div>
             </div>
+
+            <p className="text-sm text-muted-foreground pt-2">Esta información es privada y se utilizará para verificar tu identidad al activar funciones de pago. No será visible para otros usuarios.</p>
 
             <ValidationItem
                 label="Correo Electrónico:"
                 value={formData.email}
                 initialStatus={currentUser.emailValidated ? 'validated' : 'idle'}
                 onValidate={() => validateEmail(currentUser.id)}
-                onValueChange={(value) => handleValueChange('email', value)}
+                isEditable={false}
             />
              <ValidationItem
                 label="Teléfono:"
                 value={formData.phone}
                 initialStatus={currentUser.phoneValidated ? 'validated' : 'idle'}
                 onValidate={() => validatePhone(currentUser.id)}
-                 onValueChange={(value) => handleValueChange('phone', value)}
+                onValueChange={(value) => handleValueChange('phone', value)}
             />
         </div>
         
@@ -76,7 +91,7 @@ export default function Step4_GeneralDetails({ onBack, onNext, formData, setForm
 
         <div className="flex justify-between pt-4">
             <Button variant="outline" onClick={onBack}>Atrás</Button>
-            <Button onClick={onNext}>Siguiente</Button>
+            <Button onClick={onNext} disabled={!isDataComplete}>Siguiente</Button>
         </div>
     </div>
   );

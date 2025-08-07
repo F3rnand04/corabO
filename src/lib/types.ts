@@ -123,6 +123,9 @@ export type ProfileSetupData = {
 export type User = {
   id: string;
   name: string;
+  lastName?: string;
+  idNumber?: string;
+  birthDate?: string;
   type: 'client' | 'provider';
   reputation: number;
   profileImage: string;
@@ -256,4 +259,10 @@ export type AppointmentRequest = {
     date: Date;
     details: string;
     amount: number;
+};
+export type VerificationOutput = {
+    extractedName: string;
+    extractedId: string;
+    nameMatch: boolean;
+    idMatch: boolean;
 };

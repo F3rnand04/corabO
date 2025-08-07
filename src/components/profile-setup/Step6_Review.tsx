@@ -7,13 +7,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui
 import { Separator } from "../ui/separator";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { Badge } from "../ui/badge";
-import { CheckCircle, Edit, Globe, MapPin, Tag, UserCircle, XCircle, AlertCircle } from "lucide-react";
+import { CheckCircle, Edit, Globe, MapPin, Tag, UserCircle, XCircle, AlertCircle, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Slider } from '../ui/slider';
 import { cn } from '@/lib/utils';
 import { Label } from '../ui/label';
 import { SubscriptionDialog } from '../SubscriptionDialog';
+import { Checkbox } from '../ui/checkbox';
+import Link from 'next/link';
 
 interface Step6_ReviewProps {
   onBack: () => void;
@@ -44,6 +46,7 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
   const { toast } = useToast();
   const [serviceRadius, setServiceRadius] = useState(formData.serviceRadius || 10);
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
+  const [hasAcceptedPolicies, setHasAcceptedPolicies] = useState(false);
   
   useEffect(() => {
     // Sync local state with formData from props
@@ -60,9 +63,17 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
   const getCategoryName = (id: string) => allCategories.find(c => c.id === id)?.name || id;
 
   const handleFinish = () => {
+    if (!hasAcceptedPolicies) {
+        toast({
+            variant: "destructive",
+            title: "Aceptación Requerida",
+            description: "Debes aceptar las políticas de servicio y privacidad para continuar."
+        });
+        return;
+    }
+    
     updateFullProfile(currentUser.id, formData);
     
-    // Check if the user is a provider and if their transactions are already active.
     if (isProvider && !currentUser.isTransactionsActive) {
       toast({
         title: "¡Perfil Guardado!",
@@ -70,7 +81,6 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
       });
       router.push('/transactions/settings');
     } else {
-      // If client or an already active provider, just go to the profile.
       router.push('/profile');
       toast({
         title: "¡Perfil Actualizado!",
@@ -105,7 +115,7 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
       <Card>
           <CardHeader>
               <CardTitle>Resumen de tu Perfil</CardTitle>
-              <CardDescription>Así es como otros usuarios verán tu información.</CardDescription>
+              <CardDescription>Así es como otros usuarios verán tu información pública.</CardDescription>
           </CardHeader>
           <CardContent className="divide-y">
               {renderItem("Tipo de Perfil", <span className="capitalize">{profileType}</span>, 1)}
@@ -127,8 +137,11 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
                 </div>
               ), 3)}
 
-              {renderItem("Información de Contacto", (
-                <div className="space-y-1 pt-1">
+              {renderItem("Datos Personales y de Contacto", (
+                <div className="space-y-2 pt-1 text-sm text-muted-foreground">
+                    <p>Nombre: {formData.name} {formData.lastName}</p>
+                    <p>Cédula: {formData.idNumber}</p>
+                    <p>Fecha de Nacimiento: {formData.birthDate}</p>
                     <p className="flex items-center gap-2">
                         {currentUser.emailValidated ? <CheckCircle className="w-4 h-4 text-green-600"/> : <XCircle className="w-4 h-4 text-destructive"/>}
                         {formData.email}
@@ -192,9 +205,26 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
           </CardContent>
       </Card>
 
+      <div className="space-y-4 pt-4">
+        <div className="flex items-center space-x-2">
+            <Checkbox id="terms" checked={hasAcceptedPolicies} onCheckedChange={(checked) => setHasAcceptedPolicies(checked as boolean)}/>
+            <label
+            htmlFor="terms"
+            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+            He leído y acepto las{' '}
+            <Link href="/policies" target="_blank" className="text-primary underline hover:no-underline">
+                Políticas de Servicio y Privacidad
+            </Link>
+            .
+            </label>
+        </div>
+      </div>
+
+
       <div className="flex justify-between">
         <Button variant="outline" onClick={onBack}>Atrás</Button>
-        <Button onClick={handleFinish}>
+        <Button onClick={handleFinish} disabled={!hasAcceptedPolicies}>
             {isProvider && !currentUser.isTransactionsActive ? 'Continuar a Activación' : 'Finalizar Configuración'}
         </Button>
       </div>
