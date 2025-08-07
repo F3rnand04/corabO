@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
@@ -362,12 +363,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
 
     setCart([]);
-    // toast({ title: "Acuerdo de Pago Creado", description: "El compromiso de pago ha sido registrado. Serás redirigido para completar el pago." });
     
     if (finalTx) {
         router.push(`/quotes/payment?commitmentId=${finalTx.id}&amount=${finalTx.amount}`);
     }
-  }
+  };
 
   const requestService = (service: Service) => {
     const newTx: Transaction = {
@@ -612,17 +612,19 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     if(user){
       updateUser(userId, { isGpsActive: !user.isGpsActive });
       if (userId === currentUser.id) {
-          if (!user.isGpsActive) {
-              toast({
-                  title: "GPS Activado",
-                  description: "Ahora eres visible según la ubicación de tu perfil.",
-              });
-          } else {
-              toast({
-                  title: "GPS Desactivado",
-                  description: "Has dejado de ser visible para otros usuarios.",
-              });
-          }
+          useEffect(() => {
+              if (!user.isGpsActive) {
+                  toast({
+                      title: "GPS Activado",
+                      description: "Ahora eres visible según la ubicación de tu perfil.",
+                  });
+              } else {
+                  toast({
+                      title: "GPS Desactivado",
+                      description: "Has dejado de ser visible para otros usuarios.",
+                  });
+              }
+          }, [user.isGpsActive]);
       }
     }
   };
