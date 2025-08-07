@@ -19,50 +19,51 @@ La aplicación se rige por un conjunto de tipos de datos bien definidos:
 
 -   **`User`**: Representa tanto a clientes (`client`) como a proveedores (`provider`). Contiene información como `id`, `name`, `profileImage`, `reputation` y, para los proveedores, una `gallery` de publicaciones. Incluye campos para el estado de suscripción (`isSubscribed`), la activación del módulo de transacciones (`isTransactionsActive`) y su nivel y límite en el sistema **Credicora**. Un campo clave es `isPaused`, que permite a un proveedor desactivar temporalmente la visibilidad de su perfil.
 -   **`Product`**: Define un producto con `id`, `name`, `price`, `providerId`, etc. Forma parte del catálogo de un proveedor.
--   **`GalleryImage`**: Representa una publicación (imagen o video) en la galería promocional de un proveedor, incluyendo imagen, descripción y comentarios. Estas publicaciones son las que aparecen en el feed principal.
+-   **`GalleryImage`**: Representa una publicación (imagen o video) en la galería promocional de un proveedor. Crucialmente, ahora incluye un `campaignId` opcional, que la vincula a una campaña publicitaria activa.
 -   **`Transaction`**: Modela una transacción desde su inicio (`Carrito Activo`, `Solicitud Pendiente`) hasta su finalización (`Pagado`, `Resuelto`). Incluye estados detallados para el ciclo de vida completo del pago y la entrega.
 -   **`AgreementProposal`**: Estructura para las propuestas de acuerdo enviadas en el chat.
 -   **`Message`**: Ahora puede contener opcionalmente una `proposal` para mostrarla como una cápsula interactiva.
--   **`CredicoraLevel`**: Define la estructura de los niveles del sistema Credicora (Alfa, Delta, Lambda, Sigma, Omega), especificando límite de crédito, porcentaje de pago inicial requerido y número de cuotas.
+-   **`Campaign`**: Un nuevo tipo de dato que modela una campaña publicitaria. Incluye `id`, `providerId`, `publicationId`, `budget`, `durationDays`, estado, y estadísticas de rendimiento (`impressions`, `clicks`, etc.).
 
 ## 3. Lógica de Negocio y Estado (`src/contexts/CoraboContext.tsx`)
 
 El `CoraboContext` es el corazón de la aplicación. Centraliza toda la lógica y los datos:
 
--   **Gestión de Estado:** Utiliza `useState` para manejar `users`, `products`, `services`, `transactions`, `currentUser`, `searchQuery`, `feedView` y el `cart` global.
+-   **Gestión de Estado:** Utiliza `useState` para manejar `users`, `products`, `services`, `transactions`, `currentUser`, `searchQuery`, `feedView`, `cart`, y el nuevo estado `campaigns`.
 -   **Acciones Clave:**
-    -   **Clasificación Automática de Empresas:** Implementa una función (`checkIfShouldBeEnterprise`) que reclasifica a un proveedor de productos como "Empresa" si demuestra un alto volumen de ventas (5 o más transacciones diarias durante 30 días consecutivos), asegurando que se le ofrezca el plan de suscripción correcto.
-    -   **Flujo de Suscripción Seguro:** Se mantiene el flujo de pago y verificación en dos pasos.
-    -   **Sistema Credicora Mejorado:** La lógica de financiación avanzada y comisiones al proveedor sigue vigente.
-    -   **Pausar Perfil:** Se introduce la función `pauseProfile`, que permite a un proveedor desactivar temporalmente su perfil, haciéndolo invisible en las búsquedas y simulando una penalización en su reputación.
-    -   **Flexibilidad de Roles (Simulada):** El sistema permite cambiar de tipo de perfil (cliente, proveedor), pero muestra una advertencia indicando que en la versión real, este cambio estaría restringido (ej. cada 6 meses) para fomentar la estabilidad.
+    -   **Clasificación Automática de Empresas:** Implementa una función (`checkIfShouldBeEnterprise`) que reclasifica a un proveedor de productos como "Empresa" si demuestra un alto volumen de ventas.
+    -   **Pausar Perfil:** Se introduce la función `pauseProfile`, que permite a un proveedor desactivar temporalmente su perfil.
+    -   **Gestión de Campañas:** Se ha añadido una lógica robusta para campañas publicitarias:
+        -   **`createCampaign`**: Permite a un proveedor iniciar una campaña para una publicación. Calcula el costo basado en el **nivel de impulso** y la **segmentación**, aplica un **descuento del 10% a suscriptores**, y genera una transacción de "Sistema" para el pago.
+        -   **Pago con Credicora:** Las campañas con un costo de $20 o más pueden ser financiadas con Credicora, reutilizando la lógica de pago a plazos.
+        -   **Simulación de Rendimiento:** El sistema simula el incremento de las estadísticas de las campañas activas para dar feedback visual al proveedor.
 
 ## 4. Flujos de Usuario y Componentes Clave
 
 ### 4.1. Navegación Principal y Footer (`Footer.tsx`)
 
--   **Pie de Página Dinámico:** El pie de página principal contiene 5 botones cuya funcionalidad es contextual:
-    -   **Botón Central:**
-        -   En la mayoría de las páginas, es un icono de **Búsqueda** que lleva a `/search`.
-        -   Cuando el usuario está en su propio perfil (`/profile`), se convierte en un icono de **Subir**. Para proveedores, abre un diálogo para añadir publicaciones o productos; para clientes, redirige a "Emprende por Hoy".
-    -   **Botón Derecho:**
-        -   En la mayoría de las páginas, es el **Avatar del usuario**, que funciona como un atajo a su perfil (`/profile`).
-        -   Cuando el usuario está en su propio perfil, se transforma en un **Engranaje de Ajustes**, que lleva a la página de configuración (`/profile-setup`).
--   **Header Principal:** El header con el logo y accesos directos se oculta automáticamente en páginas que tienen su propia cabecera (como un chat individual) o que son parte de un flujo (como la configuración de perfil), para evitar redundancia y mejorar el enfoque.
+-   **Pie de Página Dinámico:** El pie de página principal contiene 5 botones cuya funcionalidad es contextual, incluyendo el botón de "Subir" o "Buscar" y el de "Perfil" o "Ajustes".
 
-### 4.2. Perfil de Proveedor de Productos
+### 4.2. Perfil del Proveedor (`/profile/page.tsx`)
 
--   **Diferenciación de Contenido:** Para proveedores que seleccionan `offerType: 'product'`, la plataforma diferencia entre:
-    -   **Galería de Publicaciones:** Imágenes y videos promocionales que aparecen en el feed principal.
-    -   **Catálogo de Productos:** Artículos para la venta que solo son visibles dentro del perfil del proveedor.
--   **Vista de Perfil Adaptada (`/companies/[id]/page.tsx`):** El perfil público de un vendedor de productos ahora muestra una cuadrícula de sus productos en venta, en lugar de su galería de imágenes. La imagen principal sigue siendo la última publicación de su galería.
--   **Estadísticas Relevantes:** Las métricas en la tarjeta del perfil muestran **"Publicaciones"** y **"Productos"** en lugar de "Trab. Realizados".
+-   **Header Fijo:** Se ha corregido la interfaz para que la información principal del perfil (avatar, nombre, estadísticas) permanezca fija en la parte superior al desplazarse.
+-   **Botón de "Gestionar Campañas":**
+    -   Se ha añadido un nuevo botón **"Gestionar Campañas"**, visible solo para proveedores, al lado de "Emprende por Hoy".
+    -   Este botón abre el nuevo **`CampaignDialog`**.
+-   **Diálogo de Campañas (`CampaignDialog.tsx`):**
+    -   **Paso 1: Selección:** El proveedor elige una publicación de su galería para promocionar.
+    -   **Paso 2: Presupuesto:** Selecciona un **nivel de impulso** (Básico, Avanzado, Premium) y una **duración en días**.
+    -   **Paso 3: Segmentación:** Puede añadir opcionalmente segmentación geográfica o por intereses, lo que ajusta el costo.
+    -   **Paso 4: Revisión y Pago:** Muestra un resumen del costo total, incluyendo descuentos por suscripción, y permite **pagar con Credicora** (si el monto es >= $20) antes de proceder al pago.
 
-### 4.3. Diálogo de Subida (`UploadDialog.tsx`)
+### 4.3. Perfil de Empresa (`/companies/[id]/page.tsx`)
 
--   **Opciones Claras:** Para un proveedor de productos, el diálogo de subida ahora ofrece dos botones distintos: **"Publicar en Galería"** y **"Añadir Producto al Catálogo"**, guiando al usuario a la acción correcta.
--   **Sugerencia de Diseño:** Al añadir un producto, se muestra una alerta sugiriendo el uso de imágenes con fondo blanco para una mejor presentación.
+-   **Botón de Mensaje Directo:** Se ha añadido un icono de **Enviar (`Send`)** junto al de guardar (`Bookmark`). Esto permite a cualquier usuario iniciar una conversación de chat directamente con el proveedor desde su perfil, mejorando la comunicación.
+
+### 4.4. Emprende por Hoy (`/emprende/page.tsx`)
+
+-   **Flujo Corregido:** Se ha mejorado la lógica para que los usuarios sin el registro de transacciones activo sean redirigidos inmediatamente, evitando que puedan interactuar con un formulario que no pueden usar.
 
 ## 5. Conclusión
 
-El prototipo ha alcanzado un alto grado de madurez, simulando reglas de negocio complejas como la flexibilidad de roles con limitaciones, la capacidad de pausar perfiles y una clara distinción entre marketing (publicaciones) y ventas (productos). La documentación refleja ahora fielmente esta arquitectura avanzada, proporcionando una base sólida y clara para el desarrollo futuro.
+El prototipo ha evolucionado para incluir un sofisticado **módulo de autogestión publicitaria**, permitiendo a los proveedores invertir en su propio crecimiento dentro de la plataforma. La documentación refleja esta nueva capa de monetización y las mejoras de usabilidad implementadas.

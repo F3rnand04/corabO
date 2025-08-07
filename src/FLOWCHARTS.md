@@ -12,6 +12,7 @@ Describe el viaje de un usuario que actúa como cliente.
 graph TD
     A[Inicio: Cliente en el Feed Principal] --> B{Busca un proveedor/producto};
     B --> C[Encuentra Perfil de Proveedor];
+    C -- Clic en Mensaje Directo --> L[Inicia chat para negociar];
     C --> D{¿El cliente tiene su registro de transacciones activo?};
     D -- No --> E[Ve banner de 'Activar Registro'];
     E --> F[Página de Activación de Transacciones];
@@ -34,7 +35,7 @@ graph TD
     J --> T[Explora catálogo de productos en el perfil];
     T --> U[Añade productos al Carrito Global];
     U --> V[Abre diálogo de Pre-factura];
-    V --> W{¿Usa Credicora?};
+    V --> W{¿Monto >= $20 y usa Credicora?};
     W -- Sí --> X[Paga inicial con financiación];
     W -- No --> Y[Paga el monto total];
     X & Y --> Z[Se crea Compromiso de Pago];
@@ -71,6 +72,14 @@ graph TD
         L --> P[Recibe compra de producto];
         P --> Q[Se crea compromiso de pago];
     end
+    
+    subgraph "Herramientas de Crecimiento"
+      I --> Campaign[Clic en 'Gestionar Campañas'];
+      Campaign --> CampaignDialog[Configura campaña (presupuesto, duración, segmentación)];
+      CampaignDialog --> Pay[Paga la campaña (con opción Credicora si >$20)];
+      Pay --> ActiveCampaign[Campaña Activa - Aumenta visibilidad];
+    end
+
 
     O & Q --> R[Espera confirmación y pago del cliente];
     R --> S[Confirma recepción del pago];
@@ -195,9 +204,11 @@ graph TD
 
 ```mermaid
 graph TD
-    A[Cliente en diálogo de Pre-factura] --> B[Activa 'Incluir Delivery' y 'Pagar con Credicora'];
-
-    B --> C[<b>Cálculo de Pago Complejo</b>];
+    A[Cliente en diálogo de Pre-factura] --> B{¿Monto total >= $20?};
+    B -- Sí --> B_switch[Activa 'Incluir Delivery' y 'Pagar con Credicora'];
+    B -- No --> B_no_credicora[Paga sin opción Credicora];
+    
+    B_switch --> C[<b>Cálculo de Pago Complejo</b>];
     subgraph "El Sistema Calcula el Costo Total"
        D1[Total Productos] --> D2[Se calcula el Monto Financiado <br> sobre los productos según el nivel Credicora];
        D2 --> D3[Pago Inicial Productos = Total Productos - Monto Financiado];

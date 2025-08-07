@@ -38,20 +38,33 @@ La barra de navegación inferior es el centro de control principal y su comporta
     -   **En la mayoría de las páginas:** Es tu **avatar de perfil**, un atajo para ir a `/profile`.
     -   **En tu propio perfil (`/profile`):** Se transforma en un **engranaje de Ajustes**, que te lleva a la página de configuración (`/profile-setup`).
 
-**Nota sobre Headers:** El header principal (con logo, búsqueda, etc.) se oculta automáticamente en páginas que tienen su propia cabecera, como las **pantallas de chat individuales**, o en flujos de pantalla completa como la configuración de perfil.
+**Nota sobre Headers:** El header principal se oculta en páginas con headers propios (chat) o de flujo completo. El **header de tu propio perfil es fijo** y permanece visible al hacer scroll.
 
-### 3.2. Perfil de Proveedor de Productos: Galería vs. Catálogo
-Cuando un proveedor configura su perfil para **ofrecer principalmente productos**, la plataforma se adapta:
+### 3.2. Perfil del Proveedor (`/profile/page.tsx`)
 
--   **Diferenciación de Contenido:**
-    -   **Galería de Publicaciones:** Son imágenes y videos promocionales (banners, fotos del local, etc.). Estas son las que aparecen en el **feed principal** para atraer clientes.
-    -   **Catálogo de Productos:** Son los artículos en venta, con precio, descripción, etc. Estos **solo son visibles dentro del perfil** del proveedor.
--   **Diálogo de Subida Inteligente:** El diálogo de subida le ofrece al proveedor dos opciones claras: "Publicar en Galería" o "Añadir Producto". Además, sugiere usar fondos blancos para las imágenes de producto.
--   **Vista de Perfil Adaptada:**
-    -   El perfil público de un vendedor de productos muestra una **cuadrícula de sus productos** en venta, ideal para el e-commerce. La imagen principal destacada sigue siendo la última publicación de su galería, actuando como banner.
-    -   Las estadísticas del perfil se actualizan para mostrar **"Publicaciones"** y **"Productos"**, en lugar de "Trabajos Realizados".
+- **Header Fijo:** El área con la información del perfil (avatar, nombre, reputación, etc.) se mantiene fija en la parte superior de la pantalla mientras te desplazas por la galería.
+- **Botón "Gestionar Campañas":**
+  - **Exclusivo para Proveedores:** Se ha añadido un botón "Gestionar Campañas" junto al de "Emprende por Hoy".
+  - **Abre el `CampaignDialog`:** Inicia el flujo para crear una campaña publicitaria pagada para una publicación.
+- **Botón "Emprende por Hoy":** Permite a los proveedores lanzar una oferta rápida de 24 horas por un costo fijo.
 
-### 3.3. Carrito de Compras y Checkout (Componente Global)
+#### 3.2.1. Diálogo de Gestión de Campañas (`CampaignDialog`)
+Este es un flujo de 4 pasos para que el proveedor autogestione su publicidad:
+1.  **Selección de Publicación:** Elige una imagen o video de su galería para impulsar.
+2.  **Configuración de Presupuesto:**
+    -   **Niveles de Impulso:** Selecciona un plan (Básico, Avanzado, Premium) que define un costo diario y un alcance estimado.
+    -   **Duración:** Define cuántos días durará la campaña (1-30).
+3.  **Segmentación (Opcional):**
+    -   Añade un costo extra para enfocar la campaña por **zona geográfica** o por **intereses** de los usuarios.
+4.  **Revisión y Pago:**
+    -   Muestra un resumen detallado del costo total.
+    -   Aplica un **10% de descuento** si el proveedor está suscrito.
+    -   Permite usar **Credicora** para financiar la campaña si el costo es de $20 o más.
+
+### 3.3. Perfil Público de un Proveedor (`/companies/[id]/page.tsx`)
+- **Botón de Mensaje Directo:** Se ha añadido un icono de **Enviar (`Send`)** junto al botón de guardar. Esto permite a los clientes iniciar una conversación de chat directamente con el proveedor desde su perfil, facilitando el primer contacto.
+
+### 3.4. Carrito de Compras y Checkout (Componente Global)
 - **Acceso:** Icono de carrito en el `Header` y en el perfil de proveedores de productos.
 - **Funcionalidad del Popover:**
   - Muestra un resumen de los productos, permitiendo ajustar cantidades o eliminar artículos.
@@ -60,12 +73,13 @@ Cuando un proveedor configura su perfil para **ofrecer principalmente productos*
   - **Cálculos Dinámicos:** Muestra subtotal, costo de envío (si se activa) y el total.
   - **Switch "Incluir Delivery":** Añade el costo de envío.
   - **Switch "Pagar con Credicora":**
-    - Habilitado solo si el proveedor lo acepta.
-    - Al activarlo, recalcula el "Total a Pagar Hoy" aplicando la lógica de "ayuda" de CrediCora.
-  - **Botón "Pagar Ahora":** Crea la transacción final con estado "Finalizado - Pendiente de Pago".
+    - Habilitado solo si el proveedor lo acepta y el monto es >= $20.
+    - Al activarlo, recalcula el "Total a Pagar Hoy".
+  - **Botón "Pagar Ahora":** Crea la transacción final.
 
 ---
 
 ## 4. Políticas Clave
 - **Activación Obligatoria:** Ningún proveedor puede ofertar si no ha completado el flujo de configuración Y el de activación de transacciones.
 - **Límite de Cotizaciones (No Suscritos):** Un usuario no suscrito puede cotizar el mismo producto/servicio a un máximo de 3 proveedores distintos por día.
+- **Uso de Credicora:** La opción de financiar con Credicora (tanto para compras como para campañas) solo está disponible para montos iguales o superiores a $20.
