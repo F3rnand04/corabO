@@ -16,22 +16,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { currentUser, isLoadingAuth } = useCorabo();
   const router = useRouter();
   const pathname = usePathname();
-  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  // This is the key change. We now wait for isLoadingAuth to be false.
-  useEffect(() => {
-    if (isMounted && !isLoadingAuth && !currentUser && pathname !== '/login') {
+    // Si la carga de autenticación ha terminado y no hay usuario, redirigir a login.
+    if (!isLoadingAuth && !currentUser && pathname !== '/login') {
       router.push('/login');
     }
-  }, [currentUser, isLoadingAuth, pathname, router, isMounted]);
+  }, [currentUser, isLoadingAuth, pathname, router]);
 
-  // If authentication is loading OR the component isn't mounted, show a loader.
-  // This prevents any app logic from running before Firebase has determined the auth state.
-  if (isLoadingAuth || !isMounted) {
+  // 1. Estado de Carga: Mientras Firebase comprueba el estado, muestra un cargador.
+  if (isLoadingAuth) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -39,17 +33,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
   
-  // If not logged in, only render the login page, or a loader if redirecting.
+  // 2. Estado No Autenticado: Si no está cargando y no hay usuario.
   if (!currentUser) {
-     if (pathname !== '/login') {
-       return (
+     // Si ya estamos en la página de login, la renderizamos. Si no, mostramos un cargador mientras ocurre la redirección del useEffect.
+     return pathname === '/login' ? <main>{children}</main> : (
         <div className="flex items-center justify-center min-h-screen">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
-       )
-     }
-     return <main>{children}</main>;
+       );
   }
+  
+  // 3. Estado Autenticado: Si hay un usuario, renderizamos la app.
   
   // Admin Route Guard
   if (pathname.startsWith('/admin') && currentUser?.role !== 'admin') {
@@ -63,10 +57,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       );
   }
 
-  // --- Layout logic for authenticated users ---
+  // --- Lógica de layout para usuarios autenticados ---
   const isClientWithInactiveTransactions = currentUser?.type === 'client' && !currentUser?.isTransactionsActive;
   
-  // Define routes that should NOT have the main header or footer
+  // Define las rutas que NO deben tener el header o footer principal.
   const noHeaderFooterRoutes = [
     '/profile-setup',
     '/login',
@@ -77,7 +71,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     '/terms',
     '/privacy',
     '/community-guidelines',
-    '/admin', // Add admin panel to the list
+    '/admin', // Añade el panel de admin a la lista
   ];
 
   const shouldHideAllLayout = noHeaderFooterRoutes.some(path => pathname.startsWith(path));
@@ -111,10 +105,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <div className="container p-2 flex items-center justify-center text-center gap-2">
                  <AlertCircle className="h-5 w-5 shrink-0" />
                  <p className="flex-grow">
-                    Activate your transaction log for a safe shopping experience with tracking!
+                    ¡Activa tu registro de transacciones para una experiencia de compra segura y con seguimiento!
                  </p>
                  <Button variant="ghost" size="sm" asChild className="text-current hover:bg-yellow-200 hover:text-current">
-                    <Link href="/transactions">Activate now <ArrowRight className="h-4 w-4 ml-2"/></Link>
+                    <Link href="/transactions">Activar ahora <ArrowRight className="h-4 w-4 ml-2"/></Link>
                  </Button>
             </div>
         </div>
