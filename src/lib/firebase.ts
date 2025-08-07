@@ -5,12 +5,13 @@ import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "your-project-id.firebaseapp.com",
-  projectId: "your-project-id",
-  storageBucket: "your-project-id.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  "projectId": "corabo-demo",
+  "appId": "1:220291714642:web:3aca123e39a92f16c0998b",
+  "storageBucket": "corabo-demo.firebasestorage.app",
+  "apiKey": "AIzaSyAOZ9eRQz1Sry6pdLNwCVZ3QNsr1pZgHnQ",
+  "authDomain": "corabo-demo.firebaseapp.com",
+  "measurementId": "",
+  "messagingSenderId": "220291714642"
 };
 
 
