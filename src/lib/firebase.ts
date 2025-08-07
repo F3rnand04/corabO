@@ -1,4 +1,5 @@
 
+
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
@@ -18,7 +19,13 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
+auth.tenantId = null; // Ensure we are not using a multi-tenant context
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
+
+provider.setCustomParameters({
+  'auth_type': 'reauthenticate'
+});
+
 
 export { app, auth, db, provider };
