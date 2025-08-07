@@ -135,36 +135,36 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       if (firebaseUser) {
         const userDocRef = doc(db, "users", firebaseUser.uid);
         
-        const unsubscribeUser = onSnapshot(userDocRef, (userDocSnap) => {
-            if (userDocSnap.exists()) {
-                setCurrentUser(userDocSnap.data() as User);
-            } else {
-                 const newUser: User = {
-                    id: firebaseUser.uid,
-                    name: firebaseUser.displayName || 'New User',
-                    email: firebaseUser.email || '',
-                    profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
-                    type: 'client',
-                    reputation: 0,
-                    phone: firebaseUser.phoneNumber || '',
-                    emailValidated: firebaseUser.emailVerified,
-                    phoneValidated: false,
-                    isGpsActive: true,
-                    gallery: [],
-                    credicoraLevel: 1,
-                    credicoraLimit: 150,
-                  };
-                  setDoc(userDocRef, newUser).then(() => setCurrentUser(newUser));
-            }
-            setIsLoadingAuth(false);
-        });
+        // Use getDoc for initial load to prevent race conditions
+        const userDocSnap = await getDoc(userDocRef);
 
-        return () => unsubscribeUser();
+        if (userDocSnap.exists()) {
+            setCurrentUser(userDocSnap.data() as User);
+        } else {
+            const newUser: User = {
+                id: firebaseUser.uid,
+                name: firebaseUser.displayName || 'New User',
+                email: firebaseUser.email || '',
+                profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
+                type: 'client',
+                reputation: 0,
+                phone: firebaseUser.phoneNumber || '',
+                emailValidated: firebaseUser.emailVerified,
+                phoneValidated: false,
+                isGpsActive: true,
+                gallery: [],
+                credicoraLevel: 1,
+                credicoraLimit: 150,
+            };
+            await setDoc(userDocRef, newUser);
+            setCurrentUser(newUser);
+        }
 
       } else {
         setCurrentUser(null);
-        setIsLoadingAuth(false);
       }
+       // Once we have a definitive answer (user or null), we stop loading.
+      setIsLoadingAuth(false);
     });
 
     return () => unsubscribe();
@@ -203,13 +203,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
 
   const signInWithGoogle = async () => {
-    // Definitive fix: create and configure the provider right before it's used.
     const provider = new GoogleAuthProvider();
     try {
       if (typeof window !== 'undefined') {
         const hostname = window.location.hostname;
-        // This covers both the development (cloudworkstations) and deployed (hosted.app) environments.
-        if (hostname.includes('cloudworkstations.dev') || hostname.includes('hosted.app')) {
+        // This is a more targeted check for the development environment.
+        if (hostname.endsWith('cloudworkstations.dev')) {
             provider.setCustomParameters({
               'authDomain': hostname
             });
