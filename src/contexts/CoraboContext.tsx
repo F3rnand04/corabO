@@ -611,21 +611,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const user = users.find(u => u.id === userId);
     if(user){
       updateUser(userId, { isGpsActive: !user.isGpsActive });
-      if (userId === currentUser.id) {
-          useEffect(() => {
-              if (!user.isGpsActive) {
-                  toast({
-                      title: "GPS Activado",
-                      description: "Ahora eres visible según la ubicación de tu perfil.",
-                  });
-              } else {
-                  toast({
-                      title: "GPS Desactivado",
-                      description: "Has dejado de ser visible para otros usuarios.",
-                  });
-              }
-          }, [user.isGpsActive]);
-      }
     }
   };
 
