@@ -132,15 +132,22 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         const userDocRef = doc(db, "users", firebaseUser.uid);
-        
-        const userDocSnap = await getDoc(userDocRef);
+        let userDocSnap;
+        try {
+          userDocSnap = await getDoc(userDocRef);
+        } catch (error) {
+           console.error("Firestore getDoc error:", error);
+           setIsLoadingAuth(false);
+           return;
+        }
 
         if (userDocSnap.exists()) {
             setCurrentUser(userDocSnap.data() as User);
         } else {
+            // New user, create a default client profile
             const newUser: User = {
                 id: firebaseUser.uid,
-                name: firebaseUser.displayName || 'New User',
+                name: firebaseUser.displayName || 'Usuario Nuevo',
                 email: firebaseUser.email || '',
                 profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
                 type: 'client',
@@ -152,9 +159,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
                 gallery: [],
                 credicoraLevel: 1,
                 credicoraLimit: 150,
+                profileSetupData: {}, // Start with empty setup data
             };
             await setDoc(userDocRef, newUser);
             setCurrentUser(newUser);
+            // Redirect new user to profile setup
+            router.push('/profile-setup');
         }
 
       } else {
@@ -164,7 +174,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, [auth]);
+  }, [auth, router]);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -173,19 +183,19 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribeUsers = onSnapshot(usersQuery, (snapshot) => {
       const usersData = snapshot.docs.map(doc => doc.data() as User);
       setUsers(usersData);
-    });
+    }, (error) => console.error("Error fetching users:", error));
   
     const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
     const unsubscribeTransactions = onSnapshot(transactionsQuery, (snapshot) => {
       const transactionsData = snapshot.docs.map(doc => doc.data() as Transaction);
       setTransactions(transactionsData);
-    });
+    }, (error) => console.error("Error fetching transactions:", error));
     
     const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id));
     const unsubscribeConversations = onSnapshot(conversationsQuery, (snapshot) => {
       const conversationsData = snapshot.docs.map(doc => doc.data() as Conversation);
       setConversations(conversationsData);
-    });
+    }, (error) => console.error("Error fetching conversations:", error));
 
   
     return () => {
@@ -201,7 +211,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     try {
       await setPersistence(auth, browserLocalPersistence);
       await signInWithPopup(auth, provider);
-      router.push('/');
+      // No need to push here, onAuthStateChanged will handle it
     } catch (error) {
       console.error("Error signing in with Google: ", error);
       toast({
@@ -212,9 +222,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const logout = () => {
-    signOut(auth);
-    router.push('/login');
+  const logout = async () => {
+    try {
+        await signOut(auth);
+        setCurrentUser(null); // Clear user state immediately
+        router.push('/login');
+    } catch (error) {
+        console.error("Error signing out: ", error);
+    }
   };
 
   const setSearchQuery = (query: string) => {
@@ -544,5 +559,3 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
-
-    

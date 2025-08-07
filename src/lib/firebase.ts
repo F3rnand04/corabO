@@ -2,7 +2,7 @@
 "use client";
 
 import { initializeApp, getApp, getApps } from "firebase/app";
-import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
+import { getFirestore, enableIndexedDbPersistence, initializeFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration - KEEP THIS AS IS FROM THE CONSOLE
 const firebaseConfig = {
@@ -18,29 +18,31 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const db = getFirestore(app);
 
-// Enable Firestore persistence
+// Initialize Firestore differently for client and server
+let db;
+
 if (typeof window !== 'undefined') {
+  // Client-side
   try {
-    enableIndexedDbPersistence(db)
-      .catch((err) => {
-        if (err.code == 'failed-precondition') {
-          // Multiple tabs open, persistence can only be enabled
-          // in one tab at a time.
-          console.warn('Firestore persistence failed: failed-precondition. Multiple tabs open?');
-        } else if (err.code == 'unimplemented') {
-          // The current browser does not support all of the
-          // features required to enable persistence
-          console.warn('Firestore persistence failed: unimplemented. Browser not supported?');
-        }
-      });
+    db = initializeFirestore(app, {
+      localCache: enableIndexedDbPersistence({
+        forceOwnership: true,
+      }),
+    });
+    console.log("Firestore persistence enabled.");
   } catch (error) {
-    console.error("Error enabling Firestore persistence:", error);
+    if (error instanceof Error && 'code' in error && (error as { code: string }).code === 'failed-precondition') {
+      console.warn("Multiple tabs open, persistence can only be enabled in one. Using regular firestore instance.");
+      db = getFirestore(app);
+    } else {
+      console.error("Error enabling Firestore persistence:", error);
+      db = getFirestore(app); // Fallback to regular instance
+    }
   }
+} else {
+  // Server-side
+  db = getFirestore(app);
 }
 
-
 export { app, db };
-
-    

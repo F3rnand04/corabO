@@ -32,10 +32,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   if (!currentUser) {
     // If we are on any page other than login, redirect to login.
     if (pathname !== '/login') {
-      // Perform the redirect on the client side.
-      if (typeof window !== 'undefined') {
-        router.replace('/login');
-      }
+      router.replace('/login');
       // Show a loader while the redirect happens.
       return (
         <div className="flex items-center justify-center min-h-screen">
@@ -49,9 +46,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   
   // 3. If we are on the login page but have a user, redirect to home.
   if (pathname === '/login') {
-    if (typeof window !== 'undefined') {
-        router.replace('/');
-    }
+    router.replace('/');
     return (
         <div className="flex items-center justify-center min-h-screen">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -63,9 +58,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   
   // Admin Route Guard
   if (pathname.startsWith('/admin') && currentUser?.role !== 'admin') {
-      if (typeof window !== 'undefined') {
-          router.replace('/');
-      }
+      router.replace('/');
       return (
         <div className="flex items-center justify-center min-h-screen">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -136,5 +129,3 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
-
-    
