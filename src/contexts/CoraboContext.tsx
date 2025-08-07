@@ -73,6 +73,7 @@ interface CoraboState {
   getCartItemQuantity: (productId: string) => number;
   checkIfShouldBeEnterprise: (providerId: string) => boolean;
   activatePromotion: (details: { imageId: string, promotionText: string, cost: number }) => void;
+  createCampaign: (campaignDetails: any) => void;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -787,6 +788,62 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const createCampaign = (campaignDetails: any) => {
+      const {
+        publicationId,
+        budget,
+        durationDays,
+        budgetLevel,
+        dailyBudget,
+        segmentation,
+        financedWithCredicora,
+        appliedSubscriptionDiscount,
+      } = campaignDetails;
+
+      const newCampaign: any = {
+        id: `camp-${Date.now()}`,
+        providerId: currentUser.id,
+        publicationId,
+        budget,
+        durationDays,
+        startDate: new Date().toISOString(),
+        endDate: add(new Date(), { days: durationDays }).toISOString(),
+        status: 'pending_payment',
+        stats: { impressions: 0, reach: 0, clicks: 0, messages: 0 },
+        budgetLevel,
+        dailyBudget,
+        segmentation,
+        appliedSubscriptionDiscount,
+        financedWithCredicora,
+      };
+
+      const campaignPaymentTx: Transaction = {
+        id: `camp-tx-${newCampaign.id}`,
+        type: 'Sistema',
+        status: 'Finalizado - Pendiente de Pago',
+        date: new Date().toISOString(),
+        amount: budget,
+        clientId: currentUser.id,
+        providerId: 'corabo-app',
+        details: {
+          system: `Pago de Campaña: ${durationDays} día(s) - Nivel ${budgetLevel}`,
+        }
+      };
+
+      setTransactions(prev => [...prev, campaignPaymentTx]);
+      
+      // En un escenario real, tendríamos un estado para las campañas.
+      // Aquí, podemos simplemente redirigir al pago.
+      
+      router.push(`/quotes/payment?commitmentId=${campaignPaymentTx.id}&amount=${budget}`);
+      
+      toast({
+        title: "¡Casi listo! Procede al pago",
+        description: "Tu campaña ha sido configurada. Realiza el pago para activarla."
+      });
+  };
+
+
   const downloadTransactionsPDF = () => {
     const threeMonthsAgo = new Date();
     threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
@@ -1090,6 +1147,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     getCartItemQuantity,
     checkIfShouldBeEnterprise,
     activatePromotion,
+    createCampaign,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;
@@ -1103,3 +1161,5 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
+
+    
