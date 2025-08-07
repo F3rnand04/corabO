@@ -78,6 +78,14 @@ Este es un flujo de 4 pasos para que el proveedor autogestione su publicidad:
     - Al activarlo, recalcula el "Total a Pagar Hoy".
   - **Botón "Pagar Ahora":** Crea la transacción final.
 
+### 3.5. Búsqueda por Categorías (`/search/page.tsx`)
+- **Filtro del Feed Principal:** Esta página, accesible desde el botón central de búsqueda en el `Footer`, permite a los usuarios filtrar el contenido del feed principal.
+- **Flujo de Selección:**
+  1.  El usuario navega a la página "Explorar Categorías".
+  2.  Al hacer clic en una categoría (ej: "Alimentos y Restaurantes"), la aplicación guarda esa selección como un término de búsqueda.
+  3.  El usuario es redirigido automáticamente al feed principal (`/`).
+  4.  El feed ahora muestra exclusivamente proveedores que han indicado pertenecer a la categoría seleccionada, ordenados por proximidad (GPS activo).
+
 ---
 
 ## 4. Políticas Clave

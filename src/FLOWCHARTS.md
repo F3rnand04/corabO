@@ -10,37 +10,49 @@ Describe el viaje de un usuario que actúa como cliente.
 
 ```mermaid
 graph TD
-    A[Inicio: Cliente en el Feed Principal] --> B{Busca un proveedor/producto};
-    B --> C[Encuentra Perfil de Proveedor];
-    C -- Clic en Mensaje Directo --> L[Inicia chat para negociar];
-    C -- Clic en Guardar --> C_SAVE[Contacto guardado, icono se rellena];
-    C --> D{¿El cliente tiene su registro de transacciones activo?};
-    D -- No --> E[Ve banner de 'Activar Registro'];
-    E --> F[Página de Activación de Transacciones];
-    F --> G[Sube ID y registra datos de pago];
-    G --> D;
-    D -- Sí --> H{¿Qué tipo de proveedor es?};
-    H --> I[<B>Servicio</B>];
-    H --> J[<B>Producto</B>];
+    A[Inicio: Cliente en el Feed Principal] --> B{¿Cómo busca?};
+    B -- Barra de Búsqueda --> C[Escribe y filtra el feed actual];
+    B -- Botón Central (Footer) --> D[Página de Explorar Categorías];
+    
+    D --> E[Selecciona una categoría, ej: "Hogar"];
+    E --> F[Vuelve al Feed Principal];
+    F --> G[El feed ahora muestra solo proveedores <br>de la categoría "Hogar", <br>ordenados por proximidad];
+    
+    subgraph "Interacción con Proveedor"
+      C --> H[Encuentra Perfil de Proveedor];
+      G --> H;
+      H -- Clic en Mensaje Directo --> L[Inicia chat para negociar];
+      H -- Clic en Guardar --> C_SAVE[Contacto guardado, icono se rellena];
+      H --> D_CHECK{¿El cliente tiene su registro <br>de transacciones activo?};
+    end
 
-    I --> K[Revisa galería y servicios];
-    K --> L[Inicia chat para negociar];
-    L --> M[Proveedor envía Propuesta de Acuerdo desde el chat];
-    M --> N[Cliente Acepta Propuesta];
-    N --> O[Se crea Compromiso de Pago];
-    O --> P[Cliente confirma recepción y califica el servicio];
-    P --> Q[Cliente realiza el pago];
-    Q --> R[Proveedor confirma pago];
-    R --> S[<B>Transacción Finalizada</B>];
+    D_CHECK -- No --> E_BANNER[Ve banner de 'Activar Registro'];
+    E_BANNER --> F_PAGE[Página de Activación de Transacciones];
+    F_PAGE --> G_UPLOAD[Sube ID y registra datos de pago];
+    G_UPLOAD --> D_CHECK;
+    
+    D_CHECK -- Sí --> H_PROVIDER{¿Qué tipo de proveedor es?};
+    H_PROVIDER --> I_SERVICE[<B>Servicio</B>];
+    H_PROVIDER --> J_PRODUCT[<B>Producto</B>];
 
-    J --> T[Explora catálogo de productos en el perfil];
-    T --> U[Añade productos al Carrito Global];
-    U --> V[Abre diálogo de Pre-factura];
-    V --> W{¿Monto >= $20 y usa Credicora?};
-    W -- Sí --> X[Paga inicial con financiación];
-    W -- No --> Y[Paga el monto total];
-    X & Y --> Z[Se crea Compromiso de Pago];
-    Z --> S;
+    I_SERVICE --> K_SERVICE[Revisa galería y servicios];
+    K_SERVICE --> L;
+    L --> M_PROPOSAL[Proveedor envía Propuesta de Acuerdo desde el chat];
+    M_PROPOSAL --> N_ACCEPT[Cliente Acepta Propuesta];
+    N_ACCEPT --> O_COMMIT[Se crea Compromiso de Pago];
+    O_COMMIT --> P_CONFIRM[Cliente confirma recepción y califica el servicio];
+    P_CONFIRM --> Q_PAY[Cliente realiza el pago];
+    Q_PAY --> R_CONFIRM[Proveedor confirma pago];
+    R_CONFIRM --> S_END[<B>Transacción Finalizada</B>];
+
+    J_PRODUCT --> T_PRODUCT[Explora catálogo de productos en el perfil];
+    T_PRODUCT --> U_CART[Añade productos al Carrito Global];
+    U_CART --> V_CHECKOUT[Abre diálogo de Pre-factura];
+    V_CHECKOUT --> W_CREDIT{¿Monto >= $20 y usa Credicora?};
+    W_CREDIT -- Sí --> X_FINANCE[Paga inicial con financiación];
+    W_CREDIT -- No --> Y_FULL[Paga el monto total];
+    X_FINANCE & Y_FULL --> Z_COMMIT[Se crea Compromiso de Pago];
+    Z_COMMIT --> S_END;
 ```
 
 ---
