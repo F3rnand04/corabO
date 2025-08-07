@@ -10,12 +10,12 @@ import { AlertTriangle, CheckCircle, Eye, Loader2, Sparkles, XCircle } from 'luc
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
-import type { User } from '@/lib/types';
+import type { User, VerificationOutput } from '@/lib/types';
 
 export function DocumentVerificationTab() {
   const { users, verifyUserId, rejectUserId, autoVerifyIdWithAI } = useCorabo();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [verificationResult, setVerificationResult] = useState<any>(null);
+  const [verificationResult, setVerificationResult] = useState<VerificationOutput | { error: string } | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -29,7 +29,7 @@ export function DocumentVerificationTab() {
           setVerificationResult(result);
       } catch (error) {
           console.error(error);
-          setVerificationResult({ error: 'Failed to run AI verification.' });
+          setVerificationResult({ error: 'Fallo al ejecutar la verificación por IA.' });
       } finally {
           setIsVerifying(false);
       }
@@ -123,10 +123,12 @@ export function DocumentVerificationTab() {
                                 {isVerifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4"/>}
                                 {isVerifying ? 'Verificando con IA...' : 'Auto-Verificar con IA'}
                            </Button>
-                           {verificationResult && (
+                           {verificationResult && 'error' in verificationResult && (
+                                <p className="text-destructive text-sm mt-2">{verificationResult.error}</p>
+                            )}
+                           {verificationResult && !('error' in verificationResult) && (
                                 <div className="mt-4 p-3 rounded-md border text-sm">
                                     <h5 className="font-semibold mb-2">Resultado de la IA:</h5>
-                                    {verificationResult.error && <p className="text-destructive">{verificationResult.error}</p>}
                                     {verificationResult.nameMatch === true && <p className="text-green-600 flex items-center gap-2"><CheckCircle className="h-4 w-4"/> Nombre Coincide</p>}
                                     {verificationResult.nameMatch === false && <p className="text-destructive flex items-center gap-2"><XCircle className="h-4 w-4"/> Nombre NO Coincide (IA leyó: "{verificationResult.extractedName}")</p>}
                                     {verificationResult.idMatch === true && <p className="text-green-600 flex items-center gap-2"><CheckCircle className="h-4 w-4"/> Cédula Coincide</p>}
@@ -136,10 +138,10 @@ export function DocumentVerificationTab() {
                         </div>
                   </div>
                   <AlertDialogFooter>
-                      <Button variant="destructive" onClick={() => {rejectUserId(selectedUser.id); setIsDialogOpen(false);}}>Rechazar</Button>
+                      <Button variant="destructive" onClick={() => { selectedUser && rejectUserId(selectedUser.id); setIsDialogOpen(false);}}>Rechazar</Button>
                       <div className="flex-grow"></div>
                       <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => {verifyUserId(selectedUser.id); setIsDialogOpen(false);}}>Aprobar Verificación</AlertDialogAction>
+                      <AlertDialogAction onClick={() => { selectedUser && verifyUserId(selectedUser.id); setIsDialogOpen(false);}}>Aprobar Verificación</AlertDialogAction>
                   </AlertDialogFooter>
               </>
           )}

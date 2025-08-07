@@ -12,7 +12,7 @@ import type { User as UserType } from "@/lib/types";
 import { Star, MapPin, Bookmark, Send, MessageCircle, CheckCircle, Flag } from "lucide-react";
 import Link from "next/link";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ReportDialog } from "@/components/ReportDialog";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
@@ -25,12 +25,18 @@ interface ProviderCardProps {
 }
 
 export function ProviderCard({ provider }: ProviderCardProps) {
-    const { addContact, sendMessage, products } = useCorabo();
+    const { addContact, sendMessage, products, isContact } = useCorabo();
     const router = useRouter();
     const { toast } = useToast();
     const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
     const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+    const [isSaved, setIsSaved] = useState(false);
     const profileLink = provider.type === 'provider' ? `/companies/${provider.id}` : '#';
+
+    useEffect(() => {
+        setIsSaved(isContact(provider.id));
+    }, [isContact, provider.id]);
+
 
     const handleSaveContact = () => {
         const success = addContact(provider);
@@ -39,6 +45,7 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                 title: "¡Contacto Guardado!",
                 description: `Has añadido a ${provider.name} a tus contactos.`
             });
+            setIsSaved(true);
         } else {
             toast({
                 title: "Contacto ya existe",
@@ -86,7 +93,7 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                                     </div>
                                 </Link>
                                 <Button variant="ghost" size="icon" className="shrink-0 text-muted-foreground hover:text-primary" onClick={handleSaveContact}>
-                                    <Bookmark className="w-5 h-5" />
+                                    <Bookmark className={cn("w-5 h-5", isSaved && "fill-primary text-primary")} />
                                 </Button>
                             </div>
                              <p className="text-sm text-muted-foreground">{specialty}</p>
@@ -137,7 +144,7 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                             <span className="text-xs font-bold mt-1 drop-shadow-md">8.9k</span>
                         </div>
                          <div className="flex flex-col items-center">
-                             <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">
+                             <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10" onClick={handleDirectMessage}>
                                 <Send className="w-5 h-5" />
                              </Button>
                             <span className="text-xs font-bold mt-1 drop-shadow-md">1.2k</span>

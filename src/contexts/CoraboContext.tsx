@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel } from '@/lib/types';
+import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from 'next/navigation';
 import jsPDF from 'jspdf';
@@ -11,10 +11,11 @@ import { add, subDays, startOfDay } from 'date-fns';
 import { credicoraLevels } from '@/lib/types';
 import { auth, provider, db } from '@/lib/firebase';
 import { signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where } from 'firebase/firestore';
+import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc } from 'firebase/firestore';
 import { createCampaign } from '@/ai/flows/campaign-flow';
 import { acceptProposal as acceptProposalFlow, sendMessage as sendMessageFlow } from '@/ai/flows/message-flow';
 import * as TransactionFlows from '@/ai/flows/transaction-flow';
+import { autoVerifyIdWithAI as autoVerifyIdWithAIFlow } from '@/ai/flows/verification-flow';
 
 
 type FeedView = 'servicios' | 'empresas';
@@ -85,6 +86,13 @@ interface CoraboState {
   checkIfShouldBeEnterprise: (providerId: string) => boolean;
   activatePromotion: (details: { imageId: string, promotionText: string, cost: number }) => void;
   createCampaign: typeof createCampaign;
+  // Admin functions
+  toggleUserPause: (userId: string, currentIsPaused: boolean) => void;
+  verifyCampaignPayment: (transactionId: string, campaignId: string) => void;
+  verifyUserId: (userId: string) => void;
+  rejectUserId: (userId: string) => void;
+  setIdVerificationPending: (userId: string, documentUrl: string) => Promise<void>;
+  autoVerifyIdWithAI: (user: User) => Promise<VerificationOutput>;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -122,38 +130,37 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         const userDocRef = doc(db, "users", firebaseUser.uid);
-        const userDocSnap = await getDoc(userDocRef);
+        
+        const unsubscribeUser = onSnapshot(userDocRef, (userDocSnap) => {
+            if (userDocSnap.exists()) {
+                setCurrentUser(userDocSnap.data() as User);
+            } else {
+                 const newUser: User = {
+                    id: firebaseUser.uid,
+                    name: firebaseUser.displayName || 'Nuevo Usuario',
+                    email: firebaseUser.email || '',
+                    profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
+                    type: 'client',
+                    reputation: 0,
+                    phone: firebaseUser.phoneNumber || '',
+                    emailValidated: firebaseUser.emailVerified,
+                    phoneValidated: false,
+                    isGpsActive: true,
+                    gallery: [],
+                    credicoraLevel: 1,
+                    credicoraLimit: 150,
+                  };
+                  setDoc(userDocRef, newUser).then(() => setCurrentUser(newUser));
+            }
+            setIsLoadingAuth(false);
+        });
 
-        let appUser: User;
-        if (userDocSnap.exists()) {
-          appUser = userDocSnap.data() as User;
-        } else {
-          // Create a new user if they don't exist
-          const newUser: User = {
-            id: firebaseUser.uid,
-            name: firebaseUser.displayName || 'Nuevo Usuario',
-            email: firebaseUser.email || '',
-            profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
-            type: 'client',
-            reputation: 0,
-            phone: firebaseUser.phoneNumber || '',
-            emailValidated: firebaseUser.emailVerified,
-            phoneValidated: false,
-            isGpsActive: true,
-            gallery: [],
-            credicoraLevel: 1,
-            credicoraLimit: 150,
-          };
-          await setDoc(userDocRef, newUser);
-          appUser = newUser;
-        }
-        
-        setCurrentUser(appUser);
-        
+        return () => unsubscribeUser();
+
       } else {
         setCurrentUser(null);
+        setIsLoadingAuth(false);
       }
-      setIsLoadingAuth(false);
     });
 
     return () => unsubscribe();
@@ -168,6 +175,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       setUsers(usersData);
     });
   
+    // Query for transactions where the user is either a client or a provider
     const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
     const unsubscribeTransactions = onSnapshot(transactionsQuery, (snapshot) => {
       const transactionsData = snapshot.docs.map(doc => doc.data() as Transaction);
@@ -308,8 +316,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const updateUser = async (userId: string, updates: Partial<User>) => {
     const userDocRef = doc(db, 'users', userId);
-    await setDoc(userDocRef, updates, { merge: true });
-    // State will be updated by the listener
+    await updateDoc(userDocRef, updates);
   };
   
   const toggleGps = (userId: string) => {
@@ -418,6 +425,27 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     TransactionFlows.createAppointmentRequest({ ...request, clientId: currentUser.id });
   };
 
+  // --- Admin Functions ---
+  const toggleUserPause = (userId: string, currentIsPaused: boolean) => {
+    updateUser(userId, { isPaused: !currentIsPaused });
+  };
+  const verifyCampaignPayment = async (transactionId: string, campaignId: string) => {
+    const batch = writeBatch(db);
+    const txRef = doc(db, "transactions", transactionId);
+    batch.update(txRef, { status: "Pagado" });
+    const campaignRef = doc(db, "campaigns", campaignId);
+    batch.update(campaignRef, { status: "active" });
+    await batch.commit();
+    toast({ title: "Campaña Activada" });
+  };
+  const verifyUserId = (userId: string) => updateUser(userId, { idVerificationStatus: 'verified', verified: true });
+  const rejectUserId = (userId: string) => updateUser(userId, { idVerificationStatus: 'rejected' });
+  const setIdVerificationPending = async (userId: string, documentUrl: string) => {
+    await updateUser(userId, { idVerificationStatus: 'pending', idDocumentUrl: documentUrl });
+  };
+  const autoVerifyIdWithAI = (user: User) => autoVerifyIdWithAIFlow(user);
+
+
   const requestService = (service: Service) => {};
   const requestQuoteFromGroup = (serviceName: string, items: string[], groupOrProvider: string): boolean => { return true; };
   const checkout = (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {};
@@ -497,6 +525,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     checkIfShouldBeEnterprise,
     activatePromotion,
     createCampaign,
+    toggleUserPause,
+    verifyCampaignPayment,
+    verifyUserId,
+    rejectUserId,
+    setIdVerificationPending,
+    autoVerifyIdWithAI,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;
