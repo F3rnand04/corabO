@@ -468,7 +468,12 @@ export default function TransactionsPage() {
                         <Card className="bg-card">
                            <CardHeader className="py-4 px-4">
                                 <div className="flex justify-between items-start">
-                                    <CardTitle className="text-lg">CREDICORA</CardTitle>
+                                    <Link href="/credicora" className="cursor-pointer group">
+                                        <CardTitle className="text-lg text-blue-600 group-hover:underline flex items-center gap-1">
+                                            <Star className="w-5 h-5 fill-current"/>
+                                            CREDICORA
+                                        </CardTitle>
+                                    </Link>
                                     <div className="text-right">
                                         <p className="text-xl font-bold">{showSensitiveData ? `$${(currentUser.credicoraLimit || 0).toFixed(2)}` : '$***.**'}</p>
                                     </div>
@@ -594,5 +599,3 @@ export default function TransactionsPage() {
         </div>
     );
 }
-
-    

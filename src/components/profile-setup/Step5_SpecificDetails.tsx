@@ -1,6 +1,5 @@
 
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -16,6 +15,8 @@ import { cn } from '@/lib/utils';
 import { SubscriptionDialog } from '../SubscriptionDialog';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface Step5_SpecificDetailsProps {
   onBack: () => void;
@@ -27,6 +28,7 @@ interface Step5_SpecificDetailsProps {
 const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
 export default function Step5_SpecificDetails({ onBack, onNext, formData, setFormData }: Step5_SpecificDetailsProps) {
+  const router = useRouter();
   const [specialty, setSpecialty] = useState(formData.specialty);
   const [location, setLocation] = useState(formData.location);
   const [serviceRadius, setServiceRadius] = useState(formData.serviceRadius);
@@ -107,10 +109,12 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
           <Label>Opciones de Pago y Citas</Label>
            <div className="space-y-4 rounded-md border p-4">
             <div className="flex items-center justify-between">
-                <Label htmlFor="accepts-credicora" className="flex items-center gap-2 font-medium text-blue-600">
-                    <Star className="w-5 h-5 fill-current"/>
-                    Aceptar Pagos con Credicora
-                </Label>
+                <Link href="/credicora" className="cursor-pointer group">
+                  <Label htmlFor="accepts-credicora" className="flex items-center gap-2 font-medium text-blue-600 group-hover:underline">
+                      <Star className="w-5 h-5 fill-current"/>
+                      Aceptar Pagos con Credicora
+                  </Label>
+                </Link>
                 <Switch 
                     id="accepts-credicora" 
                     checked={acceptsCredicora}
