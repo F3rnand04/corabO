@@ -250,7 +250,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         commitments.push(commitment);
       }
 
-      const commissionAmount = originalTx.amount * 0.0499; // 4.99% commission on the total value of products
+      const commissionRate = client.isSubscribed ? 0.0399 : 0.0499;
+      const commissionAmount = originalTx.amount * commissionRate;
       const commissionTx: Transaction = {
         id: `commission-${originalTx.id}`,
         type: 'Sistema',
@@ -260,7 +261,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         clientId: originalTx.providerId, // The provider owes the commission
         providerId: 'corabo-app', // Commission is owed to the app
         details: {
-          system: `Comisión (4.99%) por venta Credicora #${originalTx.id}`
+          system: `Comisión (${(commissionRate * 100).toFixed(2)}%) por venta Credicora #${originalTx.id}`
         }
       };
 
@@ -1094,4 +1095,5 @@ export type { Transaction };
     
 
     
+
 
