@@ -22,9 +22,5 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-provider.setCustomParameters({
-  'auth_type': 'reauthenticate'
-});
-
 
 export { app, auth, db, provider };
