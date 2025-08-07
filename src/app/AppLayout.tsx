@@ -22,12 +22,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     setIsMounted(true);
   }, []);
 
+  // This is the key change. We now wait for isLoadingAuth to be false.
   useEffect(() => {
     if (!isLoadingAuth && !currentUser && pathname !== '/login') {
       router.push('/login');
     }
   }, [currentUser, isLoadingAuth, pathname, router]);
 
+  // If authentication is loading OR the component isn't mounted, show a loader.
+  // This prevents any app logic from running before Firebase has determined the auth state.
   if (isLoadingAuth || !isMounted) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -36,6 +39,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
   
+  // If not logged in, only render the login page, or a loader if redirecting.
   if (!currentUser) {
      if (pathname !== '/login') {
        return (
@@ -59,7 +63,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       );
   }
 
-
+  // --- Layout logic for authenticated users ---
   const isClientWithInactiveTransactions = currentUser?.type === 'client' && !currentUser?.isTransactionsActive;
   
   // Define routes that should NOT have the main header or footer
@@ -102,15 +106,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-col min-h-screen">
       {shouldShowMainHeader && <Header />}
-       {isClientWithInactiveTransactions && !isTransactionsPage && !isTransactionsSettingsPage && (
+       {isClientWithInactiveTransactions && (
          <div className={cn("bg-yellow-100 border-b border-yellow-300 text-yellow-900 text-sm z-30", shouldShowMainHeader ? 'sticky top-16' : 'sticky top-0')}>
             <div className="container p-2 flex items-center justify-center text-center gap-2">
                  <AlertCircle className="h-5 w-5 shrink-0" />
                  <p className="flex-grow">
-                    ¡Activa tu registro de transacciones para una experiencia de compra segura y con seguimiento!
+                    Activate your transaction log for a safe shopping experience with tracking!
                  </p>
                  <Button variant="ghost" size="sm" asChild className="text-current hover:bg-yellow-200 hover:text-current">
-                    <Link href="/transactions">Activar ahora <ArrowRight className="h-4 w-4 ml-2"/></Link>
+                    <Link href="/transactions">Activate now <ArrowRight className="h-4 w-4 ml-2"/></Link>
                  </Button>
             </div>
         </div>

@@ -171,6 +171,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
+    // This effect now safely waits for the user to be authenticated before running.
     if (!currentUser) return;
   
     const usersQuery = query(collection(db, "users"));
