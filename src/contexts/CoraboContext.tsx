@@ -199,16 +199,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const signInWithGoogle = async () => {
     try {
-      // Dynamically set auth domain for different environments
-      if (typeof window !== 'undefined') {
-          const hostname = window.location.hostname;
-          // This covers both the development (cloudworkstations) and deployed (hosted.app) environments.
-          if (hostname.includes('cloudworkstations.dev') || hostname.includes('hosted.app')) {
-              provider.setCustomParameters({
-              'authDomain': hostname
-              });
-          }
-      }
       await signInWithPopup(auth, provider);
       // onAuthStateChanged will handle the rest
       router.push('/');

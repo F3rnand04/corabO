@@ -22,5 +22,16 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
+// Dynamically set auth domain for different environments. This is the fix.
+if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    // This covers both the development (cloudworkstations) and deployed (hosted.app) environments.
+    if (hostname.includes('cloudworkstations.dev') || hostname.includes('hosted.app')) {
+        provider.setCustomParameters({
+        'authDomain': hostname
+        });
+    }
+}
+
 
 export { app, auth, db, provider };
