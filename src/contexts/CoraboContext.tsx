@@ -50,7 +50,7 @@ interface CoraboState {
   startDispute: (transactionId: string) => void;
   checkout: (transactionId: string, withDelivery: boolean, useCredicora: boolean) => void;
   setSearchQuery: (query: string) => void;
-  addContact: (user: User) => void;
+  addContact: (user: User) => boolean;
   removeContact: (userId: string) => void;
   toggleGps: (userId: string) => void;
   updateUserProfileImage: (userId: string, imageUrl: string) => void;
@@ -385,7 +385,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         },
     };
     setTransactions(prev => [newTx, ...prev]);
-    toast({ title: "Servicio Solicitado", description: `Has solicitado el servicio: ${service.name}` });
   };
   
   const requestQuoteFromGroup = (serviceName: string, items: string[], groupOrProvider: string): boolean => {
@@ -422,7 +421,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
      // For demo, we'll just send it to the first provider found
      const provider = users.find(u => u.type === 'provider');
      if (!provider) {
-        toast({ variant: 'destructive', title: "Error", description: "No se encontraron proveedores para enviar la cotización." });
         return false;
      }
 
@@ -452,39 +450,31 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         details: { ...tx.details, quote },
         date: new Date().toISOString(),
     }));
-    toast({ title: "Cotización Enviada", description: "La cotización ha sido enviada al cliente." });
   };
   
   const acceptQuote = (transactionId: string) => {
     const client = users.find(u => u.id === currentUser.id);
     const newStatus = client?.isSubscribed ? 'Acuerdo Aceptado - Pendiente de Ejecución' : 'Finalizado - Pendiente de Pago';
-    const toastTitle = client?.isSubscribed ? "Acuerdo Aceptado" : "Acuerdo Aceptado - Pago Requerido";
-    const toastDescription = client?.isSubscribed ? "El servicio ha comenzado." : "Debes realizar el pago por adelantado para continuar.";
 
     updateTransaction(transactionId, {
         status: newStatus,
         date: new Date().toISOString(),
     });
 
-    toast({ title: toastTitle, description: toastDescription });
   };
 
   const acceptAppointment = (transactionId: string) => {
     const client = users.find(u => u.id === currentUser.id);
     const newStatus = client?.isSubscribed ? 'Acuerdo Aceptado - Pendiente de Ejecución' : 'Finalizado - Pendiente de Pago';
-    const toastTitle = client?.isSubscribed ? "Cita Confirmada" : "Cita Confirmada - Pago Requerido";
-    const toastDescription = client?.isSubscribed ? "Se ha creado un compromiso de pago para el cliente." : "El cliente debe pagar por adelantado para confirmar la cita.";
 
     updateTransaction(transactionId, {
       status: newStatus,
       date: new Date().toISOString(),
     });
-    toast({ title: toastTitle, description: toastDescription });
   }
 
   const completeWork = (transactionId: string) => {
     updateTransaction(transactionId, { status: 'Pendiente de Confirmación del Cliente' });
-    toast({ title: "Trabajo Marcado como Finalizado", description: "Se ha notificado al cliente para que confirme la recepción." });
   };
 
   const confirmWorkReceived = (transactionId: string, rating: number, comment?: string) => {
@@ -496,7 +486,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         clientComment: comment,
       }
     }));
-    toast({ title: "Trabajo Confirmado", description: "Gracias por tu feedback. Ahora puedes proceder con el pago." });
   };
   
   const payCommitment = (transactionId: string, rating?: number, comment?: string) => {
@@ -511,12 +500,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         clientComment: comment,
       }
     }));
-
-    if (originalTx?.details.system?.includes('Plan')) {
-         toast({ title: "¡Pago de Suscripción Registrado!", description: "Se ha notificado al sistema. Tu verificación está en proceso." });
-    } else {
-        toast({ title: "¡Pago Registrado!", description: "Se ha notificado al proveedor para que confirme la recepción." });
-    }
   };
 
   const confirmPaymentReceived = (transactionId: string, fromThirdParty: boolean) => {
@@ -531,11 +514,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         }
     }));
 
-    if (fromThirdParty) {
-        toast({ variant: 'destructive', title: "Pago de Tercero Reportado", description: "La transacción ha sido marcada. Gracias por tu colaboración." });
-    } else {
-        toast({ title: "¡Pago Confirmado!", description: "Gracias por tu pago. ¡Has sumado puntos a tu reputación!" });
-    }
 
     if (originalTx.details.delivery) {
         assignDelivery(transactionId);
@@ -559,30 +537,24 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             originalTx.clientId, 
             user.type === 'provider' ? messageForProvider : messageForClient
         );
-        toast({ title: "¡Verificación en Proceso!", description: "Revisa tus mensajes para ver los siguientes pasos."});
     }
   };
 
   const startDispute = (transactionId: string) => {
     updateTransaction(transactionId, { status: 'En Disputa' });
-    toast({ variant: 'destructive', title: "Disputa Iniciada", description: "La transacción está ahora en disputa." });
   };
 
-  const addContact = (user: User) => {
+  const addContact = (user: User): boolean => {
+    let success = false;
     setContacts(prev => {
         if (prev.find(c => c.id === user.id)) {
-            toast({
-                title: "Contacto ya existe",
-                description: `${user.name} ya está en tu lista de contactos.`
-            });
+            success = false;
             return prev;
         }
-        toast({
-            title: "¡Contacto Guardado!",
-            description: `Has añadido a ${user.name} a tus contactos.`
-        });
+        success = true;
         return [...prev, user];
     });
+    return success;
   };
 
   const removeContact = (userId: string) => {
@@ -616,10 +588,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const updateUserProfileImage = (userId: string, imageUrl: string) => {
     updateUser(userId, { profileImage: imageUrl });
-    toast({
-        title: "¡Foto de Perfil Actualizada!",
-        description: "Tu nueva foto de perfil está visible.",
-    });
   };
   
   const updateUserProfileAndGallery = (userId: string, imageOrId: GalleryImage | string, isDelete: boolean = false) => {
@@ -629,11 +597,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
       if (isDelete) {
         newGallery = currentGallery.filter(image => image.id !== imageOrId);
-        toast({ title: "Publicación Eliminada", description: "La imagen ha sido eliminada de tu galería." });
       } else {
         const newImage = imageOrId as GalleryImage;
         newGallery = [{ ...newImage, id: newImage.id || newImage.src }, ...currentGallery];
-        toast({ title: "¡Publicación Exitosa!", description: "Tu nuevo contenido ya está en tu vitrina." });
       }
 
       return { gallery: newGallery };
@@ -644,11 +610,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     updateUser(userId, (user) => ({
         gallery: user.gallery?.filter(image => image.id !== imageId) || []
     }));
-
-    toast({
-        title: "Publicación Eliminada",
-        description: "La imagen ha sido eliminada de tu galería."
-    });
   };
 
   const addCommentToImage = (ownerId: string, imageId: string, commentText: string) => {
@@ -727,20 +688,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const activateTransactions = (userId: string, creditLimit: number) => {
     updateUser(userId, { isTransactionsActive: true, credicoraLimit: creditLimit, credicoraLevel: 1 });
-    toast({
-        title: "¡Módulo de Transacciones Activado!",
-        description: "Ya puedes empezar a gestionar tus finanzas.",
-        className: "bg-green-100 border-green-300 text-green-800",
-    });
-    router.push('/transactions');
   }
   
   const deactivateTransactions = (userId: string) => {
     updateUser(userId, { isTransactionsActive: false, credicoraLimit: 0 });
-    toast({
-        title: "Registro de Transacciones Desactivado",
-        description: "Tu módulo ha sido desactivado. Puedes volver a activarlo desde los ajustes."
-    });
   }
   
   const activatePromotion = (details: { imageId: string, promotionText: string, cost: number }) => {
@@ -825,10 +776,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       
       router.push(`/quotes/payment?commitmentId=${campaignPaymentTx.id}&amount=${budget}`);
       
-      toast({
-        title: "¡Casi listo! Procede al pago",
-        description: "Tu campaña ha sido configurada. Realiza el pago para activarla."
-      });
   };
 
 
@@ -839,7 +786,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const filteredTransactions = transactions.filter(tx => new Date(tx.date) >= threeMonthsAgo);
 
     if (filteredTransactions.length === 0) {
-        toast({ title: "No hay transacciones", description: "No hay transacciones en los últimos 3 meses para imprimir." });
         return;
     }
 
@@ -936,12 +882,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             return convo;
         })
     );
-    toast({ title: "Propuesta Enviada", description: "Tu propuesta ha sido enviada al cliente."});
   };
 
   const acceptProposal = (conversationId: string, messageId: string) => {
     if (!currentUser.isTransactionsActive) {
-        toast({ variant: 'destructive', title: "Acción Requerida", description: "Debes activar tu registro de transacciones para aceptar propuestas." });
         return;
     }
 
@@ -984,8 +928,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     
     if (transaction) {
       setTransactions(prev => [transaction!, ...prev]);
-      const toastDescription = clientIsSubscribed ? "Se ha creado un nuevo compromiso de pago." : "Debes pagar por adelantado para confirmar el servicio.";
-      toast({ title: "Acuerdo Aceptado", description: toastDescription });
     }
   };
 
@@ -993,7 +935,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const createAppointmentRequest = (request: AppointmentRequest) => {
     const provider = users.find(u => u.id === request.providerId);
     if (!provider || !provider.isTransactionsActive) {
-      toast({ variant: 'destructive', title: "Proveedor no disponible", description: "Este proveedor no tiene activas las transacciones en este momento."});
       return;
     }
 
@@ -1010,10 +951,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       },
     };
     setTransactions(prev => [newTx, ...prev]);
-    toast({
-        title: "¡Solicitud de Cita Enviada!",
-        description: `Se ha notificado a tu proveedor. Recibirás una respuesta pronto.`
-    })
   }
 
   const getAgendaEvents = () => {
@@ -1149,5 +1086,7 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
+
+    
 
     

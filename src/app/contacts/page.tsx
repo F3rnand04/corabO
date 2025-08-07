@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useCorabo } from '@/contexts/CoraboContext';
@@ -11,6 +12,7 @@ import { ValidationItem } from '@/components/ValidationItem';
 import { SubscriptionDialog } from '@/components/SubscriptionDialog';
 import { useState } from 'react';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 
 function ContactsHeader({ onSubscribeClick }: { onSubscribeClick: () => void }) {
   const router = useRouter();
@@ -43,11 +45,17 @@ export default function ContactsPage() {
   const { currentUser, contacts, removeContact, validateEmail, validatePhone, sendMessage } = useCorabo();
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
   const router = useRouter();
+  const { toast } = useToast();
 
   const handleDirectMessage = (contactId: string) => {
     const conversationId = sendMessage(contactId, '', true);
     router.push(`/messages/${conversationId}`);
   };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: 'Copiado', description: `Tu ID de Corabo ha sido copiado.` });
+  }
 
   return (
     <>
@@ -65,7 +73,7 @@ export default function ContactsPage() {
                     <p className="font-bold">ID corabO</p>
                     <div className="flex items-center gap-2">
                        <p className="font-mono text-sm">ABC123456</p>
-                       <Button variant="ghost" size="icon" className="w-6 h-6">
+                       <Button variant="ghost" size="icon" className="w-6 h-6" onClick={() => copyToClipboard('ABC123456')}>
                             <Copy className="w-4 h-4 text-muted-foreground" />
                        </Button>
                     </div>
@@ -130,3 +138,5 @@ export default function ContactsPage() {
     </>
   );
 }
+
+    

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, TouchEvent, useEffect, useRef, ChangeEvent } from 'react';
@@ -100,11 +101,11 @@ export default function ProfilePage() {
         reader.onloadend = () => {
             const newImageUrl = reader.result as string;
             updateUserProfileImage(currentUser.id, newImageUrl);
-
-            toast({
+             toast({
                 title: "¡Foto de Perfil Actualizada!",
                 description: "Tu nueva foto de perfil está visible.",
             });
+
         };
         reader.readAsDataURL(file);
     }
@@ -112,6 +113,7 @@ export default function ProfilePage() {
   
   const handleDeleteImage = (imageId: string) => {
     removeGalleryImage(currentUser.id, imageId);
+    toast({ title: "Publicación Eliminada", description: "La imagen ha sido eliminada de tu galería." });
     setIsDetailsDialogOpen(false);
     // Reset index if needed
     if (currentImageIndex >= (currentUser.gallery?.length ?? 1) - 1) {
@@ -536,3 +538,5 @@ export default function ProfilePage() {
     </>
   );
 }
+
+    
