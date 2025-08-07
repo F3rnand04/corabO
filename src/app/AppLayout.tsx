@@ -28,27 +28,38 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // 2. If auth check is complete and there's no user
+  // 2. If auth check is complete and there's no user, handle redirection.
   if (!currentUser) {
-    // If we are already on the login page, render it.
-    if (pathname === '/login') {
-      return <main>{children}</main>;
-    }
-    // Otherwise, redirect to login. The effect below handles this.
-    // We show a loader while the redirect happens.
-    else {
+    // If we are on any page other than login, redirect to login.
+    if (pathname !== '/login') {
+      // Perform the redirect on the client side.
       if (typeof window !== 'undefined') {
-        router.push('/login');
+        router.replace('/login');
       }
+      // Show a loader while the redirect happens.
       return (
         <div className="flex items-center justify-center min-h-screen">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
       );
     }
+    // If we are already on the login page, render it.
+    return <main>{children}</main>;
   }
   
-  // 3. If auth check is complete and there IS a user, render the app.
+  // 3. If we are on the login page but have a user, redirect to home.
+  if (pathname === '/login') {
+    if (typeof window !== 'undefined') {
+        router.replace('/');
+    }
+    return (
+        <div className="flex items-center justify-center min-h-screen">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+    );
+  }
+  
+  // 4. If auth check is complete and there IS a user, render the app.
   
   // Admin Route Guard
   if (pathname.startsWith('/admin') && currentUser?.role !== 'admin') {
@@ -125,3 +136,5 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+
+    
