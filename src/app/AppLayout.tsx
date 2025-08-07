@@ -24,11 +24,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       return; // Do nothing while auth state is loading
     }
 
+    // If there is no user, and we are not on the login page, redirect to login
     if (!currentUser && pathname !== '/login') {
       router.replace('/login');
     }
+    
+    // If there is a user, but they haven't completed the initial setup, redirect them
+    if (currentUser && !currentUser.isInitialSetupComplete && pathname !== '/initial-setup') {
+      router.replace('/initial-setup');
+    }
 
-    if (currentUser && pathname === '/login') {
+    // If user is fully set up but on a setup/login page, redirect to home
+    if (currentUser && currentUser.isInitialSetupComplete && (pathname === '/login' || pathname === '/initial-setup')) {
       router.replace('/');
     }
   }, [currentUser, isLoadingAuth, pathname, router]);
@@ -43,17 +50,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
   
-  // 2. If not authenticated, only render the login page, or a loader while redirecting
-  if (!currentUser) {
-    return pathname === '/login' ? <main>{children}</main> : (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
+  // 2. If no user, or user is in setup, render the specific page without main layout
+  if (!currentUser || !currentUser.isInitialSetupComplete) {
+     if (pathname === '/login' || pathname === '/initial-setup') {
+        return <main>{children}</main>;
+     }
+     // While redirecting, show a loader
+     return (
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+     );
   }
   
-  // 3. If authenticated, render the main app layout
-  if(currentUser) {
+  // 3. If authenticated and setup is complete, render the main app layout
+  if(currentUser && currentUser.isInitialSetupComplete) {
       // Admin Route Guard
       if (pathname.startsWith('/admin') && currentUser?.role !== 'admin') {
           router.replace('/');
@@ -77,6 +88,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         '/privacy',
         '/community-guidelines',
         '/admin',
+        '/initial-setup',
       ];
 
       const shouldHideAllLayout = noHeaderFooterRoutes.some(path => pathname.startsWith(path));

@@ -73,6 +73,7 @@ interface CoraboState {
   validatePhone: (userId: string) => void;
   setFeedView: (view: FeedView) => void;
   updateFullProfile: (userId: string, data: ProfileSetupData) => void;
+  completeInitialSetup: (userId: string, data: { lastName: string; idNumber: string; birthDate: string }) => void;
   subscribeUser: (userId: string, planName: string, amount: number) => void;
   activateTransactions: (userId: string, creditLimit: number) => void;
   deactivateTransactions: (userId: string) => void;
@@ -154,6 +155,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
               emailValidated: firebaseUser.emailVerified,
               phoneValidated: false,
               isGpsActive: true,
+              isInitialSetupComplete: false, // <-- NUEVO CAMPO
               gallery: [],
               credicoraLevel: 1,
               credicoraLimit: 150,
@@ -163,13 +165,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             };
             await setDoc(userDocRef, newUser);
             setCurrentUser(newUser);
-            router.push('/profile-setup'); // Redirect to profile setup
           }
         } catch (error) {
             console.error("FirebaseError on getDoc:", error);
-            // This is where the "client is offline" error would be caught.
-            // By having a robust firebase.ts, we prevent it.
-            // If it still happens, we should probably sign the user out to retry.
             await signOut(auth);
             setCurrentUser(null);
         }
@@ -340,6 +338,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const updateUser = async (userId: string, updates: Partial<User>) => {
     const userDocRef = doc(db, 'users', userId);
     await updateDoc(userDocRef, updates);
+  };
+
+  const completeInitialSetup = (userId: string, data: { lastName: string; idNumber: string; birthDate: string }) => {
+    const updates = {
+        ...data,
+        isInitialSetupComplete: true,
+    };
+    updateUser(userId, updates);
   };
   
   const toggleGps = (userId: string) => {
@@ -536,6 +542,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     validatePhone,
     setFeedView,
     updateFullProfile,
+    completeInitialSetup,
     subscribeUser,
     activateTransactions,
     deactivateTransactions,

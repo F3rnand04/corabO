@@ -137,6 +137,7 @@ export type User = {
   verified?: boolean;
   isSubscribed?: boolean;
   isTransactionsActive?: boolean;
+  isInitialSetupComplete?: boolean; // <-- NUEVO CAMPO
   credicoraLimit?: number;
   credicoraLevel?: number;
   promotion?: {
