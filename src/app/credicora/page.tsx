@@ -120,7 +120,7 @@ export default function CredicoraPage() {
                     <CardTitle className="flex items-center gap-2"><Zap className="text-yellow-500 fill-yellow-500"/> Beneficios de Suscriptor</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                    <p className="flex items-center gap-2"><Percent className="w-4 h-4 text-primary"/> <span className="font-bold">10% de Descuento</span> en la comisión de Credicora.</p>
+                    <p className="flex items-center gap-2"><Percent className="w-4 h-4 text-primary"/> Comisión Reducida: <span className="line-through text-muted-foreground">4.99%</span> <span className="font-bold">¡Ahora 4.49%!</span></p>
                     <p className="flex items-center gap-2"><Award className="w-4 h-4 text-primary"/> Progresión de nivel <span className="font-bold">más rápida.</span></p>
                     <p className="flex items-center gap-2"><TrendingUp className="w-4 h-4 text-primary"/> Acceso a herramientas de promoción avanzadas.</p>
                      <Button className="w-full mt-4" onClick={() => router.push('/contacts')}>
