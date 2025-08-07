@@ -3,7 +3,6 @@
 
 import { initializeApp, getApp, getApps } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-// We will now get auth and provider directly in the context to avoid singleton issues.
 
 // Your web app's Firebase configuration - KEEP THIS AS IS FROM THE CONSOLE
 const firebaseConfig = {
@@ -15,6 +14,11 @@ const firebaseConfig = {
   "measurementId": "",
   "messagingSenderId": "220291714642"
 };
+
+// Conditional configuration for the development environment
+if (typeof window !== 'undefined' && window.location.hostname.includes('cloudworkstations.dev')) {
+    firebaseConfig.authDomain = window.location.hostname;
+}
 
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
