@@ -19,9 +19,19 @@ export default function LoginPage() {
 
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-muted/40">
-      <div className="text-center p-8 bg-background rounded-2xl shadow-xl max-w-sm w-full">
-        <Image src="https://i.postimg.cc/8zWvkhxS/Sin-t-tulo-3.png" alt="Corabo Logo" width={180} height={60} className="mx-auto mb-6" />
+    <div className="relative flex items-center justify-center min-h-screen bg-background">
+      <div className="absolute inset-0 z-0">
+          <Image 
+              src="https://i.postimg.cc/RCnNjqZt/lg2.png"
+              alt="Corabo background"
+              layout="fill"
+              objectFit="cover"
+              quality={100}
+          />
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
+      </div>
+      <div className="relative z-10 text-center p-8 bg-background/80 dark:bg-background/50 backdrop-blur-lg rounded-2xl shadow-xl max-w-sm w-full border border-white/20">
+        <Image src="https://i.postimg.cc/8zWvkhxS/Sin-t-tulo-3.png" alt="Corabo Logo" width={180} height={60} className="mx-auto mb-6 invert dark:invert-0" />
         <h1 className="text-2xl font-bold mb-2">Bienvenido a Corabo</h1>
         <p className="text-muted-foreground mb-8">Conectando tus necesidades con las mejores soluciones.</p>
         <Button onClick={signInWithGoogle} size="lg" className="w-full">
