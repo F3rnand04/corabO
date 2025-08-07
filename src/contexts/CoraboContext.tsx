@@ -199,6 +199,16 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const signInWithGoogle = async () => {
     try {
+      // This is the definitive fix: configure the provider just before it's used.
+      if (typeof window !== 'undefined') {
+        const hostname = window.location.hostname;
+        // This covers both the development (cloudworkstations) and deployed (hosted.app) environments.
+        if (hostname.includes('cloudworkstations.dev') || hostname.includes('hosted.app')) {
+            provider.setCustomParameters({
+              'authDomain': hostname
+            });
+        }
+      }
       await signInWithPopup(auth, provider);
       // onAuthStateChanged will handle the rest
       router.push('/');
