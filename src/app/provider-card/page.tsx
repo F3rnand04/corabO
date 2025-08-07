@@ -13,10 +13,10 @@ import { Star, MapPin, Bookmark, Send, MessageCircle, CheckCircle, Flag } from "
 import Link from "next/link";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { useState } from "react";
-import { ReportDialog } from "./ReportDialog";
+import { ReportDialog } from "@/components/ReportDialog";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
-import { ImageDetailsDialog } from "./ImageDetailsDialog";
+import { ImageDetailsDialog } from "@/components/ImageDetailsDialog";
 import { useToast } from "@/hooks/use-toast";
 
 
@@ -172,5 +172,3 @@ export function ProviderCard({ provider }: ProviderCardProps) {
         </>
     )
 }
-
-    

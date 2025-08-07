@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import type { Service } from "@/lib/types";
@@ -7,15 +8,15 @@ import { Button } from "@/components/ui/button";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { Star, Send, MessageCircle, MapPin, Bookmark, CheckCircle, Flag } from "lucide-react";
 import Image from "next/image";
-import { Avatar, AvatarFallback, AvatarImage } from "./avatar";
-import { Separator } from "./separator";
-import { Badge } from "./badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { useState } from "react";
-import { ReportDialog } from "./ReportDialog";
+import { ReportDialog } from "@/components/ReportDialog";
 import { cn } from "@/lib/utils";
 import { useRouter } from 'next/navigation';
-import { ImageDetailsDialog } from "./ImageDetailsDialog";
+import { ImageDetailsDialog } from "@/components/ImageDetailsDialog";
 import { useToast } from "@/hooks/use-toast";
 
 
@@ -181,5 +182,3 @@ export function ServiceCard({ service }: ServiceCardProps) {
     </>
   );
 }
-
-    
