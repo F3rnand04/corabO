@@ -29,7 +29,7 @@ La aplicación se rige por un conjunto de tipos de datos bien definidos:
 
 El `CoraboContext` es el corazón de la aplicación. Centraliza toda la lógica y los datos:
 
--   **Gestión de Estado:** Utiliza `useState` para manejar `users`, `products`, `services`, `transactions`, `currentUser`, `searchQuery`, `feedView`, `cart`, y el nuevo estado `campaigns`.
+-   **Gestión de Estado:** Utiliza `useState` para manejar `users`, `products`, `services`, `transactions`, `currentUser`, `searchQuery`, `feedView`, `cart`, `contacts` y el nuevo estado `campaigns`.
 -   **Acciones Clave:**
     -   **Clasificación Automática de Empresas:** Implementa una función (`checkIfShouldBeEnterprise`) que reclasifica a un proveedor de productos como "Empresa" si demuestra un alto volumen de ventas.
     -   **Pausar Perfil:** Se introduce la función `pauseProfile`, que permite a un proveedor desactivar temporalmente su perfil.
@@ -37,6 +37,8 @@ El `CoraboContext` es el corazón de la aplicación. Centraliza toda la lógica 
         -   **`createCampaign`**: Permite a un proveedor iniciar una campaña para una publicación. Calcula el costo basado en el **nivel de impulso** y la **segmentación**, aplica un **descuento del 10% a suscriptores**, y genera una transacción de "Sistema" para el pago.
         -   **Pago con Credicora:** Las campañas con un costo de $20 o más pueden ser financiadas con Credicora, reutilizando la lógica de pago a plazos.
         -   **Simulación de Rendimiento:** El sistema simula el incremento de las estadísticas de las campañas activas para dar feedback visual al proveedor.
+    -   **Gestión de Contactos:** Incluye la función `isContact` para verificar si un usuario ya ha sido guardado, permitiendo un feedback visual instantáneo en la UI.
+    -   **Corrección de Errores de Renderizado:** Se ha refactorizado la gestión de notificaciones (`toast`) para evitar errores de "actualización durante el renderizado", asegurando que las notificaciones solo se activen como respuesta directa a eventos del usuario.
 
 ## 4. Flujos de Usuario y Componentes Clave
 
@@ -59,6 +61,7 @@ El `CoraboContext` es el corazón de la aplicación. Centraliza toda la lógica 
 ### 4.3. Perfil de Empresa (`/companies/[id]/page.tsx`)
 
 -   **Botón de Mensaje Directo:** Se ha añadido un icono de **Enviar (`Send`)** junto al de guardar (`Bookmark`). Esto permite a cualquier usuario iniciar una conversación de chat directamente con el proveedor desde su perfil, mejorando la comunicación.
+-   **Feedback Visual al Guardar:** El icono de `Bookmark` ahora se rellena de color cuando se guarda un contacto, proporcionando una confirmación visual inmediata y persistente.
 
 ### 4.4. Emprende por Hoy (`/emprende/page.tsx`)
 
@@ -66,4 +69,4 @@ El `CoraboContext` es el corazón de la aplicación. Centraliza toda la lógica 
 
 ## 5. Conclusión
 
-El prototipo ha evolucionado para incluir un sofisticado **módulo de autogestión publicitaria**, permitiendo a los proveedores invertir en su propio crecimiento dentro de la plataforma. La documentación refleja esta nueva capa de monetización y las mejoras de usabilidad implementadas.
+El prototipo ha evolucionado para incluir un sofisticado **módulo de autogestión publicitaria**, permitiendo a los proveedores invertir en su propio crecimiento dentro de la plataforma. Las mejoras en la interfaz, como el botón de mensaje directo y el feedback visual, agilizan la interacción del usuario. La corrección de errores de renderizado ha fortalecido la estabilidad de la aplicación. La documentación refleja esta nueva capa de monetización y las mejoras de usabilidad implementadas.

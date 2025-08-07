@@ -60,6 +60,7 @@ El `CoraboContext` es el corazón de la aplicación. Centraliza toda la lógica 
     -   Muestra el perfil público de un proveedor.
     -   **Agendamiento de Citas:** Al hacer clic en una fecha del calendario, se abre un diálogo para que el cliente escriba un resumen de su solicitud. Esto inicia un proceso de negociación en lugar de crear un compromiso automático.
     -   **Carrito de Compras Mejorado:** El carrito de compras de la cabecera ahora también abre un diálogo de pre-factura completo, permitiendo añadir delivery y usar Credicora si el proveedor lo acepta.
+    -   **Mensaje Directo:** Se ha añadido un icono para enviar un mensaje directo al proveedor, mejorando la comunicación inicial.
 
 ### 4.4. Chat y Negociación de Acuerdos (`src/app/messages/[id]/page.tsx`)
 

@@ -13,6 +13,7 @@ graph TD
     A[Inicio: Cliente en el Feed Principal] --> B{Busca un proveedor/producto};
     B --> C[Encuentra Perfil de Proveedor];
     C -- Clic en Mensaje Directo --> L[Inicia chat para negociar];
+    C -- Clic en Guardar --> C_SAVE[Contacto guardado, icono se rellena];
     C --> D{¿El cliente tiene su registro de transacciones activo?};
     D -- No --> E[Ve banner de 'Activar Registro'];
     E --> F[Página de Activación de Transacciones];
@@ -105,7 +106,7 @@ graph TD
 
     C -- No (No Suscrito) --> I[Estado de la transacción cambia a 'Finalizado - Pendiente de Pago'];
     I --> J[El sistema solicita al Cliente que PAGUE POR ADELANTADO];
-    J --> K{¿Cliente realiza el pago?};
+    J --> K{Cliente realiza el pago?};
     K -- Sí --> L[Proveedor recibe notificación de pago y realiza el trabajo];
     K -- No --> M[La transacción permanece pendiente de pago];
     L --> G;

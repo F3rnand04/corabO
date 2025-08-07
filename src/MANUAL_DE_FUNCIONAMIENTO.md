@@ -62,7 +62,8 @@ Este es un flujo de 4 pasos para que el proveedor autogestione su publicidad:
     -   Permite usar **Credicora** para financiar la campaña si el costo es de $20 o más.
 
 ### 3.3. Perfil Público de un Proveedor (`/companies/[id]/page.tsx`)
-- **Botón de Mensaje Directo:** Se ha añadido un icono de **Enviar (`Send`)** junto al botón de guardar. Esto permite a los clientes iniciar una conversación de chat directamente con el proveedor desde su perfil, facilitando el primer contacto.
+- **Botón de Mensaje Directo:** Se ha añadido un icono de **Enviar (`Send`)** junto al botón de guardar (`Bookmark`). Esto permite a los clientes iniciar una conversación de chat directamente con el proveedor desde su perfil, facilitando el primer contacto.
+- **Feedback Visual al Guardar Contacto:** El icono de **Guardar (`Bookmark`)** ahora se rellena con el color primario de la aplicación cuando el contacto ha sido guardado, proporcionando una confirmación visual inmediata y persistente.
 
 ### 3.4. Carrito de Compras y Checkout (Componente Global)
 - **Acceso:** Icono de carrito en el `Header` y en el perfil de proveedores de productos.
@@ -80,6 +81,6 @@ Este es un flujo de 4 pasos para que el proveedor autogestione su publicidad:
 ---
 
 ## 4. Políticas Clave
-- **Activación Obligatoria:** Ningún proveedor puede ofertar si no ha completado el flujo de configuración Y el de activación de transacciones.
+- **Activación Obligatoria:** Ningún proveedor puede ofertar si no ha completado el flujo de configuración Y el de activación de transacciones. Los usuarios que intenten acceder a funciones que lo requieran (ej: "Emprende por Hoy") serán redirigidos.
 - **Límite de Cotizaciones (No Suscritos):** Un usuario no suscrito puede cotizar el mismo producto/servicio a un máximo de 3 proveedores distintos por día.
 - **Uso de Credicora:** La opción de financiar con Credicora (tanto para compras como para campañas) solo está disponible para montos iguales o superiores a $20.
