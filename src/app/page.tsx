@@ -58,6 +58,9 @@ export default function HomePage() {
             
         const providerNameMatch = providerName?.toLowerCase().includes(lowerCaseQuery);
         const specialtyMatch = provider.profileSetupData?.specialty?.toLowerCase().includes(lowerCaseQuery);
+        
+        // New: Check if the search query matches any of the provider's categories
+        const categoryMatch = provider.profileSetupData?.categories?.some(cat => cat.toLowerCase().includes(lowerCaseQuery));
 
         const productMatch = products.some(product => 
             product.providerId === provider.id && (
@@ -73,7 +76,7 @@ export default function HomePage() {
             )
         );
 
-        return providerNameMatch || productMatch || serviceMatch || specialtyMatch;
+        return providerNameMatch || productMatch || serviceMatch || specialtyMatch || categoryMatch;
      }
      
      const targetProviders = feedView === 'empresas' 
@@ -81,10 +84,11 @@ export default function HomePage() {
         : providers;
         
     if (lowerCaseQuery.trim() === '') {
-        return targetProviders;
+        return targetProviders.sort((a, b) => (b.isGpsActive ? 1 : 0) - (a.isGpsActive ? 1 : 0));
     }
 
-    return targetProviders.filter(filterLogic);
+    // Filter and then sort
+    return targetProviders.filter(filterLogic).sort((a, b) => (b.isGpsActive ? 1 : 0) - (a.isGpsActive ? 1 : 0));
   }
 
   const filteredItems = getFilteredItems();
@@ -98,7 +102,7 @@ export default function HomePage() {
            filteredProviders.length > 0 ? (
             filteredProviders.map(provider => <ProviderCard key={provider.id} provider={provider} />)
           ) : (
-            <p className="text-center text-muted-foreground">No se encontraron proveedores.</p>
+            <p className="text-center text-muted-foreground">No se encontraron proveedores para "{searchQuery}".</p>
           )
         ) : (
           // Vista por defecto: mostrar según la pestaña

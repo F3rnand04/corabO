@@ -12,7 +12,7 @@ export default function SearchPage() {
     const { setSearchQuery, setFeedView } = useCorabo();
 
     const handleCategorySelect = (categoryName: string) => {
-        setFeedView('empresas');
+        setFeedView('servicios');
         setSearchQuery(categoryName);
         router.push('/');
     }
