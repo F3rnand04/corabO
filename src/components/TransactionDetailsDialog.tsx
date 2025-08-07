@@ -89,9 +89,9 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
 
   if (!transaction) return null;
 
-  const isProvider = currentUser.type === 'provider';
-  const isClient = currentUser.type === 'client';
-  const otherPartyId = transaction.providerId === currentUser.id ? transaction.clientId : transaction.providerId;
+  const isProvider = currentUser?.type === 'provider';
+  const isClient = currentUser?.type === 'client';
+  const otherPartyId = transaction.providerId === currentUser?.id ? transaction.clientId : transaction.providerId;
   const otherParty = users.find(u => u.id === otherPartyId);
   const deliveryProvider = users.find(u => u.id === transaction.details.deliveryProviderId);
 

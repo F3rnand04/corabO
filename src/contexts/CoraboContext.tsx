@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData, Conversation, Message, AppointmentRequest, AgreementProposal, CredicoraLevel } from '@/lib/types';
+import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from 'next/navigation';
 import jsPDF from 'jspdf';
@@ -14,6 +14,7 @@ import { signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser } fr
 import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where } from 'firebase/firestore';
 import { createCampaign } from '@/ai/flows/campaign-flow';
 import { acceptProposal as acceptProposalFlow, sendMessage as sendMessageFlow } from '@/ai/flows/message-flow';
+import * as TransactionFlows from '@/ai/flows/transaction-flow';
 
 
 type FeedView = 'servicios' | 'empresas';
@@ -76,7 +77,7 @@ interface CoraboState {
   sendMessage: (recipientId: string, text: string, createOnly?: boolean) => string;
   sendProposalMessage: (conversationId: string, proposal: AgreementProposal) => void;
   acceptProposal: (conversationId: string, messageId: string) => void;
-  createAppointmentRequest: (request: AppointmentRequest) => void;
+  createAppointmentRequest: (request: Omit<AppointmentRequest, 'clientId'>) => void;
   getAgendaEvents: () => { date: Date; type: 'payment' | 'task'; description: string, transactionId: string }[];
   addCommentToImage: (ownerId: string, imageId: string, commentText: string) => void;
   removeCommentFromImage: (ownerId: string, imageId: string, commentIndex: number) => void;
@@ -149,16 +150,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         
         setCurrentUser(appUser);
         
-        // This part would be replaced by a Firestore listener
-        // setTransactions(initialTransactions.filter(t => t.clientId === appUser.id || t.providerId === appUser.id));
-        // setUsers(prevUsers => {
-        //   const userExists = prevUsers.some(u => u.id === appUser.id);
-        //   if (userExists) {
-        //     return prevUsers.map(u => u.id === appUser.id ? appUser : u);
-        //   }
-        //   return [...prevUsers, appUser];
-        // });
-
       } else {
         setCurrentUser(null);
       }
@@ -380,17 +371,45 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
 
 
-  // The rest of the functions would need similar refactoring...
+  // --- Transaction Flows ---
+  const sendQuote = (transactionId: string, quote: { breakdown: string; total: number }) => {
+    if (!currentUser) return;
+    TransactionFlows.sendQuote({ transactionId, userId: currentUser.id, breakdown: quote.breakdown, total: quote.total });
+  };
+  const acceptQuote = (transactionId: string) => {
+    if (!currentUser) return;
+    TransactionFlows.acceptQuote({ transactionId, userId: currentUser.id });
+  };
+  const acceptAppointment = (transactionId: string) => {
+      if (!currentUser) return;
+      TransactionFlows.acceptAppointment({ transactionId, userId: currentUser.id });
+  };
+  const payCommitment = (transactionId: string, rating?: number, comment?: string) => {
+    if (!currentUser) return;
+    TransactionFlows.payCommitment({ transactionId, userId: currentUser.id, rating, comment });
+  };
+  const confirmPaymentReceived = (transactionId: string, fromThirdParty: boolean) => {
+    if (!currentUser) return;
+    TransactionFlows.confirmPaymentReceived({ transactionId, userId: currentUser.id, fromThirdParty });
+  };
+  const completeWork = (transactionId: string) => {
+    if (!currentUser) return;
+    TransactionFlows.completeWork({ transactionId, userId: currentUser.id });
+  };
+  const confirmWorkReceived = (transactionId: string, rating: number, comment?: string) => {
+    if (!currentUser) return;
+    TransactionFlows.confirmWorkReceived({ transactionId, userId: currentUser.id, rating, comment });
+  };
+  const startDispute = (transactionId: string) => {
+    TransactionFlows.startDispute(transactionId);
+  };
+  const createAppointmentRequest = (request: Omit<AppointmentRequest, 'clientId'>) => {
+    if (!currentUser) return;
+    TransactionFlows.createAppointmentRequest({ ...request, clientId: currentUser.id });
+  };
+
   const requestService = (service: Service) => {};
   const requestQuoteFromGroup = (serviceName: string, items: string[], groupOrProvider: string): boolean => { return true; };
-  const sendQuote = (transactionId: string, quote: { breakdown: string; total: number }) => {};
-  const acceptQuote = (transactionId: string) => {};
-  const acceptAppointment = (transactionId: string) => {};
-  const payCommitment = (transactionId: string, rating?: number, comment?: string) => {};
-  const confirmPaymentReceived = (transactionId: string, fromThirdParty: boolean) => {};
-  const completeWork = (transactionId: string) => {};
-  const confirmWorkReceived = (transactionId: string, rating: number, comment?: string) => {};
-  const startDispute = (transactionId: string) => {};
   const checkout = (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {};
   const toggleGps = (userId: string) => {};
   const updateUserProfileImage = (userId: string, imageUrl: string) => {};
@@ -403,7 +422,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const activateTransactions = (userId: string, creditLimit: number) => {};
   const deactivateTransactions = (userId: string) => {};
   const downloadTransactionsPDF = () => {};
-  const createAppointmentRequest = (request: AppointmentRequest) => {};
   const getAgendaEvents = () => { return []; };
   const addCommentToImage = (ownerId: string, imageId: string, commentText: string) => {};
   const removeCommentFromImage = (ownerId: string, imageId: string, commentIndex: number) => {};
