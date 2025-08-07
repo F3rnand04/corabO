@@ -137,7 +137,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             } else {
                  const newUser: User = {
                     id: firebaseUser.uid,
-                    name: firebaseUser.displayName || 'Nuevo Usuario',
+                    name: firebaseUser.displayName || 'New User',
                     email: firebaseUser.email || '',
                     profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
                     type: 'client',
@@ -206,8 +206,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       console.error("Error signing in with Google: ", error);
       toast({
         variant: 'destructive',
-        title: 'Error de Autenticación',
-        description: 'No se pudo iniciar sesión con Google. Por favor, intenta de nuevo.'
+        title: 'Authentication Error',
+        description: 'Could not sign in with Google. Please try again.'
       });
     }
   };
@@ -237,8 +237,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     if (!currentUser.isTransactionsActive) {
         toast({
             variant: "destructive",
-            title: "Acción Requerida",
-            description: "Debes activar tu registro de transacciones para poder comprar."
+            title: "Action Required",
+            description: "You must activate your transaction log to be able to buy."
         });
         return;
     }
@@ -246,8 +246,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     if (!provider || !provider.isTransactionsActive) {
       toast({
             variant: "destructive",
-            title: "Proveedor no disponible",
-            description: "Este proveedor no tiene activas las transacciones en este momento."
+            title: "Provider not available",
+            description: "This provider does not have transactions active at the moment."
         });
       return;
     }
@@ -255,8 +255,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     if (cart.length > 0 && cart[0].product.providerId !== product.providerId) {
         toast({
             variant: "destructive",
-            title: "Carrito Multi-empresa",
-            description: "No puedes añadir productos de diferentes empresas en el mismo carrito. Finaliza esta compra primero."
+            title: "Multi-Store Cart",
+            description: "You cannot add products from different stores in the same cart. Finalize this purchase first."
         });
         return;
     }
@@ -324,8 +324,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const newGpsState = !currentUser.isGpsActive;
     updateUser(userId, { isGpsActive: newGpsState });
     toast({
-      title: `GPS ${newGpsState ? 'Activado' : 'Desactivado'}`,
-      description: newGpsState ? 'Tu ubicación ahora es visible para otros.' : 'Ya no compartirás tu ubicación.',
+      title: `GPS ${newGpsState ? 'Enabled' : 'Disabled'}`,
+      description: newGpsState ? 'Your location is now visible to others.' : 'You are no longer sharing your location.',
     });
   };
 
@@ -354,7 +354,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             recipientId: recipientId
         }).catch(err => {
             console.error(err);
-            toast({ variant: 'destructive', title: "Error al enviar mensaje" });
+            toast({ variant: 'destructive', title: "Error sending message" });
         });
     }
     return convoId;
@@ -369,10 +369,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             proposal: proposal,
             recipientId: conversations.find(c => c.id === conversationId)?.participantIds.find(p => p !== currentUser.id) || ''
         });
-        toast({ title: 'Propuesta enviada' });
+        toast({ title: 'Proposal sent' });
     } catch (error) {
         console.error("Error sending proposal:", error);
-        toast({ variant: 'destructive', title: 'Error al enviar la propuesta' });
+        toast({ variant: 'destructive', title: 'Error sending proposal' });
     }
   };
 
@@ -380,10 +380,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     if (!currentUser) return;
     try {
       await acceptProposalFlow({ conversationId, messageId, acceptorId: currentUser.id });
-      toast({ title: '¡Acuerdo Aceptado!', description: 'Se ha creado un nuevo compromiso de pago.' });
+      toast({ title: 'Agreement Accepted!', description: 'A new payment commitment has been created.' });
     } catch (error) {
       console.error("Error accepting proposal:", error);
-      toast({ variant: 'destructive', title: 'Error al aceptar la propuesta' });
+      toast({ variant: 'destructive', title: 'Error accepting proposal' });
     }
   };
 
@@ -436,7 +436,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const campaignRef = doc(db, "campaigns", campaignId);
     batch.update(campaignRef, { status: "active" });
     await batch.commit();
-    toast({ title: "Campaña Activada" });
+    toast({ title: "Campaign Activated" });
   };
   const verifyUserId = (userId: string) => updateUser(userId, { idVerificationStatus: 'verified', verified: true });
   const rejectUserId = (userId: string) => updateUser(userId, { idVerificationStatus: 'rejected' });

@@ -1,7 +1,8 @@
+
 "use client";
 
 import { initializeApp, getApp, getApps } from "firebase/app";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
@@ -15,14 +16,13 @@ const firebaseConfig = {
   "messagingSenderId": "220291714642"
 };
 
-
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// Set custom auth domain for different environments
+// Dynamically set auth domain for different environments
 if (typeof window !== 'undefined') {
   const hostname = window.location.hostname;
   if (hostname.includes('cloudworkstations.dev') || hostname.includes('hosted.app')) {
@@ -32,5 +32,4 @@ if (typeof window !== 'undefined') {
   }
 }
 
-
-export { app, auth, db, provider, signInWithPopup, signOut, onAuthStateChanged };
+export { app, auth, db, provider };

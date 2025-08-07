@@ -123,7 +123,7 @@ const createCampaignFlow = ai.defineFlow(
       providerId: 'corabo-admin', // System transaction
       participantIds: [user.id, 'corabo-admin'],
       details: {
-        system: `Pago de campaña publicitaria: ${newCampaign.id}`,
+        system: `Ad campaign payment: ${newCampaign.id}`,
         paymentMethod: input.financedWithCredicora ? 'credicora' : 'direct',
         paymentVoucherUrl: 'https://i.postimg.cc/L8y2zWc2/vzla-id.png' // Placeholder for voucher
       },
@@ -156,8 +156,8 @@ const createCampaignFlow = ai.defineFlow(
                 id: notificationId,
                 userId: client.id,
                 type: 'new_campaign',
-                title: 'Nueva Campaña Relevante',
-                message: `${user.name} ha lanzado una nueva campaña de "${user.profileSetupData?.specialty}" que podría interesarte.`,
+                title: 'New Relevant Campaign',
+                message: `${user.name} has launched a new campaign for "${user.profileSetupData?.specialty}" that might interest you.`,
                 link: `/companies/${user.id}`,
                 isRead: false,
                 timestamp: new Date().toISOString(),

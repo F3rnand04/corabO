@@ -25,42 +25,42 @@ interface SubscriptionDialogProps {
 
 const plans = {
   personal: {
-    title: "Plan Personal",
-    description: "Ideal para Clientes y prestadores básicos que buscan establecer una base sólida de confianza y credibilidad.",
+    title: "Personal Plan",
+    description: "Ideal for clients and basic providers looking to establish a solid foundation of trust and credibility.",
     price: 5,
     annualPrice: 40,
-    annualDiscount: "ahorra 33%",
+    annualDiscount: "save 33%",
     features: [
-      "Verificación de Identidad Rigurosa",
-      "Insignia de Perfil Verificado",
-      "Construye una reputación sólida",
-      "Soporte Prioritario",
+      "Rigorous Identity Verification",
+      "Verified Profile Badge",
+      "Build a solid reputation",
+      "Priority Support",
     ],
   },
   professional: {
-    title: "Plan Profesional",
-    description: "Dirigido a profesionales con un mayor volumen de trabajo o que desean mayor visibilidad.",
+    title: "Professional Plan",
+    description: "Aimed at professionals with a higher volume of work or who want greater visibility.",
     price: 12,
     annualPrice: 95,
-    annualDiscount: "ahorra 33%",
+    annualDiscount: "save 33%",
     features: [
-      "Todos los beneficios del Plan Personal",
-      "Mayor visibilidad en búsquedas",
-      "Acceso a oportunidades de negocio prioritarias",
-      "Estadísticas de rendimiento básicas",
+      "All benefits of the Personal Plan",
+      "Increased visibility in searches",
+      "Access to priority business opportunities",
+      "Basic performance statistics",
     ],
   },
   company: {
-    title: "Plan Empresarial",
-    description: "Diseñado para empresas y entidades jurídicas que necesitan proyectar una imagen de máxima confianza.",
+    title: "Business Plan",
+    description: "Designed for companies and legal entities that need to project an image of maximum trust.",
     price: 25,
     annualPrice: 190,
-    annualDiscount: "ahorra 37.5%",
+    annualDiscount: "save 37.5%",
     features: [
-      "Todos los beneficios del Plan Profesional",
-      "Gestión de Múltiples Usuarios (Próximamente)",
-      "Estadísticas Avanzadas de Perfil",
-      "Opciones de Promoción Destacadas",
+      "All benefits of the Professional Plan",
+      "Multi-User Management (Coming Soon)",
+      "Advanced Profile Statistics",
+      "Featured Promotion Options",
     ],
   }
 };
@@ -105,7 +105,7 @@ export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogP
 
   const handleSubscribe = () => {
     const amount = paymentCycle === 'monthly' ? currentPlan.price : currentPlan.annualPrice;
-    subscribeUser(currentUser.id, `Plan ${currentPlan.title} (${paymentCycle === 'monthly' ? 'Mensual' : 'Anual'})`, amount);
+    subscribeUser(currentUser.id, `Plan ${currentPlan.title} (${paymentCycle === 'monthly' ? 'Monthly' : 'Annual'})`, amount);
     onOpenChange(false);
   }
 
@@ -125,9 +125,9 @@ export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogP
         {currentUser.isSubscribed ? (
            <Alert variant="default" className="bg-green-50 text-green-800 border-green-200">
                 <CheckCircle className="h-4 w-4 !text-green-800" />
-                <AlertTitle>¡Ya estás suscrito!</AlertTitle>
+                <AlertTitle>You are already subscribed!</AlertTitle>
                 <AlertDescription>
-                 Disfrutas de todos los beneficios de tu plan actual.
+                 You enjoy all the benefits of your current plan.
                 </AlertDescription>
             </Alert>
         ) : (
@@ -145,13 +145,13 @@ export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogP
                       <div className={cn("flex items-center space-x-2 rounded-lg p-3 border-2 transition-all", paymentCycle === 'monthly' ? 'border-primary bg-primary/5' : 'border-border')}>
                           <RadioGroupItem value="monthly" id="monthly" />
                           <Label htmlFor="monthly" className="flex-grow cursor-pointer">
-                              <p className="font-bold text-base">{`$${currentPlan.price}`}<span className="font-normal text-sm"> / mes</span></p>
+                              <p className="font-bold text-base">{`$${currentPlan.price}`}<span className="font-normal text-sm"> / month</span></p>
                           </Label>
                       </div>
                       <div className={cn("flex items-center space-x-2 rounded-lg p-3 border-2 transition-all", paymentCycle === 'annually' ? 'border-primary bg-primary/5' : 'border-border')}>
                           <RadioGroupItem value="annually" id="annually" />
                           <Label htmlFor="annually" className="flex-grow cursor-pointer">
-                             <p className="font-bold text-base">{`$${currentPlan.annualPrice}`}<span className="font-normal text-sm"> / año</span></p>
+                             <p className="font-bold text-base">{`$${currentPlan.annualPrice}`}<span className="font-normal text-sm"> / year</span></p>
                              <p className="font-semibold text-green-600 text-xs">{currentPlan.annualDiscount}</p>
                           </Label>
                       </div>
@@ -162,20 +162,20 @@ export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogP
         
         <Alert>
             <Info className="h-4 w-4" />
-            <AlertTitle>¡Invierte en tu tranquilidad!</AlertTitle>
+            <AlertTitle>Invest in your peace of mind!</AlertTitle>
             <AlertDescription>
-                En CorabO, siempre recomendamos realizar transacciones con usuarios verificados. La insignia azul de 'Verificado' es tu confirmación de que ese usuario ha completado un proceso de validación riguroso, proporcionando una capa adicional de seguridad y confianza en todas tus interacciones.
+                At CorabO, we always recommend transacting with verified users. The blue 'Verified' badge is your confirmation that this user has completed a rigorous validation process, providing an additional layer of security and trust in all your interactions.
             </AlertDescription>
         </Alert>
 
         <DialogFooter className="mt-auto pt-4 flex-shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            {currentUser.isSubscribed ? 'Cerrar' : 'Cancelar'}
+            {currentUser.isSubscribed ? 'Close' : 'Cancel'}
           </Button>
           {!currentUser.isSubscribed && (
             <Button onClick={handleSubscribe}>
                 <Check className="mr-2 h-4 w-4" />
-                Suscribirme ahora
+                Subscribe Now
             </Button>
           )}
         </DialogFooter>

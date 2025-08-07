@@ -5,7 +5,7 @@ import { add } from 'date-fns';
 
 export const users: User[] = [
   { id: 'corabo-admin', name: 'CorabO Admin', type: 'client', role: 'admin', reputation: 5, profileImage: 'https://i.postimg.cc/Wz1MTvWK/lg.png', email: 'admin@corabo.app', phone: '0', emailValidated: true, phoneValidated: true, isGpsActive: false, gallery: [] },
-  { id: 'guest', name: 'Invitado', type: 'client', reputation: 0, profileImage: '', email: '', phone: '', emailValidated: false, phoneValidated: false, isGpsActive: false, gallery: [] },
+  { id: 'guest', name: 'Guest', type: 'client', reputation: 0, profileImage: '', email: '', phone: '', emailValidated: false, phoneValidated: false, isGpsActive: false, gallery: [] },
   { id: 'client1', name: 'Juan Cliente', type: 'client', reputation: 4.5, profileImage: `https://i.pravatar.cc/150?u=client1`, email: 'juan.cliente@email.com', phone: '04121234567', emailValidated: true, phoneValidated: false, isGpsActive: true, gallery: [], credicoraLevel: 1, credicoraLimit: 150, idVerificationStatus: 'pending', idDocumentUrl: 'https://i.postimg.cc/L8y2zWc2/vzla-id.png' },
   { 
     id: 'provider1', 
@@ -48,10 +48,10 @@ export const users: User[] = [
         type: 'image',
         src: "https://placehold.co/600x400.png", 
         alt: "Soporte Técnico", 
-        description: "Soporte técnico especializado para equipos de computación, tanto hardware como software. Resolvemos tus problemas con rapidez y eficacia.",
+        description: "Specialized technical support for computer equipment, both hardware and software. We solve your problems quickly and efficiently.",
         comments: [
-          { author: "Mario Gómez", text: "Resolvieron mi problema en minutos. ¡Excelente!" },
-          { author: "Laura Mendez", text: "Muy amables y eficientes." },
+          { author: "Mario Gómez", text: "They solved my problem in minutes. Excellent!" },
+          { author: "Laura Mendez", text: "Very friendly and efficient." },
         ]
       },
       { 
@@ -59,7 +59,7 @@ export const users: User[] = [
         type: 'image',
         src: "https://placehold.co/600x400.png", 
         alt: "Instalación de Redes", 
-        description: "Instalación y configuración de redes cableadas e inalámbricas para oficinas y hogares. Optimizamos la cobertura y seguridad de tu conexión.",
+        description: "Installation and configuration of wired and wireless networks for offices and homes. We optimize the coverage and security of your connection.",
         comments: []
       },
       { 
@@ -67,9 +67,9 @@ export const users: User[] = [
         type: 'image',
         src: "https://placehold.co/600x400.png", 
         alt: "Venta de Equipos", 
-        description: "Los mejores equipos y componentes para tus necesidades. Asesoramiento personalizado para que hagas la mejor inversión.",
+        description: "The best equipment and components for your needs. Personalized advice so you make the best investment.",
          comments: [
-          { author: "Pedro R.", text: "Conseguí todo lo que buscaba y a buen precio." },
+          { author: "Pedro R.", text: "I found everything I was looking for at a good price." },
         ]
       },
        { 
@@ -77,7 +77,7 @@ export const users: User[] = [
         type: 'image',
         src: "https://placehold.co/600x400.png", 
         alt: "Mantenimiento Preventivo", 
-        description: "Planes de mantenimiento preventivo para empresas. Asegura la continuidad de tus operaciones y alarga la vida útil de tus equipos.",
+        description: "Preventive maintenance plans for companies. Ensure the continuity of your operations and extend the useful life of your equipment.",
         comments: []
       },
     ]
@@ -119,10 +119,10 @@ export const users: User[] = [
         type: 'image',
         src: "https://placehold.co/600x400.png", 
         alt: "Limpieza Profunda", 
-        description: "Descripción detallada del servicio de limpieza profunda para cocinas, baños y áreas comunes. Dejamos tu hogar reluciente.",
+        description: "Detailed description of the deep cleaning service for kitchens, bathrooms, and common areas. We leave your home sparkling.",
         comments: [
-          { author: "Ana Pérez", text: "¡El mejor servicio! Mi casa quedó impecable." },
-          { author: "Carlos Ruiz", text: "Muy profesionales y puntuales. Los recomiendo." },
+          { author: "Ana Pérez", text: "The best service! My house was spotless." },
+          { author: "Carlos Ruiz", text: "Very professional and punctual. I recommend them." },
         ]
       },
       { 
@@ -130,7 +130,7 @@ export const users: User[] = [
         type: 'image',
         src: "https://placehold.co/600x400.png", 
         alt: "Armado de Muebles", 
-        description: "Instalación y armado de todo tipo de muebles. Trabajo rápido, limpio y garantizado, sin que te sobren tornillos.",
+        description: "Installation and assembly of all types of furniture. Fast, clean, and guaranteed work, with no leftover screws.",
         comments: []
       },
       { 
@@ -138,9 +138,9 @@ export const users: User[] = [
         type: 'image',
         src: "https://placehold.co/600x400.png", 
         alt: "Jardinería", 
-        description: "Servicio de jardinería y mantenimiento de áreas verdes. Diseño, poda, riego y control de plagas para que tengas el jardín de tus sueños.",
+        description: "Gardening and maintenance service for green areas. Design, pruning, irrigation, and pest control to have the garden of your dreams.",
          comments: [
-          { author: "Luisa F.", text: "Mi jardín nunca se había visto tan bien." },
+          { author: "Luisa F.", text: "My garden has never looked so good." },
         ]
       },
       { 
@@ -148,14 +148,14 @@ export const users: User[] = [
         type: 'image',
         src: "https://placehold.co/600x400.png", 
         alt: "Reparaciones Eléctricas", 
-        description: "Reparaciones eléctricas menores, como cambio de enchufes, interruptores y lámparas. Seguridad y calidad garantizada." 
+        description: "Minor electrical repairs, such as changing outlets, switches, and lamps. Safety and quality guaranteed." 
       },
       { 
         id: 'provider2-img5',
         type: 'image',
         src: "https://placehold.co/600x400.png", 
         alt: "Plomería de Emergencia", 
-        description: "Plomería de emergencia para fugas y obstrucciones. Atención 24 horas para resolver tus problemas al instante." 
+        description: "Emergency plumbing for leaks and blockages. 24-hour service to solve your problems instantly." 
       },
     ]
   },
@@ -176,9 +176,9 @@ export const users: User[] = [
         type: 'image',
         src: "https://placehold.co/600x400.png", 
         alt: "Diseño de Logos", 
-        description: "Creación de logos modernos y memorables. Desarrollamos una identidad visual única que representa los valores de tu marca.",
+        description: "Creation of modern and memorable logos. We develop a unique visual identity that represents the values of your brand.",
         comments: [
-          { author: "Empresa XYZ", text: "El logo superó nuestras expectativas. ¡Gran trabajo!" }
+          { author: "Empresa XYZ", text: "The logo exceeded our expectations. Great job!" }
         ]
       },
       { 
@@ -186,7 +186,7 @@ export const users: User[] = [
         type: 'image',
         src: "https://placehold.co/600x400.png", 
         alt: "Branding Corporativo", 
-        description: "Desarrollo de identidad de marca completa: logos, paleta de colores, tipografía y manual de marca para una comunicación consistente.",
+        description: "Development of a complete brand identity: logos, color palette, typography, and brand manual for consistent communication.",
         comments: []
       },
     ]
@@ -248,36 +248,36 @@ export const products: Product[] = [
   {
     id: 'prod1',
     name: 'Laptop Pro 15"',
-    description: 'Potente laptop para profesionales y creativos.',
+    description: 'Powerful laptop for professionals and creatives.',
     price: 1200,
-    category: 'Tecnología',
+    category: 'Technology',
     providerId: 'provider1',
     imageUrl: 'https://placehold.co/600x400.png',
   },
   {
     id: 'prod2',
-    name: 'Smartphone Avanzado',
-    description: 'El último modelo con cámara de alta resolución.',
+    name: 'Advanced Smartphone',
+    description: 'The latest model with a high-resolution camera.',
     price: 800,
-    category: 'Tecnología',
+    category: 'Technology',
     providerId: 'provider1',
     imageUrl: 'https://placehold.co/600x400.png',
   },
   {
     id: 'prod3',
-    name: 'Kit de Herramientas Básico',
-    description: 'Todo lo que necesitas para reparaciones en casa.',
+    name: 'Basic Tool Kit',
+    description: 'Everything you need for home repairs.',
     price: 75,
-    category: 'Hogar',
+    category: 'Home',
     providerId: 'provider2',
     imageUrl: 'https://placehold.co/600x400.png',
   },
     {
     id: 'prod4',
-    name: 'Monitor UltraWide 34"',
-    description: 'Expande tu visión de trabajo con este monitor curvo.',
+    name: 'UltraWide Monitor 34"',
+    description: 'Expand your work view with this curved monitor.',
     price: 550,
-    category: 'Tecnología',
+    category: 'Technology',
     providerId: 'provider1',
     imageUrl: 'https://placehold.co/600x400.png',
   },
@@ -286,30 +286,30 @@ export const products: Product[] = [
 export const services: Service[] = [
   {
     id: 'serv1',
-    name: 'Instalación de Electrodomésticos',
-    description: 'Instalación profesional y segura de cualquier electrodoméstico.',
-    category: 'Hogar',
+    name: 'Appliance Installation',
+    description: 'Professional and safe installation of any appliance.',
+    category: 'Home',
     providerId: 'provider2',
   },
   {
     id: 'serv2',
-    name: 'Reparación de Computadoras',
-    description: 'Diagnóstico y reparación de hardware y software.',
-    category: 'Tecnología',
+    name: 'Computer Repair',
+    description: 'Diagnosis and repair of hardware and software.',
+    category: 'Technology',
     providerId: 'provider1',
   },
   {
     id: 'serv3',
-    name: 'Diseño Gráfico',
-    description: 'Creación de logos, branding y material publicitario.',
-    category: 'Diseño',
+    name: 'Graphic Design',
+    description: 'Creation of logos, branding, and advertising material.',
+    category: 'Design',
     providerId: 'provider3',
   },
   {
     id: 'serv4',
-    name: 'Plomería General',
-    description: 'Reparación de fugas, instalación de grifos y más.',
-    category: 'Hogar',
+    name: 'General Plumbing',
+    description: 'Repair of leaks, installation of faucets, and more.',
+    category: 'Home',
     providerId: 'provider2',
   },
 ];
@@ -340,9 +340,9 @@ export const initialTransactions: Transaction[] = [
     clientId: 'client1',
     providerId: 'provider2',
     details: {
-      serviceName: 'Instalación de Electrodomésticos',
+      serviceName: 'Appliance Installation',
       quote: {
-        breakdown: 'Instalación de lavadora y secadora.',
+        breakdown: 'Installation of washer and dryer.',
         total: 150.00,
       },
     },
@@ -355,7 +355,7 @@ export const initialTransactions: Transaction[] = [
     amount: 50.00,
     clientId: 'client1',
     details: {
-      system: 'Recarga de saldo a través de la plataforma.',
+      system: 'Balance recharge through the platform.',
     },
   },
   {
@@ -367,7 +367,7 @@ export const initialTransactions: Transaction[] = [
     clientId: 'client1',
     providerId: 'provider3',
     details: {
-        serviceName: 'Diseño de Logo para App',
+        serviceName: 'Logo Design for App',
         quoteItems: ['Logo', 'Branding'],
     },
   },
@@ -394,7 +394,7 @@ export const initialTransactions: Transaction[] = [
     providerId: 'provider1',
     details: {
         items: [{ product: products[0], quantity: 1 }],
-        serviceName: 'Inicial de Compra: Laptop Pro 15"',
+        serviceName: 'Initial Purchase: Laptop Pro 15"',
         paymentMethod: 'credicora',
         initialPayment: 1140,
         totalAmount: 1200,
@@ -410,7 +410,7 @@ export const initialTransactions: Transaction[] = [
     clientId: 'client1',
     providerId: 'provider1',
     details: {
-      system: 'Cuota 1/3 de compra Laptop Pro 15"'
+      system: 'Installment 1/3 of Laptop Pro 15" purchase'
     },
   },
    {
@@ -422,7 +422,7 @@ export const initialTransactions: Transaction[] = [
     clientId: 'client1',
     providerId: 'provider1',
     details: {
-      system: 'Cuota 2/3 de compra Laptop Pro 15"'
+      system: 'Installment 2/3 of Laptop Pro 15" purchase'
     },
   },
    {
@@ -434,7 +434,7 @@ export const initialTransactions: Transaction[] = [
     clientId: 'client1',
     providerId: 'provider1',
     details: {
-      system: 'Cuota 3/3 de compra Laptop Pro 15"'
+      system: 'Installment 3/3 of Laptop Pro 15" purchase'
     },
   },
 ];
@@ -444,16 +444,16 @@ export const initialConversations: Conversation[] = [
         id: 'convo1',
         participantIds: ['client1', 'provider1'],
         messages: [
-            { id: 'msg1', senderId: 'provider1', text: 'Hola Juan, gracias por tu compra. Tu Laptop Pro 15" ha sido enviada.', timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), type: 'text' },
-            { id: 'msg2', senderId: 'client1', text: '¡Excelente! Muchas gracias por la rapidez.', timestamp: new Date(Date.now() - 2 * 24 * 59 * 60 * 1000).toISOString(), type: 'text' },
+            { id: 'msg1', senderId: 'provider1', text: 'Hello Juan, thanks for your purchase. Your Laptop Pro 15" has been shipped.', timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), type: 'text' },
+            { id: 'msg2', senderId: 'client1', text: 'Excellent! Thank you very much for the speed.', timestamp: new Date(Date.now() - 2 * 24 * 59 * 60 * 1000).toISOString(), type: 'text' },
             { 
               id: 'msg-proposal-1', 
               senderId: 'provider1', 
               timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
               type: 'proposal',
               proposal: {
-                title: 'Mantenimiento Preventivo Anual PC',
-                description: 'Limpieza interna de hardware, optimización de software y revisión de seguridad para 1 equipo de escritorio. Se realizará en nuestro local.',
+                title: 'Annual PC Preventive Maintenance',
+                description: 'Internal hardware cleaning, software optimization, and security check for 1 desktop computer. It will be done at our premises.',
                 amount: 50,
                 deliveryDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
                 acceptsCredicora: true,
@@ -467,9 +467,9 @@ export const initialConversations: Conversation[] = [
         id: 'convo2',
         participantIds: ['client1', 'provider2'],
         messages: [
-            { id: 'msg3', senderId: 'provider2', text: 'Buenos días, te escribo para confirmar la cotización de la instalación. ¿Procedemos?', timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), type: 'text' },
-            { id: 'msg4', senderId: 'client1', text: 'Sí, por favor. ¿Cuándo podrían venir?', timestamp: new Date(Date.now() - 5 * 24 * 55 * 60 * 1000).toISOString(), type: 'text' },
-            { id: 'msg5', senderId: 'provider2', text: 'Podemos ir mañana a las 10am. ¿Te parece bien?', timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(), type: 'text' },
+            { id: 'msg3', senderId: 'provider2', text: 'Good morning, I am writing to confirm the installation quote. Shall we proceed?', timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), type: 'text' },
+            { id: 'msg4', senderId: 'client1', text: 'Yes, please. When could you come?', timestamp: new Date(Date.now() - 5 * 24 * 55 * 60 * 1000).toISOString(), type: 'text' },
+            { id: 'msg5', senderId: 'provider2', text: 'We can go tomorrow at 10am. Is that okay with you?', timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(), type: 'text' },
         ],
         unreadCount: 1,
     },
@@ -477,8 +477,8 @@ export const initialConversations: Conversation[] = [
         id: 'convo3',
         participantIds: ['client1', 'provider3'],
         messages: [
-            { id: 'msg6', senderId: 'client1', text: 'Hola, estoy interesado en un logo para mi nuevo emprendimiento. ¿Me podrías dar más información?', timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), type: 'text' },
-            { id: 'msg7', senderId: 'provider3', text: '¡Claro que sí! Cuéntame un poco sobre tu idea y te preparo una propuesta sin compromiso.', timestamp: new Date(Date.now() - 23 * 60 * 60 * 1000).toISOString(), type: 'text' },
+            { id: 'msg6', senderId: 'client1', text: 'Hello, I am interested in a logo for my new venture. Could you give me more information?', timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), type: 'text' },
+            { id: 'msg7', senderId: 'provider3', text: 'Of course! Tell me a little about your idea and I will prepare a proposal for you without obligation.', timestamp: new Date(Date.now() - 23 * 60 * 60 * 1000).toISOString(), type: 'text' },
         ],
         unreadCount: 0,
     }
