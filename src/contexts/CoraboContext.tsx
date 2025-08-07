@@ -9,8 +9,9 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { add, subDays, startOfDay } from 'date-fns';
 import { credicoraLevels } from '@/lib/types';
-import { auth, provider, db } from '@/lib/firebase';
-import { signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+// Import necessary firebase services directly
+import { getAuth, signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, GoogleAuthProvider } from 'firebase/auth';
+import { app, db } from '@/lib/firebase'; // Import the initialized app and db
 import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc } from 'firebase/firestore';
 import { createCampaign } from '@/ai/flows/campaign-flow';
 import { acceptProposal as acceptProposalFlow, sendMessage as sendMessageFlow } from '@/ai/flows/message-flow';
@@ -99,6 +100,9 @@ const CoraboContext = createContext<CoraboState | undefined>(undefined);
 
 // Import mock data - we'll phase this out
 import { users as mockUsers, products as mockProducts, services as mockServices, initialTransactions, initialConversations } from '@/lib/mock-data';
+
+// Get the Auth instance
+const auth = getAuth(app);
 
 export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
@@ -198,8 +202,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
 
   const signInWithGoogle = async () => {
+    // Definitive fix: create and configure the provider right before it's used.
+    const provider = new GoogleAuthProvider();
     try {
-      // This is the definitive fix: configure the provider just before it's used.
       if (typeof window !== 'undefined') {
         const hostname = window.location.hostname;
         // This covers both the development (cloudworkstations) and deployed (hosted.app) environments.

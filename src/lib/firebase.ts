@@ -2,8 +2,8 @@
 "use client";
 
 import { initializeApp, getApp, getApps } from "firebase/app";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+// We will now get auth and provider directly in the context to avoid singleton issues.
 
 // Your web app's Firebase configuration - KEEP THIS AS IS FROM THE CONSOLE
 const firebaseConfig = {
@@ -18,8 +18,6 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const auth = getAuth(app);
 const db = getFirestore(app);
-const provider = new GoogleAuthProvider();
 
-export { app, auth, db, provider };
+export { app, db };
