@@ -8,7 +8,7 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
 
@@ -17,14 +17,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  useEffect(() => {
-    // Si la carga de autenticación ha terminado y no hay usuario, redirigir a login.
-    if (!isLoadingAuth && !currentUser && pathname !== '/login') {
-      router.push('/login');
-    }
-  }, [currentUser, isLoadingAuth, pathname, router]);
+  // --- Render Logic ---
 
-  // 1. Estado de Carga: Mientras Firebase comprueba el estado, muestra un cargador.
+  // 1. While checking auth state, show a global loader
   if (isLoadingAuth) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -32,18 +27,28 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-  
-  // 2. Estado No Autenticado: Si no está cargando y no hay usuario.
+
+  // 2. If auth check is complete and there's no user
   if (!currentUser) {
-     // Si ya estamos en la página de login, la renderizamos. Si no, mostramos un cargador mientras ocurre la redirección del useEffect.
-     return pathname === '/login' ? <main>{children}</main> : (
+    // If we are already on the login page, render it.
+    if (pathname === '/login') {
+      return <main>{children}</main>;
+    }
+    // Otherwise, redirect to login. The effect below handles this.
+    // We show a loader while the redirect happens.
+    else {
+      if (typeof window !== 'undefined') {
+        router.push('/login');
+      }
+      return (
         <div className="flex items-center justify-center min-h-screen">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
-       );
+      );
+    }
   }
   
-  // 3. Estado Autenticado: Si hay un usuario, renderizamos la app.
+  // 3. If auth check is complete and there IS a user, render the app.
   
   // Admin Route Guard
   if (pathname.startsWith('/admin') && currentUser?.role !== 'admin') {
@@ -57,10 +62,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       );
   }
 
-  // --- Lógica de layout para usuarios autenticados ---
+  // --- Layout for authenticated users ---
   const isClientWithInactiveTransactions = currentUser?.type === 'client' && !currentUser?.isTransactionsActive;
   
-  // Define las rutas que NO deben tener el header o footer principal.
   const noHeaderFooterRoutes = [
     '/profile-setup',
     '/login',
@@ -71,7 +75,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     '/terms',
     '/privacy',
     '/community-guidelines',
-    '/admin', // Añade el panel de admin a la lista
+    '/admin',
   ];
 
   const shouldHideAllLayout = noHeaderFooterRoutes.some(path => pathname.startsWith(path));
@@ -80,7 +84,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return <main>{children}</main>;
   }
 
-  // El header principal se oculta en páginas de flujo completo o con headers personalizados.
   const shouldShowMainHeader = ![
     '/profile',
     '/quotes',
