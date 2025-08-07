@@ -616,6 +616,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const updateUserProfileImage = (userId: string, imageUrl: string) => {
     updateUser(userId, { profileImage: imageUrl });
+    toast({
+        title: "¡Foto de Perfil Actualizada!",
+        description: "Tu nueva foto de perfil está visible.",
+    });
   };
   
   const updateUserProfileAndGallery = (userId: string, imageOrId: GalleryImage | string, isDelete: boolean = false) => {
@@ -818,9 +822,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       };
 
       setTransactions(prev => [...prev, campaignPaymentTx]);
-      
-      // En un escenario real, tendríamos un estado para las campañas.
-      // Aquí, podemos simplemente redirigir al pago.
       
       router.push(`/quotes/payment?commitmentId=${campaignPaymentTx.id}&amount=${budget}`);
       
