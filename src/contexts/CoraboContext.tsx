@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
-import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData, Conversation, Message, AppointmentRequest, AgreementProposal, CredicoraLevel } from '@/lib/types';
+import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData, Conversation, Message, AppointmentRequest, AgreementProposal, CredicoraLevel, Campaign } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from 'next/navigation';
 import jsPDF from 'jspdf';
@@ -13,6 +13,7 @@ import { auth, provider, db } from '@/lib/firebase';
 import { signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, setDoc, getDoc, onSnapshot, collection, query, where, writeBatch, getDocs, deleteDoc } from 'firebase/firestore';
 import { Loader2 } from 'lucide-react';
+import { createCampaign as createCampaignFlow, type CreateCampaignInput } from '@/ai/flows/campaign-flow';
 
 type FeedView = 'servicios' | 'empresas';
 
@@ -81,7 +82,7 @@ interface CoraboState {
   getCartItemQuantity: (productId: string) => number;
   checkIfShouldBeEnterprise: (providerId: string) => boolean;
   activatePromotion: (details: { imageId: string, promotionText: string, cost: number }) => void;
-  createCampaign: (campaignDetails: any) => void;
+  createCampaign: (campaignDetails: Omit<CreateCampaignInput, 'userId'>) => void;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -410,6 +411,28 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return convoId;
   };
 
+  const createCampaign = async (campaignDetails: Omit<CreateCampaignInput, 'userId'>) => {
+    if (!currentUser) {
+        toast({ variant: "destructive", title: "No autenticado", description: "Debes iniciar sesión para crear una campaña." });
+        return;
+    }
+    try {
+        const newCampaign = await createCampaignFlow({ ...campaignDetails, userId: currentUser.id });
+        toast({
+            title: "¡Campaña en Revisión!",
+            description: `Tu campaña "${newCampaign.id}" ha sido creada y está pendiente de pago.`,
+        });
+    } catch (error) {
+        console.error("Error creating campaign:", error);
+        toast({
+            variant: "destructive",
+            title: "Error al Crear Campaña",
+            description: "No se pudo crear la campaña. Por favor, intenta de nuevo.",
+        });
+    }
+  };
+
+
   // Remaining functions need full Firestore implementation...
   const addProduct = async (product: Product) => { await setDoc(doc(db, "products", product.id), product); };
   const requestService = (service: Service) => { console.log("requestService not implemented with Firestore") };
@@ -442,7 +465,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const removeCommentFromImage = (ownerId: string, imageId: string, commentIndex: number) => { console.log("removeCommentFromImage not implemented with Firestore") };
   const checkIfShouldBeEnterprise = (providerId: string): boolean => { console.log("checkIfShouldBeEnterprise not implemented with Firestore"); return false; };
   const activatePromotion = (details: { imageId: string, promotionText: string, cost: number }) => { console.log("activatePromotion not implemented with Firestore") };
-  const createCampaign = (campaignDetails: any) => { console.log("createCampaign not implemented with Firestore") };
 
   const value: CoraboState = {
     currentUser,
