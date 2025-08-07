@@ -3,3 +3,4 @@
 import './flows/campaign-flow';
 import './flows/message-flow';
 import './flows/transaction-flow';
+import './flows/verification-flow';

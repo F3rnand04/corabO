@@ -200,9 +200,10 @@ export default function EmprendePage() {
                      <div className="space-y-2">
                        <p className="text-sm font-semibold text-foreground">Realiza el pago a los siguientes datos:</p>
                        <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md space-y-1">
-                          <p><strong>Banco:</strong> Banco de Corabo</p>
-                          <p><strong>Teléfono:</strong> 0412-1234567</p>
-                          <p><strong>RIF:</strong> J-12345678-9</p>
+                          <p><strong>Banco:</strong> Banco de Venezuela</p>
+                          <p><strong>Cuenta:</strong> 0102-0333-30-0000982322</p>
+                          <p><strong>Pago Móvil:</strong> 0412-8978405</p>
+                          <p><strong>RIF:</strong> J-50704220-0</p>
                        </div>
                      </div>
                      <div className="space-y-2">
@@ -239,4 +240,3 @@ export default function EmprendePage() {
     </div>
   );
 }
-

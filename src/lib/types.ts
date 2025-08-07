@@ -8,7 +8,7 @@ export type Campaign = {
   durationDays: number;
   startDate: string;
   endDate: string;
-  status: 'pending_payment' | 'active' | 'completed' | 'cancelled';
+  status: 'pending_payment' | 'active' | 'completed' | 'cancelled' | 'verified';
   stats: {
     impressions: number; // Veces que se mostró
     reach: number;       // Usuarios únicos alcanzados
@@ -145,6 +145,9 @@ export type User = {
   isPaused?: boolean;
   pauseReason?: string;
   activeCampaignIds?: string[];
+  role?: 'admin';
+  idDocumentUrl?: string;
+  idVerificationStatus?: 'pending' | 'verified' | 'rejected';
 };
 
 export type Product = {
@@ -226,6 +229,7 @@ export type Transaction = {
     paymentFromThirdParty?: boolean;
     originAddress?: string; // For delivery
     destinationAddress?: string; // For delivery
+    paymentVoucherUrl?: string; // For admin verification
   };
 };
 

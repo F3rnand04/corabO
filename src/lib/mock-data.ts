@@ -1,10 +1,12 @@
 
+
 import type { User, Product, Service, Transaction, Conversation, AgreementProposal } from './types';
 import { add } from 'date-fns';
 
 export const users: User[] = [
+  { id: 'corabo-admin', name: 'CorabO Admin', type: 'client', role: 'admin', reputation: 5, profileImage: 'https://i.postimg.cc/Wz1MTvWK/lg.png', email: 'admin@corabo.app', phone: '0', emailValidated: true, phoneValidated: true, isGpsActive: false, gallery: [] },
   { id: 'guest', name: 'Invitado', type: 'client', reputation: 0, profileImage: '', email: '', phone: '', emailValidated: false, phoneValidated: false, isGpsActive: false, gallery: [] },
-  { id: 'client1', name: 'Juan Cliente', type: 'client', reputation: 4.5, profileImage: `https://i.pravatar.cc/150?u=client1`, email: 'juan.cliente@email.com', phone: '04121234567', emailValidated: true, phoneValidated: false, isGpsActive: true, gallery: [], credicoraLevel: 1, credicoraLimit: 150 },
+  { id: 'client1', name: 'Juan Cliente', type: 'client', reputation: 4.5, profileImage: `https://i.pravatar.cc/150?u=client1`, email: 'juan.cliente@email.com', phone: '04121234567', emailValidated: true, phoneValidated: false, isGpsActive: true, gallery: [], credicoraLevel: 1, credicoraLimit: 150, idVerificationStatus: 'pending', idDocumentUrl: 'https://i.postimg.cc/L8y2zWc2/vzla-id.png' },
   { 
     id: 'provider1', 
     name: 'Tecno Soluciones S.A.', 
@@ -87,6 +89,7 @@ export const users: User[] = [
     reputation: 4.2,
     isGpsActive: false,
     isTransactionsActive: true,
+    isPaused: true,
     profileImage: `https://placehold.co/150x150.png`,
     email: 'servicios@hogarfeliz.com',
     phone: '04149876543',

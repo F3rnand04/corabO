@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A campaign management flow.
@@ -16,7 +17,7 @@ import {
   credicoraLevels,
 } from '@/lib/types';
 import {db} from '@/lib/firebase';
-import {doc, getDoc, writeBatch} from 'firebase/firestore';
+import {collection, doc, getDoc, getDocs, query, writeBatch, where} from 'firebase/firestore';
 
 const CreateCampaignInputSchema = z.object({
   userId: z.string(),
@@ -49,6 +50,7 @@ const CampaignOutputSchema = z.object({
     'active',
     'completed',
     'cancelled',
+    'verified',
   ]),
   stats: z.object({
     impressions: z.number(),
@@ -87,9 +89,7 @@ const createCampaignFlow = ai.defineFlow(
     }
 
     const user = userSnap.data() as User;
-
     const batch = writeBatch(db);
-
     const startDate = new Date();
     const endDate = new Date();
     endDate.setDate(startDate.getDate() + input.durationDays);
@@ -116,15 +116,16 @@ const createCampaignFlow = ai.defineFlow(
     const campaignTransaction: Transaction = {
       id: txId,
       type: 'Sistema',
-      status: 'Finalizado - Pendiente de Pago',
+      status: 'Pago Enviado - Esperando Confirmación',
       date: new Date().toISOString(),
       amount: input.budget,
       clientId: user.id,
-      providerId: 'corabo', // System transaction
-      participantIds: [user.id, 'corabo'],
+      providerId: 'corabo-admin', // System transaction
+      participantIds: [user.id, 'corabo-admin'],
       details: {
         system: `Pago de campaña publicitaria: ${newCampaign.id}`,
         paymentMethod: input.financedWithCredicora ? 'credicora' : 'direct',
+        paymentVoucherUrl: 'https://i.postimg.cc/L8y2zWc2/vzla-id.png' // Placeholder for voucher
       },
     };
 
@@ -134,6 +135,36 @@ const createCampaignFlow = ai.defineFlow(
     // Update user's active campaigns
     const updatedCampaignIds = [...(user.activeCampaignIds || []), campaignId];
     batch.update(userRef, {activeCampaignIds: updatedCampaignIds});
+    
+    // If budget is >= $20, create notifications for relevant users
+    if (input.budget >= 20 && user.profileSetupData?.primaryCategory) {
+        const usersRef = collection(db, 'users');
+        const q = query(
+          usersRef, 
+          where('type', '==', 'client'),
+          where('profileSetupData.categories', 'array-contains', user.profileSetupData.primaryCategory)
+          // In a real scenario, you'd also filter by location here using a Geo-query library
+        );
+        const querySnapshot = await getDocs(q);
+        
+        querySnapshot.forEach(docSnap => {
+            const client = docSnap.data() as User;
+            // Create an internal notification for each relevant client
+            const notificationId = `notif-${client.id}-${campaignId}`;
+            const notificationRef = doc(db, 'notifications', notificationId);
+            batch.set(notificationRef, {
+                id: notificationId,
+                userId: client.id,
+                type: 'new_campaign',
+                title: 'Nueva Campaña Relevante',
+                message: `${user.name} ha lanzado una nueva campaña de "${user.profileSetupData?.specialty}" que podría interesarte.`,
+                link: `/companies/${user.id}`,
+                isRead: false,
+                timestamp: new Date().toISOString(),
+            });
+        });
+    }
+
 
     await batch.commit();
 

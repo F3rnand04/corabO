@@ -52,13 +52,14 @@ const banks = [
 
 
 export default function TransactionsSettingsPage() {
-    const { currentUser, activateTransactions } = useCorabo();
+    const { currentUser, activateTransactions, setIdVerificationPending } = useCorabo();
     const { toast } = useToast();
     const router = useRouter();
     const [step, setStep] = useState(1);
     
     // Step 1 state
     const [idImage, setIdImage] = useState<string | null>(null);
+    const [idFile, setIdFile] = useState<File | null>(null);
     const [isVerifyingId, setIsVerifyingId] = useState(false);
     const [idVerificationError, setIdVerificationError] = useState<string | null>(null);
     const idFileInputRef = useRef<HTMLInputElement>(null);
@@ -75,6 +76,7 @@ export default function TransactionsSettingsPage() {
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
+            setIdFile(file);
             setIdVerificationError(null);
             const reader = new FileReader();
             reader.onload = (event) => {
@@ -85,7 +87,7 @@ export default function TransactionsSettingsPage() {
     };
     
     const handleVerifyDocument = () => {
-        if (!idImage) {
+        if (!idImage || !idFile) {
             toast({
                 variant: 'destructive',
                 title: 'No hay imagen',
@@ -96,22 +98,21 @@ export default function TransactionsSettingsPage() {
 
         setIsVerifyingId(true);
         setIdVerificationError(null);
-
-        setTimeout(() => {
-            const isNameMatch = currentUser.name.trim().toLowerCase() === MOCKED_ID_DATA.name.trim().toLowerCase();
-            
-            if (isNameMatch) {
-                toast({
-                    title: "¡Verificación de Identidad Exitosa!",
-                    description: "Ahora, por favor, registra tus datos de pago.",
-                    className: "bg-green-100 border-green-300 text-green-800",
-                });
-                setStep(2); // Move to the next step
-            } else {
-                setIdVerificationError("Los datos del documento no coinciden con los de tu cuenta.");
-            }
+        
+        // This function will now just set the status to pending and upload the image URL
+        // The actual verification happens in the admin panel
+        setIdVerificationPending(currentUser.id, idImage).then(() => {
+            toast({
+                title: "¡Documento Recibido!",
+                description: "Tu documento está en revisión. Ahora, por favor, registra tus datos de pago.",
+                className: "bg-green-100 border-green-300 text-green-800",
+            });
+            setStep(2); // Move to the next step
             setIsVerifyingId(false);
-        }, 2000);
+        }).catch(err => {
+            setIdVerificationError("Hubo un error al subir tu documento. Intenta de nuevo.");
+            setIsVerifyingId(false);
+        });
     };
 
     const handleVerifyAccount = () => {
@@ -178,16 +179,9 @@ export default function TransactionsSettingsPage() {
                             {idVerificationError && (
                                 <Alert variant="destructive">
                                     <AlertCircle className="h-4 w-4" />
-                                    <AlertTitle>Verifica tu documento</AlertTitle>
+                                    <AlertTitle>Error</AlertTitle>
                                     <AlertDescription>
-                                        <p className="mb-2">{idVerificationError}</p>
-                                        <div className="text-xs p-2 bg-destructive/20 rounded-md">
-                                            <p><strong>Nombre en cuenta:</strong> {currentUser.name}</p>
-                                            <p><strong>Cédula en cuenta:</strong> V-20.123.456 (ejemplo)</p>
-                                        </div>
-                                        <p className="mt-2 text-xs">
-                                            Si deseas modificar estos datos, contacta a soporte. Si no, por favor, introduce la cédula del propietario de la cuenta.
-                                        </p>
+                                        <p>{idVerificationError}</p>
                                     </AlertDescription>
                                 </Alert>
                             )}
@@ -201,10 +195,10 @@ export default function TransactionsSettingsPage() {
                                 {isVerifyingId ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Verificando...
+                                        Procesando...
                                     </>
                                 ) : (
-                                    "Verificar Documento"
+                                    "Enviar Documento para Verificación"
                                 )}
                             </Button>
                         </CardContent>

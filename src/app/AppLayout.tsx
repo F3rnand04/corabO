@@ -46,67 +46,58 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
      }
      return <main>{children}</main>;
   }
-
-  const isProfilePage = pathname === '/profile';
-  const isCompanyProfilePage = pathname.startsWith('/companies/');
-  const isVideosPage = pathname === '/videos';
-  const isProfileSetupPage = pathname === '/profile-setup';
-  const isLoginPage = pathname === '/login';
-  const isQuotesPage = pathname === '/quotes';
-  const isContactsPage = pathname === '/contacts';
-  const isSearchPage = pathname === '/search';
-  const isMapPage = pathname === '/map';
-  const isQuotesPaymentPage = pathname === '/quotes/payment';
-  const isQuotesProPage = pathname === '/quotes/pro';
-  const isTransactionsPage = pathname === '/transactions';
-  const isTransactionsSettingsPage = pathname === '/transactions/settings';
-  const isMessagesPage = pathname === '/messages';
-  const isChatPage = /^\/messages\/.+/.test(pathname);
-  const isCredicoraPage = pathname === '/credicora';
-  const isPoliciesPage = pathname === '/policies';
-  const isSearchHistoryPage = pathname === '/search-history';
-  const isTermsPage = pathname === '/terms';
-  const isPrivacyPage = pathname === '/privacy';
-  const isCommunityGuidelinesPage = pathname === '/community-guidelines';
+  
+  // Admin Route Guard
+  if (pathname.startsWith('/admin') && currentUser?.role !== 'admin') {
+      if (typeof window !== 'undefined') {
+          router.replace('/');
+      }
+      return (
+        <div className="flex items-center justify-center min-h-screen">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      );
+  }
 
 
   const isClientWithInactiveTransactions = currentUser?.type === 'client' && !currentUser?.isTransactionsActive;
+  
+  // Define routes that should NOT have the main header or footer
+  const noHeaderFooterRoutes = [
+    '/profile-setup',
+    '/login',
+    '/map',
+    '/credicora',
+    '/search-history',
+    '/policies',
+    '/terms',
+    '/privacy',
+    '/community-guidelines',
+    '/admin', // Add admin panel to the list
+  ];
+
+  const shouldHideAllLayout = noHeaderFooterRoutes.some(path => pathname.startsWith(path));
+
+  if(shouldHideAllLayout) {
+    return <main>{children}</main>;
+  }
 
   // El header principal se oculta en páginas de flujo completo o con headers personalizados.
   const shouldShowMainHeader = ![
     '/profile',
-    '/profile-setup',
-    '/login',
     '/quotes',
     '/quotes/payment',
     '/quotes/pro',
     '/contacts',
     '/search',
-    '/map',
     '/transactions',
     '/transactions/settings',
     '/messages',
     '/videos',
     '/emprende',
-    '/credicora',
-    '/policies',
-    '/search-history',
-    '/terms',
-    '/privacy',
-    '/community-guidelines',
-  ].includes(pathname) && !isChatPage && !isCompanyProfilePage;
+  ].includes(pathname) && !/^\/messages\/.+/.test(pathname) && !/^\/companies\/.+/.test(pathname);
   
-  const shouldShowFooter = ![
-    '/profile-setup',
-    '/login',
-    '/map',
-    '/credicora',
-    '/search-history',
-    '/policies',
-     '/terms',
-    '/privacy',
-    '/community-guidelines',
-  ].some(path => pathname.startsWith(path)) && !isChatPage;
+  const shouldShowFooter = !/^\/messages\/.+/.test(pathname);
   
   return (
     <div className="flex flex-col min-h-screen">
