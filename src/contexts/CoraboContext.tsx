@@ -131,39 +131,47 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setIsLoadingAuth(true);
       if (firebaseUser) {
         const userDocRef = doc(db, "users", firebaseUser.uid);
-        const userDocSnap = await getDoc(userDocRef);
+        try {
+          const userDocSnap = await getDoc(userDocRef);
 
-        if (userDocSnap.exists()) {
-          setCurrentUser(userDocSnap.data() as User);
-        } else {
-          // This is a new user
-          const newUser: User = {
-            id: firebaseUser.uid,
-            name: firebaseUser.displayName?.split(' ')[0] || 'Usuario',
-            lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
-            idNumber: '',
-            birthDate: '',
-            email: firebaseUser.email || '',
-            profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
-            type: 'client',
-            reputation: 0,
-            phone: '',
-            emailValidated: firebaseUser.emailVerified,
-            phoneValidated: false,
-            isGpsActive: true,
-            gallery: [],
-            credicoraLevel: 1,
-            credicoraLimit: 150,
-            profileSetupData: {},
-            isSubscribed: false,
-            isTransactionsActive: false,
-          };
-          await setDoc(userDocRef, newUser);
-          setCurrentUser(newUser);
-          router.push('/profile-setup'); // Redirect to profile setup
+          if (userDocSnap.exists()) {
+            setCurrentUser(userDocSnap.data() as User);
+          } else {
+            // This is a new user
+            const newUser: User = {
+              id: firebaseUser.uid,
+              name: firebaseUser.displayName?.split(' ')[0] || 'Usuario',
+              lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
+              idNumber: '',
+              birthDate: '',
+              email: firebaseUser.email || '',
+              profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
+              type: 'client', // Default type
+              reputation: 0,
+              phone: '',
+              emailValidated: firebaseUser.emailVerified,
+              phoneValidated: false,
+              isGpsActive: true,
+              gallery: [],
+              credicoraLevel: 1,
+              credicoraLimit: 150,
+              profileSetupData: {},
+              isSubscribed: false,
+              isTransactionsActive: false,
+            };
+            await setDoc(userDocRef, newUser);
+            setCurrentUser(newUser);
+            router.push('/profile-setup'); // Redirect to profile setup
+          }
+        } catch (error) {
+            console.error("FirebaseError on getDoc:", error);
+            // This is where the "client is offline" error would be caught.
+            // By having a robust firebase.ts, we prevent it.
+            // If it still happens, we should probably sign the user out to retry.
+            await signOut(auth);
+            setCurrentUser(null);
         }
       } else {
         setCurrentUser(null);
@@ -562,5 +570,3 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
-
-    

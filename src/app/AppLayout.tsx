@@ -18,28 +18,24 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   
+  // This effect handles all redirection logic safely after the initial render.
   useEffect(() => {
     if (isLoadingAuth) {
       return; // Do nothing while auth state is loading
     }
 
-    // If auth is done:
-    if (currentUser) {
-      // and user is on login page, redirect to home
-      if (pathname === '/login') {
-        router.replace('/');
-      }
-    } else {
-      // and user is not on login page, redirect to login
-      if (pathname !== '/login') {
-        router.replace('/login');
-      }
+    if (!currentUser && pathname !== '/login') {
+      router.replace('/login');
+    }
+
+    if (currentUser && pathname === '/login') {
+      router.replace('/');
     }
   }, [currentUser, isLoadingAuth, pathname, router]);
 
 
-  // 1. While checking auth state OR redirecting, show a global loader
-  if (isLoadingAuth || (!currentUser && pathname !== '/login') || (currentUser && pathname === '/login')) {
+  // 1. While checking auth state, show a global loader
+  if (isLoadingAuth) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -47,12 +43,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
   
-  // 2. If not authenticated and on the login page, show the page
-  if (!currentUser && pathname === '/login') {
-    return <main>{children}</main>;
+  // 2. If not authenticated, only render the login page, or a loader while redirecting
+  if (!currentUser) {
+    return pathname === '/login' ? <main>{children}</main> : (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
   }
   
-  // 3. If authenticated and not on the login page, show the app layout
+  // 3. If authenticated, render the main app layout
   if(currentUser) {
       // Admin Route Guard
       if (pathname.startsWith('/admin') && currentUser?.role !== 'admin') {
@@ -128,5 +128,5 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   // Fallback for any other case (should not be reached)
-  return <main>{children}</main>;
+  return null;
 }

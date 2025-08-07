@@ -21,8 +21,9 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 const db = getFirestore(app);
 
-// Enable offline persistence only on the client-side
-if (typeof window !== 'undefined') {
+// Enable offline persistence only on the client-side, and only once.
+let persistenceEnabled = false;
+if (typeof window !== 'undefined' && !persistenceEnabled) {
   enableIndexedDbPersistence(db).catch((err) => {
     if (err.code == 'failed-precondition') {
       console.warn("Firestore persistence failed: Multiple tabs open.");
@@ -30,6 +31,7 @@ if (typeof window !== 'undefined') {
       console.warn("Firestore persistence failed: Browser does not support persistence.");
     }
   });
+  persistenceEnabled = true;
 }
 
 export { app, db };
