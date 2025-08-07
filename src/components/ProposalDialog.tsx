@@ -50,7 +50,7 @@ export function ProposalDialog({ isOpen, onOpenChange, conversationId }: Proposa
             title: '',
             description: '',
             amount: 0,
-            acceptsCredicora: currentUser.profileSetupData?.acceptsCredicora || false,
+            acceptsCredicora: currentUser?.profileSetupData?.acceptsCredicora || false,
         }
     });
 

@@ -105,7 +105,7 @@ function ChatHeader({
 function ProposalBubble({ msg, onAccept, canAccept }: { msg: Message, onAccept: (messageId: string) => void, canAccept: boolean }) {
     if (!msg.proposal) return null;
     const { currentUser } = useCorabo();
-    const isClient = currentUser.type === 'client';
+    const isClient = currentUser?.type === 'client';
     const isAccepted = msg.isProposalAccepted;
     const [formattedDate, setFormattedDate] = useState<string | null>(null);
 
@@ -211,11 +211,11 @@ export default function ChatPage() {
   const conversationId = params.id as string;
   const conversation = conversations.find(c => c.id === conversationId);
   
-  const otherParticipantId = conversation?.participantIds.find(pId => pId !== currentUser.id);
+  const otherParticipantId = conversation?.participantIds.find(pId => pId !== currentUser?.id);
   const otherParticipant = users.find(u => u.id === otherParticipantId);
 
-  const isProvider = currentUser.type === 'provider';
-  const canAcceptProposal = currentUser.isTransactionsActive ?? false;
+  const isProvider = currentUser?.type === 'provider';
+  const canAcceptProposal = currentUser?.isTransactionsActive ?? false;
 
   const showProviderWarning = isProvider && (!otherParticipant?.isTransactionsActive);
   
@@ -229,10 +229,10 @@ export default function ChatPage() {
     }
   }, [conversation?.messages]);
 
-  if (!conversation || !otherParticipant) {
+  if (!currentUser || !conversation || !otherParticipant) {
     return (
       <div className="flex flex-col h-screen items-center justify-center">
-        <p>Conversación no encontrada.</p>
+        <p>Conversación no encontrada o cargando...</p>
         <Button onClick={() => router.push('/messages')} className="mt-4">Volver a Mensajes</Button>
       </div>
     );
@@ -241,7 +241,7 @@ export default function ChatPage() {
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (newMessage.trim()) {
-      sendMessage(conversationId, newMessage);
+      sendMessage(otherParticipant.id, newMessage);
       setNewMessage('');
     }
   };
@@ -249,12 +249,12 @@ export default function ChatPage() {
   const handleDateSelect = (date: Date) => {
     const formattedDate = format(date, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: es });
     const messageText = `¡Hola! Me gustaría solicitar una cita para el ${formattedDate}. ¿Estás disponible?`;
-    sendMessage(conversationId, messageText);
+    sendMessage(otherParticipant.id, messageText);
     
     // Simulate provider accepting and creating the commitment
     setTimeout(() => {
         const appointmentMessage = `¡Claro! Te enviaré una propuesta formal para que la aceptes y creemos el compromiso.`;
-        sendMessage(conversationId, appointmentMessage);
+        sendMessage(otherParticipant.id, appointmentMessage);
     }, 1500)
   }
 
@@ -280,9 +280,9 @@ export default function ChatPage() {
         <ScrollArea className="h-full" ref={scrollAreaRef}>
           <div className="p-4 space-y-2">
             {conversation.messages.map((msg) => {
-              const isCurrentUser = msg.senderId === currentUser.id;
+              const isCurrentUserMsg = msg.senderId === currentUser.id;
               return (
-                <MessageBubble key={msg.id} msg={msg} isCurrentUser={isCurrentUser} onAccept={acceptProposal.bind(null, conversationId)} canAcceptProposal={canAcceptProposal} />
+                <MessageBubble key={msg.id} msg={msg} isCurrentUser={isCurrentUserMsg} onAccept={acceptProposal.bind(null, conversationId)} canAcceptProposal={canAcceptProposal} />
               )
             })}
           </div>

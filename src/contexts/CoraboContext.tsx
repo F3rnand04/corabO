@@ -11,7 +11,10 @@ import { add, subDays, startOfDay } from 'date-fns';
 import { credicoraLevels } from '@/lib/types';
 import { auth, provider, db } from '@/lib/firebase';
 import { signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where } from 'firebase/firestore';
+import { createCampaign } from '@/ai/flows/campaign-flow';
+import { acceptProposal as acceptProposalFlow, sendMessage as sendMessageFlow } from '@/ai/flows/message-flow';
+
 
 type FeedView = 'servicios' | 'empresas';
 
@@ -80,6 +83,7 @@ interface CoraboState {
   getCartItemQuantity: (productId: string) => number;
   checkIfShouldBeEnterprise: (providerId: string) => boolean;
   activatePromotion: (details: { imageId: string, promotionText: string, cost: number }) => void;
+  createCampaign: typeof createCampaign;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -98,11 +102,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [products, setProducts] = useState(mockProducts);
   const [services, setServices] = useState(mockServices);
   
-  const [users, setUsers] = useState(mockUsers); // Will be replaced by Firestore users
+  const [users, setUsers] = useState<User[]>([]); // Will be replaced by Firestore users
   
   // These will be managed by Firestore
-  const [transactions, setTransactions] = useState(initialTransactions);
-  const [conversations, setConversations] = useState(initialConversations);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchQuery, _setSearchQuery] = useState('');
@@ -146,14 +150,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         setCurrentUser(appUser);
         
         // This part would be replaced by a Firestore listener
-        setTransactions(initialTransactions.filter(t => t.clientId === appUser.id || t.providerId === appUser.id));
-        setUsers(prevUsers => {
-          const userExists = prevUsers.some(u => u.id === appUser.id);
-          if (userExists) {
-            return prevUsers.map(u => u.id === appUser.id ? appUser : u);
-          }
-          return [...prevUsers, appUser];
-        });
+        // setTransactions(initialTransactions.filter(t => t.clientId === appUser.id || t.providerId === appUser.id));
+        // setUsers(prevUsers => {
+        //   const userExists = prevUsers.some(u => u.id === appUser.id);
+        //   if (userExists) {
+        //     return prevUsers.map(u => u.id === appUser.id ? appUser : u);
+        //   }
+        //   return [...prevUsers, appUser];
+        // });
 
       } else {
         setCurrentUser(null);
@@ -163,6 +167,35 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!currentUser) return;
+  
+    const usersQuery = query(collection(db, "users"));
+    const unsubscribeUsers = onSnapshot(usersQuery, (snapshot) => {
+      const usersData = snapshot.docs.map(doc => doc.data() as User);
+      setUsers(usersData);
+    });
+  
+    const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
+    const unsubscribeTransactions = onSnapshot(transactionsQuery, (snapshot) => {
+      const transactionsData = snapshot.docs.map(doc => doc.data() as Transaction);
+      setTransactions(transactionsData);
+    });
+    
+    const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id));
+    const unsubscribeConversations = onSnapshot(conversationsQuery, (snapshot) => {
+      const conversationsData = snapshot.docs.map(doc => doc.data() as Conversation);
+      setConversations(conversationsData);
+    });
+
+  
+    return () => {
+      unsubscribeUsers();
+      unsubscribeTransactions();
+      unsubscribeConversations();
+    };
+  }, [currentUser]);
 
 
   const signInWithGoogle = async () => {
@@ -282,50 +315,70 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return contacts.some(c => c.id === userId);
   }
   
-  const updateUser = (userId: string, updates: Partial<User>) => {
-    setUsers(users.map(u => u.id === userId ? { ...u, ...updates } : u));
-    if (currentUser?.id === userId) {
-        setCurrentUser(prev => prev ? { ...prev, ...updates } : null);
-    }
+  const updateUser = async (userId: string, updates: Partial<User>) => {
+    const userDocRef = doc(db, 'users', userId);
+    await setDoc(userDocRef, updates, { merge: true });
+    // State will be updated by the listener
   };
   
-  const sendMessage = (recipientId: string, text: string, createOnly: boolean = false) => {
+  const sendMessage = (recipientId: string, text: string, createOnly: boolean = false): string => {
     if (!currentUser) return '';
     const convoId = [currentUser.id, recipientId].sort().join('_');
     
-    setConversations(prev => {
-      const existingConvoIndex = prev.findIndex(c => c.id === convoId);
-      
-      const newMessage: Message = {
-        id: `msg-${Date.now()}`,
-        senderId: currentUser.id,
-        text,
-        timestamp: new Date().toISOString(),
-        type: 'text',
-      };
-      
-      if (existingConvoIndex > -1) {
-        const updatedConvo = { ...prev[existingConvoIndex] };
-        if (!createOnly) {
-          updatedConvo.messages = [...updatedConvo.messages, newMessage];
+    if (createOnly) {
+      // Just ensure the conversation exists without sending a message
+      const convoRef = doc(db, 'conversations', convoId);
+      getDoc(convoRef).then(snap => {
+        if (!snap.exists()) {
+          setDoc(convoRef, {
+            id: convoId,
+            participantIds: [currentUser.id, recipientId].sort(),
+            messages: [],
+            lastUpdated: new Date().toISOString(),
+          });
         }
-        updatedConvo.lastUpdated = new Date().toISOString();
-        const newConvos = [...prev];
-        newConvos[existingConvoIndex] = updatedConvo;
-        return newConvos;
-      } else {
-        const newConvo = {
-          id: convoId,
-          participantIds: [currentUser.id, recipientId],
-          messages: createOnly ? [] : [newMessage],
-          lastUpdated: new Date().toISOString(),
-        };
-        return [newConvo, ...prev];
-      }
-    });
-
+      });
+    } else {
+        sendMessageFlow({
+            conversationId: convoId,
+            senderId: currentUser.id,
+            text: text,
+            recipientId: recipientId
+        }).catch(err => {
+            console.error(err);
+            toast({ variant: 'destructive', title: "Error al enviar mensaje" });
+        });
+    }
     return convoId;
   };
+
+  const sendProposalMessage = async (conversationId: string, proposal: AgreementProposal) => {
+    if (!currentUser) return;
+    try {
+        await sendMessageFlow({
+            conversationId: conversationId,
+            senderId: currentUser.id,
+            proposal: proposal,
+            recipientId: conversations.find(c => c.id === conversationId)?.participantIds.find(p => p !== currentUser.id) || ''
+        });
+        toast({ title: 'Propuesta enviada' });
+    } catch (error) {
+        console.error("Error sending proposal:", error);
+        toast({ variant: 'destructive', title: 'Error al enviar la propuesta' });
+    }
+  };
+
+  const acceptProposal = async (conversationId: string, messageId: string) => {
+    if (!currentUser) return;
+    try {
+      await acceptProposalFlow({ conversationId, messageId, acceptorId: currentUser.id });
+      toast({ title: '¡Acuerdo Aceptado!', description: 'Se ha creado un nuevo compromiso de pago.' });
+    } catch (error) {
+      console.error("Error accepting proposal:", error);
+      toast({ variant: 'destructive', title: 'Error al aceptar la propuesta' });
+    }
+  };
+
 
   // The rest of the functions would need similar refactoring...
   const requestService = (service: Service) => {};
@@ -350,8 +403,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const activateTransactions = (userId: string, creditLimit: number) => {};
   const deactivateTransactions = (userId: string) => {};
   const downloadTransactionsPDF = () => {};
-  const sendProposalMessage = (conversationId: string, proposal: AgreementProposal) => {};
-  const acceptProposal = (conversationId: string, messageId: string) => {};
   const createAppointmentRequest = (request: AppointmentRequest) => {};
   const getAgendaEvents = () => { return []; };
   const addCommentToImage = (ownerId: string, imageId: string, commentText: string) => {};
@@ -418,6 +469,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     getCartItemQuantity,
     checkIfShouldBeEnterprise,
     activatePromotion,
+    createCampaign,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;
