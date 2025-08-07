@@ -4,7 +4,8 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, FileText, Lock, Users } from 'lucide-react';
+import Link from 'next/link';
+import { ChevronLeft, FileText, Gavel, ShieldCheck, Users } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 function PoliciesHeader() {
@@ -16,7 +17,7 @@ function PoliciesHeader() {
           <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <ChevronLeft className="h-6 w-6" />
           </Button>
-          <h1 className="text-xl font-bold">Políticas de la Empresa</h1>
+          <h1 className="text-xl font-bold">Políticas y Documentos</h1>
           <div className="w-8"></div>
         </div>
       </div>
@@ -24,53 +25,57 @@ function PoliciesHeader() {
   );
 }
 
-const policies = [
+const policySections = [
     {
-        icon: FileText,
+        icon: Gavel,
         title: "Términos y Condiciones de Uso",
-        content: "Al utilizar Corabo, aceptas nuestros términos que rigen tu acceso y uso de la plataforma. Eres responsable de tu conducta y contenido, y debes cumplir con todas las leyes aplicables. Nos reservamos el derecho de suspender o terminar cuentas que violen nuestros términos."
+        description: "Las reglas que rigen el uso de nuestra plataforma, tus derechos y obligaciones.",
+        href: "/terms"
     },
     {
-        icon: Lock,
+        icon: ShieldCheck,
         title: "Política de Privacidad",
-        content: "Valoramos tu privacidad. Recopilamos información para operar y mejorar nuestros servicios, como datos de perfil y transacciones. No compartimos tu información personal con terceros sin tu consentimiento, excepto cuando sea requerido por ley. Utilizamos medidas de seguridad para proteger tus datos."
+        description: "Cómo recopilamos, usamos y protegemos tu información personal.",
+        href: "/privacy"
     },
     {
         icon: Users,
         title: "Normas de la Comunidad",
-        content: "Fomentamos un ambiente de respeto y confianza. Se prohíbe el acoso, el discurso de odio, el spam y cualquier actividad ilegal. Las transacciones deben ser honestas y transparentes. Reporta cualquier comportamiento inadecuado para que podamos tomar acción."
+        description: "Las directrices para mantener un entorno seguro, respetuoso y colaborativo.",
+        href: "/community-guidelines"
     }
 ];
 
 export default function PoliciesPage() {
+  const router = useRouter();
   return (
     <>
       <PoliciesHeader />
       <main className="container max-w-4xl mx-auto py-8 space-y-8">
         <section className="text-center">
-            <h2 className="text-3xl font-bold">Nuestro Compromiso con la Confianza y la Seguridad</h2>
+            <h2 className="text-3xl font-bold">Nuestro Compromiso con la Confianza y la Transparencia</h2>
             <p className="text-lg text-muted-foreground mt-2 max-w-2xl mx-auto">
-                Estas son las directrices que aseguran que Corabo sea una comunidad segura, justa y confiable para todos.
+                Aquí encontrarás todos los documentos legales que rigen el funcionamiento de Corabo. Te recomendamos leerlos para entender tus derechos y responsabilidades.
             </p>
         </section>
 
-        <Accordion type="single" collapsible className="w-full">
-            {policies.map(policy => (
-                <AccordionItem value={policy.title} key={policy.title}>
-                    <AccordionTrigger className="text-lg font-semibold">
-                       <div className="flex items-center gap-3">
-                         <policy.icon className="h-5 w-5 text-primary" />
-                         {policy.title}
-                       </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="text-base text-muted-foreground pl-10">
-                        {policy.content}
-                    </AccordionContent>
-                </AccordionItem>
+        <div className="space-y-4">
+            {policySections.map(policy => (
+                <Link href={policy.href} key={policy.title} passHref>
+                    <Card className="hover:border-primary hover:bg-muted/30 transition-all cursor-pointer">
+                       <CardHeader className="flex flex-row items-center gap-4">
+                           <policy.icon className="h-8 w-8 text-primary shrink-0" />
+                           <div>
+                               <CardTitle className="text-xl">{policy.title}</CardTitle>
+                               <CardDescription className="mt-1">{policy.description}</CardDescription>
+                           </div>
+                       </CardHeader>
+                    </Card>
+                </Link>
             ))}
-        </Accordion>
+        </div>
 
-        <Card className="mt-12">
+        <Card className="mt-12 bg-background">
             <CardHeader>
                 <CardTitle>¿Tienes Preguntas?</CardTitle>
                 <CardDescription>
