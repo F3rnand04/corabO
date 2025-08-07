@@ -25,6 +25,10 @@ export const users: User[] = [
       expires: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(), 
     },
     profileSetupData: {
+      username: 'TecnoSoluciones',
+      useUsername: true,
+      categories: ['Tecnología y Soporte'],
+      primaryCategory: 'Tecnología y Soporte',
       specialty: 'Expertos en Tecnología',
       providerType: 'company',
       offerType: 'product',
@@ -32,14 +36,16 @@ export const users: User[] = [
       showExactLocation: true,
       acceptsCredicora: true,
       appointmentCost: 50,
+      location: 'Av. Principal de Las Mercedes, Caracas',
+      website: 'https://tecnosoluciones.com',
       schedule: {
-        'Lunes': { from: '00:00', to: '23:59', active: true },
-        'Martes': { from: '00:00', to: '23:59', active: true },
-        'Miércoles': { from: '00:00', to: '23:59', active: true },
-        'Jueves': { from: '00:00', to: '23:59', active: true },
-        'Viernes': { from: '00:00', to: '23:59', active: true },
-        'Sábado': { from: '00:00', to: '23:59', active: true },
-        'Domingo': { from: '00:00', to: '23:59', active: true },
+        'Lunes': { from: '09:00', to: '18:00', active: true },
+        'Martes': { from: '09:00', to: '18:00', active: true },
+        'Miércoles': { from: '09:00', to: '18:00', active: true },
+        'Jueves': { from: '09:00', to: '18:00', active: true },
+        'Viernes': { from: '09:00', to: '18:00', active: true },
+        'Sábado': { from: '10:00', to: '15:00', active: true },
+        'Domingo': { from: '00:00', to: '00:00', active: false },
       }
     },
     gallery: [
@@ -47,11 +53,11 @@ export const users: User[] = [
         id: 'provider1-img1',
         type: 'image',
         src: "https://placehold.co/600x400.png", 
-        alt: "Soporte Técnico", 
-        description: "Specialized technical support for computer equipment, both hardware and software. We solve your problems quickly and efficiently.",
+        alt: "Soporte Técnico Especializado", 
+        description: "Soporte técnico especializado para equipos de computación, tanto hardware como software. Solucionamos tus problemas de forma rápida y eficiente.",
         comments: [
-          { author: "Mario Gómez", text: "They solved my problem in minutes. Excellent!" },
-          { author: "Laura Mendez", text: "Very friendly and efficient." },
+          { author: "Mario Gómez", text: "Me solucionaron el problema en minutos. ¡Excelentes!" },
+          { author: "Laura Mendez", text: "Muy amables y eficientes." },
         ]
       },
       { 
@@ -59,25 +65,7 @@ export const users: User[] = [
         type: 'image',
         src: "https://placehold.co/600x400.png", 
         alt: "Instalación de Redes", 
-        description: "Installation and configuration of wired and wireless networks for offices and homes. We optimize the coverage and security of your connection.",
-        comments: []
-      },
-      { 
-        id: 'provider1-img3',
-        type: 'image',
-        src: "https://placehold.co/600x400.png", 
-        alt: "Venta de Equipos", 
-        description: "The best equipment and components for your needs. Personalized advice so you make the best investment.",
-         comments: [
-          { author: "Pedro R.", text: "I found everything I was looking for at a good price." },
-        ]
-      },
-       { 
-        id: 'provider1-img4',
-        type: 'image',
-        src: "https://placehold.co/600x400.png", 
-        alt: "Mantenimiento Preventivo", 
-        description: "Preventive maintenance plans for companies. Ensure the continuity of your operations and extend the useful life of your equipment.",
+        description: "Instalación y configuración de redes alámbricas e inalámbricas para oficinas y hogares. Optimizamos la cobertura y seguridad de tu conexión.",
         comments: []
       },
     ]
@@ -89,18 +77,23 @@ export const users: User[] = [
     reputation: 4.2,
     isGpsActive: false,
     isTransactionsActive: true,
-    isPaused: true,
+    isPaused: false,
     profileImage: `https://placehold.co/150x150.png`,
-    email: 'servicios@hogarfeliz.com',
+    email: 'ana.rivas.plomeria@email.com',
     phone: '04149876543',
     emailValidated: true,
-    phoneValidated: false,
+    phoneValidated: true,
     profileSetupData: {
+      username: 'AnaPlomeria',
+      useUsername: false,
+      categories: ['Hogar y Reparaciones'],
+      primaryCategory: 'Hogar y Reparaciones',
       specialty: 'Plomería y reparaciones del hogar',
       providerType: 'professional',
       offerType: 'service',
-      hasPhysicalLocation: true,
+      hasPhysicalLocation: false,
       showExactLocation: false,
+      serviceRadius: 15,
       acceptsCredicora: false,
       appointmentCost: 0,
       schedule: {
@@ -118,44 +111,30 @@ export const users: User[] = [
         id: 'provider2-img1',
         type: 'image',
         src: "https://placehold.co/600x400.png", 
-        alt: "Limpieza Profunda", 
-        description: "Detailed description of the deep cleaning service for kitchens, bathrooms, and common areas. We leave your home sparkling.",
+        alt: "Reparación de Fugas", 
+        description: "Servicio especializado en detección y reparación de todo tipo de fugas de agua. Trabajo garantizado y sin sorpresas.",
         comments: [
-          { author: "Ana Pérez", text: "The best service! My house was spotless." },
-          { author: "Carlos Ruiz", text: "Very professional and punctual. I recommend them." },
+          { author: "Ana Pérez", text: "¡El mejor servicio! Resolvió una fuga que otros no pudieron." },
+          { author: "Carlos Ruiz", text: "Muy profesional y puntual. La recomiendo." },
         ]
       },
       { 
         id: 'provider2-img2',
         type: 'image',
         src: "https://placehold.co/600x400.png", 
-        alt: "Armado de Muebles", 
-        description: "Installation and assembly of all types of furniture. Fast, clean, and guaranteed work, with no leftover screws.",
+        alt: "Instalación de Grifería", 
+        description: "Instalación de grifos, duchas y piezas sanitarias. Acabado limpio y profesional.",
         comments: []
       },
       { 
         id: 'provider2-img3',
         type: 'image',
         src: "https://placehold.co/600x400.png", 
-        alt: "Jardinería", 
-        description: "Gardening and maintenance service for green areas. Design, pruning, irrigation, and pest control to have the garden of your dreams.",
+        alt: "Destape de Cañerías", 
+        description: "Solución a problemas de obstrucción en cañerías de cocinas, baños y bajantes principales. Usamos equipo moderno que no daña sus tuberías.",
          comments: [
-          { author: "Luisa F.", text: "My garden has never looked so good." },
+          { author: "Luisa F.", text: "Rápida y efectiva. El drenaje quedó como nuevo." },
         ]
-      },
-      { 
-        id: 'provider2-img4',
-        type: 'image',
-        src: "https://placehold.co/600x400.png", 
-        alt: "Reparaciones Eléctricas", 
-        description: "Minor electrical repairs, such as changing outlets, switches, and lamps. Safety and quality guaranteed." 
-      },
-      { 
-        id: 'provider2-img5',
-        type: 'image',
-        src: "https://placehold.co/600x400.png", 
-        alt: "Plomería de Emergencia", 
-        description: "Emergency plumbing for leaks and blockages. 24-hour service to solve your problems instantly." 
       },
     ]
   },
@@ -286,9 +265,9 @@ export const products: Product[] = [
 export const services: Service[] = [
   {
     id: 'serv1',
-    name: 'Appliance Installation',
+    name: 'Instalación de Piezas Sanitarias',
     description: 'Professional and safe installation of any appliance.',
-    category: 'Home',
+    category: 'Hogar y Reparaciones',
     providerId: 'provider2',
   },
   {
