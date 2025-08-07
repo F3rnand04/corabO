@@ -1,7 +1,65 @@
 # Settings to manage and configure a Firebase App Hosting backend.
 # https://firebase.google.com/docs/app-hosting/configure
 
+# Specifies the server-side runtime for your backend.
+# All backends are container-based.
+# We recommend keeping this up-to-date.
+# https://firebase.google.com/docs/app-hosting/manage-releases#view
+bundle:
+  # The version of the Next.js framework to use.
+  framework: nextjs
+
+# The minimum number of server instances that
+# are always running. This can be edited at any time by
+# deploying a new version of your backend.
 runConfig:
-  # Increase this value if you'd like to automatically spin up
-  # more instances in response to increased traffic.
-  maxInstances: 1
+  # The minimum number of instances to keep running at all times.
+  # This is a good setting to increase to handle higher constant
+  # traffic.
+  minInstances: 0
+  # The maximum number of server instances that can be created
+  # to handle traffic.
+  maxInstances: 2
+
+# Automatic rollouts are safe, gradual deployments.
+# https://firebase.google.com/docs/app-hosting/safe-rollouts
+rollout:
+  # The number of requests to send to the new version
+  # of your backend before considering it to be healthy.
+  # If the new version returns errors for these requests,
+  # the rollout is immediately cancelled.
+  initialRequestCount: 25
+  # The percentage of live traffic to send to the new version
+  # of your backend.
+  rampUp:
+    # The percentage of traffic to send to the new version.
+    - percentage: 100
+      # The duration to wait before moving to the next step.
+      duration: 1m
+# This section is not required.
+# https://firebase.google.com/docs/app-hosting/configure-ci-cd
+# ci:
+#   # The GitHub repository that this backend is linked to.
+#   github:
+#     # The name of the repository in the format <owner>/<repository>
+#     repository: your-github-owner/your-github-repo
+#     # The path to the directory containing your backend's source code
+#     root: /
+#     # The branch that triggers a build and deploy when a commit is pushed
+#     liveBranch: main
+#     # The branches that trigger a preview when a pull request is created
+#     # against the live branch
+#     previewBranches:
+#       - "feature/*"
+#       - "fix/*"
+#       - "main"
+#   # The command to run to build your backend
+#   build:
+#     # The command to run to build your backend
+#     # By default, this is `npm run build`
+#     command: npm run build
+#   # The command to run to start your backend
+#   start:
+#     # The command to run to start your backend
+#     # By default, this is `npm run start`
+#     command: npm run start
