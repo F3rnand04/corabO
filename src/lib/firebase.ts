@@ -2,7 +2,7 @@
 "use client";
 
 import { initializeApp, getApp, getApps } from "firebase/app";
-import { getFirestore, enableIndexedDbPersistence, initializeFirestore } from "firebase/firestore";
+import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
 
 // Your web app's Firebase configuration - KEEP THIS AS IS FROM THE CONSOLE
 const firebaseConfig = {
@@ -19,28 +19,17 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-let db;
+const db = getFirestore(app);
 
+// Enable offline persistence only on the client-side
 if (typeof window !== 'undefined') {
-  try {
-    // This will only be executed on the client side
-    db = getFirestore(app);
-    enableIndexedDbPersistence(db).catch((err) => {
-      if (err.code == 'failed-precondition') {
-        console.warn("Firestore persistence failed: Multiple tabs open.");
-      } else if (err.code == 'unimplemented') {
-        console.warn("Firestore persistence failed: Browser does not support persistence.");
-      }
-    });
-  } catch (e) {
-    console.error("Error enabling persistence", e);
-    // Fallback to regular initialization if persistence fails
-    db = getFirestore(app);
-  }
-} else {
-  // For server-side rendering, just initialize without persistence
-  db = getFirestore(app);
+  enableIndexedDbPersistence(db).catch((err) => {
+    if (err.code == 'failed-precondition') {
+      console.warn("Firestore persistence failed: Multiple tabs open.");
+    } else if (err.code == 'unimplemented') {
+      console.warn("Firestore persistence failed: Browser does not support persistence.");
+    }
+  });
 }
-
 
 export { app, db };

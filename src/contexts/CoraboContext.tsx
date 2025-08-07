@@ -131,17 +131,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-        setIsLoadingAuth(true); // Set loading true at the start of auth check
         if (firebaseUser) {
             const userDocRef = doc(db, "users", firebaseUser.uid);
             try {
                 const userDocSnap = await getDoc(userDocRef);
 
                 if (userDocSnap.exists()) {
-                    // User exists, set them as current user
                     setCurrentUser(userDocSnap.data() as User);
                 } else {
-                    // New user, create a default client profile
                     const newUser: User = {
                         id: firebaseUser.uid,
                         name: firebaseUser.displayName || 'Usuario Nuevo',
@@ -162,18 +159,15 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
                     };
                     await setDoc(userDocRef, newUser);
                     setCurrentUser(newUser);
-                    // Redirect new user to profile setup
                     router.push('/profile-setup');
                 }
             } catch (error) {
                 console.error("Firestore getDoc error during auth check:", error);
-                // Handle error state appropriately
                 setCurrentUser(null);
             }
         } else {
             setCurrentUser(null);
         }
-        // Only set loading to false after all async operations are done
         setIsLoadingAuth(false);
     });
 
