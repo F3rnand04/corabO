@@ -71,19 +71,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const shouldShowFooter = ![
     '/profile-setup',
     '/map',
-    '/messages',
     '/credicora',
-    '/policies',
-    '/search-history',
-    '/terms',
-    '/privacy',
-    '/community-guidelines',
-  ].some(path => pathname.startsWith(path)) && !isChatPage;
+  ].some(path => pathname.startsWith(path)) && !isChatPage && !isMessagesPage && !isPoliciesPage && !isTermsPage && !isPrivacyPage && !isCommunityGuidelinesPage && !isSearchHistoryPage;
   
+  if (!isMounted) {
+    return null; // O un spinner/skeleton de carga
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       {shouldShowMainHeader && <Header />}
-       {isMounted && isClientWithInactiveTransactions && !isTransactionsPage && !isTransactionsSettingsPage && (
+       {isClientWithInactiveTransactions && !isTransactionsPage && !isTransactionsSettingsPage && (
          <div className={cn("bg-yellow-100 border-b border-yellow-300 text-yellow-900 text-sm z-30", shouldShowMainHeader ? 'sticky top-16' : 'sticky top-0')}>
             <div className="container p-2 flex items-center justify-center text-center gap-2">
                  <AlertCircle className="h-5 w-5 shrink-0" />
