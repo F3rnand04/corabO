@@ -134,7 +134,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       if (firebaseUser) {
         const userDocRef = doc(db, "users", firebaseUser.uid);
         
-        // Use getDoc for initial load to prevent race conditions
         const userDocSnap = await getDoc(userDocRef);
 
         if (userDocSnap.exists()) {
@@ -162,7 +161,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       } else {
         setCurrentUser(null);
       }
-       // Once we have a definitive answer (user or null), we stop loading.
       setIsLoadingAuth(false);
     });
 
@@ -170,7 +168,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, [auth]);
 
   useEffect(() => {
-    // This effect now safely waits for the user to be authenticated before running.
     if (!currentUser) return;
   
     const usersQuery = query(collection(db, "users"));
@@ -179,7 +176,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       setUsers(usersData);
     });
   
-    // Query for transactions where the user is either a client or a provider
     const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
     const unsubscribeTransactions = onSnapshot(transactionsQuery, (snapshot) => {
       const transactionsData = snapshot.docs.map(doc => doc.data() as Transaction);
@@ -205,7 +201,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
-      // onAuthStateChanged will handle the rest
       router.push('/');
     } catch (error) {
       console.error("Error signing in with Google: ", error);
@@ -339,7 +334,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const convoId = [currentUser.id, recipientId].sort().join('_');
     
     if (createOnly) {
-      // Just ensure the conversation exists without sending a message
       const convoRef = doc(db, 'conversations', convoId);
       getDoc(convoRef).then(snap => {
         if (!snap.exists()) {
