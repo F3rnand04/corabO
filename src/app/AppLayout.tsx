@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { usePathname, useRouter } from 'next/navigation';
@@ -17,18 +18,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  useEffect(() => {
-    // This effect handles redirection after the initial auth check is complete.
-    if (!isLoadingAuth && !currentUser && pathname !== '/login') {
-      router.replace('/login');
-    }
-    // Redirect away from login page if user is already authenticated
-    if (!isLoadingAuth && currentUser && pathname === '/login') {
-      router.replace('/');
-    }
-  }, [currentUser, isLoadingAuth, pathname, router]);
-
-
   // 1. While checking auth state, show a global loader
   if (isLoadingAuth) {
     return (
@@ -38,31 +27,30 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // 2. If auth check is done, but we are still waiting for redirection logic to run,
-  // (e.g., user is null, but we are not on /login yet), show loader.
-  if (!currentUser && pathname !== '/login') {
-     return (
+  // 2. If auth is done and there's no user, handle login page
+  if (!currentUser) {
+    if (pathname !== '/login') {
+      router.replace('/login');
+      // Show loader while redirecting
+      return (
         <div className="flex items-center justify-center min-h-screen">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
       );
-  }
-
-  // 3. If on the login page, render it without the main layout
-  if (pathname === '/login') {
+    }
+    // Already on login page
     return <main>{children}</main>;
   }
 
-  // If we reach here, it means we have a user and are not on the login page.
-  // So we can render the full app layout.
-  if (!currentUser) {
-      // This case should theoretically be handled by the useEffect redirect,
-      // but as a fallback, we show a loader.
-       return (
-        <div className="flex items-center justify-center min-h-screen">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
-      );
+  // 3. If auth is done, user exists, but is on login page, redirect to home
+  if (pathname === '/login') {
+    router.replace('/');
+    // Show loader while redirecting
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
   }
   
   // --- Layout for authenticated users ---

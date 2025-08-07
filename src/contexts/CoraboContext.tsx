@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
@@ -112,7 +113,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [products, setProducts] = useState(mockProducts);
   const [services, setServices] = useState(mockServices);
   
-  const [users, setUsers] = useState<User[]>([]); // Will be replaced by Firestore users
+  const [users, setUsers] = useState<User[]>(mockUsers); // Start with admin user
   
   // These will be managed by Firestore
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -130,51 +131,55 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        const userDocRef = doc(db, "users", firebaseUser.uid);
-        let userDocSnap;
-        try {
-          userDocSnap = await getDoc(userDocRef);
-        } catch (error) {
-           console.error("Firestore getDoc error:", error);
-           setIsLoadingAuth(false);
-           return;
-        }
+        setIsLoadingAuth(true); // Set loading true at the start of auth check
+        if (firebaseUser) {
+            const userDocRef = doc(db, "users", firebaseUser.uid);
+            try {
+                const userDocSnap = await getDoc(userDocRef);
 
-        if (userDocSnap.exists()) {
-            setCurrentUser(userDocSnap.data() as User);
+                if (userDocSnap.exists()) {
+                    // User exists, set them as current user
+                    setCurrentUser(userDocSnap.data() as User);
+                } else {
+                    // New user, create a default client profile
+                    const newUser: User = {
+                        id: firebaseUser.uid,
+                        name: firebaseUser.displayName || 'Usuario Nuevo',
+                        email: firebaseUser.email || '',
+                        profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
+                        type: 'client',
+                        reputation: 0,
+                        phone: firebaseUser.phoneNumber || '',
+                        emailValidated: firebaseUser.emailVerified,
+                        phoneValidated: false,
+                        isGpsActive: true,
+                        gallery: [],
+                        credicoraLevel: 1,
+                        credicoraLimit: 150,
+                        profileSetupData: {},
+                        isSubscribed: false,
+                        isTransactionsActive: false,
+                    };
+                    await setDoc(userDocRef, newUser);
+                    setCurrentUser(newUser);
+                    // Redirect new user to profile setup
+                    router.push('/profile-setup');
+                }
+            } catch (error) {
+                console.error("Firestore getDoc error during auth check:", error);
+                // Handle error state appropriately
+                setCurrentUser(null);
+            }
         } else {
-            // New user, create a default client profile
-            const newUser: User = {
-                id: firebaseUser.uid,
-                name: firebaseUser.displayName || 'Usuario Nuevo',
-                email: firebaseUser.email || '',
-                profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
-                type: 'client',
-                reputation: 0,
-                phone: firebaseUser.phoneNumber || '',
-                emailValidated: firebaseUser.emailVerified,
-                phoneValidated: false,
-                isGpsActive: true,
-                gallery: [],
-                credicoraLevel: 1,
-                credicoraLimit: 150,
-                profileSetupData: {}, // Start with empty setup data
-            };
-            await setDoc(userDocRef, newUser);
-            setCurrentUser(newUser);
-            // Redirect new user to profile setup
-            router.push('/profile-setup');
+            setCurrentUser(null);
         }
-
-      } else {
-        setCurrentUser(null);
-      }
-      setIsLoadingAuth(false);
+        // Only set loading to false after all async operations are done
+        setIsLoadingAuth(false);
     });
 
     return () => unsubscribe();
-  }, [auth, router]);
+}, [auth, router]);
+
 
   useEffect(() => {
     if (!currentUser) return;
@@ -211,7 +216,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     try {
       await setPersistence(auth, browserLocalPersistence);
       await signInWithPopup(auth, provider);
-      // No need to push here, onAuthStateChanged will handle it
+      // onAuthStateChanged will handle the user state update and redirection
     } catch (error) {
       console.error("Error signing in with Google: ", error);
       toast({
