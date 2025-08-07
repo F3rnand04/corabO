@@ -22,13 +22,13 @@ export default function LoginPage() {
     <div className="relative flex items-center justify-center min-h-screen bg-background">
       <div className="absolute inset-0 z-0">
           <Image 
-              src="https://i.postimg.cc/RCnNjqZt/lg2.png"
+              src="https://i.postimg.cc/Wz1MTvWK/lg.png"
               alt="Corabo background"
               layout="fill"
               objectFit="cover"
               quality={100}
           />
-          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-black/30" />
       </div>
       <div className="relative z-10 text-center p-8 bg-background/80 dark:bg-background/50 backdrop-blur-lg rounded-2xl shadow-xl max-w-sm w-full border border-white/20">
         <div className="inline-block bg-primary text-primary-foreground px-6 py-2 rounded-lg mb-6">
@@ -44,3 +44,4 @@ export default function LoginPage() {
     </div>
   );
 }
+
