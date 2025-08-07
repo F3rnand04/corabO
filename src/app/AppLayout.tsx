@@ -23,21 +23,28 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!isLoadingAuth && currentUser.id === 'guest' && pathname !== '/login') {
+    if (!isLoadingAuth && !currentUser && pathname !== '/login') {
       router.push('/login');
     }
   }, [currentUser, isLoadingAuth, pathname, router]);
 
-  if (isLoadingAuth || (!isMounted && pathname !== '/login')) {
+  if (isLoadingAuth || !isMounted) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
-
-  if (currentUser.id === 'guest') {
-    return <main>{children}</main>;
+  
+  if (!currentUser) {
+     if (pathname !== '/login') {
+       return (
+        <div className="flex items-center justify-center min-h-screen">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+       )
+     }
+     return <main>{children}</main>;
   }
 
   const isProfilePage = pathname === '/profile';
@@ -94,17 +101,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     '/login',
     '/map',
     '/credicora',
+    '/search-history',
     '/policies',
-    '/terms',
+     '/terms',
     '/privacy',
     '/community-guidelines',
-    '/search-history',
   ].some(path => pathname.startsWith(path)) && !isChatPage && !isMessagesPage;
   
-  if (!isMounted) {
-    return null; // O un spinner/skeleton de carga
-  }
-
   return (
     <div className="flex flex-col min-h-screen">
       {shouldShowMainHeader && <Header />}
