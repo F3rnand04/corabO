@@ -24,10 +24,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   // This is the key change. We now wait for isLoadingAuth to be false.
   useEffect(() => {
-    if (!isLoadingAuth && !currentUser && pathname !== '/login') {
+    if (isMounted && !isLoadingAuth && !currentUser && pathname !== '/login') {
       router.push('/login');
     }
-  }, [currentUser, isLoadingAuth, pathname, router]);
+  }, [currentUser, isLoadingAuth, pathname, router, isMounted]);
 
   // If authentication is loading OR the component isn't mounted, show a loader.
   // This prevents any app logic from running before Firebase has determined the auth state.
