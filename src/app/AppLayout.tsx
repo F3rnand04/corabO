@@ -73,11 +73,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     '/profile-setup',
     '/map',
     '/credicora',
+    '/policies',
     '/terms',
     '/privacy',
     '/community-guidelines',
-    '/policies'
-  ].some(path => pathname.startsWith(path)) && !isChatPage && !isMessagesPage && !isSearchHistoryPage;
+    '/search-history',
+  ].some(path => pathname.startsWith(path)) && !isChatPage && !isMessagesPage;
   
   if (!isMounted) {
     return null; // O un spinner/skeleton de carga
