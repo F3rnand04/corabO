@@ -6,8 +6,8 @@ import AppLayout from './AppLayout';
 import { Inter } from 'next/font/google';
 
 export const metadata: Metadata = {
-  title: 'Corabo Demo',
-  description: 'Demo funcional de la aplicación Corabo',
+  title: 'corabO.app',
+  description: 'Aplicación Funcional corabO',
 };
 
 const inter = Inter({
