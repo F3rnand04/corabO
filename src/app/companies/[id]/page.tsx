@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -34,7 +33,7 @@ import { credicoraLevels } from '@/lib/types';
 
 export default function CompanyProfilePage() {
   const params = useParams();
-  const { users, products, addContact, isContact, transactions, createAppointmentRequest, currentUser, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, sendMessage } = useCorabo();
+  const { users, products, addContact, isContact, transactions, createAppointmentRequest, currentUser, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, sendMessage, toggleGps } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
   
@@ -161,8 +160,8 @@ export default function CompanyProfilePage() {
     };
 
     const handleConfirmAppointment = () => {
-        if (appointmentDate && provider && isCurrentUserTransactionReady) {
-            const request: AppointmentRequest = {
+        if (appointmentDate && provider && currentUser && isCurrentUserTransactionReady) {
+            const request: Omit<AppointmentRequest, 'clientId'> = {
                 providerId: provider.id,
                 date: appointmentDate,
                 details: appointmentDetails,
@@ -305,6 +304,8 @@ export default function CompanyProfilePage() {
   };
   
   const currentImage = gallery.length > 0 ? gallery[currentImageIndex] : null;
+
+  if (!currentUser) return null;
 
   return (
     <>

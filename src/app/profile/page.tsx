@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, TouchEvent, useEffect, useRef, ChangeEvent } from 'react';
@@ -28,6 +27,11 @@ export default function ProfilePage() {
   const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, transactions, getAgendaEvents, products } = useCorabo();
   const router = useRouter();
   
+  if (!currentUser) {
+    // Or a loading spinner
+    return null;
+  }
+
   const [gallery, setGallery] = useState<GalleryImage[]>(currentUser.gallery || []);
 
   const isProvider = currentUser.type === 'provider';
@@ -235,15 +239,6 @@ export default function ProfilePage() {
 
   const currentImage = gallery.length > 0 ? gallery[currentImageIndex] : null;
   const isPromotionActiveOnCurrentImage = currentImage?.promotion && new Date(currentImage.promotion.expires) > new Date();
-
-  if (!currentUser) {
-      return (
-        <main className="container py-8">
-            <h1 className="text-3xl font-bold">Cargando perfil...</h1>
-        </main>
-      );
-  }
-
 
   return (
     <>
@@ -538,5 +533,3 @@ export default function ProfilePage() {
     </>
   );
 }
-
-    

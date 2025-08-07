@@ -312,6 +312,16 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     // State will be updated by the listener
   };
   
+  const toggleGps = (userId: string) => {
+    if (!currentUser) return;
+    const newGpsState = !currentUser.isGpsActive;
+    updateUser(userId, { isGpsActive: newGpsState });
+    toast({
+      title: `GPS ${newGpsState ? 'Activado' : 'Desactivado'}`,
+      description: newGpsState ? 'Tu ubicación ahora es visible para otros.' : 'Ya no compartirás tu ubicación.',
+    });
+  };
+
   const sendMessage = (recipientId: string, text: string, createOnly: boolean = false): string => {
     if (!currentUser) return '';
     const convoId = [currentUser.id, recipientId].sort().join('_');
@@ -411,7 +421,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const requestService = (service: Service) => {};
   const requestQuoteFromGroup = (serviceName: string, items: string[], groupOrProvider: string): boolean => { return true; };
   const checkout = (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {};
-  const toggleGps = (userId: string) => {};
   const updateUserProfileImage = (userId: string, imageUrl: string) => {};
   const updateUserProfileAndGallery = (userId: string, imageOrId: GalleryImage | string, isDelete?: boolean) => {};
   const removeGalleryImage = (userId: string, imageId: string) => {};

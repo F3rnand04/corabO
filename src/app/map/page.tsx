@@ -20,7 +20,7 @@ export default function MapPage() {
   useEffect(() => {
     // Activa el GPS solo si no está ya activo al entrar en la página
     if (!isGpsActive) {
-      toggleGps();
+      toggleGps(currentUser.id);
     }
   }, [isGpsActive, toggleGps]);
 
@@ -63,6 +63,9 @@ export default function MapPage() {
       });
     }
   };
+
+  const { currentUser } = useCorabo();
+  if(!currentUser) return null;
 
 
   return (
