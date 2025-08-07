@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -33,7 +34,7 @@ import { credicoraLevels } from '@/lib/types';
 
 export default function CompanyProfilePage() {
   const params = useParams();
-  const { users, products, addContact, transactions, createAppointmentRequest, currentUser, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, sendMessage } = useCorabo();
+  const { users, products, addContact, isContact, transactions, createAppointmentRequest, currentUser, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, sendMessage } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
   
@@ -69,11 +70,19 @@ export default function CompanyProfilePage() {
   const [messageCount, setMessageCount] = useState(1234);
   const [activeTab, setActiveTab] = useState('comentarios');
   const [gpsReady, setGpsReady] = useState(false);
+  const [isSaved, setIsSaved] = useState(provider ? isContact(provider.id) : false);
   
   useEffect(() => {
     // This effect helps avoid hydration mismatches for client-specific logic like GPS status
     setGpsReady(true);
   }, []);
+
+  useEffect(() => {
+    if (provider) {
+        setIsSaved(isContact(provider.id));
+    }
+  }, [isContact, provider]);
+
 
   const totalCartItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -162,6 +171,10 @@ export default function CompanyProfilePage() {
             createAppointmentRequest(request);
             setIsAppointmentDialogOpen(false);
             setAppointmentDetails('');
+            toast({
+                title: "Solicitud de Cita Enviada",
+                description: "El proveedor revisará tu solicitud y se pondrá en contacto.",
+            });
         }
     };
 
@@ -276,7 +289,19 @@ export default function CompanyProfilePage() {
   }
 
   const handleSaveContact = () => {
-    addContact(provider);
+    const success = addContact(provider);
+    if (success) {
+      toast({
+        title: "¡Contacto Guardado!",
+        description: `Has añadido a ${provider.name} a tus contactos.`
+      });
+      setIsSaved(true);
+    } else {
+        toast({
+            title: "Contacto ya existe",
+            description: `${provider.name} ya está en tu lista de contactos.`
+        });
+    }
   };
   
   const currentImage = gallery.length > 0 ? gallery[currentImageIndex] : null;
@@ -500,7 +525,7 @@ export default function CompanyProfilePage() {
                     <Send className="w-5 h-5" />
                 </Button>
                 <Button variant="ghost" size="icon" className="text-muted-foreground bg-white/50 rounded-full" onClick={handleSaveContact}>
-                    <Bookmark className="w-5 h-5" />
+                    <Bookmark className={cn("w-5 h-5", isSaved && "fill-primary text-primary")} />
                 </Button>
               </div>
               <CardContent className="p-0">

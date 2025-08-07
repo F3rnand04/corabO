@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import Image from "next/image";
@@ -11,11 +12,12 @@ import type { User as UserType } from "@/lib/types";
 import { Star, MapPin, Bookmark, Send, MessageCircle, CheckCircle, Flag } from "lucide-react";
 import Link from "next/link";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ReportDialog } from "./ReportDialog";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { ImageDetailsDialog } from "./ImageDetailsDialog";
+import { useToast } from "@/hooks/use-toast";
 
 
 interface ProviderCardProps {
@@ -23,14 +25,32 @@ interface ProviderCardProps {
 }
 
 export function ProviderCard({ provider }: ProviderCardProps) {
-    const { addContact, sendMessage, products } = useCorabo();
+    const { addContact, sendMessage, products, isContact } = useCorabo();
     const router = useRouter();
+    const { toast } = useToast();
     const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
     const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+    const [isSaved, setIsSaved] = useState(isContact(provider.id));
     const profileLink = provider.type === 'provider' ? `/companies/${provider.id}` : '#';
 
+    useEffect(() => {
+        setIsSaved(isContact(provider.id));
+    }, [isContact, provider.id]);
+
     const handleSaveContact = () => {
-        addContact(provider);
+        const success = addContact(provider);
+        if (success) {
+            toast({
+                title: "¡Contacto Guardado!",
+                description: `Has añadido a ${provider.name} a tus contactos.`
+            });
+            setIsSaved(true);
+        } else {
+             toast({
+                title: "Contacto ya existe",
+                description: `${provider.name} ya está en tu lista de contactos.`
+            });
+        }
     };
 
     const handleDirectMessage = () => {
@@ -72,7 +92,7 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                                     </div>
                                 </Link>
                                 <Button variant="ghost" size="icon" className="shrink-0 text-muted-foreground hover:text-primary" onClick={handleSaveContact}>
-                                    <Bookmark className="w-5 h-5" />
+                                    <Bookmark className={cn("w-5 h-5", isSaved && "fill-primary text-primary")} />
                                 </Button>
                             </div>
                              <p className="text-sm text-muted-foreground">{specialty}</p>

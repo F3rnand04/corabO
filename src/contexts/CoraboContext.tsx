@@ -52,6 +52,7 @@ interface CoraboState {
   setSearchQuery: (query: string) => void;
   addContact: (user: User) => boolean;
   removeContact: (userId: string) => void;
+  isContact: (userId: string) => boolean;
   toggleGps: (userId: string) => void;
   updateUserProfileImage: (userId: string, imageUrl: string) => void;
   updateUserProfileAndGallery: (userId: string, imageOrId: GalleryImage | string, isDelete?: boolean) => void;
@@ -560,6 +561,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const removeContact = (userId: string) => {
     setContacts(prev => prev.filter(c => c.id !== userId));
   };
+
+  const isContact = (userId: string) => {
+    return contacts.some(c => c.id === userId);
+  }
   
   const updateUser = (userId: string, updates: Partial<User> | ((user: User) => Partial<User>)) => {
     setUsers(prevUsers =>
@@ -695,19 +700,17 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }
   
   const activatePromotion = (details: { imageId: string, promotionText: string, cost: number }) => {
-    const { imageId, promotionText, cost } = details;
-    
     // 1. Create system transaction for the payment
     const promotionTx: Transaction = {
         id: `promo-tx-${Date.now()}`,
         type: 'Sistema',
         status: 'Pagado', // Assume payment is confirmed by the dialog flow
         date: new Date().toISOString(),
-        amount: cost,
+        amount: details.cost,
         clientId: currentUser.id,
         providerId: 'corabo-app',
         details: {
-            system: `Pago por Promoción de 24h: "${promotionText}"`
+            system: `Pago por Promoción de 24h: "${details.promotionText}"`
         }
     };
     setTransactions(prev => [...prev, promotionTx]);
@@ -715,11 +718,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     // 2. Update the user's gallery item with promotion details
     updateUser(currentUser.id, user => {
         const newGallery = (user.gallery || []).map(img => {
-            if (img.id === imageId) {
+            if (img.id === details.imageId) {
                 return {
                     ...img,
                     promotion: {
-                        text: promotionText,
+                        text: details.promotionText,
                         expires: add(new Date(), { hours: 24 }).toISOString()
                     }
                 };
@@ -1050,6 +1053,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     startDispute,
     setSearchQuery,
     addContact,
+    isContact,
     removeContact,
     toggleGps,
     updateUserProfileImage,
@@ -1090,3 +1094,4 @@ export type { Transaction };
     
 
     
+
