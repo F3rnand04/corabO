@@ -1,4 +1,3 @@
-
 "use client";
 
 import { initializeApp, getApp, getApps } from "firebase/app";
@@ -23,11 +22,15 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// Explicitly set the custom auth domain for the provider to match the deployment environment.
-// This is the definitive fix for the 'unauthorized-domain' error in this context.
-provider.setCustomParameters({
-  'authDomain': 'studio--corabo-demo.us-central1.hosted.app'
-});
+// Set custom auth domain for different environments
+if (typeof window !== 'undefined') {
+  const hostname = window.location.hostname;
+  if (hostname.includes('cloudworkstations.dev') || hostname.includes('hosted.app')) {
+    provider.setCustomParameters({
+      'authDomain': hostname
+    });
+  }
+}
 
 
 export { app, auth, db, provider, signInWithPopup, signOut, onAuthStateChanged };
