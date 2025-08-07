@@ -101,9 +101,6 @@ const CoraboContext = createContext<CoraboState | undefined>(undefined);
 // Import mock data - we'll phase this out
 import { users as mockUsers, products as mockProducts, services as mockServices, initialTransactions, initialConversations } from '@/lib/mock-data';
 
-// Get the Auth instance
-const auth = getAuth(app);
-
 export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
   const router = useRouter();
@@ -129,6 +126,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [isGpsActive, setIsGpsActive] = useState(true);
   const [dailyQuotes, setDailyQuotes] = useState<Record<string, DailyQuote[]>>({});
   
+  // Get the Auth instance here
+  const auth = getAuth(app);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -168,7 +167,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [auth]);
 
   useEffect(() => {
     // This effect now safely waits for the user to be authenticated before running.
@@ -203,17 +202,20 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
 
   const signInWithGoogle = async () => {
+    // Create a new provider instance each time to ensure fresh config
     const provider = new GoogleAuthProvider();
-    try {
-      if (typeof window !== 'undefined') {
+    
+    // The most robust way: set custom parameters right before the call.
+    if (typeof window !== 'undefined') {
         const hostname = window.location.hostname;
-        // This is a more targeted check for the development environment.
         if (hostname.endsWith('cloudworkstations.dev')) {
             provider.setCustomParameters({
               'authDomain': hostname
             });
         }
-      }
+    }
+
+    try {
       await signInWithPopup(auth, provider);
       // onAuthStateChanged will handle the rest
       router.push('/');

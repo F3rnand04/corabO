@@ -18,22 +18,6 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-
-// --- START: Dynamic Auth Domain Fix ---
-// This block dynamically sets the authDomain for specific development environments.
-if (typeof window !== 'undefined' && window.location.hostname.endsWith('cloudworkstations.dev')) {
-    try {
-        const appInstance = getApp();
-        appInstance.options.authDomain = window.location.hostname;
-        // This log is for debugging and can be removed later.
-        console.log(`Firebase authDomain dynamically set to: ${appInstance.options.authDomain}`);
-    } catch (e) {
-        console.error("Could not dynamically set Firebase authDomain:", e);
-    }
-}
-// --- END: Dynamic Auth Domain Fix ---
-
-
 const db = getFirestore(app);
 
 export { app, db };
