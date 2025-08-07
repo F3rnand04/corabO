@@ -203,6 +203,7 @@ export type Transaction = {
   amount: number;
   clientId: string;
   providerId?: string; // Optional for system transactions
+  participantIds?: string[]; // For Firestore queries
   details: {
     items?: CartItem[];
     serviceName?: string;
@@ -242,6 +243,7 @@ export type Conversation = {
     id: string;
     participantIds: string[];
     messages: Message[];
+    lastUpdated: string;
     unreadCount?: number;
 };
 
