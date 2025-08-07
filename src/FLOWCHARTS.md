@@ -1,109 +1,64 @@
 # Flujogramas de Procesos de Corabo
 
-Este documento contiene los flujogramas que describen los principales procesos y la lógica de negocio de la aplicación Corabo.
+Este documento contiene los flujogramas que describen los principales procesos y la lógica de negocio de la aplicación Corabo, ahora con una arquitectura Cliente-Servidor utilizando Firebase y Genkit.
 
 ---
 
-## 1. Flujo del Cliente (Comprador)
+## 1. Flujo General de Autenticación y Acceso
 
-Describe el viaje de un usuario que actúa como cliente.
+Describe el viaje inicial de un usuario para acceder a la aplicación.
 
 ```mermaid
 graph TD
-    A[Inicio: Cliente en el Feed Principal] --> B{¿Cómo busca?};
-    B -- Barra de Búsqueda --> C[Escribe y filtra el feed actual];
-    B -- Botón Central (Footer) --> D[Página de Explorar Categorías];
-    
-    D --> E[Selecciona una categoría, ej: "Hogar"];
-    E --> F[Vuelve al Feed Principal];
-    F --> G[El feed ahora muestra solo proveedores <br>de la categoría "Hogar", <br>ordenados por proximidad];
-    
-    subgraph "Interacción con Proveedor"
-      C --> H[Encuentra Perfil de Proveedor];
-      G --> H;
-      H -- Clic en Mensaje Directo --> L[Inicia chat para negociar];
-      H -- Clic en Guardar --> C_SAVE[Contacto guardado, icono se rellena];
-      H --> D_CHECK{¿El cliente tiene su registro <br>de transacciones activo?};
-    end
-
-    D_CHECK -- No --> E_BANNER[Ve banner de 'Activar Registro'];
-    E_BANNER --> F_PAGE[Página de Activación de Transacciones];
-    F_PAGE --> G_UPLOAD[Sube ID y registra datos de pago];
-    G_UPLOAD --> D_CHECK;
-    
-    D_CHECK -- Sí --> H_PROVIDER{¿Qué tipo de proveedor es?};
-    H_PROVIDER --> I_SERVICE[<B>Servicio</B>];
-    H_PROVIDER --> J_PRODUCT[<B>Producto</B>];
-
-    I_SERVICE --> K_SERVICE[Revisa galería y servicios];
-    K_SERVICE --> L;
-    L --> M_PROPOSAL[Proveedor envía Propuesta de Acuerdo desde el chat];
-    M_PROPOSAL --> N_ACCEPT[Cliente Acepta Propuesta];
-    N_ACCEPT --> O_COMMIT[Se crea Compromiso de Pago];
-    O_COMMIT --> P_CONFIRM[Cliente confirma recepción y califica el servicio];
-    P_CONFIRM --> Q_PAY[Cliente realiza el pago];
-    Q_PAY --> R_CONFIRM[Proveedor confirma pago];
-    R_CONFIRM --> S_END[<B>Transacción Finalizada</B>];
-
-    J_PRODUCT --> T_PRODUCT[Explora catálogo de productos en el perfil];
-    T_PRODUCT --> U_CART[Añade productos al Carrito Global];
-    U_CART --> V_CHECKOUT[Abre diálogo de Pre-factura];
-    V_CHECKOUT --> W_CREDIT{¿Monto >= $20 y usa Credicora?};
-    W_CREDIT -- Sí --> X_FINANCE[Paga inicial con financiación];
-    W_CREDIT -- No --> Y_FULL[Paga el monto total];
-    X_FINANCE & Y_FULL --> Z_COMMIT[Se crea Compromiso de Pago];
-    Z_COMMIT --> S_END;
+    A[Usuario abre la App] --> B{¿Usuario autenticado?};
+    B -- No --> C[Redirigido a /login];
+    C --> D[Usuario hace clic en 'Iniciar Sesión con Google'];
+    D --> E[Popup de Firebase Authentication];
+    E --> F{¿Autenticación exitosa?};
+    F -- Sí --> G[Redirigido a la página principal '/'];
+    G --> H[CoraboContext se suscribe a los datos de Firestore del usuario];
+    H --> I[App lista para usar];
+    F -- No --> J[Muestra error en la página de login];
+    B -- Sí --> G;
 ```
 
 ---
 
-## 2. Flujo del Proveedor
+## 2. Flujo del Cliente (Comprador) con Backend
 
-Detalla el viaje de un usuario que se configura y actúa como proveedor.
+Describe el viaje de un cliente en la nueva arquitectura.
 
 ```mermaid
 graph TD
-    A[Inicio: Usuario decide ser Proveedor] --> B[Abre Ajustes de Perfil];
-    B --> C{Paso 1: Elige tipo 'Proveedor'};
-    C -- Advertencia de cambio (simulada) --> D[Paso 2-5: Configura perfil detallado];
-    D --> E[<B>Paso 6: Revisa y Guarda</B>];
-    E --> F{¿Registro de transacciones está activo?};
-    F -- No --> G[Redirige a Activación de Transacciones];
-    G --> H[Sube ID y registra datos de pago];
-    H --> F;
-
-    F -- Sí --> I[Perfil de Proveedor Activo];
-    I --> J{¿Qué ofrece principalmente?};
-    J -- Servicio --> K[Gestiona Galería y Citas];
-    J -- Producto --> L[Gestiona Galería <B>Y</B> Catálogo de Productos];
-
-    subgraph "Interacciones del Proveedor"
-        K --> M[Recibe solicitud de cita por chat];
-        M --> N[Envía Propuesta de Acuerdo];
-        N --> O[Cliente acepta y se crea compromiso];
-
-        L --> P[Recibe compra de producto];
-        P --> Q[Se crea compromiso de pago];
-    end
+    A[Inicio: Cliente en el Feed Principal] --> B[Encuentra Proveedor y hace clic en Mensaje Directo];
+    B --> C[Se abre la pantalla de Chat /messages/[id]];
+    C --> D[Cliente y Proveedor negocian];
+    D --> E[**Proveedor** envía una 'Propuesta de Acuerdo' desde el chat];
     
-    subgraph "Herramientas de Crecimiento"
-      I --> Campaign[Clic en 'Gestionar Campañas'];
-      Campaign --> CampaignDialog[Configura campaña (presupuesto, duración, segmentación)];
-      CampaignDialog --> Pay[Paga la campaña (con opción Credicora si >$20)];
-      Pay --> ActiveCampaign[Campaña Activa - Aumenta visibilidad];
+    subgraph "Lógica de Backend (Genkit)"
+        direction LR
+        E --> F_FE[El Frontend llama al flujo `sendMessageFlow` en Genkit];
+        F_FE --> G_BE[Genkit guarda la propuesta en el mensaje dentro de Firestore];
     end
 
+    G_BE --> H_CLIENT[El cliente ve la cápsula de propuesta en el chat];
+    H_CLIENT --> I_ACCEPT[Cliente hace clic en 'Revisar y Aceptar'];
+    
+    subgraph "Lógica de Backend (Genkit)"
+        direction LR
+        I_ACCEPT --> J_FE[El Frontend llama al flujo `acceptProposalFlow` en Genkit];
+        J_FE --> K_BE[Genkit valida la acción y crea una nueva **Transacción** en Firestore];
+    end
 
-    O & Q --> R[Espera confirmación y pago del cliente];
-    R --> S[Confirma recepción del pago];
-    S --> T[<B>Transacción Finalizada</B>];
+    K_BE --> L_FINAL[Se crea el Compromiso de Pago];
+    L_FINAL --> M_END[<B>Transacción Formalizada</B>];
 ```
 
 ---
 
 ## 3. Flujo de Pago: Suscrito vs. No Suscrito
 
-Detalla la diferencia clave en el flujo de pago según el estado de suscripción del cliente.
+*Este flujo no cambia en su lógica de negocio, pero ahora las actualizaciones de estado de la transacción son manejadas por el backend.*
 
 ```mermaid
 graph TD
@@ -126,137 +81,27 @@ graph TD
 
 ---
 
-## 4. Flujo de Calificación y Finalización
+## 4. Flujo de Campaña Publicitaria (con Backend)
 
-Detalla el proceso para calificar un servicio, vinculándolo al pago.
-
-```mermaid
-graph TD
-    A[Inicio: Proveedor finaliza un trabajo] --> B[Proveedor hace clic en 'Marcar como Finalizado'];
-    B --> C[Estado de la transacción cambia a: <br><b>'Pendiente de Confirmación del Cliente'</b>];
-    C --> D{Cliente recibe notificación y va a la transacción};
-
-    E[Inicio Alternativo: Cliente va a pagar un servicio] --> F{¿El servicio ya fue confirmado por el cliente?};
-    F -- No --> G[Sistema solicita: 'Primero, confirma que recibiste el servicio'];
-    F -- Sí --> H[Cliente procede directamente al pago];
-
-    D & G --> I[Cliente hace clic en 'Confirmar Recepción y Calificar'];
-    
-    I --> J[<b>PANTALLA DE CALIFICACIÓN OBLIGATORIA</b>];
-    subgraph "Calificación del Servicio"
-        J1[Cliente selecciona estrellas (1-5)]
-        J2[Cliente escribe un comentario (opcional)]
-        J1 & J2 --> J3[Cliente hace clic en 'Continuar a Pagar']
-    end
-    
-    J --> K[El sistema guarda la calificación y el comentario en la transacción];
-    K --> L[<b>PANTALLA DE REGISTRO DE PAGO</b>];
-    L --> M[Cliente sube el comprobante y el número de referencia];
-    M --> N[Estado de la transacción cambia a: <br><b>'Pago Enviado - Esperando Confirmación'</b>];
-    
-    N --> O[Proveedor recibe notificación y verifica el pago];
-    O --> P{¿Pago Correcto?};
-    P -- Sí --> Q[Proveedor confirma la recepción del pago];
-    P -- No --> R[Proveedor puede iniciar una disputa];
-    
-    Q --> S[Estado de la transacción cambia a: <br><b>'Pagado' / 'Resuelto'</b>];
-    S --> T[<b>ACTUALIZACIÓN DE REPUTACIÓN</b>];
-    subgraph "Lógica del Sistema"
-        T1[El sistema recalcula el promedio de reputación del proveedor] --> T2[La nueva reputación se muestra en el perfil del proveedor];
-    end
-
-    T --> U[<B>Flujo de Calificación Completo</B>];
-```
-
----
-
-## 5. Flujos de Delivery y Credicora
-
-### 5.1. Flujo del Proveedor de Delivery
+Detalla el nuevo flujo de creación de campañas, ahora gestionado por Genkit.
 
 ```mermaid
 graph TD
-    A[Proveedor de Delivery (Repartidor) está activo y disponible en la app] --> B{Recibe nueva solicitud de servicio de entrega};
+    A[Proveedor en su perfil hace clic en 'Gestionar Campañas'] --> B[Se abre el `CampaignDialog`];
+    B --> C[Configura campaña (presupuesto, duración, etc.)];
+    C --> D[Hace clic en 'Confirmar y Proceder al Pago'];
     
-    B --> C[Abre la solicitud para ver los detalles];
-    subgraph "Detalles de la Solicitud"
+    subgraph "Lógica de Frontend/Backend"
         direction LR
-        C1[<b>Vendedor:</b> Nombre y dirección de retiro]
-        C2[<b>Cliente:</b> Dirección de entrega]
-        C3[<b>Pedido:</b> N.º de orden y descripción (ej: '1 laptop', 'comida')]
-        C4[<b>Mapa:</b> Visualización de la ruta de retiro y entrega]
-        C5[<b>Tarifa Ofrecida:</b> Monto a ganar por el envío]
-    end
-    C --> D{¿Acepta el servicio de entrega?};
-
-    D -- No --> E[Rechaza la solicitud o la deja expirar];
-    E --> F[El sistema busca al siguiente repartidor más cercano];
-
-    D -- Sí --> G[<b>Acepta el Compromiso de Entrega</b>];
-    G --> H[Se crea una nueva transacción entre <br><b>Vendedor del Producto</b> y <b>Repartidor</b>];
-    H --> I[Estado de la transacción: <br><b>'Acuerdo Aceptado - Pendiente de Ejecución'</b>];
-
-    I --> J[Repartidor se dirige al punto de retiro (tienda del vendedor)];
-    J --> K[Confirma en la app que ha retirado el paquete];
-    K --> L[Estado cambia a: <b>'Servicio en Curso'</b>];
-    
-    L --> M[Repartidor se dirige al punto de entrega (cliente)];
-    M --> N[Cliente confirma la recepción (ej: con un código)];
-    N --> O[Repartidor marca la entrega como finalizada en la app];
-    
-    O --> P[Estado cambia a: <br><b>'Finalizado - Pendiente de Pago'</b>];
-    P --> Q[El sistema notifica al Vendedor del Producto para que libere el pago];
-
-    Q --> R{Vendedor del Producto transfiere el pago al Repartidor};
-    R --> S[Repartidor confirma la recepción del pago];
-    S --> T[Estado de la transacción cambia a: <br><b>'Pagado' / 'Resuelto'</b>];
-    T --> U[<B>Flujo de Delivery Completo</B>];
-```
-
-### 5.2. Flujo de Compra con Delivery y Credicora
-
-```mermaid
-graph TD
-    A[Cliente en diálogo de Pre-factura] --> B{¿Monto total >= $20?};
-    B -- Sí --> B_switch[Activa 'Incluir Delivery' y 'Pagar con Credicora'];
-    B -- No --> B_no_credicora[Paga sin opción Credicora];
-    
-    B_switch --> C[<b>Cálculo de Pago Complejo</b>];
-    subgraph "El Sistema Calcula el Costo Total"
-       D1[Total Productos] --> D2[Se calcula el Monto Financiado <br> sobre los productos según el nivel Credicora];
-       D2 --> D3[Pago Inicial Productos = Total Productos - Monto Financiado];
-       D3 --> D4[<b>Total a Pagar Hoy</b> = Pago Inicial Productos + 100% del Costo de Envío];
+        D --> E_FE[Frontend llama al flujo `createCampaignFlow` de Genkit];
+        E_FE --> F_BE[**Genkit (Backend)** recibe los datos];
+        F_BE --> G_BE[Calcula costos, aplica descuentos];
+        G_BE --> H_BE[Crea el documento de la Campaña en Firestore con estado 'pending_payment'];
+        H_BE --> I_BE[Crea una **Transacción de Sistema** en Firestore para el pago de la campaña];
     end
 
-    C --> E[Cliente ve el desglose: Total, Pago Inicial Hoy y Cuotas Futuras];
-    E --> F[Cliente hace clic en 'Pagar Ahora'];
-
-    F --> G[Se crea <b>Transacción Principal ÚNICA</b> por el valor del <b>Pago Inicial</b>];
-     subgraph "Detalles de la Transacción Principal"
-        direction LR
-        G1[<b>Cliente:</b> Comprador]
-        G2[<b>Proveedor:</b> Vendedor del Producto]
-        G3[<b>Monto:</b> Valor del Total a Pagar Hoy]
-        G4[<b>Estado:</b> 'Finalizado - Pendiente de Pago']
-    end
-
-    G --> H{Cliente paga el monto inicial y el Vendedor confirma};
-    H -- Proceso de Pago y Verificación --> I[Estado de la Transacción Principal cambia a <b>'Pagado'</b>];
-
-    I --> J[<b>AUTOMATIZACIÓN DEL SISTEMA POST-CONFIRMACIÓN</b>];
-    
-    subgraph "Flujo de Delivery (se inicia en paralelo)"
-        J --> K[Sistema busca un repartidor y le envía la solicitud];
-        K --> L[Repartidor acepta y se crea una <b>transacción secundaria</b> <br>(Vendedor -> Repartidor) por el costo del envío];
-        L --> M[Repartidor recoge y entrega el producto];
-    end
-
-    subgraph "Flujo de Financiación (se inicia en paralelo)"
-        J --> N[Sistema crea <b>N transacciones de cuotas futuras</b> <br>(Cliente -> Vendedor)];
-        N --> O[Sistema crea <b>transacción de comisión</b> <br>(Vendedor -> Corabo)];
-    end
-
-    M --> P[El cliente recibe su producto];
-    P --> Q[El cliente califica al Vendedor y al Repartidor];
-    Q --> R[<B>Flujo de Compra, Delivery y Financiación Completo</B>];
+    I_BE --> J[Usuario es redirigido a la pantalla de pago de la transacción];
+    J --> K[Usuario paga la transacción];
+    K --> L[Sistema actualiza el estado de la campaña a 'active'];
+    L --> M[<B>Campaña Publicitaria Activa</B>];
 ```

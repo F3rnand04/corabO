@@ -2,22 +2,17 @@
 
 ## 1. Visión General y Arquitectura
 
-Este documento es una guía exhaustiva sobre la funcionalidad, lógica de negocio y flujos de usuario del prototipo Corabo. La aplicación está diseñada como una plataforma de conexión robusta y segura, con una arquitectura centrada en componentes reutilizables (React, ShadCN/UI) y una lógica de negocio centralizada en `CoraboContext.tsx`.
+Este documento es una guía exhaustiva sobre la funcionalidad, lógica de negocio y flujos de usuario del prototipo Corabo. La aplicación ha evolucionado a una **plataforma web con una arquitectura moderna**, utilizando **Firebase para la autenticación y base de datos**, y **Genkit para la lógica de negocio del backend**, lo que la hace segura, escalable y lista para la colaboración en equipo.
 
 ---
 
-## 2. Perfiles de Usuario y Flexibilidad de Roles
+## 2. Primeros Pasos: Inicio de Sesión
 
-La plataforma es un ecosistema flexible donde los roles pueden evolucionar.
+Al ser una aplicación con datos reales y personalizados, el primer paso siempre es la autenticación.
 
-### 2.1. Flexibilidad y Límites
-- **Cambio de Rol:** Un usuario puede empezar como Cliente y decidir convertirse en Proveedor (o viceversa). Sin embargo, para fomentar la estabilidad, la plataforma simula una restricción del mundo real: al intentar cambiar el tipo de perfil principal, se muestra una **advertencia** de que este cambio solo estaría permitido cada 6 meses en una versión de producción.
-- **"Emprende por Hoy":** Esta funcionalidad actúa como una válvula de escape a la regla anterior, permitiendo a cualquier usuario probar una idea de negocio (servicio o producto) por 24 horas sin necesidad de alterar su perfil principal.
-
-### 2.2. Pausar Perfil de Proveedor
-- **Funcionalidad:** Los proveedores tienen la opción de **pausar su perfil** directamente desde sus ajustes.
-- **Consecuencias:** Al pausar, el perfil del proveedor se vuelve **invisible** en las búsquedas del feed principal. Además, el sistema simula una **penalización en su reputación y efectividad**, reflejando el impacto negativo de no estar disponible para los clientes.
-- **Reactivación:** El proveedor puede reactivar su perfil en cualquier momento para volver a ser visible.
+-   **Página de `/login`:** Al abrir la aplicación por primera vez, serás dirigido a la página de inicio de sesión.
+-   **Autenticación con Google:** Deberás usar el botón "Iniciar Sesión con Google" para acceder. Esto utiliza el sistema seguro de Firebase Authentication.
+-   **Creación Automática de Perfil:** Si es tu primera vez, se creará un perfil básico de tipo "Cliente" en nuestra base de datos Firestore, usando los datos de tu cuenta de Google. Ya podrás empezar a explorar.
 
 ---
 
@@ -40,55 +35,23 @@ La barra de navegación inferior es el centro de control principal y su comporta
 
 **Nota sobre Headers:** El header principal se oculta en páginas con headers propios (chat) o de flujo completo. El **header de tu propio perfil es fijo** y permanece visible al hacer scroll.
 
-### 3.2. Perfil del Proveedor (`/profile/page.tsx`)
-
-- **Header Fijo:** El área con la información del perfil (avatar, nombre, reputación, etc.) se mantiene fija en la parte superior de la pantalla mientras te desplazas por la galería.
-- **Botón "Gestionar Campañas":**
-  - **Exclusivo para Proveedores:** Se ha añadido un botón "Gestionar Campañas" junto al de "Emprende por Hoy".
-  - **Abre el `CampaignDialog`:** Inicia el flujo para crear una campaña publicitaria pagada para una publicación.
-- **Botón "Emprende por Hoy":** Permite a los proveedores lanzar una oferta rápida de 24 horas por un costo fijo.
-
-#### 3.2.1. Diálogo de Gestión de Campañas (`CampaignDialog`)
-Este es un flujo de 4 pasos para que el proveedor autogestione su publicidad:
-1.  **Selección de Publicación:** Elige una imagen o video de su galería para impulsar.
-2.  **Configuración de Presupuesto:**
-    -   **Niveles de Impulso:** Selecciona un plan (Básico, Avanzado, Premium) que define un costo diario y un alcance estimado.
-    -   **Duración:** Define cuántos días durará la campaña (1-30).
-3.  **Segmentación (Opcional):**
-    -   Añade un costo extra para enfocar la campaña por **zona geográfica** o por **intereses** de los usuarios.
-4.  **Revisión y Pago:**
-    -   Muestra un resumen detallado del costo total.
-    -   Aplica un **10% de descuento** si el proveedor está suscrito.
-    -   Permite usar **Credicora** para financiar la campaña si el costo es de $20 o más.
-
-### 3.3. Perfil Público de un Proveedor (`/companies/[id]/page.tsx`)
-- **Botón de Mensaje Directo:** Se ha añadido un icono de **Enviar (`Send`)** junto al botón de guardar (`Bookmark`). Esto permite a los clientes iniciar una conversación de chat directamente con el proveedor desde su perfil, facilitando el primer contacto.
+### 3.2. Perfil Público de un Proveedor (`/companies/[id]/page.tsx`)
+- **Botón de Mensaje Directo (Recién Añadido):** Ahora, cada `ProviderCard` en el feed principal incluye un icono de **Enviar (`Send`)**. Esto permite a los clientes iniciar una conversación de chat directamente con el proveedor desde el feed, sin necesidad de navegar a la página de perfil, agilizando enormemente el primer contacto.
 - **Feedback Visual al Guardar Contacto:** El icono de **Guardar (`Bookmark`)** ahora se rellena con el color primario de la aplicación cuando el contacto ha sido guardado, proporcionando una confirmación visual inmediata y persistente.
 
-### 3.4. Carrito de Compras y Checkout (Componente Global)
-- **Acceso:** Icono de carrito en el `Header` y en el perfil de proveedores de productos.
-- **Funcionalidad del Popover:**
-  - Muestra un resumen de los productos, permitiendo ajustar cantidades o eliminar artículos.
-  - El botón **"Ver Pre-factura"** abre el diálogo de checkout.
-- **Diálogo de Pre-factura (Checkout):**
-  - **Cálculos Dinámicos:** Muestra subtotal, costo de envío (si se activa) y el total.
-  - **Switch "Incluir Delivery":** Añade el costo de envío.
-  - **Switch "Pagar con Credicora":**
-    - Habilitado solo si el proveedor lo acepta y el monto es >= $20.
-    - Al activarlo, recalcula el "Total a Pagar Hoy".
-  - **Botón "Pagar Ahora":** Crea la transacción final.
+### 3.3. Chat y Propuestas de Acuerdo (`/messages/[id]/page.tsx`)
+El chat ahora es una herramienta de negociación segura, conectada al backend.
+- **Flujo de Propuesta:** Cuando un proveedor envía una "Propuesta de Acuerdo", la lógica se ejecuta en un flujo de Genkit.
+- **Aceptación Segura:** Cuando el cliente acepta, otro flujo de Genkit se encarga de crear la transacción formal en la base de datos Firestore. Esto evita que la lógica de creación de compromisos pueda ser alterada desde el navegador.
 
-### 3.5. Búsqueda por Categorías (`/search/page.tsx`)
-- **Filtro del Feed Principal:** Esta página, accesible desde el botón central de búsqueda en el `Footer`, permite a los usuarios filtrar el contenido del feed principal.
-- **Flujo de Selección:**
-  1.  El usuario navega a la página "Explorar Categorías".
-  2.  Al hacer clic en una categoría (ej: "Alimentos y Restaurantes"), la aplicación guarda esa selección como un término de búsqueda.
-  3.  El usuario es redirigido automáticamente al feed principal (`/`).
-  4.  El feed ahora muestra exclusivamente proveedores que han indicado pertenecer a la categoría seleccionada, ordenados por proximidad (GPS activo).
+### 3.4. Gestión de Campañas (`CampaignDialog`)
+El flujo de creación de campañas publicitarias también ha sido migrado al backend.
+1.  **Configuración en el Cliente:** El proveedor sigue configurando su campaña (presupuesto, duración, etc.) en el diálogo.
+2.  **Creación en el Servidor:** Al confirmar, se llama a un flujo de Genkit que realiza todos los cálculos y crea de forma segura tanto la campaña como la transacción de pago asociada en Firestore.
 
 ---
 
 ## 4. Políticas Clave
-- **Activación Obligatoria:** Ningún proveedor puede ofertar si no ha completado el flujo de configuración Y el de activación de transacciones. Los usuarios que intenten acceder a funciones que lo requieran (ej: "Emprende por Hoy") serán redirigidos.
+- **Activación Obligatoria:** Ningún proveedor puede ofertar si no ha completado el flujo de configuración Y el de activación de transacciones.
 - **Límite de Cotizaciones (No Suscritos):** Un usuario no suscrito puede cotizar el mismo producto/servicio a un máximo de 3 proveedores distintos por día.
-- **Uso de Credicora:** La opción de financiar con Credicora (tanto para compras como para campañas) solo está disponible para montos iguales o superiores a $20.
+- **Uso de Credicora:** La opción de financiar con Credicora solo está disponible para montos iguales o superiores a $20.
