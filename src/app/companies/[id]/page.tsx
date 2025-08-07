@@ -495,10 +495,7 @@ export default function CompanyProfilePage() {
           <main className="px-2">
             {/* Main Content Card */}
             <Card className="rounded-2xl overflow-hidden shadow-lg relative">
-              <div className="absolute top-2 right-2 z-10 flex gap-2">
-                <Button variant="ghost" size="icon" className="text-muted-foreground bg-white/50 rounded-full" onClick={handleDirectMessage}>
-                    <Send className="w-5 h-5" />
-                </Button>
+              <div className="absolute top-2 right-2 z-10">
                 <Button variant="ghost" size="icon" className="text-muted-foreground bg-white/50 rounded-full" onClick={handleSaveContact}>
                     <Bookmark className="w-5 h-5" />
                 </Button>
