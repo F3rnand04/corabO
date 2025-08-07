@@ -70,7 +70,7 @@ export default function CompanyProfilePage() {
   const [messageCount, setMessageCount] = useState(1234);
   const [activeTab, setActiveTab] = useState('comentarios');
   const [gpsReady, setGpsReady] = useState(false);
-  const [isSaved, setIsSaved] = useState(provider ? isContact(provider.id) : false);
+  const [isSaved, setIsSaved] = useState(false);
   
   useEffect(() => {
     // This effect helps avoid hydration mismatches for client-specific logic like GPS status
@@ -86,12 +86,12 @@ export default function CompanyProfilePage() {
 
   const totalCartItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  const cartTransaction = cart.length > 0 ? transactions.find(tx => tx.clientId === currentUser.id && tx.status === 'Carrito Activo') : undefined;
+  const cartTransaction = cart.length > 0 ? transactions.find(tx => tx.clientId === currentUser?.id && tx.status === 'Carrito Activo') : undefined;
   const isDeliveryOnly = provider?.profileSetupData?.isOnlyDelivery || false;
   const providerAcceptsCredicora = provider?.profileSetupData?.acceptsCredicora || false;
 
   // Security check for transaction readiness
-  const isCurrentUserTransactionReady = currentUser.isTransactionsActive;
+  const isCurrentUserTransactionReady = currentUser?.isTransactionsActive;
 
   const handleCheckout = () => {
     if (cartTransaction) {
@@ -103,9 +103,9 @@ export default function CompanyProfilePage() {
   const subtotal = getCartTotal();
   const totalWithDelivery = subtotal + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
 
-  const userCredicoraLevel = currentUser.credicoraLevel || 1;
+  const userCredicoraLevel = currentUser?.credicoraLevel || 1;
   const credicoraDetails = credicoraLevels[userCredicoraLevel.toString()];
-  const creditLimit = currentUser.credicoraLimit || 0;
+  const creditLimit = currentUser?.credicoraLimit || 0;
 
   // New calculation logic
   const financingPercentage = 1 - credicoraDetails.initialPaymentPercentage;
@@ -572,7 +572,7 @@ export default function CompanyProfilePage() {
                          <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="absolute top-2 left-2 z-10 text-white bg-black/20 rounded-full"
+                            className="absolute top-2 left-2 z-10 text-white bg-black/20 rounded-full h-8 w-8"
                             onClick={() => setIsReportDialogOpen(true)}
                           >
                             <Flag className="w-4 h-4" />

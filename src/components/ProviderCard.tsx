@@ -30,12 +30,13 @@ export function ProviderCard({ provider }: ProviderCardProps) {
     const { toast } = useToast();
     const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
     const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
-    const [isSaved, setIsSaved] = useState(isContact(provider.id));
+    const [isSaved, setIsSaved] = useState(false);
     const profileLink = provider.type === 'provider' ? `/companies/${provider.id}` : '#';
 
     useEffect(() => {
         setIsSaved(isContact(provider.id));
     }, [isContact, provider.id]);
+
 
     const handleSaveContact = () => {
         const success = addContact(provider);
@@ -46,7 +47,7 @@ export function ProviderCard({ provider }: ProviderCardProps) {
             });
             setIsSaved(true);
         } else {
-             toast({
+            toast({
                 title: "Contacto ya existe",
                 description: `${provider.name} ya está en tu lista de contactos.`
             });
