@@ -36,13 +36,13 @@ export function Header() {
   const [includeDelivery, setIncludeDelivery] = useState(false);
   const [useCredicora, setUseCredicora] = useState(false);
 
-  const cartTransaction = cart.length > 0 ? currentUser.transactions?.find(tx => tx.status === 'Carrito Activo' && tx.clientId === currentUser.id) : undefined;
+  const cartTransaction = cart.length > 0 ? currentUser?.transactions?.find(tx => tx.status === 'Carrito Activo' && tx.clientId === currentUser.id) : undefined;
   const provider = users.find(u => u.id === cartTransaction?.providerId);
   const isDeliveryOnly = provider?.profileSetupData?.isOnlyDelivery || false;
   const providerAcceptsCredicora = provider?.profileSetupData?.acceptsCredicora || false;
 
   const handleCheckout = () => {
-    if (cartTransaction) {
+    if (cartTransaction && currentUser) {
         checkout(cartTransaction.id, includeDelivery || isDeliveryOnly, useCredicora);
         setIsCheckoutAlertOpen(false);
         setUseCredicora(false);
@@ -53,9 +53,9 @@ export function Header() {
   const subtotal = getCartTotal();
   const totalWithDelivery = subtotal + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
 
-  const userCredicoraLevel = currentUser.credicoraLevel || 1;
+  const userCredicoraLevel = currentUser?.credicoraLevel || 1;
   const credicoraDetails = credicoraLevels[userCredicoraLevel.toString()];
-  const creditLimit = currentUser.credicoraLimit || 0;
+  const creditLimit = currentUser?.credicoraLimit || 0;
   
   const financingPercentage = 1 - credicoraDetails.initialPaymentPercentage;
   const potentialFinancing = subtotal * financingPercentage;
@@ -64,6 +64,8 @@ export function Header() {
   const totalToPayToday = productInitialPayment + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
   const installmentAmount = financedAmount > 0 ? financedAmount / credicoraDetails.installments : 0;
 
+
+  if (!currentUser) return null;
 
   return (
     <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm sticky top-0 z-40">

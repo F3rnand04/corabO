@@ -12,7 +12,7 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (currentUser && currentUser.id !== 'guest') {
+    if (currentUser) {
       router.push('/');
     }
   }, [currentUser, router]);
