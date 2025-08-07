@@ -19,20 +19,15 @@ export default function LoginPage() {
 
 
   return (
-    <div className="relative flex items-center justify-center min-h-screen bg-background">
-      <div className="absolute inset-0 z-0">
-          <Image 
-              src="https://i.postimg.cc/Wz1MTvWK/lg.png"
-              alt="Corabo background"
-              layout="fill"
-              objectFit="cover"
-              quality={100}
-          />
-          <div className="absolute inset-0 bg-black/30" />
-      </div>
-      <div className="relative z-10 text-center p-8 bg-background/80 dark:bg-background/50 backdrop-blur-lg rounded-2xl shadow-xl max-w-sm w-full border border-white/20">
-        <div className="inline-block bg-primary text-primary-foreground px-6 py-2 rounded-lg mb-6">
-            <h1 className="text-4xl font-bold tracking-tighter">corab<span className="font-extrabold">O</span></h1>
+    <div className="flex items-center justify-center min-h-screen bg-muted/40 p-4">
+      <div className="relative z-10 text-center p-8 bg-background rounded-2xl shadow-xl max-w-sm w-full border">
+        <div className="relative w-48 h-24 mx-auto mb-6">
+            <Image 
+                src="https://i.postimg.cc/Wz1MTvWK/lg.png"
+                alt="Corabo logo"
+                layout="fill"
+                objectFit="contain"
+            />
         </div>
         <h2 className="text-2xl font-bold mb-2">Bienvenido a Corabo</h2>
         <p className="text-muted-foreground mb-8">Conectando tus necesidades con las mejores soluciones.</p>
@@ -44,4 +39,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
