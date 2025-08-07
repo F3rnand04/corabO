@@ -15,11 +15,6 @@ const firebaseConfig = {
   "messagingSenderId": "220291714642"
 };
 
-// Conditional configuration for the development environment
-if (typeof window !== 'undefined' && window.location.hostname.includes('cloudworkstations.dev')) {
-    firebaseConfig.authDomain = window.location.hostname;
-}
-
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
