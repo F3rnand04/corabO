@@ -10,6 +10,9 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { add, subDays, startOfDay } from 'date-fns';
 import { credicoraLevels } from '@/lib/types';
+import { auth, provider } from '@/lib/firebase';
+import { signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { Loader2 } from 'lucide-react';
 
 type FeedView = 'servicios' | 'empresas';
 
@@ -31,6 +34,8 @@ interface CoraboState {
   feedView: FeedView;
   isGpsActive: boolean;
   searchHistory: string[];
+  isLoadingAuth: boolean;
+  signInWithGoogle: () => void;
   setSearchQuery: (query: string) => void;
   clearSearchHistory: () => void;
   logout: () => void;
@@ -88,7 +93,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [users, setUsers] = useState<User[]>(initialUsers);
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [services, setServices] = useState<Service[]>(initialServices);
-  const [currentUser, setCurrentUser] = useState<User>(users.find(u => u.id === 'client1')!);
+  const [currentUser, setCurrentUser] = useState<User>(users.find(u => u.id === 'guest')!);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
   const [conversations, setConversations] = useState<Conversation[]>(initialConversations);
@@ -98,6 +104,58 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [feedView, setFeedView] = useState<FeedView>('servicios');
   const [isGpsActive, setIsGpsActive] = useState(true);
   const [dailyQuotes, setDailyQuotes] = useState<Record<string, DailyQuote[]>>({});
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        let appUser = users.find(u => u.id === firebaseUser.uid);
+        if (!appUser) {
+          // Create a new user if they don't exist
+          const newUser: User = {
+            id: firebaseUser.uid,
+            name: firebaseUser.displayName || 'Nuevo Usuario',
+            email: firebaseUser.email || '',
+            profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
+            type: 'client',
+            reputation: 0,
+            phone: firebaseUser.phoneNumber || '',
+            emailValidated: firebaseUser.emailVerified,
+            phoneValidated: false,
+            isGpsActive: true,
+            gallery: [],
+            credicoraLevel: 1,
+            credicoraLimit: 150,
+          };
+          setUsers(prev => [...prev, newUser]);
+          appUser = newUser;
+        }
+        setCurrentUser(appUser);
+      } else {
+        setCurrentUser(users.find(u => u.id === 'guest')!);
+      }
+      setIsLoadingAuth(false);
+    });
+    return () => unsubscribe();
+  }, [users]);
+
+
+  const signInWithGoogle = async () => {
+    try {
+      await signInWithPopup(auth, provider);
+      router.push('/');
+    } catch (error) {
+      console.error("Error signing in with Google: ", error);
+      toast({
+        variant: 'destructive',
+        title: 'Error de Autenticación',
+        description: 'No se pudo iniciar sesión con Google. Por favor, intenta de nuevo.'
+      });
+    }
+  };
+
+  const logout = () => {
+    signOut(auth);
+  };
 
   const setSearchQuery = (query: string) => {
     _setSearchQuery(query);
@@ -110,14 +168,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     setSearchHistory([]);
   }
 
-  const logout = () => {
-    const guestUser = users.find(u => u.id === 'guest');
-    if (guestUser) {
-        setCurrentUser(guestUser);
-        router.push('/');
-        toast({ title: 'Has cerrado sesión' });
-    }
-  }
+  const switchUser = (userId: string) => {
+    console.warn("User switching is disabled when Firebase Auth is active.");
+  };
 
   const findOrCreateCartTransaction = (): Transaction => {
     const existingCartTx = transactions.find(
@@ -232,13 +285,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const distanceInKm = Math.floor(Math.random() * 5) + 1; // Simulate 1 to 5 km
     return distanceInKm * 1.5; 
   }
-
-  const switchUser = (userId: string) => {
-    const user = users.find((u) => u.id === userId);
-    if (user) {
-      setCurrentUser(user);
-    }
-  };
 
   const generatePaymentCommitments = (originalTx: Transaction) => {
       if (!originalTx.providerId) return;
@@ -1052,6 +1098,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     feedView,
     isGpsActive,
     searchHistory,
+    isLoadingAuth,
+    signInWithGoogle,
     setSearchQuery,
     clearSearchHistory,
     logout,

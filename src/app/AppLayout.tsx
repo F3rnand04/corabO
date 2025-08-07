@@ -1,19 +1,20 @@
 
 "use client";
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, ArrowRight } from 'lucide-react';
+import { AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { currentUser } = useCorabo();
+  const { currentUser, isLoadingAuth } = useCorabo();
+  const router = useRouter();
   const pathname = usePathname();
   const [isMounted, setIsMounted] = useState(false);
 
@@ -21,11 +22,29 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     setIsMounted(true);
   }, []);
 
+  useEffect(() => {
+    if (!isLoadingAuth && currentUser.id === 'guest' && pathname !== '/login') {
+      router.push('/login');
+    }
+  }, [currentUser, isLoadingAuth, pathname, router]);
+
+  if (isLoadingAuth || (!isMounted && pathname !== '/login')) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (currentUser.id === 'guest') {
+    return <main>{children}</main>;
+  }
 
   const isProfilePage = pathname === '/profile';
   const isCompanyProfilePage = pathname.startsWith('/companies/');
   const isVideosPage = pathname === '/videos';
   const isProfileSetupPage = pathname === '/profile-setup';
+  const isLoginPage = pathname === '/login';
   const isQuotesPage = pathname === '/quotes';
   const isContactsPage = pathname === '/contacts';
   const isSearchPage = pathname === '/search';
@@ -50,6 +69,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const shouldShowMainHeader = ![
     '/profile',
     '/profile-setup',
+    '/login',
     '/quotes',
     '/quotes/payment',
     '/quotes/pro',
@@ -71,6 +91,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   
   const shouldShowFooter = ![
     '/profile-setup',
+    '/login',
     '/map',
     '/credicora',
     '/policies',
