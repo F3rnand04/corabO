@@ -106,7 +106,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
      '/terms',
     '/privacy',
     '/community-guidelines',
-  ].some(path => pathname.startsWith(path)) || isChatPage;
+  ].some(path => pathname.startsWith(path)) && !isChatPage;
   
   return (
     <div className="flex flex-col min-h-screen">

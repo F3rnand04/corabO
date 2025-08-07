@@ -2,11 +2,10 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronLeft, FileText, Gavel, ShieldCheck, Users } from 'lucide-react';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { ChevronLeft, Gavel, ShieldCheck, Users } from 'lucide-react';
 
 function PoliciesHeader() {
   const router = useRouter();
@@ -47,7 +46,6 @@ const policySections = [
 ];
 
 export default function PoliciesPage() {
-  const router = useRouter();
   return (
     <>
       <PoliciesHeader />
