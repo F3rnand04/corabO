@@ -17,35 +17,29 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { currentUser, isLoadingAuth } = useCorabo();
   const router = useRouter();
   const pathname = usePathname();
-
-  // 1. While checking auth state, show a global loader
-  if (isLoadingAuth) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  // 2. If auth is done and there's no user, handle login page
-  if (!currentUser) {
-    if (pathname !== '/login') {
-      router.replace('/login');
-      // Show loader while redirecting
-      return (
-        <div className="flex items-center justify-center min-h-screen">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
-      );
+  
+  useEffect(() => {
+    if (isLoadingAuth) {
+      return; // Do nothing while auth state is loading
     }
-    // Already on login page
-    return <main>{children}</main>;
-  }
 
-  // 3. If auth is done, user exists, but is on login page, redirect to home
-  if (pathname === '/login') {
-    router.replace('/');
-    // Show loader while redirecting
+    // If auth is done:
+    if (currentUser) {
+      // and user is on login page, redirect to home
+      if (pathname === '/login') {
+        router.replace('/');
+      }
+    } else {
+      // and user is not on login page, redirect to login
+      if (pathname !== '/login') {
+        router.replace('/login');
+      }
+    }
+  }, [currentUser, isLoadingAuth, pathname, router]);
+
+
+  // 1. While checking auth state OR redirecting, show a global loader
+  if (isLoadingAuth || (!currentUser && pathname !== '/login') || (currentUser && pathname === '/login')) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -53,77 +47,86 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
   
-  // --- Layout for authenticated users ---
+  // 2. If not authenticated and on the login page, show the page
+  if (!currentUser && pathname === '/login') {
+    return <main>{children}</main>;
+  }
   
-  // Admin Route Guard
-  if (pathname.startsWith('/admin') && currentUser?.role !== 'admin') {
-      router.replace('/');
+  // 3. If authenticated and not on the login page, show the app layout
+  if(currentUser) {
+      // Admin Route Guard
+      if (pathname.startsWith('/admin') && currentUser?.role !== 'admin') {
+          router.replace('/');
+          return (
+            <div className="flex items-center justify-center min-h-screen">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+          );
+      }
+
+      const isClientWithInactiveTransactions = currentUser?.type === 'client' && !currentUser?.isTransactionsActive;
+      
+      const noHeaderFooterRoutes = [
+        '/profile-setup',
+        '/login',
+        '/map',
+        '/credicora',
+        '/search-history',
+        '/policies',
+        '/terms',
+        '/privacy',
+        '/community-guidelines',
+        '/admin',
+      ];
+
+      const shouldHideAllLayout = noHeaderFooterRoutes.some(path => pathname.startsWith(path));
+
+      if(shouldHideAllLayout) {
+        return <main>{children}</main>;
+      }
+
+      const shouldShowMainHeader = ![
+        '/profile',
+        '/quotes',
+        '/quotes/payment',
+        '/quotes/pro',
+        '/contacts',
+        '/search',
+        '/transactions',
+        '/transactions/settings',
+        '/messages',
+        '/videos',
+        '/emprende',
+      ].includes(pathname) && !/^\/messages\/.+/.test(pathname) && !/^\/companies\/.+/.test(pathname);
+      
+      const shouldShowFooter = !/^\/messages\/.+/.test(pathname);
+      
       return (
-        <div className="flex items-center justify-center min-h-screen">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <div className="flex flex-col min-h-screen">
+          {shouldShowMainHeader && <Header />}
+           {isClientWithInactiveTransactions && (
+             <div className={cn("bg-yellow-100 border-b border-yellow-300 text-yellow-900 text-sm z-30", shouldShowMainHeader ? 'sticky top-16' : 'sticky top-0')}>
+                <div className="container p-2 flex items-center justify-center text-center gap-2">
+                     <AlertCircle className="h-5 w-5 shrink-0" />
+                     <p className="flex-grow">
+                        ¡Activa tu registro de transacciones para una experiencia de compra segura y con seguimiento!
+                     </p>
+                     <Button variant="ghost" size="sm" asChild className="text-current hover:bg-yellow-200 hover:text-current">
+                        <Link href="/transactions">Activar ahora <ArrowRight className="h-4 w-4 ml-2"/></Link>
+                     </Button>
+                </div>
+            </div>
+          )}
+          <main className="flex-grow">
+            <div className={shouldShowFooter ? "pb-20" : ""}>
+              {children}
+            </div>
+          </main>
+          {shouldShowFooter && <Footer />}
         </div>
       );
   }
 
-  const isClientWithInactiveTransactions = currentUser?.type === 'client' && !currentUser?.isTransactionsActive;
-  
-  const noHeaderFooterRoutes = [
-    '/profile-setup',
-    '/login',
-    '/map',
-    '/credicora',
-    '/search-history',
-    '/policies',
-    '/terms',
-    '/privacy',
-    '/community-guidelines',
-    '/admin',
-  ];
-
-  const shouldHideAllLayout = noHeaderFooterRoutes.some(path => pathname.startsWith(path));
-
-  if(shouldHideAllLayout) {
-    return <main>{children}</main>;
-  }
-
-  const shouldShowMainHeader = ![
-    '/profile',
-    '/quotes',
-    '/quotes/payment',
-    '/quotes/pro',
-    '/contacts',
-    '/search',
-    '/transactions',
-    '/transactions/settings',
-    '/messages',
-    '/videos',
-    '/emprende',
-  ].includes(pathname) && !/^\/messages\/.+/.test(pathname) && !/^\/companies\/.+/.test(pathname);
-  
-  const shouldShowFooter = !/^\/messages\/.+/.test(pathname);
-  
-  return (
-    <div className="flex flex-col min-h-screen">
-      {shouldShowMainHeader && <Header />}
-       {isClientWithInactiveTransactions && (
-         <div className={cn("bg-yellow-100 border-b border-yellow-300 text-yellow-900 text-sm z-30", shouldShowMainHeader ? 'sticky top-16' : 'sticky top-0')}>
-            <div className="container p-2 flex items-center justify-center text-center gap-2">
-                 <AlertCircle className="h-5 w-5 shrink-0" />
-                 <p className="flex-grow">
-                    ¡Activa tu registro de transacciones para una experiencia de compra segura y con seguimiento!
-                 </p>
-                 <Button variant="ghost" size="sm" asChild className="text-current hover:bg-yellow-200 hover:text-current">
-                    <Link href="/transactions">Activar ahora <ArrowRight className="h-4 w-4 ml-2"/></Link>
-                 </Button>
-            </div>
-        </div>
-      )}
-      <main className="flex-grow">
-        <div className={shouldShowFooter ? "pb-20" : ""}>
-          {children}
-        </div>
-      </main>
-      {shouldShowFooter && <Footer />}
-    </div>
-  );
+  // Fallback for any other case (should not be reached)
+  return <main>{children}</main>;
 }
