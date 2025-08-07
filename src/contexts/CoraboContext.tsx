@@ -362,7 +362,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
 
     setCart([]);
-    toast({ title: "Acuerdo de Pago Creado", description: "El compromiso de pago ha sido registrado. Serás redirigido para completar el pago." });
+    // toast({ title: "Acuerdo de Pago Creado", description: "El compromiso de pago ha sido registrado. Serás redirigido para completar el pago." });
     
     if (finalTx) {
         router.push(`/quotes/payment?commitmentId=${finalTx.id}&amount=${finalTx.amount}`);
