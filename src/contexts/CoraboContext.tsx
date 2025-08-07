@@ -250,7 +250,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         commitments.push(commitment);
       }
 
-      const commissionRate = client.isSubscribed ? 0.0449 : 0.0499;
+      const commissionRate = client.isSubscribed ? 0.0399 : 0.0499; // 3.99% for subscribers
       const commissionAmount = originalTx.amount * commissionRate;
       const commissionTx: Transaction = {
         id: `commission-${originalTx.id}`,
@@ -1095,6 +1095,7 @@ export type { Transaction };
     
 
     
+
 
 
 
