@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
@@ -31,6 +30,10 @@ interface CoraboState {
   contacts: User[];
   feedView: FeedView;
   isGpsActive: boolean;
+  searchHistory: string[];
+  setSearchQuery: (query: string) => void;
+  clearSearchHistory: () => void;
+  logout: () => void;
   switchUser: (userId: string) => void;
   addToCart: (product: Product, quantity: number) => void;
   addProduct: (product: Product) => void;
@@ -49,7 +52,6 @@ interface CoraboState {
   confirmWorkReceived: (transactionId: string, rating: number, comment?: string) => void;
   startDispute: (transactionId: string) => void;
   checkout: (transactionId: string, withDelivery: boolean, useCredicora: boolean) => void;
-  setSearchQuery: (query: string) => void;
   addContact: (user: User) => boolean;
   removeContact: (userId: string) => void;
   isContact: (userId: string) => boolean;
@@ -90,11 +92,32 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
   const [conversations, setConversations] = useState<Conversation[]>(initialConversations);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, _setSearchQuery] = useState('');
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [contacts, setContacts] = useState<User[]>([]);
   const [feedView, setFeedView] = useState<FeedView>('servicios');
   const [isGpsActive, setIsGpsActive] = useState(true);
   const [dailyQuotes, setDailyQuotes] = useState<Record<string, DailyQuote[]>>({});
+
+  const setSearchQuery = (query: string) => {
+    _setSearchQuery(query);
+    if (query.trim() && !searchHistory.includes(query.trim())) {
+        setSearchHistory(prev => [query.trim(), ...prev].slice(0, 10)); // Keep last 10 searches
+    }
+  }
+
+  const clearSearchHistory = () => {
+    setSearchHistory([]);
+  }
+
+  const logout = () => {
+    const guestUser = users.find(u => u.id === 'guest');
+    if (guestUser) {
+        setCurrentUser(guestUser);
+        router.push('/');
+        toast({ title: 'Has cerrado sesión' });
+    }
+  }
 
   const findOrCreateCartTransaction = (): Transaction => {
     const existingCartTx = transactions.find(
@@ -110,7 +133,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       date: new Date().toISOString(),
       amount: 0,
       clientId: currentUser.id,
-      providerId: '', // Will be set by first item
+      providerId: '', 
       details: {
         items: [],
         delivery: false,
@@ -250,7 +273,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         commitments.push(commitment);
       }
 
-      const commissionRate = client.isSubscribed ? 0.0399 : 0.0499; // 3.99% for subscribers
+      const commissionRate = client.isSubscribed ? 0.0399 : 0.0499;
       const commissionAmount = originalTx.amount * commissionRate;
       const commissionTx: Transaction = {
         id: `commission-${originalTx.id}`,
@@ -258,8 +281,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         status: 'Acuerdo Aceptado - Pendiente de Ejecución',
         date: add(new Date(), { days: 1 }).toISOString(),
         amount: commissionAmount,
-        clientId: originalTx.providerId, // The provider owes the commission
-        providerId: 'corabo-app', // Commission is owed to the app
+        clientId: originalTx.providerId, 
+        providerId: 'corabo-app', 
         details: {
           system: `Comisión (${(commissionRate * 100).toFixed(2)}%) por venta Credicora #${originalTx.id}`
         }
@@ -272,7 +295,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const mainTx = transactions.find(tx => tx.id === mainTransactionId);
     if (!mainTx || !mainTx.details.delivery) return;
 
-    // Simulate finding the nearest delivery provider
     const deliveryProvider = users.find(u => u.profileSetupData?.primaryCategory === 'Fletes y Delivery');
 
     if (!deliveryProvider) {
@@ -286,7 +308,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         status: 'Acuerdo Aceptado - Pendiente de Ejecución',
         date: new Date().toISOString(),
         amount: mainTx.details.deliveryCost || 0,
-        clientId: mainTx.providerId!, // The seller pays the delivery guy
+        clientId: mainTx.providerId!,
         providerId: deliveryProvider.id,
         details: {
             serviceName: `Entrega para Pedido #${mainTx.id}`,
@@ -320,10 +342,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         const creditLimit = currentUser.credicoraLimit || 0;
         
         const financingPercentage = 1 - levelDetails.initialPaymentPercentage;
-        const potentialFinancing = subtotal * financingPercentage; // Finance only on subtotal
+        const potentialFinancing = subtotal * financingPercentage;
         const financedAmount = Math.min(potentialFinancing, creditLimit);
         
-        const initialPayment = (subtotal - financedAmount) + deliveryCost; // Initial payment includes full delivery cost
+        const initialPayment = (subtotal - financedAmount) + deliveryCost;
 
         updateTransaction(cartTx.id, tx => {
             const newTxDetails: Partial<Transaction> = {
@@ -344,7 +366,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             return newTxDetails;
         });
 
-    } else { // Direct Payment
+    } else { 
         updateTransaction(cartTx.id, tx => {
             const newTxDetails: Partial<Transaction> = {
                 status: 'Finalizado - Pendiente de Pago',
@@ -405,14 +427,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
          );
 
          if (uniqueProvidersContacted.size >= 3 && !uniqueProvidersContacted.has(groupOrProvider)) {
-             return false; // Block request to a 4th provider for the same item.
+             return false; 
          }
 
          const newSignature = `${itemSignature}|${groupOrProvider}`;
          const existingEntryIndex = userQuotesToday.findIndex(q => q.requestSignature === newSignature);
          
          if (existingEntryIndex > -1) {
-            // Already requested from this provider today, let it pass
+            
          } else {
              userQuotesToday.push({ requestSignature: newSignature, count: 1 });
          }
@@ -420,7 +442,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
      }
 
 
-     // For demo, we'll just send it to the first provider found
      const provider = users.find(u => u.type === 'provider');
      if (!provider) {
         return false;
@@ -433,7 +454,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
          date: new Date().toISOString(),
          amount: 0,
          clientId: currentUser.id,
-         providerId: provider.id, // In a real app, this would be a group or multiple providers
+         providerId: provider.id, 
          details: {
              serviceName: serviceName,
              quoteItems: items,
@@ -525,12 +546,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         generatePaymentCommitments(originalTx);
     }
 
-    // Activate subscription after payment is confirmed
     if(originalTx.details.system?.includes('Plan')) {
         const user = users.find(u => u.id === originalTx.clientId);
         if (!user) return;
         
-        updateUser(originalTx.clientId, { isSubscribed: true, verified: false }); // Don't mark as verified yet
+        updateUser(originalTx.clientId, { isSubscribed: true, verified: false }); 
 
         const messageForProvider = "¡Felicidades por dar el siguiente paso! Hemos recibido tu pago y tu perfil ya está en proceso de revisión. Si todo está en orden, tu insignia de **Verificado** brillará en tu perfil en menos de 24 horas. ¡Prepárate para una lluvia de nuevas oportunidades, mayor visibilidad y la confianza que mereces! El éxito te espera.";
         const messageForClient = "¡Excelente decisión! Hemos recibido tu pago y tu perfil ya está en proceso de revisión. En menos de 24 horas, tu insignia de **Verificado** estará activa, dándote acceso a transacciones más seguras y a los proveedores más confiables de la plataforma. ¡Prepárate para una experiencia de compra con total tranquilidad y confianza!";
@@ -701,11 +721,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }
   
   const activatePromotion = (details: { imageId: string, promotionText: string, cost: number }) => {
-    // 1. Create system transaction for the payment
     const promotionTx: Transaction = {
         id: `promo-tx-${Date.now()}`,
         type: 'Sistema',
-        status: 'Pagado', // Assume payment is confirmed by the dialog flow
+        status: 'Pagado', 
         date: new Date().toISOString(),
         amount: details.cost,
         clientId: currentUser.id,
@@ -716,7 +735,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     };
     setTransactions(prev => [...prev, promotionTx]);
 
-    // 2. Update the user's gallery item with promotion details
     updateUser(currentUser.id, user => {
         const newGallery = (user.gallery || []).map(img => {
             if (img.id === details.imageId) {
@@ -1033,6 +1051,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     contacts,
     feedView,
     isGpsActive,
+    searchHistory,
+    setSearchQuery,
+    clearSearchHistory,
+    logout,
     setFeedView,
     switchUser,
     addToCart,
@@ -1052,7 +1074,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     payCommitment,
     confirmPaymentReceived,
     startDispute,
-    setSearchQuery,
     addContact,
     isContact,
     removeContact,
@@ -1091,11 +1112,3 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
-
-    
-
-    
-
-
-
-

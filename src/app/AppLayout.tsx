@@ -36,6 +36,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isMessagesPage = pathname === '/messages';
   const isChatPage = /^\/messages\/.+/.test(pathname);
   const isCredicoraPage = pathname === '/credicora';
+  const isPoliciesPage = pathname === '/policies';
+  const isSearchHistoryPage = pathname === '/search-history';
+
 
   const isClientWithInactiveTransactions = currentUser.type === 'client' && !currentUser.isTransactionsActive;
 
@@ -55,6 +58,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     '/videos',
     '/emprende',
     '/credicora',
+    '/policies',
+    '/search-history'
   ].includes(pathname) && !isChatPage && !isCompanyProfilePage;
   
   const shouldShowFooter = ![
@@ -62,6 +67,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     '/map',
     '/messages',
     '/credicora',
+    '/policies',
+    '/search-history'
   ].some(path => pathname.startsWith(path)) && !isChatPage;
   
   return (

@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MapPin, FileText, Menu, Search, LogOut, User, ShoppingCart, Plus, Minus, X, Wallet, Truck, Star } from "lucide-react";
+import { MapPin, FileText, Menu, Search, LogOut, User, ShoppingCart, Plus, Minus, X, Wallet, Truck, Star, History as HistoryIcon, Shield } from "lucide-react";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -24,9 +24,10 @@ import { Switch } from "./ui/switch";
 import { Label } from "./ui/label";
 import Image from "next/image";
 import { credicoraLevels } from "@/lib/types";
+import { ThemeSwitcher } from "./ThemeSwitcher";
 
 export function Header() {
-  const { searchQuery, setSearchQuery, feedView, setFeedView, currentUser, users, toggleGps, cart, updateCartQuantity, getCartTotal, checkout, getDeliveryCost } = useCorabo();
+  const { searchQuery, setSearchQuery, feedView, setFeedView, currentUser, users, toggleGps, cart, updateCartQuantity, getCartTotal, checkout, getDeliveryCost, logout } = useCorabo();
   const router = useRouter();
   
   const hasCompletedProfileSetup = !!currentUser?.profileSetupData;
@@ -56,9 +57,8 @@ export function Header() {
   const credicoraDetails = credicoraLevels[userCredicoraLevel.toString()];
   const creditLimit = currentUser.credicoraLimit || 0;
   
-  // New calculation logic
   const financingPercentage = 1 - credicoraDetails.initialPaymentPercentage;
-  const potentialFinancing = subtotal * financingPercentage; // Financing only on products
+  const potentialFinancing = subtotal * financingPercentage;
   const financedAmount = useCredicora ? Math.min(potentialFinancing, creditLimit) : 0;
   const productInitialPayment = subtotal - financedAmount;
   const totalToPayToday = productInitialPayment + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
@@ -222,11 +222,21 @@ export function Header() {
                       </DropdownMenuItem>
                     </Link>
                 )}
-                <DropdownMenuItem>Historial de Búsquedas</DropdownMenuItem>
-                <DropdownMenuItem>Modo Oscuro</DropdownMenuItem>
-                <DropdownMenuItem>Políticas de la Empresa</DropdownMenuItem>
+                 <Link href="/search-history" passHref>
+                    <DropdownMenuItem>
+                        <HistoryIcon className="mr-2 h-4 w-4" />
+                        <span>Historial de Búsquedas</span>
+                    </DropdownMenuItem>
+                 </Link>
+                <ThemeSwitcher />
+                <Link href="/policies" passHref>
+                    <DropdownMenuItem>
+                        <Shield className="mr-2 h-4 w-4" />
+                        <span>Políticas de la Empresa</span>
+                    </DropdownMenuItem>
+                </Link>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={logout}>
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Cerrar Sesión</span>
                 </DropdownMenuItem>

@@ -1,9 +1,9 @@
 
-
 import type { User, Product, Service, Transaction, Conversation, AgreementProposal } from './types';
 import { add } from 'date-fns';
 
 export const users: User[] = [
+  { id: 'guest', name: 'Invitado', type: 'client', reputation: 0, profileImage: '', email: '', phone: '', emailValidated: false, phoneValidated: false, isGpsActive: false, gallery: [] },
   { id: 'client1', name: 'Juan Cliente', type: 'client', reputation: 4.5, profileImage: `https://i.pravatar.cc/150?u=client1`, email: 'juan.cliente@email.com', phone: '04121234567', emailValidated: true, phoneValidated: false, isGpsActive: true, gallery: [], credicoraLevel: 1, credicoraLimit: 150 },
   { 
     id: 'provider1', 
@@ -20,7 +20,7 @@ export const users: User[] = [
     phoneValidated: true,
     promotion: {
       text: 'HOY 10% OFF',
-      expires: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(), // Expires in 12 hours
+      expires: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(), 
     },
     profileSetupData: {
       specialty: 'Expertos en Tecnología',
@@ -384,9 +384,9 @@ export const initialTransactions: Transaction[] = [
   {
     id: 'txn6-credicora-main',
     type: 'Compra',
-    status: 'Pagado', // The initial payment is paid
+    status: 'Pagado', 
     date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    amount: 1140, // Total (1200) - Financed Amount (60)
+    amount: 1140, 
     clientId: 'client1',
     providerId: 'provider1',
     details: {
@@ -403,7 +403,7 @@ export const initialTransactions: Transaction[] = [
     type: 'Sistema',
     status: 'Acuerdo Aceptado - Pendiente de Ejecución',
     date: add(new Date(), { days: 15 }).toISOString(),
-    amount: 20, // 60 / 3
+    amount: 20, 
     clientId: 'client1',
     providerId: 'provider1',
     details: {
@@ -415,7 +415,7 @@ export const initialTransactions: Transaction[] = [
     type: 'Sistema',
     status: 'Acuerdo Aceptado - Pendiente de Ejecución',
     date: add(new Date(), { days: 30 }).toISOString(),
-    amount: 20, // 60 / 3
+    amount: 20, 
     clientId: 'client1',
     providerId: 'provider1',
     details: {
@@ -427,7 +427,7 @@ export const initialTransactions: Transaction[] = [
     type: 'Sistema',
     status: 'Acuerdo Aceptado - Pendiente de Ejecución',
     date: add(new Date(), { days: 45 }).toISOString(),
-    amount: 20, // 60 / 3
+    amount: 20, 
     clientId: 'client1',
     providerId: 'provider1',
     details: {
@@ -480,5 +480,3 @@ export const initialConversations: Conversation[] = [
         unreadCount: 0,
     }
 ];
-
-    
