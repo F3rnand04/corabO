@@ -26,6 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 
 interface TransactionDetailsDialogProps {
@@ -72,6 +73,7 @@ function ConfirmPaymentDialog({ onConfirm, onReportThirdParty, onCancel }: { onC
 export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: TransactionDetailsDialogProps) {
   const { currentUser, users, sendQuote, acceptQuote, startDispute, completeWork, confirmWorkReceived, acceptAppointment, payCommitment, confirmPaymentReceived, sendMessage } = useCorabo();
   const router = useRouter();
+  const { toast } = useToast();
   const [quoteBreakdown, setQuoteBreakdown] = useState('');
   const [quoteTotal, setQuoteTotal] = useState(0);
   const [rating, setRating] = useState(0);
@@ -108,6 +110,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   const handleSendQuote = () => {
     if (quoteTotal > 0 && quoteBreakdown) {
       sendQuote(transaction.id, { breakdown: quoteBreakdown, total: quoteTotal });
+      toast({ title: 'Cotización enviada', description: 'El cliente ha sido notificado.' });
       handleClose();
     }
   };
@@ -115,11 +118,13 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   const handlePayCommitment = () => {
     if (!paymentReference || !paymentVoucher) return;
     payCommitment(transaction.id, rating, comment);
+    toast({ title: 'Pago registrado', description: 'El proveedor verificará el pago.' });
     handleClose();
   }
 
   const handleCompleteWork = () => {
       completeWork(transaction.id);
+      toast({ title: 'Trabajo finalizado', description: 'Se ha notificado al cliente para que confirme.' });
       handleClose();
   }
 
@@ -132,6 +137,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
 
   const handleAcceptAppointment = () => {
     acceptAppointment(transaction.id);
+    toast({ title: 'Cita aceptada', description: 'Se ha creado un compromiso de pago.' });
     handleClose();
   }
 
@@ -145,6 +151,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
 
   const handleConfirmPayment = (fromThirdParty: boolean) => {
     confirmPaymentReceived(transaction.id, fromThirdParty);
+    toast({ title: 'Pago confirmado', description: 'La transacción ha sido completada.' });
     handleClose();
   };
 
