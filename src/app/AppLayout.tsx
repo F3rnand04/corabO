@@ -21,6 +21,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     setIsMounted(true);
   }, []);
 
+
   const isProfilePage = pathname === '/profile';
   const isCompanyProfilePage = pathname.startsWith('/companies/');
   const isVideosPage = pathname === '/videos';
@@ -43,7 +44,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isCommunityGuidelinesPage = pathname === '/community-guidelines';
 
 
-  const isClientWithInactiveTransactions = currentUser.type === 'client' && !currentUser.isTransactionsActive;
+  const isClientWithInactiveTransactions = currentUser?.type === 'client' && !currentUser?.isTransactionsActive;
 
   // El header principal se oculta en páginas de flujo completo o con headers personalizados.
   const shouldShowMainHeader = ![
@@ -72,7 +73,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     '/profile-setup',
     '/map',
     '/credicora',
-  ].some(path => pathname.startsWith(path)) && !isChatPage && !isMessagesPage && !isPoliciesPage && !isTermsPage && !isPrivacyPage && !isCommunityGuidelinesPage && !isSearchHistoryPage;
+    '/terms',
+    '/privacy',
+    '/community-guidelines',
+    '/policies'
+  ].some(path => pathname.startsWith(path)) && !isChatPage && !isMessagesPage && !isSearchHistoryPage;
   
   if (!isMounted) {
     return null; // O un spinner/skeleton de carga

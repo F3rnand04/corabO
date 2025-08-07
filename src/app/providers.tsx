@@ -11,8 +11,8 @@ export function Providers({ children, ...props }: ThemeProviderProps) {
     <NextThemesProvider {...props}>
       <CoraboProvider>
         {children}
-        <Toaster />
       </CoraboProvider>
+      <Toaster />
     </NextThemesProvider>
   );
 }
