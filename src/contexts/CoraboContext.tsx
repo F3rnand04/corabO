@@ -10,7 +10,7 @@ import 'jspdf-autotable';
 import { add, subDays, startOfDay } from 'date-fns';
 import { credicoraLevels } from '@/lib/types';
 // Import necessary firebase services directly
-import { getAuth, signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth, signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, GoogleAuthProvider, initializeAuth, browserLocalPersistence } from 'firebase/auth';
 import { app, db } from '@/lib/firebase'; // Import the initialized app and db
 import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc } from 'firebase/firestore';
 import { createCampaign } from '@/ai/flows/campaign-flow';
@@ -126,8 +126,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [isGpsActive, setIsGpsActive] = useState(true);
   const [dailyQuotes, setDailyQuotes] = useState<Record<string, DailyQuote[]>>({});
   
-  // Get the Auth instance here
-  const auth = getAuth(app);
+  // Explicitly initialize Auth with persistent storage
+  const auth = initializeAuth(app, {
+    persistence: browserLocalPersistence
+  });
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
