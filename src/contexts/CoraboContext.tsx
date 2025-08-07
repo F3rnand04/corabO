@@ -129,50 +129,84 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const auth = getAuth(app);
 
+ // Step 1: Handle Auth State Changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-        if (firebaseUser) {
-            const userDocRef = doc(db, "users", firebaseUser.uid);
-            try {
-                const userDocSnap = await getDoc(userDocRef);
-
-                if (userDocSnap.exists()) {
-                    setCurrentUser(userDocSnap.data() as User);
-                } else {
-                    const newUser: User = {
-                        id: firebaseUser.uid,
-                        name: firebaseUser.displayName || 'Usuario Nuevo',
-                        email: firebaseUser.email || '',
-                        profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
-                        type: 'client',
-                        reputation: 0,
-                        phone: firebaseUser.phoneNumber || '',
-                        emailValidated: firebaseUser.emailVerified,
-                        phoneValidated: false,
-                        isGpsActive: true,
-                        gallery: [],
-                        credicoraLevel: 1,
-                        credicoraLimit: 150,
-                        profileSetupData: {},
-                        isSubscribed: false,
-                        isTransactionsActive: false,
-                    };
-                    await setDoc(userDocRef, newUser);
-                    setCurrentUser(newUser);
-                    router.push('/profile-setup');
-                }
-            } catch (error) {
-                console.error("Firestore getDoc error during auth check:", error);
-                setCurrentUser(null);
-            }
-        } else {
-            setCurrentUser(null);
-        }
-        setIsLoadingAuth(false);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        // Just set a temporary user object. The next useEffect will handle Firestore logic.
+        setCurrentUser({
+          id: firebaseUser.uid,
+          name: firebaseUser.displayName || 'Usuario Nuevo',
+          email: firebaseUser.email || '',
+          profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
+          // Set default values, which will be overwritten by Firestore data if it exists
+          type: 'client',
+          reputation: 0,
+          phone: '',
+          emailValidated: firebaseUser.emailVerified,
+          phoneValidated: false,
+          isGpsActive: true,
+          gallery: [],
+        });
+      } else {
+        setCurrentUser(null);
+      }
+       // Defer setting loading to false until the Firestore check is done
     });
-
     return () => unsubscribe();
-}, [auth, router]);
+  }, [auth]);
+
+  // Step 2: Handle Firestore Document Logic (reading/writing user profile)
+  useEffect(() => {
+    // This effect runs only when `currentUser` is set by the auth state change
+    if (currentUser) {
+      const userDocRef = doc(db, "users", currentUser.id);
+      
+      const manageUserDocument = async () => {
+        try {
+          const userDocSnap = await getDoc(userDocRef);
+
+          if (userDocSnap.exists()) {
+            // User exists, update the context with real data from Firestore
+            setCurrentUser(userDocSnap.data() as User);
+          } else {
+            // New user, create the document in Firestore
+            const newUser: User = {
+              ...currentUser, // Start with the basic info from auth
+              type: 'client', // Default type
+              reputation: 0,
+              phone: currentUser.phone || '',
+              emailValidated: currentUser.emailValidated,
+              phoneValidated: false,
+              isGpsActive: true,
+              gallery: [],
+              credicoraLevel: 1,
+              credicoraLimit: 150,
+              profileSetupData: {},
+              isSubscribed: false,
+              isTransactionsActive: false,
+            };
+            await setDoc(userDocRef, newUser);
+            // The user object is already set from the auth state, no need to set it again
+            router.push('/profile-setup');
+          }
+        } catch (error) {
+          console.error("Firestore error in user management:", error);
+          // Handle potential errors, e.g., by logging the user out
+          setCurrentUser(null);
+        } finally {
+          // Now it's safe to say authentication and initial data loading is complete
+          setIsLoadingAuth(false);
+        }
+      };
+
+      manageUserDocument();
+
+    } else {
+      // No user from auth, so we are done loading
+      setIsLoadingAuth(false);
+    }
+  }, [currentUser?.id]); // Depend only on user ID to avoid re-running unnecessarily
 
 
   useEffect(() => {
@@ -209,8 +243,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const provider = new GoogleAuthProvider();
     try {
       await setPersistence(auth, browserLocalPersistence);
+      setIsLoadingAuth(true); // Set loading to true before starting sign-in
       await signInWithPopup(auth, provider);
-      // onAuthStateChanged will handle the user state update and redirection
+      // onAuthStateChanged will handle the rest
     } catch (error) {
       console.error("Error signing in with Google: ", error);
       toast({
@@ -218,6 +253,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         title: 'Error de Autenticación',
         description: 'No se pudo iniciar sesión con Google. Por favor, inténtalo de nuevo.'
       });
+      setIsLoadingAuth(false); // Reset loading on error
     }
   };
 
@@ -558,3 +594,5 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
+
+    
