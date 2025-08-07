@@ -38,6 +38,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isCredicoraPage = pathname === '/credicora';
   const isPoliciesPage = pathname === '/policies';
   const isSearchHistoryPage = pathname === '/search-history';
+  const isTermsPage = pathname === '/terms';
+  const isPrivacyPage = pathname === '/privacy';
+  const isCommunityGuidelinesPage = pathname === '/community-guidelines';
 
 
   const isClientWithInactiveTransactions = currentUser.type === 'client' && !currentUser.isTransactionsActive;
