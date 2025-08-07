@@ -58,12 +58,10 @@ function ConfirmPaymentDialog({ onConfirm, onReportThirdParty, onCancel }: { onC
                     Por favor, confirma que has recibido el pago. Si el pago proviene de una cuenta que no pertenece al titular de la cuenta CorabO, repórtalo para mantener la seguridad de la comunidad.
                 </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter className="gap-2">
+            <AlertDialogFooter className="gap-2 sm:flex-row-reverse">
+                <AlertDialogAction onClick={onConfirm}>Confirmar Pago del Titular</AlertDialogAction>
                 <Button variant="destructive" onClick={onReportThirdParty}>Reportar Pago de Tercero</Button>
-                <div className="flex w-full sm:w-auto flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
-                    <AlertDialogCancel onClick={onCancel}>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={onConfirm}>Confirmar Pago del Titular</AlertDialogAction>
-                </div>
+                <AlertDialogCancel onClick={onCancel} className="mt-2 sm:mt-0">Cancelar</AlertDialogCancel>
             </AlertDialogFooter>
         </AlertDialogContent>
     );
@@ -362,7 +360,18 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
             <div className="flex gap-2">
                 {isProvider && transaction.status === 'Solicitud Pendiente' && <Button onClick={handleSendQuote}>Enviar Cotización</Button>}
                 
-                {isProvider && transaction.status === 'Pago Enviado - Esperando Confirmación' && <Button onClick={() => setShowConfirmPaymentDialog(true)}>Confirmar Pago</Button>}
+                {isProvider && transaction.status === 'Pago Enviado - Esperando Confirmación' && 
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button>Confirmar Pago</Button>
+                        </AlertDialogTrigger>
+                        <ConfirmPaymentDialog 
+                            onConfirm={() => handleConfirmPayment(false)}
+                            onReportThirdParty={() => handleConfirmPayment(true)}
+                            onCancel={() => {}}
+                        />
+                    </AlertDialog>
+                }
 
                 {isProvider && transaction.status === 'Cita Solicitada' && (
                   <>

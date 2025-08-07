@@ -59,7 +59,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     '/emprende',
     '/credicora',
     '/policies',
-    '/search-history'
+    '/search-history',
+    '/terms',
+    '/privacy',
+    '/community-guidelines',
   ].includes(pathname) && !isChatPage && !isCompanyProfilePage;
   
   const shouldShowFooter = ![
@@ -68,7 +71,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     '/messages',
     '/credicora',
     '/policies',
-    '/search-history'
+    '/search-history',
+    '/terms',
+    '/privacy',
+    '/community-guidelines',
   ].some(path => pathname.startsWith(path)) && !isChatPage;
   
   return (
