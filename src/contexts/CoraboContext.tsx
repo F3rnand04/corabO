@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from 'next/navigation';
@@ -73,7 +73,7 @@ interface CoraboState {
   validatePhone: (userId: string) => void;
   setFeedView: (view: FeedView) => void;
   updateFullProfile: (userId: string, data: ProfileSetupData) => void;
-  completeInitialSetup: (userId: string, data: { lastName: string; idNumber: string; birthDate: string }) => void;
+  completeInitialSetup: (userId: string, data: { lastName: string; idNumber: string; birthDate: string }) => Promise<void>;
   subscribeUser: (userId: string, planName: string, amount: number) => void;
   activateTransactions: (userId: string, creditLimit: number) => void;
   deactivateTransactions: (userId: string) => void;
@@ -129,55 +129,60 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [dailyQuotes, setDailyQuotes] = useState<Record<string, DailyQuote[]>>({});
   
   const auth = getAuth(app);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        const userDocRef = doc(db, 'users', firebaseUser.uid);
-        try {
-          const userDocSnap = await getDoc(userDocRef);
-          if (userDocSnap.exists()) {
+  
+  const handleUserCreation = useCallback(async (firebaseUser: FirebaseUser) => {
+    const userDocRef = doc(db, 'users', firebaseUser.uid);
+    try {
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists()) {
             setCurrentUser(userDocSnap.data() as User);
-          } else {
-            // New user: create a basic profile first.
+        } else {
             const newUser: User = {
-              id: firebaseUser.uid,
-              name: firebaseUser.displayName?.split(' ')[0] || 'Usuario',
-              lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
-              idNumber: '',
-              birthDate: '',
-              email: firebaseUser.email || '',
-              profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
-              type: 'client',
-              reputation: 0,
-              phone: '',
-              emailValidated: firebaseUser.emailVerified,
-              phoneValidated: false,
-              isGpsActive: true,
-              isInitialSetupComplete: false, // <-- This is the key change
-              gallery: [],
-              credicoraLevel: 1,
-              credicoraLimit: 150,
-              profileSetupData: {},
-              isSubscribed: false,
-              isTransactionsActive: false,
+                id: firebaseUser.uid,
+                name: firebaseUser.displayName?.split(' ')[0] || 'Usuario',
+                lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
+                idNumber: '',
+                birthDate: '',
+                email: firebaseUser.email || '',
+                profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
+                type: 'client',
+                reputation: 0,
+                phone: '',
+                emailValidated: firebaseUser.emailVerified,
+                phoneValidated: false,
+                isGpsActive: true,
+                isInitialSetupComplete: false,
+                gallery: [],
+                credicoraLevel: 1,
+                credicoraLimit: 150,
+                profileSetupData: {},
+                isSubscribed: false,
+                isTransactionsActive: false,
             };
             await setDoc(userDocRef, newUser);
             setCurrentUser(newUser);
-          }
-        } catch (error) {
-          console.error("FirebaseError on getDoc:", error);
-          await signOut(auth);
-          setCurrentUser(null);
         }
-      } else {
+    } catch (error) {
+        console.error("FirebaseError on getDoc/setDoc:", error);
+        await signOut(auth);
         setCurrentUser(null);
-      }
+    } finally {
       setIsLoadingAuth(false);
-    });
-    return () => unsubscribe();
+    }
   }, [auth]);
 
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+        if (firebaseUser) {
+            handleUserCreation(firebaseUser);
+        } else {
+            setCurrentUser(null);
+            setIsLoadingAuth(false);
+        }
+    });
+    return () => unsubscribe();
+  }, [handleUserCreation]);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -339,12 +344,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     await updateDoc(userDocRef, updates);
   };
 
-  const completeInitialSetup = (userId: string, data: { lastName: string; idNumber: string; birthDate: string }) => {
+  const completeInitialSetup = async (userId: string, data: { lastName: string; idNumber: string; birthDate: string }) => {
     const updates = {
         ...data,
         isInitialSetupComplete: true,
     };
-    updateUser(userId, updates);
+    await updateUser(userId, updates);
   };
   
   const toggleGps = (userId: string) => {

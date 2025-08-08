@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -23,7 +24,7 @@ export default function InitialSetupPage() {
   const [hasAcceptedPolicies, setHasAcceptedPolicies] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!lastName || !idNumber || !birthDate) {
       toast({
         variant: 'destructive',
@@ -42,8 +43,20 @@ export default function InitialSetupPage() {
     }
 
     setIsSubmitting(true);
-    completeInitialSetup(currentUser!.id, { lastName, idNumber, birthDate });
-    // The context change will trigger the AppLayout to redirect
+    try {
+        await completeInitialSetup(currentUser!.id, { lastName, idNumber, birthDate });
+        // The context change will trigger the AppLayout to redirect automatically.
+        // We don't need to manually push the route.
+    } catch (error) {
+        console.error("Failed to complete setup:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'No se pudo guardar tu información. Inténtalo de nuevo.'
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
   };
 
   if (!currentUser) {
