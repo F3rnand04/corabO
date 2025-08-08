@@ -184,6 +184,8 @@ export type User = {
   idDocumentUrl?: string;
   idVerificationStatus?: 'pending' | 'verified' | 'rejected';
   createdAt?: string;
+  phoneVerificationCode?: string | null;
+  phoneVerificationCodeExpires?: string | null;
 };
 
 export type Product = {

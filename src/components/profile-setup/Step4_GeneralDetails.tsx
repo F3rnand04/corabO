@@ -19,7 +19,7 @@ interface Step4_GeneralDetailsProps {
 }
 
 export default function Step4_GeneralDetails({ onBack, onNext, formData, setFormData }: Step4_GeneralDetailsProps) {
-  const { currentUser, validateEmail, validatePhone, updateUser } = useCorabo();
+  const { currentUser, validateEmail, updateUser } = useCorabo();
 
   const handleValueChange = (field: 'name' | 'lastName' | 'idNumber' | 'birthDate' | 'phone' | 'email', value: string) => {
     setFormData({ ...formData, [field]: value });
@@ -69,15 +69,16 @@ export default function Step4_GeneralDetails({ onBack, onNext, formData, setForm
                 label="Correo Electrónico:"
                 value={formData.email}
                 initialStatus={currentUser.emailValidated ? 'validated' : 'idle'}
-                onValidate={() => validateEmail(currentUser.id)}
+                onValidate={() => validateEmail(currentUser.id, formData.email)}
                 onValueChange={(value) => updateUser(currentUser.id, { email: value })}
+                type="email"
             />
              <ValidationItem
                 label="Teléfono:"
                 value={formData.phone}
                 initialStatus={currentUser.phoneValidated ? 'validated' : 'idle'}
-                onValidate={() => validatePhone(currentUser.id)}
                 onValueChange={(value) => updateUser(currentUser.id, { phone: value })}
+                type="phone"
             />
         </div>
         

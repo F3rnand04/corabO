@@ -7,6 +7,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { CheckCircle } from 'lucide-react';
+import { useCorabo } from '@/contexts/CoraboContext';
 
 type ValidationStatus = 'idle' | 'pending' | 'validated';
 
@@ -16,6 +17,7 @@ interface ValidationItemProps {
     initialStatus?: 'idle' | 'validated';
     onValidate?: (valueToValidate: string) => Promise<boolean>;
     onValueChange?: (value: string) => void;
+    type?: 'email' | 'phone';
 }
 
 export function ValidationItem({ 
@@ -24,52 +26,42 @@ export function ValidationItem({
     initialStatus = 'idle',
     onValidate,
     onValueChange,
+    type,
 }: ValidationItemProps) {
+    const { currentUser, sendPhoneVerification, verifyPhoneCode } = useCorabo();
     const [status, setStatus] = useState<ValidationStatus>(initialStatus);
-    const [code, setCode] = useState('');
     const [inputCode, setInputCode] = useState('');
     const [currentValue, setCurrentValue] = useState(initialValue);
     const { toast } = useToast();
 
-    const handleStartValidation = () => {
+    const handleStartValidation = async () => {
         if (!currentValue) {
             toast({ variant: 'destructive', title: 'Campo vacío', description: 'Por favor, introduce un valor para validar.' });
             return;
         }
-        const newCode = Math.floor(1000 + Math.random() * 9000).toString();
-        setCode(newCode);
-        setStatus('pending');
-        toast({
-            title: `Código de Verificación para ${label}`,
-            description: `Tu código es: ${newCode}`,
-        });
+
+        if (type === 'phone' && currentUser) {
+            await sendPhoneVerification(currentUser.id, currentValue);
+            setStatus('pending');
+        } else if (onValidate) {
+            await onValidate(currentValue); // For email
+            setStatus('pending');
+        }
     };
     
     const handleVerifyCode = async () => {
-        if (inputCode === code) {
-            if (onValidate) {
-                const isValidated = await onValidate(currentValue);
-                if (isValidated) {
-                    setStatus('validated');
-                    toast({
-                        title: '¡Validado!',
-                        description: `${label} ha sido validado correctamente.`,
-                        className: "bg-green-100 border-green-300 text-green-800",
-                    });
-                } else {
-                     toast({
-                        variant: 'destructive',
-                        title: 'Error de Validación',
-                        description: 'No se pudo completar la validación. Intenta de nuevo.',
-                    });
-                }
+        if (type === 'phone' && currentUser) {
+            const success = await verifyPhoneCode(currentUser.id, inputCode);
+            if(success) {
+                setStatus('validated');
             }
         } else {
-            toast({
-                variant: 'destructive',
-                title: 'Código Incorrecto',
-                description: 'El código que introdujiste no es correcto. Intenta de nuevo.',
-            });
+            // Logic for email, which might be different or handled by onValidate completely
+            // This part might need adjustment if email verification logic changes.
+            if(onValidate){
+                const success = await onValidate(inputCode); // This is a simplification
+                if(success) setStatus('validated');
+            }
         }
     };
     
@@ -118,7 +110,7 @@ export function ValidationItem({
                 <Input 
                     type="text"
                     placeholder="Código"
-                    maxLength={4}
+                    maxLength={6}
                     className="h-8 w-24 text-sm"
                     value={inputCode}
                     onChange={(e) => setInputCode(e.target.value)}

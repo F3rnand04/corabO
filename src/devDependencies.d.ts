@@ -4,3 +4,4 @@
 // for more information.
 
 declare module 'jspdf-autotable';
+declare module 'twilio';

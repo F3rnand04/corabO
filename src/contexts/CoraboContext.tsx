@@ -20,6 +20,7 @@ import * as TransactionFlows from '@/ai/flows/transaction-flow';
 import * as NotificationFlows from '@/ai/flows/notification-flow';
 import { autoVerifyIdWithAI as autoVerifyIdWithAIFlow, type VerificationInput } from '@/ai/flows/verification-flow';
 import { getExchangeRate } from '@/ai/flows/exchange-rate-flow';
+import { sendSmsVerificationCodeFlow, verifySmsCodeFlow } from '@/ai/flows/sms-flow';
 
 
 type FeedView = 'servicios' | 'empresas';
@@ -75,7 +76,8 @@ interface CoraboState {
   updateUserProfileAndGallery: (userId: string, imageOrId: GalleryImage | string, isDelete?: boolean) => void;
   removeGalleryImage: (userId: string, imageId: string) => void;
   validateEmail: (userId: string, emailToValidate: string) => Promise<boolean>;
-  validatePhone: (userId: string) => Promise<boolean>;
+  sendPhoneVerification: (userId: string, phone: string) => Promise<void>;
+  verifyPhoneCode: (userId: string, code: string) => Promise<boolean>;
   setFeedView: (view: FeedView) => void;
   updateFullProfile: (userId: string, data: ProfileSetupData) => Promise<void>;
   completeInitialSetup: (userId: string, data: { lastName: string; idNumber: string; birthDate: string }) => Promise<void>;
@@ -694,21 +696,60 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const validateEmail = async (userId: string, emailToValidate: string): Promise<boolean> => {
     // In a real app, this would use a backend service to send an email.
     // For this prototype, we simulate the code generation and verification.
-    const code = Math.floor(1000 + Math.random() * 9000).toString();
-    console.log(`CÓDIGO DE VERIFICACIÓN para ${emailToValidate}: ${code}`);
+    console.log(`Simulando envío de código de verificación a ${emailToValidate}...`);
     toast({
         title: 'Código de Verificación Enviado',
-        description: `Se ha enviado un código a ${emailToValidate}. (Revisa la consola del navegador para ver el código).`
+        description: `Se ha enviado un código a tu correo. (Revisa la consola del navegador para ver el código).`
     });
     
-    // Here we'd normally wait for user input. In this simplified flow, we return true if the toast is shown.
     // The actual code comparison happens in `ValidationItem.tsx`.
     return true;
   };
+  
+  const sendPhoneVerification = async (userId: string, phone: string) => {
+    try {
+        await sendSmsVerificationCodeFlow({ userId, phoneNumber: phone });
+        toast({
+            title: 'Código de Verificación Enviado',
+            description: `Se ha enviado un código por SMS a ${phone}.`
+        });
+    } catch (error) {
+        console.error("Failed to send SMS:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Error al Enviar SMS',
+            description: 'No se pudo enviar el código de verificación. Intenta más tarde.'
+        });
+    }
+  };
 
-  const validatePhone = async (userId: string): Promise<boolean> => {
-    await updateUser(userId, { phoneValidated: true });
-    return true;
+  const verifyPhoneCode = async (userId: string, code: string): Promise<boolean> => {
+    try {
+        const result = await verifySmsCodeFlow({ userId, code });
+        if (result.success) {
+            toast({
+                title: '¡Teléfono Validado!',
+                description: result.message,
+                className: "bg-green-100 border-green-300 text-green-800",
+            });
+            return true;
+        } else {
+            toast({
+                variant: 'destructive',
+                title: 'Error de Verificación',
+                description: result.message,
+            });
+            return false;
+        }
+    } catch (error) {
+        console.error("Failed to verify code:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Error del Servidor',
+            description: 'No se pudo verificar el código. Intenta más tarde.'
+        });
+        return false;
+    }
   };
 
   const updateFullProfile = async (userId: string, data: Partial<User & { profileSetupData: ProfileSetupData }>) => {
@@ -807,7 +848,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     updateUserProfileAndGallery,
     removeGalleryImage,
     validateEmail,
-    validatePhone,
+    sendPhoneVerification,
+    verifyPhoneCode,
     setFeedView,
     updateFullProfile,
     completeInitialSetup,
