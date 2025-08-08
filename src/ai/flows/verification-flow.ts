@@ -19,6 +19,9 @@ const VerificationInputSchema = z.object({
   documentImageUrl: z.string(),
 });
 
+export type VerificationInput = z.infer<typeof VerificationInputSchema>;
+
+
 const VerificationOutputSchema = z.object({
   extractedName: z.string(),
   extractedId: z.string(),
@@ -28,19 +31,10 @@ const VerificationOutputSchema = z.object({
 
 export type VerificationOutput = z.infer<typeof VerificationOutputSchema>;
 
-export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput> {
-  if (!user.idDocumentUrl) {
-    throw new Error('User does not have an ID document uploaded.');
-  }
-  // For the demo, we use a placeholder for the ID in record. In a real app, this would come from the user's profile.
-  const simulatedIdInRecord = "V-20.123.456";
-
-  return autoVerifyIdWithAIFlow({
-      userId: user.id,
-      nameInRecord: user.name,
-      idInRecord: simulatedIdInRecord, 
-      documentImageUrl: user.idDocumentUrl,
-  });
+export async function autoVerifyIdWithAI(input: VerificationInput): Promise<VerificationOutput> {
+  // The check for the document URL is now implicitly handled by the input schema.
+  // If documentImageUrl is missing, Zod will throw an error before this function is even called.
+  return autoVerifyIdWithAIFlow(input);
 }
 
 const verificationPrompt = ai.definePrompt({

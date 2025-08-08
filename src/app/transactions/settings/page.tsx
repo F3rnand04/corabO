@@ -34,13 +34,6 @@ function SettingsHeader() {
     );
 }
 
-// Demo data simulating what we 'read' from the ID card
-const MOCKED_ID_DATA = {
-    name: "Juan Cliente",
-    idNumber: "V-20.123.456",
-    age: 28,
-};
-
 const banks = [
     "Banco de Venezuela",
     "Banesco",
@@ -74,6 +67,9 @@ export default function TransactionsSettingsPage() {
     const [isVerifyingAccount, setIsVerifyingAccount] = useState(false);
     const [accountVerificationError, setAccountVerificationError] = useState<string | null>(null);
 
+    if (!currentUser) {
+        return <Loader2 className="animate-spin" />;
+    }
 
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -99,8 +95,17 @@ export default function TransactionsSettingsPage() {
         setIdVerificationError(null);
         
         try {
+            // First, update the user profile with the document URL.
             await setIdVerificationPending(currentUser.id, idImage);
-            const result = await autoVerifyIdWithAI(currentUser);
+            
+            // Now, call the AI verification flow with the necessary data.
+            const result = await autoVerifyIdWithAI({
+                userId: currentUser.id,
+                nameInRecord: `${currentUser.name} ${currentUser.lastName || ''}`.trim(),
+                idInRecord: currentUser.idNumber || '', // Use real data from profile
+                documentImageUrl: idImage,
+            });
+
             setVerificationResult(result);
 
             if (!result.nameMatch || !result.idMatch) {
@@ -251,7 +256,7 @@ export default function TransactionsSettingsPage() {
                                 <div className="space-y-4">
                                      <div className="space-y-2">
                                         <Label htmlFor="account-name">Titular de la Cuenta</Label>
-                                        <Input id="account-name" value={currentUser.name} readOnly disabled />
+                                        <Input id="account-name" value={`${currentUser.name} ${currentUser.lastName}`} readOnly disabled />
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="bank-name">Entidad Bancaria</Label>
@@ -273,7 +278,7 @@ export default function TransactionsSettingsPage() {
                                 <div className="space-y-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="mobile-id">Cédula</Label>
-                                        <Input id="mobile-id" value={MOCKED_ID_DATA.idNumber} readOnly disabled />
+                                        <Input id="mobile-id" value={currentUser.idNumber} readOnly disabled />
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="mobile-bank-name">Entidad Bancaria</Label>

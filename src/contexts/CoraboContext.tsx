@@ -17,7 +17,7 @@ import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, 
 import { createCampaign } from '@/ai/flows/campaign-flow';
 import { acceptProposal as acceptProposalFlow, sendMessage as sendMessageFlow } from '@/ai/flows/message-flow';
 import * as TransactionFlows from '@/ai/flows/transaction-flow';
-import { autoVerifyIdWithAI as autoVerifyIdWithAIFlow } from '@/ai/flows/verification-flow';
+import { autoVerifyIdWithAI as autoVerifyIdWithAIFlow, type VerificationInput } from '@/ai/flows/verification-flow';
 
 
 type FeedView = 'servicios' | 'empresas';
@@ -99,7 +99,7 @@ interface CoraboState {
   verifyUserId: (userId: string) => void;
   rejectUserId: (userId: string) => void;
   setIdVerificationPending: (userId: string, documentUrl: string) => Promise<void>;
-  autoVerifyIdWithAI: (user: User) => Promise<VerificationOutput>;
+  autoVerifyIdWithAI: (input: VerificationInput) => Promise<VerificationOutput>;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -613,15 +613,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     // This is now a simple Firestore update. The AI flow is called separately from the component.
     await updateUser(userId, { idVerificationStatus: 'pending', idDocumentUrl: documentUrl });
   };
-  const autoVerifyIdWithAI = async (user: User) => {
-    if (!user.idDocumentUrl) throw new Error("No document URL");
-    // This calls the actual Genkit flow
-    return await autoVerifyIdWithAIFlow({
-      userId: user.id,
-      nameInRecord: `${user.name} ${user.lastName || ''}`.trim(),
-      idInRecord: user.idNumber || '', // Use real data
-      documentImageUrl: user.idDocumentUrl
-    });
+  const autoVerifyIdWithAI = async (input: VerificationInput) => {
+    return await autoVerifyIdWithAIFlow(input);
   };
 
 
