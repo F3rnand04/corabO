@@ -3,7 +3,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput } from '@/lib/types';
+import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from 'next/navigation';
 import jsPDF from 'jspdf';
@@ -72,7 +72,7 @@ interface CoraboState {
   validateEmail: (userId: string) => void;
   validatePhone: (userId: string) => void;
   setFeedView: (view: FeedView) => void;
-  updateFullProfile: (userId: string, data: ProfileSetupData) => void;
+  updateFullProfile: (userId: string, data: ProfileSetupData) => Promise<void>;
   completeInitialSetup: (userId: string, data: { lastName: string; idNumber: string; birthDate: string }) => Promise<void>;
   subscribeUser: (userId: string, planName: string, amount: number) => void;
   activateTransactions: (userId: string, creditLimit: number) => void;
@@ -159,6 +159,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
                 isSubscribed: false,
                 isTransactionsActive: false,
             };
+            console.log('Nuevo usuario creado:', newUser);
             await setDoc(userDocRef, newUser);
             setCurrentUser(newUser);
         }
@@ -486,9 +487,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const removeGalleryImage = (userId: string, imageId: string) => {};
   const validateEmail = (userId: string) => {};
   const validatePhone = (userId: string) => {};
-  const updateFullProfile = (userId: string, data: Partial<User & { profileSetupData: ProfileSetupData }>) => {
+  const updateFullProfile = async (userId: string, data: Partial<User & { profileSetupData: ProfileSetupData }>) => {
     const userRef = doc(db, 'users', userId);
-    updateDoc(userRef, data);
+    await updateDoc(userRef, data);
   };
   const subscribeUser = (userId: string, planName: string, amount: number) => {};
   const activateTransactions = (userId: string, creditLimit: number) => {};

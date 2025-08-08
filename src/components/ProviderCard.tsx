@@ -25,7 +25,7 @@ interface ProviderCardProps {
 }
 
 export function ProviderCard({ provider }: ProviderCardProps) {
-    const { addContact, sendMessage, products, isContact } = useCorabo();
+    const { addContact, sendMessage, products, isContact, transactions } = useCorabo();
     const router = useRouter();
     const { toast } = useToast();
     const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
@@ -58,6 +58,12 @@ export function ProviderCard({ provider }: ProviderCardProps) {
       const conversationId = sendMessage(provider.id, '', true);
       router.push(`/messages/${conversationId}`);
     };
+
+    const completedTransactions = transactions.filter(
+        tx => tx.providerId === provider.id && (tx.status === 'Pagado' || tx.status === 'Resuelto')
+    ).length;
+
+    const isNewProvider = completedTransactions === 0;
 
     const isPromotionActive = provider.promotion && new Date(provider.promotion.expires) > new Date();
 
@@ -100,12 +106,18 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                             <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                                 <div className="flex items-center gap-1">
                                     <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                                    <span className="font-semibold text-foreground">{provider.reputation}</span>
+                                    <span className="font-semibold text-foreground">{provider.reputation.toFixed(1)}</span>
                                 </div>
                                 <Separator orientation="vertical" className="h-4" />
-                                <span>99.9% Efec.</span>
-                                <Separator orientation="vertical" className="h-4" />
-                                <span className="text-green-600 font-semibold">00-05 min</span>
+                                {isNewProvider ? (
+                                    <Badge variant="secondary">Nuevo</Badge>
+                                ) : (
+                                    <>
+                                        <span>99.9% Efec.</span>
+                                        <Separator orientation="vertical" className="h-4" />
+                                        <span className="text-green-600 font-semibold">00-05 min</span>
+                                    </>
+                                )}
                             </div>
                         </div>
                          <div className="flex flex-col items-center gap-1 text-muted-foreground">
@@ -144,7 +156,7 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                             <span className="text-xs font-bold mt-1 drop-shadow-md">8.9k</span>
                         </div>
                          <div className="flex flex-col items-center">
-                             <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">
+                             <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10" onClick={handleDirectMessage}>
                                 <Send className="w-5 h-5" />
                              </Button>
                             <span className="text-xs font-bold mt-1 drop-shadow-md">1.2k</span>

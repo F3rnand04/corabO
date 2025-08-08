@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, TouchEvent, useEffect, useRef, ChangeEvent } from 'react';
@@ -20,6 +21,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Day, type DayProps } from 'react-day-picker';
 import { CampaignDialog } from '@/components/CampaignDialog';
+import { Badge } from '../ui/badge';
 
 
 export default function ProfilePage() {
@@ -37,6 +39,12 @@ export default function ProfilePage() {
   const isProvider = currentUser.type === 'provider';
   const isProductProvider = isProvider && currentUser.profileSetupData?.offerType === 'product';
   const providerProductsCount = isProductProvider ? products.filter(p => p.providerId === currentUser.id).length : 0;
+  
+  const completedTransactions = transactions.filter(
+    tx => tx.providerId === currentUser.id && (tx.status === 'Pagado' || tx.status === 'Resuelto')
+  ).length;
+
+  const isNewProvider = completedTransactions === 0;
 
   // Local state for interactions
   const [starCount, setStarCount] = useState(8934);
@@ -47,9 +55,9 @@ export default function ProfilePage() {
   const [providerProfile, setProviderProfile] = useState({
     name: currentUser.name,
     specialty: currentUser.profileSetupData?.specialty || "Especialidad",
-    rating: currentUser.reputation || 4.9,
+    rating: currentUser.reputation || 0,
     efficiency: "99.9%",
-    completedJobs: 15,
+    completedJobs: completedTransactions,
     otherStat: "00 | 05",
   });
 
@@ -87,9 +95,11 @@ export default function ProfilePage() {
     setProviderProfile(prev => ({
         ...prev, 
         name: currentUser.profileSetupData?.useUsername ? currentUser.profileSetupData?.username || currentUser.name : currentUser.name,
-        specialty: currentUser.profileSetupData?.specialty || "Especialidad"
+        specialty: currentUser.profileSetupData?.specialty || "Especialidad",
+        rating: currentUser.reputation || 0,
+        completedJobs: completedTransactions
     }));
-  }, [currentUser]);
+  }, [currentUser, completedTransactions]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -276,9 +286,15 @@ export default function ProfilePage() {
                         <span className="font-semibold text-foreground">{providerProfile.rating.toFixed(1)}</span>
                     </div>
                     <Separator orientation="vertical" className="h-4" />
-                    <span>{providerProfile.efficiency} Efec.</span>
-                    <Separator orientation="vertical" className="h-4" />
-                    <span>{providerProfile.otherStat}</span>
+                    {isNewProvider ? (
+                        <Badge variant="secondary">Nuevo</Badge>
+                    ) : (
+                        <>
+                            <span>{providerProfile.efficiency} Efec.</span>
+                            <Separator orientation="vertical" className="h-4" />
+                            <span>{providerProfile.otherStat}</span>
+                        </>
+                    )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
