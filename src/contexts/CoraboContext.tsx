@@ -190,7 +190,16 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         const userDocRef = doc(db, 'users', firebaseUser.uid);
         const userDocSnap = await getDoc(userDocRef);
         if (userDocSnap.exists()) {
-            setCurrentUser(userDocSnap.data() as User);
+            const userData = userDocSnap.data() as User;
+            setCurrentUser(userData);
+            // Ensure the main users list is also updated immediately
+            setUsers(prevUsers => {
+                const userExists = prevUsers.some(u => u.id === userData.id);
+                if (userExists) {
+                    return prevUsers.map(u => u.id === userData.id ? userData : u);
+                }
+                return [...prevUsers, userData];
+            });
         }
       } else {
         setCurrentUser(null);
