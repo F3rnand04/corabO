@@ -22,6 +22,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Day, type DayProps } from 'react-day-picker';
 import { CampaignDialog } from '@/components/CampaignDialog';
 import { Badge } from '@/components/ui/badge';
+import { SubscriptionDialog } from '../SubscriptionDialog';
 
 
 export default function ProfilePage() {
@@ -51,6 +52,7 @@ export default function ProfilePage() {
   const [isLiked, setIsLiked] = useState(false);
   const [shareCount, setShareCount] = useState(4567);
   const [messageCount, setMessageCount] = useState(1234);
+  const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
 
   const [providerProfile, setProviderProfile] = useState({
     name: currentUser.name,
@@ -297,61 +299,72 @@ export default function ProfilePage() {
                     )}
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                  <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <Calendar className="w-5 h-5 text-muted-foreground" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <TooltipProvider>
-                            <CalendarComponent
-                                mode="multiple"
-                                selected={[...paymentCommitmentDates, ...taskDates]}
-                                onDayDoubleClick={onDayDoubleClick}
-                                disabled={(date) => date < new Date("1900-01-01")}
-                                initialFocus
-                                components={{
-                                  Day: (props: DayProps) => {
-                                    const eventOnDay = agendaEvents.find(
-                                      (e) => new Date(e.date).toDateString() === props.date.toDateString()
-                                    );
-                                    return (
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <div className="relative w-full h-full flex items-center justify-center">
-                                            <Day {...props} />
-                                            {eventOnDay && (
-                                              <div
-                                                className={cn(
-                                                  "absolute bottom-1 left-1/2 -translate-x-1/2 h-1.5 w-1.5 rounded-full",
-                                                  eventOnDay.type === 'payment' ? 'bg-yellow-400' : 'bg-blue-400'
+              <div className="flex flex-col items-end gap-1">
+                  {!currentUser.isSubscribed && (
+                    <Button
+                        variant="link"
+                        className="text-xs h-auto p-0 text-red-500/90 hover:text-red-500 font-semibold"
+                        onClick={() => setIsSubscriptionDialogOpen(true)}
+                    >
+                        Suscribir
+                    </Button>
+                  )}
+                  <div className="flex items-center gap-2">
+                      <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <Calendar className="w-5 h-5 text-muted-foreground" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0">
+                            <TooltipProvider>
+                                <CalendarComponent
+                                    mode="multiple"
+                                    selected={[...paymentCommitmentDates, ...taskDates]}
+                                    onDayDoubleClick={onDayDoubleClick}
+                                    disabled={(date) => date < new Date("1900-01-01")}
+                                    initialFocus
+                                    components={{
+                                      Day: (props: DayProps) => {
+                                        const eventOnDay = agendaEvents.find(
+                                          (e) => new Date(e.date).toDateString() === props.date.toDateString()
+                                        );
+                                        return (
+                                          <Tooltip>
+                                            <TooltipTrigger asChild>
+                                              <div className="relative w-full h-full flex items-center justify-center">
+                                                <Day {...props} />
+                                                {eventOnDay && (
+                                                  <div
+                                                    className={cn(
+                                                      "absolute bottom-1 left-1/2 -translate-x-1/2 h-1.5 w-1.5 rounded-full",
+                                                      eventOnDay.type === 'payment' ? 'bg-yellow-400' : 'bg-blue-400'
+                                                    )}
+                                                  />
                                                 )}
-                                              />
+                                              </div>
+                                            </TooltipTrigger>
+                                            {eventOnDay && (
+                                              <TooltipContent>
+                                                <p>{eventOnDay.description}</p>
+                                              </TooltipContent>
                                             )}
-                                          </div>
-                                        </TooltipTrigger>
-                                        {eventOnDay && (
-                                          <TooltipContent>
-                                            <p>{eventOnDay.description}</p>
-                                          </TooltipContent>
-                                        )}
-                                      </Tooltip>
-                                    );
-                                  },
-                                }}
-                            />
-                        </TooltipProvider>
-                        <div className="p-2 border-t text-center text-xs text-muted-foreground">
-                            Doble clic para ver detalles.
-                        </div>
-                      </PopoverContent>
-                  </Popover>
-                  <Button variant="ghost" size="icon" onClick={() => router.push('/transactions')}><Wallet className="w-5 h-5 text-muted-foreground" /></Button>
-                  <Button variant="ghost" size="icon" onClick={() => toggleGps(currentUser.id)} onDoubleClick={() => router.push('/map')}>
-                      <MapPin className={cn("w-5 h-5 text-muted-foreground", currentUser.isGpsActive && "text-green-500")} />
-                  </Button>
+                                          </Tooltip>
+                                        );
+                                      },
+                                    }}
+                                />
+                            </TooltipProvider>
+                            <div className="p-2 border-t text-center text-xs text-muted-foreground">
+                                Doble clic para ver detalles.
+                            </div>
+                          </PopoverContent>
+                      </Popover>
+                      <Button variant="ghost" size="icon" onClick={() => router.push('/transactions')}><Wallet className="w-5 h-5 text-muted-foreground" /></Button>
+                      <Button variant="ghost" size="icon" onClick={() => toggleGps(currentUser.id)} onDoubleClick={() => router.push('/map')}>
+                          <MapPin className={cn("w-5 h-5 text-muted-foreground", currentUser.isGpsActive && "text-green-500")} />
+                      </Button>
+                  </div>
               </div>
             </div>
 
@@ -546,6 +559,7 @@ export default function ProfilePage() {
             onOpenChange={setIsCampaignDialogOpen}
           />
       )}
+       <SubscriptionDialog isOpen={isSubscriptionDialogOpen} onOpenChange={setIsSubscriptionDialogOpen} />
     </>
   );
 }

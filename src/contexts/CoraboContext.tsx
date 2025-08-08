@@ -80,7 +80,7 @@ interface CoraboState {
   sendPhoneVerification: (userId: string, phone: string) => Promise<void>;
   verifyPhoneCode: (userId: string, code: string) => Promise<boolean>;
   setFeedView: (view: FeedView) => void;
-  updateFullProfile: (userId: string, data: ProfileSetupData) => Promise<void>;
+  updateFullProfile: (userId: string, data: Partial<User & { profileSetupData: ProfileSetupData }>) => Promise<void>;
   completeInitialSetup: (userId: string, data: { lastName: string; idNumber: string; birthDate: string }) => Promise<void>;
   subscribeUser: (userId: string, planName: string, amount: number) => void;
   activateTransactions: (userId: string, paymentDetails: any) => void;
@@ -690,7 +690,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const requestService = (service: Service) => {};
   const requestQuoteFromGroup = (serviceName: string, items: string[], groupOrProvider: string): boolean => { return true; };
   const checkout = (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {};
-  const updateUserProfileImage = (userId: string, imageUrl: string) => {};
+  const updateUserProfileImage = (userId: string, imageUrl: string) => {
+    updateUser(userId, { profileImage: imageUrl });
+  };
   const updateUserProfileAndGallery = (userId: string, imageOrId: GalleryImage | string, isDelete?: boolean) => {};
   const removeGalleryImage = (userId: string, imageId: string) => {};
   
@@ -756,7 +758,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const updateFullProfile = async (userId: string, data: Partial<User & { profileSetupData: ProfileSetupData }>) => {
     const userRef = doc(db, 'users', userId);
-
+    
     const wasClient = currentUser?.type === 'client';
     const isNowProvider = data.profileSetupData?.providerType !== undefined;
     
@@ -764,26 +766,26 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       ...data,
       type: isNowProvider ? 'provider' : 'client',
     };
-
+    
     if (wasClient && isNowProvider) {
       NotificationFlows.sendWelcomeToProviderNotification({ userId });
     }
-
+    
     await updateDoc(userRef, updates);
     
     // Refresh local user state
     setCurrentUser(prevUser => {
-        if (!prevUser) return null;
-        // Deep merge profileSetupData
-        const newProfileSetupData = {
-            ...prevUser.profileSetupData,
-            ...data.profileSetupData,
-        };
-        return {
-            ...prevUser,
-            ...updates,
-            profileSetupData: newProfileSetupData,
-        };
+      if (!prevUser) return null;
+      // Deep merge profileSetupData
+      const newProfileSetupData = {
+        ...prevUser.profileSetupData,
+        ...data.profileSetupData,
+      };
+      return {
+        ...prevUser,
+        ...updates,
+        profileSetupData: newProfileSetupData,
+      };
     });
   };
 
