@@ -237,9 +237,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
           const newReputation = ratedTransactions.length > 0 ? totalRating / ratedTransactions.length : 0;
           
           // Calculate Effectiveness
-          const totalMeaningfulTransactions = providerTransactions.filter(t => t.status !== 'Carrito Activo' && t.status !== 'Pre-factura Pendiente').length;
-          const completedTransactions = providerTransactions.filter(t => t.status === 'Pagado' || t.status === 'Resuelto').length;
-          const newEffectiveness = totalMeaningfulTransactions > 0 ? (completedTransactions / totalMeaningfulTransactions) * 100 : 100;
+          const newEffectiveness = getUserEffectiveness(user.id);
 
           return { ...user, reputation: newReputation, effectiveness: newEffectiveness };
         }
@@ -294,11 +292,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const getUserEffectiveness = (userId: string) => {
     const user = users.find(u => u.id === userId);
-    if (!user || user.type !== 'provider') return 100;
+    if (!user || user.type !== 'provider') return 0;
   
     const providerTransactions = transactions.filter(t => t.providerId === userId);
     const totalMeaningfulTransactions = providerTransactions.filter(t => t.status !== 'Carrito Activo' && t.status !== 'Pre-factura Pendiente').length;
-    if (totalMeaningfulTransactions === 0) return 100;
+    
+    if (totalMeaningfulTransactions === 0) {
+      return 0; // A new provider has 0% effectiveness until they complete a transaction.
+    }
   
     const completedTransactions = providerTransactions.filter(t => t.status === 'Pagado' || t.status === 'Resuelto').length;
     return (completedTransactions / totalMeaningfulTransactions) * 100;
@@ -515,7 +516,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const isContact = (userId: string) => {
-    return contacts.some(c => c.id === userId);
+    return contacts.some(c => c.id !== userId);
   }
   
   const updateUser = async (userId: string, updates: Partial<User>) => {
@@ -724,18 +725,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       const initialCreditLimit = credicoraLevels['1'].creditLimit;
 
       const cleanedPaymentDetails = { ...paymentDetails };
-      if (cleanedPaymentDetails.method === 'account') {
-          delete cleanedPaymentDetails.mobilePaymentPhone;
-          delete cleanedPaymentDetails.binanceEmail;
-      } else if (cleanedPaymentDetails.method === 'mobile') {
-          delete cleanedPaymentDetails.accountNumber;
-          delete cleanedPaymentDetails.binanceEmail;
-      } else if (cleanedPaymentDetails.method === 'crypto') {
-          delete cleanedPaymentDetails.accountNumber;
-          delete cleanedPaymentDetails.mobilePaymentPhone;
-          delete cleanedPaymentDetails.bankName;
-      }
-
+      
       const updates = {
           isTransactionsActive: true,
           credicoraLimit: initialCreditLimit,

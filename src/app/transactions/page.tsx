@@ -467,7 +467,7 @@ export default function TransactionsPage() {
                                     </div>
                                 </CollapsibleContent>
                             </Card>
-                        </Collapsible>
+                        </Card>
                         
                         <Card className="bg-card">
                            <CardHeader className="py-4 px-4">
