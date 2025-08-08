@@ -60,16 +60,14 @@ function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary:
         router.push('/transactions/settings');
     }
 
-    const subtotal = getCartTotal();
-    const deliveryCost = getDeliveryCost();
-
     const cartTransaction = cart.length > 0 ? currentUser.transactions?.find(tx => tx.status === 'Carrito Activo' && tx.clientId === currentUser.id) : undefined;
     const provider = users.find(u => u.id === cartTransaction?.providerId);
-    
-    const isDeliveryOnly = provider?.profileSetupData?.isOnlyDelivery || false;
     const providerAcceptsCredicora = provider?.profileSetupData?.acceptsCredicora || false;
+    const isDeliveryOnly = provider?.profileSetupData?.isOnlyDelivery || false;
 
-    const totalWithDelivery = subtotal + ((includeDelivery || isOnlyDelivery) ? deliveryCost : 0);
+    const subtotal = getCartTotal();
+    const deliveryCost = getDeliveryCost();
+    const totalWithDelivery = subtotal + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
     
     const userCredicoraLevel = currentUser.credicoraLevel || 1;
     const credicoraDetails = credicoraLevels[userCredicoraLevel.toString()];
@@ -86,7 +84,7 @@ function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary:
 
     const handleCheckout = () => {
       if (cartTransaction) {
-          checkout(cartTransaction.id, includeDelivery || isOnlyDelivery, useCredicora);
+          checkout(cartTransaction.id, includeDelivery || isDeliveryOnly, useCredicora);
           setIsCheckoutAlertOpen(false);
           setUseCredicora(false);
       }
@@ -188,7 +186,7 @@ function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary:
                                 {isDeliveryOnly && <p className="text-xs text-muted-foreground -mt-2">Este proveedor solo trabaja con delivery.</p>}
                                 <div className="flex justify-between text-sm">
                                    <span>Costo de envío (aprox):</span>
-                                   <span className="font-semibold">${(includeDelivery || isOnlyDelivery) ? deliveryCost.toFixed(2) : '0.00'}</span>
+                                   <span className="font-semibold">${(includeDelivery || isDeliveryOnly) ? deliveryCost.toFixed(2) : '0.00'}</span>
                                </div>
 
                                 {providerAcceptsCredicora && (
