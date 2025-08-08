@@ -108,7 +108,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   const handleSendQuote = () => {
     if (quoteTotal > 0 && quoteBreakdown) {
       sendQuote(transaction.id, { breakdown: quoteBreakdown, total: quoteTotal });
-      toast({ title: 'Quote sent', description: 'The client has been notified.' });
+      toast({ title: 'Cotización enviada', description: 'Se ha notificado al cliente.' });
       handleClose();
     }
   };
@@ -116,13 +116,13 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   const handlePayCommitment = () => {
     if (!paymentReference || !paymentVoucher) return;
     payCommitment(transaction.id, rating, comment);
-    toast({ title: 'Payment registered', description: 'The provider will verify the payment.' });
+    toast({ title: 'Pago registrado', description: 'El proveedor verificará el pago.' });
     handleClose();
   }
 
   const handleCompleteWork = () => {
       completeWork(transaction.id);
-      toast({ title: 'Work finished', description: 'The client has been notified to confirm.' });
+      toast({ title: 'Trabajo finalizado', description: 'Se ha notificado al cliente para que confirme.' });
       handleClose();
   }
 
@@ -135,13 +135,13 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
 
   const handleAcceptAppointment = () => {
     acceptAppointment(transaction.id);
-    toast({ title: 'Appointment accepted', description: 'A payment commitment has been created.' });
+    toast({ title: 'Cita aceptada', description: 'Se ha creado un compromiso de pago.' });
     handleClose();
   }
 
   const handleContactToReschedule = () => {
      if(otherPartyId) {
-       const conversationId = sendMessage(otherPartyId, `Hello, I saw your appointment request for ${new Date(transaction.date).toLocaleDateString()}. I would like to discuss another time.`, false);
+       const conversationId = sendMessage(otherPartyId, `Hola, vi tu solicitud de cita para el ${new Date(transaction.date).toLocaleDateString()}. Me gustaría discutir otra hora.`, false);
        router.push(`/messages/${conversationId}`);
        handleClose();
      }
@@ -149,7 +149,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
 
   const handleConfirmPayment = (fromThirdParty: boolean) => {
     confirmPaymentReceived(transaction.id, fromThirdParty);
-    toast({ title: 'Payment confirmed', description: 'The transaction has been completed.' });
+    toast({ title: 'Pago confirmado', description: 'La transacción ha sido completada.' });
     handleClose();
   };
 

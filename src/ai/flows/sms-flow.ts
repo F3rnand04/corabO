@@ -8,8 +8,8 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { Twilio } from 'twilio';
 import { db } from '@/lib/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
-import { addMinutes } from 'date-fns';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { addMinutes, isAfter } from 'date-fns';
 
 const SmsVerificationInputSchema = z.object({
   userId: z.string(),
@@ -28,7 +28,8 @@ const sendSmsVerificationCodeFlow = ai.defineFlow(
     const twilioNumber = process.env.TWILIO_PHONE_NUMBER;
 
     if (!accountSid || !authToken || !twilioNumber) {
-      throw new Error('Twilio credentials are not configured in .env');
+      console.error('Twilio credentials are not configured in .env');
+      throw new Error('El servicio de SMS no está configurado. Contacta a soporte.');
     }
 
     const twilioClient = new Twilio(accountSid, authToken);
@@ -52,7 +53,7 @@ const sendSmsVerificationCodeFlow = ai.defineFlow(
     } catch (error) {
         console.error("Error sending SMS via Twilio:", error);
         // It's important to throw an error so the frontend knows the operation failed.
-        throw new Error("Failed to send verification SMS. Please check server logs.");
+        throw new Error("No se pudo enviar el SMS de verificación. Por favor, revisa la consola del servidor.");
     }
   }
 );
@@ -75,12 +76,12 @@ const verifySmsCodeFlow = ai.defineFlow(
         const userSnap = await getDoc(userRef);
 
         if (!userSnap.exists()) {
-            return { success: false, message: "User not found." };
+            return { success: false, message: "Usuario no encontrado." };
         }
 
         const userData = userSnap.data();
         
-        if (userData.phoneVerificationCodeExpires && new Date() > new Date(userData.phoneVerificationCodeExpires)) {
+        if (userData.phoneVerificationCodeExpires && isAfter(new Date(), new Date(userData.phoneVerificationCodeExpires))) {
             return { success: false, message: "El código de verificación ha expirado." };
         }
 

@@ -29,6 +29,10 @@ const VerificationOutputSchema = z.object({
 export type VerificationOutput = z.infer<typeof VerificationOutputSchema>;
 
 export async function autoVerifyIdWithAI(input: VerificationInput): Promise<VerificationOutput> {
+  if (!process.env.GEMINI_API_KEY) {
+    console.error("GEMINI_API_KEY is not set.");
+    throw new Error("El servicio de verificación IA no está configurado.");
+  }
   // The check for the document URL is now implicitly handled by the input schema.
   // If documentImageUrl is missing, Zod will throw an error before this function is even called.
   return autoVerifyIdWithAIFlow(input);
