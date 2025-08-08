@@ -650,14 +650,28 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const subscribeUser = (userId: string, planName: string, amount: number) => {};
   const activateTransactions = async (userId: string, paymentDetails: any) => {
+    if (!currentUser) return;
+    const userRef = doc(db, 'users', userId);
+    const initialCreditLimit = credicoraLevels['1'].creditLimit;
+
+    // Create a clean copy of paymentDetails to avoid mutating the original object
+    const cleanedPaymentDetails = { ...paymentDetails };
+    if (cleanedPaymentDetails.method === 'account') {
+        delete cleanedPaymentDetails.mobilePaymentPhone;
+    } else if (cleanedPaymentDetails.method === 'mobile') {
+        delete cleanedPaymentDetails.accountNumber;
+    }
+
     const updates = {
       isTransactionsActive: true,
+      credicoraLimit: initialCreditLimit,
       profileSetupData: {
-        ...currentUser?.profileSetupData,
-        paymentDetails,
+        ...currentUser.profileSetupData,
+        paymentDetails: cleanedPaymentDetails,
       },
     };
-    await updateUser(userId, updates);
+    
+    await updateDoc(userRef, updates);
   };
   const deactivateTransactions = (userId: string) => {};
   const downloadTransactionsPDF = () => {};
@@ -752,3 +766,5 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
+
+    
