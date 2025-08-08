@@ -72,6 +72,7 @@ interface CoraboState {
   removeContact: (userId: string) => void;
   isContact: (userId: string) => boolean;
   toggleGps: (userId: string) => void;
+  updateUser: (userId: string, updates: Partial<User>) => Promise<void>;
   updateUserProfileImage: (userId: string, imageUrl: string) => void;
   updateUserProfileAndGallery: (userId: string, imageOrId: GalleryImage | string, isDelete?: boolean) => void;
   removeGalleryImage: (userId: string, imageId: string) => void;
@@ -227,6 +228,21 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, [handleUserCreation, auth]);
   
+  const getUserEffectiveness = (userId: string) => {
+    const user = users.find(u => u.id === userId);
+    if (!user || user.type !== 'provider') return 0;
+  
+    const providerTransactions = transactions.filter(t => t.providerId === userId);
+    const totalMeaningfulTransactions = providerTransactions.filter(t => t.status !== 'Carrito Activo' && t.status !== 'Pre-factura Pendiente').length;
+    
+    if (totalMeaningfulTransactions === 0) {
+      return 0; // A new provider has 0% effectiveness until they complete a transaction.
+    }
+  
+    const completedTransactions = providerTransactions.filter(t => t.status === 'Pagado' || t.status === 'Resuelto').length;
+    return (completedTransactions / totalMeaningfulTransactions) * 100;
+  };
+
   // Dynamic Reputation and Effectiveness Calculation
   useEffect(() => {
     if (users.length > 0 && transactions.length > 0) {
@@ -292,21 +308,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       unsubscribeConversations();
     };
   }, [currentUser]);
-
-  const getUserEffectiveness = (userId: string) => {
-    const user = users.find(u => u.id === userId);
-    if (!user || user.type !== 'provider') return 0;
-  
-    const providerTransactions = transactions.filter(t => t.providerId === userId);
-    const totalMeaningfulTransactions = providerTransactions.filter(t => t.status !== 'Carrito Activo' && t.status !== 'Pre-factura Pendiente').length;
-    
-    if (totalMeaningfulTransactions === 0) {
-      return 0; // A new provider has 0% effectiveness until they complete a transaction.
-    }
-  
-    const completedTransactions = providerTransactions.filter(t => t.status === 'Pagado' || t.status === 'Resuelto').length;
-    return (completedTransactions / totalMeaningfulTransactions) * 100;
-  };
 
   const getRankedFeed = useCallback(() => {
     if (!currentUser || !users.length) return [];
@@ -845,6 +846,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     isContact,
     removeContact,
     toggleGps,
+    updateUser,
     updateUserProfileImage,
     updateUserProfileAndGallery,
     removeGalleryImage,
@@ -890,5 +892,3 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
-
-    

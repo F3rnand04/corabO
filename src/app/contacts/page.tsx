@@ -18,6 +18,8 @@ function ContactsHeader({ onSubscribeClick }: { onSubscribeClick: () => void }) 
   const router = useRouter();
   const { currentUser } = useCorabo();
 
+  if (!currentUser) return null;
+
   return (
     <header className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container px-4 sm:px-6">
@@ -42,10 +44,16 @@ function ContactsHeader({ onSubscribeClick }: { onSubscribeClick: () => void }) 
 
 
 export default function ContactsPage() {
-  const { currentUser, contacts, removeContact, validateEmail, validatePhone, sendMessage, updateUser } = useCorabo();
+  const { currentUser, contacts, removeContact, validateEmail, sendPhoneVerification, updateUser, sendMessage } = useCorabo();
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+
+  if (!currentUser) {
+    // This is important to prevent rendering with a null user.
+    // AppLayout should handle redirection, but this is a safeguard.
+    return null; 
+  }
 
   const handleDirectMessage = (contactId: string) => {
     const conversationId = sendMessage(contactId, '', true);
@@ -72,8 +80,8 @@ export default function ContactsPage() {
                 <div className="w-full">
                     <p className="font-bold">ID corabO</p>
                     <div className="flex items-center gap-2">
-                       <p className="font-mono text-sm">{currentUser.coraboId}</p>
-                       <Button variant="ghost" size="icon" className="w-6 h-6" onClick={() => copyToClipboard(currentUser.coraboId)}>
+                       <p className="font-mono text-sm">{currentUser.coraboId || ''}</p>
+                       <Button variant="ghost" size="icon" className="w-6 h-6" onClick={() => copyToClipboard(currentUser.coraboId || '')}>
                             <Copy className="w-4 h-4 text-muted-foreground" />
                        </Button>
                     </div>
@@ -84,15 +92,17 @@ export default function ContactsPage() {
                     label="Correo:"
                     value={currentUser.email}
                     initialStatus={currentUser.emailValidated ? 'validated' : 'idle'}
-                    onValidate={() => validateEmail(currentUser.id)}
+                    onValidate={(email) => validateEmail(currentUser.id, email)}
                     onValueChange={(value) => updateUser(currentUser.id, { email: value })}
+                    type="email"
                 />
                 <ValidationItem
                     label="Teléfono:"
                     value={currentUser.phone}
                     initialStatus={currentUser.phoneValidated ? 'validated' : 'idle'}
-                    onValidate={() => validatePhone(currentUser.id)}
+                    onValidate={() => sendPhoneVerification(currentUser.id, currentUser.phone)}
                     onValueChange={(value) => updateUser(currentUser.id, { phone: value })}
+                    type="phone"
                 />
             </div>
         </div>
@@ -138,5 +148,3 @@ export default function ContactsPage() {
     </>
   );
 }
-
-    
