@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MapPin, FileText, Menu, Search, LogOut, User, ShoppingCart, Plus, Minus, X, Wallet, Truck, Star, History as HistoryIcon, Shield } from "lucide-react";
+import { MapPin, FileText, Menu, Search, LogOut, User, ShoppingCart, Plus, Minus, X, Wallet, Truck, Star, History as HistoryIcon, Shield, HelpCircle } from "lucide-react";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -233,8 +233,8 @@ export function Header() {
                 <ThemeSwitcher />
                 <Link href="/policies" passHref>
                     <DropdownMenuItem>
-                        <Shield className="mr-2 h-4 w-4" />
-                        <span>Políticas de la Empresa</span>
+                        <HelpCircle className="mr-2 h-4 w-4" />
+                        <span>Ayuda y Contacto</span>
                     </DropdownMenuItem>
                 </Link>
                 <DropdownMenuSeparator />

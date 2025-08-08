@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronLeft, Gavel, ShieldCheck, Users } from 'lucide-react';
+import { ContactSupportCard } from '@/components/ContactSupportCard';
 
 function PoliciesHeader() {
   const router = useRouter();
@@ -73,17 +74,8 @@ export default function PoliciesPage() {
             ))}
         </div>
 
-        <Card className="mt-12 bg-background">
-            <CardHeader>
-                <CardTitle>¿Tienes Preguntas?</CardTitle>
-                <CardDescription>
-                    Si tienes alguna duda sobre nuestras políticas o necesitas reportar un incidente, nuestro equipo de soporte está aquí para ayudarte.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Button>Contactar a Soporte</Button>
-            </CardContent>
-        </Card>
+        <ContactSupportCard />
+        
       </main>
     </>
   );
