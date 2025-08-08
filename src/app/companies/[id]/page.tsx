@@ -97,8 +97,9 @@ export default function CompanyProfilePage() {
   const isDeliveryOnly = provider?.profileSetupData?.isOnlyDelivery || false;
   const providerAcceptsCredicora = provider?.profileSetupData?.acceptsCredicora || false;
 
-  // Security check for transaction readiness
+  // Transaction readiness checks
   const isCurrentUserTransactionReady = currentUser?.isTransactionsActive;
+  const isProviderTransactionReady = provider?.isTransactionsActive;
 
   const handleCheckout = () => {
     if (cartTransaction) {
@@ -108,7 +109,7 @@ export default function CompanyProfilePage() {
   
   const deliveryCost = getDeliveryCost();
   const subtotal = getCartTotal();
-  const totalWithDelivery = subtotal + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
+  const totalWithDelivery = subtotal + ((includeDelivery || isOnlyDelivery) ? deliveryCost : 0);
 
   const userCredicoraLevel = currentUser?.credicoraLevel || 1;
   const credicoraDetails = credicoraLevels[userCredicoraLevel.toString()];
@@ -155,20 +156,30 @@ export default function CompanyProfilePage() {
     });
 
     const handleDateSelect = (date: Date | undefined) => {
-        if (date && provider && isCurrentUserTransactionReady) {
-            setAppointmentDate(date);
-            setIsAppointmentDialogOpen(true);
-        } else if (!isCurrentUserTransactionReady) {
+        if (!isCurrentUserTransactionReady) {
              toast({
                 variant: 'destructive',
                 title: "Acción Requerida",
                 description: "Por favor, activa tu registro de transacciones para poder agendar citas.",
              });
+             return;
+        }
+        if (!isProviderTransactionReady) {
+             toast({
+                variant: 'destructive',
+                title: "Proveedor no disponible",
+                description: "Este proveedor no tiene las transacciones activas en este momento.",
+             });
+             return;
+        }
+        if (date && provider) {
+            setAppointmentDate(date);
+            setIsAppointmentDialogOpen(true);
         }
     };
 
     const handleConfirmAppointment = () => {
-        if (appointmentDate && provider && currentUser && isCurrentUserTransactionReady) {
+        if (appointmentDate && provider && currentUser && isCurrentUserTransactionReady && isProviderTransactionReady) {
             const request: Omit<AppointmentRequest, 'clientId'> = {
                 providerId: provider.id,
                 date: appointmentDate,
@@ -320,11 +331,20 @@ export default function CompanyProfilePage() {
       <div className="bg-background min-h-screen">
         <div className="container mx-auto px-0 md:px-2 max-w-2xl pb-24">
           
-          {!isCurrentUserTransactionReady && currentUser.type === 'client' && (
-             <div className="p-2">
+          <div className="p-2">
+            {currentUser.type === 'client' && !isCurrentUserTransactionReady && (
                 <ActivationWarning userType="client" />
-             </div>
-          )}
+            )}
+            {currentUser.type === 'client' && isCurrentUserTransactionReady && !isProviderTransactionReady && (
+                 <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle className="font-semibold">Proveedor No Disponible para Transacciones</AlertTitle>
+                    <AlertDescription>
+                        Este proveedor aún no ha activado su registro de transacciones, por lo que no podrás comprar o contratar sus servicios por ahora.
+                    </AlertDescription>
+                </Alert>
+            )}
+          </div>
 
           <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm pt-4 px-2">
             {/* Profile Header */}
@@ -353,7 +373,7 @@ export default function CompanyProfilePage() {
               <div className="flex items-center gap-2">
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="ghost" size="icon" disabled={!isCurrentUserTransactionReady}>
+                      <Button variant="ghost" size="icon" disabled={!isCurrentUserTransactionReady || !isProviderTransactionReady}>
                         <Calendar className={cn("w-5 h-5", {
                           "text-green-500": businessStatus === 'open',
                           "text-red-500": businessStatus === 'closed'
@@ -390,7 +410,7 @@ export default function CompanyProfilePage() {
                     <AlertDialog open={isCheckoutAlertOpen} onOpenChange={setIsCheckoutAlertOpen}>
                       <Popover>
                         <PopoverTrigger asChild>
-                          <Button variant="ghost" size="icon" className="relative" disabled={!isCurrentUserTransactionReady}>
+                          <Button variant="ghost" size="icon" className="relative" disabled={!isCurrentUserTransactionReady || !isProviderTransactionReady}>
                             <ShoppingCart className="w-5 h-5 text-muted-foreground" />
                             {totalCartItems > 0 && (
                               <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs rounded-full">{totalCartItems}</Badge>
@@ -750,3 +770,6 @@ export default function CompanyProfilePage() {
   );
 }
 
+
+
+    
