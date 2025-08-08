@@ -68,10 +68,15 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
     }
     
     // Normalize strings for better comparison
-    const normalize = (str: string) => str.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    const normalizeId = (str: string) => str.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    const normalizeName = (str: string) => str.trim().toLowerCase();
 
-    const nameMatch = normalize(output.fullName) === normalize(input.nameInRecord);
-    const idMatch = normalize(output.idNumber) === normalize(input.idInRecord);
+    const idMatch = normalizeId(output.idNumber) === normalizeId(input.idInRecord);
+    
+    // More flexible name matching
+    const extractedNameParts = normalizeName(output.fullName).split(' ');
+    const recordName = normalizeName(input.nameInRecord);
+    const nameMatch = extractedNameParts.every(part => recordName.includes(part));
 
     return {
       extractedName: output.fullName,
