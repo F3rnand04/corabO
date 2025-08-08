@@ -68,8 +68,6 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
     
     // 1. Normalize ID numbers for a robust comparison
     // This removes all non-alphanumeric characters (keeps letters and numbers) and converts to lowercase.
-    // e.g., "V 17.001.955" becomes "v17001955"
-    // e.g., "V-17001955" also becomes "v17001955"
     const normalizeId = (str: string) => str.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
     
     // Apply normalization to BOTH the extracted ID and the ID from the user's record.
@@ -78,12 +76,10 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
     // 2. Normalize names for flexible comparison
     const normalizeName = (str: string) => str.trim().toLowerCase();
     
-    const extractedNameLower = normalizeName(output.extractedName); // e.g., "fernando antonio infante"
-    const recordNameParts = normalizeName(input.nameInRecord).split(' '); // e.g., ["fernando", "infante"]
+    const extractedNameLower = normalizeName(output.extractedName); 
+    const recordNameParts = normalizeName(input.nameInRecord).split(' '); 
 
     // 3. Check if every part of the name from our record is present in the name extracted from the ID
-    // This is more flexible. It checks if "fernando" is in "fernando antonio infante" AND if "infante" is in "fernando antonio infante".
-    // This will correctly pass. This is the corrected logic.
     const nameMatch = recordNameParts.every(part => extractedNameLower.includes(part));
 
     return {

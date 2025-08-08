@@ -108,7 +108,7 @@ export default function TransactionsSettingsPage() {
             setVerificationResult(result);
 
             if (!result.nameMatch || !result.idMatch) {
-                setIdVerificationError("Los datos no coinciden. Sube una imagen clara o");
+                setIdVerificationError("Los datos no coinciden. Si crees que hubo un error durante tu registro inicial, por favor");
             }
 
         } catch (error) {
@@ -196,7 +196,7 @@ export default function TransactionsSettingsPage() {
                                     <AlertCircle className="h-4 w-4" />
                                     <AlertTitle>Error de Verificación</AlertTitle>
                                     <AlertDescription>
-                                        <p>{idVerificationError} <Button variant="link" className="p-0 h-auto text-current">contacta a soporte.</Button></p>
+                                        <p>{idVerificationError} <Button variant="link" className="p-0 h-auto text-current underline">contacta a soporte.</Button></p>
                                     </AlertDescription>
                                 </Alert>
                             )}
