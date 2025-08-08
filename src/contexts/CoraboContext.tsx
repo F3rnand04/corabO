@@ -12,7 +12,7 @@ import { credicoraLevels } from '@/lib/types';
 // Import necessary firebase services directly
 import { getAuth, signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, GoogleAuthProvider, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getFirebaseApp, getFirestoreDb } from '@/lib/firebase'; // Import the new getter functions
-import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, enableIndexedDbPersistence } from 'firebase/firestore';
+import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, enableIndexedDbPersistence, arrayUnion } from 'firebase/firestore';
 import { createCampaign } from '@/ai/flows/campaign-flow';
 import { acceptProposal as acceptProposalFlow, sendMessage as sendMessageFlow } from '@/ai/flows/message-flow';
 import * as TransactionFlows from '@/ai/flows/transaction-flow';
@@ -73,7 +73,7 @@ interface CoraboState {
   toggleGps: (userId: string) => void;
   updateUser: (userId: string, updates: Partial<User>) => Promise<void>;
   updateUserProfileImage: (userId: string, imageUrl: string) => void;
-  updateUserProfileAndGallery: (userId: string, imageOrId: GalleryImage | string, isDelete?: boolean) => void;
+  updateUserProfileAndGallery: (userId: string, image: GalleryImage) => void;
   removeGalleryImage: (userId: string, imageId: string) => void;
   validateEmail: (userId: string, emailToValidate: string) => Promise<boolean>;
   sendPhoneVerification: (userId: string, phone: string) => Promise<void>;
@@ -141,23 +141,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [exchangeRate, setExchangeRate] = useState(36.54); // Default value
   
   const app = getFirebaseApp();
-  const db = getFirestoreDb();
   const auth = getAuth(app);
   
-  // Enable offline persistence
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-        enableIndexedDbPersistence(db)
-          .catch((err) => {
-              if (err.code === 'failed-precondition') {
-                  console.warn("Multiple tabs open, persistence can only be enabled in one tab at a time.");
-              } else if (err.code === 'unimplemented') {
-                  console.warn("The current browser does not support all of the features required to enable persistence.");
-              }
-          });
-    }
-  }, [db]);
-
   // Fetch exchange rate on initial load
   useEffect(() => {
     const fetchRate = async () => {
@@ -173,6 +158,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const handleUserCreation = useCallback(async (firebaseUser: FirebaseUser): Promise<User> => {
+    const db = getFirestoreDb();
     const userDocRef = doc(db, 'users', firebaseUser.uid);
     const userDocSnap = await getDoc(userDocRef);
     
@@ -214,7 +200,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       await setDoc(userDocRef, newUser);
       return newUser;
     }
-  }, [db]);
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -273,6 +259,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
           }
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactions]); // Re-calculate when transactions change
   
 
@@ -283,6 +270,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     if (currentUser.profileSetupData?.location) {
         setDeliveryAddress(currentUser.profileSetupData.location);
     }
+    
+    const db = getFirestoreDb(); // Get DB instance safely
     
     const usersQuery = query(collection(db, "users"));
     const unsubscribeUsers = onSnapshot(usersQuery, (snapshot) => {
@@ -308,7 +297,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       unsubscribeTransactions();
       unsubscribeConversations();
     };
-  }, [currentUser, db]);
+  }, [currentUser]);
 
   const getRankedFeed = useCallback(() => {
     if (!currentUser || !users.length) return [];
@@ -438,9 +427,13 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     setSearchHistory([]);
   }
 
-  const addProduct = (product: Product) => {
+  const addProduct = async (product: Product) => {
+    const db = getFirestoreDb();
+    const productRef = doc(db, 'products', product.id);
+    await setDoc(productRef, product);
+    // Optimistic UI update
     setProducts(prev => [...prev, product]);
-  }
+  };
 
   const addToCart = (product: Product, quantity: number) => {
     if (!currentUser) return;
@@ -525,6 +518,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }
   
   const updateUser = async (userId: string, updates: Partial<User>) => {
+    const db = getFirestoreDb();
     const userDocRef = doc(db, 'users', userId);
     await updateDoc(userDocRef, updates);
     // Optimistically update local state for immediate feedback
@@ -553,6 +547,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const sendMessage = (recipientId: string, text: string, createOnly: boolean = false): string => {
     if (!currentUser) return '';
+    const db = getFirestoreDb();
     const convoId = [currentUser.id, recipientId].sort().join('_');
     
     if (createOnly) {
@@ -610,6 +605,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const markConversationAsRead = async (conversationId: string) => {
     if (!currentUser) return;
+    const db = getFirestoreDb();
     const convoRef = doc(db, 'conversations', conversationId);
     const convoSnap = await getDoc(convoRef);
 
@@ -669,6 +665,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     updateUser(userId, { isPaused: !currentIsPaused });
   };
   const verifyCampaignPayment = async (transactionId: string, campaignId: string) => {
+    const db = getFirestoreDb();
     const batch = writeBatch(db);
     const txRef = doc(db, "transactions", transactionId);
     batch.update(txRef, { status: "Pagado" });
@@ -692,12 +689,23 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const requestQuoteFromGroup = (serviceName: string, items: string[], groupOrProvider: string): boolean => { return true; };
   const checkout = (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {};
   
-  const updateUserProfileImage = (userId: string, imageUrl: string) => {
-     updateUser(userId, { profileImage: imageUrl });
+  const updateUserProfileImage = async (userId: string, imageUrl: string) => {
+     await updateUser(userId, { profileImage: imageUrl });
   };
 
-  const updateUserProfileAndGallery = (userId: string, imageOrId: GalleryImage | string, isDelete?: boolean) => {};
-  const removeGalleryImage = (userId: string, imageId: string) => {};
+  const updateUserProfileAndGallery = async (userId: string, image: GalleryImage) => {
+    const db = getFirestoreDb();
+    const userRef = doc(db, 'users', userId);
+    await updateDoc(userRef, {
+        gallery: arrayUnion(image)
+    });
+  };
+
+  const removeGalleryImage = async (userId: string, imageId: string) => {
+    if(!currentUser || !currentUser.gallery) return;
+    const updatedGallery = currentUser.gallery.filter(image => image.id !== imageId);
+    await updateUser(userId, { gallery: updatedGallery });
+  };
   
   const validateEmail = async (userId: string, emailToValidate: string): Promise<boolean> => {
     // In a real app, this would use a backend service to send an email.
@@ -775,6 +783,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
     
     // Perform the Firestore update
+    const db = getFirestoreDb();
     const userDocRef = doc(db, 'users', userId);
     await updateDoc(userDocRef, updates);
 
@@ -790,6 +799,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const subscribeUser = (userId: string, planName: string, amount: number) => {
       const txId = `txn-sub-${Date.now()}`;
+      const db = getFirestoreDb();
       const subscriptionTransaction: Transaction = {
           id: txId,
           type: 'Sistema',
@@ -803,12 +813,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
               system: `Pago de suscripción: ${planName}`,
           },
       };
-      setTransactions(prev => [...prev, subscriptionTransaction]);
+      const txRef = doc(db, 'transactions', txId);
+      setDoc(txRef, subscriptionTransaction);
       router.push(`/quotes/payment?commitmentId=${txId}&amount=${amount}`);
   };
   
   const activateTransactions = async (userId: string, paymentDetails: any) => {
       if (!currentUser) return;
+      const db = getFirestoreDb();
       const userRef = doc(db, 'users', userId);
       const initialCreditLimit = credicoraLevels['1'].creditLimit;
 

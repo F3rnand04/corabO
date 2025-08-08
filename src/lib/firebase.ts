@@ -1,3 +1,4 @@
+
 "use client";
 
 import { initializeApp, getApp, getApps, type FirebaseApp } from "firebase/app";
@@ -26,7 +27,7 @@ function getFirestoreDb(): Firestore {
     return getFirestore(app);
 }
 
-const app = getFirebaseApp();
-const db = getFirestoreDb();
+// It's better not to export the instances directly to avoid race conditions
+// during the app's startup. Instead, components should call the getter functions.
 
-export { app, db, getFirebaseApp, getFirestoreDb };
+export { getFirebaseApp, getFirestoreDb };

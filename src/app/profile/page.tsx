@@ -13,7 +13,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useCorabo } from '@/contexts/CoraboContext';
-import type { GalleryImage, Transaction } from '@/lib/types';
+import type { GalleryImage, Transaction, Product } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { ReportDialog } from '@/components/ReportDialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -23,6 +23,8 @@ import { Day, type DayProps } from 'react-day-picker';
 import { CampaignDialog } from '@/components/CampaignDialog';
 import { Badge } from '@/components/ui/badge';
 import { SubscriptionDialog } from '@/components/SubscriptionDialog';
+import { ProductGridCard } from '@/components/ProductGridCard';
+import { ProductDetailsDialog } from '@/components/ProductDetailsDialog';
 
 
 export default function ProfilePage() {
@@ -37,7 +39,7 @@ export default function ProfilePage() {
 
   const isProvider = currentUser.type === 'provider';
   const isProductProvider = isProvider && currentUser.profileSetupData?.offerType === 'product';
-  const providerProductsCount = isProductProvider ? products.filter(p => p.providerId === currentUser.id).length : 0;
+  const providerProducts = isProductProvider ? products.filter(p => p.providerId === currentUser.id) : [];
   
   const completedTransactions = transactions.filter(
     tx => tx.providerId === currentUser.id && (tx.status === 'Pagado' || tx.status === 'Resuelto')
@@ -56,7 +58,9 @@ export default function ProfilePage() {
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [isProductDetailsDialogOpen, setIsProductDetailsDialogOpen] = useState(false);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [isCampaignDialogOpen, setIsCampaignDialogOpen] = useState(false);
   const [_, setForceRerender] = useState(0);
@@ -91,9 +95,9 @@ export default function ProfilePage() {
     const file = event.target.files?.[0];
     if (file) {
         const reader = new FileReader();
-        reader.onloadend = () => {
+        reader.onloadend = async () => {
             const newImageUrl = reader.result as string;
-            updateUserProfileImage(currentUser.id, newImageUrl);
+            await updateUserProfileImage(currentUser.id, newImageUrl);
              toast({
                 title: "¡Foto de Perfil Actualizada!",
                 description: "Tu nueva foto de perfil está visible.",
@@ -165,6 +169,12 @@ export default function ProfilePage() {
     setSelectedImage(image);
     setIsDetailsDialogOpen(true);
   }
+  
+  const openProductDetailsDialog = (product: Product) => {
+    setSelectedProduct(product);
+    setIsProductDetailsDialogOpen(true);
+  };
+
 
   const handleStarClick = () => {
     if (isLiked) {
@@ -176,12 +186,12 @@ export default function ProfilePage() {
   };
 
   const handleShareClick = async () => {
-    const currentImage = currentUser.gallery && currentUser.gallery.length > 0 ? currentUser.gallery[currentImageIndex] : null;
-    if (!currentImage) return;
+    const currentItem = isProductProvider ? providerProducts[0] : (currentUser.gallery && currentUser.gallery.length > 0 ? currentUser.gallery[currentImageIndex] : null);
+    if (!currentItem) return;
 
     const shareData = {
-      title: `Mira esta publicación de ${currentUser.name}`,
-      text: `${currentImage.alt}: ${currentImage.description}`,
+      title: `Mira esto de ${currentUser.name}`,
+      text: 'description' in currentItem ? currentItem.description : '',
       url: window.location.href, // Shares the URL of the current profile page
     };
 
@@ -354,7 +364,7 @@ export default function ProfilePage() {
               {isProvider && (
                   isProductProvider ? (
                       <div className="flex-1">
-                          <p className="font-semibold text-foreground">{providerProductsCount}</p>
+                          <p className="font-semibold text-foreground">{providerProducts.length}</p>
                           <p>Productos</p>
                       </div>
                   ) : (
@@ -389,131 +399,161 @@ export default function ProfilePage() {
           </header>
           
           <main className="space-y-4">
-            <Card className="rounded-2xl overflow-hidden shadow-lg">
-              <CardContent className="p-0">
-                <div 
-                  className="relative group cursor-pointer"
-                  onTouchStart={gallery.length > 0 ? onTouchStart : undefined}
-                  onTouchMove={gallery.length > 0 ? onTouchMove : undefined}
-                  onTouchEnd={gallery.length > 0 ? onTouchEnd : undefined}
-                  onDoubleClick={currentImage ? handleImageDoubleClick : undefined}
-                >
-                  {currentImage ? (
-                    <>
-                      <Image
-                        src={currentImage.src}
-                        alt={currentImage.alt}
-                        width={600}
-                        height={400}
-                        className="rounded-t-2xl object-cover w-full aspect-[4/3] transition-opacity duration-300"
-                        data-ai-hint="professional workspace"
-                        key={currentImage.src} 
-                      />
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="absolute top-2 left-2 z-10 text-white bg-black/20 hover:bg-black/40 rounded-full h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => setIsReportDialogOpen(true)}
-                      >
-                        <Flag className="w-4 h-4" />
-                      </Button>
-                      {isProvider && isPromotionActiveOnCurrentImage && currentImage.promotion && (
-                          <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-md shadow-lg">
-                              {currentImage.promotion.text}
-                          </div>
-                      )}
-                      <Button 
-                          onClick={handlePrev}
-                          variant="ghost" 
-                          size="icon" 
-                          className="absolute top-1/2 left-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 hidden md:flex group-hover:flex"
-                      >
-                          <ChevronLeft className="h-5 w-5" />
-                      </Button>
-                      <Button 
-                          onClick={handleNext}
-                          variant="ghost" 
-                          size="icon" 
-                          className="absolute top-1/2 right-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 hidden md:flex group-hover:flex"
-                      >
-                          <ChevronRight className="h-5 w-5" />
-                      </Button>
-                      
-                      <div className="absolute bottom-2 right-2 flex flex-col items-end gap-2 text-white">
-                        <div className="flex flex-col items-center">
-                            <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={handleStarClick}>
-                                <Star className={cn("w-5 h-5", isLiked && "fill-yellow-400 text-yellow-400")} />
-                            </Button>
-                            <span className="text-xs font-bold mt-1 drop-shadow-md">{(starCount / 1000).toFixed(1)}k</span>
-                        </div>
-                        <div className="flex flex-col items-center">
-                            <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={() => openDetailsDialog(currentImage)}>
-                                <MessageCircle className="w-5 h-5" />
-                            </Button>
-                            <span className="text-xs font-bold mt-1 drop-shadow-md">{(messageCount / 1000).toFixed(1)}k</span>
-                        </div>
-                        <div className="flex flex-col items-center">
-                            <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={handleShareClick}>
-                                <Send className="w-5 h-5" />
-                            </Button>
-                            <span className="text-xs font-bold mt-1 drop-shadow-md">{shareCount}</span>
-                        </div>
-                    </div>
-                    </>
-                  ) : (
-                    <div className="w-full aspect-[4/3] bg-muted flex flex-col items-center justify-center text-center p-4">
-                          <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
-                          <h3 className="font-bold text-lg text-foreground">
-                            Tu vitrina está vacía
-                          </h3>
-                          <p className="text-muted-foreground text-sm">
-                            Haz clic en el botón (+) en el pie de página para añadir tu primera publicación.
-                          </p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="p-4 grid grid-cols-3 gap-2">
-                    {gallery.length > 0 ? (
-                      gallery.map((thumb, index) => (
-                          <div 
-                              key={index} 
-                              className="relative aspect-square group cursor-pointer"
-                              onClick={() => setCurrentImageIndex(index)}
-                              onDoubleClick={() => openDetailsDialog(thumb)}
-                          >
-                          <Image
-                              src={thumb.src}
-                              alt={thumb.alt}
-                              fill
-                              className={cn(
-                                  "rounded-lg object-cover transition-all duration-200",
-                                  currentImageIndex === index
-                                      ? "ring-2 ring-primary ring-offset-2" 
-                                      : "ring-0 group-hover:opacity-80"
-                              )}
-                              data-ai-hint="product image"
-                          />
-                          {isProvider && thumb.promotion && new Date(thumb.promotion.expires) > new Date() && (
-                            <div className="absolute top-1 left-1 bg-red-500 text-white text-[10px] font-bold px-1 rounded-sm shadow-lg">
-                              PROMO
+             {isProductProvider ? (
+                // PRODUCT VIEW
+                <Card className="rounded-2xl overflow-hidden shadow-lg">
+                    <CardContent className="p-2">
+                        {providerProducts.length > 0 ? (
+                           <div className='grid grid-cols-3 gap-1'>
+                            {providerProducts.map(product => (
+                                <ProductGridCard 
+                                    key={product.id} 
+                                    product={product}
+                                    onDoubleClick={() => openProductDetailsDialog(product)}
+                                />
+                            ))}
+                           </div>
+                        ) : (
+                           <div className="w-full aspect-video bg-muted flex flex-col items-center justify-center text-center p-4 rounded-lg">
+                                <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
+                                <h3 className="font-bold text-lg text-foreground">
+                                    Tu vitrina de productos está vacía
+                                </h3>
+                                <p className="text-muted-foreground text-sm">
+                                    Haz clic en el botón (+) en el pie de página para añadir tu primer producto.
+                                </p>
+                           </div>
+                        )}
+                    </CardContent>
+                </Card>
+            ) : (
+                // GALLERY (SERVICE) VIEW
+                <Card className="rounded-2xl overflow-hidden shadow-lg">
+                <CardContent className="p-0">
+                    <div 
+                    className="relative group cursor-pointer"
+                    onTouchStart={gallery.length > 0 ? onTouchStart : undefined}
+                    onTouchMove={gallery.length > 0 ? onTouchMove : undefined}
+                    onTouchEnd={gallery.length > 0 ? onTouchEnd : undefined}
+                    onDoubleClick={currentImage ? handleImageDoubleClick : undefined}
+                    >
+                    {currentImage ? (
+                        <>
+                        <Image
+                            src={currentImage.src}
+                            alt={currentImage.alt}
+                            width={600}
+                            height={400}
+                            className="rounded-t-2xl object-cover w-full aspect-[4/3] transition-opacity duration-300"
+                            data-ai-hint="professional workspace"
+                            key={currentImage.src} 
+                        />
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="absolute top-2 left-2 z-10 text-white bg-black/20 hover:bg-black/40 rounded-full h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => setIsReportDialogOpen(true)}
+                        >
+                            <Flag className="w-4 h-4" />
+                        </Button>
+                        {isProvider && isPromotionActiveOnCurrentImage && currentImage.promotion && (
+                            <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-md shadow-lg">
+                                {currentImage.promotion.text}
                             </div>
-                          )}
-                            {isProvider && thumb.campaignId && (
-                            <div className="absolute top-1 right-1 bg-purple-500 text-white text-[10px] font-bold px-1 rounded-sm shadow-lg">
-                              <Megaphone className="w-3 h-3"/>
+                        )}
+                        <Button 
+                            onClick={handlePrev}
+                            variant="ghost" 
+                            size="icon" 
+                            className="absolute top-1/2 left-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 hidden md:flex group-hover:flex"
+                        >
+                            <ChevronLeft className="h-5 w-5" />
+                        </Button>
+                        <Button 
+                            onClick={handleNext}
+                            variant="ghost" 
+                            size="icon" 
+                            className="absolute top-1/2 right-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 hidden md:flex group-hover:flex"
+                        >
+                            <ChevronRight className="h-5 w-5" />
+                        </Button>
+                        
+                        <div className="absolute bottom-2 right-2 flex flex-col items-end gap-2 text-white">
+                            <div className="flex flex-col items-center">
+                                <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={handleStarClick}>
+                                    <Star className={cn("w-5 h-5", isLiked && "fill-yellow-400 text-yellow-400")} />
+                                </Button>
+                                <span className="text-xs font-bold mt-1 drop-shadow-md">{(starCount / 1000).toFixed(1)}k</span>
                             </div>
-                          )}
-                          </div>
-                      ))
+                            <div className="flex flex-col items-center">
+                                <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={() => openDetailsDialog(currentImage)}>
+                                    <MessageCircle className="w-5 h-5" />
+                                </Button>
+                                <span className="text-xs font-bold mt-1 drop-shadow-md">{(messageCount / 1000).toFixed(1)}k</span>
+                            </div>
+                            <div className="flex flex-col items-center">
+                                <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={handleShareClick}>
+                                    <Send className="w-5 h-5" />
+                                </Button>
+                                <span className="text-xs font-bold mt-1 drop-shadow-md">{shareCount}</span>
+                            </div>
+                        </div>
+                        </>
                     ) : (
-                      <p className="col-span-3 text-center text-muted-foreground py-8">
-                        No hay publicaciones en tu galería.
-                      </p>
+                        <div className="w-full aspect-[4/3] bg-muted flex flex-col items-center justify-center text-center p-4">
+                            <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
+                            <h3 className="font-bold text-lg text-foreground">
+                                Tu vitrina está vacía
+                            </h3>
+                            <p className="text-muted-foreground text-sm">
+                                Haz clic en el botón (+) en el pie de página para añadir tu primera publicación.
+                            </p>
+                        </div>
                     )}
-                </div>
-              </CardContent>
-            </Card>
+                    </div>
+
+                    <div className="p-4 grid grid-cols-3 gap-2">
+                        {gallery.length > 0 ? (
+                        gallery.map((thumb, index) => (
+                            <div 
+                                key={index} 
+                                className="relative aspect-square group cursor-pointer"
+                                onClick={() => setCurrentImageIndex(index)}
+                                onDoubleClick={() => openDetailsDialog(thumb)}
+                            >
+                            <Image
+                                src={thumb.src}
+                                alt={thumb.alt}
+                                fill
+                                className={cn(
+                                    "rounded-lg object-cover transition-all duration-200",
+                                    currentImageIndex === index
+                                        ? "ring-2 ring-primary ring-offset-2" 
+                                        : "ring-0 group-hover:opacity-80"
+                                )}
+                                data-ai-hint="product image"
+                            />
+                            {isProvider && thumb.promotion && new Date(thumb.promotion.expires) > new Date() && (
+                                <div className="absolute top-1 left-1 bg-red-500 text-white text-[10px] font-bold px-1 rounded-sm shadow-lg">
+                                PROMO
+                                </div>
+                            )}
+                                {isProvider && thumb.campaignId && (
+                                <div className="absolute top-1 right-1 bg-purple-500 text-white text-[10px] font-bold px-1 rounded-sm shadow-lg">
+                                <Megaphone className="w-3 h-3"/>
+                                </div>
+                            )}
+                            </div>
+                        ))
+                        ) : (
+                        <p className="col-span-3 text-center text-muted-foreground py-8">
+                            No hay publicaciones en tu galería.
+                        </p>
+                        )}
+                    </div>
+                </CardContent>
+                </Card>
+            )}
           </main>
         </div>
       </div>
@@ -529,6 +569,13 @@ export default function ProfilePage() {
           onOpenChange={setIsDetailsDialogOpen}
           gallery={[selectedImage]}
           owner={currentUser}
+        />
+      )}
+      {selectedProduct && (
+        <ProductDetailsDialog
+            isOpen={isProductDetailsDialogOpen}
+            onOpenChange={setIsProductDetailsDialogOpen}
+            product={selectedProduct}
         />
       )}
       {isProvider && (
