@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useRef, ChangeEvent } from 'react';
@@ -47,7 +46,7 @@ const banks = [
 
 
 export default function TransactionsSettingsPage() {
-    const { currentUser, activateTransactions, autoVerifyIdWithAI, setIdVerificationPending } = useCorabo();
+    const { currentUser, activateTransactions, autoVerifyIdWithAI, setIdVerificationPending, sendMessage } = useCorabo();
     const { toast } = useToast();
     const router = useRouter();
     const [step, setStep] = useState(1);
@@ -117,6 +116,12 @@ export default function TransactionsSettingsPage() {
         } finally {
             setIsVerifyingId(false);
         }
+    };
+
+    const handleContactSupport = () => {
+        const supportMessage = "Hola, necesito ayuda para corregir mis datos de registro de identidad. Cometí un error al ingresarlos.";
+        const conversationId = sendMessage('corabo-admin', supportMessage);
+        router.push(`/messages/${conversationId}`);
     };
 
     const handleVerifyAccount = () => {
@@ -196,7 +201,7 @@ export default function TransactionsSettingsPage() {
                                     <AlertCircle className="h-4 w-4" />
                                     <AlertTitle>Error de Verificación</AlertTitle>
                                     <AlertDescription>
-                                        <p>{idVerificationError} <Button variant="link" className="p-0 h-auto text-current underline">contacta a soporte.</Button></p>
+                                        {idVerificationError} <Button variant="link" className="p-0 h-auto text-current underline" onClick={handleContactSupport}>contacta a soporte.</Button>
                                     </AlertDescription>
                                 </Alert>
                             )}
