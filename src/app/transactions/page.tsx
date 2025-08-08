@@ -37,6 +37,7 @@ import { Day, type DayProps } from 'react-day-picker';
 import { cn } from "@/lib/utils";
 import { credicoraLevels } from "@/lib/types";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ActivationWarning } from "@/components/ActivationWarning";
 
 
 function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary: () => void, currentView: string }) {
@@ -577,16 +578,15 @@ export default function TransactionsPage() {
             
             <main className="container py-6" onClick={handleInactiveClick}>
                  {isModuleActive ? renderContent() : (
-                    <div className="text-center py-20 cursor-pointer">
-                        <Wallet className="mx-auto h-16 w-16 text-muted-foreground" />
-                        <h2 className="mt-4 text-2xl font-semibold">Módulo Desactivado</h2>
-                        <p className="mt-2 text-muted-foreground">
-                            Para ver tu registro de transacciones, activa el módulo desde el menú de Ajustes.
-                        </p>
-                        <Button className="mt-6" onClick={(e) => { e.stopPropagation(); navigateToSettings(); }}>
-                            <Info className="w-4 h-4 mr-2"/>
-                            Activar Módulo
-                        </Button>
+                    <div className="space-y-4">
+                        <ActivationWarning userType={currentUser.type} />
+                        <div className="text-center py-12 cursor-pointer opacity-50">
+                            <Wallet className="mx-auto h-16 w-16 text-muted-foreground" />
+                            <h2 className="mt-4 text-2xl font-semibold">Módulo Desactivado</h2>
+                            <p className="mt-2 text-muted-foreground">
+                                Activa el módulo para ver tu registro de transacciones.
+                            </p>
+                        </div>
                     </div>
                 )}
             </main>

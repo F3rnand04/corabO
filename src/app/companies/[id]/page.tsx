@@ -30,6 +30,7 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { credicoraLevels } from '@/lib/types';
+import { ActivationWarning } from '@/components/ActivationWarning';
 
 export default function CompanyProfilePage() {
   const params = useParams();
@@ -118,7 +119,7 @@ export default function CompanyProfilePage() {
   const potentialFinancing = subtotal * financingPercentage; // Financing only on products
   const financedAmount = useCredicora ? Math.min(potentialFinancing, creditLimit) : 0;
   const productInitialPayment = subtotal - financedAmount;
-  const totalToPayToday = productInitialPayment + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
+  const totalToPayToday = productInitialPayment + ((includeDelivery || isOnlyDelivery) ? deliveryCost : 0);
   const installmentAmount = financedAmount > 0 ? financedAmount / credicoraDetails.installments : 0;
 
   if (!provider) {
@@ -318,6 +319,13 @@ export default function CompanyProfilePage() {
     <>
       <div className="bg-background min-h-screen">
         <div className="container mx-auto px-0 md:px-2 max-w-2xl pb-24">
+          
+          {!isCurrentUserTransactionReady && currentUser.type === 'client' && (
+             <div className="p-2">
+                <ActivationWarning userType="client" />
+             </div>
+          )}
+
           <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm pt-4 px-2">
             {/* Profile Header */}
             <div className="flex items-center space-x-4">

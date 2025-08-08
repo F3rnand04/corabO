@@ -5,12 +5,11 @@ import { useState } from 'react';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { AlertCircle, ChevronLeft, Search, SquarePen } from 'lucide-react';
+import { ChevronLeft, Search, SquarePen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ConversationCard } from '@/components/ConversationCard';
 import type { Conversation } from '@/lib/types';
-import Link from 'next/link';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { ActivationWarning } from '@/components/ActivationWarning';
 
 
 function MessagesHeader() {
@@ -43,7 +42,13 @@ export default function MessagesPage() {
         if (!currentUser) return false;
         const otherParticipantId = convo.participantIds.find(pId => pId !== currentUser.id);
         const otherParticipant = users.find(u => u.id === otherParticipantId);
-        if (!otherParticipant) return false;
+        if (!otherParticipant) {
+             // Handle system conversations
+            if (convo.id.includes('corabo-admin')) {
+                return 'corabo admin'.includes(searchQuery.toLowerCase());
+            }
+            return false;
+        };
 
         const lastMessage = convo.messages[convo.messages.length - 1];
         
@@ -61,16 +66,7 @@ export default function MessagesPage() {
             <MessagesHeader />
              <div className="container py-4 px-4 space-y-4">
                 {isClientWithInactiveTransactions && (
-                    <Alert>
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle className="font-semibold">¡Activa tu registro!</AlertTitle>
-                        <AlertDescription className="flex justify-between items-center">
-                            <span>Disfruta de compras seguras y con seguimiento.</span>
-                             <Button variant="link" size="sm" asChild className="p-0 h-auto text-current font-bold">
-                                <Link href="/transactions">Activar ahora &rarr;</Link>
-                             </Button>
-                        </AlertDescription>
-                    </Alert>
+                    <ActivationWarning userType='client' />
                 )}
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
