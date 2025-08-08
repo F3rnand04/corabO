@@ -13,7 +13,7 @@ import { credicoraLevels } from '@/lib/types';
 // Import necessary firebase services directly
 import { getAuth, signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, GoogleAuthProvider, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { app, db } from '@/lib/firebase'; // Import the initialized app and db
-import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, enableIndexedDbPersistence } from 'firebase/firestore';
+import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc } from 'firebase/firestore';
 import { createCampaign } from '@/ai/flows/campaign-flow';
 import { acceptProposal as acceptProposalFlow, sendMessage as sendMessageFlow } from '@/ai/flows/message-flow';
 import * as TransactionFlows from '@/ai/flows/transaction-flow';
@@ -129,32 +129,17 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [dailyQuotes, setDailyQuotes] = useState<Record<string, DailyQuote[]>>({});
   
   const auth = getAuth(app);
-  
-  // This effect runs once to enable persistence.
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-        enableIndexedDbPersistence(db)
-            .catch((err) => {
-                if (err.code === 'failed-precondition') {
-                    console.warn("Firestore persistence failed: Multiple tabs open.");
-                } else if (err.code === 'unimplemented') {
-                    console.warn("Firestore persistence failed: Browser does not support persistence.");
-                }
-            });
-    }
-  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        const userDocRef = doc(db, "users", firebaseUser.uid);
+        const userDocRef = doc(db, 'users', firebaseUser.uid);
         try {
           const userDocSnap = await getDoc(userDocRef);
-
           if (userDocSnap.exists()) {
             setCurrentUser(userDocSnap.data() as User);
           } else {
-            // This is a new user
+            // New user: create a basic profile first.
             const newUser: User = {
               id: firebaseUser.uid,
               name: firebaseUser.displayName?.split(' ')[0] || 'Usuario',
@@ -163,13 +148,13 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
               birthDate: '',
               email: firebaseUser.email || '',
               profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
-              type: 'client', // Default type
+              type: 'client',
               reputation: 0,
               phone: '',
               emailValidated: firebaseUser.emailVerified,
               phoneValidated: false,
               isGpsActive: true,
-              isInitialSetupComplete: false,
+              isInitialSetupComplete: false, // <-- This is the key change
               gallery: [],
               credicoraLevel: 1,
               credicoraLimit: 150,
@@ -181,9 +166,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             setCurrentUser(newUser);
           }
         } catch (error) {
-            console.error("FirebaseError on getDoc:", error);
-            await signOut(auth);
-            setCurrentUser(null);
+          console.error("FirebaseError on getDoc:", error);
+          await signOut(auth);
+          setCurrentUser(null);
         }
       } else {
         setCurrentUser(null);
@@ -191,7 +176,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       setIsLoadingAuth(false);
     });
     return () => unsubscribe();
-  }, [auth, router]);
+  }, [auth]);
 
 
   useEffect(() => {
