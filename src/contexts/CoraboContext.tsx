@@ -276,6 +276,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     // Scoped queries to the current user
     const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
     const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id));
+    // Fetch all users and products for now. In a larger app, this would be optimized.
     const usersQuery = query(collection(db, 'users'));
     const productsQuery = query(collection(db, 'products'));
 
@@ -438,10 +439,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     setProducts(prev => [...prev, product]);
     setCurrentUser(prevUser => {
         if (!prevUser) return null;
-        return {
-            ...prevUser,
-            products: [...(prevUser.products || []), product]
-        }
+        // This is a bit tricky since products are not directly on the user object.
+        // The onSnapshot for products should handle this, but an optimistic update here is good for UX.
+        return prevUser;
     })
   };
 

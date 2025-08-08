@@ -429,9 +429,67 @@ export default function ProfilePage() {
                          </div>
                       )}
                   </TabsContent>
-                  <TabsContent value="publications">
-                      <p className="text-center text-muted-foreground py-8">Vista de publicaciones en construcción.</p>
-                  </TabsContent>
+                   <TabsContent value="publications">
+                        <Card className="rounded-2xl overflow-hidden shadow-lg mt-2">
+                            <CardContent className="p-0">
+                                {gallery.length > 0 ? (
+                                    <>
+                                        <div 
+                                            className="relative group cursor-pointer"
+                                            onTouchStart={onTouchStart}
+                                            onTouchMove={onTouchMove}
+                                            onTouchEnd={onTouchEnd}
+                                            onDoubleClick={handleImageDoubleClick}
+                                        >
+                                            <Image
+                                                src={currentImage!.src}
+                                                alt={currentImage!.alt}
+                                                width={600}
+                                                height={400}
+                                                className="rounded-t-2xl object-cover w-full aspect-[4/3] transition-opacity duration-300"
+                                                data-ai-hint="professional workspace"
+                                                key={currentImage!.src} 
+                                            />
+                                            {/* ... Other buttons for image ... */}
+                                        </div>
+                                        <div className="p-2 grid grid-cols-3 gap-1">
+                                            {gallery.map((thumb, index) => (
+                                                <div 
+                                                    key={index} 
+                                                    className="relative aspect-square cursor-pointer group"
+                                                    onClick={() => setCurrentImageIndex(index)}
+                                                    onDoubleClick={() => openDetailsDialog(thumb)}
+                                                >
+                                                <Image
+                                                    src={thumb.src}
+                                                    alt={thumb.alt}
+                                                    fill
+                                                    className={cn(
+                                                        "rounded-lg object-cover transition-all duration-200",
+                                                        currentImageIndex === index 
+                                                            ? "ring-2 ring-primary ring-offset-2" 
+                                                            : "ring-0 group-hover:opacity-80"
+                                                    )}
+                                                    data-ai-hint="product image"
+                                                />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="w-full aspect-[4/3] bg-muted flex flex-col items-center justify-center text-center p-4">
+                                        <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
+                                        <h3 className="font-bold text-lg text-foreground">
+                                            Tu galería está vacía
+                                        </h3>
+                                        <p className="text-muted-foreground text-sm">
+                                            Haz clic en el botón (+) en el pie de página para añadir tu primera publicación.
+                                        </p>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
                 </Tabs>
             ) : (
                 // GALLERY (SERVICE) VIEW
@@ -519,7 +577,7 @@ export default function ProfilePage() {
                     )}
                     </div>
 
-                    <div className="p-4 grid grid-cols-3 gap-2">
+                    <div className="p-2 grid grid-cols-3 gap-1">
                         {gallery.length > 0 ? (
                         gallery.map((thumb, index) => (
                             <div 
@@ -595,5 +653,6 @@ export default function ProfilePage() {
     </>
   );
 }
+
 
 

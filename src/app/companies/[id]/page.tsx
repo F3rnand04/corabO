@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -74,7 +75,7 @@ export default function CompanyProfilePage() {
   const [starCount, setStarCount] = useState(Math.floor(Math.random() * 5000));
   const [isLiked, setIsLiked] = useState(false);
   const [shareCount, setShareCount] = useState(Math.floor(Math.random() * 1000));
-  const [messageCount, setMessageCount] = useState(Math.floor(Math.random() * 2000));
+  const [messageCount, setMessageCount] = useState(0);
   const [activeTab, setActiveTab] = useState('comentarios');
   const [gpsReady, setGpsReady] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
