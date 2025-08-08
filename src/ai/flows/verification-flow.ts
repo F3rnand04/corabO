@@ -71,12 +71,18 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
     const normalizeId = (str: string) => str.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
     const normalizeName = (str: string) => str.trim().toLowerCase();
 
+    // Compare IDs by normalizing both the extracted ID and the record ID
     const idMatch = normalizeId(output.idNumber) === normalizeId(input.idInRecord);
     
     // More flexible name matching
-    const extractedNameParts = normalizeName(output.fullName).split(' ');
-    const recordName = normalizeName(input.nameInRecord);
-    const nameMatch = extractedNameParts.every(part => recordName.includes(part));
+    const extractedNameLower = normalizeName(output.fullName);
+    const recordNameLower = normalizeName(input.nameInRecord);
+
+    // Split the record name into parts (e.g., ["fernando", "infante"])
+    const recordNameParts = recordNameLower.split(' ');
+
+    // Check if every part of the name from our record is present in the name extracted from the ID
+    const nameMatch = recordNameParts.every(part => extractedNameLower.includes(part));
 
     return {
       extractedName: output.fullName,
