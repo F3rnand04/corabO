@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, TouchEvent, useEffect, useRef, ChangeEvent } from 'react';
@@ -362,19 +361,8 @@ export default function ProfilePage() {
                   </div>
               </div>
             </div>
-
-            <div className="flex justify-around text-center text-xs text-muted-foreground pt-4 pb-2">
-                <div className="flex-1">
-                    <p className="font-semibold text-foreground">{gallery.length}</p>
-                </div>
-                {isProvider && (
-                    <div className="flex-1">
-                        <p className="font-semibold text-foreground">{isProductProvider ? providerProducts.length : completedTransactions}</p>
-                    </div>
-                )}
-            </div>
             
-            <div className="flex justify-end gap-2 py-2">
+            <div className="flex justify-end gap-2 py-4">
               {isProvider && (
                 <Button 
                   variant="outline" 
@@ -401,8 +389,8 @@ export default function ProfilePage() {
                 // PRODUCT VIEW WITH TABS
                 <Tabs defaultValue="products" className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="products">Productos</TabsTrigger>
-                    <TabsTrigger value="publications">Publicaciones</TabsTrigger>
+                    <TabsTrigger value="products">Productos <span className="ml-2 font-bold">({providerProducts.length})</span></TabsTrigger>
+                    <TabsTrigger value="publications">Publicaciones <span className="ml-2 font-bold">({gallery.length})</span></TabsTrigger>
                   </TabsList>
                   <TabsContent value="products">
                       {providerProducts.length > 0 ? (
@@ -651,3 +639,5 @@ export default function ProfilePage() {
     </>
   );
 }
+
+    
