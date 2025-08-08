@@ -39,11 +39,11 @@ export async function autoVerifyIdWithAI(input: VerificationInput): Promise<Veri
 
 const verificationPrompt = ai.definePrompt({
     name: 'idVerificationPrompt',
-    input: { schema: z.object({ documentImageUrl: z.string() }) },
+    input: { schema: VerificationInputSchema },
     output: { 
         schema: z.object({
-            fullName: z.string().describe("The full name of the person on the ID, including all given names and surnames."),
-            idNumber: z.string().describe("The full identification number, including any prefix like 'V-'."),
+            extractedName: z.string().describe("The full name of the person on the ID, including all given names and surnames."),
+            extractedId: z.string().describe("The full identification number, including any prefix like 'V-'."),
         })
     },
     prompt: `You are an expert document analyst. Analyze the provided image of an identification document.
@@ -61,34 +61,40 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
   },
   async (input) => {
     
-    const { output } = await verificationPrompt({ documentImageUrl: input.documentImageUrl });
+    const { output } = await verificationPrompt({ 
+        ...input,
+        documentImageUrl: input.documentImageUrl 
+    });
 
     if (!output) {
       throw new Error('AI model did not return an output.');
     }
     
-    // Normalize strings for better comparison
+    // 1. Normalize ID numbers for a robust comparison
+    // This removes all non-alphanumeric characters and converts to lowercase.
+    // e.g., "V 17.001.955" becomes "v17001955"
+    // e.g., "V-17001955" also becomes "v17001955"
     const normalizeId = (str: string) => str.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-    const normalizeName = (str: string) => str.trim().toLowerCase();
-
-    // Compare IDs by normalizing both the extracted ID and the record ID
-    const idMatch = normalizeId(output.idNumber) === normalizeId(input.idInRecord);
     
-    // More flexible name matching
-    const extractedNameLower = normalizeName(output.fullName);
-    const recordNameLower = normalizeName(input.nameInRecord);
+    const idMatch = normalizeId(output.extractedId) === normalizeId(input.idInRecord);
+    
+    // 2. Normalize names for flexible comparison
+    const normalizeName = (str: string) => str.trim().toLowerCase();
+    
+    const extractedNameLower = normalizeName(output.extractedName); // e.g., "fernando antonio"
+    const recordNameParts = normalizeName(input.nameInRecord).split(' '); // e.g., ["fernando", "infante"]
 
-    // Split the record name into parts (e.g., ["fernando", "infante"])
-    const recordNameParts = recordNameLower.split(' ');
-
-    // Check if every part of the name from our record is present in the name extracted from the ID
+    // 3. Check if every part of the name from our record is present in the name extracted from the ID
+    // This is more flexible. It checks if "fernando" is in "fernando antonio" AND if "infante" is in "fernando antonio".
+    // This will correctly fail because "infante" is not in the document.
     const nameMatch = recordNameParts.every(part => extractedNameLower.includes(part));
 
     return {
-      extractedName: output.fullName,
-      extractedId: output.idNumber,
+      extractedName: output.extractedName,
+      extractedId: output.extractedId,
       nameMatch,
       idMatch,
     };
   }
 );
+
