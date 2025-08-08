@@ -4,56 +4,94 @@
 
 import { useCorabo } from "@/contexts/CoraboContext";
 import { ProviderCard } from "@/components/ProviderCard";
-import type { User } from "@/lib/types";
-import { useMemo } from "react";
+import type { User, GalleryImage } from "@/lib/types";
+import { useMemo, useEffect, useState } from "react";
+
+const mainCategories = [
+  'Hogar y Reparaciones', 
+  'Tecnología y Soporte', 
+  'Automotriz y Repuestos', 
+  'Alimentos y Restaurantes', 
+  'Salud y Bienestar', 
+  'Educación', 
+  'Eventos', 
+  'Belleza', 
+  'Fletes y Delivery'
+];
 
 export default function HomePage() {
   const { users, searchQuery, feedView } = useCorabo();
+  const [allPublications, setAllPublications] = useState<(GalleryImage & { provider: User })[]>([]);
 
-  const allProviders = useMemo(() => users.filter(u => u.type === 'provider' && !u.isPaused), [users]);
+  useEffect(() => {
+    const publications = users
+      .filter(u => u.type === 'provider')
+      .flatMap(p => (p.gallery || []).map(g => ({ ...g, provider: p })))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    setAllPublications(publications);
+  }, [users]);
 
-  const getFilteredProviders = () => {
-     const lowerCaseQuery = searchQuery.toLowerCase();
-     
-     const filterLogic = (provider: User) => {
+
+  const getFilteredPublications = () => {
+    const lowerCaseQuery = searchQuery.toLowerCase();
+    
+    // Determine if the search query is one of the main categories
+    const isCategorySearch = mainCategories.some(cat => cat.toLowerCase() === lowerCaseQuery);
+
+    const filterLogic = (publication: (GalleryImage & { provider: User })) => {
+      const provider = publication.provider;
+      
+      if (isCategorySearch) {
+        // Strict category filtering
+        return provider.profileSetupData?.categories?.some(cat => cat.toLowerCase() === lowerCaseQuery);
+      } else {
+        // General text search
+        const publicationMatch = publication.description.toLowerCase().includes(lowerCaseQuery);
         const providerName = provider.profileSetupData?.useUsername 
             ? provider.profileSetupData.username 
             : provider.name;
-            
         const providerNameMatch = providerName?.toLowerCase().includes(lowerCaseQuery);
         const specialtyMatch = provider.profileSetupData?.specialty?.toLowerCase().includes(lowerCaseQuery);
-        const categoryMatch = provider.profileSetupData?.categories?.some(cat => cat.toLowerCase().includes(lowerCaseQuery));
+        const categoryKeywordMatch = provider.profileSetupData?.categories?.some(cat => cat.toLowerCase().includes(lowerCaseQuery));
 
-        return providerNameMatch || specialtyMatch || categoryMatch;
-     }
+        return publicationMatch || providerNameMatch || specialtyMatch || categoryKeywordMatch;
+      }
+    }
      
-     // Determine the target providers based on the current feed view
-     const targetProviders = feedView === 'empresas' 
-        ? allProviders.filter(p => p.profileSetupData?.providerType === 'company')
-        : allProviders.filter(p => p.profileSetupData?.providerType !== 'company'); // 'servicios' are professionals/individuals
+     // Determine the target publications based on the current feed view (servicios vs empresas)
+     const targetPublications = allPublications.filter(p => {
+        const providerType = p.provider.profileSetupData?.providerType || 'professional';
+        if (feedView === 'empresas') {
+            return providerType === 'company';
+        }
+        return providerType !== 'company'; // 'servicios' are professionals/individuals
+     });
         
     if (lowerCaseQuery.trim() === '') {
-        // Sort by GPS status when there is no search query
-        return targetProviders.sort((a, b) => (b.isGpsActive ? 1 : 0) - (a.isGpsActive ? 1 : 0));
+        return targetPublications;
     }
 
-    // Filter and then sort
-    return targetProviders.filter(filterLogic).sort((a, b) => (b.isGpsActive ? 1 : 0) - (a.isGpsActive ? 1 : 0));
+    return targetPublications.filter(filterLogic);
   }
 
-  const filteredProviders = getFilteredProviders();
-  const noResultsMessage = feedView === 'empresas' 
-    ? "No se encontraron empresas." 
-    : "No se encontraron servicios.";
+  const filteredPublications = getFilteredPublications();
+
+  const noResultsMessage = () => {
+    const baseMessage = feedView === 'empresas' ? "No se encontraron empresas" : "No se encontraron servicios";
+    if (searchQuery) {
+        return `${baseMessage} para "${searchQuery}".`;
+    }
+    return `${baseMessage}.`;
+  }
 
   return (
     <main className="container py-4 space-y-6">
       <div className="space-y-4">
-        {filteredProviders.length > 0 ? (
-          filteredProviders.map(provider => <ProviderCard key={provider.id} provider={provider} />)
+        {filteredPublications.length > 0 ? (
+          filteredPublications.map(pub => <ProviderCard key={pub.id} publication={pub} />)
         ) : (
           <p className="text-center text-muted-foreground pt-16">
-            {searchQuery ? `No se encontraron resultados para "${searchQuery}".` : noResultsMessage}
+            {noResultsMessage()}
           </p>
         )}
       </div>
