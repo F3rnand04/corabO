@@ -41,6 +41,8 @@ export default function HomePage() {
 
     return rankedFeed.filter(pub => {
         const provider = pub.provider;
+        if (!provider) return false;
+        
         const providerType = provider.profileSetupData?.providerType || 'professional';
 
         // Apply feed view filter first
@@ -80,7 +82,7 @@ export default function HomePage() {
       )}
       <div className="space-y-4">
         {filteredFeed.length > 0 ? (
-          filteredFeed.map(pub => <ProviderCard key={`${pub.provider.id}-${pub.id}`} provider={pub.provider} />)
+          filteredFeed.map(pub => pub.provider ? <ProviderCard key={`${pub.provider.id}-${pub.id}`} provider={pub.provider} /> : null)
         ) : (
           <p className="text-center text-muted-foreground pt-16">
             {noResultsMessage()}

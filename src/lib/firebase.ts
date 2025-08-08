@@ -16,18 +16,31 @@ const firebaseConfig = {
 };
 
 
+let app: FirebaseApp;
+let db: Firestore;
+
+function initializeFirebase() {
+    if (!getApps().length) {
+        app = initializeApp(firebaseConfig);
+    } else {
+        app = getApp();
+    }
+    db = getFirestore(app);
+}
+
+initializeFirebase();
+
 // Function to get the initialized Firebase app instance
 function getFirebaseApp(): FirebaseApp {
-    return !getApps().length ? initializeApp(firebaseConfig) : getApp();
+    if (!app) initializeFirebase();
+    return app;
 }
 
 // Function to get the initialized Firestore instance
 function getFirestoreDb(): Firestore {
-    const app = getFirebaseApp();
-    return getFirestore(app);
+    if (!db) initializeFirebase();
+    return db;
 }
 
-// It's better not to export the instances directly to avoid race conditions
-// during the app's startup. Instead, components should call the getter functions.
 
 export { getFirebaseApp, getFirestoreDb };

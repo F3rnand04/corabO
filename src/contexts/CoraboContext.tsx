@@ -264,44 +264,43 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
 
   useEffect(() => {
-    const db = getFirestoreDb(); // Get DB instance safely
-    if (!db || !currentUser?.id) return; // Ensure db and user are ready
+    const db = getFirestoreDb();
+    if (!db || !currentUser?.id) return;
   
-    // Set default delivery address once user loads
     if (currentUser.profileSetupData?.location) {
         setDeliveryAddress(currentUser.profileSetupData.location);
     }
     
-    const usersQuery = query(collection(db, "users"));
-    const unsubscribeUsers = onSnapshot(usersQuery, (snapshot) => {
-      const usersData = snapshot.docs.map(doc => doc.data() as User);
-      setUsers(usersData);
-    }, (error) => console.error("Error fetching users:", error));
-
-    const productsQuery = query(collection(db, "products"));
-    const unsubscribeProducts = onSnapshot(productsQuery, (snapshot) => {
-      const productsData = snapshot.docs.map(doc => doc.data() as Product);
-      setProducts(productsData);
-    }, (error) => console.error("Error fetching products:", error));
-  
+    // Scoped queries to the current user
     const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
-    const unsubscribeTransactions = onSnapshot(transactionsQuery, (snapshot) => {
-      const transactionsData = snapshot.docs.map(doc => doc.data() as Transaction);
-      setTransactions(transactionsData);
-    }, (error) => console.error("Error fetching transactions:", error));
-    
     const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id));
-    const unsubscribeConversations = onSnapshot(conversationsQuery, (snapshot) => {
-        const conversationsData = snapshot.docs.map(doc => doc.data() as Conversation).sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime());
-        setConversations(conversationsData);
-    }, (error) => console.error("Error fetching conversations:", error));
 
+    // Fetch all users and products once - THIS IS INEFFICIENT & INSECURE for a real app
+    // In a real app, you would fetch users/products by ID as needed.
+    const usersQuery = query(collection(db, 'users'));
+    const productsQuery = query(collection(db, 'products'));
+
+    const unsubUsers = onSnapshot(usersQuery, (snapshot) => {
+        setUsers(snapshot.docs.map(doc => doc.data() as User));
+    });
+
+    const unsubProducts = onSnapshot(productsQuery, (snapshot) => {
+        setProducts(snapshot.docs.map(doc => doc.data() as Product));
+    });
+
+    const unsubTransactions = onSnapshot(transactionsQuery, (snapshot) => {
+      setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
+    });
+    
+    const unsubConversations = onSnapshot(conversationsQuery, (snapshot) => {
+        setConversations(snapshot.docs.map(doc => doc.data() as Conversation).sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()));
+    });
   
     return () => {
-      unsubscribeUsers();
-      unsubscribeProducts();
-      unsubscribeTransactions();
-      unsubscribeConversations();
+      unsubUsers();
+      unsubProducts();
+      unsubTransactions();
+      unsubConversations();
     };
   }, [currentUser]);
 
@@ -437,7 +436,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const db = getFirestoreDb();
     const productRef = doc(db, 'products', product.id);
     await setDoc(productRef, product);
-    // Optimistic UI update
     setProducts(prev => [...prev, product]);
   };
 
@@ -705,7 +703,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     await updateDoc(userRef, {
         gallery: arrayUnion(image)
     });
-    // Optimistically update local state for immediate feedback
     if (currentUser?.id === userId) {
       setCurrentUser(prev => prev ? { ...prev, gallery: [...(prev.gallery || []), image] } : null);
     }
@@ -718,17 +715,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const validateEmail = async (userId: string, emailToValidate: string): Promise<boolean> => {
-    // In a real app, this would use a backend service to send an email.
-    // For this prototype, we simulate the code generation and verification.
     const verificationCode = Math.floor(1000 + Math.random() * 9000).toString();
     console.log(`CÓDIGO DE VERIFICACIÓN PARA ${emailToValidate}: ${verificationCode}`);
     toast({
         title: 'Código de Verificación Enviado',
         description: `Se ha enviado un código a tu correo. (Revisa la consola del navegador para ver el código).`
     });
-    
-    // The actual code comparison happens in `ValidationItem.tsx`.
-    // Here we'd typically store the code server-side. For now, we assume this works.
     return true;
   };
   
