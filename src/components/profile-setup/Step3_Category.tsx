@@ -1,20 +1,19 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { Info } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import type { ProfileSetupData } from '@/lib/types';
 
 
 interface Step3_CategoryProps {
   onBack: () => void;
   onNext: () => void;
-  formData: any;
-  setFormData: (data: any) => void;
+  formData: ProfileSetupData;
+  setFormData: (data: ProfileSetupData) => void;
 }
 
 const allCategories = [
@@ -30,27 +29,27 @@ const allCategories = [
 ];
 
 export default function Step3_Category({ onBack, onNext, formData, setFormData }: Step3_CategoryProps) {
-    const [selectedCategories, setSelectedCategories] = useState<string[]>(formData.categories);
-    const [primaryCategory, setPrimaryCategory] = useState<string | null>(formData.primaryCategory);
-
-    useEffect(() => {
-        setFormData({ ...formData, categories: selectedCategories, primaryCategory });
-    }, [selectedCategories, primaryCategory]);
-
+    const selectedCategories = formData.categories || [];
+    const primaryCategory = formData.primaryCategory;
 
     const handleCategoryToggle = (categoryId: string) => {
         const newSelected = selectedCategories.includes(categoryId)
             ? selectedCategories.filter(c => c !== categoryId)
             : [...selectedCategories, categoryId];
-
-        setSelectedCategories(newSelected);
-
+        
+        let newPrimary = primaryCategory;
         if (newSelected.length === 1) {
-            setPrimaryCategory(newSelected[0]);
+            newPrimary = newSelected[0];
         } else if (!newSelected.includes(primaryCategory || '')) {
-            setPrimaryCategory(null);
+            newPrimary = null;
         }
+
+        setFormData({ ...formData, categories: newSelected, primaryCategory: newPrimary });
     };
+
+    const handlePrimaryCategorySelect = (categoryId: string) => {
+        setFormData({ ...formData, primaryCategory: categoryId });
+    }
     
 
   return (
@@ -97,7 +96,7 @@ export default function Step3_Category({ onBack, onNext, formData, setFormData }
                 <Button 
                     key={catId}
                     variant={primaryCategory === catId ? 'default' : 'outline'}
-                    onClick={() => setPrimaryCategory(catId)}
+                    onClick={() => handlePrimaryCategorySelect(catId)}
                 >
                     {category?.name}
                 </Button>

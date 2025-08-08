@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Separator } from "../ui/separator";
@@ -16,11 +16,13 @@ import { Label } from '../ui/label';
 import { SubscriptionDialog } from '../SubscriptionDialog';
 import { Checkbox } from '../ui/checkbox';
 import Link from 'next/link';
+import type { ProfileSetupData } from '@/lib/types';
+
 
 interface Step6_ReviewProps {
   onBack: () => void;
-  formData: any;
-  setFormData: (data: any) => void;
+  formData: ProfileSetupData;
+  setFormData: (data: ProfileSetupData) => void;
   profileType: 'client' | 'provider';
   goToStep: (step: number) => void;
 }
@@ -41,28 +43,18 @@ const MAX_RADIUS_FREE = 10;
 
 
 export default function Step6_Review({ onBack, formData, setFormData, profileType, goToStep }: Step6_ReviewProps) {
-  const { currentUser, updateFullProfile, setFeedView } = useCorabo();
+  const { currentUser, updateFullProfile } = useCorabo();
   const router = useRouter();
   const { toast } = useToast();
-  const [serviceRadius, setServiceRadius] = useState(formData.serviceRadius || 10);
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
   const [hasAcceptedPolicies, setHasAcceptedPolicies] = useState(false);
-  
-  useEffect(() => {
-    // Sync local state with formData from props
-    setServiceRadius(formData.serviceRadius || 10);
-  }, [formData.serviceRadius]);
-
-  useEffect(() => {
-    // Update parent formData when local slider changes
-    setFormData({ ...formData, serviceRadius });
-  }, [serviceRadius, setFormData]);
 
   const isProvider = profileType === 'provider';
   
   const getCategoryName = (id: string) => allCategories.find(c => c.id === id)?.name || id;
 
   const handleFinish = () => {
+    if (!currentUser) return;
     if (!hasAcceptedPolicies) {
         toast({
             variant: "destructive",
@@ -72,7 +64,7 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
         return;
     }
     
-    updateFullProfile(currentUser.id, formData);
+    updateFullProfile(currentUser.id, formData, profileType);
     
     if (isProvider && !currentUser.isTransactionsActive) {
       toast({
@@ -89,7 +81,8 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
     }
   }
   
-  const isOverFreeRadius = serviceRadius > MAX_RADIUS_FREE && !currentUser.isSubscribed;
+  const serviceRadius = formData.serviceRadius || 10;
+  const isOverFreeRadius = serviceRadius > MAX_RADIUS_FREE && !currentUser?.isSubscribed;
 
   const renderItem = (label: string, value: React.ReactNode, step: number, children?: React.ReactNode) => (
     <div className="flex justify-between items-start py-4">
@@ -103,6 +96,8 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
         </Button>
     </div>
   );
+
+  if (!currentUser) return null;
 
   return (
     <>
@@ -127,7 +122,7 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
                 </div>
               ), 2)}
 
-              {isProvider && formData.categories.length > 0 && renderItem("Categorías", (
+              {isProvider && formData.categories && formData.categories.length > 0 && renderItem("Categorías", (
                 <div className="flex flex-wrap gap-2 pt-1">
                     {formData.categories.map((cat: string) => (
                         <Badge key={cat} variant={cat === formData.primaryCategory ? "default" : "secondary"}>
@@ -139,16 +134,16 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
 
               {renderItem("Datos Personales y de Contacto", (
                 <div className="space-y-2 pt-1 text-sm text-muted-foreground">
-                    <p>Nombre: {formData.name} {formData.lastName}</p>
-                    <p>Cédula: {formData.idNumber}</p>
-                    <p>Fecha de Nacimiento: {formData.birthDate}</p>
+                    <p>Nombre: {currentUser.name} {currentUser.lastName}</p>
+                    <p>Cédula: {currentUser.idNumber}</p>
+                    <p>Fecha de Nacimiento: {currentUser.birthDate}</p>
                     <p className="flex items-center gap-2">
                         {currentUser.emailValidated ? <CheckCircle className="w-4 h-4 text-green-600"/> : <XCircle className="w-4 h-4 text-destructive"/>}
-                        {formData.email}
+                        {currentUser.email}
                     </p>
                     <p className="flex items-center gap-2">
                          {currentUser.phoneValidated ? <CheckCircle className="w-4 h-4 text-green-600"/> : <XCircle className="w-4 h-4 text-destructive"/>}
-                        {formData.phone || 'No especificado'}
+                        {currentUser.phone || 'No especificado'}
                     </p>
                 </div>
               ), 4)}
@@ -186,7 +181,7 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
                                     max={100}
                                     step={5}
                                     value={[serviceRadius]}
-                                    onValueChange={(value) => setServiceRadius(value[0])}
+                                    onValueChange={(value) => setFormData({...formData, serviceRadius: value[0]})}
                                     className={cn(isOverFreeRadius && '[&_.bg-primary]:bg-destructive')}
                                 />
                                 {isOverFreeRadius && (

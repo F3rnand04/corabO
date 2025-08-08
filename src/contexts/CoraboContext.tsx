@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
@@ -80,7 +79,7 @@ interface CoraboState {
   sendPhoneVerification: (userId: string, phone: string) => Promise<void>;
   verifyPhoneCode: (userId: string, code: string) => Promise<boolean>;
   setFeedView: (view: FeedView) => void;
-  updateFullProfile: (userId: string, data: Partial<User & { profileSetupData: ProfileSetupData }>) => Promise<void>;
+  updateFullProfile: (userId: string, data: ProfileSetupData, profileType: 'client' | 'provider') => Promise<void>;
   completeInitialSetup: (userId: string, data: { lastName: string; idNumber: string; birthDate: string }) => Promise<void>;
   subscribeUser: (userId: string, planName: string, amount: number) => void;
   activateTransactions: (userId: string, paymentDetails: any) => void;
@@ -692,8 +691,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const checkout = (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {};
   
   const updateUserProfileImage = (userId: string, imageUrl: string) => {
-    if (!currentUser) return;
-    updateUser(userId, { profileImage: imageUrl });
+     updateUser(userId, { profileImage: imageUrl });
   };
 
   const updateUserProfileAndGallery = (userId: string, imageOrId: GalleryImage | string, isDelete?: boolean) => {};
@@ -759,24 +757,33 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateFullProfile = async (userId: string, data: Partial<User & { profileSetupData: ProfileSetupData }>) => {
+  const updateFullProfile = async (userId: string, data: ProfileSetupData, profileType: 'client' | 'provider') => {
     if (!currentUser) return;
+    
     const wasClient = currentUser.type === 'client';
-    const isNowProvider = data.profileSetupData?.providerType !== undefined;
+    const isNowProvider = profileType === 'provider';
     
     const updates: Partial<User> = {
-      type: isNowProvider ? 'provider' : 'client',
-      profileSetupData: {
-        ...currentUser.profileSetupData,
-        ...data.profileSetupData,
-      },
+        profileSetupData: data,
+        type: profileType,
     };
     
     if (wasClient && isNowProvider) {
       NotificationFlows.sendWelcomeToProviderNotification({ userId });
     }
     
-    await updateUser(userId, updates);
+    // Perform the Firestore update
+    const userDocRef = doc(db, 'users', userId);
+    await updateDoc(userDocRef, updates);
+
+    // Then, update the local state to match
+    setCurrentUser(prevUser => {
+        if (!prevUser) return null;
+        return {
+            ...prevUser,
+            ...updates,
+        };
+    });
   };
 
   const subscribeUser = (userId: string, planName: string, amount: number) => {

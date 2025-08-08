@@ -1,8 +1,6 @@
 
-
 'use client';
 
-import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,62 +15,38 @@ import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import type { ProfileSetupData } from '@/lib/types';
+import { useState } from 'react';
 
 interface Step5_SpecificDetailsProps {
   onBack: () => void;
   onNext: () => void;
-  formData: any;
-  setFormData: (data: any) => void;
+  formData: ProfileSetupData;
+  setFormData: (data: ProfileSetupData) => void;
 }
 
 const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
 export default function Step5_SpecificDetails({ onBack, onNext, formData, setFormData }: Step5_SpecificDetailsProps) {
   const router = useRouter();
-  const [specialty, setSpecialty] = useState(formData.specialty);
-  const [location, setLocation] = useState(formData.location);
-  const [serviceRadius, setServiceRadius] = useState(formData.serviceRadius);
-  const [hasPhysicalLocation, setHasPhysicalLocation] = useState(formData.hasPhysicalLocation);
-  const [showExactLocation, setShowExactLocation] = useState(formData.showExactLocation);
-  const [isOnlyDelivery, setIsOnlyDelivery] = useState(formData.isOnlyDelivery);
-  const [website, setWebsite] = useState(formData.website);
-  const [schedule, setSchedule] = useState(formData.schedule);
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
-  const [offerType, setOfferType] = useState(formData.offerType || 'service');
-  const [acceptsCredicora, setAcceptsCredicora] = useState(formData.acceptsCredicora || false);
-  const [appointmentCost, setAppointmentCost] = useState(formData.appointmentCost || 0);
-
-  useEffect(() => {
-    setFormData({ 
-      ...formData, 
-      specialty,
-      location,
-      serviceRadius,
-      hasPhysicalLocation,
-      showExactLocation,
-      isOnlyDelivery,
-      website,
-      schedule,
-      offerType,
-      acceptsCredicora,
-      appointmentCost,
-    });
-  }, [specialty, location, serviceRadius, hasPhysicalLocation, showExactLocation, isOnlyDelivery, website, schedule, offerType, acceptsCredicora, appointmentCost, setFormData]);
-
+  
   const MAX_RADIUS_FREE = 10;
-  const isOverFreeRadius = serviceRadius > MAX_RADIUS_FREE && !formData.isSubscribed;
+  const isOverFreeRadius = (formData.serviceRadius || 0) > MAX_RADIUS_FREE && !formData.isSubscribed;
+
+  const handleFormDataChange = (field: keyof ProfileSetupData, value: any) => {
+    setFormData({ ...formData, [field]: value });
+  };
   
   const handleMapClick = () => {
     router.push('/map');
   };
 
   const handleScheduleChange = (day: string, field: 'from' | 'to' | 'active', value: string | boolean) => {
-    setSchedule((prev: any) => ({
-      ...prev,
-      [day]: { ...prev[day], [field]: value }
-    }));
+    const newSchedule = { ...formData.schedule, [day]: { ...formData.schedule?.[day], [field]: value } };
+    handleFormDataChange('schedule', newSchedule);
   };
-
+  
   return (
     <>
     <div className="space-y-8">
@@ -85,15 +59,15 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
             placeholder="Ej: Expertos en cocina italiana." 
             rows={2} 
             maxLength={30}
-            value={specialty}
-            onChange={(e) => setSpecialty(e.target.value)}
+            value={formData.specialty || ''}
+            onChange={(e) => handleFormDataChange('specialty', e.target.value)}
         />
-        <p className="text-xs text-muted-foreground text-right">{specialty.length} / 30</p>
+        <p className="text-xs text-muted-foreground text-right">{formData.specialty?.length || 0} / 30</p>
       </div>
 
        <div className="space-y-3">
         <Label>Ofrezco principalmente</Label>
-        <RadioGroup value={offerType} onValueChange={(value: 'product' | 'service') => setOfferType(value)} className="flex gap-4">
+        <RadioGroup value={formData.offerType || 'service'} onValueChange={(value: 'product' | 'service') => handleFormDataChange('offerType', value)} className="flex gap-4">
             <div className="flex items-center space-x-2">
                 <RadioGroupItem value="service" id="service" />
                 <Label htmlFor="service" className="flex items-center gap-2 font-normal cursor-pointer"><Hand className="w-4 h-4"/> Servicios</Label>
@@ -117,12 +91,12 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
                 </Link>
                 <Switch 
                     id="accepts-credicora" 
-                    checked={acceptsCredicora}
-                    onCheckedChange={setAcceptsCredicora}
+                    checked={formData.acceptsCredicora}
+                    onCheckedChange={(checked) => handleFormDataChange('acceptsCredicora', checked)}
                 />
             </div>
 
-            {acceptsCredicora && (
+            {formData.acceptsCredicora && (
                 <Alert className="bg-blue-50 border-blue-200 text-blue-800">
                     <Info className="h-4 w-4 !text-current" />
                     <AlertTitle className="font-bold">¡Amplía tu Horizonte de Clientes con CrediCora!</AlertTitle>
@@ -132,7 +106,7 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
                 </Alert>
             )}
 
-            {offerType === 'service' && (
+            {formData.offerType === 'service' && (
               <div className="flex items-center justify-between pt-4 border-t">
                   <Label htmlFor="appointment-cost">
                       Costo por Consulta/Cita
@@ -144,8 +118,8 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
                         id="appointment-cost"
                         type="number"
                         className="w-28 pl-6"
-                        value={appointmentCost}
-                        onChange={(e) => setAppointmentCost(parseFloat(e.target.value))}
+                        value={formData.appointmentCost || 0}
+                        onChange={(e) => handleFormDataChange('appointmentCost', parseFloat(e.target.value))}
                     />
                   </div>
               </div>
@@ -164,8 +138,8 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
              </Label>
              <Switch 
                 id="has-physical-location" 
-                checked={hasPhysicalLocation}
-                onCheckedChange={setHasPhysicalLocation}
+                checked={formData.hasPhysicalLocation}
+                onCheckedChange={(checked) => handleFormDataChange('hasPhysicalLocation', checked)}
             />
            </div>
 
@@ -177,8 +151,8 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
                   id="location" 
                   placeholder="Ubicación de tu negocio..." 
                   className="pl-12"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
+                  value={formData.location || ''}
+                  onChange={(e) => handleFormDataChange('location', e.target.value)}
                 />
             </div>
 
@@ -188,24 +162,24 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
                  </Label>
                  <Switch 
                     id="show-exact-location" 
-                    checked={showExactLocation}
-                    onCheckedChange={setShowExactLocation}
+                    checked={formData.showExactLocation}
+                    onCheckedChange={(checked) => handleFormDataChange('showExactLocation', checked)}
                 />
             </div>
             
-            {!showExactLocation && (
+            {!formData.showExactLocation && (
                 <div className="space-y-3 pt-2">
                     <div className="flex justify-between items-center">
                         <Label htmlFor="service-radius">Radio de acción</Label>
-                        <Badge variant={isOverFreeRadius ? "destructive" : "secondary"} className="font-mono">{serviceRadius} km</Badge>
+                        <Badge variant={isOverFreeRadius ? "destructive" : "secondary"} className="font-mono">{formData.serviceRadius} km</Badge>
                     </div>
                     <Slider
                         id="service-radius"
                         min={5}
                         max={100}
                         step={5}
-                        value={[serviceRadius]}
-                        onValueChange={(value) => setServiceRadius(value[0])}
+                        value={[formData.serviceRadius || 5]}
+                        onValueChange={(value) => handleFormDataChange('serviceRadius', value[0])}
                         className={cn(isOverFreeRadius && '[&_.bg-primary]:bg-destructive')}
                     />
                      {isOverFreeRadius ? (
@@ -221,8 +195,8 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
                             </Label>
                             <Switch 
                                 id="only-delivery"
-                                checked={isOnlyDelivery}
-                                onCheckedChange={setIsOnlyDelivery}
+                                checked={formData.isOnlyDelivery}
+                                onCheckedChange={(checked) => handleFormDataChange('isOnlyDelivery', checked)}
                             />
                         </div>
                      )}
@@ -237,13 +211,13 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
             {daysOfWeek.map(day => (
                  <div key={day} className="flex flex-col sm:flex-row sm:items-center justify-between">
                     <div className="flex items-center gap-3 mb-2 sm:mb-0">
-                        <Switch id={`switch-${day}`} checked={schedule[day]?.active} onCheckedChange={(checked) => handleScheduleChange(day, 'active', checked)} />
+                        <Switch id={`switch-${day}`} checked={formData.schedule?.[day]?.active} onCheckedChange={(checked) => handleScheduleChange(day, 'active', checked)} />
                         <Label htmlFor={`switch-${day}`} className="w-24">{day}</Label>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Input type="time" value={schedule[day]?.from} onChange={(e) => handleScheduleChange(day, 'from', e.target.value)} className="w-full sm:w-auto"/>
+                        <Input type="time" value={formData.schedule?.[day]?.from || '09:00'} onChange={(e) => handleScheduleChange(day, 'from', e.target.value)} className="w-full sm:w-auto"/>
                         <span>-</span>
-                        <Input type="time" value={schedule[day]?.to} onChange={(e) => handleScheduleChange(day, 'to', e.target.value)} className="w-full sm:w-auto"/>
+                        <Input type="time" value={formData.schedule?.[day]?.to || '17:00'} onChange={(e) => handleScheduleChange(day, 'to', e.target.value)} className="w-full sm:w-auto"/>
                     </div>
                  </div>
             ))}
@@ -252,12 +226,12 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
 
       <div className="space-y-2">
         <Label htmlFor="website">Redes Sociales / Sitio Web (Opcional)</Label>
-        <Input id="website" placeholder="https://tu-sitio-web.com" value={website} onChange={(e) => setWebsite(e.target.value)} />
+        <Input id="website" placeholder="https://tu-sitio-web.com" value={formData.website || ''} onChange={(e) => handleFormDataChange('website', e.target.value)} />
       </div>
 
       <div className="flex justify-between">
         <Button variant="outline" onClick={onBack}>Atrás</Button>
-        <Button onClick={onNext} disabled={!location.trim()}>Siguiente</Button>
+        <Button onClick={onNext} disabled={!formData.location?.trim()}>Siguiente</Button>
       </div>
     </div>
     <SubscriptionDialog isOpen={isSubscriptionDialogOpen} onOpenChange={setIsSubscriptionDialogOpen} />
