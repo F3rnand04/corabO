@@ -205,12 +205,12 @@ export default function TransactionsSettingsPage() {
     }
     
     const handleBinanceEmailValidation = async (email: string) => {
-        const success = await validateEmail(currentUser.id, email);
-        if (success) {
+        const isValidated = await validateEmail(currentUser.id, email);
+        if (isValidated) {
             handleMethodChange('crypto', 'validated', true);
             handleMethodChange('crypto', 'binanceEmail', email); // Persist validated email
         }
-        return success;
+        return isValidated;
     };
 
 
