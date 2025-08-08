@@ -35,8 +35,6 @@ export default function ProfilePage() {
     return null;
   }
 
-  const [gallery, setGallery] = useState<GalleryImage[]>(currentUser.gallery || []);
-
   const isProvider = currentUser.type === 'provider';
   const isProductProvider = isProvider && currentUser.profileSetupData?.offerType === 'product';
   const providerProductsCount = isProductProvider ? products.filter(p => p.providerId === currentUser.id).length : 0;
@@ -53,15 +51,6 @@ export default function ProfilePage() {
   const [shareCount, setShareCount] = useState(4567);
   const [messageCount, setMessageCount] = useState(1234);
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
-
-  const [providerProfile, setProviderProfile] = useState({
-    name: currentUser.name,
-    specialty: currentUser.profileSetupData?.specialty || "Especialidad",
-    rating: currentUser.reputation || 0,
-    efficiency: "99.9%",
-    completedJobs: completedTransactions,
-    otherStat: "00 | 05",
-  });
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -90,18 +79,6 @@ export default function ProfilePage() {
       }
     }
   };
-
-
-  useEffect(() => {
-    setGallery(currentUser.gallery || []);
-    setProviderProfile(prev => ({
-        ...prev, 
-        name: currentUser.profileSetupData?.useUsername ? currentUser.profileSetupData?.username || currentUser.name : currentUser.name,
-        specialty: currentUser.profileSetupData?.specialty || "Especialidad",
-        rating: currentUser.reputation || 0,
-        completedJobs: completedTransactions
-    }));
-  }, [currentUser, completedTransactions]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -170,13 +147,13 @@ export default function ProfilePage() {
 
   const handlePrev = () => {
     setCurrentImageIndex((prevIndex) =>
-      prevIndex === 0 ? gallery.length - 1 : prevIndex - 1
+      prevIndex === 0 ? (currentUser.gallery?.length ?? 1) - 1 : prevIndex - 1
     );
   };
 
   const handleNext = () => {
     setCurrentImageIndex((prevIndex) =>
-      prevIndex === gallery.length - 1 ? 0 : prevIndex + 1
+      prevIndex === (currentUser.gallery?.length ?? 1) - 1 ? 0 : prevIndex + 1
     );
   };
   
@@ -199,7 +176,7 @@ export default function ProfilePage() {
   };
 
   const handleShareClick = async () => {
-    const currentImage = gallery.length > 0 ? gallery[currentImageIndex] : null;
+    const currentImage = currentUser.gallery && currentUser.gallery.length > 0 ? currentUser.gallery[currentImageIndex] : null;
     if (!currentImage) return;
 
     const shareData = {
@@ -249,6 +226,7 @@ export default function ProfilePage() {
     setIsCampaignDialogOpen(true);
   }
 
+  const gallery = currentUser.gallery || [];
   const currentImage = gallery.length > 0 ? gallery[currentImageIndex] : null;
   const isPromotionActiveOnCurrentImage = currentImage?.promotion && new Date(currentImage.promotion.expires) > new Date();
 
@@ -280,21 +258,21 @@ export default function ProfilePage() {
                 </Button>
               </div>
               <div className="flex-grow">
-                <h1 className="text-lg font-bold text-foreground">{providerProfile.name}</h1>
-                <p className="text-sm text-muted-foreground">{providerProfile.specialty}</p>
+                <h1 className="text-lg font-bold text-foreground">{currentUser.profileSetupData?.useUsername ? currentUser.profileSetupData?.username || currentUser.name : currentUser.name}</h1>
+                <p className="text-sm text-muted-foreground">{currentUser.profileSetupData?.specialty || 'Sin especialidad'}</p>
                 <div className="flex items-center gap-3 text-sm mt-2 text-muted-foreground">
                     <div className="flex items-center gap-1">
                         <Star className="w-4 h-4 text-yellow-400 fill-yellow-400"/>
-                        <span className="font-semibold text-foreground">{providerProfile.rating.toFixed(1)}</span>
+                        <span className="font-semibold text-foreground">{currentUser.reputation.toFixed(1)}</span>
                     </div>
                     <Separator orientation="vertical" className="h-4" />
                     {isNewProvider ? (
                         <Badge variant="secondary">Nuevo</Badge>
                     ) : (
                         <>
-                            <span>{providerProfile.efficiency} Efec.</span>
+                            <span>{currentUser.effectiveness?.toFixed(0) || '0'}% Efec.</span>
                             <Separator orientation="vertical" className="h-4" />
-                            <span>{providerProfile.otherStat}</span>
+                            <span>00 | 05</span>
                         </>
                     )}
                 </div>
@@ -381,7 +359,7 @@ export default function ProfilePage() {
                       </div>
                   ) : (
                       <div className="flex-1">
-                          <p className="font-semibold text-foreground">{providerProfile.completedJobs}</p>
+                          <p className="font-semibold text-foreground">{completedTransactions}</p>
                           <p>Trab. Realizados</p>
                       </div>
                   )

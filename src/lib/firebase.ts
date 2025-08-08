@@ -1,8 +1,7 @@
-
 "use client";
 
-import { initializeApp, getApp, getApps } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { initializeApp, getApp, getApps, type FirebaseApp } from "firebase/app";
+import { getFirestore, type Firestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration - KEEP THIS AS IS FROM THE CONSOLE
 const firebaseConfig = {
@@ -16,8 +15,18 @@ const firebaseConfig = {
 };
 
 
-// Initialize Firebase
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const db = getFirestore(app);
+// Function to get the initialized Firebase app instance
+function getFirebaseApp(): FirebaseApp {
+    return !getApps().length ? initializeApp(firebaseConfig) : getApp();
+}
 
-export { app, db };
+// Function to get the initialized Firestore instance
+function getFirestoreDb(): Firestore {
+    const app = getFirebaseApp();
+    return getFirestore(app);
+}
+
+const app = getFirebaseApp();
+const db = getFirestoreDb();
+
+export { app, db, getFirebaseApp, getFirestoreDb };

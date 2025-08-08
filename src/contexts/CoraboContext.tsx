@@ -11,7 +11,7 @@ import { add, subDays, startOfDay, differenceInDays, differenceInHours } from 'd
 import { credicoraLevels } from '@/lib/types';
 // Import necessary firebase services directly
 import { getAuth, signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, GoogleAuthProvider, setPersistence, browserLocalPersistence } from 'firebase/auth';
-import { app, db } from '@/lib/firebase'; // Import the initialized app and db
+import { getFirebaseApp, getFirestoreDb } from '@/lib/firebase'; // Import the new getter functions
 import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, enableIndexedDbPersistence } from 'firebase/firestore';
 import { createCampaign } from '@/ai/flows/campaign-flow';
 import { acceptProposal as acceptProposalFlow, sendMessage as sendMessageFlow } from '@/ai/flows/message-flow';
@@ -140,6 +140,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [exchangeRate, setExchangeRate] = useState(36.54); // Default value
   
+  const app = getFirebaseApp();
+  const db = getFirestoreDb();
   const auth = getAuth(app);
   
   // Enable offline persistence
@@ -154,7 +156,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
               }
           });
     }
-  }, []);
+  }, [db]);
 
   // Fetch exchange rate on initial load
   useEffect(() => {
@@ -212,7 +214,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       await setDoc(userDocRef, newUser);
       return newUser;
     }
-  }, []);
+  }, [db]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -306,7 +308,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       unsubscribeTransactions();
       unsubscribeConversations();
     };
-  }, [currentUser]);
+  }, [currentUser, db]);
 
   const getRankedFeed = useCallback(() => {
     if (!currentUser || !users.length) return [];
