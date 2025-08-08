@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useRef, ChangeEvent } from 'react';
+import { useState, useRef, ChangeEvent, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronLeft, FileUp, AlertCircle, Loader2, Banknote, Smartphone, CheckCircle, XCircle } from "lucide-react";
@@ -52,7 +52,10 @@ export default function TransactionsSettingsPage() {
     const { currentUser, activateTransactions, autoVerifyIdWithAI, setIdVerificationPending, sendMessage, updateUser, validateEmail } = useCorabo();
     const { toast } = useToast();
     const router = useRouter();
-    const [step, setStep] = useState(1);
+
+    // Determine initial step based on verification status
+    const initialStep = currentUser?.idVerificationStatus === 'verified' ? 2 : 1;
+    const [step, setStep] = useState(initialStep);
     
     // Step 1 state
     const [idImage, setIdImage] = useState<string | null>(null);
@@ -71,7 +74,7 @@ export default function TransactionsSettingsPage() {
         };
 
         const existingMethods = currentUser?.profileSetupData?.paymentDetails;
-
+        
         return {
             account: { ...defaultMethods.account, ...existingMethods?.account },
             mobile: { ...defaultMethods.mobile, ...existingMethods?.mobile },
@@ -81,6 +84,14 @@ export default function TransactionsSettingsPage() {
     
     const [isVerifyingAccount, setIsVerifyingAccount] = useState(false);
     const [accountVerificationError, setAccountVerificationError] = useState<string | null>(null);
+
+    useEffect(() => {
+        // If user is already verified, ensure we start at step 2.
+        if (currentUser?.idVerificationStatus === 'verified') {
+            setStep(2);
+        }
+    }, [currentUser?.idVerificationStatus]);
+
 
     if (!currentUser) {
         return <Loader2 className="animate-spin" />;

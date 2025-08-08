@@ -691,10 +691,17 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const removeGalleryImage = (userId: string, imageId: string) => {};
   
   const validateEmail = async (userId: string, emailToValidate: string): Promise<boolean> => {
-    // In a real app, this would send an email via a backend service.
-    // For the prototype, we simulate this and return true.
-    console.log(`Simulating sending validation code to ${emailToValidate} for user ${userId}`);
-    await updateUser(userId, { emailValidated: true }); // Simulate validation
+    // In a real app, this would use a backend service to send an email.
+    // For this prototype, we simulate the code generation and verification.
+    const code = Math.floor(1000 + Math.random() * 9000).toString();
+    console.log(`CÓDIGO DE VERIFICACIÓN para ${emailToValidate}: ${code}`);
+    toast({
+        title: 'Código de Verificación Enviado',
+        description: `Se ha enviado un código a ${emailToValidate}. (Revisa la consola del navegador para ver el código).`
+    });
+    
+    // Here we'd normally wait for user input. In this simplified flow, we return true if the toast is shown.
+    // The actual code comparison happens in `ValidationItem.tsx`.
     return true;
   };
 
