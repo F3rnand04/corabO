@@ -49,11 +49,6 @@ function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary:
     const [includeDelivery, setIncludeDelivery] = useState(false);
     const [useCredicora, setUseCredicora] = useState(false);
     
-    const cartTransaction = cart.length > 0 ? currentUser.transactions?.find(tx => tx.status === 'Carrito Activo' && tx.clientId === currentUser.id) : undefined;
-    const provider = users.find(u => u.id === cartTransaction?.providerId);
-    const isDeliveryOnly = provider?.profileSetupData?.isOnlyDelivery || false;
-    const providerAcceptsCredicora = provider?.profileSetupData?.acceptsCredicora || false;
-    
     const totalCartItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
     const handleDeactivation = () => {
@@ -67,8 +62,15 @@ function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary:
 
     const subtotal = getCartTotal();
     const deliveryCost = getDeliveryCost();
-    const totalWithDelivery = subtotal + ((includeDelivery || isOnlyDelivery) ? deliveryCost : 0);
 
+    const cartTransaction = cart.length > 0 ? currentUser.transactions?.find(tx => tx.status === 'Carrito Activo' && tx.clientId === currentUser.id) : undefined;
+    const provider = users.find(u => u.id === cartTransaction?.providerId);
+    
+    const isDeliveryOnly = provider?.profileSetupData?.isOnlyDelivery || false;
+    const providerAcceptsCredicora = provider?.profileSetupData?.acceptsCredicora || false;
+
+    const totalWithDelivery = subtotal + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
+    
     const userCredicoraLevel = currentUser.credicoraLevel || 1;
     const credicoraDetails = credicoraLevels[userCredicoraLevel.toString()];
     const creditLimit = currentUser.credicoraLimit || 0;
@@ -78,13 +80,13 @@ function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary:
     const potentialFinancing = subtotal * financingPercentage; // Financing only on products
     const financedAmount = useCredicora ? Math.min(potentialFinancing, creditLimit) : 0;
     const productInitialPayment = subtotal - financedAmount;
-    const totalToPayToday = productInitialPayment + ((includeDelivery || isOnlyDelivery) ? deliveryCost : 0);
+    const totalToPayToday = productInitialPayment + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
     const installmentAmount = financedAmount > 0 ? financedAmount / credicoraDetails.installments : 0;
 
 
     const handleCheckout = () => {
       if (cartTransaction) {
-          checkout(cartTransaction.id, includeDelivery || isOnlyDelivery, useCredicora);
+          checkout(cartTransaction.id, includeDelivery || isDeliveryOnly, useCredicora);
           setIsCheckoutAlertOpen(false);
           setUseCredicora(false);
       }
@@ -186,7 +188,7 @@ function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary:
                                 {isDeliveryOnly && <p className="text-xs text-muted-foreground -mt-2">Este proveedor solo trabaja con delivery.</p>}
                                 <div className="flex justify-between text-sm">
                                    <span>Costo de envío (aprox):</span>
-                                   <span className="font-semibold">${(includeDelivery || isOnlyDelivery) ? deliveryCost.toFixed(2) : '0.00'}</span>
+                                   <span className="font-semibold">${(includeDelivery || isDeliveryOnly) ? deliveryCost.toFixed(2) : '0.00'}</span>
                                </div>
 
                                 {providerAcceptsCredicora && (
