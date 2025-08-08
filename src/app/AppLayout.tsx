@@ -7,16 +7,18 @@ import { Header } from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
+import { AlertCircle, ArrowRight, Bell, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { currentUser, isLoadingAuth } = useCorabo();
   const router = useRouter();
   const pathname = usePathname();
+  const { toast } = useToast();
   
   // This effect handles all redirection logic safely after the initial render.
   useEffect(() => {
@@ -39,6 +41,35 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       router.replace('/');
     }
   }, [currentUser, isLoadingAuth, pathname, router]);
+
+  // Request notification permission
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window && currentUser) {
+      // Check if permission was already granted or denied
+      if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+        setTimeout(() => { // Delay the request slightly
+             toast({
+              title: '¿Activar notificaciones?',
+              description: 'Mantente al día con mensajes, ofertas y recordatorios importantes.',
+              action: (
+                <Button onClick={() => {
+                   Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                      console.log('Notification permission granted.');
+                      // You could save this preference to the user's profile
+                    }
+                  });
+                }}>
+                  <Bell className="mr-2 h-4 w-4"/>
+                  Activar
+                </Button>
+              ),
+              duration: 10000,
+            });
+        }, 5000);
+      }
+    }
+  }, [currentUser, toast]);
 
 
   // 1. While checking auth state, show a global loader

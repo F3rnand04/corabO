@@ -1,12 +1,7 @@
-
 {
   "name": "Corabo",
   "short_name": "Corabo",
-  "description": "Conectando tus necesidades con las mejores soluciones.",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#F0F8FF",
-  "theme_color": "#B0D8FF",
+  "description": "Tu plataforma de confianza para servicios y productos.",
   "icons": [
     {
       "src": "https://i.postimg.cc/Wz1MTvWK/lg.png",
@@ -17,6 +12,17 @@
       "src": "https://i.postimg.cc/Wz1MTvWK/lg.png",
       "sizes": "512x512",
       "type": "image/png"
+    },
+    {
+      "src": "https://i.postimg.cc/Wz1MTvWK/lg.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "apple-touch-icon"
     }
-  ]
+  ],
+  "theme_color": "#B0D8FF",
+  "background_color": "#F0F8FF",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait"
 }
