@@ -610,9 +610,19 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const verifyUserId = (userId: string) => updateUser(userId, { idVerificationStatus: 'verified', verified: true });
   const rejectUserId = (userId: string) => updateUser(userId, { idVerificationStatus: 'rejected' });
   const setIdVerificationPending = async (userId: string, documentUrl: string) => {
+    // This is now a simple Firestore update. The AI flow is called separately from the component.
     await updateUser(userId, { idVerificationStatus: 'pending', idDocumentUrl: documentUrl });
   };
-  const autoVerifyIdWithAI = (user: User) => autoVerifyIdWithAIFlow(user);
+  const autoVerifyIdWithAI = async (user: User) => {
+    if (!user.idDocumentUrl) throw new Error("No document URL");
+    // This calls the actual Genkit flow
+    return await autoVerifyIdWithAIFlow({
+      userId: user.id,
+      nameInRecord: `${user.name} ${user.lastName || ''}`.trim(),
+      idInRecord: user.idNumber || '', // Use real data
+      documentImageUrl: user.idDocumentUrl
+    });
+  };
 
 
   const requestService = (service: Service) => {};

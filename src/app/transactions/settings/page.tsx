@@ -4,7 +4,7 @@
 import { useState, useRef, ChangeEvent } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronLeft, FileUp, AlertCircle, Loader2, Banknote, Smartphone } from "lucide-react";
+import { ChevronLeft, FileUp, AlertCircle, Loader2, Banknote, Smartphone, CheckCircle, XCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useCorabo } from '@/contexts/CoraboContext';
@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { VerificationOutput } from '@/lib/types';
 
 
 function SettingsHeader() {
@@ -52,7 +53,7 @@ const banks = [
 
 
 export default function TransactionsSettingsPage() {
-    const { currentUser, activateTransactions, setIdVerificationPending } = useCorabo();
+    const { currentUser, activateTransactions, autoVerifyIdWithAI, setIdVerificationPending } = useCorabo();
     const { toast } = useToast();
     const router = useRouter();
     const [step, setStep] = useState(1);
@@ -61,6 +62,7 @@ export default function TransactionsSettingsPage() {
     const [idImage, setIdImage] = useState<string | null>(null);
     const [idFile, setIdFile] = useState<File | null>(null);
     const [isVerifyingId, setIsVerifyingId] = useState(false);
+    const [verificationResult, setVerificationResult] = useState<VerificationOutput | null>(null);
     const [idVerificationError, setIdVerificationError] = useState<string | null>(null);
     const idFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -86,33 +88,31 @@ export default function TransactionsSettingsPage() {
         }
     };
     
-    const handleVerifyDocument = () => {
+    const handleVerifyDocument = async () => {
         if (!idImage || !idFile) {
-            toast({
-                variant: 'destructive',
-                title: 'No hay imagen',
-                description: 'Por favor, sube una imagen de tu cédula para continuar.',
-            });
+            toast({ variant: 'destructive', title: 'No hay imagen', description: 'Por favor, sube una imagen de tu cédula para continuar.' });
             return;
         }
 
         setIsVerifyingId(true);
+        setVerificationResult(null);
         setIdVerificationError(null);
         
-        // This function will now just set the status to pending and upload the image URL
-        // The actual verification happens in the admin panel
-        setIdVerificationPending(currentUser.id, idImage).then(() => {
-            toast({
-                title: "¡Documento Recibido!",
-                description: "Tu documento está en revisión. Ahora, por favor, registra tus datos de pago.",
-                className: "bg-green-100 border-green-300 text-green-800",
-            });
-            setStep(2); // Move to the next step
+        try {
+            await setIdVerificationPending(currentUser.id, idImage);
+            const result = await autoVerifyIdWithAI(currentUser);
+            setVerificationResult(result);
+
+            if (!result.nameMatch || !result.idMatch) {
+                setIdVerificationError("Los datos no coinciden. Sube una imagen clara o contacta a soporte.");
+            }
+
+        } catch (error) {
+            console.error(error);
+            setIdVerificationError("Hubo un error al procesar tu documento. Intenta de nuevo.");
+        } finally {
             setIsVerifyingId(false);
-        }).catch(err => {
-            setIdVerificationError("Hubo un error al subir tu documento. Intenta de nuevo.");
-            setIsVerifyingId(false);
-        });
+        }
     };
 
     const handleVerifyAccount = () => {
@@ -120,7 +120,6 @@ export default function TransactionsSettingsPage() {
         setIsVerifyingAccount(true);
 
         setTimeout(() => {
-            // Simulate check: for demo, fail if account number is "123"
             const isAccountInvalid = paymentMethod === 'account' && bankAccount === '123';
             const isMobileInvalid = paymentMethod === 'mobile' && mobilePaymentPhone === '123';
 
@@ -175,32 +174,48 @@ export default function TransactionsSettingsPage() {
                                     </div>
                                 )}
                             </div>
+                            
+                            {!verificationResult && (
+                               <Button 
+                                    className="w-full" 
+                                    size="lg" 
+                                    onClick={handleVerifyDocument}
+                                    disabled={isVerifyingId || !idImage}
+                                >
+                                    {isVerifyingId ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verificando...</> : "Enviar y Verificar Documento"}
+                                </Button>
+                            )}
+
 
                             {idVerificationError && (
                                 <Alert variant="destructive">
                                     <AlertCircle className="h-4 w-4" />
-                                    <AlertTitle>Error</AlertTitle>
+                                    <AlertTitle>Error de Verificación</AlertTitle>
                                     <AlertDescription>
                                         <p>{idVerificationError}</p>
                                     </AlertDescription>
                                 </Alert>
                             )}
+
+                             {verificationResult && (
+                                <div className="space-y-4">
+                                    <Alert variant={verificationResult.nameMatch && verificationResult.idMatch ? 'default' : 'destructive'} className={verificationResult.nameMatch && verificationResult.idMatch ? 'bg-green-50 border-green-200' : ''}>
+                                        <AlertTitle className="flex items-center gap-2">
+                                            {verificationResult.nameMatch && verificationResult.idMatch ? <CheckCircle className="text-green-600"/> : <XCircle />}
+                                            Resultado de la Verificación
+                                        </AlertTitle>
+                                        <AlertDescription className="space-y-1 pl-6">
+                                            <p><strong>Nombre en Documento:</strong> {verificationResult.extractedName} ({verificationResult.nameMatch ? 'Coincide' : 'No Coincide'})</p>
+                                            <p><strong>Cédula en Documento:</strong> {verificationResult.extractedId} ({verificationResult.idMatch ? 'Coincide' : 'No Coincide'})</p>
+                                        </AlertDescription>
+                                    </Alert>
+                                    
+                                     <Button className="w-full" onClick={() => setStep(2)} disabled={!verificationResult.nameMatch || !verificationResult.idMatch}>
+                                        Continuar al Siguiente Paso
+                                    </Button>
+                                </div>
+                            )}
                             
-                            <Button 
-                                className="w-full" 
-                                size="lg" 
-                                onClick={handleVerifyDocument}
-                                disabled={isVerifyingId || !idImage}
-                            >
-                                {isVerifyingId ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Procesando...
-                                    </>
-                                ) : (
-                                    "Enviar Documento para Verificación"
-                                )}
-                            </Button>
                         </CardContent>
                      </>
                    )}
