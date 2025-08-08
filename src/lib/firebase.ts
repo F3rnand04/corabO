@@ -19,28 +19,27 @@ const firebaseConfig = {
 let app: FirebaseApp;
 let db: Firestore;
 
+// This function can be called multiple times, but it will only initialize
+// the app and db once.
 function initializeFirebase() {
     if (!getApps().length) {
         app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
     } else {
         app = getApp();
+        db = getFirestore(app); // Ensure db is assigned if app already exists
     }
-    db = getFirestore(app);
 }
 
-initializeFirebase();
 
 // Function to get the initialized Firebase app instance
-function getFirebaseApp(): FirebaseApp {
+export function getFirebaseApp(): FirebaseApp {
     if (!app) initializeFirebase();
     return app;
 }
 
 // Function to get the initialized Firestore instance
-function getFirestoreDb(): Firestore {
+export function getFirestoreDb(): Firestore {
     if (!db) initializeFirebase();
     return db;
 }
-
-
-export { getFirebaseApp, getFirestoreDb };

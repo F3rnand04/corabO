@@ -264,45 +264,42 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
 
   useEffect(() => {
-    const db = getFirestoreDb();
-    if (!db || !currentUser?.id) return;
+    if (!currentUser?.id) return;
+    const db = getFirestoreDb(); // Ensure db is initialized
   
     if (currentUser.profileSetupData?.location) {
         setDeliveryAddress(currentUser.profileSetupData.location);
     }
     
+    const unsubs: (() => void)[] = [];
+
     // Scoped queries to the current user
     const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
     const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id));
-
-    // Fetch all users and products once - THIS IS INEFFICIENT & INSECURE for a real app
-    // In a real app, you would fetch users/products by ID as needed.
     const usersQuery = query(collection(db, 'users'));
     const productsQuery = query(collection(db, 'products'));
 
-    const unsubUsers = onSnapshot(usersQuery, (snapshot) => {
-        setUsers(snapshot.docs.map(doc => doc.data() as User));
-    });
 
-    const unsubProducts = onSnapshot(productsQuery, (snapshot) => {
+    unsubs.push(onSnapshot(usersQuery, (snapshot) => {
+      setUsers(snapshot.docs.map(doc => doc.data() as User));
+    }, (error) => console.error("Users snapshot error:", error)));
+
+    unsubs.push(onSnapshot(productsQuery, (snapshot) => {
         setProducts(snapshot.docs.map(doc => doc.data() as Product));
-    });
+    }, (error) => console.error("Products snapshot error:", error)));
 
-    const unsubTransactions = onSnapshot(transactionsQuery, (snapshot) => {
+    unsubs.push(onSnapshot(transactionsQuery, (snapshot) => {
       setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
-    });
+    }, (error) => console.error("Transactions snapshot error:", error)));
     
-    const unsubConversations = onSnapshot(conversationsQuery, (snapshot) => {
+    unsubs.push(onSnapshot(conversationsQuery, (snapshot) => {
         setConversations(snapshot.docs.map(doc => doc.data() as Conversation).sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()));
-    });
+    }, (error) => console.error("Conversations snapshot error:", error)));
   
     return () => {
-      unsubUsers();
-      unsubProducts();
-      unsubTransactions();
-      unsubConversations();
+      unsubs.forEach(unsub => unsub());
     };
-  }, [currentUser]);
+  }, [currentUser?.id]);
 
   const getRankedFeed = useCallback(() => {
     if (!currentUser || !users.length) return [];
@@ -433,10 +430,19 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const addProduct = async (product: Product) => {
+    if(!currentUser) return;
     const db = getFirestoreDb();
     const productRef = doc(db, 'products', product.id);
     await setDoc(productRef, product);
+    // Optimistic update
     setProducts(prev => [...prev, product]);
+    setCurrentUser(prevUser => {
+        if (!prevUser) return null;
+        return {
+            ...prevUser,
+            products: [...(prevUser.products || []), product]
+        }
+    })
   };
 
   const addToCart = (product: Product, quantity: number) => {
@@ -503,9 +509,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const getCartTotal = () => cart.reduce((total, item) => total + item.product.price * item.quantity, 0);
   
   const getDeliveryCost = () => {
-    const distanceInKm = Math.floor(Math.random() * 5) + 1; // Simulate 1 to 5 km
-    return distanceInKm * 1.5; 
-  }
+    // Simulate distance calculation. In a real app, use a mapping service.
+    // Here we use a random factor for demonstration.
+    const distanceInKm = (Math.random() * 9) + 1; // Random distance between 1 and 10 km
+    return distanceInKm * 1.5;
+  };
   
   const addContact = (user: User) => {
     if (contacts.some(c => c.id === user.id)) return false;
@@ -703,15 +711,16 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     await updateDoc(userRef, {
         gallery: arrayUnion(image)
     });
-    if (currentUser?.id === userId) {
-      setCurrentUser(prev => prev ? { ...prev, gallery: [...(prev.gallery || []), image] } : null);
-    }
+    // Optimistic update
+    setCurrentUser(prev => prev ? { ...prev, gallery: [...(prev.gallery || []), image] } : null);
   };
 
   const removeGalleryImage = async (userId: string, imageId: string) => {
     if(!currentUser || !currentUser.gallery) return;
     const updatedGallery = currentUser.gallery.filter(image => image.id !== imageId);
     await updateUser(userId, { gallery: updatedGallery });
+    // Optimistic update
+    setCurrentUser(prev => prev ? { ...prev, gallery: updatedGallery } : null);
   };
   
   const validateEmail = async (userId: string, emailToValidate: string): Promise<boolean> => {

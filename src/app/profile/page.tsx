@@ -25,6 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import { SubscriptionDialog } from '@/components/SubscriptionDialog';
 import { ProductGridCard } from '@/components/ProductGridCard';
 import { ProductDetailsDialog } from '@/components/ProductDetailsDialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 export default function ProfilePage() {
@@ -32,14 +33,15 @@ export default function ProfilePage() {
   const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, transactions, getAgendaEvents, products } = useCorabo();
   const router = useRouter();
   
+  // This is a critical guard. Return null or a loader if currentUser is not available yet.
   if (!currentUser) {
-    // Or a loading spinner
     return null;
   }
 
   const isProvider = currentUser.type === 'provider';
   const isProductProvider = isProvider && currentUser.profileSetupData?.offerType === 'product';
-  const providerProducts = isProductProvider ? products.filter(p => p.providerId === currentUser.id) : [];
+  // Correctly filter products associated with the current user.
+  const providerProducts = products.filter(p => p.providerId === currentUser.id);
   
   const completedTransactions = transactions.filter(
     tx => tx.providerId === currentUser.id && (tx.status === 'Pagado' || tx.status === 'Resuelto')
@@ -239,6 +241,11 @@ export default function ProfilePage() {
   const gallery = currentUser.gallery || [];
   const currentImage = gallery.length > 0 ? gallery[currentImageIndex] : null;
   const isPromotionActiveOnCurrentImage = currentImage?.promotion && new Date(currentImage.promotion.expires) > new Date();
+  
+  const displayName = currentUser.profileSetupData?.useUsername 
+    ? currentUser.profileSetupData.username || currentUser.name 
+    : currentUser.name;
+  const specialty = currentUser.profileSetupData?.specialty || 'Sin especialidad';
 
   return (
     <>
@@ -268,8 +275,8 @@ export default function ProfilePage() {
                 </Button>
               </div>
               <div className="flex-grow">
-                <h1 className="text-lg font-bold text-foreground">{currentUser.profileSetupData?.useUsername ? currentUser.profileSetupData?.username || currentUser.name : currentUser.name}</h1>
-                <p className="text-sm text-muted-foreground">{currentUser.profileSetupData?.specialty || 'Sin especialidad'}</p>
+                <h1 className="text-lg font-bold text-foreground">{displayName}</h1>
+                <p className="text-sm text-muted-foreground">{specialty}</p>
                 <div className="flex items-center gap-3 text-sm mt-2 text-muted-foreground">
                     <div className="flex items-center gap-1">
                         <Star className="w-4 h-4 text-yellow-400 fill-yellow-400"/>
@@ -357,23 +364,16 @@ export default function ProfilePage() {
             </div>
 
             <div className="flex justify-around text-center text-xs text-muted-foreground pt-4 pb-2">
-              <div className="flex-1">
-                  <p className="font-semibold text-foreground">{gallery.length}</p>
-                  <p>Publicaciones</p>
-              </div>
-              {isProvider && (
-                  isProductProvider ? (
-                      <div className="flex-1">
-                          <p className="font-semibold text-foreground">{providerProducts.length}</p>
-                          <p>Productos</p>
-                      </div>
-                  ) : (
-                      <div className="flex-1">
-                          <p className="font-semibold text-foreground">{completedTransactions}</p>
-                          <p>Trab. Realizados</p>
-                      </div>
-                  )
-              )}
+                <div className="flex-1">
+                    <p className="font-semibold text-foreground">{gallery.length}</p>
+                    <p>Publicaciones</p>
+                </div>
+                {isProvider && (
+                    <div className="flex-1">
+                        <p className="font-semibold text-foreground">{isProductProvider ? providerProducts.length : completedTransactions}</p>
+                        <p>{isProductProvider ? 'Productos' : 'Trab. Realizados'}</p>
+                    </div>
+                )}
             </div>
             
             <div className="flex justify-end gap-2 py-2">
@@ -400,32 +400,39 @@ export default function ProfilePage() {
           
           <main className="space-y-4">
              {isProductProvider ? (
-                // PRODUCT VIEW
-                <Card className="rounded-2xl overflow-hidden shadow-lg">
-                    <CardContent className="p-2">
-                        {providerProducts.length > 0 ? (
-                           <div className='grid grid-cols-3 gap-1'>
-                            {providerProducts.map(product => (
-                                <ProductGridCard 
-                                    key={product.id} 
-                                    product={product}
-                                    onDoubleClick={() => openProductDetailsDialog(product)}
-                                />
-                            ))}
-                           </div>
-                        ) : (
-                           <div className="w-full aspect-video bg-muted flex flex-col items-center justify-center text-center p-4 rounded-lg">
-                                <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
-                                <h3 className="font-bold text-lg text-foreground">
-                                    Tu vitrina de productos está vacía
-                                </h3>
-                                <p className="text-muted-foreground text-sm">
-                                    Haz clic en el botón (+) en el pie de página para añadir tu primer producto.
-                                </p>
-                           </div>
-                        )}
-                    </CardContent>
-                </Card>
+                // PRODUCT VIEW WITH TABS
+                <Tabs defaultValue="products" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="products">Productos</TabsTrigger>
+                    <TabsTrigger value="publications">Publicaciones</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="products">
+                      {providerProducts.length > 0 ? (
+                         <div className='p-2 grid grid-cols-3 gap-1'>
+                          {providerProducts.map(product => (
+                              <ProductGridCard 
+                                  key={product.id} 
+                                  product={product}
+                                  onDoubleClick={() => openProductDetailsDialog(product)}
+                              />
+                          ))}
+                         </div>
+                      ) : (
+                         <div className="w-full aspect-video bg-muted flex flex-col items-center justify-center text-center p-4 rounded-lg mt-2">
+                              <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
+                              <h3 className="font-bold text-lg text-foreground">
+                                  Tu vitrina de productos está vacía
+                              </h3>
+                              <p className="text-muted-foreground text-sm">
+                                  Haz clic en el botón (+) en el pie de página para añadir tu primer producto.
+                              </p>
+                         </div>
+                      )}
+                  </TabsContent>
+                  <TabsContent value="publications">
+                      <p className="text-center text-muted-foreground py-8">Vista de publicaciones en construcción.</p>
+                  </TabsContent>
+                </Tabs>
             ) : (
                 // GALLERY (SERVICE) VIEW
                 <Card className="rounded-2xl overflow-hidden shadow-lg">
@@ -588,4 +595,5 @@ export default function ProfilePage() {
     </>
   );
 }
+
 
