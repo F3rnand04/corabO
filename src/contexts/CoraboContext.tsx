@@ -144,11 +144,13 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const handleUserCreation = useCallback(async (firebaseUser: FirebaseUser) => {
+  const handleUserCreation = useCallback(async (firebaseUser: FirebaseUser): Promise<User | null> => {
     const userDocRef = doc(db, 'users', firebaseUser.uid);
     try {
       const userDocSnap = await getDoc(userDocRef);
-      if (!userDocSnap.exists()) {
+      if (userDocSnap.exists()) {
+        return userDocSnap.data() as User;
+      } else {
         const coraboId = (firebaseUser.displayName?.substring(0, 3) || 'COR').toUpperCase() + Math.random().toString(36).substring(2, 8).toUpperCase();
         console.log('Generated new coraboId:', coraboId);
         const newUser: User = {
@@ -176,30 +178,29 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         };
         console.log('Creating new user in Firestore:', newUser);
         await setDoc(userDocRef, newUser);
+        return newUser;
       }
     } catch (error) {
       console.error("FirebaseError on getDoc/setDoc during user creation:", error);
       await signOut(auth);
+      return null;
     }
   }, [auth]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        await handleUserCreation(firebaseUser);
-        const userDocRef = doc(db, 'users', firebaseUser.uid);
-        const userDocSnap = await getDoc(userDocRef);
-        if (userDocSnap.exists()) {
-            const userData = userDocSnap.data() as User;
-            setCurrentUser(userData);
-            // Ensure the main users list is also updated immediately
-            setUsers(prevUsers => {
-                const userExists = prevUsers.some(u => u.id === userData.id);
-                if (userExists) {
-                    return prevUsers.map(u => u.id === userData.id ? userData : u);
-                }
-                return [...prevUsers, userData];
-            });
+        const userData = await handleUserCreation(firebaseUser);
+        if (userData) {
+          setCurrentUser(userData);
+          // Ensure the main users list is also updated immediately
+          setUsers(prevUsers => {
+            const userExists = prevUsers.some(u => u.id === userData.id);
+            if (userExists) {
+              return prevUsers.map(u => u.id === userData.id ? userData : u);
+            }
+            return [...prevUsers, userData];
+          });
         }
       } else {
         setCurrentUser(null);
@@ -619,3 +620,4 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
+
