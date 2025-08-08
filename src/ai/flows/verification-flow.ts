@@ -67,8 +67,8 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
     }
     
     // 1. Normalize ID numbers for a robust comparison
-    // This removes all non-alphanumeric characters (keeps letters and numbers) and converts to lowercase.
-    const normalizeId = (str: string) => str.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+    // This removes all non-alphanumeric characters, converts to lowercase, and replaces common OCR errors (O -> 0).
+    const normalizeId = (str: string) => str.trim().toLowerCase().replace(/o/g, '0').replace(/[^a-z0-9]/g, '');
     
     // Apply normalization to BOTH the extracted ID and the ID from the user's record.
     const idMatch = normalizeId(output.extractedId) === normalizeId(input.idInRecord);
