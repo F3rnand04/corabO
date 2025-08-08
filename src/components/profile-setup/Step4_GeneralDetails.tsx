@@ -5,11 +5,12 @@
 import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Info, MessageSquare, User, ScanLine, Cake } from "lucide-react";
+import { Info, MessageSquare, User, ScanLine, Cake, Contact } from "lucide-react";
 import { ValidationItem } from "@/components/ValidationItem";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
+import { useRouter } from 'next/navigation';
 
 interface Step4_GeneralDetailsProps {
   onBack: () => void;
@@ -19,13 +20,17 @@ interface Step4_GeneralDetailsProps {
 }
 
 export default function Step4_GeneralDetails({ onBack, onNext, formData, setFormData }: Step4_GeneralDetailsProps) {
-  const { currentUser, validateEmail, updateUser } = useCorabo();
+  const { currentUser, validateEmail, updateUser, sendMessage } = useCorabo();
+  const router = useRouter();
 
-  const handleValueChange = (field: 'name' | 'lastName' | 'idNumber' | 'birthDate' | 'phone' | 'email', value: string) => {
-    setFormData({ ...formData, [field]: value });
+  const handleValueChange = (field: 'phone' | 'email', value: string) => {
+    // Only allow changing phone and email directly here
+    updateUser(currentUser.id, { [field]: value });
   };
   
   useEffect(() => {
+    // Ensure form data is synced with the latest from the current user,
+    // especially after re-renders.
     setFormData({
       ...formData,
       name: currentUser.name,
@@ -37,7 +42,13 @@ export default function Step4_GeneralDetails({ onBack, onNext, formData, setForm
     });
   }, [currentUser]);
   
-  const isDataComplete = formData.lastName && formData.idNumber && formData.birthDate;
+  const isIdentityComplete = currentUser.lastName && currentUser.idNumber && currentUser.birthDate;
+
+  const handleContactSupport = () => {
+    const supportMessage = "Hola, necesito ayuda para corregir mis datos de registro de identidad. Cometí un error al ingresarlos.";
+    const conversationId = sendMessage('corabo-admin', supportMessage);
+    router.push(`/messages/${conversationId}`);
+  };
 
   return (
     <div className="space-y-6">
@@ -47,21 +58,32 @@ export default function Step4_GeneralDetails({ onBack, onNext, formData, setForm
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                     <Label htmlFor="name">Nombre</Label>
-                    <Input id="name" value={formData.name || ''} readOnly disabled />
+                    <Input id="name" value={currentUser.name || ''} readOnly disabled />
                 </div>
                  <div className="space-y-1.5">
                     <Label htmlFor="lastName">Apellido</Label>
-                    <Input id="lastName" placeholder="Tu apellido" value={formData.lastName || ''} onChange={(e) => handleValueChange('lastName', e.target.value)} />
+                    <Input id="lastName" value={currentUser.lastName || ''} readOnly disabled />
                 </div>
                  <div className="space-y-1.5">
                     <Label htmlFor="idNumber">Cédula de Identidad</Label>
-                    <Input id="idNumber" placeholder="V-12345678" value={formData.idNumber || ''} onChange={(e) => handleValueChange('idNumber', e.target.value)} />
+                    <Input id="idNumber" value={currentUser.idNumber || ''} readOnly disabled />
                 </div>
                  <div className="space-y-1.5">
                     <Label htmlFor="birthDate">Fecha de Nacimiento</Label>
-                    <Input id="birthDate" type="date" value={formData.birthDate || ''} onChange={(e) => handleValueChange('birthDate', e.target.value)} />
+                    <Input id="birthDate" type="date" value={currentUser.birthDate || ''} readOnly disabled />
                 </div>
             </div>
+
+            {isIdentityComplete && (
+                 <Alert variant="destructive">
+                    <Info className="h-4 w-4" />
+                    <AlertTitle>Información de Identidad Protegida</AlertTitle>
+                    <AlertDescription>
+                        Por seguridad, estos datos no se pueden modificar. Si necesitas corregirlos, por favor
+                        <Button variant="link" className="p-1 h-auto text-current underline" onClick={handleContactSupport}>contacta a soporte</Button>.
+                    </AlertDescription>
+                </Alert>
+            )}
 
             <p className="text-sm text-muted-foreground pt-2">Esta información es privada y se utilizará para verificar tu identidad al activar funciones de pago. No será visible para otros usuarios.</p>
 
@@ -70,14 +92,14 @@ export default function Step4_GeneralDetails({ onBack, onNext, formData, setForm
                 value={formData.email}
                 initialStatus={currentUser.emailValidated ? 'validated' : 'idle'}
                 onValidate={() => validateEmail(currentUser.id, formData.email)}
-                onValueChange={(value) => updateUser(currentUser.id, { email: value })}
+                onValueChange={(value) => handleValueChange('email', value)}
                 type="email"
             />
              <ValidationItem
                 label="Teléfono:"
                 value={formData.phone}
                 initialStatus={currentUser.phoneValidated ? 'validated' : 'idle'}
-                onValueChange={(value) => updateUser(currentUser.id, { phone: value })}
+                onValueChange={(value) => handleValueChange('phone', value)}
                 type="phone"
             />
         </div>
@@ -93,7 +115,7 @@ export default function Step4_GeneralDetails({ onBack, onNext, formData, setForm
 
         <div className="flex justify-between pt-4">
             <Button variant="outline" onClick={onBack}>Atrás</Button>
-            <Button onClick={onNext} disabled={!isDataComplete}>Siguiente</Button>
+            <Button onClick={onNext}>Siguiente</Button>
         </div>
     </div>
   );

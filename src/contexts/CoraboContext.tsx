@@ -693,9 +693,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const updateUserProfileImage = (userId: string, imageUrl: string) => {
     if (!currentUser) return;
-    const userRef = doc(db, 'users', userId);
-    updateDoc(userRef, { profileImage: imageUrl });
-    setCurrentUser(prev => prev ? { ...prev, profileImage: imageUrl } : null);
+    updateUser(userId, { profileImage: imageUrl });
   };
 
   const updateUserProfileAndGallery = (userId: string, imageOrId: GalleryImage | string, isDelete?: boolean) => {};
@@ -762,36 +760,23 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateFullProfile = async (userId: string, data: Partial<User & { profileSetupData: ProfileSetupData }>) => {
-    const userRef = doc(db, 'users', userId);
-    
-    const wasClient = currentUser?.type === 'client';
+    if (!currentUser) return;
+    const wasClient = currentUser.type === 'client';
     const isNowProvider = data.profileSetupData?.providerType !== undefined;
     
     const updates: Partial<User> = {
-      ...data,
       type: isNowProvider ? 'provider' : 'client',
+      profileSetupData: {
+        ...currentUser.profileSetupData,
+        ...data.profileSetupData,
+      },
     };
     
     if (wasClient && isNowProvider) {
       NotificationFlows.sendWelcomeToProviderNotification({ userId });
     }
     
-    await updateDoc(userRef, updates);
-    
-    // Refresh local user state
-    setCurrentUser(prevUser => {
-      if (!prevUser) return null;
-      // Deep merge profileSetupData
-      const newProfileSetupData = {
-        ...prevUser.profileSetupData,
-        ...data.profileSetupData,
-      };
-      return {
-        ...prevUser,
-        ...updates,
-        profileSetupData: newProfileSetupData,
-      };
-    });
+    await updateUser(userId, updates);
   };
 
   const subscribeUser = (userId: string, planName: string, amount: number) => {
