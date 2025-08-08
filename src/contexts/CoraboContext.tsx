@@ -654,7 +654,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const userRef = doc(db, 'users', userId);
     const initialCreditLimit = credicoraLevels['1'].creditLimit;
 
-    // Create a clean copy of paymentDetails to avoid mutating the original object
     const cleanedPaymentDetails = { ...paymentDetails };
     if (cleanedPaymentDetails.method === 'account') {
         delete cleanedPaymentDetails.mobilePaymentPhone;
@@ -672,6 +671,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     };
     
     await updateDoc(userRef, updates);
+    setCurrentUser(prevUser => prevUser ? { ...prevUser, ...updates } : null);
   };
   const deactivateTransactions = (userId: string) => {};
   const downloadTransactionsPDF = () => {};
