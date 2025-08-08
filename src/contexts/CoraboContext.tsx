@@ -277,7 +277,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const getUserEffectiveness = (userId: string) => {
     const user = users.find(u => u.id === userId);
-    if (user?.type !== 'provider') return 100;
+    if (!user || user.type !== 'provider') return 100;
   
     const providerTransactions = transactions.filter(t => t.providerId === userId);
     const totalMeaningfulTransactions = providerTransactions.filter(t => t.status !== 'Carrito Activo' && t.status !== 'Pre-factura Pendiente').length;
