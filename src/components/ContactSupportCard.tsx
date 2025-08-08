@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button";
 import { Mail, Phone, Instagram } from "lucide-react";
 import Link from 'next/link';
-import { useToast } from "./ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 export function ContactSupportCard() {
     const { toast } = useToast();
