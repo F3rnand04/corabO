@@ -17,15 +17,18 @@ interface ConversationCardProps {
 export function ConversationCard({ conversation }: ConversationCardProps) {
     const { users, currentUser } = useCorabo();
 
+    if (!currentUser) return null;
+
     const otherParticipantId = conversation.participantIds.find(pId => pId !== currentUser.id);
     const otherParticipant = users.find(u => u.id === otherParticipantId);
 
     if (!otherParticipant) {
-        return null;
+        return null; // Or some fallback for conversations with deleted users
     }
 
     const lastMessage = conversation.messages[conversation.messages.length - 1];
-    const unreadCount = conversation.unreadCount || 0;
+    // In a real app, unreadCount would come from the backend. We'll simulate it.
+    const unreadCount = conversation.messages.filter(m => !m.isRead && m.senderId !== currentUser.id).length;
     
     // Format timestamp
     const timeAgo = lastMessage ? formatDistanceToNow(new Date(lastMessage.timestamp), { addSuffix: true, locale: es }) : '';
@@ -38,22 +41,22 @@ export function ConversationCard({ conversation }: ConversationCardProps) {
                     <AvatarImage src={otherParticipant.profileImage} alt={otherParticipant.name} />
                     <AvatarFallback>{otherParticipant.name.charAt(0)}</AvatarFallback>
                 </Avatar>
-                <div className="flex-grow">
+                <div className="flex-grow overflow-hidden">
                     <div className="flex justify-between items-center">
-                        <p className="font-semibold">{otherParticipant.name}</p>
+                        <p className="font-semibold truncate">{otherParticipant.name}</p>
                         <p className={cn(
-                            "text-xs",
+                            "text-xs shrink-0 pl-2",
                             unreadCount > 0 ? "text-primary font-bold" : "text-muted-foreground"
                         )}>
                             {timeAgo}
                         </p>
                     </div>
                     <div className="flex justify-between items-center mt-1">
-                        <p className="text-sm text-muted-foreground truncate w-4/5">
-                            {lastMessage?.text || "No hay mensajes todavía."}
+                        <p className="text-sm text-muted-foreground truncate pr-2">
+                           {lastMessage?.type === 'proposal' ? '📝 Propuesta de Acuerdo' : lastMessage?.text || "No hay mensajes todavía."}
                         </p>
                         {unreadCount > 0 && (
-                            <Badge variant="default" className="w-6 h-6 flex items-center justify-center p-0 rounded-full">
+                            <Badge variant="default" className="w-6 h-6 flex items-center justify-center p-0 rounded-full shrink-0">
                                 {unreadCount}
                             </Badge>
                         )}

@@ -41,6 +41,7 @@ interface CoraboState {
   isGpsActive: boolean;
   searchHistory: string[];
   isLoadingAuth: boolean;
+  deliveryAddress: string;
   signInWithGoogle: () => void;
   setSearchQuery: (query: string) => void;
   clearSearchHistory: () => void;
@@ -89,6 +90,7 @@ interface CoraboState {
   checkIfShouldBeEnterprise: (providerId: string) => boolean;
   activatePromotion: (details: { imageId: string, promotionText: string, cost: number }) => void;
   createCampaign: typeof createCampaign;
+  setDeliveryAddress: (address: string) => void;
   // Admin functions
   toggleUserPause: (userId: string, currentIsPaused: boolean) => void;
   verifyCampaignPayment: (transactionId: string, campaignId: string) => void;
@@ -127,6 +129,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [feedView, setFeedView] = useState<FeedView>('servicios');
   const [isGpsActive, setIsGpsActive] = useState(true);
   const [dailyQuotes, setDailyQuotes] = useState<Record<string, DailyQuote[]>>({});
+  const [deliveryAddress, setDeliveryAddress] = useState('');
   
   const auth = getAuth(app);
   
@@ -144,64 +147,53 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const handleUserCreation = useCallback(async (firebaseUser: FirebaseUser): Promise<User | null> => {
+  const handleUserCreation = useCallback(async (firebaseUser: FirebaseUser): Promise<User> => {
     const userDocRef = doc(db, 'users', firebaseUser.uid);
-    try {
-      const userDocSnap = await getDoc(userDocRef);
-      if (userDocSnap.exists()) {
-        return userDocSnap.data() as User;
-      } else {
-        const coraboId = (firebaseUser.displayName?.substring(0, 3) || 'COR').toUpperCase() + Math.random().toString(36).substring(2, 8).toUpperCase();
-        console.log('Generated new coraboId:', coraboId);
-        const newUser: User = {
-          id: firebaseUser.uid,
-          coraboId: coraboId,
-          name: firebaseUser.displayName?.split(' ')[0] || 'Usuario',
-          lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
-          idNumber: '',
-          birthDate: '',
-          email: firebaseUser.email || '',
-          profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
-          type: 'client',
-          reputation: 0,
-          phone: '',
-          emailValidated: firebaseUser.emailVerified,
-          phoneValidated: false,
-          isGpsActive: true,
-          isInitialSetupComplete: false,
-          gallery: [],
-          credicoraLevel: 1,
-          credicoraLimit: 150,
-          profileSetupData: {},
-          isSubscribed: false,
-          isTransactionsActive: false,
-        };
-        console.log('Creating new user in Firestore:', newUser);
-        await setDoc(userDocRef, newUser);
-        return newUser;
-      }
-    } catch (error) {
-      console.error("FirebaseError on getDoc/setDoc during user creation:", error);
-      await signOut(auth);
-      return null;
+    const userDocSnap = await getDoc(userDocRef);
+    
+    if (userDocSnap.exists()) {
+      return userDocSnap.data() as User;
+    } else {
+      const nameParts = (firebaseUser.displayName || 'Usuario Nuevo').split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(' ');
+
+      const coraboId = (firstName.substring(0, 3)).toUpperCase() + Math.random().toString(36).substring(2, 8).toUpperCase();
+      
+      const newUser: User = {
+        id: firebaseUser.uid,
+        coraboId: coraboId,
+        name: firstName,
+        lastName: lastName,
+        idNumber: '',
+        birthDate: '',
+        email: firebaseUser.email || '',
+        profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
+        type: 'client',
+        reputation: 0,
+        phone: '',
+        emailValidated: firebaseUser.emailVerified,
+        phoneValidated: false,
+        isGpsActive: true,
+        isInitialSetupComplete: false,
+        gallery: [],
+        credicoraLevel: 1,
+        credicoraLimit: 150,
+        profileSetupData: {},
+        isSubscribed: false,
+        isTransactionsActive: false,
+      };
+      
+      await setDoc(userDocRef, newUser);
+      return newUser;
     }
-  }, [auth]);
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         const userData = await handleUserCreation(firebaseUser);
-        if (userData) {
-          setCurrentUser(userData);
-          // Ensure the main users list is also updated immediately
-          setUsers(prevUsers => {
-            const userExists = prevUsers.some(u => u.id === userData.id);
-            if (userExists) {
-              return prevUsers.map(u => u.id === userData.id ? userData : u);
-            }
-            return [...prevUsers, userData];
-          });
-        }
+        setCurrentUser(userData);
       } else {
         setCurrentUser(null);
       }
@@ -214,6 +206,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (!currentUser) return;
   
+    // Set default delivery address once user loads
+    if (currentUser.profileSetupData?.location) {
+        setDeliveryAddress(currentUser.profileSetupData.location);
+    }
+    
     const usersQuery = query(collection(db, "users"));
     const unsubscribeUsers = onSnapshot(usersQuery, (snapshot) => {
       const usersData = snapshot.docs.map(doc => doc.data() as User);
@@ -228,8 +225,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     
     const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id));
     const unsubscribeConversations = onSnapshot(conversationsQuery, (snapshot) => {
-      const conversationsData = snapshot.docs.map(doc => doc.data() as Conversation);
-      setConversations(conversationsData);
+        const conversationsData = snapshot.docs.map(doc => doc.data() as Conversation).sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime());
+        setConversations(conversationsData);
     }, (error) => console.error("Error fetching conversations:", error));
 
   
@@ -553,6 +550,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     isGpsActive,
     searchHistory,
     isLoadingAuth,
+    deliveryAddress,
+    setDeliveryAddress,
     signInWithGoogle,
     setSearchQuery,
     clearSearchHistory,
@@ -620,4 +619,3 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
-

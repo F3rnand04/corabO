@@ -123,7 +123,7 @@ export type ProfileSetupData = {
 
 export type User = {
   id: string;
-  coraboId?: string; // Made optional for backward compatibility
+  coraboId?: string;
   name: string;
   lastName?: string;
   idNumber?: string;
@@ -244,6 +244,7 @@ export type Message = {
     senderId: string;
     text?: string;
     timestamp: string;
+    isRead?: boolean; // Added for unread count
     type?: 'text' | 'proposal';
     proposal?: AgreementProposal;
     isProposalAccepted?: boolean;
@@ -254,7 +255,6 @@ export type Conversation = {
     participantIds: string[];
     messages: Message[];
     lastUpdated: string;
-    unreadCount?: number;
 };
 
 export type AppointmentRequest = {

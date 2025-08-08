@@ -5,10 +5,12 @@ import { useState } from 'react';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ChevronLeft, Search, SquarePen } from 'lucide-react';
+import { AlertCircle, ChevronLeft, Search, SquarePen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ConversationCard } from '@/components/ConversationCard';
 import type { Conversation } from '@/lib/types';
+import Link from 'next/link';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 
 function MessagesHeader() {
@@ -35,7 +37,10 @@ export default function MessagesPage() {
     const { conversations, users, currentUser } = useCorabo();
     const [searchQuery, setSearchQuery] = useState('');
 
+    const isClientWithInactiveTransactions = currentUser?.type === 'client' && !currentUser?.isTransactionsActive;
+
     const filteredConversations = conversations.filter(convo => {
+        if (!currentUser) return false;
         const otherParticipantId = convo.participantIds.find(pId => pId !== currentUser.id);
         const otherParticipant = users.find(u => u.id === otherParticipantId);
         if (!otherParticipant) return false;
@@ -54,7 +59,19 @@ export default function MessagesPage() {
     return (
         <div className="flex flex-col h-screen bg-muted/20">
             <MessagesHeader />
-             <div className="container py-4 px-4">
+             <div className="container py-4 px-4 space-y-4">
+                {isClientWithInactiveTransactions && (
+                    <Alert>
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle className="font-semibold">¡Activa tu registro!</AlertTitle>
+                        <AlertDescription className="flex justify-between items-center">
+                            <span>Disfruta de compras seguras y con seguimiento.</span>
+                             <Button variant="link" size="sm" asChild className="p-0 h-auto text-current font-bold">
+                                <Link href="/transactions">Activar ahora &rarr;</Link>
+                             </Button>
+                        </AlertDescription>
+                    </Alert>
+                )}
                 <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <Input 
