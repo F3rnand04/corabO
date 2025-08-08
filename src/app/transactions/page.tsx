@@ -67,7 +67,7 @@ function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary:
 
     const subtotal = getCartTotal();
     const deliveryCost = getDeliveryCost();
-    const totalWithDelivery = subtotal + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
+    const totalWithDelivery = subtotal + ((includeDelivery || isOnlyDelivery) ? deliveryCost : 0);
 
     const userCredicoraLevel = currentUser.credicoraLevel || 1;
     const credicoraDetails = credicoraLevels[userCredicoraLevel.toString()];
@@ -78,13 +78,13 @@ function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary:
     const potentialFinancing = subtotal * financingPercentage; // Financing only on products
     const financedAmount = useCredicora ? Math.min(potentialFinancing, creditLimit) : 0;
     const productInitialPayment = subtotal - financedAmount;
-    const totalToPayToday = productInitialPayment + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
+    const totalToPayToday = productInitialPayment + ((includeDelivery || isOnlyDelivery) ? deliveryCost : 0);
     const installmentAmount = financedAmount > 0 ? financedAmount / credicoraDetails.installments : 0;
 
 
     const handleCheckout = () => {
       if (cartTransaction) {
-          checkout(cartTransaction.id, includeDelivery || isDeliveryOnly, useCredicora);
+          checkout(cartTransaction.id, includeDelivery || isOnlyDelivery, useCredicora);
           setIsCheckoutAlertOpen(false);
           setUseCredicora(false);
       }
@@ -186,7 +186,7 @@ function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary:
                                 {isDeliveryOnly && <p className="text-xs text-muted-foreground -mt-2">Este proveedor solo trabaja con delivery.</p>}
                                 <div className="flex justify-between text-sm">
                                    <span>Costo de envío (aprox):</span>
-                                   <span className="font-semibold">${(includeDelivery || isDeliveryOnly) ? deliveryCost.toFixed(2) : '0.00'}</span>
+                                   <span className="font-semibold">${(includeDelivery || isOnlyDelivery) ? deliveryCost.toFixed(2) : '0.00'}</span>
                                </div>
 
                                 {providerAcceptsCredicora && (
@@ -442,12 +442,12 @@ export default function TransactionsPage() {
                                         <Separator/>
                                         <div className="space-y-3">
                                             <div className="space-y-1">
-                                                <div className="flex justify-between text-xs font-medium"><span>Reputación</span><span>{currentUser.reputation}/5.0</span></div>
+                                                <div className="flex justify-between text-xs font-medium"><span>Reputación</span><span>{currentUser.reputation.toFixed(1)}/5.0</span></div>
                                                 <Progress value={(currentUser.reputation / 5) * 100} />
                                             </div>
                                             <div className="space-y-1">
-                                                <div className="flex justify-between text-xs font-medium"><span>Efectividad</span><span>99%</span></div>
-                                                <Progress value={99} />
+                                                <div className="flex justify-between text-xs font-medium"><span>Efectividad</span><span>{completedTransactions === 0 ? 'N/A' : '99%'}</span></div>
+                                                <Progress value={completedTransactions === 0 ? 0 : 99} />
                                             </div>
                                             <div className="space-y-1">
                                                  <div className="flex justify-between text-xs font-medium"><span>Transacciones para Nivel {credicoraDetails.level + 1}</span><span>{completedTransactions}/{transactionsForNextLevel}</span></div>
