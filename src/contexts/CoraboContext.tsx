@@ -696,13 +696,15 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const validateEmail = async (userId: string, emailToValidate: string): Promise<boolean> => {
     // In a real app, this would use a backend service to send an email.
     // For this prototype, we simulate the code generation and verification.
-    console.log(`Simulando envío de código de verificación a ${emailToValidate}...`);
+    const verificationCode = Math.floor(1000 + Math.random() * 9000).toString();
+    console.log(`CÓDIGO DE VERIFICACIÓN PARA ${emailToValidate}: ${verificationCode}`);
     toast({
         title: 'Código de Verificación Enviado',
         description: `Se ha enviado un código a tu correo. (Revisa la consola del navegador para ver el código).`
     });
     
     // The actual code comparison happens in `ValidationItem.tsx`.
+    // Here we'd typically store the code server-side. For now, we assume this works.
     return true;
   };
   
@@ -732,15 +734,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
                 description: result.message,
                 className: "bg-green-100 border-green-300 text-green-800",
             });
-            return true;
         } else {
             toast({
                 variant: 'destructive',
                 title: 'Error de Verificación',
                 description: result.message,
             });
-            return false;
         }
+        return result.success;
     } catch (error) {
         console.error("Failed to verify code:", error);
         toast({
