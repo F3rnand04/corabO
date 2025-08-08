@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useRef, ChangeEvent } from 'react';
@@ -15,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { VerificationOutput } from '@/lib/types';
-import { ValidationItem } from '@/components/ValidationItem';
+import { ValidationItem } from "@/components/ValidationItem";
 import { Switch } from '@/components/ui/switch';
 
 
@@ -62,10 +63,20 @@ export default function TransactionsSettingsPage() {
     const idFileInputRef = useRef<HTMLInputElement>(null);
 
     // Step 2 state
-    const [paymentMethods, setPaymentMethods] = useState(currentUser?.profileSetupData?.paymentDetails || {
-        account: { active: false, bankName: '', accountNumber: '' },
-        mobile: { active: false, bankName: '', mobilePaymentPhone: '' },
-        crypto: { active: false, binanceEmail: currentUser?.email || '', validated: false }
+    const [paymentMethods, setPaymentMethods] = useState(() => {
+        const defaultMethods = {
+            account: { active: false, bankName: '', accountNumber: '' },
+            mobile: { active: false, bankName: '', mobilePaymentPhone: '' },
+            crypto: { active: false, binanceEmail: currentUser?.email || '', validated: false }
+        };
+
+        const existingMethods = currentUser?.profileSetupData?.paymentDetails;
+
+        return {
+            account: { ...defaultMethods.account, ...existingMethods?.account },
+            mobile: { ...defaultMethods.mobile, ...existingMethods?.mobile },
+            crypto: { ...defaultMethods.crypto, ...existingMethods?.crypto },
+        };
     });
     
     const [isVerifyingAccount, setIsVerifyingAccount] = useState(false);
