@@ -32,7 +32,9 @@ export function ProviderCard({ provider }: ProviderCardProps) {
     const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
     const [isLiked, setIsLiked] = useState(false);
-    const [likeCount, setLikeCount] = useState(Math.floor(Math.random() * 5000));
+    const [likeCount, setLikeCount] = useState(0);
+    const [commentCount, setCommentCount] = useState(0);
+    const [shareCount, setShareCount] = useState(0);
     
     const profileLink = `/companies/${provider.id}`;
 
@@ -67,6 +69,31 @@ export function ProviderCard({ provider }: ProviderCardProps) {
         setLikeCount(prev => isLiked ? prev - 1 : prev + 1);
     };
 
+    const handleShare = async () => {
+        const mainImage = provider.gallery && provider.gallery.length > 0 ? provider.gallery[0] : null;
+        if (!mainImage) return;
+
+        const shareData = {
+          title: `Mira esta publicación de ${provider.name}`,
+          text: mainImage.description,
+          url: window.location.origin + profileLink,
+        };
+        try {
+            if (navigator.share) {
+                await navigator.share(shareData);
+                setShareCount(prev => prev + 1);
+            } else {
+                throw new Error("Share API not supported");
+            }
+        } catch (error) {
+           navigator.clipboard.writeText(shareData.url);
+           toast({
+             title: "Enlace Copiado",
+             description: "El enlace al perfil ha sido copiado.",
+           });
+        }
+    }
+
     const completedTransactions = transactions.filter(
         tx => tx.providerId === provider.id && (tx.status === 'Pagado' || tx.status === 'Resuelto')
     ).length;
@@ -83,10 +110,6 @@ export function ProviderCard({ provider }: ProviderCardProps) {
     const displayDistance = provider.profileSetupData?.showExactLocation ? "A menos de 1km" : "500m - 1km";
 
     const mainImage = provider.gallery && provider.gallery.length > 0 ? provider.gallery[0] : null;
-    
-    const commentCount = mainImage?.comments?.length || Math.floor(Math.random() * 100);
-    const shareCount = Math.floor(Math.random() * 1000);
-
 
     return (
         <>
@@ -172,10 +195,10 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                              <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10" onClick={() => setIsDetailsDialogOpen(true)}>
                                 <MessageCircle className="w-5 h-5" />
                              </Button>
-                            <span className="text-xs font-bold mt-1 drop-shadow-md">{commentCount.toLocaleString('en-US')}</span>
+                            <span className="text-xs font-bold mt-1 drop-shadow-md">{mainImage?.comments?.length || 0}</span>
                         </div>
                          <div className="flex flex-col items-center">
-                             <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10" onClick={handleDirectMessage}>
+                             <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10" onClick={handleShare}>
                                 <Send className="w-5 h-5" />
                              </Button>
                             <span className="text-xs font-bold mt-1 drop-shadow-md">{shareCount.toLocaleString('en-US', {notation: 'compact'})}</span>
@@ -210,3 +233,4 @@ export function ProviderCard({ provider }: ProviderCardProps) {
         </>
     )
 }
+

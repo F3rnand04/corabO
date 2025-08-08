@@ -71,10 +71,10 @@ export default function CompanyProfilePage() {
   const minSwipeDistance = 50;
 
   // Local state for interactions
-  const [starCount, setStarCount] = useState(0);
+  const [starCount, setStarCount] = useState(Math.floor(Math.random() * 5000));
   const [isLiked, setIsLiked] = useState(false);
-  const [shareCount, setShareCount] = useState(0);
-  const [messageCount, setMessageCount] = useState(0);
+  const [shareCount, setShareCount] = useState(Math.floor(Math.random() * 1000));
+  const [messageCount, setMessageCount] = useState(Math.floor(Math.random() * 2000));
   const [activeTab, setActiveTab] = useState('comentarios');
   const [gpsReady, setGpsReady] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -111,7 +111,7 @@ export default function CompanyProfilePage() {
   
   const deliveryCost = getDeliveryCost();
   const subtotal = getCartTotal();
-  const totalWithDelivery = subtotal + ((includeDelivery || isOnlyDelivery) ? deliveryCost : 0);
+  const totalWithDelivery = subtotal + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
 
   const userCredicoraLevel = currentUser?.credicoraLevel || 1;
   const credicoraDetails = credicoraLevels[userCredicoraLevel.toString()];
@@ -122,7 +122,7 @@ export default function CompanyProfilePage() {
   const potentialFinancing = subtotal * financingPercentage; // Financing only on products
   const financedAmount = useCredicora ? Math.min(potentialFinancing, creditLimit) : 0;
   const productInitialPayment = subtotal - financedAmount;
-  const totalToPayToday = productInitialPayment + ((includeDelivery || isOnlyDelivery) ? deliveryCost : 0);
+  const totalToPayToday = productInitialPayment + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
   const installmentAmount = financedAmount > 0 ? financedAmount / credicoraDetails.installments : 0;
 
   if (!provider) {
@@ -769,7 +769,3 @@ export default function CompanyProfilePage() {
     </>
   );
 }
-
-
-
-    
