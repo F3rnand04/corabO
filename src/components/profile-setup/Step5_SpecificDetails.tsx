@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from '../ui/textarea';
-import { MapPin, Building, AlertCircle, Package, Hand, Star, Info } from 'lucide-react';
+import { MapPin, Building, AlertCircle, Package, Hand, Star, Info, LocateFixed } from 'lucide-react';
 import { Switch } from '../ui/switch';
 import { Slider } from '../ui/slider';
 import { Badge } from '../ui/badge';
@@ -62,8 +62,8 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
   const MAX_RADIUS_FREE = 10;
   const isOverFreeRadius = serviceRadius > MAX_RADIUS_FREE && !formData.isSubscribed;
   
-  const handleGpsClick = () => {
-    setLocation('https://maps.app.goo.gl/h2bYMPEgneUp9i7J8');
+  const handleMapClick = () => {
+    router.push('/map');
   };
 
   const handleScheduleChange = (day: string, field: 'from' | 'to' | 'active', value: string | boolean) => {
@@ -170,14 +170,13 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
            </div>
 
             <div className="relative">
-                <MapPin 
-                  className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground cursor-pointer hover:text-primary transition-colors"
-                  onClick={handleGpsClick}
-                />
+                 <Button variant="ghost" size="icon" className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-primary" onClick={handleMapClick}>
+                    <LocateFixed className="h-5 w-5" />
+                 </Button>
                 <Input 
                   id="location" 
-                  placeholder="Ingresa la dirección de tu negocio (Obligatorio)" 
-                  className="pl-10"
+                  placeholder="Ubicación de tu negocio..." 
+                  className="pl-12"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                 />

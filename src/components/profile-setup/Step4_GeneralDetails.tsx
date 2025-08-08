@@ -24,25 +24,28 @@ export default function Step4_GeneralDetails({ onBack, onNext, formData, setForm
   const router = useRouter();
 
   const handleValueChange = (field: 'phone' | 'email', value: string) => {
-    // Only allow changing phone and email directly here
-    updateUser(currentUser.id, { [field]: value });
+    // This now correctly calls the updateUser function from the context
+    if (currentUser) {
+      updateUser(currentUser.id, { [field]: value });
+    }
   };
   
   useEffect(() => {
-    // Ensure form data is synced with the latest from the current user,
-    // especially after re-renders.
-    setFormData({
-      ...formData,
-      name: currentUser.name,
-      lastName: currentUser.lastName || '',
-      idNumber: currentUser.idNumber || '',
-      birthDate: currentUser.birthDate || '',
-      email: currentUser.email,
-      phone: currentUser.phone
-    });
+    // Ensure form data is synced with the latest from the current user
+    if (currentUser) {
+        setFormData({
+            ...formData,
+            name: currentUser.name,
+            lastName: currentUser.lastName || '',
+            idNumber: currentUser.idNumber || '',
+            birthDate: currentUser.birthDate || '',
+            email: currentUser.email,
+            phone: currentUser.phone
+        });
+    }
   }, [currentUser]);
   
-  const isIdentityComplete = currentUser.lastName && currentUser.idNumber && currentUser.birthDate;
+  const isIdentityComplete = currentUser?.lastName && currentUser?.idNumber && currentUser?.birthDate;
 
   const handleContactSupport = () => {
     const supportMessage = "Hola, necesito ayuda para corregir mis datos de registro de identidad. Cometí un error al ingresarlos.";
@@ -58,19 +61,19 @@ export default function Step4_GeneralDetails({ onBack, onNext, formData, setForm
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                     <Label htmlFor="name">Nombre</Label>
-                    <Input id="name" value={currentUser.name || ''} readOnly disabled />
+                    <Input id="name" value={currentUser?.name || ''} readOnly disabled />
                 </div>
                  <div className="space-y-1.5">
                     <Label htmlFor="lastName">Apellido</Label>
-                    <Input id="lastName" value={currentUser.lastName || ''} readOnly disabled />
+                    <Input id="lastName" value={currentUser?.lastName || ''} readOnly disabled />
                 </div>
                  <div className="space-y-1.5">
                     <Label htmlFor="idNumber">Cédula de Identidad</Label>
-                    <Input id="idNumber" value={currentUser.idNumber || ''} readOnly disabled />
+                    <Input id="idNumber" value={currentUser?.idNumber || ''} readOnly disabled />
                 </div>
                  <div className="space-y-1.5">
                     <Label htmlFor="birthDate">Fecha de Nacimiento</Label>
-                    <Input id="birthDate" type="date" value={currentUser.birthDate || ''} readOnly disabled />
+                    <Input id="birthDate" type="date" value={currentUser?.birthDate || ''} readOnly disabled />
                 </div>
             </div>
 
@@ -90,15 +93,15 @@ export default function Step4_GeneralDetails({ onBack, onNext, formData, setForm
             <ValidationItem
                 label="Correo Electrónico:"
                 value={formData.email}
-                initialStatus={currentUser.emailValidated ? 'validated' : 'idle'}
-                onValidate={() => validateEmail(currentUser.id, formData.email)}
+                initialStatus={currentUser?.emailValidated ? 'validated' : 'idle'}
+                onValidate={() => validateEmail(currentUser!.id, formData.email)}
                 onValueChange={(value) => handleValueChange('email', value)}
                 type="email"
             />
              <ValidationItem
                 label="Teléfono:"
                 value={formData.phone}
-                initialStatus={currentUser.phoneValidated ? 'validated' : 'idle'}
+                initialStatus={currentUser?.phoneValidated ? 'validated' : 'idle'}
                 onValueChange={(value) => handleValueChange('phone', value)}
                 type="phone"
             />
