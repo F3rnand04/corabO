@@ -83,7 +83,7 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
 
     // 3. Check if every part of the name from our record is present in the name extracted from the ID
     // This is more flexible. It checks if "fernando" is in "fernando antonio infante" AND if "infante" is in "fernando antonio infante".
-    // This will correctly pass.
+    // This will correctly pass. This is the corrected logic.
     const nameMatch = recordNameParts.every(part => extractedNameLower.includes(part));
 
     return {
