@@ -22,7 +22,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Day, type DayProps } from 'react-day-picker';
 import { CampaignDialog } from '@/components/CampaignDialog';
 import { Badge } from '@/components/ui/badge';
-import { SubscriptionDialog } from '../SubscriptionDialog';
+import { SubscriptionDialog } from '@/components/SubscriptionDialog';
 
 
 export default function ProfilePage() {

@@ -690,9 +690,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const requestService = (service: Service) => {};
   const requestQuoteFromGroup = (serviceName: string, items: string[], groupOrProvider: string): boolean => { return true; };
   const checkout = (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {};
+  
   const updateUserProfileImage = (userId: string, imageUrl: string) => {
-    updateUser(userId, { profileImage: imageUrl });
+    if (!currentUser) return;
+    const userRef = doc(db, 'users', userId);
+    updateDoc(userRef, { profileImage: imageUrl });
+    setCurrentUser(prev => prev ? { ...prev, profileImage: imageUrl } : null);
   };
+
   const updateUserProfileAndGallery = (userId: string, imageOrId: GalleryImage | string, isDelete?: boolean) => {};
   const removeGalleryImage = (userId: string, imageId: string) => {};
   
