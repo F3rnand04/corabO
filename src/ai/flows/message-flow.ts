@@ -56,6 +56,7 @@ export const sendMessage = ai.defineFlow(
       text: input.text,
       proposal: input.proposal,
       isProposalAccepted: false,
+      isRead: false, // New messages are always unread
     };
 
     if (convoSnap.exists()) {

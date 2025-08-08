@@ -244,7 +244,7 @@ export type Message = {
     senderId: string;
     text?: string;
     timestamp: string;
-    isRead?: boolean; // Added for unread count
+    isRead: boolean;
     type?: 'text' | 'proposal';
     proposal?: AgreementProposal;
     isProposalAccepted?: boolean;

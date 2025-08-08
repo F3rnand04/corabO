@@ -27,7 +27,6 @@ export function ConversationCard({ conversation }: ConversationCardProps) {
     }
 
     const lastMessage = conversation.messages[conversation.messages.length - 1];
-    // In a real app, unreadCount would come from the backend. We'll simulate it.
     const unreadCount = conversation.messages.filter(m => !m.isRead && m.senderId !== currentUser.id).length;
     
     // Format timestamp

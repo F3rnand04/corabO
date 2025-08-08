@@ -191,7 +191,7 @@ function MessageBubble({ msg, isCurrentUser, onAccept, canAcceptProposal }: { ms
                         {formattedTime || '...'}
                     </p>
                     {isCurrentUser && (
-                        <CheckCheck className="w-4 h-4 text-blue-400" />
+                        <CheckCheck className={cn("w-4 h-4", msg.isRead ? "text-blue-400" : "text-primary-foreground/50")} />
                     )}
                 </div>
             </div>
@@ -203,7 +203,7 @@ function MessageBubble({ msg, isCurrentUser, onAccept, canAcceptProposal }: { ms
 export default function ChatPage() {
   const params = useParams();
   const router = useRouter();
-  const { conversations, users, currentUser, sendMessage, createAppointmentRequest, acceptProposal } = useCorabo();
+  const { conversations, users, currentUser, sendMessage, acceptProposal, markConversationAsRead } = useCorabo();
   const [newMessage, setNewMessage] = useState('');
   const [isProposalDialogOpen, setIsProposalDialogOpen] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -228,6 +228,13 @@ export default function ChatPage() {
         }
     }
   }, [conversation?.messages]);
+
+  useEffect(() => {
+    // Mark messages as read when component mounts and conversation is available
+    if (conversation && currentUser) {
+      markConversationAsRead(conversation.id);
+    }
+  }, [conversation, currentUser, markConversationAsRead]);
 
   if (!currentUser || !conversation || !otherParticipant) {
     return (

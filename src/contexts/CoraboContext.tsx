@@ -91,6 +91,7 @@ interface CoraboState {
   activatePromotion: (details: { imageId: string, promotionText: string, cost: number }) => void;
   createCampaign: typeof createCampaign;
   setDeliveryAddress: (address: string) => void;
+  markConversationAsRead: (conversationId: string) => void;
   // Admin functions
   toggleUserPause: (userId: string, currentIsPaused: boolean) => void;
   verifyCampaignPayment: (transactionId: string, campaignId: string) => void;
@@ -446,6 +447,24 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       toast({ variant: 'destructive', title: 'Error al aceptar la propuesta' });
     }
   };
+  
+  const markConversationAsRead = async (conversationId: string) => {
+    if (!currentUser) return;
+    const convoRef = doc(db, 'conversations', conversationId);
+    const convoSnap = await getDoc(convoRef);
+
+    if (convoSnap.exists()) {
+      const conversation = convoSnap.data() as Conversation;
+      const unreadMessages = conversation.messages.some(m => !m.isRead && m.senderId !== currentUser.id);
+
+      if (unreadMessages) {
+        const updatedMessages = conversation.messages.map(msg => 
+          msg.senderId !== currentUser.id ? { ...msg, isRead: true } : msg
+        );
+        await updateDoc(convoRef, { messages: updatedMessages });
+      }
+    }
+  };
 
 
   // --- Transaction Flows ---
@@ -606,6 +625,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     rejectUserId,
     setIdVerificationPending,
     autoVerifyIdWithAI,
+    markConversationAsRead,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;
