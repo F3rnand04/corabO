@@ -5,7 +5,7 @@
 import { useCorabo } from "@/contexts/CoraboContext";
 import { ProviderCard } from "@/components/ProviderCard";
 import type { User, GalleryImage } from "@/lib/types";
-import { useMemo, useEffect, useState } from "react";
+import { useMemo } from "react";
 
 const mainCategories = [
   'Hogar y Reparaciones', 
@@ -20,75 +20,62 @@ const mainCategories = [
 ];
 
 export default function HomePage() {
-  const { users, searchQuery, feedView } = useCorabo();
-  const [allPublications, setAllPublications] = useState<(GalleryImage & { provider: User })[]>([]);
+  const { getRankedFeed, searchQuery, feedView } = useCorabo();
 
-  useEffect(() => {
-    const publications = users
-      .filter(u => u.type === 'provider')
-      .flatMap(p => (p.gallery || []).map(g => ({ ...g, provider: p })))
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    setAllPublications(publications);
-  }, [users]);
+  const rankedFeed = useMemo(() => getRankedFeed(), [getRankedFeed]);
+  
+  const filteredFeed = useMemo(() => {
+    const lowerCaseQuery = searchQuery.toLowerCase().trim();
 
+    if (!lowerCaseQuery) {
+        // Filter by feed view only
+        return rankedFeed.filter(pub => {
+            const providerType = pub.provider.profileSetupData?.providerType || 'professional';
+            if (feedView === 'empresas') return providerType === 'company';
+            return providerType !== 'company';
+        });
+    }
 
-  const getFilteredPublications = () => {
-    const lowerCaseQuery = searchQuery.toLowerCase();
-    
-    // Determine if the search query is one of the main categories
     const isCategorySearch = mainCategories.some(cat => cat.toLowerCase() === lowerCaseQuery);
 
-    const filterLogic = (publication: (GalleryImage & { provider: User })) => {
-      const provider = publication.provider;
-      
-      if (isCategorySearch) {
-        // Strict category filtering
-        return provider.profileSetupData?.categories?.some(cat => cat.toLowerCase() === lowerCaseQuery);
-      } else {
-        // General text search
-        const publicationMatch = publication.description.toLowerCase().includes(lowerCaseQuery);
-        const providerName = provider.profileSetupData?.useUsername 
-            ? provider.profileSetupData.username 
-            : provider.name;
-        const providerNameMatch = providerName?.toLowerCase().includes(lowerCaseQuery);
-        const specialtyMatch = provider.profileSetupData?.specialty?.toLowerCase().includes(lowerCaseQuery);
-        const categoryKeywordMatch = provider.profileSetupData?.categories?.some(cat => cat.toLowerCase().includes(lowerCaseQuery));
+    return rankedFeed.filter(pub => {
+        const provider = pub.provider;
+        const providerType = provider.profileSetupData?.providerType || 'professional';
 
-        return publicationMatch || providerNameMatch || specialtyMatch || categoryKeywordMatch;
-      }
-    }
-     
-     // Determine the target publications based on the current feed view (servicios vs empresas)
-     const targetPublications = allPublications.filter(p => {
-        const providerType = p.provider.profileSetupData?.providerType || 'professional';
-        if (feedView === 'empresas') {
-            return providerType === 'company';
+        // Apply feed view filter first
+        if (feedView === 'empresas' && providerType !== 'company') return false;
+        if (feedView === 'servicios' && providerType === 'company') return false;
+
+        // Then apply search query filter
+        if (isCategorySearch) {
+            return provider.profileSetupData?.categories?.some(cat => cat.toLowerCase() === lowerCaseQuery);
+        } else {
+            const publicationMatch = pub.description.toLowerCase().includes(lowerCaseQuery);
+            const providerName = provider.profileSetupData?.useUsername 
+                ? provider.profileSetupData.username 
+                : provider.name;
+            const providerNameMatch = providerName?.toLowerCase().includes(lowerCaseQuery);
+            const specialtyMatch = provider.profileSetupData?.specialty?.toLowerCase().includes(lowerCaseQuery);
+            
+            return publicationMatch || providerNameMatch || specialtyMatch;
         }
-        return providerType !== 'company'; // 'servicios' are professionals/individuals
-     });
-        
-    if (lowerCaseQuery.trim() === '') {
-        return targetPublications;
-    }
+    });
 
-    return targetPublications.filter(filterLogic);
-  }
-
-  const filteredPublications = getFilteredPublications();
+  }, [rankedFeed, searchQuery, feedView]);
 
   const noResultsMessage = () => {
     const baseMessage = feedView === 'empresas' ? "No se encontraron empresas" : "No se encontraron servicios";
     if (searchQuery) {
         return `${baseMessage} para "${searchQuery}".`;
     }
-    return `${baseMessage}.`;
+    return `${baseMessage} en el feed.`;
   }
 
   return (
     <main className="container py-4 space-y-6">
       <div className="space-y-4">
-        {filteredPublications.length > 0 ? (
-          filteredPublications.map(pub => <ProviderCard key={pub.id} publication={pub} />)
+        {filteredFeed.length > 0 ? (
+          filteredFeed.map(pub => <ProviderCard key={`${pub.provider.id}-${pub.id}`} provider={pub.provider} />)
         ) : (
           <p className="text-center text-muted-foreground pt-16">
             {noResultsMessage()}

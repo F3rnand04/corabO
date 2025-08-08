@@ -154,6 +154,7 @@ export type User = {
   role?: 'admin';
   idDocumentUrl?: string;
   idVerificationStatus?: 'pending' | 'verified' | 'rejected';
+  createdAt?: string;
 };
 
 export type Product = {

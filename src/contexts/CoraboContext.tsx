@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useRouter } from 'next/navigation';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { add, subDays, startOfDay } from 'date-fns';
+import { add, subDays, startOfDay, differenceInDays, differenceInHours } from 'date-fns';
 import { credicoraLevels } from '@/lib/types';
 // Import necessary firebase services directly
 import { getAuth, signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, GoogleAuthProvider, setPersistence, browserLocalPersistence } from 'firebase/auth';
@@ -42,6 +42,7 @@ interface CoraboState {
   searchHistory: string[];
   isLoadingAuth: boolean;
   deliveryAddress: string;
+  getRankedFeed: () => (GalleryImage & { provider: User })[];
   signInWithGoogle: () => void;
   setSearchQuery: (query: string) => void;
   clearSearchHistory: () => void;
@@ -168,6 +169,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         lastName: lastName,
         idNumber: '',
         birthDate: '',
+        createdAt: new Date().toISOString(),
         email: firebaseUser.email || '',
         profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
         type: 'client',
@@ -238,6 +240,62 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [currentUser]);
 
+  const getRankedFeed = useCallback(() => {
+    if (!currentUser) return [];
+
+    const allPublications = users
+        .filter(u => u.type === 'provider')
+        .flatMap(p => (p.gallery || []).map(g => ({ ...g, provider: p })));
+
+    const isNewProvider = (provider: User) => {
+        const completedTransactions = transactions.filter(
+            tx => tx.providerId === provider.id && (tx.status === 'Pagado' || tx.status === 'Resuelto')
+        ).length;
+        const accountAgeInDays = provider.createdAt ? differenceInDays(new Date(), new Date(provider.createdAt)) : 999;
+        return completedTransactions < 5 && accountAgeInDays < 30;
+    };
+
+    const calculateScore = (pub: GalleryImage & { provider: User }): number => {
+        const provider = pub.provider;
+        const isNew = isNewProvider(provider);
+        let score = 0;
+
+        // --- Relevance Score ---
+        let relevanceScore = 0;
+        const userInterests = currentUser.profileSetupData?.categories || [];
+        const providerCategories = provider.profileSetupData?.categories || [];
+        if (userInterests.some(interest => providerCategories.includes(interest))) {
+            relevanceScore += 50;
+        }
+
+        // --- Freshness Score ---
+        const hoursSincePublication = differenceInHours(new Date(), new Date(pub.createdAt));
+        const freshnessScore = Math.max(0, 100 - hoursSincePublication); // Higher score for newer posts
+
+        if (isNew) {
+            // Opportunity Lane
+            let profileCompleteness = 0;
+            if (provider.emailValidated) profileCompleteness += 10;
+            if (provider.phoneValidated) profileCompleteness += 10;
+            if (provider.profileSetupData?.specialty) profileCompleteness += 10;
+            
+            score = (relevanceScore * 0.6) + (freshnessScore * 0.3) + (profileCompleteness * 0.1);
+
+        } else {
+            // Trust Lane
+            let qualityScore = 0;
+            qualityScore += (provider.reputation || 0) * 10; // Max 50
+            if (provider.isSubscribed) qualityScore += 20;
+            if (provider.verified) qualityScore += 30;
+            
+            score = (qualityScore * 0.5) + (relevanceScore * 0.4) + (freshnessScore * 0.1);
+        }
+
+        return score;
+    };
+
+    return allPublications.sort((a, b) => calculateScore(b) - calculateScore(a));
+  }, [currentUser, users, transactions]);
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
@@ -570,6 +628,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     searchHistory,
     isLoadingAuth,
     deliveryAddress,
+    getRankedFeed,
     setDeliveryAddress,
     signInWithGoogle,
     setSearchQuery,
