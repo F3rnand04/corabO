@@ -112,7 +112,7 @@ export default function QuotesProPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const unlockedOption = searchParams.get('unlocked');
-  const { requestQuoteFromGroup } = useCorabo();
+  const { requestQuoteFromGroup, subscribeUser, currentUser } = useCorabo();
 
   const form = useForm<QuoteFormValues>({
     resolver: zodResolver(quoteSchema),
@@ -132,6 +132,13 @@ export default function QuotesProPage() {
   });
 
   const quoteType = form.watch('type');
+  
+  const handleSubscribe = () => {
+    if (!currentUser) return;
+    // Redirects to payment page
+    subscribeUser(currentUser.id, "Plan Personal", 5);
+  };
+
 
   const onSubmit = (data: QuoteFormValues) => {
     const success = requestQuoteFromGroup(
@@ -355,7 +362,7 @@ export default function QuotesProPage() {
            <div className="p-4 border rounded-lg bg-muted/50 mt-6 text-center">
                 <h3 className="font-semibold">¡Cotiza siempre sin pagos adicionales!</h3>
                 <p className="text-sm text-muted-foreground mt-1">Disfruta de búsquedas PRO ilimitadas y más beneficios.</p>
-                <Button className="mt-4" variant="outline" onClick={() => router.push('/contacts')}>
+                <Button className="mt-4" variant="outline" onClick={handleSubscribe}>
                     <Star className="mr-2 h-4 w-4"/>
                     Suscribirme ahora
                 </Button>

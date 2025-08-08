@@ -773,7 +773,24 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   };
 
-  const subscribeUser = (userId: string, planName: string, amount: number) => {};
+  const subscribeUser = (userId: string, planName: string, amount: number) => {
+      const txId = `txn-sub-${Date.now()}`;
+      const subscriptionTransaction: Transaction = {
+          id: txId,
+          type: 'Sistema',
+          status: 'Finalizado - Pendiente de Pago',
+          date: new Date().toISOString(),
+          amount: amount,
+          clientId: userId,
+          providerId: 'corabo-admin',
+          participantIds: [userId, 'corabo-admin'],
+          details: {
+              system: `Pago de suscripción: ${planName}`,
+          },
+      };
+      setTransactions(prev => [...prev, subscriptionTransaction]);
+      router.push(`/quotes/payment?commitmentId=${txId}&amount=${amount}`);
+  };
   
   const activateTransactions = async (userId: string, paymentDetails: any) => {
       if (!currentUser) return;

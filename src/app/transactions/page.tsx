@@ -299,7 +299,7 @@ const ActionButton = ({ icon: Icon, label, count, onClick }: { icon: React.Eleme
 
 
 export default function TransactionsPage() {
-    const { transactions, currentUser, getAgendaEvents, confirmPaymentReceived, getUserEffectiveness } = useCorabo();
+    const { transactions, currentUser, getAgendaEvents, confirmPaymentReceived, getUserEffectiveness, subscribeUser } = useCorabo();
     const router = useRouter();
     const isModuleActive = currentUser.isTransactionsActive ?? false;
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);

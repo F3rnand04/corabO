@@ -33,7 +33,9 @@ export function AdvancedQuoteDialog({ isOpen, onOpenChange, selectedOption }: Ad
   }
 
   const handleSubscribe = () => {
-    subscribeUser(currentUser.id, "Plan Personal", 5); // Placeholder values
+    if(!currentUser) return;
+    // This will now redirect to the payment page
+    subscribeUser(currentUser.id, "Plan Personal", 5);
     onOpenChange(false);
   }
 

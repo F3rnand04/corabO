@@ -76,6 +76,9 @@ export default function QuotePaymentPage() {
     
     const getBenefitMessage = () => {
         if (commitmentId) {
+             if (transaction?.details.system?.includes('suscripción')) {
+                return `Estás a punto de pagar tu suscripción: **${transaction.details.system}**.`;
+            }
             return `Estás a punto de pagar un compromiso por **$${amount.toFixed(2)}**.`;
         }
         if (amount <= 3) {
