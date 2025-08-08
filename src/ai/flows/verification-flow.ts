@@ -81,12 +81,12 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
     // 2. Normalize names for flexible comparison
     const normalizeName = (str: string) => str.trim().toLowerCase();
     
-    const extractedNameLower = normalizeName(output.extractedName); // e.g., "fernando antonio"
+    const extractedNameLower = normalizeName(output.extractedName); // e.g., "fernando antonio infante"
     const recordNameParts = normalizeName(input.nameInRecord).split(' '); // e.g., ["fernando", "infante"]
 
     // 3. Check if every part of the name from our record is present in the name extracted from the ID
-    // This is more flexible. It checks if "fernando" is in "fernando antonio" AND if "infante" is in "fernando antonio".
-    // This will correctly fail because "infante" is not in the document.
+    // This is more flexible. It checks if "fernando" is in "fernando antonio infante" AND if "infante" is in "fernando antonio infante".
+    // This will correctly pass.
     const nameMatch = recordNameParts.every(part => extractedNameLower.includes(part));
 
     return {
@@ -97,4 +97,3 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
     };
   }
 );
-
