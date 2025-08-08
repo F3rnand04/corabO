@@ -8,7 +8,7 @@ import { Input } from './ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { CheckCircle } from 'lucide-react';
 
-type ValidationStatus = 'add' | 'pending' | 'validated';
+type ValidationStatus = 'idle' | 'pending' | 'validated';
 
 interface ValidationItemProps {
     label: string;
@@ -16,7 +16,6 @@ interface ValidationItemProps {
     initialStatus?: 'idle' | 'validated';
     onValidate?: (valueToValidate: string) => Promise<boolean>;
     onValueChange?: (value: string) => void;
-    forceAddStatus?: boolean; // New prop
 }
 
 export function ValidationItem({ 
@@ -25,9 +24,8 @@ export function ValidationItem({
     initialStatus = 'idle',
     onValidate,
     onValueChange,
-    forceAddStatus = false, // Default to false
 }: ValidationItemProps) {
-    const [status, setStatus] = useState<ValidationStatus>(forceAddStatus ? 'add' : (initialValue ? (initialStatus === 'validated' ? 'validated' : 'pending') : 'add'));
+    const [status, setStatus] = useState<ValidationStatus>(initialStatus);
     const [code, setCode] = useState('');
     const [inputCode, setInputCode] = useState('');
     const [currentValue, setCurrentValue] = useState(initialValue);
@@ -47,17 +45,6 @@ export function ValidationItem({
         });
     };
     
-    const handleAddValue = () => {
-        if (!currentValue) {
-            toast({ variant: 'destructive', title: 'Campo vacío', description: 'Por favor, introduce un valor.' });
-            return;
-        }
-        if (onValueChange) {
-            onValueChange(currentValue);
-        }
-        handleStartValidation();
-    };
-
     const handleVerifyCode = async () => {
         if (inputCode === code) {
             if (onValidate) {
@@ -68,6 +55,12 @@ export function ValidationItem({
                         title: '¡Validado!',
                         description: `${label} ha sido validado correctamente.`,
                         className: "bg-green-100 border-green-300 text-green-800",
+                    });
+                } else {
+                     toast({
+                        variant: 'destructive',
+                        title: 'Error de Validación',
+                        description: 'No se pudo completar la validación. Intenta de nuevo.',
                     });
                 }
             }
@@ -92,7 +85,7 @@ export function ValidationItem({
         );
     }
     
-     if (status === 'add') {
+     if (status === 'idle') {
          return (
              <div className="flex items-center justify-between mt-1 h-9">
                  <div className="flex items-center gap-2 flex-grow">
@@ -101,11 +94,14 @@ export function ValidationItem({
                         className="h-8 text-sm w-auto flex-grow" 
                         value={currentValue} 
                         placeholder={`Añade tu ${label.toLowerCase().replace(':', '')}`}
-                        onChange={(e) => setCurrentValue(e.target.value)}
+                        onChange={(e) => {
+                            setCurrentValue(e.target.value);
+                            if (onValueChange) onValueChange(e.target.value);
+                        }}
                     />
                 </div>
-                <Button variant="link" className="p-0 h-auto text-sm font-semibold" onClick={handleAddValue}>
-                    Agregar
+                <Button variant="link" className="p-0 h-auto text-sm font-semibold" onClick={handleStartValidation}>
+                    Validar
                 </Button>
             </div>
          )

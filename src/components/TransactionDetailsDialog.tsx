@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState } from 'react';
@@ -16,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "./ui/badge";
 import type { Transaction } from "@/lib/types";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert, Truck, Banknote, ClipboardCheck, CalendarCheck, Contact, Star, Calendar as CalendarIcon, Upload } from "lucide-react";
+import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert, Truck, Banknote, ClipboardCheck, CalendarCheck, Contact, Star, Calendar as CalendarIcon, Upload, Smartphone } from "lucide-react";
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
@@ -183,23 +184,31 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
                     </DialogDescription>
                 </DialogHeader>
                  <div className="text-sm bg-muted p-4 rounded-lg border space-y-2">
-                    <p className="font-bold mb-2">Datos del Proveedor</p>
-                    <div className="flex justify-between"><span>Banco:</span><span className="font-mono">{otherParty?.profileSetupData?.paymentDetails?.bankName || "No especificado"}</span></div>
-                    {otherParty?.profileSetupData?.paymentDetails?.method === 'account' &&
-                      <div className="flex justify-between"><span>Cuenta:</span><span className="font-mono">{otherParty.profileSetupData.paymentDetails.accountNumber}</span></div>
-                    }
-                    {otherParty?.profileSetupData?.paymentDetails?.method === 'mobile' &&
-                      <>
-                        <div className="flex justify-between"><span>Teléfono:</span><span className="font-mono">{otherParty.profileSetupData.paymentDetails.mobilePaymentPhone}</span></div>
-                        <div className="flex justify-between"><span>RIF/CI:</span><span className="font-mono">{otherParty.idNumber}</span></div>
-                      </>
-                    }
-                     {otherParty?.profileSetupData?.paymentDetails?.method === 'crypto' &&
-                        <div className="flex justify-between items-center">
-                            <span>Binance Pay (Email):</span>
-                            <span className="font-mono">{otherParty.profileSetupData.paymentDetails.binanceEmail}</span>
-                        </div>
-                    }
+                    <p className="font-bold mb-2">Datos de Pago del Proveedor</p>
+                    
+                    {otherParty?.profileSetupData?.paymentDetails?.account?.active && (
+                      <div className="p-2 border-b">
+                        <p className="font-semibold flex items-center gap-2"><Banknote className="w-4 h-4" /> Cuenta Bancaria</p>
+                        <div className="flex justify-between mt-1"><span>Banco:</span><span className="font-mono">{otherParty?.profileSetupData?.paymentDetails.account.bankName}</span></div>
+                        <div className="flex justify-between mt-1"><span>Cuenta:</span><span className="font-mono">{otherParty?.profileSetupData?.paymentDetails.account.accountNumber}</span></div>
+                      </div>
+                    )}
+                    
+                    {otherParty?.profileSetupData?.paymentDetails?.mobile?.active && (
+                       <div className="p-2 border-b">
+                        <p className="font-semibold flex items-center gap-2"><Smartphone className="w-4 h-4" /> Pago Móvil</p>
+                        <div className="flex justify-between mt-1"><span>Banco:</span><span className="font-mono">{otherParty?.profileSetupData?.paymentDetails.mobile.bankName}</span></div>
+                        <div className="flex justify-between mt-1"><span>Teléfono:</span><span className="font-mono">{otherParty?.profileSetupData?.paymentDetails.mobile.mobilePaymentPhone}</span></div>
+                        <div className="flex justify-between mt-1"><span>RIF/CI:</span><span className="font-mono">{otherParty.idNumber}</span></div>
+                      </div>
+                    )}
+
+                    {otherParty?.profileSetupData?.paymentDetails?.crypto?.active && (
+                       <div className="p-2">
+                         <p className="font-semibold flex items-center gap-2"><svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.714 6.556H14.15l2.031 2.031-2.03 2.032h2.563l2.032-2.031-2.03-2.032Zm-4.582 4.583H9.57l2.032 2.03-2.031 2.031h2.562l2.032-2.03-2.032-2.032Zm-4.582 0H5.087l2.032 2.03-2.032 2.031H7.55l2.032-2.03-2.032-2.032Zm9.164-2.551h2.563l-2.032 2.031 2.032 2.03h-2.563l-2.031-2.031 2.031-2.03Zm-4.582-4.582H9.57l2.032 2.03-2.031 2.032h2.562l2.032-2.03-2.032-2.031Zm4.582 9.164h2.563l-2.032 2.031 2.032 2.03h-2.563l-2.031-2.031 2.031-2.03ZM9.62 2.01l-7.61 7.61 2.032 2.031 7.61-7.61L9.62 2.01Zm0 17.98l-7.61-7.61 2.032-2.032 7.61 7.61-2.032 2.032Z" fill="#F0B90B"></path></svg> Binance Pay</p>
+                        <div className="flex justify-between items-center mt-1"><span>Correo (Pay ID):</span><span className="font-mono">{otherParty.profileSetupData.paymentDetails.crypto.binanceEmail}</span></div>
+                      </div>
+                    )}
                  </div>
                  <div className="py-4 space-y-4">
                      <div className="space-y-2">

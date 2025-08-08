@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { VerificationOutput } from '@/lib/types';
 import { ValidationItem } from '@/components/ValidationItem';
+import { Switch } from '../ui/switch';
 
 
 function SettingsHeader() {
@@ -47,7 +48,7 @@ const banks = [
 
 
 export default function TransactionsSettingsPage() {
-    const { currentUser, activateTransactions, autoVerifyIdWithAI, setIdVerificationPending, sendMessage, updateUser, validateEmail: validateBinanceEmail } = useCorabo();
+    const { currentUser, activateTransactions, autoVerifyIdWithAI, setIdVerificationPending, sendMessage, updateUser, validateEmail } = useCorabo();
     const { toast } = useToast();
     const router = useRouter();
     const [step, setStep] = useState(1);
@@ -61,14 +62,14 @@ export default function TransactionsSettingsPage() {
     const idFileInputRef = useRef<HTMLInputElement>(null);
 
     // Step 2 state
-    const [paymentMethod, setPaymentMethod] = useState<'account' | 'mobile' | 'crypto'>('account');
-    const [bankAccount, setBankAccount] = useState('');
-    const [bankName, setBankName] = useState('');
-    const [mobilePaymentPhone, setMobilePaymentPhone] = useState('');
-    const [binanceEmail, setBinanceEmail] = useState(currentUser?.email || '');
+    const [paymentMethods, setPaymentMethods] = useState(currentUser?.profileSetupData?.paymentDetails || {
+        account: { active: false, bankName: '', accountNumber: '' },
+        mobile: { active: false, bankName: '', mobilePaymentPhone: '' },
+        crypto: { active: false, binanceEmail: currentUser?.email || '', validated: false }
+    });
+    
     const [isVerifyingAccount, setIsVerifyingAccount] = useState(false);
     const [accountVerificationError, setAccountVerificationError] = useState<string | null>(null);
-    const [isBinanceEmailValidated, setIsBinanceEmailValidated] = useState(false);
 
     if (!currentUser) {
         return <Loader2 className="animate-spin" />;
@@ -127,44 +128,51 @@ export default function TransactionsSettingsPage() {
         router.push(`/messages/${conversationId}`);
     };
 
+    const handleMethodChange = (method: 'account' | 'mobile' | 'crypto', field: string, value: any) => {
+        setPaymentMethods((prev: any) => ({
+            ...prev,
+            [method]: {
+                ...prev[method],
+                [field]: value
+            }
+        }));
+    };
+
     const handleVerifyAccount = () => {
         setAccountVerificationError(null);
-
-        if (paymentMethod === 'crypto' && !isBinanceEmailValidated) {
-            setAccountVerificationError("Debes validar tu correo de Binance Pay antes de continuar.");
+        const activeMethods = Object.entries(paymentMethods).filter(([, details]: [string, any]) => details.active);
+        
+        if(activeMethods.length === 0) {
+            setAccountVerificationError("Debes activar y configurar al menos un método de pago.");
             return;
         }
+
+        // Validation for each active method
+        for (const [key, details] of activeMethods) {
+            const typedDetails = details as any;
+            if (key === 'account' && (!typedDetails.bankName || typedDetails.accountNumber.length !== 20)) {
+                setAccountVerificationError("Los datos de la cuenta bancaria son incorrectos o incompletos.");
+                return;
+            }
+             if (key === 'mobile' && (!typedDetails.bankName || !typedDetails.mobilePaymentPhone)) {
+                setAccountVerificationError("Los datos de Pago Móvil son incorrectos o incompletos.");
+                return;
+            }
+            if (key === 'crypto' && !typedDetails.validated) {
+                setAccountVerificationError("Debes validar tu correo de Binance Pay antes de continuar.");
+                return;
+            }
+        }
+
 
         setIsVerifyingAccount(true);
 
         setTimeout(() => {
-            const isAccountInvalid = paymentMethod === 'account' && bankAccount === '123';
-            const isMobileInvalid = paymentMethod === 'mobile' && mobilePaymentPhone === '123';
-
-            if (isAccountInvalid || isMobileInvalid) {
-                 setAccountVerificationError("El titular de la cuenta/pago móvil no coincide con el propietario de la cuenta Corabo. Por favor, verifica los datos.");
-                 setIsVerifyingAccount(false);
-                 return;
-            }
-
-            const paymentDetails: any = { method: paymentMethod };
-
-            if(paymentMethod === 'account') {
-                paymentDetails.bankName = bankName;
-                paymentDetails.accountNumber = bankAccount;
-            } else if (paymentMethod === 'mobile') {
-                paymentDetails.bankName = bankName;
-                paymentDetails.mobilePaymentPhone = mobilePaymentPhone;
-            } else if (paymentMethod === 'crypto') {
-                paymentDetails.binanceEmail = binanceEmail;
-            }
-
-
-            activateTransactions(currentUser.id, paymentDetails);
+            activateTransactions(currentUser.id, paymentMethods);
 
             toast({
-                title: "¡Cuenta Verificada!",
-                description: "Tus datos de pago han sido guardados exitosamente. Tu módulo de transacciones está activo.",
+                title: "¡Módulo Activado!",
+                description: "Tus métodos de pago han sido guardados exitosamente.",
                 className: "bg-green-100 border-green-300 text-green-800",
             });
             
@@ -174,13 +182,13 @@ export default function TransactionsSettingsPage() {
         }, 1500);
     }
     
-    const handleBinanceEmailValidation = async () => {
-        const success = await validateBinanceEmail(currentUser.id, binanceEmail);
-        setIsBinanceEmailValidated(success);
-        if(success) {
-            // Persist the validated email in the user's profile
-            updateUser(currentUser.id, { 'profileSetupData.paymentDetails.binanceEmail': binanceEmail });
+    const handleBinanceEmailValidation = async (email: string) => {
+        const success = await validateEmail(currentUser.id, email);
+        if (success) {
+            handleMethodChange('crypto', 'validated', true);
+            handleMethodChange('crypto', 'binanceEmail', email); // Persist validated email
         }
+        return success;
     };
 
 
@@ -277,106 +285,98 @@ export default function TransactionsSettingsPage() {
                    {step === 2 && (
                      <>
                         <CardHeader>
-                            <CardTitle>Paso 2: Registro de Cuenta de Pago</CardTitle>
+                            <CardTitle>Paso 2: Registro de Métodos de Pago</CardTitle>
                             <CardDescription>
-                               Registra el método donde recibirás tus pagos. Debe estar a tu nombre.
+                               Activa y configura los métodos donde recibirás tus pagos. Deben estar a tu nombre.
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="flex gap-2 rounded-lg bg-muted p-1">
-                                <Button 
-                                    variant={paymentMethod === 'account' ? 'default' : 'ghost'} 
-                                    onClick={() => setPaymentMethod('account')}
-                                    className="flex-1"
-                                >
-                                    <Banknote className="mr-2 h-4 w-4"/>
-                                    Cuenta
-                                </Button>
-                                <Button 
-                                    variant={paymentMethod === 'mobile' ? 'default' : 'ghost'} 
-                                    onClick={() => setPaymentMethod('mobile')}
-                                    className="flex-1"
-                                >
-                                     <Smartphone className="mr-2 h-4 w-4"/>
-                                    Pago Móvil
-                                </Button>
-                                <Button 
-                                    variant={paymentMethod === 'crypto' ? 'default' : 'ghost'} 
-                                    onClick={() => setPaymentMethod('crypto')}
-                                    className="flex-1"
-                                >
-                                    <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.714 6.556H14.15l2.031 2.031-2.03 2.032h2.563l2.032-2.031-2.03-2.032Zm-4.582 4.583H9.57l2.032 2.03-2.031 2.031h2.562l2.032-2.03-2.032-2.032Zm-4.582 0H5.087l2.032 2.03-2.032 2.031H7.55l2.032-2.03-2.032-2.032Zm9.164-2.551h2.563l-2.032 2.031 2.032 2.03h-2.563l-2.031-2.031 2.031-2.03Zm-4.582-4.582H9.57l2.032 2.03-2.031 2.032h2.562l2.032-2.03-2.032-2.031Zm4.582 9.164h2.563l-2.032 2.031 2.032 2.03h-2.563l-2.031-2.031 2.031-2.03ZM9.62 2.01l-7.61 7.61 2.032 2.031 7.61-7.61L9.62 2.01Zm0 17.98l-7.61-7.61 2.032-2.032 7.61 7.61-2.032 2.032Z" fill="#F0B90B"></path></svg>
-                                    Binance Pay
-                                </Button>
+                        <CardContent className="space-y-4">
+                            
+                            {/* Bank Account */}
+                            <div className="space-y-4 rounded-md border p-4">
+                                <div className="flex items-center justify-between">
+                                    <Label htmlFor="account-switch" className="flex items-center gap-2 font-medium">
+                                        <Banknote className="w-5 h-5"/>
+                                        Cuenta Bancaria
+                                    </Label>
+                                    <Switch id="account-switch" checked={paymentMethods.account.active} onCheckedChange={(c) => handleMethodChange('account', 'active', c)} />
+                                </div>
+                                {paymentMethods.account.active && (
+                                    <div className="space-y-4 pt-4 border-t">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="bank-name">Entidad Bancaria</Label>
+                                            <Select onValueChange={(v) => handleMethodChange('account', 'bankName', v)} value={paymentMethods.account.bankName}>
+                                                <SelectTrigger id="bank-name"><SelectValue placeholder="Selecciona un banco" /></SelectTrigger>
+                                                <SelectContent>{banks.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="account-number">Número de Cuenta (20 dígitos)</Label>
+                                            <Input id="account-number" placeholder="0102..." value={paymentMethods.account.accountNumber} onChange={(e) => handleMethodChange('account', 'accountNumber', e.target.value)} maxLength={20} />
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
-                            {paymentMethod === 'account' && (
-                                <div className="space-y-4">
-                                     <div className="space-y-2">
-                                        <Label htmlFor="account-name">Titular de la Cuenta</Label>
-                                        <Input id="account-name" value={`${currentUser.name} ${currentUser.lastName}`} readOnly disabled />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="bank-name">Entidad Bancaria</Label>
-                                        <Select onValueChange={setBankName} value={bankName}>
-                                            <SelectTrigger id="bank-name">
-                                                <SelectValue placeholder="Selecciona un banco" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {banks.map(bank => <SelectItem key={bank} value={bank}>{bank}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="account-number">Número de Cuenta (20 dígitos)</Label>
-                                        <Input id="account-number" placeholder="0102..." value={bankAccount} onChange={(e) => setBankAccount(e.target.value)} maxLength={20} />
-                                    </div>
+                            {/* Mobile Payment */}
+                            <div className="space-y-4 rounded-md border p-4">
+                                <div className="flex items-center justify-between">
+                                    <Label htmlFor="mobile-switch" className="flex items-center gap-2 font-medium">
+                                        <Smartphone className="w-5 h-5"/>
+                                        Pago Móvil
+                                    </Label>
+                                    <Switch id="mobile-switch" checked={paymentMethods.mobile.active} onCheckedChange={(c) => handleMethodChange('mobile', 'active', c)} />
                                 </div>
-                            )}
-                            
-                            {paymentMethod === 'mobile' && (
-                                <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="mobile-id">Cédula</Label>
-                                        <Input id="mobile-id" value={currentUser.idNumber} readOnly disabled />
+                                {paymentMethods.mobile.active && (
+                                     <div className="space-y-4 pt-4 border-t">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="mobile-id">Cédula</Label>
+                                            <Input id="mobile-id" value={currentUser.idNumber} readOnly disabled />
+                                        </div>
+                                         <div className="space-y-2">
+                                            <Label htmlFor="mobile-bank-name">Entidad Bancaria</Label>
+                                            <Select onValueChange={(v) => handleMethodChange('mobile', 'bankName', v)} value={paymentMethods.mobile.bankName}>
+                                                <SelectTrigger id="mobile-bank-name"><SelectValue placeholder="Selecciona un banco" /></SelectTrigger>
+                                                <SelectContent>{banks.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="mobile-phone">Número de Teléfono</Label>
+                                            <Input id="mobile-phone" placeholder="0412..." value={paymentMethods.mobile.mobilePaymentPhone} onChange={(e) => handleMethodChange('mobile', 'mobilePaymentPhone', e.target.value)} />
+                                        </div>
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="mobile-bank-name">Entidad Bancaria</Label>
-                                        <Select onValueChange={setBankName} value={bankName}>
-                                            <SelectTrigger id="mobile-bank-name">
-                                                <SelectValue placeholder="Selecciona un banco" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {banks.map(bank => <SelectItem key={bank} value={bank}>{bank}</SelectItem>)}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="mobile-phone">Número de Teléfono</Label>
-                                        <Input id="mobile-phone" placeholder="0412..." value={mobilePaymentPhone} onChange={(e) => setMobilePaymentPhone(e.target.value)} />
-                                    </div>
-                                </div>
-                            )}
+                                )}
+                            </div>
 
-                            {paymentMethod === 'crypto' && (
-                                <div className="space-y-4">
-                                    <ValidationItem
-                                        label="Correo de Binance:"
-                                        value={binanceEmail}
-                                        initialStatus={isBinanceEmailValidated ? 'validated' : 'idle'}
-                                        onValidate={handleBinanceEmailValidation}
-                                        onValueChange={setBinanceEmail}
-                                        forceAddStatus={true}
-                                    />
+                            {/* Binance Pay */}
+                             <div className="space-y-4 rounded-md border p-4">
+                                <div className="flex items-center justify-between">
+                                    <Label htmlFor="crypto-switch" className="flex items-center gap-2 font-medium">
+                                        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.714 6.556H14.15l2.031 2.031-2.03 2.032h2.563l2.032-2.031-2.03-2.032Zm-4.582 4.583H9.57l2.032 2.03-2.031 2.031h2.562l2.032-2.03-2.032-2.032Zm-4.582 0H5.087l2.032 2.03-2.032 2.031H7.55l2.032-2.03-2.032-2.032Zm9.164-2.551h2.563l-2.032 2.031 2.032 2.03h-2.563l-2.031-2.031 2.031-2.03Zm-4.582-4.582H9.57l2.032 2.03-2.031 2.032h2.562l2.032-2.03-2.032-2.031Zm4.582 9.164h2.563l-2.032 2.031 2.032 2.03h-2.563l-2.031-2.031 2.031-2.03ZM9.62 2.01l-7.61 7.61 2.032 2.031 7.61-7.61L9.62 2.01Zm0 17.98l-7.61-7.61 2.032-2.032 7.61 7.61-2.032 2.032Z" fill="#F0B90B"></path></svg>
+                                        Binance Pay
+                                    </Label>
+                                    <Switch id="crypto-switch" checked={paymentMethods.crypto.active} onCheckedChange={(c) => handleMethodChange('crypto', 'active', c)} />
                                 </div>
-                            )}
+                                {paymentMethods.crypto.active && (
+                                     <div className="space-y-4 pt-4 border-t">
+                                        <ValidationItem
+                                            label="Correo de Binance:"
+                                            value={paymentMethods.crypto.binanceEmail}
+                                            initialStatus={paymentMethods.crypto.validated ? 'validated' : 'idle'}
+                                            onValidate={handleBinanceEmailValidation}
+                                            onValueChange={(v) => handleMethodChange('crypto', 'binanceEmail', v)}
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
 
                              {accountVerificationError && (
                                 <Alert variant="destructive">
                                     <AlertCircle className="h-4 w-4" />
                                     <AlertTitle>Error de Verificación</AlertTitle>
                                     <AlertDescription>
-                                        {accountVerificationError} La cuenta puede ser modificada para cambiar de banco, pero siempre debe pertenecer al usuario.
+                                        {accountVerificationError}
                                     </AlertDescription>
                                 </Alert>
                             )}
@@ -390,10 +390,10 @@ export default function TransactionsSettingsPage() {
                                 {isVerifyingAccount ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Verificando y Guardando...
+                                        Guardando y Activando...
                                     </>
                                 ) : (
-                                    "Verificar y Guardar"
+                                    "Guardar Métodos y Activar Módulo"
                                 )}
                             </Button>
                         </CardContent>

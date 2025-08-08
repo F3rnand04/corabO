@@ -119,11 +119,21 @@ export type ProfileSetupData = {
   acceptsCredicora?: boolean;
   appointmentCost?: number;
   paymentDetails?: {
-      method: 'account' | 'mobile' | 'crypto';
-      bankName?: string;
-      accountNumber?: string;
-      mobilePaymentPhone?: string;
-      binanceEmail?: string;
+    account?: {
+        active: boolean;
+        bankName: string;
+        accountNumber: string;
+    },
+    mobile?: {
+        active: boolean;
+        bankName: string;
+        mobilePaymentPhone: string;
+    },
+    crypto?: {
+        active: boolean;
+        binanceEmail: string;
+        validated: boolean;
+    }
   }
 };
 
