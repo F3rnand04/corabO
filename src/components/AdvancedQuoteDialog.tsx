@@ -32,7 +32,7 @@ export function AdvancedQuoteDialog({ isOpen, onOpenChange, selectedOption }: Ad
   }
 
   const handleSubscribe = () => {
-    subscribeUser(currentUser.id);
+    subscribeUser(currentUser.id, "Plan Personal", 5); // Placeholder values
     onOpenChange(false);
   }
 
