@@ -6,6 +6,7 @@ import { useCorabo } from "@/contexts/CoraboContext";
 import { ProviderCard } from "@/components/ProviderCard";
 import type { User, GalleryImage } from "@/lib/types";
 import { useMemo } from "react";
+import { ActivationWarning } from "@/components/ActivationWarning";
 
 const mainCategories = [
   'Hogar y Reparaciones', 
@@ -20,7 +21,7 @@ const mainCategories = [
 ];
 
 export default function HomePage() {
-  const { getRankedFeed, searchQuery, feedView } = useCorabo();
+  const { getRankedFeed, searchQuery, feedView, currentUser } = useCorabo();
 
   const rankedFeed = useMemo(() => getRankedFeed(), [getRankedFeed]);
   
@@ -48,7 +49,8 @@ export default function HomePage() {
 
         // Then apply search query filter
         if (isCategorySearch) {
-            return provider.profileSetupData?.categories?.some(cat => cat.toLowerCase() === lowerCaseQuery);
+            const providerCategories = provider.profileSetupData?.categories || [];
+            return providerCategories.some(cat => cat.toLowerCase() === lowerCaseQuery) || provider.profileSetupData?.primaryCategory?.toLowerCase() === lowerCaseQuery;
         } else {
             const publicationMatch = pub.description.toLowerCase().includes(lowerCaseQuery);
             const providerName = provider.profileSetupData?.useUsername 
@@ -72,7 +74,10 @@ export default function HomePage() {
   }
 
   return (
-    <main className="container py-4 space-y-6">
+    <main className="container py-4 space-y-4">
+       {currentUser && !currentUser.isTransactionsActive && (
+          <ActivationWarning userType={currentUser.type} />
+      )}
       <div className="space-y-4">
         {filteredFeed.length > 0 ? (
           filteredFeed.map(pub => <ProviderCard key={`${pub.provider.id}-${pub.id}`} provider={pub.provider} />)
