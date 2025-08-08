@@ -91,8 +91,8 @@ export default function QuotePaymentPage() {
     };
     
     const paymentData = {
-        'mobile': { bank: "Banco de Corabo", phone: "0412-1234567", rif: "J-12345678-9", title: "Datos para Pago Móvil" },
-        'transfer': { bank: "Banco de Corabo", account: "0102-0123-4567-8901-2345", rif: "J-12345678-9", holder: provider?.name || "Corabo C.A.", title: "Datos para Transferencia" },
+        'mobile': { bank: "Banco de Venezuela", phone: "0412-8978405", rif: "J-50704220-0", title: "Datos para Pago Móvil" },
+        'transfer': { bank: "Banco de Venezuela", account: "0102-0333-30-0000982322", rif: "J-50704220-0", holder: provider?.name || "CorabO Soluciones Cercanas C.A.", title: "Datos para Transferencia" },
     }
     
     const selectedData = selectedPaymentMethod ? paymentData[selectedPaymentMethod as keyof typeof paymentData] : null;
