@@ -13,7 +13,7 @@ import { credicoraLevels } from '@/lib/types';
 // Import necessary firebase services directly
 import { getAuth, signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, GoogleAuthProvider, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { app, db } from '@/lib/firebase'; // Import the initialized app and db
-import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, enableIndexedDbPersistence } from 'firebase/firestore';
 import { createCampaign } from '@/ai/flows/campaign-flow';
 import { acceptProposal as acceptProposalFlow, sendMessage as sendMessageFlow } from '@/ai/flows/message-flow';
 import * as TransactionFlows from '@/ai/flows/transaction-flow';
@@ -114,7 +114,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [products, setProducts] = useState(mockProducts);
   const [services, setServices] = useState(mockServices);
   
-  const [users, setUsers] = useState<User[]>(mockUsers); // Start with admin user
+  const [users, setUsers] = useState<User[]>([]);
   
   // These will be managed by Firestore
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -129,6 +129,20 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [dailyQuotes, setDailyQuotes] = useState<Record<string, DailyQuote[]>>({});
   
   const auth = getAuth(app);
+  
+  // This effect runs once to enable persistence.
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+        enableIndexedDbPersistence(db)
+            .catch((err) => {
+                if (err.code === 'failed-precondition') {
+                    console.warn("Firestore persistence failed: Multiple tabs open.");
+                } else if (err.code === 'unimplemented') {
+                    console.warn("Firestore persistence failed: Browser does not support persistence.");
+                }
+            });
+    }
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -155,7 +169,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
               emailValidated: firebaseUser.emailVerified,
               phoneValidated: false,
               isGpsActive: true,
-              isInitialSetupComplete: false, // <-- NUEVO CAMPO
+              isInitialSetupComplete: false,
               gallery: [],
               credicoraLevel: 1,
               credicoraLimit: 150,
