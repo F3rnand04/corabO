@@ -17,6 +17,7 @@ import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, 
 import { createCampaign } from '@/ai/flows/campaign-flow';
 import { acceptProposal as acceptProposalFlow, sendMessage as sendMessageFlow } from '@/ai/flows/message-flow';
 import * as TransactionFlows from '@/ai/flows/transaction-flow';
+import * as NotificationFlows from '@/ai/flows/notification-flow';
 import { autoVerifyIdWithAI as autoVerifyIdWithAIFlow, type VerificationInput } from '@/ai/flows/verification-flow';
 import { getExchangeRate } from '@/ai/flows/exchange-rate-flow';
 
@@ -712,16 +713,21 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const updateFullProfile = async (userId: string, data: Partial<User & { profileSetupData: ProfileSetupData }>) => {
     const userRef = doc(db, 'users', userId);
+    
+    // Extract `type` and `profileSetupData` for the check
+    const newType = data.type; 
+    const profileSetupData = data.profileSetupData;
+
+    // Check if the user is transitioning from client to provider
+    if (currentUser?.type === 'client' && newType === 'provider') {
+        NotificationFlows.sendWelcomeToProviderNotification({ userId });
+    }
+
     await updateDoc(userRef, data);
     
     const wasClient = currentUser?.type === 'client';
     const isNowProvider = data.profileSetupData?.providerType !== undefined;
   
-    // Check if the user is transitioning from client to provider
-    if (wasClient && isNowProvider && !data.isSubscribed) {
-      const welcomeMessage = "¡Felicidades por convertirte en proveedor! Para empezar con el pie derecho y ganar la confianza de tus primeros clientes, te recomendamos suscribirte. Obtendrás la insignia de verificado y acceso a más herramientas. Toca este mensaje para ver los planes.";
-      sendMessage('corabo-admin', welcomeMessage); // This will send a message from admin to the user
-    }
   };
 
   const subscribeUser = (userId: string, planName: string, amount: number) => {};

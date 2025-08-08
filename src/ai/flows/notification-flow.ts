@@ -10,7 +10,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { db } from '@/lib/firebase';
-import { collection, doc, writeBatch, getDoc, getDocs, query, where } from 'firebase/firestore';
+import { collection, doc, writeBatch, getDoc, getDocs, query, where, setDoc } from 'firebase/firestore';
 import type { Notification, Transaction, User, Campaign } from '@/lib/types';
 import { differenceInHours } from 'date-fns';
 
@@ -137,4 +137,21 @@ export const sendNewCampaignNotifications = ai.defineFlow({
     });
 
     await batch.commit();
+});
+
+/**
+ * Sends a welcome notification to a user who just became a provider.
+ */
+export const sendWelcomeToProviderNotification = ai.defineFlow({
+    name: 'sendWelcomeToProviderNotificationFlow',
+    inputSchema: z.object({ userId: z.string() }),
+    outputSchema: z.void(),
+}, async ({ userId }) => {
+    await sendNotification({
+        userId: userId,
+        type: 'welcome',
+        title: '¡Felicidades por convertirte en proveedor!',
+        message: 'Para empezar con el pie derecho, suscríbete y obtén la insignia de verificado.',
+        link: '/contacts', // Links to the subscription page
+    });
 });
