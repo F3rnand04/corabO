@@ -39,6 +39,7 @@ export type GalleryImage = {
   src: string;
   alt: string;
   description: string;
+  createdAt: string; // Added for chronological sorting
   comments?: GalleryImageComment[];
   isTemporary?: boolean; // Flag for promotions from clients
   promotion?: {
@@ -122,7 +123,7 @@ export type ProfileSetupData = {
 
 export type User = {
   id: string;
-  coraboId: string;
+  coraboId?: string; // Made optional for backward compatibility
   name: string;
   lastName?: string;
   idNumber?: string;

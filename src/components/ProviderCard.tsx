@@ -25,13 +25,16 @@ interface ProviderCardProps {
 }
 
 export function ProviderCard({ provider }: ProviderCardProps) {
-    const { addContact, sendMessage, products, isContact, transactions } = useCorabo();
+    const { addContact, sendMessage, isContact, transactions } = useCorabo();
     const router = useRouter();
     const { toast } = useToast();
     const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
     const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
-    const profileLink = provider.type === 'provider' ? `/companies/${provider.id}` : '#';
+    const [isLiked, setIsLiked] = useState(false);
+    const [likeCount, setLikeCount] = useState(Math.floor(Math.random() * 5000));
+    
+    const profileLink = `/companies/${provider.id}`;
 
     useEffect(() => {
         setIsSaved(isContact(provider.id));
@@ -58,6 +61,11 @@ export function ProviderCard({ provider }: ProviderCardProps) {
       const conversationId = sendMessage(provider.id, '', true);
       router.push(`/messages/${conversationId}`);
     };
+    
+    const handleLike = () => {
+        setIsLiked(!isLiked);
+        setLikeCount(prev => isLiked ? prev - 1 : prev + 1);
+    };
 
     const completedTransactions = transactions.filter(
         tx => tx.providerId === provider.id && (tx.status === 'Pagado' || tx.status === 'Resuelto')
@@ -77,7 +85,8 @@ export function ProviderCard({ provider }: ProviderCardProps) {
     const mainImage = provider.gallery && provider.gallery.length > 0 ? provider.gallery[0].src : "https://placehold.co/600x400.png";
     const mainImageAlt = provider.gallery && provider.gallery.length > 0 ? provider.gallery[0].alt : displayName;
     
-    const providerProductsCount = products.filter(p => p.providerId === provider.id).length;
+    const commentCount = provider.gallery?.[0]?.comments?.length || Math.floor(Math.random() * 100);
+    const shareCount = Math.floor(Math.random() * 1000);
 
 
     return (
@@ -144,22 +153,22 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                     )}
                     <div className="absolute bottom-2 right-2 flex flex-col items-end gap-2 text-white">
                         <div className="flex flex-col items-center">
-                            <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10">
-                                <Star className="w-5 h-5" />
+                            <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10" onClick={handleLike}>
+                                <Star className={cn("w-5 h-5", isLiked && "fill-yellow-400 text-yellow-400")} />
                             </Button>
-                            <span className="text-xs font-bold mt-1 drop-shadow-md">4.5k</span>
+                            <span className="text-xs font-bold mt-1 drop-shadow-md">{likeCount.toLocaleString('en-US')}</span>
                         </div>
                         <div className="flex flex-col items-center">
                              <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10" onClick={() => setIsDetailsDialogOpen(true)}>
                                 <MessageCircle className="w-5 h-5" />
                              </Button>
-                            <span className="text-xs font-bold mt-1 drop-shadow-md">8.9k</span>
+                            <span className="text-xs font-bold mt-1 drop-shadow-md">{commentCount.toLocaleString('en-US')}</span>
                         </div>
                          <div className="flex flex-col items-center">
                              <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10" onClick={handleDirectMessage}>
                                 <Send className="w-5 h-5" />
                              </Button>
-                            <span className="text-xs font-bold mt-1 drop-shadow-md">1.2k</span>
+                            <span className="text-xs font-bold mt-1 drop-shadow-md">{shareCount.toLocaleString('en-US', {notation: 'compact'})}</span>
                         </div>
                     </div>
                 </div>
@@ -177,7 +186,7 @@ export function ProviderCard({ provider }: ProviderCardProps) {
             isOpen={isReportDialogOpen} 
             onOpenChange={setIsReportDialogOpen} 
             providerId={provider.id} 
-            publicationId="provider-img" 
+            publicationId={provider.gallery?.[0]?.id || 'provider-img'}
         />
         {provider.gallery && provider.gallery.length > 0 && (
             <ImageDetailsDialog

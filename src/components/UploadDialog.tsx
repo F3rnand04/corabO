@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useRef, ChangeEvent } from 'react';
@@ -112,6 +113,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
       alt: `Publicación de ${currentUser.name}`,
       description: galleryDescription,
       comments: [],
+      createdAt: new Date().toISOString(),
     };
 
     updateUserProfileAndGallery(currentUser.id, newGalleryItem);
