@@ -122,6 +122,7 @@ export type ProfileSetupData = {
 
 export type User = {
   id: string;
+  coraboId: string;
   name: string;
   lastName?: string;
   idNumber?: string;
@@ -137,7 +138,7 @@ export type User = {
   verified?: boolean;
   isSubscribed?: boolean;
   isTransactionsActive?: boolean;
-  isInitialSetupComplete?: boolean; // <-- NUEVO CAMPO
+  isInitialSetupComplete?: boolean;
   credicoraLimit?: number;
   credicoraLevel?: number;
   promotion?: {

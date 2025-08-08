@@ -69,8 +69,8 @@ interface CoraboState {
   updateUserProfileImage: (userId: string, imageUrl: string) => void;
   updateUserProfileAndGallery: (userId: string, imageOrId: GalleryImage | string, isDelete?: boolean) => void;
   removeGalleryImage: (userId: string, imageId: string) => void;
-  validateEmail: (userId: string) => void;
-  validatePhone: (userId: string) => void;
+  validateEmail: (userId: string) => Promise<boolean>;
+  validatePhone: (userId: string) => Promise<boolean>;
   setFeedView: (view: FeedView) => void;
   updateFullProfile: (userId: string, data: ProfileSetupData) => Promise<void>;
   completeInitialSetup: (userId: string, data: { lastName: string; idNumber: string; birthDate: string }) => Promise<void>;
@@ -150,11 +150,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       const userDocSnap = await getDoc(userDocRef);
       if (!userDocSnap.exists()) {
         const coraboId = (firebaseUser.displayName?.substring(0, 3) || 'COR').toUpperCase() + Math.random().toString(36).substring(2, 8).toUpperCase();
+        console.log('Generated new coraboId:', coraboId);
         const newUser: User = {
           id: firebaseUser.uid,
+          coraboId: coraboId,
           name: firebaseUser.displayName?.split(' ')[0] || 'Usuario',
           lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
-          coraboId: coraboId,
           idNumber: '',
           birthDate: '',
           email: firebaseUser.email || '',
@@ -358,6 +359,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const updateUser = async (userId: string, updates: Partial<User>) => {
     const userDocRef = doc(db, 'users', userId);
     await updateDoc(userDocRef, updates);
+    // Optimistically update local state for immediate feedback
+    if (currentUser?.id === userId) {
+      setCurrentUser(prev => prev ? { ...prev, ...updates } : null);
+    }
   };
 
   const completeInitialSetup = async (userId: string, data: { lastName: string; idNumber: string; birthDate: string }) => {
@@ -366,11 +371,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         isInitialSetupComplete: true,
     };
     await updateUser(userId, updates);
-    // Refetch current user data after update
-    const userDocSnap = await getDoc(doc(db, 'users', userId));
-    if (userDocSnap.exists()) {
-        setCurrentUser(userDocSnap.data() as User);
-    }
   };
   
   const toggleGps = (userId: string) => {
@@ -505,8 +505,16 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const updateUserProfileImage = (userId: string, imageUrl: string) => {};
   const updateUserProfileAndGallery = (userId: string, imageOrId: GalleryImage | string, isDelete?: boolean) => {};
   const removeGalleryImage = (userId: string, imageId: string) => {};
-  const validateEmail = (userId: string) => {};
-  const validatePhone = (userId: string) => {};
+  
+  const validateEmail = async (userId: string): Promise<boolean> => {
+    await updateUser(userId, { emailValidated: true });
+    return true;
+  };
+  const validatePhone = async (userId: string): Promise<boolean> => {
+    await updateUser(userId, { phoneValidated: true });
+    return true;
+  };
+
   const updateFullProfile = async (userId: string, data: Partial<User & { profileSetupData: ProfileSetupData }>) => {
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, data);

@@ -42,7 +42,7 @@ function ContactsHeader({ onSubscribeClick }: { onSubscribeClick: () => void }) 
 
 
 export default function ContactsPage() {
-  const { currentUser, contacts, removeContact, validateEmail, validatePhone, sendMessage } = useCorabo();
+  const { currentUser, contacts, removeContact, validateEmail, validatePhone, sendMessage, updateUser } = useCorabo();
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
@@ -72,8 +72,8 @@ export default function ContactsPage() {
                 <div className="w-full">
                     <p className="font-bold">ID corabO</p>
                     <div className="flex items-center gap-2">
-                       <p className="font-mono text-sm">ABC123456</p>
-                       <Button variant="ghost" size="icon" className="w-6 h-6" onClick={() => copyToClipboard('ABC123456')}>
+                       <p className="font-mono text-sm">{currentUser.coraboId}</p>
+                       <Button variant="ghost" size="icon" className="w-6 h-6" onClick={() => copyToClipboard(currentUser.coraboId)}>
                             <Copy className="w-4 h-4 text-muted-foreground" />
                        </Button>
                     </div>
@@ -85,14 +85,14 @@ export default function ContactsPage() {
                     value={currentUser.email}
                     initialStatus={currentUser.emailValidated ? 'validated' : 'idle'}
                     onValidate={() => validateEmail(currentUser.id)}
-                    isEditable={false}
+                    onValueChange={(value) => updateUser(currentUser.id, { email: value })}
                 />
                 <ValidationItem
                     label="Teléfono:"
                     value={currentUser.phone}
                     initialStatus={currentUser.phoneValidated ? 'validated' : 'idle'}
                     onValidate={() => validatePhone(currentUser.id)}
-                    isEditable={false}
+                    onValueChange={(value) => updateUser(currentUser.id, { phone: value })}
                 />
             </div>
         </div>

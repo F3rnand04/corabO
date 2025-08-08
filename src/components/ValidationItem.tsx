@@ -1,19 +1,20 @@
 
+
 "use client";
 
 import { useState } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { CheckCircle } from 'lucide-react';
 
-type ValidationStatus = 'idle' | 'pending' | 'validated';
+type ValidationStatus = 'add' | 'pending' | 'validated';
 
 interface ValidationItemProps {
     label: string;
     value: string;
-    initialStatus?: ValidationStatus;
-    isEditable?: boolean;
-    onValidate?: () => void;
+    initialStatus?: 'idle' | 'validated';
+    onValidate?: () => Promise<boolean>;
     onValueChange?: (value: string) => void;
 }
 
@@ -21,17 +22,20 @@ export function ValidationItem({
     label, 
     value: initialValue, 
     initialStatus = 'idle',
-    isEditable = true,
     onValidate,
     onValueChange,
 }: ValidationItemProps) {
-    const [status, setStatus] = useState<ValidationStatus>(initialStatus);
+    const [status, setStatus] = useState<ValidationStatus>(initialValue ? (initialStatus === 'validated' ? 'validated' : 'pending') : 'add');
     const [code, setCode] = useState('');
     const [inputCode, setInputCode] = useState('');
     const [currentValue, setCurrentValue] = useState(initialValue);
     const { toast } = useToast();
 
     const handleStartValidation = () => {
+        if (!currentValue) {
+            toast({ variant: 'destructive', title: 'Campo vacío', description: 'Por favor, introduce un valor para validar.' });
+            return;
+        }
         const newCode = Math.floor(1000 + Math.random() * 9000).toString();
         setCode(newCode);
         setStatus('pending');
@@ -40,17 +44,31 @@ export function ValidationItem({
             description: `Tu código es: ${newCode}`,
         });
     };
+    
+    const handleAddValue = () => {
+        if (!currentValue) {
+            toast({ variant: 'destructive', title: 'Campo vacío', description: 'Por favor, introduce un valor.' });
+            return;
+        }
+        if (onValueChange) {
+            onValueChange(currentValue);
+        }
+        handleStartValidation();
+    };
 
-    const handleVerifyCode = () => {
+    const handleVerifyCode = async () => {
         if (inputCode === code) {
-            setStatus('validated');
             if (onValidate) {
-                onValidate();
+                const isValidated = await onValidate();
+                if (isValidated) {
+                    setStatus('validated');
+                    toast({
+                        title: '¡Validado!',
+                        description: `${label} ha sido validado correctamente.`,
+                        className: "bg-green-100 border-green-300 text-green-800",
+                    });
+                }
             }
-            toast({
-                title: '¡Validado!',
-                description: `${label} ha sido validado correctamente.`,
-            });
         } else {
             toast({
                 variant: 'destructive',
@@ -60,51 +78,57 @@ export function ValidationItem({
         }
     };
     
-    return (
-        <div className="flex items-center justify-between mt-1">
-             <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">{label}</span>
-                {isEditable ? (
+    if (status === 'validated') {
+        return (
+             <div className="flex items-center justify-between mt-1 h-9">
+                <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">{label}</span>
+                    <span className="text-sm">{currentValue}</span>
+                </div>
+                 <p className="text-sm font-semibold text-green-600 flex items-center gap-1"><CheckCircle className="w-4 h-4"/> Validado</p>
+            </div>
+        );
+    }
+    
+     if (status === 'add') {
+         return (
+             <div className="flex items-center justify-between mt-1 h-9">
+                 <div className="flex items-center gap-2 flex-grow">
+                    <span className="text-sm text-muted-foreground">{label}</span>
                     <Input 
                         className="h-8 text-sm w-auto flex-grow" 
                         value={currentValue} 
-                        onChange={(e) => {
-                            setCurrentValue(e.target.value);
-                            if (onValueChange) {
-                                onValueChange(e.target.value);
-                            }
-                        }} 
+                        placeholder={`Añade tu ${label.toLowerCase().replace(':', '')}`}
+                        onChange={(e) => setCurrentValue(e.target.value)}
                     />
-                ) : (
-                    <span className="text-sm">{currentValue}</span>
-                )}
+                </div>
+                <Button variant="link" className="p-0 h-auto text-sm font-semibold" onClick={handleAddValue}>
+                    Agregar
+                </Button>
+            </div>
+         )
+     }
+
+    return (
+        <div className="flex items-center justify-between mt-1 h-9">
+            <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">{label}</span>
+                <span className="text-sm">{currentValue}</span>
             </div>
 
-            {status === 'idle' && (
-                <Button variant="link" className="p-0 h-auto text-sm font-semibold text-red-500" onClick={handleStartValidation}>
-                    Validar
+            <div className="flex items-center gap-2">
+                <Input 
+                    type="text"
+                    placeholder="Código"
+                    maxLength={4}
+                    className="h-8 w-24 text-sm"
+                    value={inputCode}
+                    onChange={(e) => setInputCode(e.target.value)}
+                />
+                <Button size="sm" className="h-8 text-xs" onClick={handleVerifyCode}>
+                    Verificar
                 </Button>
-            )}
-
-            {status === 'pending' && (
-                <div className="flex items-center gap-2">
-                    <Input 
-                        type="text"
-                        placeholder="Código"
-                        maxLength={4}
-                        className="h-8 w-24 text-sm"
-                        value={inputCode}
-                        onChange={(e) => setInputCode(e.target.value)}
-                    />
-                    <Button size="sm" className="h-8 text-xs" onClick={handleVerifyCode}>
-                        Verificar
-                    </Button>
-                </div>
-            )}
-
-            {status === 'validated' && (
-                 <p className="text-sm font-semibold text-green-600">Validado</p>
-            )}
+            </div>
         </div>
     );
 }
