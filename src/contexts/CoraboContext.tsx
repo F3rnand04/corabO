@@ -5,7 +5,7 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast"
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { add, subDays, startOfDay, differenceInDays, differenceInHours } from 'date-fns';
@@ -100,6 +100,7 @@ interface CoraboState {
   rejectUserId: (userId: string) => void;
   setIdVerificationPending: (userId: string, documentUrl: string) => Promise<void>;
   autoVerifyIdWithAI: (input: VerificationInput) => Promise<VerificationOutput>;
+  getUserEffectiveness: (userId: string) => number;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -174,6 +175,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
         type: 'client',
         reputation: 0,
+        effectiveness: 100, // Start at 100%
         phone: '',
         emailValidated: firebaseUser.emailVerified,
         phoneValidated: false,
@@ -204,6 +206,39 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     });
     return () => unsubscribe();
   }, [handleUserCreation, auth]);
+  
+  // Dynamic Reputation and Effectiveness Calculation
+  useEffect(() => {
+    if (users.length > 0 && transactions.length > 0) {
+      const updatedUsers = users.map(user => {
+        if (user.type === 'provider') {
+          const providerTransactions = transactions.filter(t => t.providerId === user.id);
+          
+          // Calculate Reputation
+          const ratedTransactions = providerTransactions.filter(t => (t.status === 'Pagado' || t.status === 'Resuelto') && t.details.clientRating);
+          const totalRating = ratedTransactions.reduce((acc, t) => acc + (t.details.clientRating || 0), 0);
+          const newReputation = ratedTransactions.length > 0 ? totalRating / ratedTransactions.length : 0;
+          
+          // Calculate Effectiveness
+          const totalMeaningfulTransactions = providerTransactions.filter(t => t.status !== 'Carrito Activo' && t.status !== 'Pre-factura Pendiente').length;
+          const completedTransactions = providerTransactions.filter(t => t.status === 'Pagado' || t.status === 'Resuelto').length;
+          const newEffectiveness = totalMeaningfulTransactions > 0 ? (completedTransactions / totalMeaningfulTransactions) * 100 : 100;
+
+          return { ...user, reputation: newReputation, effectiveness: newEffectiveness };
+        }
+        return user;
+      });
+
+      setUsers(updatedUsers);
+      // Also update currentUser if they are in the list
+      if (currentUser) {
+          const updatedCurrentUser = updatedUsers.find(u => u.id === currentUser.id);
+          if (updatedCurrentUser) {
+              setCurrentUser(updatedCurrentUser);
+          }
+      }
+    }
+  }, [transactions]); // Re-calculate when transactions change
   
 
   useEffect(() => {
@@ -239,6 +274,18 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       unsubscribeConversations();
     };
   }, [currentUser]);
+
+  const getUserEffectiveness = (userId: string) => {
+    const user = users.find(u => u.id === userId);
+    if (user?.type !== 'provider') return 100;
+  
+    const providerTransactions = transactions.filter(t => t.providerId === userId);
+    const totalMeaningfulTransactions = providerTransactions.filter(t => t.status !== 'Carrito Activo' && t.status !== 'Pre-factura Pendiente').length;
+    if (totalMeaningfulTransactions === 0) return 100;
+  
+    const completedTransactions = providerTransactions.filter(t => t.status === 'Pagado' || t.status === 'Resuelto').length;
+    return (completedTransactions / totalMeaningfulTransactions) * 100;
+  };
 
   const getRankedFeed = useCallback(() => {
     if (!currentUser || !users.length) return [];
@@ -285,7 +332,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         if (provider.isSubscribed) qualityScore += 20;
         if (provider.verified) qualityScore += 30;
         // Assuming effectiveness is a percentage from 0 to 100
-        // qualityScore += (provider.effectiveness || 0); // Max 100
+        qualityScore += (provider.effectiveness || 0); // Max 100
   
         let relevanceScore = 0;
         const userInterests = currentUser.profileSetupData?.categories || [];
@@ -753,6 +800,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     setIdVerificationPending,
     autoVerifyIdWithAI,
     markConversationAsRead,
+    getUserEffectiveness,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;

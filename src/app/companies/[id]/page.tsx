@@ -209,11 +209,11 @@ export default function CompanyProfilePage() {
   const profileData = {
     name: displayName,
     specialty: specialty,
-    rating: provider.reputation || 4.9,
-    efficiency: "99.9%",
+    rating: provider.reputation || 0,
+    efficiency: provider.effectiveness || 100,
     otherStat: "00 | 05",
     publications: gallery.length,
-    completedJobs: 15,
+    completedJobs: transactions.filter(t => t.providerId === provider.id && (t.status === 'Pagado' || t.status === 'Resuelto')).length,
     distance: displayDistance,
     profileImage: provider.profileImage,
     mainImage: gallery.length > 0 ? gallery[currentImageIndex].src : "https://placehold.co/600x400.png",
@@ -365,7 +365,7 @@ export default function CompanyProfilePage() {
                         <span className="font-semibold text-foreground">{profileData.rating.toFixed(1)}</span>
                     </div>
                     <Separator orientation="vertical" className="h-4" />
-                    <span>{profileData.efficiency}</span>
+                    <span>{profileData.efficiency.toFixed(0)}%</span>
                     <Separator orientation="vertical" className="h-4" />
                     <span>{profileData.otherStat}</span>
                 </div>
@@ -496,7 +496,7 @@ export default function CompanyProfilePage() {
                             {isDeliveryOnly && <p className="text-xs text-muted-foreground -mt-2">Este proveedor solo trabaja con delivery.</p>}
                             <div className="flex justify-between text-sm">
                                 <span>Costo de envío (aprox):</span>
-                                <span className="font-semibold">${(includeDelivery || isDeliveryOnly) ? deliveryCost.toFixed(2) : '0.00'}</span>
+                                <span className="font-semibold">${(includeDelivery || isOnlyDelivery) ? deliveryCost.toFixed(2) : '0.00'}</span>
                             </div>
 
                             {providerAcceptsCredicora && (

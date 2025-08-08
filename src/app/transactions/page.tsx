@@ -292,7 +292,7 @@ const ActionButton = ({ icon: Icon, label, count, onClick }: { icon: React.Eleme
 
 
 export default function TransactionsPage() {
-    const { transactions, currentUser, getAgendaEvents, confirmPaymentReceived } = useCorabo();
+    const { transactions, currentUser, getAgendaEvents, confirmPaymentReceived, getUserEffectiveness } = useCorabo();
     const router = useRouter();
     const isModuleActive = currentUser.isTransactionsActive ?? false;
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
@@ -317,6 +317,7 @@ export default function TransactionsPage() {
     ).reduce((sum, tx) => sum + tx.amount, 0);
 
     const availableCredit = (currentUser.credicoraLimit || 0) - usedCredit;
+    const userEffectiveness = getUserEffectiveness(currentUser.id);
 
 
     // Placeholder data for progression
@@ -446,8 +447,8 @@ export default function TransactionsPage() {
                                                 <Progress value={(currentUser.reputation / 5) * 100} />
                                             </div>
                                             <div className="space-y-1">
-                                                <div className="flex justify-between text-xs font-medium"><span>Efectividad</span><span>{completedTransactions === 0 ? 'N/A' : '99%'}</span></div>
-                                                <Progress value={completedTransactions === 0 ? 0 : 99} />
+                                                <div className="flex justify-between text-xs font-medium"><span>Efectividad</span><span>{userEffectiveness.toFixed(0)}%</span></div>
+                                                <Progress value={userEffectiveness} />
                                             </div>
                                             <div className="space-y-1">
                                                  <div className="flex justify-between text-xs font-medium"><span>Transacciones para Nivel {credicoraDetails.level + 1}</span><span>{completedTransactions}/{transactionsForNextLevel}</span></div>

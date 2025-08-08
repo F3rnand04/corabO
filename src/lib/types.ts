@@ -130,6 +130,7 @@ export type User = {
   birthDate?: string;
   type: 'client' | 'provider';
   reputation: number;
+  effectiveness?: number;
   profileImage: string;
   email: string;
   phone: string;

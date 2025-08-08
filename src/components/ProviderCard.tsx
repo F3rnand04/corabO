@@ -122,7 +122,7 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                                     <Badge variant="secondary">Nuevo</Badge>
                                 ) : (
                                     <>
-                                        <span>99.9% Efec.</span>
+                                        <span>{(provider.effectiveness || 0).toFixed(0)}% Efec.</span>
                                         <Separator orientation="vertical" className="h-4" />
                                         <span className="text-green-600 font-semibold">00-05 min</span>
                                     </>
