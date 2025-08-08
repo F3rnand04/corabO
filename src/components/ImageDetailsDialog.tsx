@@ -101,16 +101,20 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex =
         <div className="w-full h-3/5 bg-black flex-shrink-0 relative">
             <Carousel setApi={setApi} className="w-full h-full">
                 <CarouselContent>
-                    {gallery.map((image, index) => (
+                    {gallery.map((media, index) => (
                     <CarouselItem key={index}>
                         <div className="w-full h-full relative">
-                        <Image
-                            src={image.src}
-                            alt={image.alt}
-                            fill
-                            className="object-contain"
-                            data-ai-hint="product detail"
-                        />
+                          {media.type === 'video' ? (
+                              <video src={media.src} className="w-full h-full object-contain" controls autoPlay loop />
+                          ) : (
+                              <Image
+                                  src={media.src}
+                                  alt={media.alt}
+                                  fill
+                                  className="object-contain"
+                                  data-ai-hint="product detail"
+                              />
+                          )}
                         </div>
                     </CarouselItem>
                     ))}
