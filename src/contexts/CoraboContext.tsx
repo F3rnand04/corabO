@@ -13,7 +13,7 @@ import { credicoraLevels } from '@/lib/types';
 // Import necessary firebase services directly
 import { getAuth, signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, GoogleAuthProvider, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { app, db } from '@/lib/firebase'; // Import the initialized app and db
-import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, enableIndexedDbPersistence } from 'firebase/firestore';
 import { createCampaign } from '@/ai/flows/campaign-flow';
 import { acceptProposal as acceptProposalFlow, sendMessage as sendMessageFlow } from '@/ai/flows/message-flow';
 import * as TransactionFlows from '@/ai/flows/transaction-flow';
@@ -130,60 +130,75 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const auth = getAuth(app);
   
+  // Enable offline persistence
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+        enableIndexedDbPersistence(db)
+          .catch((err) => {
+              if (err.code === 'failed-precondition') {
+                  console.warn("Multiple tabs open, persistence can only be enabled in one tab at a time.");
+              } else if (err.code === 'unimplemented') {
+                  console.warn("The current browser does not support all of the features required to enable persistence.");
+              }
+          });
+    }
+  }, []);
+
   const handleUserCreation = useCallback(async (firebaseUser: FirebaseUser) => {
     const userDocRef = doc(db, 'users', firebaseUser.uid);
     try {
-        const userDocSnap = await getDoc(userDocRef);
-        if (userDocSnap.exists()) {
-            setCurrentUser(userDocSnap.data() as User);
-        } else {
-            const newUser: User = {
-                id: firebaseUser.uid,
-                name: firebaseUser.displayName?.split(' ')[0] || 'Usuario',
-                lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
-                idNumber: '',
-                birthDate: '',
-                email: firebaseUser.email || '',
-                profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
-                type: 'client',
-                reputation: 0,
-                phone: '',
-                emailValidated: firebaseUser.emailVerified,
-                phoneValidated: false,
-                isGpsActive: true,
-                isInitialSetupComplete: false,
-                gallery: [],
-                credicoraLevel: 1,
-                credicoraLimit: 150,
-                profileSetupData: {},
-                isSubscribed: false,
-                isTransactionsActive: false,
-            };
-            console.log('Nuevo usuario creado:', newUser);
-            await setDoc(userDocRef, newUser);
-            setCurrentUser(newUser);
-        }
+      const userDocSnap = await getDoc(userDocRef);
+      if (!userDocSnap.exists()) {
+        const coraboId = (firebaseUser.displayName?.substring(0, 3) || 'COR').toUpperCase() + Math.random().toString(36).substring(2, 8).toUpperCase();
+        const newUser: User = {
+          id: firebaseUser.uid,
+          name: firebaseUser.displayName?.split(' ')[0] || 'Usuario',
+          lastName: firebaseUser.displayName?.split(' ').slice(1).join(' ') || '',
+          coraboId: coraboId,
+          idNumber: '',
+          birthDate: '',
+          email: firebaseUser.email || '',
+          profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
+          type: 'client',
+          reputation: 0,
+          phone: '',
+          emailValidated: firebaseUser.emailVerified,
+          phoneValidated: false,
+          isGpsActive: true,
+          isInitialSetupComplete: false,
+          gallery: [],
+          credicoraLevel: 1,
+          credicoraLimit: 150,
+          profileSetupData: {},
+          isSubscribed: false,
+          isTransactionsActive: false,
+        };
+        console.log('Creating new user in Firestore:', newUser);
+        await setDoc(userDocRef, newUser);
+      }
     } catch (error) {
-        console.error("FirebaseError on getDoc/setDoc:", error);
-        await signOut(auth);
-        setCurrentUser(null);
-    } finally {
-      setIsLoadingAuth(false);
+      console.error("FirebaseError on getDoc/setDoc during user creation:", error);
+      await signOut(auth);
     }
   }, [auth]);
 
-
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-        if (firebaseUser) {
-            handleUserCreation(firebaseUser);
-        } else {
-            setCurrentUser(null);
-            setIsLoadingAuth(false);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        await handleUserCreation(firebaseUser);
+        const userDocRef = doc(db, 'users', firebaseUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists()) {
+            setCurrentUser(userDocSnap.data() as User);
         }
+      } else {
+        setCurrentUser(null);
+      }
+      setIsLoadingAuth(false);
     });
     return () => unsubscribe();
-  }, [handleUserCreation]);
+  }, [handleUserCreation, auth]);
+  
 
   useEffect(() => {
     if (!currentUser) return;
@@ -351,6 +366,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         isInitialSetupComplete: true,
     };
     await updateUser(userId, updates);
+    // Refetch current user data after update
+    const userDocSnap = await getDoc(doc(db, 'users', userId));
+    if (userDocSnap.exists()) {
+        setCurrentUser(userDocSnap.data() as User);
+    }
   };
   
   const toggleGps = (userId: string) => {
