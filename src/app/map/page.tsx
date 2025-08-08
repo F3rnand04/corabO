@@ -12,7 +12,7 @@ import { APIProvider, Map, AdvancedMarker, MapMouseEvent } from '@vis.gl/react-g
 type MarkerPosition = { lat: number; lng: number } | null;
 
 export default function MapPage() {
-  const { toggleGps, currentUser, setDeliveryAddress } = useCorabo();
+  const { currentUser, setDeliveryAddress } = useCorabo();
   const router = useRouter();
   const { toast } = useToast();
   const [markerPosition, setMarkerPosition] = useState<MarkerPosition>(null);
@@ -33,11 +33,6 @@ export default function MapPage() {
     }
   }, [toast]);
   
-  useEffect(() => {
-    if (currentUser) {
-      toggleGps(currentUser.id);
-    }
-  }, [toggleGps, currentUser]);
 
   const handleMapClick = (e: MapMouseEvent) => {
     if (e.detail.latLng) {

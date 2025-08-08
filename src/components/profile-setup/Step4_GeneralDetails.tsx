@@ -43,6 +43,7 @@ export default function Step4_GeneralDetails({ onBack, onNext, formData, setForm
             phone: currentUser.phone
         });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]);
   
   const isIdentityComplete = currentUser?.lastName && currentUser?.idNumber && currentUser?.birthDate;
@@ -78,7 +79,7 @@ export default function Step4_GeneralDetails({ onBack, onNext, formData, setForm
             </div>
 
             {isIdentityComplete && (
-                 <Alert variant="destructive">
+                 <Alert>
                     <Info className="h-4 w-4" />
                     <AlertTitle>Información de Identidad Protegida</AlertTitle>
                     <AlertDescription>
@@ -107,9 +108,9 @@ export default function Step4_GeneralDetails({ onBack, onNext, formData, setForm
             />
         </div>
         
-        <Alert>
-            <Info className="h-4 w-4" />
-            <AlertTitle>¡Aumenta tu confianza!</AlertTitle>
+        <Alert className="bg-yellow-50 border-yellow-200 text-yellow-800">
+            <Info className="h-4 w-4 !text-yellow-800" />
+            <AlertTitle className="font-bold">¡Aumenta tu confianza!</AlertTitle>
             <AlertDescription>
                 Valida tus datos para mejorar tu <strong>reputación, efectividad y credibilidad</strong> en la plataforma.
                 Tu número de teléfono es para uso interno y <strong>nunca</strong> se compartirá con otros usuarios.

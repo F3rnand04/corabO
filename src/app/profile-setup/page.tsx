@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Stepper } from '@/components/profile-setup/Stepper';
 import Step1_ProfileType from '@/components/profile-setup/Step1_ProfileType';
 import Step2_Username from '@/components/profile-setup/Step2_Username';
@@ -56,6 +56,19 @@ export default function ProfileSetupPage() {
       schedule: initialSchedule,
       ...currentUser.profileSetupData,
   });
+  
+  useEffect(() => {
+    // This effect ensures formData is always in sync with the latest currentUser data.
+    if (currentUser) {
+        setProfileType(currentUser.type);
+        setFormData(prevData => ({
+            ...prevData,
+            ...currentUser.profileSetupData, // Apply existing saved data
+            email: currentUser.email,       // Always sync latest email/phone
+            phone: currentUser.phone,
+        }));
+    }
+  }, [currentUser]);
 
   const goToStep = (step: number) => {
     setCurrentStep(step);
