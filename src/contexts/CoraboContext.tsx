@@ -72,7 +72,7 @@ interface CoraboState {
   isContact: (userId: string) => boolean;
   toggleGps: (userId: string) => void;
   updateUser: (userId: string, updates: Partial<User>) => Promise<void>;
-  updateUserProfileImage: (userId: string, imageUrl: string) => void;
+  updateUserProfileImage: (userId: string, imageUrl: string) => Promise<void>;
   updateUserProfileAndGallery: (userId: string, image: GalleryImage) => void;
   removeGalleryImage: (userId: string, imageId: string) => void;
   validateEmail: (userId: string, emailToValidate: string) => Promise<boolean>;
@@ -121,10 +121,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
 
   // We still use mock data for these until we migrate them to Firestore
-  const [products, setProducts] = useState(mockProducts);
   const [services, setServices] = useState(mockServices);
   
   const [users, setUsers] = useState<User[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   
   // These will be managed by Firestore
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -264,20 +264,25 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
 
   useEffect(() => {
-    if (!currentUser) return;
+    const db = getFirestoreDb(); // Get DB instance safely
+    if (!db || !currentUser?.id) return; // Ensure db and user are ready
   
     // Set default delivery address once user loads
     if (currentUser.profileSetupData?.location) {
         setDeliveryAddress(currentUser.profileSetupData.location);
     }
     
-    const db = getFirestoreDb(); // Get DB instance safely
-    
     const usersQuery = query(collection(db, "users"));
     const unsubscribeUsers = onSnapshot(usersQuery, (snapshot) => {
       const usersData = snapshot.docs.map(doc => doc.data() as User);
       setUsers(usersData);
     }, (error) => console.error("Error fetching users:", error));
+
+    const productsQuery = query(collection(db, "products"));
+    const unsubscribeProducts = onSnapshot(productsQuery, (snapshot) => {
+      const productsData = snapshot.docs.map(doc => doc.data() as Product);
+      setProducts(productsData);
+    }, (error) => console.error("Error fetching products:", error));
   
     const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
     const unsubscribeTransactions = onSnapshot(transactionsQuery, (snapshot) => {
@@ -294,6 +299,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
     return () => {
       unsubscribeUsers();
+      unsubscribeProducts();
       unsubscribeTransactions();
       unsubscribeConversations();
     };
@@ -699,6 +705,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     await updateDoc(userRef, {
         gallery: arrayUnion(image)
     });
+    // Optimistically update local state for immediate feedback
+    if (currentUser?.id === userId) {
+      setCurrentUser(prev => prev ? { ...prev, gallery: [...(prev.gallery || []), image] } : null);
+    }
   };
 
   const removeGalleryImage = async (userId: string, imageId: string) => {
@@ -782,19 +792,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       NotificationFlows.sendWelcomeToProviderNotification({ userId });
     }
     
-    // Perform the Firestore update
-    const db = getFirestoreDb();
-    const userDocRef = doc(db, 'users', userId);
-    await updateDoc(userDocRef, updates);
-
-    // Then, update the local state to match
-    setCurrentUser(prevUser => {
-        if (!prevUser) return null;
-        return {
-            ...prevUser,
-            ...updates,
-        };
-    });
+    await updateUser(userId, updates);
   };
 
   const subscribeUser = (userId: string, planName: string, amount: number) => {
