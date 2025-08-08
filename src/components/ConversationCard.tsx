@@ -23,7 +23,39 @@ export function ConversationCard({ conversation }: ConversationCardProps) {
     const otherParticipant = users.find(u => u.id === otherParticipantId);
 
     if (!otherParticipant) {
-        return null; // Or some fallback for conversations with deleted users
+        // Special card for system messages
+        if (conversation.id.includes('corabo-admin')) {
+             const lastMessage = conversation.messages[conversation.messages.length - 1];
+             const timeAgo = lastMessage ? formatDistanceToNow(new Date(lastMessage.timestamp), { addSuffix: true, locale: es }) : '';
+             const unreadCount = conversation.messages.filter(m => !m.isRead && m.senderId !== currentUser.id).length;
+            return (
+                 <Link href={`/contacts`} passHref>
+                    <div className="flex items-center p-3 gap-4 bg-blue-50 border border-blue-200 rounded-xl shadow-sm cursor-pointer hover:bg-blue-100/80 transition-colors">
+                        <Avatar className="w-14 h-14">
+                            <AvatarImage src="https://i.postimg.cc/Wz1MTvWK/lg.png" alt="Corabo Admin" />
+                            <AvatarFallback>C</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-grow overflow-hidden">
+                            <div className="flex justify-between items-center">
+                                <p className="font-semibold text-blue-800">Corabo Admin</p>
+                                <p className="text-xs text-blue-600 font-medium">{timeAgo}</p>
+                            </div>
+                            <div className="flex justify-between items-center mt-1">
+                                <p className="text-sm text-blue-700/90 truncate pr-2">
+                                   {lastMessage?.text || "Mensaje del sistema."}
+                                </p>
+                                 {unreadCount > 0 && (
+                                    <Badge variant="default" className="w-6 h-6 flex items-center justify-center p-0 rounded-full shrink-0 bg-blue-500 hover:bg-blue-600">
+                                        {unreadCount}
+                                    </Badge>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </Link>
+            )
+        }
+        return null;
     }
 
     const lastMessage = conversation.messages[conversation.messages.length - 1];

@@ -241,61 +241,93 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, [currentUser]);
 
   const getRankedFeed = useCallback(() => {
-    if (!currentUser) return [];
-
+    if (!currentUser || !users.length) return [];
+  
     const allPublications = users
-        .filter(u => u.type === 'provider')
-        .flatMap(p => (p.gallery || []).map(g => ({ ...g, provider: p })));
-
+      .filter(u => u.type === 'provider' && u.gallery && u.gallery.length > 0)
+      .flatMap(p => p.gallery!.map(g => ({ ...g, provider: p })));
+  
     const isNewProvider = (provider: User) => {
-        const completedTransactions = transactions.filter(
-            tx => tx.providerId === provider.id && (tx.status === 'Pagado' || tx.status === 'Resuelto')
-        ).length;
-        const accountAgeInDays = provider.createdAt ? differenceInDays(new Date(), new Date(provider.createdAt)) : 999;
-        return completedTransactions < 5 && accountAgeInDays < 30;
+      const completedTransactions = transactions.filter(
+        tx => tx.providerId === provider.id && (tx.status === 'Pagado' || tx.status === 'Resuelto')
+      ).length;
+      const accountAgeInDays = provider.createdAt ? differenceInDays(new Date(), new Date(provider.createdAt)) : 999;
+      return completedTransactions < 5 && accountAgeInDays < 30;
     };
-
+  
     const calculateScore = (pub: GalleryImage & { provider: User }): number => {
-        const provider = pub.provider;
-        const isNew = isNewProvider(provider);
-        let score = 0;
-
-        // --- Relevance Score ---
+      const provider = pub.provider;
+      const isNew = isNewProvider(provider);
+  
+      if (isNew) {
+        // Carril de Oportunidad
         let relevanceScore = 0;
         const userInterests = currentUser.profileSetupData?.categories || [];
         const providerCategories = provider.profileSetupData?.categories || [];
         if (userInterests.some(interest => providerCategories.includes(interest))) {
-            relevanceScore += 50;
+          relevanceScore = 100;
         }
-
-        // --- Freshness Score ---
-        const hoursSincePublication = differenceInHours(new Date(), new Date(pub.createdAt));
-        const freshnessScore = Math.max(0, 100 - hoursSincePublication); // Higher score for newer posts
-
-        if (isNew) {
-            // Opportunity Lane
-            let profileCompleteness = 0;
-            if (provider.emailValidated) profileCompleteness += 10;
-            if (provider.phoneValidated) profileCompleteness += 10;
-            if (provider.profileSetupData?.specialty) profileCompleteness += 10;
-            
-            score = (relevanceScore * 0.6) + (freshnessScore * 0.3) + (profileCompleteness * 0.1);
-
-        } else {
-            // Trust Lane
-            let qualityScore = 0;
-            qualityScore += (provider.reputation || 0) * 10; // Max 50
-            if (provider.isSubscribed) qualityScore += 20;
-            if (provider.verified) qualityScore += 30;
-            
-            score = (qualityScore * 0.5) + (relevanceScore * 0.4) + (freshnessScore * 0.1);
+  
+        const hoursSincePublication = pub.createdAt ? differenceInHours(new Date(), new Date(pub.createdAt)) : 9999;
+        const freshnessScore = Math.max(0, 100 - hoursSincePublication);
+  
+        let profileCompleteness = 0;
+        if (provider.emailValidated) profileCompleteness += 10;
+        if (provider.phoneValidated) profileCompleteness += 10;
+        if (provider.profileSetupData?.specialty) profileCompleteness += 10;
+        if(provider.gallery && provider.gallery.length > 2) profileCompleteness += 10;
+  
+        return (relevanceScore * 0.5) + (freshnessScore * 0.4) + (profileCompleteness * 0.1);
+      } else {
+        // Carril de Confianza
+        let qualityScore = 0;
+        qualityScore += (provider.reputation || 0) * 10; // Max 50
+        if (provider.isSubscribed) qualityScore += 20;
+        if (provider.verified) qualityScore += 30;
+        // Assuming effectiveness is a percentage from 0 to 100
+        // qualityScore += (provider.effectiveness || 0); // Max 100
+  
+        let relevanceScore = 0;
+        const userInterests = currentUser.profileSetupData?.categories || [];
+        const providerCategories = provider.profileSetupData?.categories || [];
+        if (userInterests.some(interest => providerCategories.includes(interest))) {
+          relevanceScore += 50;
         }
-
-        return score;
+        if (contacts.some(c => c.id === provider.id)) {
+            relevanceScore += 50; // Big boost for contacts
+        }
+  
+        const hoursSincePublication = pub.createdAt ? differenceInHours(new Date(), new Date(pub.createdAt)) : 9999;
+        const freshnessScore = Math.max(0, 100 - (hoursSincePublication / 24)); // Slower decay
+  
+        return (qualityScore * 0.5) + (relevanceScore * 0.4) + (freshnessScore * 0.1);
+      }
     };
+    
+    const scoredPublications = allPublications.map(pub => ({ ...pub, score: calculateScore(pub) }));
+    
+    // Separate into two lanes
+    const opportunityLane = scoredPublications.filter(p => isNewProvider(p.provider)).sort((a, b) => b.score - a.score);
+    const trustLane = scoredPublications.filter(p => !isNewProvider(p.provider)).sort((a, b) => b.score - a.score);
 
-    return allPublications.sort((a, b) => calculateScore(b) - calculateScore(a));
-  }, [currentUser, users, transactions]);
+    // Interleave the feeds
+    const finalFeed = [];
+    let trustIndex = 0;
+    let opportunityIndex = 0;
+
+    // Build the feed by interleaving, for example, 1 opportunity for every 3 trust posts
+    while (trustIndex < trustLane.length || opportunityIndex < opportunityLane.length) {
+        for (let i = 0; i < 3 && trustIndex < trustLane.length; i++) {
+            finalFeed.push(trustLane[trustIndex++]);
+        }
+        if (opportunityIndex < opportunityLane.length) {
+            finalFeed.push(opportunityLane[opportunityIndex++]);
+        }
+    }
+
+    return finalFeed.map(({ score, ...rest }) => rest);
+  }, [currentUser, users, transactions, contacts]);
+
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
@@ -602,7 +634,17 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const updateFullProfile = async (userId: string, data: Partial<User & { profileSetupData: ProfileSetupData }>) => {
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, data);
+    
+    const wasClient = currentUser?.type === 'client';
+    const isNowProvider = data.profileSetupData?.providerType !== undefined;
+  
+    // Check if the user is transitioning from client to provider
+    if (wasClient && isNowProvider && !data.isSubscribed) {
+      const welcomeMessage = "¡Felicidades por convertirte en proveedor! Para empezar con el pie derecho y ganar la confianza de tus primeros clientes, te recomendamos suscribirte. Obtendrás la insignia de verificado y acceso a más herramientas. Toca este mensaje para ver los planes.";
+      sendMessage('corabo-admin', welcomeMessage); // This will send a message from admin to the user
+    }
   };
+
   const subscribeUser = (userId: string, planName: string, amount: number) => {};
   const activateTransactions = (userId: string, creditLimit: number) => {};
   const deactivateTransactions = (userId: string) => {};
