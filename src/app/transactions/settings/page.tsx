@@ -95,10 +95,10 @@ export default function TransactionsSettingsPage() {
         setIdVerificationError(null);
         
         try {
-            // First, update the user profile with the document URL.
+            // First, update the user profile with the document URL. This is for admin review if needed.
             await setIdVerificationPending(currentUser.id, idImage);
             
-            // Now, call the AI verification flow with the necessary data.
+            // Now, call the AI verification flow with the current user data.
             const result = await autoVerifyIdWithAI({
                 userId: currentUser.id,
                 nameInRecord: `${currentUser.name} ${currentUser.lastName || ''}`.trim(),
