@@ -14,13 +14,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useCorabo } from '@/contexts/CoraboContext';
 
-const EXCHANGE_RATE = 130; // 130 Bs per dollar
-
 export default function QuotePaymentPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { toast } = useToast();
-    const { payCommitment, users, transactions } = useCorabo();
+    const { payCommitment, users, transactions, exchangeRate } = useCorabo();
 
     const commitmentId = searchParams.get('commitmentId');
     const commitmentAmount = searchParams.get('amount');
@@ -74,7 +72,7 @@ export default function QuotePaymentPage() {
         }
     };
 
-    const bolivaresAmount = (amount * EXCHANGE_RATE).toFixed(2);
+    const bolivaresAmount = (amount * exchangeRate).toFixed(2);
     
     const getBenefitMessage = () => {
         if (commitmentId) {

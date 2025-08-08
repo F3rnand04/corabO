@@ -18,6 +18,7 @@ import { createCampaign } from '@/ai/flows/campaign-flow';
 import { acceptProposal as acceptProposalFlow, sendMessage as sendMessageFlow } from '@/ai/flows/message-flow';
 import * as TransactionFlows from '@/ai/flows/transaction-flow';
 import { autoVerifyIdWithAI as autoVerifyIdWithAIFlow, type VerificationInput } from '@/ai/flows/verification-flow';
+import { getExchangeRate } from '@/ai/flows/exchange-rate-flow';
 
 
 type FeedView = 'servicios' | 'empresas';
@@ -42,6 +43,7 @@ interface CoraboState {
   searchHistory: string[];
   isLoadingAuth: boolean;
   deliveryAddress: string;
+  exchangeRate: number;
   getRankedFeed: () => (GalleryImage & { provider: User })[];
   signInWithGoogle: () => void;
   setSearchQuery: (query: string) => void;
@@ -133,6 +135,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [isGpsActive, setIsGpsActive] = useState(true);
   const [dailyQuotes, setDailyQuotes] = useState<Record<string, DailyQuote[]>>({});
   const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [exchangeRate, setExchangeRate] = useState(36.54); // Default value
   
   const auth = getAuth(app);
   
@@ -148,6 +151,20 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
               }
           });
     }
+  }, []);
+
+  // Fetch exchange rate on initial load
+  useEffect(() => {
+    const fetchRate = async () => {
+      try {
+        const { rate } = await getExchangeRate();
+        setExchangeRate(rate);
+      } catch (error) {
+        console.error("Failed to fetch exchange rate:", error);
+        // Keep the default rate in case of an error
+      }
+    };
+    fetchRate();
   }, []);
 
   const handleUserCreation = useCallback(async (firebaseUser: FirebaseUser): Promise<User> => {
@@ -743,6 +760,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     searchHistory,
     isLoadingAuth,
     deliveryAddress,
+    exchangeRate,
     getRankedFeed,
     setDeliveryAddress,
     signInWithGoogle,
