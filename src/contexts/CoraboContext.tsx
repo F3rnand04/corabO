@@ -756,21 +756,35 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const updateFullProfile = async (userId: string, data: Partial<User & { profileSetupData: ProfileSetupData }>) => {
     const userRef = doc(db, 'users', userId);
-    
-    // Extract `type` and `profileSetupData` for the check
-    const newType = data.type; 
-    const profileSetupData = data.profileSetupData;
 
-    // Check if the user is transitioning from client to provider
-    if (currentUser?.type === 'client' && newType === 'provider') {
-        NotificationFlows.sendWelcomeToProviderNotification({ userId });
-    }
-
-    await updateDoc(userRef, data);
-    
     const wasClient = currentUser?.type === 'client';
     const isNowProvider = data.profileSetupData?.providerType !== undefined;
-  
+    
+    const updates: Partial<User> = {
+      ...data,
+      type: isNowProvider ? 'provider' : 'client',
+    };
+
+    if (wasClient && isNowProvider) {
+      NotificationFlows.sendWelcomeToProviderNotification({ userId });
+    }
+
+    await updateDoc(userRef, updates);
+    
+    // Refresh local user state
+    setCurrentUser(prevUser => {
+        if (!prevUser) return null;
+        // Deep merge profileSetupData
+        const newProfileSetupData = {
+            ...prevUser.profileSetupData,
+            ...data.profileSetupData,
+        };
+        return {
+            ...prevUser,
+            ...updates,
+            profileSetupData: newProfileSetupData,
+        };
+    });
   };
 
   const subscribeUser = (userId: string, planName: string, amount: number) => {
