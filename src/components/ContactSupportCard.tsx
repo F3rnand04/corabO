@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -11,6 +10,7 @@ export function ContactSupportCard() {
     const { toast } = useToast();
     const contactEmail = "corabo.app@gmail.com";
     const contactPhone = "+584128978405";
+    const whatsappNumber = "584128978405"; // Number without '+' for wa.me link
     const instagramUrl = "https://www.instagram.com/corabo.app?igsh=cGF2MXl0aGdyZ3hx";
 
     const copyToClipboard = (text: string, type: string) => {
@@ -42,9 +42,11 @@ export function ContactSupportCard() {
                     </Button>
                 </div>
                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Button variant="outline" className="w-full justify-start" onClick={() => copyToClipboard(contactPhone, "número")}>
-                        <Phone className="mr-2 h-4 w-4" />
-                        {contactPhone} (Copiar)
+                    <Button asChild variant="outline" className="w-full justify-start">
+                        <Link href={`https://wa.me/${whatsappNumber}`} target="_blank">
+                            <Phone className="mr-2 h-4 w-4" />
+                            {contactPhone} (Abrir Chat)
+                        </Link>
                     </Button>
                  </div>
             </CardContent>
