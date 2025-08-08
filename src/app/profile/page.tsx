@@ -48,10 +48,10 @@ export default function ProfilePage() {
   const isNewProvider = completedTransactions === 0;
 
   // Local state for interactions
-  const [starCount, setStarCount] = useState(8934);
+  const [starCount, setStarCount] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
-  const [shareCount, setShareCount] = useState(4567);
-  const [messageCount, setMessageCount] = useState(1234);
+  const [shareCount, setShareCount] = useState(0);
+  const [messageCount, setMessageCount] = useState(0);
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -483,13 +483,13 @@ export default function ProfilePage() {
                                 <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={handleStarClick}>
                                     <Star className={cn("w-5 h-5", isLiked && "fill-yellow-400 text-yellow-400")} />
                                 </Button>
-                                <span className="text-xs font-bold mt-1 drop-shadow-md">{(starCount / 1000).toFixed(1)}k</span>
+                                <span className="text-xs font-bold mt-1 drop-shadow-md">{starCount.toLocaleString('en-US')}</span>
                             </div>
                             <div className="flex flex-col items-center">
                                 <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={() => openDetailsDialog(currentImage)}>
                                     <MessageCircle className="w-5 h-5" />
                                 </Button>
-                                <span className="text-xs font-bold mt-1 drop-shadow-md">{(messageCount / 1000).toFixed(1)}k</span>
+                                <span className="text-xs font-bold mt-1 drop-shadow-md">{messageCount.toLocaleString('en-US')}</span>
                             </div>
                             <div className="flex flex-col items-center">
                                 <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={handleShareClick}>
@@ -588,3 +588,4 @@ export default function ProfilePage() {
     </>
   );
 }
+

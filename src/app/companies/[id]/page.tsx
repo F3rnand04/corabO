@@ -39,7 +39,14 @@ export default function CompanyProfilePage() {
   const router = useRouter();
   
   const provider = users.find(u => u.id === params.id);
-  const providerProducts = products.filter(p => p.providerId === provider?.id);
+  
+  // Define provider-dependent variables at the top
+  const providerProducts = provider ? products.filter(p => p.providerId === provider.id) : [];
+  const isDeliveryOnly = provider?.profileSetupData?.isOnlyDelivery || false;
+  const providerAcceptsCredicora = provider?.profileSetupData?.acceptsCredicora || false;
+  const isProductProvider = provider?.profileSetupData?.offerType === 'product';
+  const isCurrentUserTransactionReady = currentUser?.isTransactionsActive;
+  const isProviderTransactionReady = provider?.isTransactionsActive;
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -64,10 +71,10 @@ export default function CompanyProfilePage() {
   const minSwipeDistance = 50;
 
   // Local state for interactions
-  const [starCount, setStarCount] = useState(8934);
+  const [starCount, setStarCount] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
-  const [shareCount, setShareCount] = useState(4567);
-  const [messageCount, setMessageCount] = useState(1234);
+  const [shareCount, setShareCount] = useState(0);
+  const [messageCount, setMessageCount] = useState(0);
   const [activeTab, setActiveTab] = useState('comentarios');
   const [gpsReady, setGpsReady] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
@@ -94,12 +101,7 @@ export default function CompanyProfilePage() {
   const totalCartItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const cartTransaction = cart.length > 0 ? transactions.find(tx => tx.clientId === currentUser?.id && tx.status === 'Carrito Activo') : undefined;
-  const isDeliveryOnly = provider?.profileSetupData?.isOnlyDelivery || false;
-  const providerAcceptsCredicora = provider?.profileSetupData?.acceptsCredicora || false;
 
-  // Transaction readiness checks
-  const isCurrentUserTransactionReady = currentUser?.isTransactionsActive;
-  const isProviderTransactionReady = provider?.isTransactionsActive;
 
   const handleCheckout = () => {
     if (cartTransaction) {
@@ -137,8 +139,6 @@ export default function CompanyProfilePage() {
     const conversationId = sendMessage(provider.id, '', true);
     router.push(`/messages/${conversationId}`);
   };
-
-  const isProductProvider = provider.profileSetupData?.offerType === 'product';
 
   const paymentCommitmentDates = transactions
     .filter(tx => (tx.providerId === provider.id || tx.clientId === provider.id) && tx.status === 'Acuerdo Aceptado - Pendiente de Ejecución')
@@ -496,7 +496,7 @@ export default function CompanyProfilePage() {
                             {isDeliveryOnly && <p className="text-xs text-muted-foreground -mt-2">Este proveedor solo trabaja con delivery.</p>}
                             <div className="flex justify-between text-sm">
                                 <span>Costo de envío (aprox):</span>
-                                <span className="font-semibold">${(includeDelivery || isOnlyDelivery) ? deliveryCost.toFixed(2) : '0.00'}</span>
+                                <span className="font-semibold">${(includeDelivery || isDeliveryOnly) ? deliveryCost.toFixed(2) : '0.00'}</span>
                             </div>
 
                             {providerAcceptsCredicora && (
