@@ -53,9 +53,8 @@ export default function TransactionsSettingsPage() {
     const { toast } = useToast();
     const router = useRouter();
 
-    // Determine initial step based on verification status
-    const initialStep = currentUser?.idVerificationStatus === 'verified' ? 2 : 1;
-    const [step, setStep] = useState(initialStep);
+    // This is the key change: determine the initial step based on the user's verification status.
+    const [step, setStep] = useState(() => currentUser?.idVerificationStatus === 'verified' ? 2 : 1);
     
     // Step 1 state
     const [idImage, setIdImage] = useState<string | null>(null);
@@ -84,13 +83,13 @@ export default function TransactionsSettingsPage() {
     
     const [isVerifyingAccount, setIsVerifyingAccount] = useState(false);
     const [accountVerificationError, setAccountVerificationError] = useState<string | null>(null);
-
+    
     useEffect(() => {
-        // If user is already verified, ensure we start at step 2.
-        if (currentUser?.idVerificationStatus === 'verified') {
+        // If the user's status changes (e.g., after verification), ensure the step is correct.
+        if (currentUser?.idVerificationStatus === 'verified' && step === 1) {
             setStep(2);
         }
-    }, [currentUser?.idVerificationStatus]);
+    }, [currentUser?.idVerificationStatus, step]);
 
 
     if (!currentUser) {
@@ -138,7 +137,11 @@ export default function TransactionsSettingsPage() {
 
         } catch (error) {
             console.error(error);
-            setIdVerificationError("Hubo un error al procesar tu documento. Intenta de nuevo o");
+            toast({
+                variant: 'destructive',
+                title: 'Error de Verificación',
+                description: `Código de verificación enviado a tu correo. (Consola del Navegador)`
+            });
         } finally {
             setIsVerifyingId(false);
         }
@@ -321,9 +324,9 @@ export default function TransactionsSettingsPage() {
                                         <Banknote className="w-5 h-5"/>
                                         Cuenta Bancaria
                                     </Label>
-                                    <Switch id="account-switch" checked={paymentMethods.account.active} onCheckedChange={(c) => handleMethodChange('account', 'active', c)} />
+                                    <Switch id="account-switch" checked={paymentMethods.account?.active || false} onCheckedChange={(c) => handleMethodChange('account', 'active', c)} />
                                 </div>
-                                {paymentMethods.account.active && (
+                                {paymentMethods.account?.active && (
                                     <div className="space-y-4 pt-4 border-t">
                                         <div className="space-y-2">
                                             <Label htmlFor="bank-name">Entidad Bancaria</Label>
@@ -347,9 +350,9 @@ export default function TransactionsSettingsPage() {
                                         <Smartphone className="w-5 h-5"/>
                                         Pago Móvil
                                     </Label>
-                                    <Switch id="mobile-switch" checked={paymentMethods.mobile.active} onCheckedChange={(c) => handleMethodChange('mobile', 'active', c)} />
+                                    <Switch id="mobile-switch" checked={paymentMethods.mobile?.active || false} onCheckedChange={(c) => handleMethodChange('mobile', 'active', c)} />
                                 </div>
-                                {paymentMethods.mobile.active && (
+                                {paymentMethods.mobile?.active && (
                                      <div className="space-y-4 pt-4 border-t">
                                         <div className="space-y-2">
                                             <Label htmlFor="mobile-id">Cédula</Label>
@@ -377,9 +380,9 @@ export default function TransactionsSettingsPage() {
                                         <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.714 6.556H14.15l2.031 2.031-2.03 2.032h2.563l2.032-2.031-2.03-2.032Zm-4.582 4.583H9.57l2.032 2.03-2.031 2.031h2.562l2.032-2.03-2.032-2.032Zm-4.582 0H5.087l2.032 2.03-2.032 2.031H7.55l2.032-2.03-2.032-2.032Zm9.164-2.551h2.563l-2.032 2.031 2.032 2.03h-2.563l-2.031-2.031 2.031-2.03Zm-4.582-4.582H9.57l2.032 2.03-2.031 2.032h2.562l2.032-2.03-2.032-2.031Zm4.582 9.164h2.563l-2.032 2.031 2.032 2.03h-2.563l-2.031-2.031 2.031-2.03ZM9.62 2.01l-7.61 7.61 2.032 2.031 7.61-7.61L9.62 2.01Zm0 17.98l-7.61-7.61 2.032-2.032 7.61 7.61-2.032 2.032Z" fill="#F0B90B"></path></svg>
                                         Binance Pay
                                     </Label>
-                                    <Switch id="crypto-switch" checked={paymentMethods.crypto.active} onCheckedChange={(c) => handleMethodChange('crypto', 'active', c)} />
+                                    <Switch id="crypto-switch" checked={paymentMethods.crypto?.active || false} onCheckedChange={(c) => handleMethodChange('crypto', 'active', c)} />
                                 </div>
-                                {paymentMethods.crypto.active && (
+                                {paymentMethods.crypto?.active && (
                                      <div className="space-y-4 pt-4 border-t">
                                         <ValidationItem
                                             label="Correo de Binance:"
