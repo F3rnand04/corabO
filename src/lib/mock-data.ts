@@ -47,8 +47,8 @@ export const users: User[] = [
       },
     },
     gallery: [
-      { id: 'gal-ana-1', type: 'image', src: 'https://i.postimg.cc/cLDw0Wz1/plumber-woman-work.png', alt: 'Plomería profesional', description: 'Instalación y reparación de tuberías con la mejor calidad.', comments: [] },
-      { id: 'gal-ana-2', type: 'image', src: 'https://i.postimg.cc/HxbYVz75/plumbing-tools.png', alt: 'Herramientas de plomería', description: 'Contamos con las herramientas adecuadas para cada trabajo.', comments: [] },
+      { id: 'gal-ana-1', type: 'image', src: 'https://i.postimg.cc/cLDw0Wz1/plumber-woman-work.png', alt: 'Plomería profesional', description: 'Instalación y reparación de tuberías con la mejor calidad.', comments: [], createdAt: new Date().toISOString() },
+      { id: 'gal-ana-2', type: 'image', src: 'https://i.postimg.cc/HxbYVz75/plumbing-tools.png', alt: 'Herramientas de plomería', description: 'Contamos con las herramientas adecuadas para cada trabajo.', comments: [], createdAt: new Date().toISOString() },
     ],
   },
   {
@@ -92,14 +92,14 @@ export const users: User[] = [
       },
     },
     gallery: [
-      { id: 'gal-tecno-1', type: 'image', src: 'https://i.postimg.cc/qR0Y632z/tech-store.png', alt: 'Tienda de tecnología', description: 'Visítanos en nuestra tienda física.', comments: [] },
+      { id: 'gal-tecno-1', type: 'image', src: 'https://i.postimg.cc/qR0Y632z/tech-store.png', alt: 'Tienda de tecnología', description: 'Visítanos en nuestra tienda física.', comments: [], createdAt: new Date().toISOString() },
     ],
   },
 ];
 
 export const products: Product[] = [
-  { id: 'prod1', name: 'Laptop Pro X15', description: 'Potente laptop para profesionales y gamers.', price: 1200, category: 'Tecnología y Soporte', providerId: 'provider2', imageUrl: 'https://placehold.co/600x400.png' },
-  { id: 'prod2', name: 'Smartphone Galaxy Z', description: 'El último modelo con cámara de 108MP.', price: 950, category: 'Tecnología y Soporte', providerId: 'provider2', imageUrl: 'https://placehold.co/600x400.png' },
+  { id: 'prod1', name: 'Laptop Pro X15', description: 'Potente laptop para profesionales y gamers.', price: 1200, category: 'Tecnología y Soporte', providerId: 'provider2', imageUrl: 'https://i.postimg.cc/6pS6p2fV/laptop.png' },
+  { id: 'prod2', name: 'Smartphone Galaxy Z', description: 'El último modelo con cámara de 108MP.', price: 950, category: 'Tecnología y Soporte', providerId: 'provider2', imageUrl: 'https://i.postimg.cc/W49nN8rJ/smartphone.png' },
 ];
 
 export const services: Service[] = [

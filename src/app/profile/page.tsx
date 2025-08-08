@@ -366,12 +366,10 @@ export default function ProfilePage() {
             <div className="flex justify-around text-center text-xs text-muted-foreground pt-4 pb-2">
                 <div className="flex-1">
                     <p className="font-semibold text-foreground">{gallery.length}</p>
-                    <p>Publicaciones</p>
                 </div>
                 {isProvider && (
                     <div className="flex-1">
                         <p className="font-semibold text-foreground">{isProductProvider ? providerProducts.length : completedTransactions}</p>
-                        <p>{isProductProvider ? 'Productos' : 'Trab. Realizados'}</p>
                     </div>
                 )}
             </div>
@@ -653,6 +651,3 @@ export default function ProfilePage() {
     </>
   );
 }
-
-
-

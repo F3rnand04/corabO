@@ -111,7 +111,7 @@ interface CoraboState {
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
 
 // Import mock data - we'll phase this out
-import { users as mockUsers, products as mockProducts, services as mockServices, initialTransactions, initialConversations } from '@/lib/mock-data';
+import { users as mockUsers, services as mockServices, initialTransactions, initialConversations } from '@/lib/mock-data';
 
 export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
@@ -265,42 +265,50 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (!currentUser?.id) return;
-    const db = getFirestoreDb(); // Ensure db is initialized
-  
+
+    const db = getFirestoreDb();
+    if (!db) {
+        console.error("Firestore DB is not initialized yet.");
+        return;
+    }
+
     if (currentUser.profileSetupData?.location) {
         setDeliveryAddress(currentUser.profileSetupData.location);
     }
     
+    // This will hold all the unsubscribe functions.
     const unsubs: (() => void)[] = [];
 
-    // Scoped queries to the current user
-    const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
-    const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id));
-    // Fetch all users and products for now. In a larger app, this would be optimized.
+    // All Users Listener
     const usersQuery = query(collection(db, 'users'));
-    const productsQuery = query(collection(db, 'products'));
-
-
     unsubs.push(onSnapshot(usersQuery, (snapshot) => {
-      setUsers(snapshot.docs.map(doc => doc.data() as User));
+        setUsers(snapshot.docs.map(doc => doc.data() as User));
     }, (error) => console.error("Users snapshot error:", error)));
-
+    
+    // All Products Listener
+    const productsQuery = query(collection(db, 'products'));
     unsubs.push(onSnapshot(productsQuery, (snapshot) => {
         setProducts(snapshot.docs.map(doc => doc.data() as Product));
     }, (error) => console.error("Products snapshot error:", error)));
 
+    // User-specific Transactions Listener
+    const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
     unsubs.push(onSnapshot(transactionsQuery, (snapshot) => {
-      setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
+        setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
     }, (error) => console.error("Transactions snapshot error:", error)));
     
+    // User-specific Conversations Listener
+    const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id));
     unsubs.push(onSnapshot(conversationsQuery, (snapshot) => {
         setConversations(snapshot.docs.map(doc => doc.data() as Conversation).sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()));
     }, (error) => console.error("Conversations snapshot error:", error)));
   
+    // This is the cleanup function. It will be called when the component unmounts
+    // or when the dependency (currentUser.id) changes.
     return () => {
       unsubs.forEach(unsub => unsub());
     };
-  }, [currentUser?.id]);
+  }, [currentUser?.id]); // The effect now correctly depends only on the user's ID.
 
   const getRankedFeed = useCallback(() => {
     if (!currentUser || !users.length) return [];
@@ -437,12 +445,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     await setDoc(productRef, product);
     // Optimistic update
     setProducts(prev => [...prev, product]);
-    setCurrentUser(prevUser => {
-        if (!prevUser) return null;
-        // This is a bit tricky since products are not directly on the user object.
-        // The onSnapshot for products should handle this, but an optimistic update here is good for UX.
-        return prevUser;
-    })
   };
 
   const addToCart = (product: Product, quantity: number) => {
