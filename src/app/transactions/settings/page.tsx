@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { VerificationOutput } from '@/lib/types';
+import { ValidationItem } from '@/components/ValidationItem';
 
 
 function SettingsHeader() {
@@ -46,7 +47,7 @@ const banks = [
 
 
 export default function TransactionsSettingsPage() {
-    const { currentUser, activateTransactions, autoVerifyIdWithAI, setIdVerificationPending, sendMessage } = useCorabo();
+    const { currentUser, activateTransactions, autoVerifyIdWithAI, setIdVerificationPending, sendMessage, updateUser, validateEmail: validateBinanceEmail } = useCorabo();
     const { toast } = useToast();
     const router = useRouter();
     const [step, setStep] = useState(1);
@@ -60,12 +61,14 @@ export default function TransactionsSettingsPage() {
     const idFileInputRef = useRef<HTMLInputElement>(null);
 
     // Step 2 state
-    const [paymentMethod, setPaymentMethod] = useState<'account' | 'mobile'>('account');
+    const [paymentMethod, setPaymentMethod] = useState<'account' | 'mobile' | 'crypto'>('account');
     const [bankAccount, setBankAccount] = useState('');
     const [bankName, setBankName] = useState('');
     const [mobilePaymentPhone, setMobilePaymentPhone] = useState('');
+    const [binanceEmail, setBinanceEmail] = useState(currentUser?.email || '');
     const [isVerifyingAccount, setIsVerifyingAccount] = useState(false);
     const [accountVerificationError, setAccountVerificationError] = useState<string | null>(null);
+    const [isBinanceEmailValidated, setIsBinanceEmailValidated] = useState(false);
 
     if (!currentUser) {
         return <Loader2 className="animate-spin" />;
@@ -126,6 +129,12 @@ export default function TransactionsSettingsPage() {
 
     const handleVerifyAccount = () => {
         setAccountVerificationError(null);
+
+        if (paymentMethod === 'crypto' && !isBinanceEmailValidated) {
+            setAccountVerificationError("Debes validar tu correo de Binance Pay antes de continuar.");
+            return;
+        }
+
         setIsVerifyingAccount(true);
 
         setTimeout(() => {
@@ -138,12 +147,18 @@ export default function TransactionsSettingsPage() {
                  return;
             }
 
-            const paymentDetails = {
-                method: paymentMethod,
-                bankName: bankName,
-                accountNumber: paymentMethod === 'account' ? bankAccount : undefined,
-                mobilePaymentPhone: paymentMethod === 'mobile' ? mobilePaymentPhone : undefined,
-            };
+            const paymentDetails: any = { method: paymentMethod };
+
+            if(paymentMethod === 'account') {
+                paymentDetails.bankName = bankName;
+                paymentDetails.accountNumber = bankAccount;
+            } else if (paymentMethod === 'mobile') {
+                paymentDetails.bankName = bankName;
+                paymentDetails.mobilePaymentPhone = mobilePaymentPhone;
+            } else if (paymentMethod === 'crypto') {
+                paymentDetails.binanceEmail = binanceEmail;
+            }
+
 
             activateTransactions(currentUser.id, paymentDetails);
 
@@ -158,6 +173,16 @@ export default function TransactionsSettingsPage() {
             setIsVerifyingAccount(false);
         }, 1500);
     }
+    
+    const handleBinanceEmailValidation = async () => {
+        const success = await validateBinanceEmail(currentUser.id, binanceEmail);
+        setIsBinanceEmailValidated(success);
+        if(success) {
+            // Persist the validated email in the user's profile
+            updateUser(currentUser.id, { 'profileSetupData.paymentDetails.binanceEmail': binanceEmail });
+        }
+    };
+
 
     return (
         <>
@@ -254,7 +279,7 @@ export default function TransactionsSettingsPage() {
                         <CardHeader>
                             <CardTitle>Paso 2: Registro de Cuenta de Pago</CardTitle>
                             <CardDescription>
-                               Registra la cuenta bancaria o pago móvil donde recibirás tus pagos. Debe estar a tu nombre.
+                               Registra el método donde recibirás tus pagos. Debe estar a tu nombre.
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
@@ -265,7 +290,7 @@ export default function TransactionsSettingsPage() {
                                     className="flex-1"
                                 >
                                     <Banknote className="mr-2 h-4 w-4"/>
-                                    Cuenta Bancaria
+                                    Cuenta
                                 </Button>
                                 <Button 
                                     variant={paymentMethod === 'mobile' ? 'default' : 'ghost'} 
@@ -275,9 +300,17 @@ export default function TransactionsSettingsPage() {
                                      <Smartphone className="mr-2 h-4 w-4"/>
                                     Pago Móvil
                                 </Button>
+                                <Button 
+                                    variant={paymentMethod === 'crypto' ? 'default' : 'ghost'} 
+                                    onClick={() => setPaymentMethod('crypto')}
+                                    className="flex-1"
+                                >
+                                    <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.714 6.556H14.15l2.031 2.031-2.03 2.032h2.563l2.032-2.031-2.03-2.032Zm-4.582 4.583H9.57l2.032 2.03-2.031 2.031h2.562l2.032-2.03-2.032-2.032Zm-4.582 0H5.087l2.032 2.03-2.032 2.031H7.55l2.032-2.03-2.032-2.032Zm9.164-2.551h2.563l-2.032 2.031 2.032 2.03h-2.563l-2.031-2.031 2.031-2.03Zm-4.582-4.582H9.57l2.032 2.03-2.031 2.032h2.562l2.032-2.03-2.032-2.031Zm4.582 9.164h2.563l-2.032 2.031 2.032 2.03h-2.563l-2.031-2.031 2.031-2.03ZM9.62 2.01l-7.61 7.61 2.032 2.031 7.61-7.61L9.62 2.01Zm0 17.98l-7.61-7.61 2.032-2.032 7.61 7.61-2.032 2.032Z" fill="#F0B90B"></path></svg>
+                                    Binance Pay
+                                </Button>
                             </div>
 
-                            {paymentMethod === 'account' ? (
+                            {paymentMethod === 'account' && (
                                 <div className="space-y-4">
                                      <div className="space-y-2">
                                         <Label htmlFor="account-name">Titular de la Cuenta</Label>
@@ -299,7 +332,9 @@ export default function TransactionsSettingsPage() {
                                         <Input id="account-number" placeholder="0102..." value={bankAccount} onChange={(e) => setBankAccount(e.target.value)} maxLength={20} />
                                     </div>
                                 </div>
-                            ) : (
+                            )}
+                            
+                            {paymentMethod === 'mobile' && (
                                 <div className="space-y-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="mobile-id">Cédula</Label>
@@ -320,6 +355,19 @@ export default function TransactionsSettingsPage() {
                                         <Label htmlFor="mobile-phone">Número de Teléfono</Label>
                                         <Input id="mobile-phone" placeholder="0412..." value={mobilePaymentPhone} onChange={(e) => setMobilePaymentPhone(e.target.value)} />
                                     </div>
+                                </div>
+                            )}
+
+                            {paymentMethod === 'crypto' && (
+                                <div className="space-y-4">
+                                    <ValidationItem
+                                        label="Correo de Binance:"
+                                        value={binanceEmail}
+                                        initialStatus={isBinanceEmailValidated ? 'validated' : 'idle'}
+                                        onValidate={handleBinanceEmailValidation}
+                                        onValueChange={setBinanceEmail}
+                                        forceAddStatus={true}
+                                    />
                                 </div>
                             )}
 

@@ -26,12 +26,11 @@ const getExchangeRateFlow = ai.defineFlow(
     outputSchema: ExchangeRateOutputSchema,
   },
   async () => {
-    // In a real-world scenario, this would make a fetch call to a third-party API.
-    // For this prototype, we return a realistic, fixed value.
-    // Example: const response = await fetch('https://api.exchangerate-provider.com/v4/latest/USD');
-    // const data = await response.json();
-    // return { rate: data.rates.VES };
+    // In a real-world scenario, this flow would contain logic to scrape
+    // https://www.bcv.org.ve/ or call a third-party financial data API.
+    // This flow would be triggered by a scheduled job (cron) once daily at 9 AM.
+    // For this prototype, we return a fixed, realistic value.
     
-    return { rate: 36.54 };
+    return { rate: 130.06 };
   }
 );

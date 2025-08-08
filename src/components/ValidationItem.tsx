@@ -14,8 +14,9 @@ interface ValidationItemProps {
     label: string;
     value: string;
     initialStatus?: 'idle' | 'validated';
-    onValidate?: () => Promise<boolean>;
+    onValidate?: (valueToValidate: string) => Promise<boolean>;
     onValueChange?: (value: string) => void;
+    forceAddStatus?: boolean; // New prop
 }
 
 export function ValidationItem({ 
@@ -24,8 +25,9 @@ export function ValidationItem({
     initialStatus = 'idle',
     onValidate,
     onValueChange,
+    forceAddStatus = false, // Default to false
 }: ValidationItemProps) {
-    const [status, setStatus] = useState<ValidationStatus>(initialValue ? (initialStatus === 'validated' ? 'validated' : 'pending') : 'add');
+    const [status, setStatus] = useState<ValidationStatus>(forceAddStatus ? 'add' : (initialValue ? (initialStatus === 'validated' ? 'validated' : 'pending') : 'add'));
     const [code, setCode] = useState('');
     const [inputCode, setInputCode] = useState('');
     const [currentValue, setCurrentValue] = useState(initialValue);
@@ -59,7 +61,7 @@ export function ValidationItem({
     const handleVerifyCode = async () => {
         if (inputCode === code) {
             if (onValidate) {
-                const isValidated = await onValidate();
+                const isValidated = await onValidate(currentValue);
                 if (isValidated) {
                     setStatus('validated');
                     toast({

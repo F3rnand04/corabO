@@ -118,6 +118,13 @@ export type ProfileSetupData = {
   schedule?: Record<string, { from: string; to: string; active: boolean }>;
   acceptsCredicora?: boolean;
   appointmentCost?: number;
+  paymentDetails?: {
+      method: 'account' | 'mobile' | 'crypto';
+      bankName?: string;
+      accountNumber?: string;
+      mobilePaymentPhone?: string;
+      binanceEmail?: string;
+  }
 };
 
 

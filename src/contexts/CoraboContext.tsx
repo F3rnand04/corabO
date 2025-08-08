@@ -73,7 +73,7 @@ interface CoraboState {
   updateUserProfileImage: (userId: string, imageUrl: string) => void;
   updateUserProfileAndGallery: (userId: string, imageOrId: GalleryImage | string, isDelete?: boolean) => void;
   removeGalleryImage: (userId: string, imageId: string) => void;
-  validateEmail: (userId: string) => Promise<boolean>;
+  validateEmail: (userId: string, emailToValidate: string) => Promise<boolean>;
   validatePhone: (userId: string) => Promise<boolean>;
   setFeedView: (view: FeedView) => void;
   updateFullProfile: (userId: string, data: ProfileSetupData) => Promise<void>;
@@ -689,10 +689,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const updateUserProfileAndGallery = (userId: string, imageOrId: GalleryImage | string, isDelete?: boolean) => {};
   const removeGalleryImage = (userId: string, imageId: string) => {};
   
-  const validateEmail = async (userId: string): Promise<boolean> => {
-    await updateUser(userId, { emailValidated: true });
+  const validateEmail = async (userId: string, emailToValidate: string): Promise<boolean> => {
+    // In a real app, this would send an email via a backend service.
+    // For the prototype, we simulate this and return true.
+    console.log(`Simulating sending validation code to ${emailToValidate} for user ${userId}`);
+    await updateUser(userId, { emailValidated: true }); // Simulate validation
     return true;
   };
+
   const validatePhone = async (userId: string): Promise<boolean> => {
     await updateUser(userId, { phoneValidated: true });
     return true;
@@ -713,30 +717,38 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const subscribeUser = (userId: string, planName: string, amount: number) => {};
+  
   const activateTransactions = async (userId: string, paymentDetails: any) => {
-    if (!currentUser) return;
-    const userRef = doc(db, 'users', userId);
-    const initialCreditLimit = credicoraLevels['1'].creditLimit;
+      if (!currentUser) return;
+      const userRef = doc(db, 'users', userId);
+      const initialCreditLimit = credicoraLevels['1'].creditLimit;
 
-    const cleanedPaymentDetails = { ...paymentDetails };
-    if (cleanedPaymentDetails.method === 'account') {
-        delete cleanedPaymentDetails.mobilePaymentPhone;
-    } else if (cleanedPaymentDetails.method === 'mobile') {
-        delete cleanedPaymentDetails.accountNumber;
-    }
+      const cleanedPaymentDetails = { ...paymentDetails };
+      if (cleanedPaymentDetails.method === 'account') {
+          delete cleanedPaymentDetails.mobilePaymentPhone;
+          delete cleanedPaymentDetails.binanceEmail;
+      } else if (cleanedPaymentDetails.method === 'mobile') {
+          delete cleanedPaymentDetails.accountNumber;
+          delete cleanedPaymentDetails.binanceEmail;
+      } else if (cleanedPaymentDetails.method === 'crypto') {
+          delete cleanedPaymentDetails.accountNumber;
+          delete cleanedPaymentDetails.mobilePaymentPhone;
+          delete cleanedPaymentDetails.bankName;
+      }
 
-    const updates = {
-      isTransactionsActive: true,
-      credicoraLimit: initialCreditLimit,
-      profileSetupData: {
-        ...currentUser.profileSetupData,
-        paymentDetails: cleanedPaymentDetails,
-      },
-    };
-    
-    await updateDoc(userRef, updates);
-    setCurrentUser(prevUser => prevUser ? { ...prevUser, ...updates } : null);
+      const updates = {
+          isTransactionsActive: true,
+          credicoraLimit: initialCreditLimit,
+          profileSetupData: {
+              ...currentUser.profileSetupData,
+              paymentDetails: cleanedPaymentDetails,
+          },
+      };
+
+      await updateDoc(userRef, updates);
+      setCurrentUser(prevUser => prevUser ? { ...prevUser, ...updates } : null);
   };
+  
   const deactivateTransactions = (userId: string) => {};
   const downloadTransactionsPDF = () => {};
   const getAgendaEvents = () => { return []; };
