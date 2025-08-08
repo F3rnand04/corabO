@@ -77,7 +77,7 @@ interface CoraboState {
   updateFullProfile: (userId: string, data: ProfileSetupData) => Promise<void>;
   completeInitialSetup: (userId: string, data: { lastName: string; idNumber: string; birthDate: string }) => Promise<void>;
   subscribeUser: (userId: string, planName: string, amount: number) => void;
-  activateTransactions: (userId: string, creditLimit: number) => void;
+  activateTransactions: (userId: string, paymentDetails: any) => void;
   deactivateTransactions: (userId: string) => void;
   downloadTransactionsPDF: () => void;
   sendMessage: (recipientId: string, text: string, createOnly?: boolean) => string;
@@ -649,7 +649,16 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const subscribeUser = (userId: string, planName: string, amount: number) => {};
-  const activateTransactions = (userId: string, creditLimit: number) => {};
+  const activateTransactions = async (userId: string, paymentDetails: any) => {
+    const updates = {
+      isTransactionsActive: true,
+      profileSetupData: {
+        ...currentUser?.profileSetupData,
+        paymentDetails,
+      },
+    };
+    await updateUser(userId, updates);
+  };
   const deactivateTransactions = (userId: string) => {};
   const downloadTransactionsPDF = () => {};
   const getAgendaEvents = () => { return []; };

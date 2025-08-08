@@ -134,17 +134,29 @@ export default function TransactionsSettingsPage() {
 
             if (isAccountInvalid || isMobileInvalid) {
                  setAccountVerificationError("El titular de la cuenta/pago móvil no coincide con el propietario de la cuenta Corabo. Por favor, verifica los datos.");
-            } else {
-                toast({
-                    title: "¡Cuenta Verificada!",
-                    description: "Tus datos de pago han sido guardados exitosamente. Tu módulo de transacciones está activo.",
-                    className: "bg-green-100 border-green-300 text-green-800",
-                });
-                activateTransactions(currentUser.id, 150);
-                router.push('/transactions');
+                 setIsVerifyingAccount(false);
+                 return;
             }
+
+            const paymentDetails = {
+                method: paymentMethod,
+                bankName: bankName,
+                accountNumber: paymentMethod === 'account' ? bankAccount : undefined,
+                mobilePaymentPhone: paymentMethod === 'mobile' ? mobilePaymentPhone : undefined,
+            };
+
+            activateTransactions(currentUser.id, paymentDetails);
+
+            toast({
+                title: "¡Cuenta Verificada!",
+                description: "Tus datos de pago han sido guardados exitosamente. Tu módulo de transacciones está activo.",
+                className: "bg-green-100 border-green-300 text-green-800",
+            });
+            
+            router.push('/transactions');
+
             setIsVerifyingAccount(false);
-        }, 2000);
+        }, 1500);
     }
 
     return (
@@ -201,7 +213,8 @@ export default function TransactionsSettingsPage() {
                                     <AlertCircle className="h-4 w-4" />
                                     <AlertTitle>Error de Verificación</AlertTitle>
                                     <AlertDescription>
-                                        {idVerificationError} <Button variant="link" className="p-0 h-auto text-current underline" onClick={handleContactSupport}>contacta a soporte.</Button>
+                                        {idVerificationError}{' '}
+                                        <Button variant="link" className="p-0 h-auto text-current underline" onClick={handleContactSupport}>contacta a soporte.</Button>
                                     </AlertDescription>
                                 </Alert>
                             )}
