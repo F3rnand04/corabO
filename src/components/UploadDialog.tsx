@@ -39,6 +39,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
   const [galleryDescription, setGalleryDescription] = useState('');
   const [galleryFile, setGalleryFile] = useState<File | null>(null);
   const [isVideofile, setIsVideoFile] = useState(false);
+  const [galleryAspectRatio, setGalleryAspectRatio] = useState<'square' | 'horizontal' | 'vertical'>('square');
 
   // Product state
   const [productImagePreview, setProductImagePreview] = useState<string | null>(null);
@@ -68,7 +69,23 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
             if (view === 'upload_gallery') {
                 setGalleryFile(selectedFile);
                 setGalleryImagePreview(result);
-                setIsVideoFile(selectedFile.type.startsWith('video/'));
+                const isVideo = selectedFile.type.startsWith('video/');
+                setIsVideoFile(isVideo);
+
+                if (isVideo) {
+                    // For videos, we can't easily get aspect ratio on client, assume horizontal
+                    setGalleryAspectRatio('horizontal');
+                } else {
+                    const img = new window.Image();
+                    img.src = result;
+                    img.onload = () => {
+                        const ratio = img.width / img.height;
+                        if (ratio > 1.2) setGalleryAspectRatio('horizontal');
+                        else if (ratio < 0.9) setGalleryAspectRatio('vertical');
+                        else setGalleryAspectRatio('square');
+                    };
+                }
+
             } else if (view === 'upload_product') {
                 setProductFile(selectedFile);
                 setProductImagePreview(result);
@@ -114,6 +131,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
       description: galleryDescription,
       comments: [],
       createdAt: new Date().toISOString(),
+      aspectRatio: galleryAspectRatio,
     };
 
     updateUserProfileAndGallery(currentUser.id, newGalleryItem);
@@ -189,7 +207,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
                 {isVideofile ? (
                     <video src={galleryImagePreview} className="w-full h-full object-contain" controls />
                 ) : (
-                    <Image src={galleryImagePreview} alt="Vista previa" layout="fill" objectFit="cover" />
+                    <Image src={galleryImagePreview} alt="Vista previa" layout="fill" objectFit="contain" />
                 )}
                 <Button 
                   variant="destructive" 

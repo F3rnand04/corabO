@@ -27,8 +27,16 @@ const sendSmsVerificationCodeFlow = ai.defineFlow(
     const authToken = process.env.TWILIO_AUTH_TOKEN;
     const twilioNumber = process.env.TWILIO_PHONE_NUMBER;
 
-    if (!accountSid || !authToken || !twilioNumber) {
-      console.error('Twilio credentials are not configured in .env');
+    // Enhanced check for credentials
+    const missingCredentials = [];
+    if (!accountSid) missingCredentials.push('TWILIO_ACCOUNT_SID');
+    if (!authToken) missingCredentials.push('TWILIO_AUTH_TOKEN');
+    if (!twilioNumber) missingCredentials.push('TWILIO_PHONE_NUMBER');
+
+    if (missingCredentials.length > 0) {
+      const errorMessage = `Las siguientes credenciales de Twilio no están configuradas en .env: ${missingCredentials.join(', ')}.`;
+      console.error(errorMessage);
+      // The user-facing error remains generic for security.
       throw new Error('El servicio de SMS no está configurado. Contacta a soporte.');
     }
 

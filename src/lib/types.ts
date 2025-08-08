@@ -58,6 +58,7 @@ export type GalleryImage = {
     expires: string;
   };
   campaignId?: string;
+  aspectRatio?: 'square' | 'horizontal' | 'vertical';
 };
 
 export type CredicoraLevel = {

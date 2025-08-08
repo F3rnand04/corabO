@@ -82,10 +82,9 @@ export function ProviderCard({ provider }: ProviderCardProps) {
     
     const displayDistance = provider.profileSetupData?.showExactLocation ? "A menos de 1km" : "500m - 1km";
 
-    const mainImage = provider.gallery && provider.gallery.length > 0 ? provider.gallery[0].src : "https://placehold.co/600x400.png";
-    const mainImageAlt = provider.gallery && provider.gallery.length > 0 ? provider.gallery[0].alt : displayName;
+    const mainImage = provider.gallery && provider.gallery.length > 0 ? provider.gallery[0] : null;
     
-    const commentCount = provider.gallery?.[0]?.comments?.length || Math.floor(Math.random() * 100);
+    const commentCount = mainImage?.comments?.length || Math.floor(Math.random() * 100);
     const shareCount = Math.floor(Math.random() * 1000);
 
 
@@ -136,8 +135,19 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                     </div>
                 </div>
 
-                <div className="relative aspect-video w-full group" onDoubleClick={() => setIsDetailsDialogOpen(true)}>
-                    <Image src={mainImage} alt={mainImageAlt} layout="fill" objectFit="cover" data-ai-hint="service person working" />
+                <div className={cn(
+                    "relative w-full group",
+                    mainImage?.aspectRatio === 'horizontal' ? 'aspect-video' :
+                    mainImage?.aspectRatio === 'vertical' ? 'aspect-[4/5]' :
+                    'aspect-square'
+                )} onDoubleClick={() => setIsDetailsDialogOpen(true)}>
+                    <Image 
+                        src={mainImage?.src || "https://placehold.co/600x400.png"} 
+                        alt={mainImage?.alt || displayName} 
+                        layout="fill" 
+                        objectFit="cover" 
+                        data-ai-hint="service person working" 
+                    />
                     
                     <Button 
                         variant="ghost" 
