@@ -21,7 +21,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Day, type DayProps } from 'react-day-picker';
 import { CampaignDialog } from '@/components/CampaignDialog';
-import { Badge } from '../ui/badge';
+import { Badge } from '@/components/ui/badge';
 
 
 export default function ProfilePage() {
