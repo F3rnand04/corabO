@@ -11,8 +11,10 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import Image from 'next/image';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 export default function InitialSetupPage() {
   const { currentUser, completeInitialSetup } = useCorabo();
@@ -25,28 +27,10 @@ export default function InitialSetupPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
-    if (!lastName || !idNumber || !birthDate) {
-      toast({
-        variant: 'destructive',
-        title: 'Campos Incompletos',
-        description: 'Por favor, completa todos los campos requeridos.',
-      });
-      return;
-    }
-    if (!hasAcceptedPolicies) {
-      toast({
-        variant: 'destructive',
-        title: 'Políticas no aceptadas',
-        description: 'Debes aceptar las políticas para continuar.',
-      });
-      return;
-    }
-
     setIsSubmitting(true);
     try {
         await completeInitialSetup(currentUser!.id, { lastName, idNumber, birthDate });
         // The context change will trigger the AppLayout to redirect automatically.
-        // We don't need to manually push the route.
     } catch (error) {
         console.error("Failed to complete setup:", error);
         toast({
@@ -67,6 +51,8 @@ export default function InitialSetupPage() {
     );
   }
 
+  const canSubmit = lastName && idNumber && birthDate && hasAcceptedPolicies;
+
   return (
     <Card className="w-full max-w-md shadow-2xl">
       <CardHeader className="text-center">
@@ -80,10 +66,18 @@ export default function InitialSetupPage() {
         </div>
         <CardTitle className="text-2xl">¡Casi listo, {currentUser.name}!</CardTitle>
         <CardDescription>
-          Necesitamos algunos datos adicionales para completar tu perfil. Esta información es privada y no se podrá modificar después.
+          Necesitamos algunos datos adicionales para completar tu perfil.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>¡Atención!</AlertTitle>
+            <AlertDescription>
+                Esta información es privada y se usará para verificar tu identidad. <strong>No podrás modificarla después.</strong> Por favor, asegúrate de que sea correcta.
+            </AlertDescription>
+        </Alert>
+
         <div className="space-y-2">
           <Label htmlFor="lastName">Apellido</Label>
           <Input id="lastName" placeholder="Tu apellido" value={lastName} onChange={(e) => setLastName(e.target.value)} />
@@ -106,9 +100,27 @@ export default function InitialSetupPage() {
             .
           </label>
         </div>
-        <Button onClick={handleSubmit} className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Finalizar Registro'}
-        </Button>
+         <AlertDialog>
+            <AlertDialogTrigger asChild>
+                 <Button className="w-full" disabled={!canSubmit || isSubmitting}>
+                  Finalizar Registro
+                </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                <AlertDialogTitle>¿Estás seguro que los datos son correctos?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Recuerda que tu nombre, apellido, cédula y fecha de nacimiento no podrán ser modificados una vez guardados.
+                </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                <AlertDialogCancel>Revisar de nuevo</AlertDialogCancel>
+                <AlertDialogAction onClick={handleSubmit} disabled={isSubmitting}>
+                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Sí, guardar datos'}
+                </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   );

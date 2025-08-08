@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useRef, ChangeEvent } from 'react';
@@ -95,26 +96,24 @@ export default function TransactionsSettingsPage() {
         setIdVerificationError(null);
         
         try {
-            // First, update the user profile with the document URL. This is for admin review if needed.
             await setIdVerificationPending(currentUser.id, idImage);
             
-            // Now, call the AI verification flow with the current user data.
             const result = await autoVerifyIdWithAI({
                 userId: currentUser.id,
                 nameInRecord: `${currentUser.name} ${currentUser.lastName || ''}`.trim(),
-                idInRecord: currentUser.idNumber || '', // Use real data from profile
+                idInRecord: currentUser.idNumber || '',
                 documentImageUrl: idImage,
             });
 
             setVerificationResult(result);
 
             if (!result.nameMatch || !result.idMatch) {
-                setIdVerificationError("Los datos no coinciden. Sube una imagen clara o contacta a soporte.");
+                setIdVerificationError("Los datos no coinciden. Sube una imagen clara o");
             }
 
         } catch (error) {
             console.error(error);
-            setIdVerificationError("Hubo un error al procesar tu documento. Intenta de nuevo.");
+            setIdVerificationError("Hubo un error al procesar tu documento. Intenta de nuevo o");
         } finally {
             setIsVerifyingId(false);
         }
@@ -197,23 +196,31 @@ export default function TransactionsSettingsPage() {
                                     <AlertCircle className="h-4 w-4" />
                                     <AlertTitle>Error de Verificación</AlertTitle>
                                     <AlertDescription>
-                                        <p>{idVerificationError}</p>
+                                        <p>{idVerificationError} <Button variant="link" className="p-0 h-auto text-current">contacta a soporte.</Button></p>
                                     </AlertDescription>
                                 </Alert>
                             )}
 
                              {verificationResult && (
                                 <div className="space-y-4">
-                                    <Alert variant={verificationResult.nameMatch && verificationResult.idMatch ? 'default' : 'destructive'} className={verificationResult.nameMatch && verificationResult.idMatch ? 'bg-green-50 border-green-200' : ''}>
-                                        <AlertTitle className="flex items-center gap-2">
-                                            {verificationResult.nameMatch && verificationResult.idMatch ? <CheckCircle className="text-green-600"/> : <XCircle />}
-                                            Resultado de la Verificación
-                                        </AlertTitle>
-                                        <AlertDescription className="space-y-1 pl-6">
-                                            <p><strong>Nombre en Documento:</strong> {verificationResult.extractedName} ({verificationResult.nameMatch ? 'Coincide' : 'No Coincide'})</p>
-                                            <p><strong>Cédula en Documento:</strong> {verificationResult.extractedId} ({verificationResult.idMatch ? 'Coincide' : 'No Coincide'})</p>
-                                        </AlertDescription>
-                                    </Alert>
+                                     <Card>
+                                        <CardHeader>
+                                            <CardTitle className="text-lg flex items-center gap-2">
+                                                {verificationResult.nameMatch && verificationResult.idMatch ? <CheckCircle className="text-green-600"/> : <XCircle className="text-destructive"/>}
+                                                Resultado de la Verificación
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="space-y-2 text-sm">
+                                            <div className={cn("flex justify-between p-2 rounded-md", verificationResult.nameMatch ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800")}>
+                                                <span>Nombre en documento:</span>
+                                                <span className="font-semibold">{verificationResult.extractedName}</span>
+                                            </div>
+                                             <div className={cn("flex justify-between p-2 rounded-md", verificationResult.idMatch ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800")}>
+                                                <span>Cédula en documento:</span>
+                                                <span className="font-semibold">{verificationResult.extractedId}</span>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
                                     
                                      <Button className="w-full" onClick={() => setStep(2)} disabled={!verificationResult.nameMatch || !verificationResult.idMatch}>
                                         Continuar al Siguiente Paso

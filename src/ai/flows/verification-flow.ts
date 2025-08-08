@@ -8,9 +8,6 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
-import type { User } from '@/lib/types';
 
 const VerificationInputSchema = z.object({
   userId: z.string(),
@@ -39,7 +36,7 @@ export async function autoVerifyIdWithAI(input: VerificationInput): Promise<Veri
 
 const verificationPrompt = ai.definePrompt({
     name: 'idVerificationPrompt',
-    input: { schema: VerificationInputSchema },
+    input: { schema: z.object({ documentImageUrl: z.string() }) }, // Prompt only needs the image
     output: { 
         schema: z.object({
             extractedName: z.string().describe("The full name of the person on the ID, including all given names and surnames."),
@@ -62,7 +59,6 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
   async (input) => {
     
     const { output } = await verificationPrompt({ 
-        ...input,
         documentImageUrl: input.documentImageUrl 
     });
 
@@ -71,11 +67,12 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
     }
     
     // 1. Normalize ID numbers for a robust comparison
-    // This removes all non-alphanumeric characters and converts to lowercase.
+    // This removes all non-alphanumeric characters (keeps letters and numbers) and converts to lowercase.
     // e.g., "V 17.001.955" becomes "v17001955"
     // e.g., "V-17001955" also becomes "v17001955"
     const normalizeId = (str: string) => str.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
     
+    // Apply normalization to BOTH the extracted ID and the ID from the user's record.
     const idMatch = normalizeId(output.extractedId) === normalizeId(input.idInRecord);
     
     // 2. Normalize names for flexible comparison
