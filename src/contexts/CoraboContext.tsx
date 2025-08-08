@@ -279,18 +279,22 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     // This will hold all the unsubscribe functions.
     const unsubs: (() => void)[] = [];
 
-    // All Users Listener
-    const usersQuery = query(collection(db, 'users'));
-    unsubs.push(onSnapshot(usersQuery, (snapshot) => {
-        setUsers(snapshot.docs.map(doc => doc.data() as User));
+    // All Users Listener (This is what is causing the error)
+    // FIX: Listen to a query of providers instead of all users.
+    const providersQuery = query(collection(db, 'users'), where('type', '==', 'provider'));
+    unsubs.push(onSnapshot(providersQuery, (snapshot) => {
+        const providerUsers = snapshot.docs.map(doc => doc.data() as User);
+        // We need to merge this with the current user if they are not a provider
+        setUsers(prevUsers => {
+            const otherUsers = prevUsers.filter(u => u.type !== 'provider');
+            const newUsers = [...otherUsers, ...providerUsers];
+            // Deduplicate
+            const uniqueUsers = Array.from(new Map(newUsers.map(u => [u.id, u])).values());
+            return uniqueUsers;
+        });
+
     }, (error) => console.error("Users snapshot error:", error)));
     
-    // All Products Listener
-    const productsQuery = query(collection(db, 'products'));
-    unsubs.push(onSnapshot(productsQuery, (snapshot) => {
-        setProducts(snapshot.docs.map(doc => doc.data() as Product));
-    }, (error) => console.error("Products snapshot error:", error)));
-
     // User-specific Transactions Listener
     const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
     unsubs.push(onSnapshot(transactionsQuery, (snapshot) => {
@@ -937,5 +941,3 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
-
-    
