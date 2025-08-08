@@ -18,6 +18,8 @@ import {
 } from '@/lib/types';
 import {db} from '@/lib/firebase';
 import {collection, doc, getDoc, getDocs, query, writeBatch, where} from 'firebase/firestore';
+import { sendNewCampaignNotifications } from './notification-flow';
+
 
 const CreateCampaignInputSchema = z.object({
   userId: z.string(),
@@ -108,7 +110,7 @@ const createCampaignFlow = ai.defineFlow(
       ...input,
     };
 
-    const campaignRef = doc(db, 'campaigns', campaignId);
+    const campaignRef = doc(db, 'campaigns', newCampaign.id);
     batch.set(campaignRef, newCampaign);
 
     // Create system transaction for the payment
@@ -123,7 +125,7 @@ const createCampaignFlow = ai.defineFlow(
       providerId: 'corabo-admin', // System transaction
       participantIds: [user.id, 'corabo-admin'],
       details: {
-        system: `Ad campaign payment: ${newCampaign.id}`,
+        system: `Pago de campaña publicitaria: ${newCampaign.id}`,
         paymentMethod: input.financedWithCredicora ? 'credicora' : 'direct',
         paymentVoucherUrl: 'https://i.postimg.cc/L8y2zWc2/vzla-id.png' // Placeholder for voucher
       },
@@ -133,40 +135,17 @@ const createCampaignFlow = ai.defineFlow(
     batch.set(txRef, campaignTransaction);
 
     // Update user's active campaigns
-    const updatedCampaignIds = [...(user.activeCampaignIds || []), campaignId];
+    const updatedCampaignIds = [...(user.activeCampaignIds || []), newCampaign.id];
     batch.update(userRef, {activeCampaignIds: updatedCampaignIds});
     
-    // If budget is >= $20, create notifications for relevant users
-    if (input.budget >= 20 && user.profileSetupData?.primaryCategory) {
-        const usersRef = collection(db, 'users');
-        const q = query(
-          usersRef, 
-          where('type', '==', 'client'),
-          where('profileSetupData.categories', 'array-contains', user.profileSetupData.primaryCategory)
-          // In a real scenario, you'd also filter by location here using a Geo-query library
-        );
-        const querySnapshot = await getDocs(q);
-        
-        querySnapshot.forEach(docSnap => {
-            const client = docSnap.data() as User;
-            // Create an internal notification for each relevant client
-            const notificationId = `notif-${client.id}-${campaignId}`;
-            const notificationRef = doc(db, 'notifications', notificationId);
-            batch.set(notificationRef, {
-                id: notificationId,
-                userId: client.id,
-                type: 'new_campaign',
-                title: 'New Relevant Campaign',
-                message: `${user.name} has launched a new campaign for "${user.profileSetupData?.specialty}" that might interest you.`,
-                link: `/companies/${user.id}`,
-                isRead: false,
-                timestamp: new Date().toISOString(),
-            });
-        });
-    }
-
-
     await batch.commit();
+
+    // After payment is verified, this will trigger notifications
+    // We call it here to simulate for now. In a real app, a webhook
+    // or trigger on the transaction status changing to 'active' would call this.
+    if (newCampaign.budget >= 20) {
+        await sendNewCampaignNotifications({ campaignId: newCampaign.id });
+    }
 
     return newCampaign;
   }

@@ -9,6 +9,7 @@ import { Inter } from 'next/font/google';
 export const metadata: Metadata = {
   title: 'corabO.app',
   description: 'Aplicación Funcional corabO',
+  manifest: '/manifest.json',
 };
 
 const inter = Inter({
@@ -24,6 +25,10 @@ export default function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
+       <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#B0D8FF" />
+      </head>
       <body className={`${inter.variable} antialiased bg-background`}>
         <Providers attribute="class" defaultTheme="system" enableSystem>
           <AppLayout>

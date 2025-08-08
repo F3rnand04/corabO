@@ -5,3 +5,4 @@ import './flows/message-flow';
 import './flows/transaction-flow';
 import './flows/verification-flow';
 import './flows/exchange-rate-flow';
+import './flows/notification-flow';

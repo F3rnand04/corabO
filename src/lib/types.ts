@@ -1,5 +1,16 @@
 
 
+export type Notification = {
+  id: string;
+  userId: string;
+  type: 'new_campaign' | 'payment_reminder' | 'admin_alert' | 'welcome';
+  title: string;
+  message: string;
+  link?: string;
+  isRead: boolean;
+  timestamp: string;
+}
+
 export type Campaign = {
   id: string;
   providerId: string;
