@@ -33,7 +33,7 @@ import { credicoraLevels } from '@/lib/types';
 
 export default function CompanyProfilePage() {
   const params = useParams();
-  const { users, products, addContact, isContact, transactions, createAppointmentRequest, currentUser, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, sendMessage, toggleGps } = useCorabo();
+  const { users, products, addContact, isContact, transactions, createAppointmentRequest, currentUser, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, sendMessage, toggleGps, deliveryAddress, setDeliveryAddress } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
   
@@ -81,6 +81,13 @@ export default function CompanyProfilePage() {
         setIsSaved(isContact(provider.id));
     }
   }, [isContact, provider]);
+
+  // Set default delivery address when opening checkout
+  useEffect(() => {
+      if(isCheckoutAlertOpen && currentUser?.profileSetupData?.location) {
+          setDeliveryAddress(currentUser.profileSetupData.location);
+      }
+  }, [isCheckoutAlertOpen, currentUser?.profileSetupData?.location, setDeliveryAddress])
 
 
   const totalCartItems = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -437,6 +444,11 @@ export default function CompanyProfilePage() {
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <div className="py-4 space-y-4">
+                             <div className="flex justify-between text-sm">
+                                <span>Dirección de Entrega:</span>
+                                <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => router.push('/map')}>Cambiar</Button>
+                            </div>
+                            <p className="text-sm font-semibold p-2 bg-muted rounded-md truncate">{deliveryAddress || "No especificada"}</p>
                             <div className="flex justify-between text-sm">
                                 <span>Subtotal:</span>
                                 <span className="font-semibold">${subtotal.toFixed(2)}</span>
@@ -729,3 +741,4 @@ export default function CompanyProfilePage() {
     </>
   );
 }
+
