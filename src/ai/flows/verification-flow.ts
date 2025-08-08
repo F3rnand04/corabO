@@ -40,7 +40,7 @@ const verificationPrompt = ai.definePrompt({
     output: { 
         schema: z.object({
             extractedName: z.string().describe("The full name of the person on the ID, including all given names and surnames."),
-            extractedId: z.string().describe("The full identification number, including any prefix like 'V-'."),
+            extractedId: z.string().describe("The full identification number, including any prefix like 'V-' or 'E-'."),
         })
     },
     prompt: `You are an expert document analyst. Analyze the provided image of an identification document.
@@ -104,23 +104,25 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
       throw new Error('AI model did not return an output.');
     }
     
-    // 1. Normalize ID numbers for a robust comparison
-    // This removes common separators like spaces, dots, and dashes, and handles OCR errors (O -> 0).
-    const normalizeId = (str: string) => str.trim().toLowerCase().replace(/o/g, '0').replace(/[\s.-]/g, '');
+    const normalizeId = (str: string) => {
+        return str
+            .trim()
+            .toLowerCase()
+            .replace(/o/g, '0') // Correct common OCR errors (O -> 0)
+            .replace(/^[ve]-?/, "") // Remove V or E prefix
+            .replace(/[\s.-]/g, ''); // Remove separators
+    };
     
-    // Apply normalization to BOTH the extracted ID and the ID from the user's record.
     const idMatch = normalizeId(output.extractedId) === normalizeId(input.idInRecord);
     
-    // 2. Normalize names for flexible comparison
     const normalizeName = (str: string) => str.trim().toLowerCase().replace(/\s+/g, ' ');
     
     const extractedNameLower = normalizeName(output.extractedName);
     const recordNameLower = normalizeName(input.nameInRecord);
 
-    // 3. Use similarity for name matching to handle missing middle names or other variations.
-    // A similarity of 80% is usually a good threshold.
-    const nameSimilarity = calculateSimilarity(extractedNameLower, recordNameLower);
-    const nameMatch = nameSimilarity > 0.8 || recordNameLower.split(' ').every(part => extractedNameLower.includes(part));
+    // Flexible name matching: Check if all parts of the recorded name are present in the extracted name.
+    // This handles cases where the document has more names (e.g., middle names) than the profile.
+    const nameMatch = recordNameLower.split(' ').every(part => extractedNameLower.includes(part));
 
     return {
       extractedName: output.extractedName,
