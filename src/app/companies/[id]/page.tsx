@@ -550,17 +550,17 @@ export default function CompanyProfilePage() {
             </div>
             
             <div className="flex justify-around text-center text-xs text-muted-foreground pt-4 pb-4">
-              <div className="flex-1">
-                    <p className="font-semibold text-foreground">{profileData.publications}</p>
-                    <p>Publicaciones</p>
+              <div>
+                <p className="font-semibold text-foreground">{profileData.publications}</p>
+                <p>Publicaciones</p>
               </div>
-               {isProductProvider ? (
-                 <div className="flex-1">
+              {isProductProvider ? (
+                 <div>
                     <p className="font-semibold text-foreground">{providerProducts.length}</p>
                     <p>Productos</p>
                 </div>
                ) : (
-                 <div className="flex-1">
+                 <div>
                     <p className="font-semibold text-foreground">{profileData.completedJobs}</p>
                     <p>Trab. Realizados</p>
                 </div>
@@ -779,3 +779,5 @@ export default function CompanyProfilePage() {
     </>
   );
 }
+
+    

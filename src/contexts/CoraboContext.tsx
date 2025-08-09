@@ -224,7 +224,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, [handleUserCreation, auth]);
   
   const fetchUser = useCallback(async (userId: string): Promise<User | null> => {
-    // Check cache first
     let cachedUser = users.find(u => u.id === userId);
     if (cachedUser) return cachedUser;
 
@@ -234,7 +233,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     if (userSnap.exists()) {
         const user = userSnap.data() as User;
         
-        // Fetch user's products and add to global product state
         const productsQuery = query(collection(db, "products"), where("providerId", "==", userId));
         const productsSnapshot = await getDocs(productsQuery);
         const userProducts = productsSnapshot.docs.map(doc => doc.data() as Product);
@@ -244,7 +242,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             return [...otherProducts, ...userProducts];
         });
 
-        // Add to user cache
         setUsers(prev => {
             if (!prev.some(u => u.id === userId)) {
                 return [...prev, user];
@@ -258,18 +255,23 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, [users]);
 
 
-  const getUserMetrics = (userId: string): UserMetrics => {
+  const getUserMetrics = useCallback((userId: string): UserMetrics => {
     const providerTransactions = transactions.filter(t => t.providerId === userId);
   
+    // Check for new provider status
+    const totalMeaningfulTransactions = providerTransactions.filter(t => t.status !== 'Carrito Activo' && t.status !== 'Pre-factura Pendiente').length;
+    if (totalMeaningfulTransactions === 0) {
+        return { reputation: 0, effectiveness: 0, responseTime: "Nuevo" };
+    }
+
     // Reputation calculation
     const ratedTransactions = providerTransactions.filter(t => (t.status === 'Pagado' || t.status === 'Resuelto') && t.details.clientRating);
     const totalRating = ratedTransactions.reduce((acc, t) => acc + (t.details.clientRating || 0), 0);
     const reputation = ratedTransactions.length > 0 ? totalRating / ratedTransactions.length : 0;
   
     // Effectiveness calculation
-    const totalMeaningfulTransactions = providerTransactions.filter(t => t.status !== 'Carrito Activo' && t.status !== 'Pre-factura Pendiente').length;
     const completedTransactions = providerTransactions.filter(t => t.status === 'Pagado' || t.status === 'Resuelto').length;
-    const effectiveness = totalMeaningfulTransactions > 0 ? (completedTransactions / totalMeaningfulTransactions) * 100 : 0;
+    const effectiveness = (completedTransactions / totalMeaningfulTransactions) * 100;
   
     // Response time calculation
     let responseTime = "Nuevo";
@@ -285,14 +287,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       else if (avgResponseTime <= 15) responseTime = "05-15 min";
       else responseTime = "+15 min";
     }
-    
-    // If no transactions, the provider is new.
-    if (totalMeaningfulTransactions === 0) {
-        return { reputation: 0, effectiveness: 0, responseTime: "Nuevo" };
-    }
   
     return { reputation, effectiveness, responseTime };
-  };
+  }, [transactions]);
   
 
   useEffect(() => {
@@ -354,92 +351,17 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
 
   const getRankedFeed = useCallback(() => {
+    // This function needs to be re-evaluated as it depends on having all users, which is insecure.
+    // For now, it will only rank based on the users currently fetched.
     if (!currentUser || !users.length) return [];
   
     const allPublications = users
       .filter(u => u.type === 'provider' && u.gallery && u.gallery.length > 0)
       .flatMap(p => p.gallery!.map(g => ({ ...g, provider: p })));
-  
-    const isNewProvider = (provider: User) => {
-      const completedTransactions = transactions.filter(
-        tx => tx.providerId === provider.id && (tx.status === 'Pagado' || tx.status === 'Resuelto')
-      ).length;
-      const accountAgeInDays = provider.createdAt ? differenceInDays(new Date(), new Date(provider.createdAt)) : 999;
-      return completedTransactions < 5 && accountAgeInDays < 30;
-    };
-  
-    const calculateScore = (pub: GalleryImage & { provider: User }): number => {
-      const provider = pub.provider;
-      const isNew = isNewProvider(provider);
-  
-      if (isNew) {
-        // Carril de Oportunidad
-        let relevanceScore = 0;
-        const userInterests = currentUser.profileSetupData?.categories || [];
-        const providerCategories = provider.profileSetupData?.categories || [];
-        if (userInterests.some(interest => providerCategories.includes(interest))) {
-          relevanceScore = 100;
-        }
-  
-        const hoursSincePublication = pub.createdAt ? differenceInHours(new Date(), new Date(pub.createdAt)) : 9999;
-        const freshnessScore = Math.max(0, 100 - hoursSincePublication);
-  
-        let profileCompleteness = 0;
-        if (provider.emailValidated) profileCompleteness += 10;
-        if (provider.phoneValidated) profileCompleteness += 10;
-        if (provider.profileSetupData?.specialty) profileCompleteness += 10;
-        if(provider.gallery && provider.gallery.length > 2) profileCompleteness += 10;
-  
-        return (relevanceScore * 0.5) + (freshnessScore * 0.4) + (profileCompleteness * 0.1);
-      } else {
-        // Carril de Confianza
-        let qualityScore = 0;
-        qualityScore += (provider.reputation || 0) * 10; // Max 50
-        if (provider.isSubscribed) qualityScore += 20;
-        if (provider.verified) qualityScore += 30;
-        // Assuming effectiveness is a percentage from 0 to 100
-        qualityScore += (provider.effectiveness || 0); // Max 100
-  
-        let relevanceScore = 0;
-        const userInterests = currentUser.profileSetupData?.categories || [];
-        const providerCategories = provider.profileSetupData?.categories || [];
-        if (userInterests.some(interest => providerCategories.includes(interest))) {
-          relevanceScore += 50;
-        }
-        if (contacts.some(c => c.id === provider.id)) {
-            relevanceScore += 50; // Big boost for contacts
-        }
-  
-        const hoursSincePublication = pub.createdAt ? differenceInHours(new Date(), new Date(pub.createdAt)) : 9999;
-        const freshnessScore = Math.max(0, 100 - (hoursSincePublication / 24)); // Slower decay
-  
-        return (qualityScore * 0.5) + (relevanceScore * 0.4) + (freshnessScore * 0.1);
-      }
-    };
-    
-    const scoredPublications = allPublications.map(pub => ({ ...pub, score: calculateScore(pub) }));
-    
-    // Separate into two lanes
-    const opportunityLane = scoredPublications.filter(p => isNewProvider(p.provider)).sort((a, b) => b.score - a.score);
-    const trustLane = scoredPublications.filter(p => !isNewProvider(p.provider)).sort((a, b) => b.score - a.score);
 
-    // Interleave the feeds
-    const finalFeed = [];
-    let trustIndex = 0;
-    let opportunityIndex = 0;
-
-    // Build the feed by interleaving, for example, 1 opportunity for every 3 trust posts
-    while (trustIndex < trustLane.length || opportunityIndex < opportunityLane.length) {
-        for (let i = 0; i < 3 && trustIndex < trustLane.length; i++) {
-            finalFeed.push(trustLane[trustIndex++]);
-        }
-        if (opportunityIndex < opportunityLane.length) {
-            finalFeed.push(opportunityLane[opportunityIndex++]);
-        }
-    }
-
-    return finalFeed.map(({ score, ...rest }) => rest);
-  }, [currentUser, users, transactions, contacts]);
+    // Placeholder ranking, needs secure backend implementation
+    return allPublications.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [currentUser, users]);
 
 
   const signInWithGoogle = async () => {
@@ -981,5 +903,7 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
+
+    
 
     

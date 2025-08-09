@@ -324,7 +324,7 @@ export default function TransactionsPage() {
     ).reduce((sum, tx) => sum + tx.amount, 0);
 
     const availableCredit = (currentUser.credicoraLimit || 0) - usedCredit;
-    const { effectiveness: userEffectiveness, reputation } = getUserMetrics(currentUser.id);
+    const { effectiveness, reputation } = getUserMetrics(currentUser.id);
 
 
     // Placeholder data for progression
@@ -454,8 +454,8 @@ export default function TransactionsPage() {
                                                 <Progress value={(reputation / 5) * 100} />
                                             </div>
                                             <div className="space-y-1">
-                                                <div className="flex justify-between text-xs font-medium"><span>Efectividad</span><span>{userEffectiveness.toFixed(0)}%</span></div>
-                                                <Progress value={userEffectiveness} />
+                                                <div className="flex justify-between text-xs font-medium"><span>Efectividad</span><span>{effectiveness.toFixed(0)}%</span></div>
+                                                <Progress value={effectiveness} />
                                             </div>
                                             <div className="space-y-1">
                                                  <div className="flex justify-between text-xs font-medium"><span>Transacciones para Nivel {credicoraDetails.level + 1}</span><span>{completedTransactions}/{transactionsForNextLevel}</span></div>
@@ -607,3 +607,5 @@ export default function TransactionsPage() {
         </div>
     );
 }
+
+    
