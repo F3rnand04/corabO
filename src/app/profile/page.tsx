@@ -387,7 +387,7 @@ export default function ProfilePage() {
               </TabsList>
               
               <TabsContent value="products">
-                  {isProductProvider ? (
+                  {isProvider ? (
                     providerProducts.length > 0 ? (
                       <div className='p-2 grid grid-cols-2 sm:grid-cols-3 gap-2'>
                         {providerProducts.map(product => (
@@ -409,7 +409,7 @@ export default function ProfilePage() {
                         </p>
                       </div>
                     )
-                  ) : <div className="text-center p-8 text-muted-foreground">Esta vista es solo para proveedores de productos.</div>}
+                  ) : <div className="text-center p-8 text-muted-foreground">Esta vista es solo para proveedores.</div>}
               </TabsContent>
 
               <TabsContent value="publications">
@@ -514,5 +514,3 @@ export default function ProfilePage() {
     </>
   );
 }
-
-    

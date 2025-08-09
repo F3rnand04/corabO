@@ -7,7 +7,7 @@ import type { User, GalleryImage } from "@/lib/types";
 import { useMemo, useEffect, useState } from "react";
 import { ActivationWarning } from "@/components/ActivationWarning";
 import { Skeleton } from "@/components/ui/skeleton";
-import { collection, getDocs, query, where, limit, orderBy, collectionGroup } from 'firebase/firestore';
+import { collection, getDocs, query, where, limit, orderBy } from 'firebase/firestore';
 import { getFirestoreDb } from "@/lib/firebase";
 
 const mainCategories = [
@@ -23,47 +23,52 @@ const mainCategories = [
 ];
 
 export default function HomePage() {
-  const { searchQuery, feedView, currentUser, fetchUser } = useCorabo();
-  const [feed, setFeed] = useState<(User & { galleryItem: GalleryImage })[]>([]);
+  const { searchQuery, feedView, currentUser } = useCorabo();
+  const [providers, setProviders] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
-    const fetchFeed = async () => {
+    const fetchProviders = async () => {
       if (!currentUser) return;
       setIsLoading(true);
       const db = getFirestoreDb();
       
-      const publicationsQuery = query(collectionGroup(db, "gallery"), orderBy("createdAt", "desc"), limit(20));
-      const publicationsSnapshot = await getDocs(publicationsQuery);
+      const providersQuery = query(
+        collection(db, "users"), 
+        where("type", "==", "provider"),
+        where("isTransactionsActive", "==", true),
+        orderBy("reputation", "desc"),
+        limit(20)
+      );
 
-      const feedPromises = publicationsSnapshot.docs.map(async (doc) => {
-        const publication = doc.data() as GalleryImage;
-        const provider = await fetchUser(publication.providerId);
-        
-        if (provider) {
-          return { ...provider, galleryItem: publication };
-        }
-        return null;
-      });
-      
-      const feedItems = (await Promise.all(feedPromises)).filter(Boolean) as (User & { galleryItem: GalleryImage })[];
-      
-      setFeed(feedItems);
-      setIsLoading(false);
+      try {
+        const querySnapshot = await getDocs(providersQuery);
+        const providerList = querySnapshot.docs.map(doc => doc.data() as User);
+        setProviders(providerList);
+      } catch (error) {
+        console.error("Error fetching providers:", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     if (currentUser) {
-        fetchFeed();
+        fetchProviders();
     }
-  }, [currentUser, fetchUser]);
+  }, [currentUser]);
+
+  const feedItems = useMemo(() => {
+    return providers.flatMap(p => (p.gallery || []).map(g => ({ ...p, galleryItem: g })) )
+            .sort((a, b) => new Date(b.galleryItem.createdAt).getTime() - new Date(a.galleryItem.createdAt).getTime());
+  }, [providers]);
 
 
   const filteredFeed = useMemo(() => {
-    if (!feed.length) return [];
+    if (!feedItems.length) return [];
     
     const lowerCaseQuery = searchQuery.toLowerCase().trim();
 
-    let viewFiltered = feed.filter(item => {
+    let viewFiltered = feedItems.filter(item => {
         const providerType = item.profileSetupData?.providerType || 'professional';
         if (feedView === 'empresas') return providerType === 'company';
         return providerType !== 'company';
@@ -93,7 +98,7 @@ export default function HomePage() {
         }
     });
 
-  }, [feed, searchQuery, feedView]);
+  }, [feedItems, searchQuery, feedView]);
 
   const noResultsMessage = () => {
     const baseMessage = feedView === 'empresas' ? "No se encontraron empresas" : "No se encontraron servicios";
