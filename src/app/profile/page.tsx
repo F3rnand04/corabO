@@ -52,9 +52,11 @@ export default function ProfilePage() {
     const galleryUnsub = onSnapshot(galleryQuery, (snapshot) => {
         const userGallery = snapshot.docs.map(doc => doc.data() as GalleryImage);
         setGallery(userGallery);
+        setIsLoading(false); // Set loading to false once gallery is loaded
     }, (error) => {
         console.error("Error fetching gallery:", error);
         toast({ variant: "destructive", title: "Error al cargar la galería" });
+        setIsLoading(false);
     });
     unsubscribes.push(galleryUnsub);
 
@@ -69,10 +71,11 @@ export default function ProfilePage() {
             toast({ variant: "destructive", title: "Error al cargar los productos" });
         });
         unsubscribes.push(productsUnsub);
+    } else {
+        // If not a provider, we are done loading.
+        if(isLoading) setIsLoading(false);
     }
     
-    setIsLoading(false);
-
     return () => unsubscribes.forEach(unsub => unsub());
   }, [currentUser, toast]);
 
@@ -279,7 +282,6 @@ export default function ProfilePage() {
   }
 
   const currentImage = gallery.length > 0 ? gallery[currentImageIndex] : null;
-  const isPromotionActiveOnCurrentImage = currentImage?.promotion && new Date(currentImage.promotion.expires) > new Date();
   
   const displayName = currentUser.profileSetupData?.useUsername 
     ? currentUser.profileSetupData.username || currentUser.name 
@@ -544,6 +546,7 @@ export default function ProfilePage() {
           isOpen={isDetailsDialogOpen}
           onOpenChange={setIsDetailsDialogOpen}
           gallery={[selectedImage]}
+          startIndex={0}
           owner={currentUser}
         />
       )}

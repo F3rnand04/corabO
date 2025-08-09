@@ -37,10 +37,7 @@ interface UserMetrics {
 
 interface CoraboState {
   currentUser: User | null;
-  users: User[]; 
   fetchUser: (userId: string) => Promise<User | null>;
-  products: Product[];
-  services: Service[];
   cart: CartItem[];
   transactions: Transaction[];
   conversations: Conversation[];
@@ -123,10 +120,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  const [services, setServices] = useState(mockServices);
-  
-  const [users, setUsers] = useState<User[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
   
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -137,25 +130,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [contacts, setContacts] = useState<User[]>([]);
   const [feedView, setFeedView] = useState<FeedView>('servicios');
   const [isGpsActive, setIsGpsActive] = useState(true);
-  const [dailyQuotes, setDailyQuotes] = useState<Record<string, DailyQuote[]>>({});
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [exchangeRate, setExchangeRate] = useState(36.54);
   
   const app = getFirebaseApp();
   const auth = getAuth(app);
   
-  useEffect(() => {
-    const fetchRate = async () => {
-      try {
-        const { rate } = await getExchangeRate();
-        setExchangeRate(rate);
-      } catch (error) {
-        console.error("Failed to fetch exchange rate:", error);
-      }
-    };
-    fetchRate();
-  }, []);
-
   const handleUserCreation = useCallback(async (firebaseUser: FirebaseUser): Promise<User> => {
     const db = getFirestoreDb();
     const userDocRef = doc(db, 'users', firebaseUser.uid);
@@ -207,13 +187,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     let listeners: Unsubscribe[] = [];
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+      // Clean up previous listeners
       listeners.forEach(unsub => unsub());
       listeners = [];
       
+      // Reset state
       setCurrentUser(null);
       setTransactions([]);
       setConversations([]);
-      setProducts([]);
 
       if (firebaseUser) {
         const userData = await handleUserCreation(firebaseUser);
@@ -221,20 +202,21 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
         const db = getFirestoreDb();
         
+        // Subscribe to user's transactions
         const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userData.id));
         const transactionsUnsub = onSnapshot(transactionsQuery, (snapshot) => {
             setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
         });
         listeners.push(transactionsUnsub);
 
+        // Subscribe to user's conversations
         const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userData.id));
         const conversationsUnsub = onSnapshot(conversationsQuery, (snapshot) => {
             setConversations(snapshot.docs.map(doc => doc.data() as Conversation).sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()));
         });
         listeners.push(conversationsUnsub);
-
-        // Products are now loaded on the profile page itself
         
+        // Subscribe to user document itself for real-time profile updates
         const userUnsub = onSnapshot(doc(db, 'users', userData.id), (doc) => {
             if (doc.exists()) setCurrentUser(doc.data() as User);
         });
@@ -332,7 +314,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     try {
         await signOut(auth);
         setCurrentUser(null);
-        setProducts([]);
         setTransactions([]);
         setConversations([]);
         router.push('/login');
@@ -369,33 +350,35 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         });
         return;
     }
-    const provider = users.find(u => u.id === product.providerId);
-    if (!provider || !provider.isTransactionsActive) {
-      toast({
-            variant: "destructive",
-            title: "Proveedor no disponible",
-            description: "Este proveedor no tiene las transacciones activas en este momento."
-        });
-      return;
-    }
+    // Logic to find provider can be simplified as we fetch users on demand
+    fetchUser(product.providerId).then(provider => {
+        if (!provider || !provider.isTransactionsActive) {
+            toast({
+                variant: "destructive",
+                title: "Proveedor no disponible",
+                description: "Este proveedor no tiene las transacciones activas en este momento."
+            });
+            return;
+        }
 
-    if (cart.length > 0 && cart[0].product.providerId !== product.providerId) {
-        toast({
-            variant: "destructive",
-            title: "Carrito Multi-tienda",
-            description: "No puedes añadir productos de diferentes tiendas en un mismo carrito. Finaliza esta compra primero."
+         if (cart.length > 0 && cart[0].product.providerId !== product.providerId) {
+            toast({
+                variant: "destructive",
+                title: "Carrito Multi-tienda",
+                description: "No puedes añadir productos de diferentes tiendas en un mismo carrito. Finaliza esta compra primero."
+            });
+            return;
+        }
+        
+        setCart((prevCart) => {
+          const existingItem = prevCart.find((item) => item.product.id === product.id);
+          if (existingItem) {
+            return prevCart.map((item) =>
+              item.product.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
+            );
+          }
+          return [...prevCart, { product, quantity }];
         });
-        return;
-    }
-    
-    setCart((prevCart) => {
-      const existingItem = prevCart.find((item) => item.product.id === product.id);
-      if (existingItem) {
-        return prevCart.map((item) =>
-          item.product.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
-        );
-      }
-      return [...prevCart, { product, quantity }];
     });
   };
   
@@ -502,11 +485,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const sendProposalMessage = async (conversationId: string, proposal: AgreementProposal) => {
     if (!currentUser) return;
     try {
+        const recipient = conversations.find(c => c.id === conversationId)?.participantIds.find(p => p !== currentUser.id);
+        if (!recipient) throw new Error("Recipient not found");
+        
         await sendMessageFlow({
             conversationId: conversationId,
             senderId: currentUser.id,
             proposal: proposal,
-            recipientId: conversations.find(c => c.id === conversationId)?.participantIds.find(p => p !== currentUser.id) || ''
+            recipientId: recipient,
         });
         toast({ title: 'Propuesta enviada' });
     } catch (error) {
@@ -765,10 +751,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const value: CoraboState = {
     currentUser,
-    users,
     fetchUser,
-    products,
-    services,
     cart,
     transactions,
     conversations,
