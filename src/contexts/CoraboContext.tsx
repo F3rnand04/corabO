@@ -195,7 +195,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       setCurrentUser(null);
       setTransactions([]);
       setConversations([]);
-      setProducts([]);
+      // Do NOT reset products here, it is loaded globally by a secure flow.
 
       if (firebaseUser) {
         const userData = await handleUserCreation(firebaseUser);
@@ -222,13 +222,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             if (doc.exists()) setCurrentUser(doc.data() as User);
         });
         listeners.push(userUnsub);
-
-        // Subscribe to all products (for client-side filtering)
-        const productsUnsub = onSnapshot(collection(db, 'products'), (snapshot) => {
-            setProducts(snapshot.docs.map(doc => doc.data() as Product));
-        });
-        listeners.push(productsUnsub);
-
 
         if (userData.profileSetupData?.location) {
             setDeliveryAddress(userData.profileSetupData.location);
