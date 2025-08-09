@@ -29,6 +29,7 @@ export default function HomePage() {
   
   useEffect(() => {
     const fetchFeed = async () => {
+      // No ejecutar si el usuario aún no está cargado.
       if (!currentUser) return;
       setIsLoading(true);
       const db = getFirestoreDb();
@@ -36,7 +37,7 @@ export default function HomePage() {
       const publicationsQuery = query(
         collection(db, "publications"),
         orderBy("createdAt", "desc"),
-        limit(50) // Limit to the last 50 publications for performance
+        limit(50)
       );
 
       try {
@@ -45,7 +46,7 @@ export default function HomePage() {
 
         const feedDataPromises = publications.map(async (pub) => {
           const owner = await fetchUser(pub.providerId);
-          if (owner && !owner.isPaused) { // Check if owner is not paused
+          if (owner && !owner.isPaused) {
             return { publication: pub, owner };
           }
           return null;
@@ -61,6 +62,7 @@ export default function HomePage() {
       }
     };
 
+    // Solo cargar el feed cuando el usuario esté definido
     if (currentUser) {
         fetchFeed();
     }
@@ -111,6 +113,7 @@ export default function HomePage() {
     return `${baseMessage} en el feed.`;
   }
 
+  // Muestra el esqueleto de carga mientras isLoading es true O si currentUser aún no está disponible.
   if (isLoading || !currentUser) {
     return (
       <main className="container py-4 space-y-4">

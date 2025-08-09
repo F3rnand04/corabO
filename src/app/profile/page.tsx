@@ -47,7 +47,7 @@ export default function ProfilePage() {
       return;
     }
 
-    // For providers, set up a real-time listener to their personal gallery
+    // For providers, set up a real-time listener to their personal gallery subcollection
     setIsLoadingGallery(true);
     const db = getFirestoreDb();
     const q = query(collection(db, 'users', currentUser.id, 'gallery'), orderBy("createdAt", "desc"));
@@ -69,8 +69,9 @@ export default function ProfilePage() {
     return () => unsubscribe(); // Cleanup subscription on component unmount
   }, [currentUser, toast]);
 
+  // This check must happen after hooks, so we put it here.
   if (!currentUser) {
-    return null;
+    return null; // or a loading spinner
   }
 
   const isProvider = currentUser.type === 'provider';
@@ -460,7 +461,7 @@ export default function ProfilePage() {
                         <div 
                           className="relative group cursor-pointer"
                           onTouchStart={onTouchStart}
-                          onTouchMove={onTouchEnd}
+                          onTouchEnd={onTouchEnd}
                           onDoubleClick={handleImageDoubleClick}
                         >
                           <Image
