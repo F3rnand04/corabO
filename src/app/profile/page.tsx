@@ -362,24 +362,7 @@ export default function ProfilePage() {
               </div>
             </div>
             
-            <div className="flex justify-around text-center py-4">
-                <div className="flex-1">
-                    <p className="font-semibold text-foreground text-lg">{gallery.length}</p>
-                    <p className="text-xs text-muted-foreground">Publicaciones</p>
-                </div>
-                {isProductProvider && (
-                    <div className="flex-1">
-                        <p className="font-semibold text-foreground text-lg">{providerProducts.length}</p>
-                        <p className="text-xs text-muted-foreground">Productos</p>
-                    </div>
-                )}
-                 <div className="flex-1">
-                    <p className="font-semibold text-foreground text-lg">{completedTransactions}</p>
-                    <p className="text-xs text-muted-foreground">Trab. Realizados</p>
-                </div>
-            </div>
-
-            <div className="flex justify-end gap-2 pb-4">
+            <div className="flex justify-end gap-2 py-4">
               {isProvider && (
                 <Button 
                   variant="outline" 
@@ -660,3 +643,4 @@ export default function ProfilePage() {
     
 
     
+

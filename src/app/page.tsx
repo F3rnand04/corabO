@@ -23,48 +23,32 @@ const mainCategories = [
 ];
 
 export default function HomePage() {
-  const { searchQuery, feedView, currentUser, fetchUser } = useCorabo();
-  const [feedData, setFeedData] = useState<(GalleryImage & { provider: User })[]>([]);
+  const { searchQuery, feedView, currentUser, getRankedFeed } = useCorabo();
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchFeed = async () => {
-      setIsLoading(true);
-      const db = getFirestoreDb();
-      const publicationsCol = collection(db, 'publications'); // Assuming a top-level publications collection
-      const q = query(publicationsCol, limit(20)); // Get latest 20 publications
-      
-      try {
-        const querySnapshot = await getDocs(q);
-        const publications = await Promise.all(
-            querySnapshot.docs.map(async (doc) => {
-                const pub = doc.data() as GalleryImage;
-                const provider = await fetchUser(pub.providerId); // Fetch provider for each pub
-                return provider ? { ...pub, provider } : null;
-            })
-        );
-        
-        setFeedData(publications.filter(p => p !== null) as (GalleryImage & { provider: User })[]);
-      } catch (error) {
-        console.error("Error fetching feed:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // The getRankedFeed function from the context will now handle fetching and ranking
+  const rankedFeed = useMemo(() => {
+    if (!currentUser) return [];
+    return getRankedFeed();
+  }, [currentUser, getRankedFeed]);
 
-    if (currentUser) {
-        fetchFeed();
+
+  useEffect(() => {
+    // Simulate loading time, as data fetching is now inside the context
+    if(currentUser) {
+        setIsLoading(true);
+        setTimeout(() => setIsLoading(false), 1500); 
     }
-  }, [currentUser, fetchUser]);
+  }, [currentUser]);
 
   
   const filteredFeed = useMemo(() => {
-    if (!feedData.length) return [];
+    if (!rankedFeed.length) return [];
     
     const lowerCaseQuery = searchQuery.toLowerCase().trim();
 
     // Filter by feed view first
-    let viewFiltered = feedData.filter(pub => {
+    let viewFiltered = rankedFeed.filter(pub => {
         const providerType = pub.provider.profileSetupData?.providerType || 'professional';
         if (feedView === 'empresas') return providerType === 'company';
         return providerType !== 'company';
@@ -95,7 +79,7 @@ export default function HomePage() {
         }
     });
 
-  }, [feedData, searchQuery, feedView]);
+  }, [rankedFeed, searchQuery, feedView]);
 
   const noResultsMessage = () => {
     const baseMessage = feedView === 'empresas' ? "No se encontraron empresas" : "No se encontraron servicios";

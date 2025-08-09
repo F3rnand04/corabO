@@ -283,58 +283,60 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (!currentUser?.id) return;
-
+  
     const db = getFirestoreDb();
     if (!db) {
-        console.error("Firestore DB is not initialized yet.");
-        return;
+      console.error("Firestore DB is not initialized yet.");
+      return;
     }
-
+  
     if (currentUser.profileSetupData?.location) {
-        setDeliveryAddress(currentUser.profileSetupData.location);
+      setDeliveryAddress(currentUser.profileSetupData.location);
     }
-    
-    let isMounted = true;
+  
     const unsubs: (() => void)[] = [];
-
+    let isMounted = true;
+  
     // Listener for the current user's document
-    unsubs.push(onSnapshot(doc(db, 'users', currentUser.id), (doc) => {
-        if (isMounted && doc.exists()) {
-            setCurrentUser(doc.data() as User);
-        }
+    const userDocRef = doc(db, 'users', currentUser.id);
+    unsubs.push(onSnapshot(userDocRef, (doc) => {
+      if (isMounted && doc.exists()) {
+        setCurrentUser(doc.data() as User);
+      }
     }, (error) => console.error("Current user snapshot error:", error)));
-
-    // Correct, secure query for transactions
+  
+    // Correct, secure query for transactions involving the current user
     const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
     unsubs.push(onSnapshot(transactionsQuery, (snapshot) => {
-        if (isMounted) {
-            setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
-        }
+      if (isMounted) {
+        setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
+      }
     }, (error) => console.error("Transactions snapshot error:", error)));
-
-    // Correct, secure query for conversations
+  
+    // Correct, secure query for conversations involving the current user
     const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id));
     unsubs.push(onSnapshot(conversationsQuery, (snapshot) => {
-        if (isMounted) {
-            setConversations(snapshot.docs.map(doc => doc.data() as Conversation).sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()));
-        }
+      if (isMounted) {
+        setConversations(snapshot.docs.map(doc => doc.data() as Conversation).sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()));
+      }
     }, (error) => console.error("Conversations snapshot error:", error)));
-
-    // Load products for the current user if they are a provider
+  
+    // Load products ONLY for the current user if they are a provider
     if (currentUser.type === 'provider') {
-        const productsQuery = query(collection(db, "products"), where("providerId", "==", currentUser.id));
-        unsubs.push(onSnapshot(productsQuery, (snapshot) => {
-            if (isMounted) {
-                setProducts(snapshot.docs.map(doc => doc.data() as Product));
-            }
-        }, (error) => console.error("Provider products snapshot error:", error)));
+      const productsQuery = query(collection(db, "products"), where("providerId", "==", currentUser.id));
+      unsubs.push(onSnapshot(productsQuery, (snapshot) => {
+        if (isMounted) {
+          setProducts(snapshot.docs.map(doc => doc.data() as Product));
+        }
+      }, (error) => console.error("Provider products snapshot error:", error)));
     }
   
     return () => {
       isMounted = false;
       unsubs.forEach(unsub => unsub());
     };
-  }, [currentUser?.id]);
+  }, [currentUser?.id]); // Only re-run if the user ID changes
+  
 
 
   const getRankedFeed = useCallback(() => {
