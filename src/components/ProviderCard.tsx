@@ -24,7 +24,7 @@ interface ProviderCardProps {
 }
 
 export function ProviderCard({ provider }: ProviderCardProps) {
-    const { addContact, sendMessage, isContact, transactions } = useCorabo();
+    const { addContact, sendMessage, isContact, transactions, getUserEffectiveness } = useCorabo();
     const router = useRouter();
     const { toast } = useToast();
     const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
@@ -32,7 +32,6 @@ export function ProviderCard({ provider }: ProviderCardProps) {
     const [isSaved, setIsSaved] = useState(false);
     const [isLiked, setIsLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(0);
-    const [commentCount, setCommentCount] = useState(0);
     const [shareCount, setShareCount] = useState(0);
     
     const profileLink = `/companies/${provider.id}`;
@@ -40,6 +39,12 @@ export function ProviderCard({ provider }: ProviderCardProps) {
     useEffect(() => {
         setIsSaved(isContact(provider.id));
     }, [isContact, provider.id]);
+
+    useEffect(() => {
+        // Initialize counts only on the client-side
+        setLikeCount(Math.floor(Math.random() * 20)); // Keep some initial random feel for demo
+        setShareCount(Math.floor(Math.random() * 10));
+    }, []);
 
 
     const handleSaveContact = () => {
@@ -143,7 +148,7 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                                     <Badge variant="secondary">Nuevo</Badge>
                                 ) : (
                                     <>
-                                        <span>{(provider.effectiveness || 0).toFixed(0)}% Efec.</span>
+                                        <span>{getUserEffectiveness(provider.id).toFixed(0)}% Efec.</span>
                                         <Separator orientation="vertical" className="h-4" />
                                         <span className="text-green-600 font-semibold">00-05 min</span>
                                     </>
@@ -232,6 +237,8 @@ export function ProviderCard({ provider }: ProviderCardProps) {
         </>
     )
 }
+
+    
 
     
 

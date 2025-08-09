@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useCorabo } from "@/contexts/CoraboContext";
@@ -75,6 +74,14 @@ export default function HomePage() {
     return `${baseMessage} en el feed.`;
   }
 
+  if (!currentUser) {
+    return (
+      <main className="container py-4 space-y-4">
+        {/* You can add a loading skeleton here */}
+      </main>
+    );
+  }
+
   return (
     <main className="container py-4 space-y-4">
        {currentUser && !currentUser.isTransactionsActive && (
@@ -92,3 +99,5 @@ export default function HomePage() {
     </main>
   );
 }
+
+    

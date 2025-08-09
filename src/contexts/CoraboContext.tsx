@@ -123,7 +123,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   // We still use mock data for these until we migrate them to Firestore
   const [services, setServices] = useState(mockServices);
   
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<User[]>(mockUsers);
   const [products, setProducts] = useState<Product[]>([]);
   
   // These will be managed by Firestore
@@ -265,7 +265,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (!currentUser?.id) return;
-
+    
     const db = getFirestoreDb();
     if (!db) {
         console.error("Firestore DB is not initialized yet.");
@@ -276,43 +276,39 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         setDeliveryAddress(currentUser.profileSetupData.location);
     }
     
-    // This will hold all the unsubscribe functions.
     const unsubs: (() => void)[] = [];
 
-    // All Users Listener (This is what is causing the error)
-    // FIX: Listen to a query of providers instead of all users.
-    const providersQuery = query(collection(db, 'users'), where('type', '==', 'provider'));
-    unsubs.push(onSnapshot(providersQuery, (snapshot) => {
-        const providerUsers = snapshot.docs.map(doc => doc.data() as User);
-        // We need to merge this with the current user if they are not a provider
-        setUsers(prevUsers => {
-            const otherUsers = prevUsers.filter(u => u.type !== 'provider');
-            const newUsers = [...otherUsers, ...providerUsers];
-            // Deduplicate
-            const uniqueUsers = Array.from(new Map(newUsers.map(u => [u.id, u])).values());
-            return uniqueUsers;
-        });
+    // Listener for the current user's document
+    unsubs.push(onSnapshot(doc(db, 'users', currentUser.id), (doc) => {
+        if (doc.exists()) {
+            setCurrentUser(doc.data() as User);
+        }
+    }, (error) => console.error("Current user snapshot error:", error)));
 
-    }, (error) => console.error("Users snapshot error:", error)));
-    
-    // User-specific Transactions Listener
+    // Correct, secure query for transactions
     const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
     unsubs.push(onSnapshot(transactionsQuery, (snapshot) => {
         setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
     }, (error) => console.error("Transactions snapshot error:", error)));
-    
-    // User-specific Conversations Listener
+
+    // Correct, secure query for conversations
     const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id));
     unsubs.push(onSnapshot(conversationsQuery, (snapshot) => {
         setConversations(snapshot.docs.map(doc => doc.data() as Conversation).sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()));
     }, (error) => console.error("Conversations snapshot error:", error)));
+
+    // Load products for the current user if they are a provider
+    if (currentUser.type === 'provider') {
+        const productsQuery = query(collection(db, "products"), where("providerId", "==", currentUser.id));
+        unsubs.push(onSnapshot(productsQuery, (snapshot) => {
+            setProducts(snapshot.docs.map(doc => doc.data() as Product));
+        }, (error) => console.error("Provider products snapshot error:", error)));
+    }
   
-    // This is the cleanup function. It will be called when the component unmounts
-    // or when the dependency (currentUser.id) changes.
     return () => {
       unsubs.forEach(unsub => unsub());
     };
-  }, [currentUser?.id]); // The effect now correctly depends only on the user's ID.
+  }, [currentUser?.id]);
 
   const getRankedFeed = useCallback(() => {
     if (!currentUser || !users.length) return [];
@@ -712,12 +708,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const updateUserProfileAndGallery = async (userId: string, image: GalleryImage) => {
+    if (!currentUser) return;
     const db = getFirestoreDb();
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, {
         gallery: arrayUnion(image)
     });
-    // Optimistic update
     setCurrentUser(prev => prev ? { ...prev, gallery: [...(prev.gallery || []), image] } : null);
   };
 
@@ -941,3 +937,5 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
+
+    
