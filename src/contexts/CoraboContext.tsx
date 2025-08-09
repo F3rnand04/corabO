@@ -278,6 +278,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         const productsQuery = query(collection(db, "products"), where("providerId", "==", currentUser.id));
         unsubs.push(onSnapshot(productsQuery, (snapshot) => {
             setProducts(snapshot.docs.map(doc => doc.data() as Product));
+        }, (error) => {
+            console.error("Error fetching products:", error);
         }));
     } else {
         setProducts([]); // Ensure products are cleared if user is not a provider
