@@ -227,17 +227,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     if (userSnap.exists()) {
         const user = userSnap.data() as User;
         
-        // Securely fetch products for this specific user
-        const productsQuery = query(collection(db, "products"), where("providerId", "==", userId));
-        const productsSnapshot = await getDocs(productsQuery);
-        const userProducts = productsSnapshot.docs.map(doc => doc.data() as Product);
-        
-        // Update products state without removing others
-        setProducts(prev => {
-            const otherProducts = prev.filter(p => p.providerId !== userId);
-            return [...otherProducts, ...userProducts];
-        });
-
         // Add user to cache if not present
         setUsers(prev => {
             if (!prev.some(u => u.id === userId)) {
@@ -246,6 +235,17 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             return prev;
         });
 
+        // Fetch products only for this user and update the state
+        const productsQuery = query(collection(db, "products"), where("providerId", "==", userId));
+        const productsSnapshot = await getDocs(productsQuery);
+        if (!productsSnapshot.empty) {
+            const userProducts = productsSnapshot.docs.map(doc => doc.data() as Product);
+            setProducts(prev => {
+                const otherProducts = prev.filter(p => p.providerId !== userId);
+                return [...otherProducts, ...userProducts];
+            });
+        }
+        
         return user;
     }
     return null;

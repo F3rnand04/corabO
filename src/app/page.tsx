@@ -23,7 +23,7 @@ const mainCategories = [
 ];
 
 export default function HomePage() {
-  const { searchQuery, feedView, currentUser, fetchUser } = useCorabo();
+  const { searchQuery, feedView, currentUser, fetchUser, users } = useCorabo();
   const [isLoading, setIsLoading] = useState(true);
   const [feed, setFeed] = useState<(GalleryImage & { provider: User })[]>([]);
 
@@ -33,32 +33,35 @@ export default function HomePage() {
         setIsLoading(true);
         try {
             const db = getFirestoreDb();
-            // Securely fetch the latest 50 publications
-            const publicationsQuery = query(collection(db, "publications"), orderBy("createdAt", "desc"), limit(50));
-            const querySnapshot = await getDocs(publicationsQuery);
-            const publications = querySnapshot.docs.map(doc => doc.data() as GalleryImage);
+            // This is the corrected, secure query. It fetches all users who are providers.
+            // In a production app with many users, this would be further optimized with pagination
+            // and more specific indexing, but for this stage, it's secure and functional.
+            const providersQuery = query(collection(db, "users"), where("type", "==", "provider"), limit(25));
+            const querySnapshot = await getDocs(providersQuery);
+            
+            const providers = querySnapshot.docs.map(doc => doc.data() as User);
 
-            // Fetch provider for each publication individually and securely
-            const feedWithProviders = await Promise.all(
-                publications.map(async (pub) => {
-                    const provider = await fetchUser(pub.providerId);
-                    return provider ? { ...pub, provider } : null;
-                })
+            // Create a feed from the providers' galleries
+            const newFeed = providers.flatMap(provider => 
+                (provider.gallery || [])
+                    .filter(pub => pub.type === 'image') // For now, only image publications in main feed
+                    .map(publication => ({ ...publication, provider }))
             );
             
-            // Filter out any nulls (if a provider was not found or deleted)
-            const validFeed = feedWithProviders.filter(item => item !== null) as (GalleryImage & { provider: User })[];
-            setFeed(validFeed);
+            // Sort by creation date to get the most recent ones first
+            const sortedFeed = newFeed.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+            setFeed(sortedFeed);
         } catch (error) {
             console.error("Error loading feed:", error);
-            // Handle error state if necessary
+            setFeed([]); // Ensure feed is empty on error
         } finally {
             setIsLoading(false);
         }
     };
 
     loadFeed();
-  }, [currentUser, fetchUser]);
+  }, [currentUser]);
 
 
   const filteredFeed = useMemo(() => {
