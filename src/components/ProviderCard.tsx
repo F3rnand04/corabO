@@ -24,7 +24,7 @@ interface ProviderCardProps {
 }
 
 export function ProviderCard({ provider }: ProviderCardProps) {
-    const { addContact, sendMessage, isContact, transactions, getUserEffectiveness } = useCorabo();
+    const { addContact, sendMessage, isContact, getUserMetrics } = useCorabo();
     const router = useRouter();
     const { toast } = useToast();
     const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
@@ -45,7 +45,6 @@ export function ProviderCard({ provider }: ProviderCardProps) {
         setLikeCount(Math.floor(Math.random() * 20)); // Keep some initial random feel for demo
         setShareCount(Math.floor(Math.random() * 10));
     }, []);
-
 
     const handleSaveContact = () => {
         const success = addContact(provider);
@@ -98,11 +97,9 @@ export function ProviderCard({ provider }: ProviderCardProps) {
         }
     }
 
-    const completedTransactions = transactions.filter(
-        tx => tx.providerId === provider.id && (tx.status === 'Pagado' || tx.status === 'Resuelto')
-    ).length;
+    const { reputation, effectiveness, responseTime } = getUserMetrics(provider.id);
+    const isNewProvider = responseTime === 'Nuevo';
 
-    const isNewProvider = completedTransactions === 0;
 
     const isPromotionActive = provider.promotion && new Date(provider.promotion.expires) > new Date();
 
@@ -141,16 +138,16 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                             <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                                 <div className="flex items-center gap-1">
                                     <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                                    <span className="font-semibold text-foreground">{provider.reputation.toFixed(1)}</span>
+                                    <span className="font-semibold text-foreground">{reputation.toFixed(1)}</span>
                                 </div>
                                 <Separator orientation="vertical" className="h-4" />
                                 {isNewProvider ? (
                                     <Badge variant="secondary">Nuevo</Badge>
                                 ) : (
                                     <>
-                                        <span>{getUserEffectiveness(provider.id).toFixed(0)}% Efec.</span>
+                                        <span>{effectiveness.toFixed(0)}% Efec.</span>
                                         <Separator orientation="vertical" className="h-4" />
-                                        <span className="text-green-600 font-semibold">00-05 min</span>
+                                        <span className="text-green-600 font-semibold">{responseTime}</span>
                                     </>
                                 )}
                             </div>

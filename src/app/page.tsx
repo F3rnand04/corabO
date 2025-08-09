@@ -35,11 +35,14 @@ export default function HomePage() {
 
   useEffect(() => {
     // Simulate loading time, as data fetching is now inside the context
-    if(currentUser) {
-        setIsLoading(true);
-        setTimeout(() => setIsLoading(false), 1500); 
+    if(currentUser && rankedFeed.length > 0) {
+        setIsLoading(false);
+    } else if (currentUser) {
+        // If there's a user but no feed, wait a bit before showing no results
+        const timer = setTimeout(() => setIsLoading(false), 2500);
+        return () => clearTimeout(timer);
     }
-  }, [currentUser]);
+  }, [currentUser, rankedFeed]);
 
   
   const filteredFeed = useMemo(() => {
@@ -92,7 +95,7 @@ export default function HomePage() {
   if (!currentUser) {
     return (
       <main className="container py-4 space-y-4">
-        {/* You can add a loading skeleton here */}
+        {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[400px] w-full rounded-2xl" />)}
       </main>
     );
   }

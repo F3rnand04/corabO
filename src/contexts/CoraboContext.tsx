@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation";
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { add, subDays, startOfDay, differenceInDays, differenceInHours } from 'date-fns';
+import { add, subDays, startOfDay, differenceInDays, differenceInHours, differenceInMinutes } from 'date-fns';
 import { credicoraLevels } from '@/lib/types';
 // Import necessary firebase services directly
 import { getAuth, signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, GoogleAuthProvider, setPersistence, browserLocalPersistence } from 'firebase/auth';
@@ -28,6 +28,13 @@ interface DailyQuote {
     requestSignature: string;
     count: number;
 }
+
+interface UserMetrics {
+    reputation: number;
+    effectiveness: number;
+    responseTime: string; // e.g., "00-05 min", "Nuevo"
+}
+
 
 interface CoraboState {
   currentUser: User | null;
@@ -106,7 +113,7 @@ interface CoraboState {
   rejectUserId: (userId: string) => void;
   setIdVerificationPending: (userId: string, documentUrl: string) => Promise<void>;
   autoVerifyIdWithAI: (input: VerificationInput) => Promise<VerificationOutput>;
-  getUserEffectiveness: (userId: string) => number;
+  getUserMetrics: (userId: string) => UserMetrics;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -233,52 +240,41 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return null;
   }, [users]);
 
-  const getUserEffectiveness = (userId: string) => {
-    const user = users.find(u => u.id === userId);
-    if (!user || user.type !== 'provider') return 0;
-  
+  const getUserMetrics = (userId: string): UserMetrics => {
     const providerTransactions = transactions.filter(t => t.providerId === userId);
+  
+    // Reputation calculation
+    const ratedTransactions = providerTransactions.filter(t => (t.status === 'Pagado' || t.status === 'Resuelto') && t.details.clientRating);
+    const totalRating = ratedTransactions.reduce((acc, t) => acc + (t.details.clientRating || 0), 0);
+    const reputation = ratedTransactions.length > 0 ? totalRating / ratedTransactions.length : 0;
+  
+    // Effectiveness calculation
     const totalMeaningfulTransactions = providerTransactions.filter(t => t.status !== 'Carrito Activo' && t.status !== 'Pre-factura Pendiente').length;
+    const completedTransactions = providerTransactions.filter(t => t.status === 'Pagado' || t.status === 'Resuelto').length;
+    const effectiveness = totalMeaningfulTransactions > 0 ? (completedTransactions / totalMeaningfulTransactions) * 100 : 0;
+  
+    // Response time calculation
+    let responseTime = "Nuevo";
+    const paymentConfirmations = providerTransactions.filter(t => t.status === 'Pagado' && t.details.paymentConfirmationDate && t.details.paymentReportedDate);
+    if (paymentConfirmations.length > 0) {
+      const totalResponseTime = paymentConfirmations.reduce((acc, t) => {
+        const reported = new Date(t.details.paymentReportedDate!);
+        const confirmed = new Date(t.details.paymentConfirmationDate!);
+        return acc + differenceInMinutes(confirmed, reported);
+      }, 0);
+      const avgResponseTime = totalResponseTime / paymentConfirmations.length;
+      if (avgResponseTime <= 5) responseTime = "00-05 min";
+      else if (avgResponseTime <= 15) responseTime = "05-15 min";
+      else responseTime = "+15 min";
+    }
     
+    // If no transactions, the provider is new.
     if (totalMeaningfulTransactions === 0) {
-      return 0; // A new provider has 0% effectiveness until they complete a transaction.
+        return { reputation: 0, effectiveness: 0, responseTime: "Nuevo" };
     }
   
-    const completedTransactions = providerTransactions.filter(t => t.status === 'Pagado' || t.status === 'Resuelto').length;
-    return (completedTransactions / totalMeaningfulTransactions) * 100;
+    return { reputation, effectiveness, responseTime };
   };
-
-  // Dynamic Reputation and Effectiveness Calculation
-  useEffect(() => {
-    if (users.length > 0 && transactions.length > 0) {
-      const updatedUsers = users.map(user => {
-        if (user.type === 'provider') {
-          const providerTransactions = transactions.filter(t => t.providerId === user.id);
-          
-          // Calculate Reputation
-          const ratedTransactions = providerTransactions.filter(t => (t.status === 'Pagado' || t.status === 'Resuelto') && t.details.clientRating);
-          const totalRating = ratedTransactions.reduce((acc, t) => acc + (t.details.clientRating || 0), 0);
-          const newReputation = ratedTransactions.length > 0 ? totalRating / ratedTransactions.length : 0;
-          
-          // Calculate Effectiveness
-          const newEffectiveness = getUserEffectiveness(user.id);
-
-          return { ...user, reputation: newReputation, effectiveness: newEffectiveness };
-        }
-        return user;
-      });
-
-      setUsers(updatedUsers);
-      // Also update currentUser if they are in the list
-      if (currentUser) {
-          const updatedCurrentUser = updatedUsers.find(u => u.id === currentUser.id);
-          if (updatedCurrentUser) {
-              setCurrentUser(updatedCurrentUser);
-          }
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transactions]); // Re-calculate when transactions change
   
 
   useEffect(() => {
@@ -953,7 +949,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     setIdVerificationPending,
     autoVerifyIdWithAI,
     markConversationAsRead,
-    getUserEffectiveness,
+    getUserMetrics,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;

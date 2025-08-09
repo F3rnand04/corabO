@@ -35,7 +35,7 @@ import { ActivationWarning } from '@/components/ActivationWarning';
 
 export default function CompanyProfilePage() {
   const params = useParams();
-  const { users, products, addContact, isContact, transactions, createAppointmentRequest, currentUser, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, sendMessage, toggleGps, deliveryAddress, setDeliveryAddress } = useCorabo();
+  const { users, products, addContact, isContact, transactions, createAppointmentRequest, currentUser, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, sendMessage, toggleGps, deliveryAddress, setDeliveryAddress, getUserMetrics } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
   
@@ -207,12 +207,15 @@ export default function CompanyProfilePage() {
   
   const displayDistance = provider.profileSetupData?.showExactLocation ? "A menos de 1km" : "500m - 1km";
   
+  const { reputation, effectiveness, responseTime } = getUserMetrics(provider.id);
+  const isNewProvider = responseTime === 'Nuevo';
+
   const profileData = {
     name: displayName,
     specialty: specialty,
-    rating: provider.reputation || 0,
-    efficiency: provider.effectiveness || 100,
-    otherStat: "00 | 05",
+    rating: reputation,
+    efficiency: effectiveness,
+    responseTime: responseTime,
     publications: gallery.length,
     completedJobs: transactions.filter(t => t.providerId === provider.id && (t.status === 'Pagado' || t.status === 'Resuelto')).length,
     distance: displayDistance,
@@ -366,9 +369,15 @@ export default function CompanyProfilePage() {
                         <span className="font-semibold text-foreground">{profileData.rating.toFixed(1)}</span>
                     </div>
                     <Separator orientation="vertical" className="h-4" />
-                    <span>{profileData.efficiency.toFixed(0)}%</span>
-                    <Separator orientation="vertical" className="h-4" />
-                    <span>{profileData.otherStat}</span>
+                    {isNewProvider ? (
+                        <Badge variant="secondary">Nuevo</Badge>
+                    ) : (
+                        <>
+                            <span>{profileData.efficiency.toFixed(0)}% Efec.</span>
+                            <Separator orientation="vertical" className="h-4" />
+                            <span className="font-semibold text-green-600">{profileData.responseTime}</span>
+                        </>
+                    )}
                 </div>
               </div>
               <div className="flex items-center gap-2">

@@ -29,7 +29,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function ProfilePage() {
   const { toast } = useToast();
-  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, transactions, getAgendaEvents, products, getUserEffectiveness } = useCorabo();
+  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, transactions, getAgendaEvents, products, getUserMetrics } = useCorabo();
   const router = useRouter();
   
   // This is a critical guard. Return null or a loader if currentUser is not available yet.
@@ -41,12 +41,6 @@ export default function ProfilePage() {
   const isProductProvider = isProvider && currentUser.profileSetupData?.offerType === 'product';
   // Correctly filter products associated with the current user.
   const providerProducts = products.filter(p => p.providerId === currentUser.id);
-  
-  const completedTransactions = transactions.filter(
-    tx => tx.providerId === currentUser.id && (tx.status === 'Pagado' || tx.status === 'Resuelto')
-  ).length;
-
-  const isNewProvider = completedTransactions === 0;
 
   // Local state for interactions
   const [starCount, setStarCount] = useState(0);
@@ -71,6 +65,10 @@ export default function ProfilePage() {
   const agendaEvents = getAgendaEvents();
   const paymentCommitmentDates = agendaEvents.filter(e => e.type === 'payment').map(e => new Date(e.date));
   const taskDates = agendaEvents.filter(e => e.type === 'task').map(e => new Date(e.date));
+
+  const { reputation, effectiveness, responseTime } = getUserMetrics(currentUser.id);
+  const isNewProvider = responseTime === 'Nuevo';
+
 
   const onDayDoubleClick = (day: Date) => {
     const eventOnDay = agendaEvents.find(
@@ -279,16 +277,16 @@ export default function ProfilePage() {
                 <div className="flex items-center gap-3 text-sm mt-2 text-muted-foreground">
                     <div className="flex items-center gap-1">
                         <Star className="w-4 h-4 text-yellow-400 fill-yellow-400"/>
-                        <span className="font-semibold text-foreground">{currentUser.reputation.toFixed(1)}</span>
+                        <span className="font-semibold text-foreground">{reputation.toFixed(1)}</span>
                     </div>
                     <Separator orientation="vertical" className="h-4" />
                     {isNewProvider ? (
                         <Badge variant="secondary">Nuevo</Badge>
                     ) : (
                         <>
-                            <span>{getUserEffectiveness(currentUser.id).toFixed(0)}% Efec.</span>
+                            <span>{effectiveness.toFixed(0)}% Efec.</span>
                             <Separator orientation="vertical" className="h-4" />
-                            <span>00 | 05</span>
+                            <span className="font-semibold text-green-600">{responseTime}</span>
                         </>
                     )}
                 </div>
@@ -643,4 +641,5 @@ export default function ProfilePage() {
     
 
     
+
 
