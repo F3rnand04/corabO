@@ -27,6 +27,7 @@ import { ProductDetailsDialog } from '@/components/ProductDetailsDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { collection, query, where, onSnapshot, Unsubscribe, orderBy } from 'firebase/firestore';
 import { getFirestoreDb } from '@/lib/firebase';
+import { Skeleton } from '../ui/skeleton';
 
 
 export default function ProfilePage() {
@@ -41,14 +42,12 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!currentUser) return;
     
-    // For clients, the gallery is static from their user object and doesn't need a listener
     if (currentUser.type === 'client') {
       setGallery(currentUser.gallery || []);
       setIsLoadingGallery(false);
       return;
     }
 
-    // For providers, set up a real-time listener to their personal gallery subcollection
     setIsLoadingGallery(true);
     const db = getFirestoreDb();
     const q = query(collection(db, 'users', currentUser.id, 'gallery'), orderBy("createdAt", "desc"));
@@ -70,15 +69,17 @@ export default function ProfilePage() {
     return () => unsubscribe(); // Cleanup subscription on component unmount
   }, [currentUser, toast]);
 
-  // This check must happen after hooks, so we put it here.
   if (!currentUser) {
-    return null; // or a loading spinner
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
   }
 
   const isProvider = currentUser.type === 'provider';
   const isProductProvider = isProvider && currentUser.profileSetupData?.offerType === 'product';
-  // Products now come directly from the filtered context state
-  const providerProducts = products; 
+  const providerProducts = isProvider ? products.filter(p => p.providerId === currentUser.id) : [];
 
   const [starCount, setStarCount] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
@@ -426,6 +427,7 @@ export default function ProfilePage() {
               
               <TabsContent value="products">
                   {isProvider ? (
+                    isLoadingGallery ? <Skeleton className="h-48 w-full" /> :
                     providerProducts.length > 0 ? (
                       <div className='p-2 grid grid-cols-2 sm:grid-cols-3 gap-2'>
                         {providerProducts.map(product => (

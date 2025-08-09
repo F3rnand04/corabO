@@ -7,7 +7,7 @@ import type { User, GalleryImage } from "@/lib/types";
 import { useMemo, useEffect, useState } from "react";
 import { ActivationWarning } from "@/components/ActivationWarning";
 import { Skeleton } from "@/components/ui/skeleton";
-import { collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import { getFirestoreDb } from "@/lib/firebase";
 
 const mainCategories = [
@@ -29,18 +29,18 @@ export default function HomePage() {
   
   useEffect(() => {
     const fetchFeed = async () => {
-      // No ejecutar si el usuario aún no está cargado.
       if (!currentUser) return;
+      
       setIsLoading(true);
       const db = getFirestoreDb();
       
-      const publicationsQuery = query(
-        collection(db, "publications"),
-        orderBy("createdAt", "desc"),
-        limit(50)
-      );
-
       try {
+        const publicationsQuery = query(
+          collection(db, "publications"),
+          orderBy("createdAt", "desc"),
+          limit(50)
+        );
+        
         const querySnapshot = await getDocs(publicationsQuery);
         const publications = querySnapshot.docs.map(doc => doc.data() as GalleryImage);
 
@@ -62,7 +62,6 @@ export default function HomePage() {
       }
     };
 
-    // Solo cargar el feed cuando el usuario esté definido
     if (currentUser) {
         fetchFeed();
     }
@@ -113,7 +112,6 @@ export default function HomePage() {
     return `${baseMessage} en el feed.`;
   }
 
-  // Muestra el esqueleto de carga mientras isLoading es true O si currentUser aún no está disponible.
   if (isLoading || !currentUser) {
     return (
       <main className="container py-4 space-y-4">

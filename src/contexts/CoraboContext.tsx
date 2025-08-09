@@ -194,7 +194,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         profileSetupData: {},
         isSubscribed: false,
         isTransactionsActive: false,
-        idVerificationStatus: 'rejected', // Default state
+        idVerificationStatus: 'rejected',
       };
       
       await setDoc(userDocRef, newUser);
@@ -207,11 +207,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     let listeners: Unsubscribe[] = [];
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
-      // Clean up old listeners before setting new ones
       listeners.forEach(unsub => unsub());
       listeners = [];
       
-      // Clear all user-specific state on auth change
       setCurrentUser(null);
       setTransactions([]);
       setConversations([]);
@@ -223,7 +221,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
         const db = getFirestoreDb();
         
-        // --- Setup Safe Listeners ---
         const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userData.id));
         const transactionsUnsub = onSnapshot(transactionsQuery, (snapshot) => {
             setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
@@ -246,7 +243,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             listeners.push(productsUnsub);
         }
         
-        // Listen to own user document for real-time updates
         const userUnsub = onSnapshot(doc(db, 'users', userData.id), (doc) => {
             if (doc.exists()) setCurrentUser(doc.data() as User);
         });
@@ -264,10 +260,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       unsubscribeAuth();
       listeners.forEach(unsub => unsub());
     };
-  }, [handleUserCreation, auth, toast]);
+  }, [handleUserCreation, auth]);
   
   const fetchUser = useCallback(async (userId: string): Promise<User | null> => {
-    // This function can be optimized to check a local cache first
+    const existingUser = users.find(u => u.id === userId);
+    if(existingUser) return existingUser;
+
     const db = getFirestoreDb();
     const userDocRef = doc(db, 'users', userId);
     try {
@@ -287,7 +285,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         console.error("Error fetching user:", error);
         return null;
     }
-  }, []);
+  }, [users]);
 
   const getUserMetrics = useCallback((userId: string): UserMetrics => {
     const providerTransactions = transactions.filter(t => t.providerId === userId);
@@ -628,11 +626,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const db = getFirestoreDb();
     const batch = writeBatch(db);
 
-    // Add to user's gallery subcollection
     const userGalleryRef = doc(db, 'users', userId, 'gallery', image.id);
     batch.set(userGalleryRef, image);
 
-    // Add to top-level publications collection for public feed
     const publicationRef = doc(db, 'publications', image.id);
     batch.set(publicationRef, image);
     
@@ -644,11 +640,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const db = getFirestoreDb();
     const batch = writeBatch(db);
     
-    // Delete from user's gallery subcollection
     const userGalleryRef = doc(db, 'users', userId, 'gallery', imageId);
     batch.delete(userGalleryRef);
 
-    // Delete from top-level publications collection
     const publicationRef = doc(db, 'publications', imageId);
     batch.delete(publicationRef);
 
