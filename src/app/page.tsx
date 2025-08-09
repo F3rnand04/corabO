@@ -6,7 +6,7 @@ import { ProviderCard } from "@/components/ProviderCard";
 import type { User, GalleryImage } from "@/lib/types";
 import { useMemo, useEffect, useState } from "react";
 import { ActivationWarning } from "@/components/ActivationWarning";
-import { collection, getDocs, limit, query } from "firebase/firestore";
+import { collection, getDocs, limit, query, where } from "firebase/firestore";
 import { getFirestoreDb } from "@/lib/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -23,35 +23,47 @@ const mainCategories = [
 ];
 
 export default function HomePage() {
-  const { searchQuery, feedView, currentUser, getRankedFeed } = useCorabo();
+  const { searchQuery, feedView, currentUser, getRankedFeed, fetchUser } = useCorabo();
   const [isLoading, setIsLoading] = useState(true);
-
-  // The getRankedFeed function from the context will now handle fetching and ranking
-  const rankedFeed = useMemo(() => {
-    if (!currentUser) return [];
-    return getRankedFeed();
-  }, [currentUser, getRankedFeed]);
-
+  const [feed, setFeed] = useState<(GalleryImage & { provider: User })[]>([]);
 
   useEffect(() => {
-    // Simulate loading time, as data fetching is now inside the context
-    if(currentUser && rankedFeed.length > 0) {
-        setIsLoading(false);
-    } else if (currentUser) {
-        // If there's a user but no feed, wait a bit before showing no results
-        const timer = setTimeout(() => setIsLoading(false), 2500);
-        return () => clearTimeout(timer);
-    }
-  }, [currentUser, rankedFeed]);
+    const loadFeed = async () => {
+        setIsLoading(true);
+        const db = getFirestoreDb();
+        // Securely fetch publications, e.g., limit to a reasonable number
+        const q = query(collection(db, "publications"), limit(50));
+        const querySnapshot = await getDocs(q);
+        const publications = querySnapshot.docs.map(doc => doc.data() as GalleryImage);
 
-  
+        // Fetch provider for each publication
+        const feedWithProviders = await Promise.all(
+            publications.map(async (pub) => {
+                const provider = await fetchUser(pub.providerId);
+                // Return null or a placeholder if provider not found
+                return provider ? { ...pub, provider } : null;
+            })
+        );
+        
+        // Filter out any nulls
+        const validFeed = feedWithProviders.filter(item => item !== null) as (GalleryImage & { provider: User })[];
+        setFeed(validFeed);
+        setIsLoading(false);
+    };
+
+    if (currentUser) {
+        loadFeed();
+    }
+  }, [currentUser, fetchUser]);
+
+
   const filteredFeed = useMemo(() => {
-    if (!rankedFeed.length) return [];
+    if (!feed.length) return [];
     
     const lowerCaseQuery = searchQuery.toLowerCase().trim();
 
     // Filter by feed view first
-    let viewFiltered = rankedFeed.filter(pub => {
+    let viewFiltered = feed.filter(pub => {
         const providerType = pub.provider.profileSetupData?.providerType || 'professional';
         if (feedView === 'empresas') return providerType === 'company';
         return providerType !== 'company';
@@ -82,7 +94,7 @@ export default function HomePage() {
         }
     });
 
-  }, [rankedFeed, searchQuery, feedView]);
+  }, [feed, searchQuery, feedView]);
 
   const noResultsMessage = () => {
     const baseMessage = feedView === 'empresas' ? "No se encontraron empresas" : "No se encontraron servicios";
@@ -119,5 +131,3 @@ export default function HomePage() {
     </main>
   );
 }
-
-    

@@ -12,7 +12,7 @@ import { credicoraLevels } from '@/lib/types';
 // Import necessary firebase services directly
 import { getAuth, signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, GoogleAuthProvider, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getFirebaseApp, getFirestoreDb } from '@/lib/firebase'; // Import the new getter functions
-import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, enableIndexedDbPersistence, arrayUnion } from 'firebase/firestore';
+import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, enableIndexedDbPersistence, arrayUnion, getDocs } from 'firebase/firestore';
 import { createCampaign } from '@/ai/flows/campaign-flow';
 import { acceptProposal as acceptProposalFlow, sendMessage as sendMessageFlow } from '@/ai/flows/message-flow';
 import * as TransactionFlows from '@/ai/flows/transaction-flow';
@@ -225,7 +225,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const fetchUser = useCallback(async (userId: string): Promise<User | null> => {
     // Check cache first
-    const cachedUser = users.find(u => u.id === userId);
+    let cachedUser = users.find(u => u.id === userId);
     if (cachedUser) return cachedUser;
 
     const db = getFirestoreDb();
@@ -233,12 +233,30 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const userSnap = await getDoc(userRef);
     if (userSnap.exists()) {
         const user = userSnap.data() as User;
-        // Add to cache
-        setUsers(prev => [...prev, user]);
+        
+        // Fetch user's products and add to global product state
+        const productsQuery = query(collection(db, "products"), where("providerId", "==", userId));
+        const productsSnapshot = await getDocs(productsQuery);
+        const userProducts = productsSnapshot.docs.map(doc => doc.data() as Product);
+        
+        setProducts(prev => {
+            const otherProducts = prev.filter(p => p.providerId !== userId);
+            return [...otherProducts, ...userProducts];
+        });
+
+        // Add to user cache
+        setUsers(prev => {
+            if (!prev.some(u => u.id === userId)) {
+                return [...prev, user];
+            }
+            return prev;
+        });
+
         return user;
     }
     return null;
   }, [users]);
+
 
   const getUserMetrics = (userId: string): UserMetrics => {
     const providerTransactions = transactions.filter(t => t.providerId === userId);
