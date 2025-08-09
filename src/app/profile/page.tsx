@@ -379,12 +379,13 @@ export default function ProfilePage() {
           </header>
           
           <main className="space-y-4">
-             {isProductProvider ? (
-                <Tabs defaultValue="products" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="products">Catálogo <span className="ml-2 font-bold">({providerProducts.length})</span></TabsTrigger>
-                    <TabsTrigger value="publications">Publicaciones <span className="ml-2 font-bold">({gallery.length})</span></TabsTrigger>
-                  </TabsList>
+            <Tabs defaultValue={isProductProvider ? 'products' : 'publications'} className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                {isProductProvider && <TabsTrigger value="products">Catálogo <span className="ml-2 font-bold">({providerProducts.length})</span></TabsTrigger>}
+                <TabsTrigger value="publications" className={cn(!isProductProvider && 'col-span-2')}>Publicaciones <span className="ml-2 font-bold">({gallery.length})</span></TabsTrigger>
+              </TabsList>
+              
+              {isProductProvider && (
                   <TabsContent value="products">
                       {providerProducts.length > 0 ? (
                          <div className='p-2 grid grid-cols-3 gap-1'>
@@ -408,194 +409,77 @@ export default function ProfilePage() {
                          </div>
                       )}
                   </TabsContent>
-                   <TabsContent value="publications">
-                        <Card className="rounded-2xl overflow-hidden shadow-lg mt-2">
-                            <CardContent className="p-0">
-                                {gallery.length > 0 ? (
-                                    <>
-                                        <div 
-                                            className="relative group cursor-pointer"
-                                            onTouchStart={onTouchStart}
-                                            onTouchMove={onTouchMove}
-                                            onTouchEnd={onTouchEnd}
-                                            onDoubleClick={handleImageDoubleClick}
-                                        >
-                                            <Image
-                                                src={currentImage!.src}
-                                                alt={currentImage!.alt}
-                                                width={600}
-                                                height={400}
-                                                className="rounded-t-2xl object-cover w-full aspect-[4/3] transition-opacity duration-300"
-                                                data-ai-hint="professional workspace"
-                                                key={currentImage!.src} 
-                                            />
-                                        </div>
-                                        <div className="p-2 grid grid-cols-3 gap-1">
-                                            {gallery.map((thumb, index) => (
-                                                <div 
-                                                    key={index} 
-                                                    className="relative aspect-square cursor-pointer group"
-                                                    onClick={() => setCurrentImageIndex(index)}
-                                                    onDoubleClick={() => openDetailsDialog(thumb)}
-                                                >
-                                                <Image
-                                                    src={thumb.src}
-                                                    alt={thumb.alt}
-                                                    fill
-                                                    className={cn(
-                                                        "rounded-lg object-cover transition-all duration-200",
-                                                        currentImageIndex === index 
-                                                            ? "ring-2 ring-primary ring-offset-2" 
-                                                            : "ring-0 group-hover:opacity-80"
-                                                    )}
-                                                    data-ai-hint="product image"
-                                                />
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="w-full aspect-[4/3] bg-muted flex flex-col items-center justify-center text-center p-4">
-                                        <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
-                                        <h3 className="font-bold text-lg text-foreground">
-                                            Tu galería está vacía
-                                        </h3>
-                                        <p className="text-muted-foreground text-sm">
-                                            Haz clic en el botón (+) en el pie de página para añadir tu primera publicación.
-                                        </p>
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                </Tabs>
-            ) : (
-                <Card className="rounded-2xl overflow-hidden shadow-lg">
-                <CardContent className="p-0">
-                    <div 
-                    className="relative group cursor-pointer"
-                    onTouchStart={gallery.length > 0 ? onTouchStart : undefined}
-                    onTouchMove={gallery.length > 0 ? onTouchMove : undefined}
-                    onTouchEnd={gallery.length > 0 ? onTouchEnd : undefined}
-                    onDoubleClick={currentImage ? handleImageDoubleClick : undefined}
-                    >
-                    {currentImage ? (
-                        <>
-                        <Image
-                            src={currentImage.src}
-                            alt={currentImage.alt}
+              )}
+
+              <TabsContent value="publications">
+                <Card className="rounded-2xl overflow-hidden shadow-lg mt-2">
+                  <CardContent className="p-0">
+                    {gallery.length > 0 ? (
+                      <>
+                        <div 
+                          className="relative group cursor-pointer"
+                          onTouchStart={onTouchStart}
+                          onTouchMove={onTouchMove}
+                          onTouchEnd={onTouchEnd}
+                          onDoubleClick={handleImageDoubleClick}
+                        >
+                          <Image
+                            src={currentImage!.src}
+                            alt={currentImage!.alt}
                             width={600}
                             height={400}
                             className="rounded-t-2xl object-cover w-full aspect-[4/3] transition-opacity duration-300"
                             data-ai-hint="professional workspace"
-                            key={currentImage.src} 
-                        />
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="absolute top-2 left-2 z-10 text-white bg-black/20 hover:bg-black/40 rounded-full h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                            onClick={() => setIsReportDialogOpen(true)}
-                        >
+                            key={currentImage!.src} 
+                          />
+                           <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="absolute top-2 left-2 z-10 text-white bg-black/20 hover:bg-black/40 rounded-full h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => setIsReportDialogOpen(true)}
+                          >
                             <Flag className="w-4 h-4" />
                         </Button>
-                        {isProvider && isPromotionActiveOnCurrentImage && currentImage.promotion && (
-                            <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-md shadow-lg">
-                                {currentImage.promotion.text}
-                            </div>
-                        )}
-                        <Button 
-                            onClick={handlePrev}
-                            variant="ghost" 
-                            size="icon" 
-                            className="absolute top-1/2 left-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 hidden md:flex group-hover:flex"
-                        >
-                            <ChevronLeft className="h-5 w-5" />
-                        </Button>
-                        <Button 
-                            onClick={handleNext}
-                            variant="ghost" 
-                            size="icon" 
-                            className="absolute top-1/2 right-2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white rounded-full h-8 w-8 hidden md:flex group-hover:flex"
-                        >
-                            <ChevronRight className="h-5 w-5" />
-                        </Button>
-                        
-                        <div className="absolute bottom-2 right-2 flex flex-col items-end gap-2 text-white">
-                            <div className="flex flex-col items-center">
-                                <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={handleStarClick}>
-                                    <Star className={cn("w-5 h-5", isLiked && "fill-yellow-400 text-yellow-400")} />
-                                </Button>
-                                <span className="text-xs font-bold mt-1 drop-shadow-md">{starCount.toLocaleString('en-US')}</span>
-                            </div>
-                            <div className="flex flex-col items-center">
-                                <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={() => openDetailsDialog(currentImage)}>
-                                    <MessageCircle className="w-5 h-5" />
-                                </Button>
-                                <span className="text-xs font-bold mt-1 drop-shadow-md">{messageCount.toLocaleString('en-US')}</span>
-                            </div>
-                            <div className="flex flex-col items-center">
-                                <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={handleShareClick}>
-                                    <Send className="w-5 h-5" />
-                                </Button>
-                                <span className="text-xs font-bold mt-1 drop-shadow-md">{shareCount}</span>
-                            </div>
                         </div>
-                        </>
-                    ) : (
-                        <div className="w-full aspect-[4/3] bg-muted flex flex-col items-center justify-center text-center p-4">
-                            <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
-                            <h3 className="font-bold text-lg text-foreground">
-                                Tu vitrina está vacía
-                            </h3>
-                            <p className="text-muted-foreground text-sm">
-                                Haz clic en el botón (+) en el pie de página para añadir tu primera publicación.
-                            </p>
-                        </div>
-                    )}
-                    </div>
-
-                    <div className="p-2 grid grid-cols-3 gap-1">
-                        {gallery.length > 0 ? (
-                        gallery.map((thumb, index) => (
+                        <div className="p-2 grid grid-cols-3 gap-1">
+                          {gallery.map((thumb, index) => (
                             <div 
-                                key={index} 
-                                className="relative aspect-square group cursor-pointer"
-                                onClick={() => setCurrentImageIndex(index)}
-                                onDoubleClick={() => openDetailsDialog(thumb)}
+                              key={index} 
+                              className="relative aspect-square cursor-pointer group"
+                              onClick={() => setCurrentImageIndex(index)}
+                              onDoubleClick={() => openDetailsDialog(thumb)}
                             >
-                            <Image
+                              <Image
                                 src={thumb.src}
                                 alt={thumb.alt}
                                 fill
                                 className={cn(
-                                    "rounded-lg object-cover transition-all duration-200",
-                                    currentImageIndex === index
-                                        ? "ring-2 ring-primary ring-offset-2" 
-                                        : "ring-0 group-hover:opacity-80"
+                                  "rounded-lg object-cover transition-all duration-200",
+                                  currentImageIndex === index 
+                                    ? "ring-2 ring-primary ring-offset-2" 
+                                    : "ring-0 group-hover:opacity-80"
                                 )}
                                 data-ai-hint="product image"
-                            />
-                            {isProvider && thumb.promotion && new Date(thumb.promotion.expires) > new Date() && (
-                                <div className="absolute top-1 left-1 bg-red-500 text-white text-[10px] font-bold px-1 rounded-sm shadow-lg">
-                                PROMO
-                                </div>
-                            )}
-                                {isProvider && thumb.campaignId && (
-                                <div className="absolute top-1 right-1 bg-purple-500 text-white text-[10px] font-bold px-1 rounded-sm shadow-lg">
-                                <Megaphone className="w-3 h-3"/>
-                                </div>
-                            )}
+                              />
                             </div>
-                        ))
-                        ) : (
-                        <p className="col-span-3 text-center text-muted-foreground py-8">
-                            No hay publicaciones en tu galería.
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="w-full aspect-[4/3] bg-muted flex flex-col items-center justify-center text-center p-4">
+                        <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
+                        <h3 className="font-bold text-lg text-foreground">
+                          Tu galería está vacía
+                        </h3>
+                        <p className="text-muted-foreground text-sm">
+                          Haz clic en el botón (+) en el pie de página para añadir tu primera publicación.
                         </p>
-                        )}
-                    </div>
-                </CardContent>
+                      </div>
+                    )}
+                  </CardContent>
                 </Card>
-            )}
+              </TabsContent>
+            </Tabs>
           </main>
         </div>
       </div>

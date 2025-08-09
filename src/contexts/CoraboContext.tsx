@@ -250,13 +250,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         console.error("Firestore DB is not initialized yet.");
         return;
     }
-    
-    // Set initial user list for feed
-    const usersQuery = query(collection(db, "users"), where("type", "==", "provider"));
-    getDocs(usersQuery).then(snapshot => {
-        setUsers(snapshot.docs.map(doc => doc.data() as User));
-    });
-
 
     if (currentUser.profileSetupData?.location) {
         setDeliveryAddress(currentUser.profileSetupData.location);
@@ -279,7 +272,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         setConversations(snapshot.docs.map(doc => doc.data() as Conversation).sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()));
     }, (error) => console.error("Conversations snapshot error:", error)));
 
-    // Corrected products query
     if (currentUser.type === 'provider') {
         const productsQuery = query(collection(db, "products"), where("providerId", "==", currentUser.id));
         unsubs.push(onSnapshot(productsQuery, (snapshot) => {
@@ -851,5 +843,3 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
-
-    
