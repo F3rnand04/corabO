@@ -35,6 +35,7 @@ export default function HomePage() {
       const db = getFirestoreDb();
       
       try {
+        // 1. Securely query the public 'publications' collection
         const publicationsQuery = query(
           collection(db, "publications"),
           orderBy("createdAt", "desc"),
@@ -44,6 +45,7 @@ export default function HomePage() {
         const querySnapshot = await getDocs(publicationsQuery);
         const publications = querySnapshot.docs.map(doc => doc.data() as GalleryImage);
 
+        // 2. Fetch the owner for each publication individually and securely
         const feedDataPromises = publications.map(async (pub) => {
           const owner = await fetchUser(pub.providerId);
           if (owner && !owner.isPaused) {

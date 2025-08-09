@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from 'react';
 import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation";
@@ -233,15 +233,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         });
         listeners.push(conversationsUnsub);
 
-        if (userData.type === 'provider') {
-            const productsQuery = query(collection(db, "products"), where("providerId", "==", userData.id));
-            const productsUnsub = onSnapshot(productsQuery, (snapshot) => {
-                setProducts(snapshot.docs.map(doc => doc.data() as Product));
-            }, (error) => {
-                console.error("Error fetching products:", error);
-            });
-            listeners.push(productsUnsub);
-        }
+        // Products are now loaded on the profile page itself
         
         const userUnsub = onSnapshot(doc(db, 'users', userData.id), (doc) => {
             if (doc.exists()) setCurrentUser(doc.data() as User);
@@ -262,9 +254,13 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [handleUserCreation, auth]);
   
+  // In-memory cache for users
+  const userCache = useRef(new Map<string, User>());
+
   const fetchUser = useCallback(async (userId: string): Promise<User | null> => {
-    const existingUser = users.find(u => u.id === userId);
-    if(existingUser) return existingUser;
+    if (userCache.current.has(userId)) {
+        return userCache.current.get(userId)!;
+    }
 
     const db = getFirestoreDb();
     const userDocRef = doc(db, 'users', userId);
@@ -272,12 +268,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         const userSnap = await getDoc(userDocRef);
         if (userSnap.exists()) {
             const fetchedUser = userSnap.data() as User;
-            setUsers(prev => {
-                if (!prev.some(u => u.id === userId)) {
-                    return [...prev, fetchedUser];
-                }
-                return prev.map(u => u.id === userId ? fetchedUser : u);
-            });
+            userCache.current.set(userId, fetchedUser); // Store in cache
             return fetchedUser;
         }
         return null;
@@ -285,7 +276,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         console.error("Error fetching user:", error);
         return null;
     }
-  }, [users]);
+  }, []);
 
   const getUserMetrics = useCallback((userId: string): UserMetrics => {
     const providerTransactions = transactions.filter(t => t.providerId === userId);

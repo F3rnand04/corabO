@@ -32,41 +32,48 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ProfilePage() {
   const { toast } = useToast();
-  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, transactions, getAgendaEvents, products, getUserMetrics } = useCorabo();
+  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, transactions, getAgendaEvents, getUserMetrics } = useCorabo();
   const router = useRouter();
   
   const [gallery, setGallery] = useState<GalleryImage[]>([]);
-  const [isLoadingGallery, setIsLoadingGallery] = useState(true);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Effect to load provider-specific gallery
+  // Effect to load provider-specific gallery and products
   useEffect(() => {
     if (!currentUser) return;
-    
-    if (currentUser.type === 'client') {
-      setGallery(currentUser.gallery || []);
-      setIsLoadingGallery(false);
-      return;
-    }
 
-    setIsLoadingGallery(true);
+    setIsLoading(true);
     const db = getFirestoreDb();
-    const q = query(collection(db, 'users', currentUser.id, 'gallery'), orderBy("createdAt", "desc"));
+    const unsubscribes: Unsubscribe[] = [];
 
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-        const userGallery = querySnapshot.docs.map(doc => doc.data() as GalleryImage);
+    // Subscribe to gallery
+    const galleryQuery = query(collection(db, 'users', currentUser.id, 'gallery'), orderBy("createdAt", "desc"));
+    const galleryUnsub = onSnapshot(galleryQuery, (snapshot) => {
+        const userGallery = snapshot.docs.map(doc => doc.data() as GalleryImage);
         setGallery(userGallery);
-        setIsLoadingGallery(false);
     }, (error) => {
         console.error("Error fetching gallery:", error);
-        toast({
-            variant: "destructive",
-            title: "Error al cargar la galería",
-            description: "No se pudieron cargar tus publicaciones. Intenta recargar la página.",
-        });
-        setIsLoadingGallery(false);
+        toast({ variant: "destructive", title: "Error al cargar la galería" });
     });
+    unsubscribes.push(galleryUnsub);
 
-    return () => unsubscribe(); // Cleanup subscription on component unmount
+    // Subscribe to products if provider
+    if (currentUser.type === 'provider') {
+        const productsQuery = query(collection(db, 'products'), where("providerId", "==", currentUser.id));
+        const productsUnsub = onSnapshot(productsQuery, (snapshot) => {
+            const userProducts = snapshot.docs.map(doc => doc.data() as Product);
+            setProducts(userProducts);
+        }, (error) => {
+            console.error("Error fetching products:", error);
+            toast({ variant: "destructive", title: "Error al cargar los productos" });
+        });
+        unsubscribes.push(productsUnsub);
+    }
+    
+    setIsLoading(false);
+
+    return () => unsubscribes.forEach(unsub => unsub());
   }, [currentUser, toast]);
 
   if (!currentUser) {
@@ -79,7 +86,6 @@ export default function ProfilePage() {
 
   const isProvider = currentUser.type === 'provider';
   const isProductProvider = isProvider && currentUser.profileSetupData?.offerType === 'product';
-  const providerProducts = isProvider ? products.filter(p => p.providerId === currentUser.id) : [];
 
   const [starCount, setStarCount] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
@@ -222,7 +228,7 @@ export default function ProfilePage() {
   };
 
   const handleShareClick = async () => {
-    const currentItem = isProductProvider ? providerProducts[0] : (gallery && gallery.length > 0 ? gallery[currentImageIndex] : null);
+    const currentItem = isProductProvider ? products[0] : (gallery && gallery.length > 0 ? gallery[currentImageIndex] : null);
     if (!currentItem) return;
 
     const shareData = {
@@ -421,16 +427,16 @@ export default function ProfilePage() {
           <main className="space-y-4">
             <Tabs defaultValue={isProductProvider ? 'products' : 'publications'} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                 <TabsTrigger value="products">Catálogo ({isProvider ? providerProducts.length : 0})</TabsTrigger>
+                 <TabsTrigger value="products">Catálogo ({isProvider ? products.length : 0})</TabsTrigger>
                  <TabsTrigger value="publications">Publicaciones ({gallery.length})</TabsTrigger>
               </TabsList>
               
               <TabsContent value="products">
                   {isProvider ? (
-                    isLoadingGallery ? <Skeleton className="h-48 w-full" /> :
-                    providerProducts.length > 0 ? (
+                    isLoading ? <Skeleton className="h-48 w-full" /> :
+                    products.length > 0 ? (
                       <div className='p-2 grid grid-cols-2 sm:grid-cols-3 gap-2'>
-                        {providerProducts.map(product => (
+                        {products.map(product => (
                             <ProductGridCard 
                                 key={product.id} 
                                 product={product}
@@ -455,7 +461,7 @@ export default function ProfilePage() {
               <TabsContent value="publications">
                 <Card className="rounded-2xl overflow-hidden shadow-lg mt-2">
                   <CardContent className="p-0">
-                    {isLoadingGallery ? (
+                    {isLoading ? (
                         <div className="w-full aspect-video flex items-center justify-center bg-muted">
                            <Loader2 className="w-8 h-8 animate-spin text-primary" />
                         </div>
