@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from "next/image";
@@ -35,9 +36,10 @@ export function PublicationCard({ publication, owner, className }: PublicationCa
 
     useEffect(() => {
         setIsSaved(isContact(owner.id));
-        setLikeCount(Math.floor(Math.random() * 20));
-        setShareCount(Math.floor(Math.random() * 10));
-    }, [isContact, owner.id]);
+        // Initialize likes and shares to a base value for demonstration, avoiding Math.random
+        setLikeCount(publication.comments?.reduce((acc, c) => acc + (c.likes || 0), 0) || 0);
+        setShareCount(Math.floor(Math.random() * 10)); // Keep share random for now as it's not persisted
+    }, [isContact, owner.id, publication]);
 
     const handleSaveContact = () => {
         const success = addContact(owner);
@@ -56,8 +58,8 @@ export function PublicationCard({ publication, owner, className }: PublicationCa
     };
     
     const handleLike = () => {
-        setIsLiked(!isLiked);
-        setLikeCount(prev => isLiked ? prev - 1 : prev + 1);
+        setIsLiked(prev => !prev);
+        setLikeCount(prev => (isLiked ? prev - 1 : prev + 1));
     };
 
     const handleShare = async () => {
