@@ -241,29 +241,25 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   // Secure data loading useEffect
   useEffect(() => {
     if (!currentUser?.id) {
-        // Clear all data if user logs out
         setTransactions([]);
         setConversations([]);
         setProducts([]);
-        // Keep current user in users array until they are null
-        setUsers(prev => prev.filter(u => u.id === currentUser?.id));
+        setUsers([]);
         return;
     };
 
     const db = getFirestoreDb();
     const unsubs: (() => void)[] = [];
 
-    // --- User's own data ---
     const userDocRef = doc(db, 'users', currentUser.id);
     unsubs.push(onSnapshot(userDocRef, (doc) => {
         if (doc.exists()) setCurrentUser(doc.data() as User);
     }));
-    
+
     if (currentUser.profileSetupData?.location) {
         setDeliveryAddress(currentUser.profileSetupData.location);
     }
 
-    // --- Data related to the current user ---
     const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
     unsubs.push(onSnapshot(transactionsQuery, (snapshot) => {
         setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
@@ -274,14 +270,13 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         setConversations(snapshot.docs.map(doc => doc.data() as Conversation).sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()));
     }));
     
-    // --- Provider-specific data (Products) ---
+    // SAFEGUARD: Only subscribe to products if the user is a provider.
     if (currentUser.type === 'provider') {
         const productsQuery = query(collection(db, "products"), where("providerId", "==", currentUser.id));
         const unsubProducts = onSnapshot(productsQuery, (snapshot) => {
             setProducts(snapshot.docs.map(doc => doc.data() as Product));
         }, (error) => {
             console.error("Error fetching products:", error);
-            // This is where Firebase security rule errors would be caught.
             toast({
                 variant: "destructive",
                 title: "Error de Permisos",
@@ -293,22 +288,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         setProducts([]); // Ensure products are cleared if user is not a provider
     }
     
-    // --- All users (for admin or specific features) ---
-    if (currentUser.role === 'admin') {
-        const allUsersQuery = query(collection(db, "users"));
-        unsubs.push(onSnapshot(allUsersQuery, (snapshot) => {
-            setUsers(snapshot.docs.map(doc => doc.data() as User));
-        }));
-    } else if (currentUser) {
-        // For regular users, only keep their own data in the 'users' state initially
-        setUsers([currentUser]);
-    }
-
-
     return () => {
         unsubs.forEach(unsub => unsub());
     };
-  }, [currentUser, toast]);
+  }, [currentUser?.id, currentUser?.type, toast]);
 
 
   const getUserMetrics = useCallback((userId: string): UserMetrics => {
@@ -873,4 +856,5 @@ export type { Transaction };
     
 
     
+
 

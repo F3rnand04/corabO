@@ -203,5 +203,3 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex =
     </Dialog>
   );
 }
-
-    

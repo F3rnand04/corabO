@@ -189,11 +189,11 @@ export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductD
                                       <Button variant="ghost" size="icon" className="w-6 h-6" onClick={() => handleVote(index, 'like')}>
                                           <ThumbsUp className={`w-4 h-4 ${commentVotes[index] === 'like' ? 'text-primary fill-primary' : ''}`}/>
                                       </Button>
-                                       <span className="text-xs min-w-[1ch]">{comment.likes || 0}</span>
+                                       <span className="text-xs min-w-[1ch]">{0}</span>
                                       <Button variant="ghost" size="icon" className="w-6 h-6" onClick={() => handleVote(index, 'dislike')}>
                                           <ThumbsDown className={`w-4 h-4 ${commentVotes[index] === 'dislike' ? 'text-destructive fill-destructive' : ''}`}/>
                                       </Button>
-                                       <span className="text-xs min-w-[1ch]">{comment.dislikes || 0}</span>
+                                       <span className="text-xs min-w-[1ch]">{0}</span>
                                    </div>
                                </div>
                            </div>
@@ -218,5 +218,3 @@ export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductD
     </Dialog>
   );
 }
-
-    

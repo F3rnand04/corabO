@@ -103,5 +103,3 @@ export function ProductGridCard({ product, onDoubleClick }: ProductGridCardProps
         </div>
     );
 }
-
-    

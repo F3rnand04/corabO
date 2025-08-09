@@ -33,7 +33,6 @@ export default function HomePage() {
       setIsLoading(true);
       const db = getFirestoreDb();
       
-      // Securely query the most recent publications across all users
       const publicationsQuery = query(collectionGroup(db, "gallery"), orderBy("createdAt", "desc"), limit(20));
       const publicationsSnapshot = await getDocs(publicationsQuery);
 
@@ -53,7 +52,9 @@ export default function HomePage() {
       setIsLoading(false);
     };
 
-    fetchFeed();
+    if (currentUser) {
+        fetchFeed();
+    }
   }, [currentUser, fetchUser]);
 
 
@@ -129,5 +130,3 @@ export default function HomePage() {
     </main>
   );
 }
-
-    
