@@ -216,39 +216,29 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, [handleUserCreation, auth]);
   
   const fetchUser = useCallback(async (userId: string): Promise<User | null> => {
-    // Check cache first
-    let cachedUser = users.find(u => u.id === userId);
-    if (cachedUser) return cachedUser;
+    let user = users.find(u => u.id === userId);
+    if (user) return user;
 
     const db = getFirestoreDb();
-    const userRef = doc(db, 'users', userId);
-    const userSnap = await getDoc(userRef);
-
-    if (userSnap.exists()) {
-        const user = userSnap.data() as User;
-        
-        // Add user to cache if not present
-        setUsers(prev => {
-            if (!prev.some(u => u.id === userId)) {
-                return [...prev, user];
-            }
-            return prev;
-        });
-
-        // Fetch products only for this user and update the state
-        const productsQuery = query(collection(db, "products"), where("providerId", "==", userId));
-        const productsSnapshot = await getDocs(productsQuery);
-        if (!productsSnapshot.empty) {
-            const userProducts = productsSnapshot.docs.map(doc => doc.data() as Product);
-            setProducts(prev => {
-                const otherProducts = prev.filter(p => p.providerId !== userId);
-                return [...otherProducts, ...userProducts];
+    const userDocRef = doc(db, 'users', userId);
+    try {
+        const userSnap = await getDoc(userDocRef);
+        if (userSnap.exists()) {
+            user = userSnap.data() as User;
+            setUsers(prev => {
+                if (!prev.some(u => u.id === userId)) {
+                    return [...prev, user as User];
+                }
+                return prev.map(u => u.id === userId ? user as User : u);
             });
+            return user;
+        } else {
+            return null;
         }
-        
-        return user;
+    } catch (error) {
+        console.error("Error fetching user:", error);
+        return null;
     }
-    return null;
   }, [users]);
 
 
@@ -326,11 +316,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const effectiveness = totalMeaningfulTransactions > 0 ? (completedTransactions / totalMeaningfulTransactions) * 100 : 0;
   
     let responseTime = "Nuevo";
-    const paymentConfirmations = providerTransactions.filter(t => t.status === 'Pagado' && t.details.paymentVoucherUrl && t.details.paymentMethod);
+    const paymentConfirmations = providerTransactions.filter(t => t.status === 'Pagado' && t.details.paymentReportedDate && t.details.paymentConfirmationDate);
     if (paymentConfirmations.length > 0) {
       const totalResponseTime = paymentConfirmations.reduce((acc, t) => {
-        const reported = new Date(t.date); 
-        const confirmed = new Date();
+        const reported = new Date(t.details.paymentReportedDate!); 
+        const confirmed = new Date(t.details.paymentConfirmationDate!);
         return acc + differenceInMinutes(confirmed, reported);
       }, 0);
       const avgResponseTime = totalResponseTime / paymentConfirmations.length;

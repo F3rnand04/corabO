@@ -159,7 +159,7 @@ export function ProviderCard({ provider }: ProviderCardProps) {
 
                 {mainImage && (
                     <div className={cn(
-                        "relative w-full group",
+                        "relative w-full group cursor-pointer",
                         mainImage.aspectRatio === 'horizontal' ? 'aspect-video' :
                         mainImage.aspectRatio === 'vertical' ? 'aspect-[4/5]' :
                         'aspect-square'
@@ -178,6 +178,17 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                         </div>
                     </div>
                 )}
+                 <div className="flex justify-around items-center border-t">
+                    <Button variant="ghost" className="flex-1 text-muted-foreground font-semibold text-sm rounded-none h-12" onClick={handleDirectMessage}>
+                        Mensaje
+                    </Button>
+                    <Separator orientation="vertical" className="h-6" />
+                    <Link href={profileLink} passHref className="flex-1">
+                        <Button variant="ghost" className="w-full text-muted-foreground font-semibold text-sm rounded-none h-12">
+                            Ver Perfil
+                        </Button>
+                    </Link>
+                </div>
             </CardContent>
         </Card>
         <ReportDialog 

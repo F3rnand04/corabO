@@ -16,6 +16,7 @@ import { ReportDialog } from "./ReportDialog";
 import { cn } from "@/lib/utils";
 import { useRouter } from 'next/navigation';
 import { ImageDetailsDialog } from "./ImageDetailsDialog";
+import { useToast } from "@/hooks/use-toast";
 
 
 interface ServiceCardProps {
@@ -23,8 +24,9 @@ interface ServiceCardProps {
 }
 
 export function ServiceCard({ service }: ServiceCardProps) {
-  const { users, addContact, sendMessage } = useCorabo();
+  const { users, addContact, sendMessage, requestService, getUserMetrics } = useCorabo();
   const router = useRouter();
+  const { toast } = useToast();
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
 
@@ -34,16 +36,35 @@ export function ServiceCard({ service }: ServiceCardProps) {
   if (!provider) {
     return null; // or a fallback UI
   }
+  
+  const { reputation, effectiveness, responseTime } = getUserMetrics(provider.id);
+  const isNewProvider = responseTime === 'Nuevo';
 
   const profileLink = `/companies/${provider.id}`;
 
   const handleSaveContact = () => {
-    addContact(provider);
+    const success = addContact(provider);
+     if (success) {
+        toast({
+            title: "¡Contacto Guardado!",
+            description: `Has añadido a ${provider.name} a tus contactos.`
+        });
+    } else {
+        toast({
+            title: "Contacto ya existe",
+            description: `${provider.name} ya está en tu lista de contactos.`
+        });
+    }
   };
   
   const handleDirectMessage = () => {
       const conversationId = sendMessage(provider.id, '', true);
       router.push(`/messages/${conversationId}`);
+  };
+
+  const handleRequestService = () => {
+    requestService(service);
+    toast({ title: "Servicio Solicitado", description: `Has solicitado el servicio: ${service.name}` });
   };
 
   const isPromotionActive = provider.promotion && new Date(provider.promotion.expires) > new Date();
@@ -80,12 +101,18 @@ export function ServiceCard({ service }: ServiceCardProps) {
               <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                 <div className="flex items-center gap-1">
                   <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-                  <span className="font-semibold text-foreground">{provider.reputation}</span>
+                  <span className="font-semibold text-foreground">{reputation.toFixed(1)}</span>
                 </div>
                 <Separator orientation="vertical" className="h-4" />
-                <span>99.9% Efec.</span>
-                <Separator orientation="vertical" className="h-4" />
-                <span className="text-green-600 font-semibold">00-05 min</span>
+                {isNewProvider ? (
+                    <Badge variant="secondary">Nuevo</Badge>
+                ) : (
+                    <>
+                        <span>{effectiveness.toFixed(0)}% Efec.</span>
+                        <Separator orientation="vertical" className="h-4" />
+                        <span className="text-green-600 font-semibold">{responseTime}</span>
+                    </>
+                )}
               </div>
             </div>
             <div className="flex flex-col items-center gap-1 text-muted-foreground">
