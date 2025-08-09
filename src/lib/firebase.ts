@@ -15,31 +15,16 @@ const firebaseConfig = {
   "messagingSenderId": "220291714642"
 };
 
-
-let app: FirebaseApp;
-let db: Firestore;
-
-// This function can be called multiple times, but it will only initialize
-// the app and db once.
-function initializeFirebase() {
-    if (!getApps().length) {
-        app = initializeApp(firebaseConfig);
-        db = getFirestore(app);
-    } else {
-        app = getApp();
-        db = getFirestore(app); // Ensure db is assigned if app already exists
-    }
-}
-
+// Singleton pattern to ensure only one instance of Firebase is initialized.
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+const db = getFirestore(app);
 
 // Function to get the initialized Firebase app instance
 export function getFirebaseApp(): FirebaseApp {
-    if (!app) initializeFirebase();
     return app;
 }
 
 // Function to get the initialized Firestore instance
 export function getFirestoreDb(): Firestore {
-    if (!db) initializeFirebase();
     return db;
 }
