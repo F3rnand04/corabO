@@ -33,6 +33,7 @@ export default function HomePage() {
       setIsLoading(true);
       const db = getFirestoreDb();
       
+      // Simplified and safe query
       const providersQuery = query(
         collection(db, "users"), 
         where("type", "==", "provider"),
@@ -42,8 +43,11 @@ export default function HomePage() {
       try {
         const querySnapshot = await getDocs(providersQuery);
         const providerList = querySnapshot.docs.map(doc => doc.data() as User);
-        // Sort on the client side to avoid complex indexes
-        const sortedProviders = providerList.sort((a, b) => (b.reputation || 0) - (a.reputation || 0));
+        
+        // Filter and sort on the client side
+        const activeProviders = providerList.filter(p => p.isTransactionsActive);
+        const sortedProviders = activeProviders.sort((a, b) => (b.reputation || 0) - (a.reputation || 0));
+        
         setProviders(sortedProviders);
       } catch (error) {
         console.error("Error fetching providers:", error);
