@@ -15,24 +15,25 @@ const firebaseConfig = {
   "messagingSenderId": "220291714642"
 };
 
-let app: FirebaseApp;
-let db: Firestore;
 
-if (getApps().length === 0) {
-    app = initializeApp(firebaseConfig);
-} else {
-    app = getApp();
+function getFirebaseAppInstance(): FirebaseApp {
+    if (getApps().length === 0) {
+        return initializeApp(firebaseConfig);
+    } else {
+        return getApp();
+    }
 }
 
-db = getFirestore(app);
+const app = getFirebaseAppInstance();
+let db: Firestore | null = null;
 
-
-// Function to get the initialized Firebase app instance
 export function getFirebaseApp(): FirebaseApp {
     return app;
 }
 
-// Function to get the initialized Firestore instance
 export function getFirestoreDb(): Firestore {
+    if (!db) {
+        db = getFirestore(app);
+    }
     return db;
 }
