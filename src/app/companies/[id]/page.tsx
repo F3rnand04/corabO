@@ -150,9 +150,10 @@ export default function CompanyProfilePage() {
 
   if (!provider) {
     return (
-      <main className="container py-8">
+      <main className="container py-8 text-center">
         <h1 className="text-3xl font-bold">Perfil no encontrado</h1>
-        <p className="text-muted-foreground">No se pudo encontrar el proveedor.</p>
+        <p className="text-muted-foreground mt-4">No se pudo encontrar el proveedor que estás buscando.</p>
+        <Button onClick={() => router.push('/')} className="mt-6">Volver al Inicio</Button>
       </main>
     );
   }
@@ -801,3 +802,5 @@ export default function CompanyProfilePage() {
     </>
   );
 }
+
+    
