@@ -60,7 +60,9 @@ export default function HomePage() {
         }
     };
 
-    loadFeed();
+    if(currentUser) {
+        loadFeed();
+    }
   }, [currentUser]);
 
 
