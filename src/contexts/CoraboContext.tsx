@@ -52,7 +52,7 @@ interface CoraboState {
   isLoadingAuth: boolean;
   deliveryAddress: string;
   exchangeRate: number;
-  getRankedFeed: () => (GalleryImage & { provider: User })[];
+  getRankedFeed: () => (User)[];
   signInWithGoogle: () => void;
   setSearchQuery: (query: string) => void;
   clearSearchHistory: () => void;
@@ -298,8 +298,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
 
   const getRankedFeed = useCallback(() => {
-    return []; // This function is deprecated in favor of direct, secure fetching in HomePage
-  }, []);
+    return users.filter(user => user.type === 'provider');
+  }, [users]);
 
   const getUserMetrics = useCallback((userId: string): UserMetrics => {
     const providerTransactions = transactions.filter(t => t.providerId === userId);

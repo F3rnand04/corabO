@@ -23,40 +23,20 @@ const mainCategories = [
 ];
 
 export default function HomePage() {
-  const { searchQuery, feedView, currentUser, fetchUser, users } = useCorabo();
+  const { searchQuery, feedView, currentUser, getRankedFeed } = useCorabo();
   const [isLoading, setIsLoading] = useState(true);
-  const [feed, setFeed] = useState<(User)[]>([]);
+  
+  const feed = getRankedFeed();
 
+  // Simulate loading
   useEffect(() => {
-    const loadFeed = async () => {
-        if (!currentUser) return;
-        setIsLoading(true);
-        try {
-            const db = getFirestoreDb();
-            // This is the corrected, secure query. It fetches all users who are providers.
-            // In a production app with many users, this would be further optimized with pagination
-            // and more specific indexing, but for this stage, it's secure and functional.
-            const providersQuery = query(collection(db, "users"), where("type", "==", "provider"), limit(25));
-            const querySnapshot = await getDocs(providersQuery);
-            
-            const providers = querySnapshot.docs.map(doc => doc.data() as User);
-            
-            // Sort by creation date to get the most recent ones first
-            const sortedFeed = providers.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-
-            setFeed(sortedFeed);
-        } catch (error) {
-            console.error("Error loading feed:", error);
-            setFeed([]); // Ensure feed is empty on error
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    if(currentUser) {
-        loadFeed();
+    if (feed.length > 0 || !currentUser) {
+        setIsLoading(false);
+    } else {
+        const timer = setTimeout(() => setIsLoading(false), 1500); // Wait a bit in case feed is just slow
+        return () => clearTimeout(timer);
     }
-  }, [currentUser]);
+  }, [feed, currentUser]);
 
 
   const filteredFeed = useMemo(() => {
