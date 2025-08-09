@@ -218,7 +218,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       setProducts([]);
 
       if (firebaseUser) {
-        setIsLoadingAuth(true);
         const userData = await handleUserCreation(firebaseUser);
         setCurrentUser(userData);
 
@@ -257,9 +256,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             setDeliveryAddress(userData.profileSetupData.location);
         }
 
-      } else {
-        // User is signed out
-        setCurrentUser(null);
       }
       setIsLoadingAuth(false);
     });
