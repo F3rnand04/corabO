@@ -382,7 +382,7 @@ export default function ProfilePage() {
              {isProductProvider ? (
                 <Tabs defaultValue="products" className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="products">Productos <span className="ml-2 font-bold">({providerProducts.length})</span></TabsTrigger>
+                    <TabsTrigger value="products">Catálogo <span className="ml-2 font-bold">({providerProducts.length})</span></TabsTrigger>
                     <TabsTrigger value="publications">Publicaciones <span className="ml-2 font-bold">({gallery.length})</span></TabsTrigger>
                   </TabsList>
                   <TabsContent value="products">
@@ -400,7 +400,7 @@ export default function ProfilePage() {
                          <div className="w-full aspect-video bg-muted flex flex-col items-center justify-center text-center p-4 rounded-lg mt-2">
                               <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
                               <h3 className="font-bold text-lg text-foreground">
-                                  Tu vitrina de productos está vacía
+                                  Tu catálogo está vacío
                               </h3>
                               <p className="text-muted-foreground text-sm">
                                   Haz clic en el botón (+) en el pie de página para añadir tu primer producto.
