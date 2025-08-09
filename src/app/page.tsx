@@ -23,7 +23,7 @@ const mainCategories = [
 ];
 
 export default function HomePage() {
-  const { searchQuery, feedView, currentUser, users, fetchUser } = useCorabo();
+  const { searchQuery, feedView, currentUser, fetchUser, users: initialUsers } = useCorabo();
   const [feed, setFeed] = useState<(User & { galleryItem: GalleryImage })[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -31,16 +31,23 @@ export default function HomePage() {
     const fetchFeed = async () => {
       setIsLoading(true);
       const db = getFirestoreDb();
-      const galleryRef = collection(db, "gallery");
-      const q = query(galleryRef, orderBy("createdAt", "desc"), limit(20));
-      const querySnapshot = await getDocs(q);
       
+      // 1. Fetch a list of providers securely
+      const providersQuery = query(collection(db, "users"), where("type", "==", "provider"), limit(20));
+      const providerSnapshots = await getDocs(providersQuery);
+      const providers = providerSnapshots.docs.map(doc => doc.data() as User);
+
+      // 2. For each provider, fetch their most recent gallery item
       const feedItems = await Promise.all(
-        querySnapshot.docs.map(async (doc) => {
-          const galleryItem = doc.data() as GalleryImage;
-          const provider = await fetchUser(galleryItem.providerId);
-          if (provider) {
-            return { ...provider, galleryItem };
+        providers.map(async (provider) => {
+          if (!provider.gallery || provider.gallery.length === 0) {
+            return null; // Skip providers with no gallery items
+          }
+          // Assuming gallery is sorted by date, get the latest one.
+          const latestPublication = provider.gallery.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
+          
+          if (latestPublication) {
+            return { ...provider, galleryItem: latestPublication };
           }
           return null;
         })
@@ -50,8 +57,10 @@ export default function HomePage() {
       setIsLoading(false);
     };
 
-    fetchFeed();
-  }, [fetchUser]);
+    if(currentUser) {
+        fetchFeed();
+    }
+  }, [currentUser]);
 
   const filteredFeed = useMemo(() => {
     if (!feed.length) return [];
