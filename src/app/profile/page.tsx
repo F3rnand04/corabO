@@ -27,7 +27,7 @@ import { ProductDetailsDialog } from '@/components/ProductDetailsDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { collection, query, where, onSnapshot, Unsubscribe, orderBy } from 'firebase/firestore';
 import { getFirestoreDb } from '@/lib/firebase';
-import { Skeleton } from '../ui/skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 export default function ProfilePage() {
