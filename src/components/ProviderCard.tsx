@@ -1,101 +1,34 @@
 
 "use client";
 
-import Image from "next/image";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import type { User as UserType } from "@/lib/types";
-import { Star, MapPin, Bookmark, Send, MessageCircle, CheckCircle, Flag } from "lucide-react";
+import { Star, MapPin, Send, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { useState, useEffect } from "react";
-import { ReportDialog } from "./ReportDialog";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
-import { ImageDetailsDialog } from "./ImageDetailsDialog";
-import { useToast } from "@/hooks/use-toast";
-
+import { PublicationCard } from "./PublicationCard";
 
 interface ProviderCardProps {
     provider: UserType & { galleryItem: NonNullable<UserType['gallery']>[0] };
 }
 
 export function ProviderCard({ provider }: ProviderCardProps) {
-    const { addContact, sendMessage, isContact, getUserMetrics } = useCorabo();
+    const { sendMessage, getUserMetrics } = useCorabo();
     const router = useRouter();
-    const { toast } = useToast();
-    const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
-    const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
-    const [isSaved, setIsSaved] = useState(false);
-    const [isLiked, setIsLiked] = useState(false);
-    const [likeCount, setLikeCount] = useState(0);
-    const [shareCount, setShareCount] = useState(0);
     
     const profileLink = `/companies/${provider.id}`;
-
-    useEffect(() => {
-        setIsSaved(isContact(provider.id));
-    }, [isContact, provider.id]);
-
-    useEffect(() => {
-        setLikeCount(Math.floor(Math.random() * 20));
-        setShareCount(Math.floor(Math.random() * 10));
-    }, []);
-
-    const handleSaveContact = () => {
-        const success = addContact(provider);
-        if (success) {
-            toast({
-                title: "¡Contacto Guardado!",
-                description: `Has añadido a ${provider.name} a tus contactos.`
-            });
-            setIsSaved(true);
-        } else {
-            toast({
-                title: "Contacto ya existe",
-                description: `${provider.name} ya está en tu lista de contactos.`
-            });
-        }
-    };
 
     const handleDirectMessage = () => {
       const conversationId = sendMessage(provider.id, '', true);
       router.push(`/messages/${conversationId}`);
     };
     
-    const handleLike = () => {
-        setIsLiked(!isLiked);
-        setLikeCount(prev => isLiked ? prev - 1 : prev + 1);
-    };
-
-    const handleShare = async () => {
-        const mainImage = provider.galleryItem;
-        if (!mainImage) return;
-
-        const shareData = {
-          title: `Mira esta publicación de ${provider.name}`,
-          text: mainImage.description,
-          url: window.location.origin + profileLink,
-        };
-        try {
-            if (navigator.share) {
-                await navigator.share(shareData);
-                setShareCount(prev => prev + 1);
-            } else {
-                throw new Error("Share API not supported");
-            }
-        } catch (error) {
-           navigator.clipboard.writeText(shareData.url);
-           toast({
-             title: "Enlace Copiado",
-             description: "El enlace al perfil ha sido copiado.",
-           });
-        }
-    }
-
     const { reputation, effectiveness, responseTime } = getUserMetrics(provider.id);
     const isNewProvider = responseTime === 'Nuevo';
 
@@ -109,9 +42,7 @@ export function ProviderCard({ provider }: ProviderCardProps) {
     const mainImage = provider.galleryItem;
     if (!mainImage) return null;
 
-
     return (
-        <>
         <Card className="rounded-2xl overflow-hidden shadow-md">
             <CardContent className="p-0">
                 <div className="p-3">
@@ -121,17 +52,12 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                              <AvatarFallback className="text-xs">{displayName.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div className="flex-grow">
-                            <div className="flex justify-between items-start">
-                                <Link href={profileLink} passHref>
-                                    <div className="flex items-center gap-2 cursor-pointer group">
-                                        <p className="font-bold text-base group-hover:underline">{displayName}</p>
-                                        {provider.verified && <CheckCircle className="w-4 h-4 text-blue-500" />}
-                                    </div>
-                                </Link>
-                                <Button variant="ghost" size="icon" className="shrink-0 text-muted-foreground hover:text-primary" onClick={handleSaveContact}>
-                                    <Bookmark className={cn("w-5 h-5", isSaved && "fill-primary text-primary")} />
-                                </Button>
-                            </div>
+                            <Link href={profileLink} passHref>
+                                <div className="flex items-center gap-2 cursor-pointer group">
+                                    <p className="font-bold text-base group-hover:underline">{displayName}</p>
+                                    {provider.verified && <CheckCircle className="w-4 h-4 text-blue-500" />}
+                                </div>
+                            </Link>
                              <p className="text-sm text-muted-foreground">{specialty}</p>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                                 <div className="flex items-center gap-1">
@@ -157,25 +83,8 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                     </div>
                 </div>
 
-                <div className={cn(
-                    "relative w-full group cursor-pointer",
-                    mainImage.aspectRatio === 'horizontal' ? 'aspect-video' :
-                    mainImage.aspectRatio === 'vertical' ? 'aspect-[4/5]' :
-                    'aspect-square'
-                )} onDoubleClick={() => setIsDetailsDialogOpen(true)}>
-                    <Image 
-                        src={mainImage.src} 
-                        alt={mainImage.alt} 
-                        layout="fill" 
-                        objectFit="cover" 
-                        data-ai-hint="service person working" 
-                    />
-                    <div className="absolute bottom-2 right-2 flex flex-col items-end gap-2 text-white">
-                       <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10" onClick={handleDirectMessage}>
-                           <Send className="w-5 h-5" />
-                       </Button>
-                    </div>
-                </div>
+                <PublicationCard publication={mainImage} owner={provider} />
+
                  <div className="flex justify-around items-center border-t">
                     <Button variant="ghost" className="flex-1 text-muted-foreground font-semibold text-sm rounded-none h-12" onClick={handleDirectMessage}>
                         Mensaje
@@ -189,19 +98,5 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                 </div>
             </CardContent>
         </Card>
-        <ReportDialog 
-            isOpen={isReportDialogOpen} 
-            onOpenChange={setIsReportDialogOpen} 
-            providerId={provider.id} 
-            publicationId={provider.galleryItem.id}
-        />
-        <ImageDetailsDialog
-            isOpen={isDetailsDialogOpen}
-            onOpenChange={setIsDetailsDialogOpen}
-            gallery={[provider.galleryItem]}
-            owner={provider}
-            startIndex={0}
-        />
-        </>
     )
 }

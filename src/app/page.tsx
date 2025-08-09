@@ -7,6 +7,8 @@ import type { User, GalleryImage } from "@/lib/types";
 import { useMemo, useEffect, useState } from "react";
 import { ActivationWarning } from "@/components/ActivationWarning";
 import { Skeleton } from "@/components/ui/skeleton";
+import { collection, getDocs, query, where, limit, orderBy } from 'firebase/firestore';
+import { getFirestoreDb } from "@/lib/firebase";
 
 const mainCategories = [
   'Hogar y Reparaciones', 
@@ -21,32 +23,43 @@ const mainCategories = [
 ];
 
 export default function HomePage() {
-  const { searchQuery, feedView, currentUser, users } = useCorabo();
+  const { searchQuery, feedView, currentUser, users, fetchUser } = useCorabo();
+  const [feed, setFeed] = useState<(User & { galleryItem: GalleryImage })[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  // Deriving the feed from the users state
-  const feed = useMemo(() => {
-    return users
-      .filter(u => u.type === 'provider' && u.gallery && u.gallery.length > 0)
-      .map(provider => ({ ...provider, galleryItem: provider.gallery![provider.gallery!.length - 1] }));
-  }, [users]);
   
   useEffect(() => {
-      // Simulate loading state or handle async operations if users list were fetched here
-      if(users.length > 0) {
-          setIsLoading(false);
-      }
-  }, [users]);
+    const fetchFeed = async () => {
+      setIsLoading(true);
+      const db = getFirestoreDb();
+      const galleryRef = collection(db, "gallery");
+      const q = query(galleryRef, orderBy("createdAt", "desc"), limit(20));
+      const querySnapshot = await getDocs(q);
+      
+      const feedItems = await Promise.all(
+        querySnapshot.docs.map(async (doc) => {
+          const galleryItem = doc.data() as GalleryImage;
+          const provider = await fetchUser(galleryItem.providerId);
+          if (provider) {
+            return { ...provider, galleryItem };
+          }
+          return null;
+        })
+      );
+      
+      setFeed(feedItems.filter(Boolean) as (User & { galleryItem: GalleryImage })[]);
+      setIsLoading(false);
+    };
 
+    fetchFeed();
+  }, [fetchUser]);
 
   const filteredFeed = useMemo(() => {
     if (!feed.length) return [];
     
     const lowerCaseQuery = searchQuery.toLowerCase().trim();
 
-    // Filter by feed view first
-    let viewFiltered = feed.filter(provider => {
-        const providerType = provider.profileSetupData?.providerType || 'professional';
+    let viewFiltered = feed.filter(item => {
+        const providerType = item.profileSetupData?.providerType || 'professional';
         if (feedView === 'empresas') return providerType === 'company';
         return providerType !== 'company';
     });
@@ -57,20 +70,19 @@ export default function HomePage() {
     
     const isCategorySearch = mainCategories.some(cat => cat.toLowerCase() === lowerCaseQuery);
 
-    return viewFiltered.filter(provider => {
-        if (!provider) return false;
+    return viewFiltered.filter(item => {
+        if (!item) return false;
         
         if (isCategorySearch) {
-            const providerCategories = provider.profileSetupData?.categories || [];
-            return providerCategories.some(cat => cat.toLowerCase() === lowerCaseQuery) || provider.profileSetupData?.primaryCategory?.toLowerCase() === lowerCaseQuery;
+            const providerCategories = item.profileSetupData?.categories || [];
+            return providerCategories.some(cat => cat.toLowerCase() === lowerCaseQuery) || item.profileSetupData?.primaryCategory?.toLowerCase() === lowerCaseQuery;
         } else {
-            const providerName = provider.profileSetupData?.useUsername 
-                ? provider.profileSetupData.username 
-                : provider.name;
+            const providerName = item.profileSetupData?.useUsername 
+                ? item.profileSetupData.username 
+                : item.name;
             const providerNameMatch = providerName?.toLowerCase().includes(lowerCaseQuery);
-            const specialtyMatch = provider.profileSetupData?.specialty?.toLowerCase().includes(lowerCaseQuery);
-            // Search in the specific gallery item description shown in the feed
-            const publicationMatch = provider.galleryItem.description.toLowerCase().includes(lowerCaseQuery);
+            const specialtyMatch = item.profileSetupData?.specialty?.toLowerCase().includes(lowerCaseQuery);
+            const publicationMatch = item.galleryItem.description.toLowerCase().includes(lowerCaseQuery);
 
             return publicationMatch || providerNameMatch || specialtyMatch;
         }
@@ -89,7 +101,7 @@ export default function HomePage() {
   if (!currentUser) {
     return (
       <main className="container py-4 space-y-4">
-        {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[400px] w-full rounded-2xl" />)}
+        {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[500px] w-full rounded-2xl" />)}
       </main>
     );
   }
@@ -101,9 +113,9 @@ export default function HomePage() {
       )}
       <div className="space-y-4">
         {isLoading ? (
-          Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[400px] w-full rounded-2xl" />)
+          Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[500px] w-full rounded-2xl" />)
         ) : filteredFeed.length > 0 ? (
-          filteredFeed.map(provider => <ProviderCard key={provider.galleryItem.id} provider={provider} />)
+          filteredFeed.map(item => <ProviderCard key={item.galleryItem.id} provider={item} />)
         ) : (
           <p className="text-center text-muted-foreground pt-16">
             {noResultsMessage()}
