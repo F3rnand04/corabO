@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MapPin, FileText, Menu, Search, LogOut, User, ShoppingCart, Plus, Minus, X, Wallet, Truck, Star, History as HistoryIcon, Shield, HelpCircle } from "lucide-react";
@@ -23,11 +23,11 @@ import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader,
 import { Switch } from "./ui/switch";
 import { Label } from "./ui/label";
 import Image from "next/image";
-import { credicoraLevels } from "@/lib/types";
+import { credicoraLevels, type User as UserType } from "@/lib/types";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 
 export function Header() {
-  const { searchQuery, setSearchQuery, feedView, setFeedView, currentUser, users, toggleGps, cart, updateCartQuantity, getCartTotal, checkout, getDeliveryCost, logout } = useCorabo();
+  const { searchQuery, setSearchQuery, feedView, setFeedView, currentUser, fetchUser, toggleGps, cart, updateCartQuantity, getCartTotal, checkout, getDeliveryCost, logout } = useCorabo();
   const router = useRouter();
   
   const hasCompletedProfileSetup = !!currentUser?.profileSetupData;
@@ -35,9 +35,18 @@ export function Header() {
   const [isCheckoutAlertOpen, setIsCheckoutAlertOpen] = useState(false);
   const [includeDelivery, setIncludeDelivery] = useState(false);
   const [useCredicora, setUseCredicora] = useState(false);
+  const [provider, setProvider] = useState<UserType | null>(null);
 
   const cartTransaction = cart.length > 0 ? currentUser?.transactions?.find(tx => tx.status === 'Carrito Activo' && tx.clientId === currentUser.id) : undefined;
-  const provider = users.find(u => u.id === cartTransaction?.providerId);
+  
+  useEffect(() => {
+    if (cartTransaction?.providerId) {
+      fetchUser(cartTransaction.providerId).then(setProvider);
+    } else {
+      setProvider(null);
+    }
+  }, [cartTransaction, fetchUser]);
+
   const isDeliveryOnly = provider?.profileSetupData?.isOnlyDelivery || false;
   const providerAcceptsCredicora = provider?.profileSetupData?.acceptsCredicora || false;
 
