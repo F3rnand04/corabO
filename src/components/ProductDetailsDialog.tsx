@@ -90,15 +90,15 @@ export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductD
     const comment = newComments[index];
 
     // Annul previous vote if any
-    if (currentVote === 'like') comment.likes = (comment.likes || 0) - 1;
-    if (currentVote === 'dislike') comment.dislikes = (comment.dislikes || 0) - 1;
+    if (currentVote === 'like') comment.likes = 0;
+    if (currentVote === 'dislike') comment.dislikes = 0;
 
     // Apply new vote
     if (currentVote === voteType) { // User is annulling their vote
       setCommentVotes(prev => ({ ...prev, [index]: null }));
     } else { // User is casting a new vote
-      if (voteType === 'like') comment.likes = (comment.likes || 0) + 1;
-      if (voteType === 'dislike') comment.dislikes = (comment.dislikes || 0) + 1;
+      if (voteType === 'like') comment.likes = 1;
+      if (voteType === 'dislike') comment.dislikes = 1;
       setCommentVotes(prev => ({ ...prev, [index]: voteType }));
     }
 
@@ -218,3 +218,5 @@ export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductD
     </Dialog>
   );
 }
+
+    

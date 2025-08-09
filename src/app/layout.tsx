@@ -9,7 +9,6 @@ import { Inter } from 'next/font/google';
 export const metadata: Metadata = {
   title: 'corabO.app',
   description: 'Aplicación Funcional corabO',
-  manifest: '/manifest.json',
 };
 
 const inter = Inter({
@@ -39,3 +38,5 @@ export default function RootLayout({
     </html>
   );
 }
+
+    

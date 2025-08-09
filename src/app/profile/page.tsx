@@ -38,6 +38,7 @@ export default function ProfilePage() {
 
   const isProvider = currentUser.type === 'provider';
   const isProductProvider = isProvider && currentUser.profileSetupData?.offerType === 'product';
+  // Products now come directly from the filtered context state
   const providerProducts = products; 
 
   const [starCount, setStarCount] = useState(0);
@@ -513,3 +514,5 @@ export default function ProfilePage() {
     </>
   );
 }
+
+    

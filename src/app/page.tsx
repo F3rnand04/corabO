@@ -2,7 +2,7 @@
 "use client";
 
 import { useCorabo } from "@/contexts/CoraboContext";
-import { ProviderCard } from "@/components/ProviderCard";
+import { PublicationCard } from "@/components/PublicationCard";
 import type { User, GalleryImage } from "@/lib/types";
 import { useMemo, useEffect, useState } from "react";
 import { ActivationWarning } from "@/components/ActivationWarning";
@@ -119,7 +119,7 @@ export default function HomePage() {
         {isLoading ? (
           Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[500px] w-full rounded-2xl" />)
         ) : filteredFeed.length > 0 ? (
-          filteredFeed.map(item => <ProviderCard key={item.galleryItem.id} provider={item} />)
+          filteredFeed.map(item => <PublicationCard key={item.galleryItem.id} publication={item.galleryItem} owner={item} />)
         ) : (
           <p className="text-center text-muted-foreground pt-16">
             {noResultsMessage()}
@@ -129,3 +129,5 @@ export default function HomePage() {
     </main>
   );
 }
+
+    

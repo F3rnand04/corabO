@@ -164,9 +164,9 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex =
                                    <p className="text-sm text-muted-foreground">{comment.text}</p>
                                    <div className="flex items-center gap-2 mt-1 text-muted-foreground">
                                       <Button variant="ghost" size="icon" className="w-6 h-6"><ThumbsUp className="w-4 h-4"/></Button>
-                                      <span className="text-xs">{comment.likes || 0}</span>
+                                      <span className="text-xs">{0}</span>
                                       <Button variant="ghost" size="icon" className="w-6 h-6"><ThumbsDown className="w-4 h-4"/></Button>
-                                      <span className="text-xs">{comment.dislikes || 0}</span>
+                                      <span className="text-xs">{0}</span>
                                    </div>
                                </div>
                                 {comment.author === currentUser.name && (
@@ -203,3 +203,5 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex =
     </Dialog>
   );
 }
+
+    

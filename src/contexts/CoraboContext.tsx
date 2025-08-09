@@ -11,7 +11,7 @@ import { add, subDays, startOfDay, differenceInDays, differenceInHours, differen
 import { credicoraLevels } from '@/lib/types';
 import { getAuth, signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, GoogleAuthProvider, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getFirebaseApp, getFirestoreDb } from '@/lib/firebase';
-import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, enableIndexedDbPersistence, arrayUnion, getDocs, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, enableIndexedDbPersistence, arrayUnion, getDocs, deleteDoc, collectionGroup } from 'firebase/firestore';
 import { createCampaign } from '@/ai/flows/campaign-flow';
 import { acceptProposal as acceptProposalFlow, sendMessage as sendMessageFlow } from '@/ai/flows/message-flow';
 import * as TransactionFlows from '@/ai/flows/transaction-flow';
@@ -245,7 +245,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         setTransactions([]);
         setConversations([]);
         setProducts([]);
-        setUsers([]);
+        // Keep current user in users array until they are null
+        setUsers(prev => prev.filter(u => u.id === currentUser?.id));
         return;
     };
 
@@ -273,26 +274,32 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         setConversations(snapshot.docs.map(doc => doc.data() as Conversation).sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()));
     }));
     
-    // --- Provider-specific data ---
+    // --- Provider-specific data (Products) ---
     if (currentUser.type === 'provider') {
         const productsQuery = query(collection(db, "products"), where("providerId", "==", currentUser.id));
-        unsubs.push(onSnapshot(productsQuery, (snapshot) => {
+        const unsubProducts = onSnapshot(productsQuery, (snapshot) => {
             setProducts(snapshot.docs.map(doc => doc.data() as Product));
         }, (error) => {
             console.error("Error fetching products:", error);
-        }));
+            // This is where Firebase security rule errors would be caught.
+            toast({
+                variant: "destructive",
+                title: "Error de Permisos",
+                description: "No se pudieron cargar tus productos. Contacta a soporte.",
+            });
+        });
+        unsubs.push(unsubProducts);
     } else {
         setProducts([]); // Ensure products are cleared if user is not a provider
     }
     
     // --- All users (for admin or specific features) ---
-    // This query is now only run if the user is an admin
     if (currentUser.role === 'admin') {
         const allUsersQuery = query(collection(db, "users"));
         unsubs.push(onSnapshot(allUsersQuery, (snapshot) => {
             setUsers(snapshot.docs.map(doc => doc.data() as User));
         }));
-    } else {
+    } else if (currentUser) {
         // For regular users, only keep their own data in the 'users' state initially
         setUsers([currentUser]);
     }
@@ -862,5 +869,7 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
+
+    
 
     

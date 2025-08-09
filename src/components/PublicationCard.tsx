@@ -36,8 +36,8 @@ export function PublicationCard({ publication, owner, className }: PublicationCa
 
     useEffect(() => {
         setIsSaved(isContact(owner.id));
-        setLikeCount(0);
-        setShareCount(0);
+        setLikeCount(0); // Reset likes
+        setShareCount(0); // Reset shares
     }, [isContact, owner.id, publication]);
 
     const handleSaveContact = () => {
@@ -160,3 +160,5 @@ export function PublicationCard({ publication, owner, className }: PublicationCa
         </>
     );
 }
+
+    
