@@ -32,17 +32,14 @@ export default function ProfilePage() {
   const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, transactions, getAgendaEvents, products, getUserMetrics } = useCorabo();
   const router = useRouter();
   
-  // This is a critical guard. Return null or a loader if currentUser is not available yet.
   if (!currentUser) {
     return null;
   }
 
   const isProvider = currentUser.type === 'provider';
   const isProductProvider = isProvider && currentUser.profileSetupData?.offerType === 'product';
-  // Correctly filter products associated with the current user.
   const providerProducts = products.filter(p => p.providerId === currentUser.id);
 
-  // Local state for interactions
   const [starCount, setStarCount] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
   const [shareCount, setShareCount] = useState(0);
@@ -86,7 +83,7 @@ export default function ProfilePage() {
   useEffect(() => {
     const interval = setInterval(() => {
       setForceRerender(Math.random());
-    }, 1000 * 60); // Rerender every minute to update promotion time
+    }, 1000 * 60);
     return () => clearInterval(interval);
   }, []);
 
@@ -111,7 +108,6 @@ export default function ProfilePage() {
     removeGalleryImage(currentUser.id, imageId);
     toast({ title: "Publicación Eliminada", description: "La imagen ha sido eliminada de tu galería." });
     setIsDetailsDialogOpen(false);
-    // Reset index if needed
     if (currentImageIndex >= (currentUser.gallery?.length ?? 1) - 1) {
       setCurrentImageIndex(0);
     }
@@ -191,7 +187,7 @@ export default function ProfilePage() {
     const shareData = {
       title: `Mira esto de ${currentUser.name}`,
       text: 'description' in currentItem ? currentItem.description : '',
-      url: window.location.href, // Shares the URL of the current profile page
+      url: window.location.href,
     };
 
     try {
@@ -384,7 +380,6 @@ export default function ProfilePage() {
           
           <main className="space-y-4">
              {isProductProvider ? (
-                // PRODUCT VIEW WITH TABS
                 <Tabs defaultValue="products" className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="products">Productos <span className="ml-2 font-bold">({providerProducts.length})</span></TabsTrigger>
@@ -434,7 +429,6 @@ export default function ProfilePage() {
                                                 data-ai-hint="professional workspace"
                                                 key={currentImage!.src} 
                                             />
-                                            {/* ... Other buttons for image ... */}
                                         </div>
                                         <div className="p-2 grid grid-cols-3 gap-1">
                                             {gallery.map((thumb, index) => (
@@ -476,7 +470,6 @@ export default function ProfilePage() {
                     </TabsContent>
                 </Tabs>
             ) : (
-                // GALLERY (SERVICE) VIEW
                 <Card className="rounded-2xl overflow-hidden shadow-lg">
                 <CardContent className="p-0">
                     <div 
@@ -637,9 +630,3 @@ export default function ProfilePage() {
     </>
   );
 }
-
-    
-
-    
-
-

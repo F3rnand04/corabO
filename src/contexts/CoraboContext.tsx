@@ -9,10 +9,9 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { add, subDays, startOfDay, differenceInDays, differenceInHours, differenceInMinutes } from 'date-fns';
 import { credicoraLevels } from '@/lib/types';
-// Import necessary firebase services directly
 import { getAuth, signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, GoogleAuthProvider, setPersistence, browserLocalPersistence } from 'firebase/auth';
-import { getFirebaseApp, getFirestoreDb } from '@/lib/firebase'; // Import the new getter functions
-import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, enableIndexedDbPersistence, arrayUnion, getDocs } from 'firebase/firestore';
+import { getFirebaseApp, getFirestoreDb } from '@/lib/firebase';
+import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, enableIndexedDbPersistence, arrayUnion, getDocs, deleteDoc } from 'firebase/firestore';
 import { createCampaign } from '@/ai/flows/campaign-flow';
 import { acceptProposal as acceptProposalFlow, sendMessage as sendMessageFlow } from '@/ai/flows/message-flow';
 import * as TransactionFlows from '@/ai/flows/transaction-flow';
@@ -38,7 +37,7 @@ interface UserMetrics {
 
 interface CoraboState {
   currentUser: User | null;
-  users: User[]; // This will now only store fetched users, not all users
+  users: User[]; 
   fetchUser: (userId: string) => Promise<User | null>;
   products: Product[];
   services: Service[];
@@ -106,7 +105,6 @@ interface CoraboState {
   createCampaign: typeof createCampaign;
   setDeliveryAddress: (address: string) => void;
   markConversationAsRead: (conversationId: string) => void;
-  // Admin functions
   toggleUserPause: (userId: string, currentIsPaused: boolean) => void;
   verifyCampaignPayment: (transactionId: string, campaignId: string) => void;
   verifyUserId: (userId: string) => void;
@@ -118,7 +116,6 @@ interface CoraboState {
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
 
-// Import mock data - we'll phase this out
 import { services as mockServices, initialTransactions, initialConversations } from '@/lib/mock-data';
 
 export const CoraboProvider = ({ children }: { children: ReactNode }) => {
@@ -127,14 +124,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-
-  // We still use mock data for these until we migrate them to Firestore
   const [services, setServices] = useState(mockServices);
   
-  const [users, setUsers] = useState<User[]>([]); // Will only store fetched users
+  const [users, setUsers] = useState<User[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   
-  // These will be managed by Firestore
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   
@@ -146,12 +140,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [isGpsActive, setIsGpsActive] = useState(true);
   const [dailyQuotes, setDailyQuotes] = useState<Record<string, DailyQuote[]>>({});
   const [deliveryAddress, setDeliveryAddress] = useState('');
-  const [exchangeRate, setExchangeRate] = useState(36.54); // Default value
+  const [exchangeRate, setExchangeRate] = useState(36.54);
   
   const app = getFirebaseApp();
   const auth = getAuth(app);
   
-  // Fetch exchange rate on initial load
   useEffect(() => {
     const fetchRate = async () => {
       try {
@@ -159,7 +152,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         setExchangeRate(rate);
       } catch (error) {
         console.error("Failed to fetch exchange rate:", error);
-        // Keep the default rate in case of an error
       }
     };
     fetchRate();
@@ -191,7 +183,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
         type: 'client',
         reputation: 0,
-        effectiveness: 100, // Start at 100%
+        effectiveness: 100,
         phone: '',
         emailValidated: firebaseUser.emailVerified,
         phoneValidated: false,
@@ -224,24 +216,29 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, [handleUserCreation, auth]);
   
   const fetchUser = useCallback(async (userId: string): Promise<User | null> => {
+    // Check cache first
     let cachedUser = users.find(u => u.id === userId);
     if (cachedUser) return cachedUser;
 
     const db = getFirestoreDb();
     const userRef = doc(db, 'users', userId);
     const userSnap = await getDoc(userRef);
+
     if (userSnap.exists()) {
         const user = userSnap.data() as User;
         
+        // Securely fetch products for this specific user
         const productsQuery = query(collection(db, "products"), where("providerId", "==", userId));
         const productsSnapshot = await getDocs(productsQuery);
         const userProducts = productsSnapshot.docs.map(doc => doc.data() as Product);
         
+        // Update products state without removing others
         setProducts(prev => {
             const otherProducts = prev.filter(p => p.providerId !== userId);
             return [...otherProducts, ...userProducts];
         });
 
+        // Add user to cache if not present
         setUsers(prev => {
             if (!prev.some(u => u.id === userId)) {
                 return [...prev, user];
@@ -254,43 +251,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return null;
   }, [users]);
 
-
-  const getUserMetrics = useCallback((userId: string): UserMetrics => {
-    const providerTransactions = transactions.filter(t => t.providerId === userId);
-  
-    // Check for new provider status
-    const totalMeaningfulTransactions = providerTransactions.filter(t => t.status !== 'Carrito Activo' && t.status !== 'Pre-factura Pendiente').length;
-    if (totalMeaningfulTransactions === 0) {
-        return { reputation: 0, effectiveness: 0, responseTime: "Nuevo" };
-    }
-
-    // Reputation calculation
-    const ratedTransactions = providerTransactions.filter(t => (t.status === 'Pagado' || t.status === 'Resuelto') && t.details.clientRating);
-    const totalRating = ratedTransactions.reduce((acc, t) => acc + (t.details.clientRating || 0), 0);
-    const reputation = ratedTransactions.length > 0 ? totalRating / ratedTransactions.length : 0;
-  
-    // Effectiveness calculation
-    const completedTransactions = providerTransactions.filter(t => t.status === 'Pagado' || t.status === 'Resuelto').length;
-    const effectiveness = (completedTransactions / totalMeaningfulTransactions) * 100;
-  
-    // Response time calculation
-    let responseTime = "Nuevo";
-    const paymentConfirmations = providerTransactions.filter(t => t.status === 'Pagado' && t.details.paymentConfirmationDate && t.details.paymentReportedDate);
-    if (paymentConfirmations.length > 0) {
-      const totalResponseTime = paymentConfirmations.reduce((acc, t) => {
-        const reported = new Date(t.details.paymentReportedDate!);
-        const confirmed = new Date(t.details.paymentConfirmationDate!);
-        return acc + differenceInMinutes(confirmed, reported);
-      }, 0);
-      const avgResponseTime = totalResponseTime / paymentConfirmations.length;
-      if (avgResponseTime <= 5) responseTime = "00-05 min";
-      else if (avgResponseTime <= 15) responseTime = "05-15 min";
-      else responseTime = "+15 min";
-    }
-  
-    return { reputation, effectiveness, responseTime };
-  }, [transactions]);
-  
 
   useEffect(() => {
     if (!currentUser?.id) return;
@@ -308,7 +268,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const unsubs: (() => void)[] = [];
     let isMounted = true;
   
-    // Listener for the current user's document
     const userDocRef = doc(db, 'users', currentUser.id);
     unsubs.push(onSnapshot(userDocRef, (doc) => {
       if (isMounted && doc.exists()) {
@@ -316,7 +275,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       }
     }, (error) => console.error("Current user snapshot error:", error)));
   
-    // Correct, secure query for transactions involving the current user
     const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
     unsubs.push(onSnapshot(transactionsQuery, (snapshot) => {
       if (isMounted) {
@@ -324,7 +282,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       }
     }, (error) => console.error("Transactions snapshot error:", error)));
   
-    // Correct, secure query for conversations involving the current user
     const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id));
     unsubs.push(onSnapshot(conversationsQuery, (snapshot) => {
       if (isMounted) {
@@ -332,7 +289,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       }
     }, (error) => console.error("Conversations snapshot error:", error)));
   
-    // Load products ONLY for the current user if they are a provider
     if (currentUser.type === 'provider') {
       const productsQuery = query(collection(db, "products"), where("providerId", "==", currentUser.id));
       unsubs.push(onSnapshot(productsQuery, (snapshot) => {
@@ -346,31 +302,53 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       isMounted = false;
       unsubs.forEach(unsub => unsub());
     };
-  }, [currentUser?.id]); // Only re-run if the user ID changes
+  }, [currentUser?.id]);
   
 
 
   const getRankedFeed = useCallback(() => {
-    // This function needs to be re-evaluated as it depends on having all users, which is insecure.
-    // For now, it will only rank based on the users currently fetched.
-    if (!currentUser || !users.length) return [];
-  
-    const allPublications = users
-      .filter(u => u.type === 'provider' && u.gallery && u.gallery.length > 0)
-      .flatMap(p => p.gallery!.map(g => ({ ...g, provider: p })));
+    return []; // This function is deprecated in favor of direct, secure fetching in HomePage
+  }, []);
 
-    // Placeholder ranking, needs secure backend implementation
-    return allPublications.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [currentUser, users]);
+  const getUserMetrics = useCallback((userId: string): UserMetrics => {
+    const providerTransactions = transactions.filter(t => t.providerId === userId);
+    
+    const totalMeaningfulTransactions = providerTransactions.filter(t => t.status !== 'Carrito Activo' && t.status !== 'Pre-factura Pendiente').length;
+    if (totalMeaningfulTransactions === 0) {
+        return { reputation: 0, effectiveness: 0, responseTime: "Nuevo" };
+    }
+
+    const ratedTransactions = providerTransactions.filter(t => (t.status === 'Pagado' || t.status === 'Resuelto') && t.details.clientRating);
+    const totalRating = ratedTransactions.reduce((acc, t) => acc + (t.details.clientRating || 0), 0);
+    const reputation = ratedTransactions.length > 0 ? totalRating / ratedTransactions.length : 0;
+  
+    const completedTransactions = providerTransactions.filter(t => t.status === 'Pagado' || t.status === 'Resuelto').length;
+    const effectiveness = totalMeaningfulTransactions > 0 ? (completedTransactions / totalMeaningfulTransactions) * 100 : 0;
+  
+    let responseTime = "Nuevo";
+    const paymentConfirmations = providerTransactions.filter(t => t.status === 'Pagado' && t.details.paymentVoucherUrl && t.details.paymentMethod);
+    if (paymentConfirmations.length > 0) {
+      const totalResponseTime = paymentConfirmations.reduce((acc, t) => {
+        const reported = new Date(t.date); 
+        const confirmed = new Date();
+        return acc + differenceInMinutes(confirmed, reported);
+      }, 0);
+      const avgResponseTime = totalResponseTime / paymentConfirmations.length;
+      if (avgResponseTime <= 5) responseTime = "00-05 min";
+      else if (avgResponseTime <= 15) responseTime = "05-15 min";
+      else responseTime = "+15 min";
+    }
+  
+    return { reputation, effectiveness, responseTime };
+  }, [transactions]);
 
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
     try {
       await setPersistence(auth, browserLocalPersistence);
-      setIsLoadingAuth(true); // Set loading to true before starting sign-in
+      setIsLoadingAuth(true);
       await signInWithPopup(auth, provider);
-      // onAuthStateChanged will handle the rest
     } catch (error) {
       console.error("Error signing in with Google: ", error);
       toast({
@@ -378,14 +356,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         title: 'Error de Autenticación',
         description: 'No se pudo iniciar sesión con Google. Por favor, inténtalo de nuevo.'
       });
-      setIsLoadingAuth(false); // Reset loading on error
+      setIsLoadingAuth(false);
     }
   };
 
   const logout = async () => {
     try {
         await signOut(auth);
-        setCurrentUser(null); // Clear user state immediately
+        setCurrentUser(null);
         router.push('/login');
     } catch (error) {
         console.error("Error signing out: ", error);
@@ -395,7 +373,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const setSearchQuery = (query: string) => {
     _setSearchQuery(query);
     if (query.trim() && !searchHistory.includes(query.trim())) {
-        setSearchHistory(prev => [query.trim(), ...prev].slice(0, 10)); // Keep last 10 searches
+        setSearchHistory(prev => [query.trim(), ...prev].slice(0, 10));
     }
   }
   
@@ -408,8 +386,19 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const db = getFirestoreDb();
     const productRef = doc(db, 'products', product.id);
     await setDoc(productRef, product);
-    // Optimistic update
-    setProducts(prev => [...prev, product]);
+    // Publication for the feed
+    const publicationRef = doc(db, 'publications', `pub-prod-${product.id}`);
+    const newPublication: GalleryImage = {
+        id: `pub-prod-${product.id}`,
+        providerId: currentUser.id,
+        type: 'image',
+        src: product.imageUrl,
+        alt: product.name,
+        description: product.description,
+        createdAt: new Date().toISOString(),
+        aspectRatio: 'square'
+    }
+    await setDoc(publicationRef, newPublication);
   };
 
   const addToCart = (product: Product, quantity: number) => {
@@ -476,9 +465,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const getCartTotal = () => cart.reduce((total, item) => total + item.product.price * item.quantity, 0);
   
   const getDeliveryCost = () => {
-    // Simulate distance calculation. In a real app, use a mapping service.
-    // Here we use a random factor for demonstration.
-    const distanceInKm = (Math.random() * 9) + 1; // Random distance between 1 and 10 km
+    const distanceInKm = (Math.random() * 9) + 1;
     return distanceInKm * 1.5;
   };
   
@@ -500,7 +487,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const db = getFirestoreDb();
     const userDocRef = doc(db, 'users', userId);
     await updateDoc(userDocRef, updates);
-    // Optimistically update local state for immediate feedback
     if (currentUser?.id === userId) {
       setCurrentUser(prev => prev ? { ...prev, ...updates } : null);
     }
@@ -601,8 +587,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-
-  // --- Transaction Flows ---
   const sendQuote = (transactionId: string, quote: { breakdown: string; total: number }) => {
     if (!currentUser) return;
     TransactionFlows.sendQuote({ transactionId, userId: currentUser.id, breakdown: quote.breakdown, total: quote.total });
@@ -639,7 +623,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     TransactionFlows.createAppointmentRequest({ ...request, clientId: currentUser.id });
   };
 
-  // --- Admin Functions ---
   const toggleUserPause = (userId: string, currentIsPaused: boolean) => {
     updateUser(userId, { isPaused: !currentIsPaused });
   };
@@ -656,7 +639,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const verifyUserId = (userId: string) => updateUser(userId, { idVerificationStatus: 'verified', verified: true });
   const rejectUserId = (userId: string) => updateUser(userId, { idVerificationStatus: 'rejected' });
   const setIdVerificationPending = async (userId: string, documentUrl: string) => {
-    // This is now a simple Firestore update. The AI flow is called separately from the component.
     await updateUser(userId, { idVerificationStatus: 'pending', idDocumentUrl: documentUrl });
   };
   const autoVerifyIdWithAI = async (input: VerificationInput) => {
@@ -675,19 +657,34 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const updateUserProfileAndGallery = async (userId: string, image: GalleryImage) => {
     if (!currentUser) return;
     const db = getFirestoreDb();
+    
+    // Atomically add to user's gallery and create a new publication document
+    const batch = writeBatch(db);
+    
     const userRef = doc(db, 'users', userId);
-    await updateDoc(userRef, {
-        gallery: arrayUnion(image)
-    });
-    setCurrentUser(prev => prev ? { ...prev, gallery: [...(prev.gallery || []), image] } : null);
+    batch.update(userRef, { gallery: arrayUnion(image) });
+    
+    const publicationRef = doc(db, 'publications', image.id);
+    batch.set(publicationRef, image);
+    
+    await batch.commit();
   };
 
   const removeGalleryImage = async (userId: string, imageId: string) => {
     if(!currentUser || !currentUser.gallery) return;
+    const db = getFirestoreDb();
+
+    // Atomically remove from user's gallery and delete the publication document
+    const batch = writeBatch(db);
+
     const updatedGallery = currentUser.gallery.filter(image => image.id !== imageId);
-    await updateUser(userId, { gallery: updatedGallery });
-    // Optimistic update
-    setCurrentUser(prev => prev ? { ...prev, gallery: updatedGallery } : null);
+    const userRef = doc(db, 'users', userId);
+    batch.update(userRef, { gallery: updatedGallery });
+
+    const publicationRef = doc(db, 'publications', imageId);
+    batch.delete(publicationRef);
+    
+    await batch.commit();
   };
   
   const validateEmail = async (userId: string, emailToValidate: string): Promise<boolean> => {
@@ -903,7 +900,3 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
-
-    
-
-    

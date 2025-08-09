@@ -46,14 +46,14 @@ export type GalleryImageComment = {
 
 export type GalleryImage = {
   id: string;
-  providerId: string; // Added to link back to the provider
+  providerId: string;
   type: 'image' | 'video';
   src: string;
   alt: string;
   description: string;
-  createdAt: string; // Added for chronological sorting
+  createdAt: string;
   comments?: GalleryImageComment[];
-  isTemporary?: boolean; // Flag for promotions from clients
+  isTemporary?: boolean;
   promotion?: {
     text: string;
     expires: string;
@@ -228,7 +228,7 @@ export type TransactionStatus =
   | 'Recarga'
   | 'Pendiente de Confirmación del Cliente'
   | 'Pago Enviado - Esperando Confirmación'
-  | 'En Reparto'; // New status for delivery
+  | 'En Reparto';
 
 export type AgreementProposal = {
     title: string;
@@ -245,8 +245,8 @@ export type Transaction = {
   date: string;
   amount: number;
   clientId: string;
-  providerId?: string; // Optional for system transactions
-  participantIds?: string[]; // For Firestore queries
+  providerId?: string;
+  participantIds?: string[];
   details: {
     items?: CartItem[];
     serviceName?: string;
@@ -258,8 +258,8 @@ export type Transaction = {
     quoteItems?: string[];
     delivery?: boolean;
     deliveryCost?: number;
-    deliveryProviderId?: string; // To link the delivery provider
-    system?: string; // Description for system transactions e.g., 'Recarga de Saldo'
+    deliveryProviderId?: string;
+    system?: string;
     paymentMethod?: 'direct' | 'credicora';
     initialPayment?: number;
     totalAmount?: number;
@@ -267,9 +267,11 @@ export type Transaction = {
     clientRating?: number;
     clientComment?: string;
     paymentFromThirdParty?: boolean;
-    originAddress?: string; // For delivery
-    destinationAddress?: string; // For delivery
-    paymentVoucherUrl?: string; // For admin verification
+    originAddress?: string;
+    destinationAddress?: string;
+    paymentVoucherUrl?: string;
+    paymentReportedDate?: string; 
+    paymentConfirmationDate?: string;
   };
 };
 
@@ -303,5 +305,3 @@ export type VerificationOutput = {
     nameMatch: boolean;
     idMatch: boolean;
 };
-
-    

@@ -6,7 +6,7 @@ import { ProviderCard } from "@/components/ProviderCard";
 import type { User, GalleryImage } from "@/lib/types";
 import { useMemo, useEffect, useState } from "react";
 import { ActivationWarning } from "@/components/ActivationWarning";
-import { collection, getDocs, limit, query, where } from "firebase/firestore";
+import { collection, getDocs, limit, query, where, orderBy } from "firebase/firestore";
 import { getFirestoreDb } from "@/lib/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -23,37 +23,41 @@ const mainCategories = [
 ];
 
 export default function HomePage() {
-  const { searchQuery, feedView, currentUser, getRankedFeed, fetchUser } = useCorabo();
+  const { searchQuery, feedView, currentUser, fetchUser } = useCorabo();
   const [isLoading, setIsLoading] = useState(true);
   const [feed, setFeed] = useState<(GalleryImage & { provider: User })[]>([]);
 
   useEffect(() => {
     const loadFeed = async () => {
+        if (!currentUser) return;
         setIsLoading(true);
-        const db = getFirestoreDb();
-        // Securely fetch publications, e.g., limit to a reasonable number
-        const q = query(collection(db, "publications"), limit(50));
-        const querySnapshot = await getDocs(q);
-        const publications = querySnapshot.docs.map(doc => doc.data() as GalleryImage);
+        try {
+            const db = getFirestoreDb();
+            // Securely fetch the latest 50 publications
+            const publicationsQuery = query(collection(db, "publications"), orderBy("createdAt", "desc"), limit(50));
+            const querySnapshot = await getDocs(publicationsQuery);
+            const publications = querySnapshot.docs.map(doc => doc.data() as GalleryImage);
 
-        // Fetch provider for each publication
-        const feedWithProviders = await Promise.all(
-            publications.map(async (pub) => {
-                const provider = await fetchUser(pub.providerId);
-                // Return null or a placeholder if provider not found
-                return provider ? { ...pub, provider } : null;
-            })
-        );
-        
-        // Filter out any nulls
-        const validFeed = feedWithProviders.filter(item => item !== null) as (GalleryImage & { provider: User })[];
-        setFeed(validFeed);
-        setIsLoading(false);
+            // Fetch provider for each publication individually and securely
+            const feedWithProviders = await Promise.all(
+                publications.map(async (pub) => {
+                    const provider = await fetchUser(pub.providerId);
+                    return provider ? { ...pub, provider } : null;
+                })
+            );
+            
+            // Filter out any nulls (if a provider was not found or deleted)
+            const validFeed = feedWithProviders.filter(item => item !== null) as (GalleryImage & { provider: User })[];
+            setFeed(validFeed);
+        } catch (error) {
+            console.error("Error loading feed:", error);
+            // Handle error state if necessary
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    if (currentUser) {
-        loadFeed();
-    }
+    loadFeed();
   }, [currentUser, fetchUser]);
 
 

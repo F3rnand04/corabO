@@ -41,8 +41,7 @@ export function ProviderCard({ provider }: ProviderCardProps) {
     }, [isContact, provider.id]);
 
     useEffect(() => {
-        // Initialize counts only on the client-side
-        setLikeCount(Math.floor(Math.random() * 20)); // Keep some initial random feel for demo
+        setLikeCount(Math.floor(Math.random() * 20));
         setShareCount(Math.floor(Math.random() * 10));
     }, []);
 
@@ -99,7 +98,6 @@ export function ProviderCard({ provider }: ProviderCardProps) {
 
     const { reputation, effectiveness, responseTime } = getUserMetrics(provider.id);
     const isNewProvider = responseTime === 'Nuevo';
-
 
     const isPromotionActive = provider.promotion && new Date(provider.promotion.expires) > new Date();
 
@@ -159,61 +157,27 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                     </div>
                 </div>
 
-                <div className={cn(
-                    "relative w-full group",
-                    mainImage?.aspectRatio === 'horizontal' ? 'aspect-video' :
-                    mainImage?.aspectRatio === 'vertical' ? 'aspect-[4/5]' :
-                    'aspect-square'
-                )} onDoubleClick={() => setIsDetailsDialogOpen(true)}>
-                    <Image 
-                        src={mainImage?.src || "https://placehold.co/600x400.png"} 
-                        alt={mainImage?.alt || displayName} 
-                        layout="fill" 
-                        objectFit="cover" 
-                        data-ai-hint="service person working" 
-                    />
-                    
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="absolute top-2 left-2 z-10 text-white bg-black/20 hover:bg-black/40 rounded-full h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => setIsReportDialogOpen(true)}
-                        >
-                        <Flag className="w-4 h-4" />
-                    </Button>
-
-                    {isPromotionActive && provider.promotion && (
-                        <Badge variant="destructive" className="absolute top-2 right-2 bg-red-500 text-white shadow-lg">{provider.promotion.text}</Badge>
-                    )}
-                    <div className="absolute bottom-2 right-2 flex flex-col items-end gap-2 text-white">
-                        <div className="flex flex-col items-center">
-                            <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10" onClick={handleLike}>
-                                <Star className={cn("w-5 h-5", isLiked && "fill-yellow-400 text-yellow-400")} />
-                            </Button>
-                            <span className="text-xs font-bold mt-1 drop-shadow-md">{likeCount.toLocaleString('en-US')}</span>
-                        </div>
-                        <div className="flex flex-col items-center">
-                             <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10" onClick={() => setIsDetailsDialogOpen(true)}>
-                                <MessageCircle className="w-5 h-5" />
-                             </Button>
-                            <span className="text-xs font-bold mt-1 drop-shadow-md">{mainImage?.comments?.length || 0}</span>
-                        </div>
-                         <div className="flex flex-col items-center">
-                             <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10" onClick={handleShare}>
-                                <Send className="w-5 h-5" />
-                             </Button>
-                            <span className="text-xs font-bold mt-1 drop-shadow-md">{shareCount.toLocaleString('en-US', {notation: 'compact'})}</span>
+                {mainImage && (
+                    <div className={cn(
+                        "relative w-full group",
+                        mainImage.aspectRatio === 'horizontal' ? 'aspect-video' :
+                        mainImage.aspectRatio === 'vertical' ? 'aspect-[4/5]' :
+                        'aspect-square'
+                    )} onDoubleClick={() => setIsDetailsDialogOpen(true)}>
+                        <Image 
+                            src={mainImage.src} 
+                            alt={mainImage.alt} 
+                            layout="fill" 
+                            objectFit="cover" 
+                            data-ai-hint="service person working" 
+                        />
+                        <div className="absolute bottom-2 right-2 flex flex-col items-end gap-2 text-white">
+                           <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10" onClick={handleDirectMessage}>
+                               <Send className="w-5 h-5" />
+                           </Button>
                         </div>
                     </div>
-                </div>
-
-                <div className="flex justify-around items-center p-2 border-t">
-                    <Button variant="ghost" className="text-muted-foreground font-semibold text-sm" onClick={handleDirectMessage}>Mensaje</Button>
-                    <Separator orientation="vertical" className="h-6" />
-                    <Link href={profileLink} passHref>
-                        <Button variant="ghost" className="text-muted-foreground font-semibold text-sm">Ver Perfil</Button>
-                    </Link>
-                </div>
+                )}
             </CardContent>
         </Card>
         <ReportDialog 
@@ -234,5 +198,3 @@ export function ProviderCard({ provider }: ProviderCardProps) {
         </>
     )
 }
-
-    
