@@ -381,14 +381,14 @@ export default function ProfilePage() {
           <main className="space-y-4">
             <Tabs defaultValue={isProductProvider ? 'products' : 'publications'} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                 <TabsTrigger value="products" disabled={!isProductProvider}>Catálogo <span className="ml-2 font-bold">({providerProducts.length})</span></TabsTrigger>
-                 <TabsTrigger value="publications">Publicaciones <span className="ml-2 font-bold">({gallery.length})</span></TabsTrigger>
+                 <TabsTrigger value="products" disabled={!isProductProvider}>Catálogo ({providerProducts.length})</TabsTrigger>
+                 <TabsTrigger value="publications">Publicaciones ({gallery.length})</TabsTrigger>
               </TabsList>
               
               <TabsContent value="products">
                   {isProductProvider ? (
                     providerProducts.length > 0 ? (
-                      <div className='p-2 grid grid-cols-3 gap-1'>
+                      <div className='p-2 grid grid-cols-2 sm:grid-cols-3 gap-2'>
                         {providerProducts.map(product => (
                             <ProductGridCard 
                                 key={product.id} 

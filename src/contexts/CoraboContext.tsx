@@ -249,7 +249,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         setTransactions([]);
         setConversations([]);
         setProducts([]);
-        setUsers([]);
+        setUsers([currentUser].filter(Boolean) as User[]);
         return;
     };
 
