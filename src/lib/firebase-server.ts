@@ -1,6 +1,5 @@
-// IMPORTANT: This file MUST have the "use client" directive.
-// It's intended for client-side components and hooks.
-"use client";
+// IMPORTANT: This file should NOT have the "use client" directive.
+// It's intended for server-side code, like Genkit flows.
 
 import { initializeApp, getApp, getApps, type FirebaseApp } from "firebase/app";
 import { getFirestore, type Firestore } from "firebase/firestore";
@@ -15,7 +14,6 @@ const firebaseConfig = {
   "measurementId": "",
   "messagingSenderId": "220291714642"
 };
-
 
 function getFirebaseAppInstance(): FirebaseApp {
     if (getApps().length === 0) {
@@ -32,7 +30,7 @@ export function getFirebaseApp(): FirebaseApp {
     return app;
 }
 
-// This function provides a client-side instance of Firestore.
+// This function provides a server-side instance of Firestore.
 export function getFirestoreDb(): Firestore {
     if (!db) {
         db = getFirestore(app);

@@ -9,7 +9,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { getFirestoreDb } from '@/lib/firebase';
+import { getFirestoreDb } from '@/lib/firebase-server'; // Use server-side firebase
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, writeBatch } from 'firebase/firestore';
 import type { Conversation, Message, Transaction, AgreementProposal, User } from '@/lib/types';
 

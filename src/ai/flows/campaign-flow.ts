@@ -15,7 +15,8 @@ import {
   type Campaign,
   type Transaction,
   credicoraLevels,
-} from '@/lib/types';import { getFirestoreDb } from '@/lib/firebase';
+} from '@/lib/types';
+import { getFirestoreDb } from '@/lib/firebase-server'; // Use server-side firebase
 import {collection, doc, getDoc, getDocs, query, writeBatch, where} from 'firebase/firestore';
 import { sendNewCampaignNotifications } from './notification-flow';
 

@@ -7,8 +7,10 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { Twilio } from 'twilio';
-import { getFirestoreDb } from '@/lib/firebase';import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { getFirestoreDb } from '@/lib/firebase-server'; // Use server-side firebase
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { addMinutes, isAfter } from 'date-fns';
+import type { User } from '@/lib/types';
 
 const SmsVerificationInputSchema = z.object({
   userId: z.string(),

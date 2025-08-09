@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Transaction management flows.
@@ -5,7 +6,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { getFirestoreDb } from '@/lib/firebase';
+import { getFirestoreDb } from '@/lib/firebase-server'; // Use server-side firebase
 import { doc, getDoc, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import type { Transaction, User, AppointmentRequest } from '@/lib/types';
 

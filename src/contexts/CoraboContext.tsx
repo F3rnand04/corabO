@@ -48,6 +48,7 @@ interface CoraboState {
   isLoadingAuth: boolean;
   deliveryAddress: string;
   exchangeRate: number;
+  products: Product[];
   signInWithGoogle: () => void;
   setSearchQuery: (query: string) => void;
   clearSearchHistory: () => void;
@@ -107,6 +108,7 @@ interface CoraboState {
   setIdVerificationPending: (userId: string, documentUrl: string) => Promise<void>;
   autoVerifyIdWithAI: (input: VerificationInput) => Promise<VerificationOutput>;
   getUserMetrics: (userId: string) => UserMetrics;
+  fetchUser: (userId: string) => Promise<User | null>;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -120,6 +122,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchQuery, _setSearchQuery] = useState('');
@@ -192,6 +195,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       setCurrentUser(null);
       setTransactions([]);
       setConversations([]);
+      setProducts([]);
 
       if (firebaseUser) {
         const userData = await handleUserCreation(firebaseUser);
@@ -207,9 +211,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         listeners.push(transactionsUnsub);
 
         // Subscribe to user's conversations
-        const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userData.id));
+        const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userData.id), orderBy("lastUpdated", "desc"));
         const conversationsUnsub = onSnapshot(conversationsQuery, (snapshot) => {
-            setConversations(snapshot.docs.map(doc => doc.data() as Conversation).sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()));
+            setConversations(snapshot.docs.map(doc => doc.data() as Conversation));
         });
         listeners.push(conversationsUnsub);
         
@@ -218,6 +222,13 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             if (doc.exists()) setCurrentUser(doc.data() as User);
         });
         listeners.push(userUnsub);
+
+        // Subscribe to all products (for client-side filtering)
+        const productsUnsub = onSnapshot(collection(db, 'products'), (snapshot) => {
+            setProducts(snapshot.docs.map(doc => doc.data() as Product));
+        });
+        listeners.push(productsUnsub);
+
 
         if (userData.profileSetupData?.location) {
             setDeliveryAddress(userData.profileSetupData.location);
@@ -722,6 +733,25 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const removeCommentFromImage = (ownerId: string, imageId: string, commentIndex: number) => {};
   const checkIfShouldBeEnterprise = (providerId: string): boolean => { return false; };
   const activatePromotion = (details: { imageId: string, promotionText: string, cost: number }) => {};
+  
+  const userCache = useRef<Map<string, User>>(new Map());
+
+  const fetchUser = useCallback(async (userId: string): Promise<User | null> => {
+    if (userCache.current.has(userId)) {
+      return userCache.current.get(userId)!;
+    }
+    
+    const db = getFirestoreDb();
+    const userDocRef = doc(db, 'users', userId);
+    const userDocSnap = await getDoc(userDocRef);
+
+    if (userDocSnap.exists()) {
+      const userData = userDocSnap.data() as User;
+      userCache.current.set(userId, userData);
+      return userData;
+    }
+    return null;
+  }, []);
 
   const value: CoraboState = {
     currentUser,
@@ -736,6 +766,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     isLoadingAuth,
     deliveryAddress,
     exchangeRate,
+    products,
     signInWithGoogle,
     setSearchQuery,
     clearSearchHistory,
@@ -795,6 +826,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     markConversationAsRead,
     getUserMetrics,
     setDeliveryAddress,
+    fetchUser,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;

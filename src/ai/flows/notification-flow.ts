@@ -9,7 +9,8 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { getFirestoreDb } from '@/lib/firebase'; // Import getFirestoreDb
+import { getFirestoreDb } from '@/lib/firebase-server'; // Use server-side firebase
+import { collection, doc, setDoc, query, where, getDocs, getDoc, writeBatch } from 'firebase/firestore';
 import type { Notification, Transaction, User, Campaign } from '@/lib/types';
 import { differenceInHours } from 'date-fns';
 
@@ -93,30 +94,34 @@ export const sendNewCampaignNotifications = ai.defineFlow({
     inputSchema: z.object({ campaignId: z.string() }),
     outputSchema: z.void(),
 }, async ({ campaignId }) => {
-    const campaignRef = doc(getFirestoreDb(), 'campaigns', campaignId);
+    const db = getFirestoreDb();
+    const campaignRef = doc(db, 'campaigns', campaignId);
     const campaignSnap = await getDoc(campaignRef);
     if (!campaignSnap.exists()) return;
     const campaign = campaignSnap.data() as Campaign;
 
-    const providerRef = doc(getFirestoreDb(), 'users', campaign.providerId); // Use getFirestoreDb
+    const providerRef = doc(db, 'users', campaign.providerId);
     const providerSnap = await getDoc(providerRef);
     if (!providerSnap.exists()) return;
-    const provider = providerSnap.data() as User; // Corrected line break and duplication
+    const provider = providerSnap.data() as User;
+    
+    const targetCategory = provider.profileSetupData?.primaryCategory;
+    if (!targetCategory) return;
 
     const usersRef = collection(db, 'users');
-    const q = query(getFirestoreDb(),
+    const q = query(
         usersRef,
         where('type', '==', 'client'),
         where('profileSetupData.categories', 'array-contains', targetCategory)
     );
 
     const querySnapshot = await getDocs(q);
-    const batch = writeBatch(getFirestoreDb());
+    const batch = writeBatch(db);
 
     querySnapshot.forEach(docSnap => {
         const client = docSnap.data() as User;
         const notificationId = `notif-${client.id}-${campaignId}`;
-        const notificationRef = doc(getFirestoreDb(), 'notifications', notificationId);
+        const notificationRef = doc(db, 'notifications', notificationId);
         
         const newNotification: Notification = {
             id: notificationId,
