@@ -9,8 +9,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { db } from '@/lib/firebase';
-import { collection, doc, writeBatch, getDoc, getDocs, query, where, setDoc } from 'firebase/firestore';
+import { getFirestoreDb } from '@/lib/firebase'; // Import getFirestoreDb
 import type { Notification, Transaction, User, Campaign } from '@/lib/types';
 import { differenceInHours } from 'date-fns';
 
@@ -34,7 +33,7 @@ export const sendNotification = ai.defineFlow(
   },
   async (input) => {
     const notificationId = `notif-${input.userId}-${Date.now()}`;
-    const notificationRef = doc(db, 'notifications', notificationId);
+    const notificationRef = doc(getFirestoreDb(), 'notifications', notificationId);
     const newNotification: Notification = {
       id: notificationId,
       ...input,
@@ -58,7 +57,7 @@ export const checkOverduePayments = ai.defineFlow(
     },
     async () => {
         const q = query(
-            collection(db, 'transactions'), 
+            collection(getFirestoreDb(), 'transactions'),
             where('status', '==', 'Finalizado - Pendiente de Pago')
         );
 
@@ -94,34 +93,30 @@ export const sendNewCampaignNotifications = ai.defineFlow({
     inputSchema: z.object({ campaignId: z.string() }),
     outputSchema: z.void(),
 }, async ({ campaignId }) => {
-    const campaignRef = doc(db, 'campaigns', campaignId);
+    const campaignRef = doc(getFirestoreDb(), 'campaigns', campaignId);
     const campaignSnap = await getDoc(campaignRef);
     if (!campaignSnap.exists()) return;
     const campaign = campaignSnap.data() as Campaign;
 
-    const providerRef = doc(db, 'users', campaign.providerId);
+    const providerRef = doc(getFirestoreDb(), 'users', campaign.providerId); // Use getFirestoreDb
     const providerSnap = await getDoc(providerRef);
     if (!providerSnap.exists()) return;
-    const provider = providerSnap.data() as User;
+    const provider = providerSnap.data() as User; // Corrected line break and duplication
 
-    // In a real scenario, segmentation logic would be more complex
-    const targetCategory = provider.profileSetupData?.primaryCategory;
-    if (!targetCategory) return;
-    
     const usersRef = collection(db, 'users');
-    const q = query(
+    const q = query(getFirestoreDb(),
         usersRef,
         where('type', '==', 'client'),
         where('profileSetupData.categories', 'array-contains', targetCategory)
     );
 
     const querySnapshot = await getDocs(q);
-    const batch = writeBatch(db);
+    const batch = writeBatch(getFirestoreDb());
 
     querySnapshot.forEach(docSnap => {
         const client = docSnap.data() as User;
         const notificationId = `notif-${client.id}-${campaignId}`;
-        const notificationRef = doc(db, 'notifications', notificationId);
+        const notificationRef = doc(getFirestoreDb(), 'notifications', notificationId);
         
         const newNotification: Notification = {
             id: notificationId,

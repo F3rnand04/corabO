@@ -15,8 +15,7 @@ import {
   type Campaign,
   type Transaction,
   credicoraLevels,
-} from '@/lib/types';
-import {db} from '@/lib/firebase';
+} from '@/lib/types';import { getFirestoreDb } from '@/lib/firebase';
 import {collection, doc, getDoc, getDocs, query, writeBatch, where} from 'firebase/firestore';
 import { sendNewCampaignNotifications } from './notification-flow';
 
@@ -83,7 +82,7 @@ const createCampaignFlow = ai.defineFlow(
     outputSchema: CampaignOutputSchema,
   },
   async (input: CreateCampaignInput) => {
-    const userRef = doc(db, 'users', input.userId);
+    const userRef = doc(getFirestoreDb(), 'users', input.userId);
     const userSnap = await getDoc(userRef);
 
     if (!userSnap.exists()) {
@@ -91,7 +90,7 @@ const createCampaignFlow = ai.defineFlow(
     }
 
     const user = userSnap.data() as User;
-    const batch = writeBatch(db);
+    const batch = writeBatch(getFirestoreDb());
     const startDate = new Date();
     const endDate = new Date();
     endDate.setDate(startDate.getDate() + input.durationDays);
@@ -110,7 +109,7 @@ const createCampaignFlow = ai.defineFlow(
       ...input,
     };
 
-    const campaignRef = doc(db, 'campaigns', newCampaign.id);
+    const campaignRef = doc(getFirestoreDb(), 'campaigns', newCampaign.id);
     batch.set(campaignRef, newCampaign);
 
     // Create system transaction for the payment
@@ -131,7 +130,7 @@ const createCampaignFlow = ai.defineFlow(
       },
     };
 
-    const txRef = doc(db, 'transactions', txId);
+    const txRef = doc(getFirestoreDb(), 'transactions', txId);
     batch.set(txRef, campaignTransaction);
 
     // Update user's active campaigns

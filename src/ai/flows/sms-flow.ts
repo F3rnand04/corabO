@@ -7,8 +7,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { Twilio } from 'twilio';
-import { db } from '@/lib/firebase';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { getFirestoreDb } from '@/lib/firebase';import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { addMinutes, isAfter } from 'date-fns';
 
 const SmsVerificationInputSchema = z.object({
@@ -52,7 +51,7 @@ const sendSmsVerificationCodeFlow = ai.defineFlow(
       });
 
       // Store the code and expiry on the user's document for later verification
-      const userRef = doc(db, 'users', userId);
+      const userRef = doc(getFirestoreDb(), 'users', userId);
       await updateDoc(userRef, {
         phoneVerificationCode: verificationCode,
         phoneVerificationCodeExpires: codeExpiry.toISOString(),
@@ -80,15 +79,15 @@ const verifySmsCodeFlow = ai.defineFlow(
         outputSchema: z.object({ success: z.boolean(), message: z.string() }),
     },
     async ({ userId, code }) => {
-        const userRef = doc(db, 'users', userId);
+        const userRef = doc(getFirestoreDb(), 'users', userId);
         const userSnap = await getDoc(userRef);
 
         if (!userSnap.exists()) {
             return { success: false, message: "Usuario no encontrado." };
         }
 
-        const userData = userSnap.data();
-        
+        const userData: User = userSnap.data() as User;
+
         if (userData.phoneVerificationCodeExpires && isAfter(new Date(), new Date(userData.phoneVerificationCodeExpires))) {
             return { success: false, message: "El código de verificación ha expirado." };
         }

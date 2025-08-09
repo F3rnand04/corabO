@@ -11,8 +11,8 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useState } from 'react';
 import { UploadDialog } from './UploadDialog';
 import { useRouter } from 'next/navigation';
-
-export default function Footer() {
+ 
+export function Footer() {
   const pathname = usePathname();
   const router = useRouter();
   const { currentUser } = useCorabo();

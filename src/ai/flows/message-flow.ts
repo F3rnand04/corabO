@@ -9,7 +9,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { db } from '@/lib/firebase';
+import { getFirestoreDb } from '@/lib/firebase';
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, writeBatch } from 'firebase/firestore';
 import type { Conversation, Message, Transaction, AgreementProposal, User } from '@/lib/types';
 
@@ -45,7 +45,7 @@ export const sendMessage = ai.defineFlow(
     outputSchema: z.void(),
   },
   async (input) => {
-    const convoRef = doc(db, 'conversations', input.conversationId);
+    const convoRef = doc(getFirestoreDb(), 'conversations', input.conversationId);
     const convoSnap = await getDoc(convoRef);
 
     const newMessage: Message = {
@@ -83,8 +83,8 @@ export const acceptProposal = ai.defineFlow(
     outputSchema: z.void(),
   },
   async ({ conversationId, messageId, acceptorId }) => {
-    const batch = writeBatch(db);
-    const convoRef = doc(db, 'conversations', conversationId);
+    const batch = writeBatch(getFirestoreDb());
+    const convoRef = doc(getFirestoreDb(), 'conversations', conversationId);
     
     const convoSnap = await getDoc(convoRef);
     if (!convoSnap.exists()) throw new Error("Conversation not found");
@@ -122,7 +122,7 @@ export const acceptProposal = ai.defineFlow(
       },
     };
 
-    const txRef = doc(db, 'transactions', newTransaction.id);
+    const txRef = doc(getFirestoreDb(), 'transactions', newTransaction.id);
     batch.set(txRef, newTransaction);
     
     await batch.commit();

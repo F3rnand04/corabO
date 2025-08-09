@@ -25,7 +25,8 @@ import { SubscriptionDialog } from '@/components/SubscriptionDialog';
 import { ProductGridCard } from '@/components/ProductGridCard';
 import { ProductDetailsDialog } from '@/components/ProductDetailsDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { collection, query, where, onSnapshot, Unsubscribe, getFirestoreDb, orderBy } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, Unsubscribe, orderBy } from 'firebase/firestore';
+import { getFirestoreDb } from '@/lib/firebase';
 
 
 export default function ProfilePage() {
