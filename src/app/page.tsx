@@ -5,9 +5,10 @@ import { PublicationCard } from "@/components/PublicationCard";
 import type { User, GalleryImage } from "@/lib/types";
 import { useMemo, useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getFeed } from "@/ai/flows/feed-flow";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { ActivationWarning } from "@/components/ActivationWarning";
+import { getFirestoreDb } from "@/lib/firebase";
+import { collection, onSnapshot, orderBy, query, Unsubscribe } from "firebase/firestore";
 
 const mainCategories = [
   'Hogar y Reparaciones', 
@@ -22,25 +23,56 @@ const mainCategories = [
 ];
 
 export default function HomePage() {
-  const { searchQuery, feedView, currentUser } = useCorabo();
+  const { searchQuery, feedView, currentUser, fetchUser } = useCorabo();
   const [feedItems, setFeedItems] = useState<{ publication: GalleryImage; owner: User }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
+    let unsubscribe: Unsubscribe | undefined;
+
     const loadFeed = async () => {
-        try {
-            setIsLoading(true);
-            const feedData = await getFeed();
-            setFeedItems(feedData);
-        } catch (error) {
-            console.error("Error fetching feed:", error);
-            // Optionally set an error state to show in the UI
-        } finally {
+        setIsLoading(true);
+        const db = getFirestoreDb();
+        const publicationsQuery = query(
+            collection(db, "publications"),
+            orderBy("createdAt", "desc")
+        );
+
+        unsubscribe = onSnapshot(publicationsQuery, async (snapshot) => {
+            const publications = snapshot.docs.map(doc => doc.data() as GalleryImage);
+            
+            const ownerIds = [...new Set(publications.map(p => p.providerId))];
+            const ownerPromises = ownerIds.map(id => fetchUser(id));
+            const ownerResults = await Promise.all(ownerPromises);
+            
+            const ownersMap = new Map<string, User>();
+            ownerResults.forEach(user => {
+                if (user) {
+                    ownersMap.set(user.id, user);
+                }
+            });
+
+            const items = publications.map(pub => {
+                const owner = ownersMap.get(pub.providerId);
+                return owner && !owner.isPaused ? { publication: pub, owner } : null;
+            }).filter(Boolean) as { publication: GalleryImage; owner: User }[];
+            
+            setFeedItems(items);
             setIsLoading(false);
+        }, (error) => {
+            console.error("Error fetching feed in real-time:", error);
+            setIsLoading(false);
+        });
+    };
+    
+    loadFeed();
+
+    return () => {
+        if (unsubscribe) {
+            unsubscribe();
         }
     };
-    loadFeed();
-  }, []);
+  }, [fetchUser]);
 
   const filteredFeed = useMemo(() => {
     if (!feedItems.length) return [];
