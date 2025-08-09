@@ -125,6 +125,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
 
     const newGalleryItem: GalleryImage = {
       id: `gal-${Date.now()}`,
+      providerId: currentUser.id,
       type: isVideofile ? 'video' : 'image',
       src: galleryImagePreview,
       alt: `Publicación de ${currentUser.name}`,
