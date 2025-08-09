@@ -243,9 +243,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
 
   useEffect(() => {
-    // Only set up subscriptions if we have a logged-in user with an ID
     if (!currentUser?.id) {
-        // Clear data when user logs out
         setTransactions([]);
         setConversations([]);
         setProducts([]);
@@ -254,10 +252,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const db = getFirestoreDb();
-    if (!db) {
-        console.error("Firestore DB is not initialized yet.");
-        return;
-    }
+    if (!db) return;
     
     if (currentUser.profileSetupData?.location) {
         setDeliveryAddress(currentUser.profileSetupData.location);
@@ -265,39 +260,34 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     
     const unsubs: (() => void)[] = [];
 
-    // Subscribe to the current user's document
     const userDocRef = doc(db, 'users', currentUser.id);
     unsubs.push(onSnapshot(userDocRef, (doc) => {
         if (doc.exists()) setCurrentUser(doc.data() as User);
     }, (error) => console.error("Current user snapshot error:", error)));
 
-    // Subscribe to transactions involving the current user
     const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
     unsubs.push(onSnapshot(transactionsQuery, (snapshot) => {
         setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
     }, (error) => console.error("Transactions snapshot error:", error)));
 
-    // Subscribe to conversations involving the current user
     const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id));
     unsubs.push(onSnapshot(conversationsQuery, (snapshot) => {
         setConversations(snapshot.docs.map(doc => doc.data() as Conversation).sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()));
     }, (error) => console.error("Conversations snapshot error:", error)));
     
-    // Subscribe to products only if the user is a provider
     if (currentUser.type === 'provider') {
         const productsQuery = query(collection(db, "products"), where("providerId", "==", currentUser.id));
         unsubs.push(onSnapshot(productsQuery, (snapshot) => {
             setProducts(snapshot.docs.map(doc => doc.data() as Product));
         }, (error) => console.error("Provider products snapshot error:", error)));
     } else {
-        setProducts([]); // Clear products if user is not a provider
+        setProducts([]);
     }
 
-    // Unsubscribe from all listeners on cleanup
     return () => {
         unsubs.forEach(unsub => unsub());
     };
-  }, [currentUser?.id, currentUser?.type]); // Re-run when user ID or type changes
+  }, [currentUser?.id, currentUser?.type]);
 
 
   const getUserMetrics = useCallback((userId: string): UserMetrics => {
@@ -858,5 +848,3 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
-
-    

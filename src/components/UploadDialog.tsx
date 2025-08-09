@@ -32,7 +32,9 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [view, setView] = useState<'selection' | 'upload_gallery' | 'upload_product'>('selection');
+  // Determine view based on provider type, default to 'upload_gallery' if not product provider
+  const isProductProvider = currentUser.profileSetupData?.offerType === 'product';
+  const [view, setView] = useState<'selection' | 'upload_gallery' | 'upload_product'>(isProductProvider ? 'selection' : 'upload_gallery');
   
   // Gallery state
   const [galleryImagePreview, setGalleryImagePreview] = useState<string | null>(null);
@@ -47,9 +49,6 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
   const [productName, setProductName] = useState('');
   const [productDescription, setProductDescription] = useState('');
   const [productPrice, setProductPrice] = useState('');
-
-
-  const isProductProvider = currentUser.profileSetupData?.offerType === 'product';
 
   const handleFileSelect = (type: 'gallery' | 'product') => {
     fileInputRef.current?.click();
@@ -73,7 +72,6 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
                 setIsVideoFile(isVideo);
 
                 if (isVideo) {
-                    // For videos, we can't easily get aspect ratio on client, assume horizontal
                     setGalleryAspectRatio('horizontal');
                 } else {
                     const img = new window.Image();
@@ -96,7 +94,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
   };
 
   const resetState = () => {
-    setView('selection');
+    setView(isProductProvider ? 'selection' : 'upload_gallery');
     setGalleryImagePreview(null);
     setGalleryDescription('');
     setGalleryFile(null);
@@ -299,24 +297,20 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
      </>
   );
 
-  const renderSingleView = () => {
-    if (isProductProvider) {
-        switch(view) {
-            case 'upload_gallery': return renderGalleryUploadView();
-            case 'upload_product': return renderProductUploadView();
-            case 'selection':
-            default:
-              return renderSelectionView();
-        }
+  const renderContent = () => {
+    if (view === 'upload_gallery') {
+        return renderGalleryUploadView();
     }
-    // For service providers, only allow gallery uploads
-    return renderGalleryUploadView();
+    if (view === 'upload_product') {
+        return renderProductUploadView();
+    }
+    return renderSelectionView();
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
-        {renderSingleView()}
+        {renderContent()}
       </DialogContent>
     </Dialog>
   );

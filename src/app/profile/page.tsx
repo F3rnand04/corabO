@@ -38,7 +38,7 @@ export default function ProfilePage() {
 
   const isProvider = currentUser.type === 'provider';
   const isProductProvider = isProvider && currentUser.profileSetupData?.offerType === 'product';
-  const providerProducts = products; // Products are now correctly filtered in the context
+  const providerProducts = products; 
 
   const [starCount, setStarCount] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
@@ -381,7 +381,7 @@ export default function ProfilePage() {
           <main className="space-y-4">
             <Tabs defaultValue={isProductProvider ? 'products' : 'publications'} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                 <TabsTrigger value="products" disabled={!isProductProvider}>Catálogo ({providerProducts.length})</TabsTrigger>
+                 <TabsTrigger value="products">Catálogo ({providerProducts.length})</TabsTrigger>
                  <TabsTrigger value="publications">Publicaciones ({gallery.length})</TabsTrigger>
               </TabsList>
               
@@ -408,7 +408,7 @@ export default function ProfilePage() {
                         </p>
                       </div>
                     )
-                  ) : null}
+                  ) : <div className="text-center p-8 text-muted-foreground">Esta vista es solo para proveedores de productos.</div>}
               </TabsContent>
 
               <TabsContent value="publications">
@@ -419,8 +419,7 @@ export default function ProfilePage() {
                         <div 
                           className="relative group cursor-pointer"
                           onTouchStart={onTouchStart}
-                          onTouchMove={onTouchMove}
-                          onTouchEnd={onTouchEnd}
+                          onTouchMove={onTouchEnd}
                           onDoubleClick={handleImageDoubleClick}
                         >
                           <Image
