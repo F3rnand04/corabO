@@ -216,22 +216,25 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, [handleUserCreation, auth]);
   
   const fetchUser = useCallback(async (userId: string): Promise<User | null> => {
-    let user = users.find(u => u.id === userId);
-    if (user) return user;
+    // Return from local cache if available
+    const cachedUser = users.find(u => u.id === userId);
+    if (cachedUser) return cachedUser;
 
+    // Fetch from Firestore
     const db = getFirestoreDb();
     const userDocRef = doc(db, 'users', userId);
     try {
         const userSnap = await getDoc(userDocRef);
         if (userSnap.exists()) {
-            user = userSnap.data() as User;
+            const fetchedUser = userSnap.data() as User;
+            // Add to local cache
             setUsers(prev => {
                 if (!prev.some(u => u.id === userId)) {
-                    return [...prev, user as User];
+                    return [...prev, fetchedUser];
                 }
-                return prev.map(u => u.id === userId ? user as User : u);
+                return prev.map(u => u.id === userId ? fetchedUser : u);
             });
-            return user;
+            return fetchedUser;
         } else {
             console.log("No such user!");
             return null;
@@ -302,6 +305,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
 
   const getRankedFeed = useCallback(() => {
+    // This function is now just a placeholder. The feed logic is handled in page.tsx
     return users.filter(user => user.type === 'provider');
   }, [users]);
 

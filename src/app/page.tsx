@@ -23,21 +23,47 @@ const mainCategories = [
 ];
 
 export default function HomePage() {
-  const { searchQuery, feedView, currentUser, getRankedFeed } = useCorabo();
+  const { searchQuery, feedView, currentUser, fetchUser } = useCorabo();
   const [isLoading, setIsLoading] = useState(true);
-  
-  const feed = getRankedFeed();
+  const [feed, setFeed] = useState<(User & { galleryItem: GalleryImage })[]>([]);
 
-  // Simulate loading
   useEffect(() => {
-    if (feed.length > 0 || !currentUser) {
-        setIsLoading(false);
-    } else {
-        const timer = setTimeout(() => setIsLoading(false), 1500); // Wait a bit in case feed is just slow
-        return () => clearTimeout(timer);
-    }
-  }, [feed, currentUser]);
+    const fetchFeed = async () => {
+        setIsLoading(true);
+        const db = getFirestoreDb();
+        const galleryQuery = query(
+            collection(db, "gallery"), 
+            orderBy("createdAt", "desc"), 
+            limit(50)
+        );
 
+        try {
+            const querySnapshot = await getDocs(galleryQuery);
+            const feedItems = await Promise.all(
+                querySnapshot.docs.map(async (doc) => {
+                    const galleryItem = doc.data() as GalleryImage;
+                    const provider = await fetchUser(galleryItem.providerId);
+                    if (provider) {
+                        return { ...provider, galleryItem };
+                    }
+                    return null;
+                })
+            );
+            
+            // Filter out nulls and potentially shuffle/rank here
+            setFeed(feedItems.filter(item => item !== null) as (User & { galleryItem: GalleryImage })[]);
+
+        } catch (error) {
+            console.error("Error fetching feed:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    if (currentUser) {
+        fetchFeed();
+    }
+  }, [currentUser, fetchUser]);
 
   const filteredFeed = useMemo(() => {
     if (!feed.length) return [];
@@ -69,7 +95,8 @@ export default function HomePage() {
                 : provider.name;
             const providerNameMatch = providerName?.toLowerCase().includes(lowerCaseQuery);
             const specialtyMatch = provider.profileSetupData?.specialty?.toLowerCase().includes(lowerCaseQuery);
-            const publicationMatch = provider.gallery?.some(p => p.description.toLowerCase().includes(lowerCaseQuery));
+            // Search in the specific gallery item description shown in the feed
+            const publicationMatch = provider.galleryItem.description.toLowerCase().includes(lowerCaseQuery);
 
             return publicationMatch || providerNameMatch || specialtyMatch;
         }
@@ -102,7 +129,7 @@ export default function HomePage() {
         {isLoading ? (
           Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[400px] w-full rounded-2xl" />)
         ) : filteredFeed.length > 0 ? (
-          filteredFeed.map(provider => <ProviderCard key={provider.id} provider={provider} />)
+          filteredFeed.map(provider => <ProviderCard key={provider.galleryItem.id} provider={provider} />)
         ) : (
           <p className="text-center text-muted-foreground pt-16">
             {noResultsMessage()}
