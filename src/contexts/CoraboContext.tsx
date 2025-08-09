@@ -630,16 +630,33 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const updateUserProfileAndGallery = async (userId: string, image: GalleryImage) => {
     if (!currentUser) return;
     const db = getFirestoreDb();
-    await updateDoc(doc(db, 'users', userId), {
-        gallery: arrayUnion(image)
-    });
+    const batch = writeBatch(db);
+
+    // Add to user's gallery subcollection
+    const userGalleryRef = doc(db, 'users', userId, 'gallery', image.id);
+    batch.set(userGalleryRef, image);
+
+    // Add to top-level publications collection for public feed
+    const publicationRef = doc(db, 'publications', image.id);
+    batch.set(publicationRef, image);
+    
+    await batch.commit();
   };
 
   const removeGalleryImage = async (userId: string, imageId: string) => {
     if(!currentUser || !currentUser.gallery) return;
     const db = getFirestoreDb();
-    const updatedGallery = currentUser.gallery.filter(image => image.id !== imageId);
-    await updateDoc(doc(db, 'users', userId), { gallery: updatedGallery });
+    const batch = writeBatch(db);
+    
+    // Delete from user's gallery subcollection
+    const userGalleryRef = doc(db, 'users', userId, 'gallery', imageId);
+    batch.delete(userGalleryRef);
+
+    // Delete from top-level publications collection
+    const publicationRef = doc(db, 'publications', imageId);
+    batch.delete(publicationRef);
+
+    await batch.commit();
   };
   
   const validateEmail = async (userId: string, emailToValidate: string): Promise<boolean> => {
@@ -854,3 +871,5 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
+
+    
