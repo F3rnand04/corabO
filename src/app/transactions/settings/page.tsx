@@ -330,7 +330,7 @@ export default function TransactionsSettingsPage() {
                                     <div className="space-y-4 pt-4 border-t">
                                         <div className="space-y-2">
                                             <Label htmlFor="bank-name">Entidad Bancaria</Label>
-                                            <Select onValueChange={(v) => handleMethodChange('account', 'bankName', v)} value={paymentMethods.account.bankName}>
+                                            <Select onValueChange={(v) => handleMethodChange('account', 'bankName', v)} value={paymentMethods.account.bankName || undefined}>
                                                 <SelectTrigger id="bank-name"><SelectValue placeholder="Selecciona un banco" /></SelectTrigger>
                                                 <SelectContent>{banks.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>
                                             </Select>
@@ -356,11 +356,11 @@ export default function TransactionsSettingsPage() {
                                      <div className="space-y-4 pt-4 border-t">
                                         <div className="space-y-2">
                                             <Label htmlFor="mobile-id">Cédula</Label>
-                                            <Input id="mobile-id" value={currentUser.idNumber} readOnly disabled />
+                                            <Input id="mobile-id" value={currentUser.idNumber || ''} readOnly disabled />
                                         </div>
                                          <div className="space-y-2">
                                             <Label htmlFor="mobile-bank-name">Entidad Bancaria</Label>
-                                            <Select onValueChange={(v) => handleMethodChange('mobile', 'bankName', v)} value={paymentMethods.mobile.bankName}>
+                                            <Select onValueChange={(v) => handleMethodChange('mobile', 'bankName', v)} value={paymentMethods.mobile.bankName || undefined}>
                                                 <SelectTrigger id="mobile-bank-name"><SelectValue placeholder="Selecciona un banco" /></SelectTrigger>
                                                 <SelectContent>{banks.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}</SelectContent>
                                             </Select>
