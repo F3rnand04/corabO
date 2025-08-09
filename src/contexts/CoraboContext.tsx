@@ -257,32 +257,40 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
     const unsubs: (() => void)[] = [];
 
+    // Subscribe to the current user's document
     const userDocRef = doc(db, 'users', currentUser.id);
     unsubs.push(onSnapshot(userDocRef, (doc) => {
         if (doc.exists()) setCurrentUser(doc.data() as User);
     }, (error) => console.error("Current user snapshot error:", error)));
 
+    // Subscribe to transactions involving the current user
     const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
     unsubs.push(onSnapshot(transactionsQuery, (snapshot) => {
         setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
     }, (error) => console.error("Transactions snapshot error:", error)));
 
+    // Subscribe to conversations involving the current user
     const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id));
     unsubs.push(onSnapshot(conversationsQuery, (snapshot) => {
         setConversations(snapshot.docs.map(doc => doc.data() as Conversation).sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()));
     }, (error) => console.error("Conversations snapshot error:", error)));
 
+    // If the user is a provider, subscribe to their products
     if (currentUser.type === 'provider') {
         const productsQuery = query(collection(db, "products"), where("providerId", "==", currentUser.id));
         unsubs.push(onSnapshot(productsQuery, (snapshot) => {
             setProducts(snapshot.docs.map(doc => doc.data() as Product));
         }, (error) => console.error("Provider products snapshot error:", error)));
+    } else {
+        // If user is not a provider, ensure their product list is empty
+        setProducts([]);
     }
 
+    // Unsubscribe from all listeners on cleanup
     return () => {
         unsubs.forEach(unsub => unsub());
     };
-}, [currentUser?.id, currentUser?.type]);
+}, [currentUser?.id, currentUser?.type]); // Re-run when user or user type changes
 
 
   const getUserMetrics = useCallback((userId: string): UserMetrics => {
