@@ -259,6 +259,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const unsubs: (() => void)[] = [];
     let isMounted = true;
   
+    // Listen to the current user's document
     const userDocRef = doc(db, 'users', currentUser.id);
     unsubs.push(onSnapshot(userDocRef, (doc) => {
       if (isMounted && doc.exists()) {
@@ -266,6 +267,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       }
     }, (error) => console.error("Current user snapshot error:", error)));
   
+    // Listen to transactions where the current user is a participant
     const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
     unsubs.push(onSnapshot(transactionsQuery, (snapshot) => {
       if (isMounted) {
@@ -273,6 +275,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       }
     }, (error) => console.error("Transactions snapshot error:", error)));
   
+    // Listen to conversations where the current user is a participant
     const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id));
     unsubs.push(onSnapshot(conversationsQuery, (snapshot) => {
       if (isMounted) {
@@ -280,6 +283,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       }
     }, (error) => console.error("Conversations snapshot error:", error)));
   
+    // Listen to products if the current user is a provider
     if (currentUser.type === 'provider') {
       const productsQuery = query(collection(db, "products"), where("providerId", "==", currentUser.id));
       unsubs.push(onSnapshot(productsQuery, (snapshot) => {
