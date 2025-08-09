@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState } from 'react';
@@ -14,12 +12,12 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import Image from 'next/image';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // Importación correcta
 
 export default function InitialSetupPage() {
   const { currentUser, completeInitialSetup } = useCorabo();
   const { toast } = useToast();
-  
+
   const [lastName, setLastName] = useState(currentUser?.lastName || '');
   const [idNumber, setIdNumber] = useState('');
   const [birthDate, setBirthDate] = useState('');
@@ -57,7 +55,7 @@ export default function InitialSetupPage() {
     <Card className="w-full max-w-md shadow-2xl">
       <CardHeader className="text-center">
         <div className="relative w-32 h-16 mx-auto mb-4">
-            <Image 
+            <Image
                 src="https://i.postimg.cc/Wz1MTvWK/lg.png"
                 alt="Corabo logo"
                 layout="fill"
@@ -74,8 +72,7 @@ export default function InitialSetupPage() {
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>¡Atención!</AlertTitle>
             <AlertDescription>
-                Esta información es privada y se usará para verificar tu identidad. <strong>No podrás modificarla después.</strong> Por favor, asegúrate de que sea correcta.
-            </AlertDescription>
+                Esta información es privada y se usará para verificar tu identidad. <strong>No podrás modificarla después.</strong> Por favor, asegúrate de que sea correcta.\n            </AlertDescription>
         </Alert>
 
         <div className="space-y-2">

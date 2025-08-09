@@ -4,7 +4,7 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
-import Footer from '@/components/Footer';
+import { Footer } from '@/components/Footer';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, ArrowRight, Bell, Loader2 } from 'lucide-react';
