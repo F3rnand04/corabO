@@ -7,3 +7,5 @@ import './flows/verification-flow';
 import './flows/exchange-rate-flow';
 import './flows/notification-flow';
 import './flows/sms-flow';
+import './flows/feed-flow';
+import './flows/profile-flow';

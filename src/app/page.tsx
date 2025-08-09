@@ -1,14 +1,13 @@
 
 "use client";
 
-import { useCorabo } from "@/contexts/CoraboContext";
 import { PublicationCard } from "@/components/PublicationCard";
 import type { User, GalleryImage } from "@/lib/types";
 import { useMemo, useEffect, useState } from "react";
-import { ActivationWarning } from "@/components/ActivationWarning";
 import { Skeleton } from "@/components/ui/skeleton";
-import { collection, getDocs, query, orderBy, limit, onSnapshot, Unsubscribe } from 'firebase/firestore';
-import { getFirestoreDb } from "@/lib/firebase";
+import { getFeed } from "@/ai/flows/feed-flow";
+import { useCorabo } from "@/contexts/CoraboContext";
+import { ActivationWarning } from "@/components/ActivationWarning";
 
 const mainCategories = [
   'Hogar y Reparaciones', 
@@ -23,45 +22,25 @@ const mainCategories = [
 ];
 
 export default function HomePage() {
-  const { searchQuery, feedView, currentUser, fetchUser } = useCorabo();
+  const { searchQuery, feedView, currentUser } = useCorabo();
   const [feedItems, setFeedItems] = useState<{ publication: GalleryImage; owner: User }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
-    if (!currentUser) return;
-
-    setIsLoading(true);
-    const db = getFirestoreDb();
-    
-    // Subscribe to real-time updates on the publications collection
-    const publicationsQuery = query(
-      collection(db, "publications"),
-      orderBy("createdAt", "desc"),
-      limit(50)
-    );
-
-    const unsubscribe = onSnapshot(publicationsQuery, async (querySnapshot) => {
-      const publications = querySnapshot.docs.map(doc => doc.data() as GalleryImage);
-
-      const feedDataPromises = publications.map(async (pub) => {
-        const owner = await fetchUser(pub.providerId);
-        if (owner && !owner.isPaused) {
-          return { publication: pub, owner };
+    const loadFeed = async () => {
+        try {
+            setIsLoading(true);
+            const feedData = await getFeed();
+            setFeedItems(feedData);
+        } catch (error) {
+            console.error("Error fetching feed:", error);
+            // Optionally set an error state to show in the UI
+        } finally {
+            setIsLoading(false);
         }
-        return null;
-      });
-      
-      const resolvedFeedData = (await Promise.all(feedDataPromises)).filter(Boolean);
-      setFeedItems(resolvedFeedData as { publication: GalleryImage; owner: User }[]);
-      setIsLoading(false);
-    }, (error) => {
-      console.error("Error fetching real-time feed:", error);
-      setIsLoading(false);
-    });
-
-    // Cleanup subscription on unmount
-    return () => unsubscribe();
-  }, [currentUser, fetchUser]);
+    };
+    loadFeed();
+  }, []);
 
   const filteredFeed = useMemo(() => {
     if (!feedItems.length) return [];

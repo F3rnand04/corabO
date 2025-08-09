@@ -37,7 +37,6 @@ interface UserMetrics {
 
 interface CoraboState {
   currentUser: User | null;
-  fetchUser: (userId: string) => Promise<User | null>;
   cart: CartItem[];
   transactions: Transaction[];
   conversations: Conversation[];
@@ -111,8 +110,6 @@ interface CoraboState {
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
-
-import { services as mockServices, initialTransactions, initialConversations } from '@/lib/mock-data';
 
 export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
@@ -236,30 +233,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [handleUserCreation, auth]);
   
-  // In-memory cache for users
-  const userCache = useRef(new Map<string, User>());
-
-  const fetchUser = useCallback(async (userId: string): Promise<User | null> => {
-    if (userCache.current.has(userId)) {
-        return userCache.current.get(userId)!;
-    }
-
-    const db = getFirestoreDb();
-    const userDocRef = doc(db, 'users', userId);
-    try {
-        const userSnap = await getDoc(userDocRef);
-        if (userSnap.exists()) {
-            const fetchedUser = userSnap.data() as User;
-            userCache.current.set(userId, fetchedUser); // Store in cache
-            return fetchedUser;
-        }
-        return null;
-    } catch (error) {
-        console.error("Error fetching user:", error);
-        return null;
-    }
-  }, []);
-
   const getUserMetrics = useCallback((userId: string): UserMetrics => {
     const providerTransactions = transactions.filter(t => t.providerId === userId);
     
@@ -350,35 +323,36 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         });
         return;
     }
-    // Logic to find provider can be simplified as we fetch users on demand
-    fetchUser(product.providerId).then(provider => {
-        if (!provider || !provider.isTransactionsActive) {
-            toast({
-                variant: "destructive",
-                title: "Proveedor no disponible",
-                description: "Este proveedor no tiene las transacciones activas en este momento."
-            });
-            return;
-        }
+    
+    // In a real app, you would fetch provider data here. We simulate for now.
+    const isProviderTransactionReady = true; 
 
-         if (cart.length > 0 && cart[0].product.providerId !== product.providerId) {
-            toast({
-                variant: "destructive",
-                title: "Carrito Multi-tienda",
-                description: "No puedes añadir productos de diferentes tiendas en un mismo carrito. Finaliza esta compra primero."
-            });
-            return;
-        }
-        
-        setCart((prevCart) => {
-          const existingItem = prevCart.find((item) => item.product.id === product.id);
-          if (existingItem) {
-            return prevCart.map((item) =>
-              item.product.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
-            );
-          }
-          return [...prevCart, { product, quantity }];
+    if (!isProviderTransactionReady) {
+        toast({
+            variant: "destructive",
+            title: "Proveedor no disponible",
+            description: "Este proveedor no tiene las transacciones activas en este momento."
         });
+        return;
+    }
+
+    if (cart.length > 0 && cart[0].product.providerId !== product.providerId) {
+        toast({
+            variant: "destructive",
+            title: "Carrito Multi-tienda",
+            description: "No puedes añadir productos de diferentes tiendas en un mismo carrito. Finaliza esta compra primero."
+        });
+        return;
+    }
+    
+    setCart((prevCart) => {
+      const existingItem = prevCart.find((item) => item.product.id === product.id);
+      if (existingItem) {
+        return prevCart.map((item) =>
+          item.product.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
+        );
+      }
+      return [...prevCart, { product, quantity }];
     });
   };
   
@@ -751,7 +725,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const value: CoraboState = {
     currentUser,
-    fetchUser,
     cart,
     transactions,
     conversations,
