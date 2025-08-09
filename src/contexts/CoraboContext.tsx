@@ -233,6 +233,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             });
             return user;
         } else {
+            console.log("No such user!");
             return null;
         }
     } catch (error) {

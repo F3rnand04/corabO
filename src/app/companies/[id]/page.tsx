@@ -7,7 +7,7 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, MessageCircle, CheckCircle, Flag, Package, Hand, ShoppingCart, Plus, Minus, X, Truck, AlertTriangle } from 'lucide-react';
+import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, MessageCircle, CheckCircle, Flag, Package, Hand, ShoppingCart, Plus, Minus, X, Truck, AlertTriangle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
@@ -35,11 +35,25 @@ import { ActivationWarning } from '@/components/ActivationWarning';
 
 export default function CompanyProfilePage() {
   const params = useParams();
-  const { users, products, addContact, isContact, transactions, createAppointmentRequest, currentUser, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, sendMessage, toggleGps, deliveryAddress, setDeliveryAddress, getUserMetrics } = useCorabo();
+  const { users, products, addContact, isContact, transactions, createAppointmentRequest, currentUser, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, sendMessage, toggleGps, deliveryAddress, setDeliveryAddress, getUserMetrics, fetchUser } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
-  
-  const provider = users.find(u => u.id === params.id);
+
+  const [provider, setProvider] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadProvider = async () => {
+        setIsLoading(true);
+        const providerId = params.id as string;
+        if (providerId) {
+            const fetchedProvider = await fetchUser(providerId);
+            setProvider(fetchedProvider);
+        }
+        setIsLoading(false);
+    };
+    loadProvider();
+  }, [params.id, fetchUser]);
   
   // Define provider-dependent variables at the top
   const providerProducts = provider ? products.filter(p => p.providerId === provider.id) : [];
@@ -125,6 +139,14 @@ export default function CompanyProfilePage() {
   const productInitialPayment = subtotal - financedAmount;
   const totalToPayToday = productInitialPayment + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
   const installmentAmount = financedAmount > 0 ? financedAmount / credicoraDetails.installments : 0;
+
+  if (isLoading) {
+    return (
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+    );
+  }
 
   if (!provider) {
     return (
@@ -779,5 +801,3 @@ export default function CompanyProfilePage() {
     </>
   );
 }
-
-    
