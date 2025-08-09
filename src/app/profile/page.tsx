@@ -38,7 +38,7 @@ export default function ProfilePage() {
 
   const isProvider = currentUser.type === 'provider';
   const isProductProvider = isProvider && currentUser.profileSetupData?.offerType === 'product';
-  const providerProducts = products.filter(p => p.providerId === currentUser.id);
+  const providerProducts = products; // Products are now correctly filtered in the context
 
   const [starCount, setStarCount] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
@@ -381,35 +381,35 @@ export default function ProfilePage() {
           <main className="space-y-4">
             <Tabs defaultValue={isProductProvider ? 'products' : 'publications'} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                {isProductProvider && <TabsTrigger value="products">Catálogo <span className="ml-2 font-bold">({providerProducts.length})</span></TabsTrigger>}
-                <TabsTrigger value="publications" className={cn(!isProductProvider && 'col-span-2')}>Publicaciones <span className="ml-2 font-bold">({gallery.length})</span></TabsTrigger>
+                 <TabsTrigger value="products" disabled={!isProductProvider}>Catálogo <span className="ml-2 font-bold">({providerProducts.length})</span></TabsTrigger>
+                 <TabsTrigger value="publications">Publicaciones <span className="ml-2 font-bold">({gallery.length})</span></TabsTrigger>
               </TabsList>
               
-              {isProductProvider && (
-                  <TabsContent value="products">
-                      {providerProducts.length > 0 ? (
-                         <div className='p-2 grid grid-cols-3 gap-1'>
-                          {providerProducts.map(product => (
-                              <ProductGridCard 
-                                  key={product.id} 
-                                  product={product}
-                                  onDoubleClick={() => openProductDetailsDialog(product)}
-                              />
-                          ))}
-                         </div>
-                      ) : (
-                         <div className="w-full aspect-video bg-muted flex flex-col items-center justify-center text-center p-4 rounded-lg mt-2">
-                              <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
-                              <h3 className="font-bold text-lg text-foreground">
-                                  Tu catálogo está vacío
-                              </h3>
-                              <p className="text-muted-foreground text-sm">
-                                  Haz clic en el botón (+) en el pie de página para añadir tu primer producto.
-                              </p>
-                         </div>
-                      )}
-                  </TabsContent>
-              )}
+              <TabsContent value="products">
+                  {isProductProvider ? (
+                    providerProducts.length > 0 ? (
+                      <div className='p-2 grid grid-cols-3 gap-1'>
+                        {providerProducts.map(product => (
+                            <ProductGridCard 
+                                key={product.id} 
+                                product={product}
+                                onDoubleClick={() => openProductDetailsDialog(product)}
+                            />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="w-full aspect-video bg-muted flex flex-col items-center justify-center text-center p-4 rounded-lg mt-2">
+                        <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
+                        <h3 className="font-bold text-lg text-foreground">
+                            Tu catálogo está vacío
+                        </h3>
+                        <p className="text-muted-foreground text-sm">
+                            Haz clic en el botón (+) en el pie de página para añadir tu primer producto.
+                        </p>
+                      </div>
+                    )
+                  ) : null}
+              </TabsContent>
 
               <TabsContent value="publications">
                 <Card className="rounded-2xl overflow-hidden shadow-lg mt-2">

@@ -243,18 +243,26 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
 
   useEffect(() => {
-    if (!currentUser?.id) return;
+    // Only set up subscriptions if we have a logged-in user with an ID
+    if (!currentUser?.id) {
+        // Clear data when user logs out
+        setTransactions([]);
+        setConversations([]);
+        setProducts([]);
+        setUsers([]);
+        return;
+    };
 
     const db = getFirestoreDb();
     if (!db) {
         console.error("Firestore DB is not initialized yet.");
         return;
     }
-
+    
     if (currentUser.profileSetupData?.location) {
         setDeliveryAddress(currentUser.profileSetupData.location);
     }
-
+    
     const unsubs: (() => void)[] = [];
 
     // Subscribe to the current user's document
@@ -274,23 +282,22 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     unsubs.push(onSnapshot(conversationsQuery, (snapshot) => {
         setConversations(snapshot.docs.map(doc => doc.data() as Conversation).sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()));
     }, (error) => console.error("Conversations snapshot error:", error)));
-
-    // If the user is a provider, subscribe to their products
+    
+    // Subscribe to products only if the user is a provider
     if (currentUser.type === 'provider') {
         const productsQuery = query(collection(db, "products"), where("providerId", "==", currentUser.id));
         unsubs.push(onSnapshot(productsQuery, (snapshot) => {
             setProducts(snapshot.docs.map(doc => doc.data() as Product));
         }, (error) => console.error("Provider products snapshot error:", error)));
     } else {
-        // If user is not a provider, ensure their product list is empty
-        setProducts([]);
+        setProducts([]); // Clear products if user is not a provider
     }
 
     // Unsubscribe from all listeners on cleanup
     return () => {
         unsubs.forEach(unsub => unsub());
     };
-}, [currentUser?.id, currentUser?.type]); // Re-run when user or user type changes
+  }, [currentUser?.id, currentUser?.type]); // Re-run when user ID or type changes
 
 
   const getUserMetrics = useCallback((userId: string): UserMetrics => {
@@ -851,4 +858,3 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
-
