@@ -36,9 +36,8 @@ export function PublicationCard({ publication, owner, className }: PublicationCa
 
     useEffect(() => {
         setIsSaved(isContact(owner.id));
-        // Initialize likes and shares to a base value for demonstration, avoiding Math.random
-        setLikeCount(publication.comments?.reduce((acc, c) => acc + (c.likes || 0), 0) || 0);
-        setShareCount(Math.floor(Math.random() * 10)); // Keep share random for now as it's not persisted
+        setLikeCount(0);
+        setShareCount(0);
     }, [isContact, owner.id, publication]);
 
     const handleSaveContact = () => {

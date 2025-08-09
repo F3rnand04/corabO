@@ -29,17 +29,15 @@ export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductD
   const { currentUser, addToCart, cart, updateCartQuantity } = useCorabo();
   const { toast } = useToast();
   const [newComment, setNewComment] = useState("");
-  // Comments would be fetched or part of product data
-  const [comments, setComments] = useState<GalleryImageComment[]>([
-    { author: "Ana P.", text: "¡Me encantó! Llegó súper rápido y es de buena calidad.", profileImage: `https://i.pravatar.cc/150?u=ana`, likes: 5, dislikes: 0 },
-    { author: "Carlos M.", text: "¿Tienen disponible en otro color?", profileImage: `https://i.pravatar.cc/150?u=carlos`, likes: 1, dislikes: 1 },
-  ]);
+  // Comments are now managed locally for this dialog
+  const [comments, setComments] = useState<GalleryImageComment[]>([]);
 
   const [commentVotes, setCommentVotes] = useState<Record<number, 'like' | 'dislike' | null>>({});
 
   useEffect(() => {
     // Reset votes when product changes
     setCommentVotes({});
+    setComments([]); // Also reset comments
   }, [product]);
 
   if (!product) return null;
@@ -124,13 +122,13 @@ export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductD
                     <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10">
                         <Star className="w-5 h-5"/>
                     </Button>
-                    <span className="text-xs font-bold mt-1 drop-shadow-md">1.2k</span>
+                    <span className="text-xs font-bold mt-1 drop-shadow-md">0</span>
                 </div>
                 <div className="flex flex-col items-center">
                     <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10">
                         <Send className="w-5 h-5"/>
                     </Button>
-                    <span className="text-xs font-bold mt-1 drop-shadow-md">345</span>
+                    <span className="text-xs font-bold mt-1 drop-shadow-md">0</span>
                 </div>
              </div>
         </div>

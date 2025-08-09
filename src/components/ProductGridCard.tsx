@@ -18,20 +18,15 @@ interface ProductGridCardProps {
 export function ProductGridCard({ product, onDoubleClick }: ProductGridCardProps) {
     const { currentUser, addToCart, updateCartQuantity, cart } = useCorabo();
     const { toast } = useToast();
-    const [likeCount, setLikeCount] = useState<number | null>(null);
+    const [likeCount, setLikeCount] = useState(0);
     const [isLiked, setIsLiked] = useState(false);
 
     const cartItem = cart.find(item => item.product.id === product.id);
     const quantityInCart = cartItem?.quantity || 0;
     const isTransactionReady = currentUser.isTransactionsActive;
 
-    useEffect(() => {
-        // Generate random number only on the client side to avoid hydration mismatch
-        setLikeCount(Math.floor(Math.random() * 100));
-    }, []);
-
     const handleLike = () => {
-        setLikeCount(prev => (prev !== null ? (isLiked ? prev - 1 : prev + 1) : 0));
+        setLikeCount(prev => (isLiked ? prev - 1 : prev + 1));
         setIsLiked(prev => !prev);
     }
     
@@ -96,11 +91,11 @@ export function ProductGridCard({ product, onDoubleClick }: ProductGridCardProps
                     <div className="flex items-center gap-3">
                         <div className="flex items-center gap-1">
                             <Heart className={cn("w-4 h-4 cursor-pointer", isLiked && "text-red-500 fill-red-500")} onClick={handleLike} />
-                            <span className="text-xs">{likeCount ?? '...'}</span>
+                            <span className="text-xs">{likeCount}</span>
                         </div>
                          <div className="flex items-center gap-1">
                             <MessageCircle className="w-4 h-4"/>
-                            <span className="text-xs">12</span>
+                            <span className="text-xs">0</span>
                         </div>
                     </div>
                 </div>

@@ -7,7 +7,7 @@ import type { User, GalleryImage } from "@/lib/types";
 import { useMemo, useEffect, useState } from "react";
 import { ActivationWarning } from "@/components/ActivationWarning";
 import { Skeleton } from "@/components/ui/skeleton";
-import { collection, getDocs, query, where, limit, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, where, limit, orderBy, collectionGroup } from 'firebase/firestore';
 import { getFirestoreDb } from "@/lib/firebase";
 
 const mainCategories = [
@@ -33,29 +33,28 @@ export default function HomePage() {
       setIsLoading(true);
       const db = getFirestoreDb();
       
-      const providersQuery = query(collection(db, "users"), where("type", "==", "provider"), limit(20));
-      const providerSnapshots = await getDocs(providersQuery);
-      
-      const providerPromises = providerSnapshots.docs.map(async (doc) => {
-        const provider = doc.data() as User;
-        const galleryQuery = query(collection(db, `users/${provider.id}/gallery`), orderBy("createdAt", "desc"), limit(1));
-        const gallerySnapshot = await getDocs(galleryQuery);
+      // Securely query the most recent publications across all users
+      const publicationsQuery = query(collectionGroup(db, "gallery"), orderBy("createdAt", "desc"), limit(20));
+      const publicationsSnapshot = await getDocs(publicationsQuery);
+
+      const feedPromises = publicationsSnapshot.docs.map(async (doc) => {
+        const publication = doc.data() as GalleryImage;
+        const provider = await fetchUser(publication.providerId);
         
-        if (!gallerySnapshot.empty) {
-            const latestPublication = gallerySnapshot.docs[0].data() as GalleryImage;
-            return { ...provider, galleryItem: latestPublication };
+        if (provider) {
+          return { ...provider, galleryItem: publication };
         }
         return null;
       });
       
-      const feedItems = (await Promise.all(providerPromises)).filter(Boolean) as (User & { galleryItem: GalleryImage })[];
+      const feedItems = (await Promise.all(feedPromises)).filter(Boolean) as (User & { galleryItem: GalleryImage })[];
       
       setFeed(feedItems);
       setIsLoading(false);
     };
 
     fetchFeed();
-  }, [currentUser]);
+  }, [currentUser, fetchUser]);
 
 
   const filteredFeed = useMemo(() => {
