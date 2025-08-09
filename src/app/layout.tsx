@@ -26,7 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
        <head>
-        <link rel="manifest" href="/manifest.json" />
+        <link rel="manifest" href="/manifest.json" crossOrigin="use-credentials" />
         <meta name="theme-color" content="#B0D8FF" />
       </head>
       <body className={`${inter.variable} antialiased bg-background`}>

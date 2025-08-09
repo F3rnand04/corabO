@@ -299,7 +299,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return () => {
         unsubs.forEach(unsub => unsub());
     };
-  }, [currentUser?.id]);
+  }, [currentUser]);
 
 
   const getUserMetrics = useCallback((userId: string): UserMetrics => {
@@ -860,3 +860,5 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
+
+    
