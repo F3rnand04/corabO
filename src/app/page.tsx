@@ -103,7 +103,7 @@ export default function HomePage() {
     return `${baseMessage} en el feed.`;
   }
 
-  if (!currentUser) {
+  if (isLoading || !currentUser) {
     return (
       <main className="container py-4 space-y-4">
         {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[500px] w-full rounded-2xl" />)}
@@ -117,9 +117,7 @@ export default function HomePage() {
           <ActivationWarning userType={currentUser.type} />
       )}
       <div className="space-y-4">
-        {isLoading ? (
-          Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[500px] w-full rounded-2xl" />)
-        ) : filteredFeed.length > 0 ? (
+        {filteredFeed.length > 0 ? (
           filteredFeed.map(item => <PublicationCard key={item.galleryItem.id} publication={item.galleryItem} owner={item} />)
         ) : (
           <p className="text-center text-muted-foreground pt-16">
@@ -130,3 +128,5 @@ export default function HomePage() {
     </main>
   );
 }
+
+    

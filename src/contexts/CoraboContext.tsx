@@ -244,7 +244,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         setTransactions([]);
         setConversations([]);
         setProducts([]);
-        setUsers([]);
+        setUsers(prev => prev.filter(u => u.id === currentUser?.id));
         return;
     };
 
@@ -291,7 +291,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return () => {
         unsubs.forEach(unsub => unsub());
     };
-  }, [currentUser?.id, currentUser?.type, toast]);
+  }, [currentUser, toast]);
 
 
   const getUserMetrics = useCallback((userId: string): UserMetrics => {
@@ -854,7 +854,3 @@ export const useCorabo = () => {
 export type { Transaction };
 
     
-
-    
-
-
