@@ -23,7 +23,7 @@ const mainCategories = [
 ];
 
 export default function HomePage() {
-  const { searchQuery, feedView, currentUser, users: contextUsers, fetchUser } = useCorabo();
+  const { searchQuery, feedView, currentUser, fetchUser } = useCorabo();
   const [feed, setFeed] = useState<(User & { galleryItem: GalleryImage })[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -35,17 +35,20 @@ export default function HomePage() {
       
       const providersQuery = query(collection(db, "users"), where("type", "==", "provider"), limit(20));
       const providerSnapshots = await getDocs(providersQuery);
-      const providers = providerSnapshots.docs.map(doc => doc.data() as User);
-
-      const feedItems = providers
-        .map(provider => {
-          if (!provider.gallery || provider.gallery.length === 0) {
-            return null;
-          }
-          const latestPublication = provider.gallery.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
-          return { ...provider, galleryItem: latestPublication };
-        })
-        .filter(Boolean) as (User & { galleryItem: GalleryImage })[];
+      
+      const providerPromises = providerSnapshots.docs.map(async (doc) => {
+        const provider = doc.data() as User;
+        const galleryQuery = query(collection(db, `users/${provider.id}/gallery`), orderBy("createdAt", "desc"), limit(1));
+        const gallerySnapshot = await getDocs(galleryQuery);
+        
+        if (!gallerySnapshot.empty) {
+            const latestPublication = gallerySnapshot.docs[0].data() as GalleryImage;
+            return { ...provider, galleryItem: latestPublication };
+        }
+        return null;
+      });
+      
+      const feedItems = (await Promise.all(providerPromises)).filter(Boolean) as (User & { galleryItem: GalleryImage })[];
       
       setFeed(feedItems);
       setIsLoading(false);

@@ -194,6 +194,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         profileSetupData: {},
         isSubscribed: false,
         isTransactionsActive: false,
+        idVerificationStatus: 'rejected', // Default state
       };
       
       await setDoc(userDocRef, newUser);
@@ -215,9 +216,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, [handleUserCreation, auth]);
   
   const fetchUser = useCallback(async (userId: string): Promise<User | null> => {
-    const cachedUser = users.find(u => u.id === userId);
-    if (cachedUser) return cachedUser;
-
+    // This function can be optimized to check a local cache first
     const db = getFirestoreDb();
     const userDocRef = doc(db, 'users', userId);
     try {
@@ -231,63 +230,76 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
                 return prev.map(u => u.id === userId ? fetchedUser : u);
             });
             return fetchedUser;
-        } else {
-            console.log("No such user!");
-            return null;
         }
+        return null;
     } catch (error) {
         console.error("Error fetching user:", error);
         return null;
     }
-  }, [users]);
+  }, []);
 
-
+  // Secure data loading useEffect
   useEffect(() => {
     if (!currentUser?.id) {
+        // Clear all data if user logs out
         setTransactions([]);
         setConversations([]);
         setProducts([]);
-        setUsers([currentUser].filter(Boolean) as User[]);
+        setUsers([]);
         return;
     };
 
     const db = getFirestoreDb();
-    if (!db) return;
+    const unsubs: (() => void)[] = [];
+
+    // --- User's own data ---
+    const userDocRef = doc(db, 'users', currentUser.id);
+    unsubs.push(onSnapshot(userDocRef, (doc) => {
+        if (doc.exists()) setCurrentUser(doc.data() as User);
+    }));
     
     if (currentUser.profileSetupData?.location) {
         setDeliveryAddress(currentUser.profileSetupData.location);
     }
-    
-    const unsubs: (() => void)[] = [];
 
-    const userDocRef = doc(db, 'users', currentUser.id);
-    unsubs.push(onSnapshot(userDocRef, (doc) => {
-        if (doc.exists()) setCurrentUser(doc.data() as User);
-    }, (error) => console.error("Current user snapshot error:", error)));
-
+    // --- Data related to the current user ---
     const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
     unsubs.push(onSnapshot(transactionsQuery, (snapshot) => {
         setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
-    }, (error) => console.error("Transactions snapshot error:", error)));
+    }));
 
     const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id));
     unsubs.push(onSnapshot(conversationsQuery, (snapshot) => {
         setConversations(snapshot.docs.map(doc => doc.data() as Conversation).sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()));
-    }, (error) => console.error("Conversations snapshot error:", error)));
+    }));
     
+    // --- Provider-specific data ---
     if (currentUser.type === 'provider') {
         const productsQuery = query(collection(db, "products"), where("providerId", "==", currentUser.id));
         unsubs.push(onSnapshot(productsQuery, (snapshot) => {
             setProducts(snapshot.docs.map(doc => doc.data() as Product));
-        }, (error) => console.error("Provider products snapshot error:", error)));
+        }));
     } else {
-        setProducts([]);
+        setProducts([]); // Ensure products are cleared if user is not a provider
     }
+    
+    // --- All users (for admin or specific features) ---
+    // This query is now only run if the user is an admin
+    if (currentUser.role === 'admin') {
+        const allUsersQuery = query(collection(db, "users"));
+        unsubs.push(onSnapshot(allUsersQuery, (snapshot) => {
+            setUsers(snapshot.docs.map(doc => doc.data() as User));
+        }));
+    } else {
+        // For regular users, only keep their own data in the 'users' state initially
+        setUsers([currentUser]);
+    }
+
 
     return () => {
         unsubs.forEach(unsub => unsub());
     };
-  }, [currentUser?.id, currentUser?.type]);
+  }, [currentUser?.id]);
 
 
   const getUserMetrics = useCallback((userId: string): UserMetrics => {

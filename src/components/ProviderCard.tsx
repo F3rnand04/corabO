@@ -55,7 +55,7 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                             <Link href={profileLink} passHref>
                                 <div className="flex items-center gap-2 cursor-pointer group">
                                     <p className="font-bold text-base group-hover:underline">{displayName}</p>
-                                    {provider.verified && <CheckCircle className="w-4 h-4 text-blue-500" />}
+                                    {provider.idVerificationStatus === 'verified' && <CheckCircle className="w-4 h-4 text-blue-500" />}
                                 </div>
                             </Link>
                              <p className="text-sm text-muted-foreground">{specialty}</p>

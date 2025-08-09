@@ -305,4 +305,3 @@ export type VerificationOutput = {
     nameMatch: boolean;
     idMatch: boolean;
 };
-

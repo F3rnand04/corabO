@@ -32,8 +32,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Determine view based on provider type, default to 'upload_gallery' if not product provider
-  const isProductProvider = currentUser.profileSetupData?.offerType === 'product';
+  const isProductProvider = currentUser?.profileSetupData?.offerType === 'product';
   const [view, setView] = useState<'selection' | 'upload_gallery' | 'upload_product'>(isProductProvider ? 'selection' : 'upload_gallery');
   
   // Gallery state
@@ -112,7 +111,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
   };
   
   const handlePublishGallery = () => {
-    if (!galleryFile || !galleryImagePreview || !galleryDescription.trim()) {
+    if (!galleryFile || !galleryImagePreview || !galleryDescription.trim() || !currentUser) {
       toast({
         variant: "destructive",
         title: "Faltan datos",
@@ -144,7 +143,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
   };
 
   const handlePublishProduct = () => {
-    if (!productFile || !productImagePreview || !productName.trim() || !productDescription.trim() || !productPrice) {
+    if (!productFile || !productImagePreview || !productName.trim() || !productDescription.trim() || !productPrice || !currentUser) {
         toast({ variant: "destructive", title: "Faltan datos", description: "Completa todos los campos del producto." });
         return;
     }
@@ -306,6 +305,8 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
     }
     return renderSelectionView();
   }
+
+  if (!currentUser) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
