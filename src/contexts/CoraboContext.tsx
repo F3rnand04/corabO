@@ -293,7 +293,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       isMounted = false;
       unsubs.forEach(unsub => unsub());
     };
-  }, [currentUser?.id]);
+  }, [currentUser?.id, currentUser?.type]);
   
 
 
@@ -377,19 +377,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const db = getFirestoreDb();
     const productRef = doc(db, 'products', product.id);
     await setDoc(productRef, product);
-    // Publication for the feed
-    const publicationRef = doc(db, 'publications', `pub-prod-${product.id}`);
-    const newPublication: GalleryImage = {
-        id: `pub-prod-${product.id}`,
-        providerId: currentUser.id,
-        type: 'image',
-        src: product.imageUrl,
-        alt: product.name,
-        description: product.description,
-        createdAt: new Date().toISOString(),
-        aspectRatio: 'square'
-    }
-    await setDoc(publicationRef, newPublication);
   };
 
   const addToCart = (product: Product, quantity: number) => {
@@ -648,34 +635,16 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const updateUserProfileAndGallery = async (userId: string, image: GalleryImage) => {
     if (!currentUser) return;
     const db = getFirestoreDb();
-    
-    // Atomically add to user's gallery and create a new publication document
-    const batch = writeBatch(db);
-    
-    const userRef = doc(db, 'users', userId);
-    batch.update(userRef, { gallery: arrayUnion(image) });
-    
-    const publicationRef = doc(db, 'publications', image.id);
-    batch.set(publicationRef, image);
-    
-    await batch.commit();
+    await updateDoc(doc(db, 'users', userId), {
+        gallery: arrayUnion(image)
+    });
   };
 
   const removeGalleryImage = async (userId: string, imageId: string) => {
     if(!currentUser || !currentUser.gallery) return;
     const db = getFirestoreDb();
-
-    // Atomically remove from user's gallery and delete the publication document
-    const batch = writeBatch(db);
-
     const updatedGallery = currentUser.gallery.filter(image => image.id !== imageId);
-    const userRef = doc(db, 'users', userId);
-    batch.update(userRef, { gallery: updatedGallery });
-
-    const publicationRef = doc(db, 'publications', imageId);
-    batch.delete(publicationRef);
-    
-    await batch.commit();
+    await updateDoc(doc(db, 'users', userId), { gallery: updatedGallery });
   };
   
   const validateEmail = async (userId: string, emailToValidate: string): Promise<boolean> => {

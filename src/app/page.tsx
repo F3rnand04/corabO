@@ -25,7 +25,7 @@ const mainCategories = [
 export default function HomePage() {
   const { searchQuery, feedView, currentUser, fetchUser, users } = useCorabo();
   const [isLoading, setIsLoading] = useState(true);
-  const [feed, setFeed] = useState<(GalleryImage & { provider: User })[]>([]);
+  const [feed, setFeed] = useState<(User)[]>([]);
 
   useEffect(() => {
     const loadFeed = async () => {
@@ -40,16 +40,9 @@ export default function HomePage() {
             const querySnapshot = await getDocs(providersQuery);
             
             const providers = querySnapshot.docs.map(doc => doc.data() as User);
-
-            // Create a feed from the providers' galleries
-            const newFeed = providers.flatMap(provider => 
-                (provider.gallery || [])
-                    .filter(pub => pub.type === 'image') // For now, only image publications in main feed
-                    .map(publication => ({ ...publication, provider }))
-            );
             
             // Sort by creation date to get the most recent ones first
-            const sortedFeed = newFeed.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            const sortedFeed = providers.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
             setFeed(sortedFeed);
         } catch (error) {
@@ -72,8 +65,8 @@ export default function HomePage() {
     const lowerCaseQuery = searchQuery.toLowerCase().trim();
 
     // Filter by feed view first
-    let viewFiltered = feed.filter(pub => {
-        const providerType = pub.provider.profileSetupData?.providerType || 'professional';
+    let viewFiltered = feed.filter(provider => {
+        const providerType = provider.profileSetupData?.providerType || 'professional';
         if (feedView === 'empresas') return providerType === 'company';
         return providerType !== 'company';
     });
@@ -84,21 +77,20 @@ export default function HomePage() {
     
     const isCategorySearch = mainCategories.some(cat => cat.toLowerCase() === lowerCaseQuery);
 
-    return viewFiltered.filter(pub => {
-        const provider = pub.provider;
+    return viewFiltered.filter(provider => {
         if (!provider) return false;
         
         if (isCategorySearch) {
             const providerCategories = provider.profileSetupData?.categories || [];
             return providerCategories.some(cat => cat.toLowerCase() === lowerCaseQuery) || provider.profileSetupData?.primaryCategory?.toLowerCase() === lowerCaseQuery;
         } else {
-            const publicationMatch = pub.description.toLowerCase().includes(lowerCaseQuery);
             const providerName = provider.profileSetupData?.useUsername 
                 ? provider.profileSetupData.username 
                 : provider.name;
             const providerNameMatch = providerName?.toLowerCase().includes(lowerCaseQuery);
             const specialtyMatch = provider.profileSetupData?.specialty?.toLowerCase().includes(lowerCaseQuery);
-            
+            const publicationMatch = provider.gallery?.some(p => p.description.toLowerCase().includes(lowerCaseQuery));
+
             return publicationMatch || providerNameMatch || specialtyMatch;
         }
     });
@@ -130,7 +122,7 @@ export default function HomePage() {
         {isLoading ? (
           Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[400px] w-full rounded-2xl" />)
         ) : filteredFeed.length > 0 ? (
-          filteredFeed.map(pub => pub.provider ? <ProviderCard key={`${pub.provider.id}-${pub.id}`} provider={pub.provider} /> : null)
+          filteredFeed.map(provider => <ProviderCard key={provider.id} provider={provider} />)
         ) : (
           <p className="text-center text-muted-foreground pt-16">
             {noResultsMessage()}

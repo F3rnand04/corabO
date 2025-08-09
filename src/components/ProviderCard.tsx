@@ -99,8 +99,6 @@ export function ProviderCard({ provider }: ProviderCardProps) {
     const { reputation, effectiveness, responseTime } = getUserMetrics(provider.id);
     const isNewProvider = responseTime === 'Nuevo';
 
-    const isPromotionActive = provider.promotion && new Date(provider.promotion.expires) > new Date();
-
     const displayName = provider.profileSetupData?.useUsername 
         ? provider.profileSetupData.username || provider.name 
         : provider.name;

@@ -15,9 +15,17 @@ const firebaseConfig = {
   "messagingSenderId": "220291714642"
 };
 
-// Singleton pattern to ensure only one instance of Firebase is initialized.
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const db = getFirestore(app);
+let app: FirebaseApp;
+let db: Firestore;
+
+if (getApps().length === 0) {
+    app = initializeApp(firebaseConfig);
+} else {
+    app = getApp();
+}
+
+db = getFirestore(app);
+
 
 // Function to get the initialized Firebase app instance
 export function getFirebaseApp(): FirebaseApp {
