@@ -250,6 +250,13 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         console.error("Firestore DB is not initialized yet.");
         return;
     }
+    
+    // Set initial user list for feed
+    const usersQuery = query(collection(db, "users"), where("type", "==", "provider"));
+    getDocs(usersQuery).then(snapshot => {
+        setUsers(snapshot.docs.map(doc => doc.data() as User));
+    });
+
 
     if (currentUser.profileSetupData?.location) {
         setDeliveryAddress(currentUser.profileSetupData.location);

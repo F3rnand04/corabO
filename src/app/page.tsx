@@ -6,8 +6,6 @@ import { ProviderCard } from "@/components/ProviderCard";
 import type { User, GalleryImage } from "@/lib/types";
 import { useMemo, useEffect, useState } from "react";
 import { ActivationWarning } from "@/components/ActivationWarning";
-import { collection, getDocs, limit, query, where, orderBy } from "firebase/firestore";
-import { getFirestoreDb } from "@/lib/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const mainCategories = [
@@ -23,47 +21,23 @@ const mainCategories = [
 ];
 
 export default function HomePage() {
-  const { searchQuery, feedView, currentUser, fetchUser } = useCorabo();
+  const { searchQuery, feedView, currentUser, users } = useCorabo();
   const [isLoading, setIsLoading] = useState(true);
-  const [feed, setFeed] = useState<(User & { galleryItem: GalleryImage })[]>([]);
 
+  // Deriving the feed from the users state
+  const feed = useMemo(() => {
+    return users
+      .filter(u => u.type === 'provider' && u.gallery && u.gallery.length > 0)
+      .map(provider => ({ ...provider, galleryItem: provider.gallery![provider.gallery!.length - 1] }));
+  }, [users]);
+  
   useEffect(() => {
-    const fetchFeed = async () => {
-        setIsLoading(true);
-        const db = getFirestoreDb();
-        const galleryQuery = query(
-            collection(db, "gallery"), 
-            orderBy("createdAt", "desc"), 
-            limit(50)
-        );
+      // Simulate loading state or handle async operations if users list were fetched here
+      if(users.length > 0) {
+          setIsLoading(false);
+      }
+  }, [users]);
 
-        try {
-            const querySnapshot = await getDocs(galleryQuery);
-            const feedItems = await Promise.all(
-                querySnapshot.docs.map(async (doc) => {
-                    const galleryItem = doc.data() as GalleryImage;
-                    const provider = await fetchUser(galleryItem.providerId);
-                    if (provider) {
-                        return { ...provider, galleryItem };
-                    }
-                    return null;
-                })
-            );
-            
-            // Filter out nulls and potentially shuffle/rank here
-            setFeed(feedItems.filter(item => item !== null) as (User & { galleryItem: GalleryImage })[]);
-
-        } catch (error) {
-            console.error("Error fetching feed:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    if (currentUser) {
-        fetchFeed();
-    }
-  }, [currentUser, fetchUser]);
 
   const filteredFeed = useMemo(() => {
     if (!feed.length) return [];
