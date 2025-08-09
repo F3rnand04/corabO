@@ -20,7 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 
 
 interface ProviderCardProps {
-    provider: UserType;
+    provider: UserType & { galleryItem: NonNullable<UserType['gallery']>[0] };
 }
 
 export function ProviderCard({ provider }: ProviderCardProps) {
@@ -72,7 +72,7 @@ export function ProviderCard({ provider }: ProviderCardProps) {
     };
 
     const handleShare = async () => {
-        const mainImage = provider.gallery && provider.gallery.length > 0 ? provider.gallery[0] : null;
+        const mainImage = provider.galleryItem;
         if (!mainImage) return;
 
         const shareData = {
@@ -105,8 +105,10 @@ export function ProviderCard({ provider }: ProviderCardProps) {
     const specialty = provider.profileSetupData?.specialty || "Especialidad del Proveedor";
     
     const displayDistance = provider.profileSetupData?.showExactLocation ? "A menos de 1km" : "500m - 1km";
+    
+    const mainImage = provider.galleryItem;
+    if (!mainImage) return null;
 
-    const mainImage = provider.gallery && provider.gallery.length > 0 ? provider.gallery[0] : null;
 
     return (
         <>
@@ -155,27 +157,25 @@ export function ProviderCard({ provider }: ProviderCardProps) {
                     </div>
                 </div>
 
-                {mainImage && (
-                    <div className={cn(
-                        "relative w-full group cursor-pointer",
-                        mainImage.aspectRatio === 'horizontal' ? 'aspect-video' :
-                        mainImage.aspectRatio === 'vertical' ? 'aspect-[4/5]' :
-                        'aspect-square'
-                    )} onDoubleClick={() => setIsDetailsDialogOpen(true)}>
-                        <Image 
-                            src={mainImage.src} 
-                            alt={mainImage.alt} 
-                            layout="fill" 
-                            objectFit="cover" 
-                            data-ai-hint="service person working" 
-                        />
-                        <div className="absolute bottom-2 right-2 flex flex-col items-end gap-2 text-white">
-                           <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10" onClick={handleDirectMessage}>
-                               <Send className="w-5 h-5" />
-                           </Button>
-                        </div>
+                <div className={cn(
+                    "relative w-full group cursor-pointer",
+                    mainImage.aspectRatio === 'horizontal' ? 'aspect-video' :
+                    mainImage.aspectRatio === 'vertical' ? 'aspect-[4/5]' :
+                    'aspect-square'
+                )} onDoubleClick={() => setIsDetailsDialogOpen(true)}>
+                    <Image 
+                        src={mainImage.src} 
+                        alt={mainImage.alt} 
+                        layout="fill" 
+                        objectFit="cover" 
+                        data-ai-hint="service person working" 
+                    />
+                    <div className="absolute bottom-2 right-2 flex flex-col items-end gap-2 text-white">
+                       <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10" onClick={handleDirectMessage}>
+                           <Send className="w-5 h-5" />
+                       </Button>
                     </div>
-                )}
+                </div>
                  <div className="flex justify-around items-center border-t">
                     <Button variant="ghost" className="flex-1 text-muted-foreground font-semibold text-sm rounded-none h-12" onClick={handleDirectMessage}>
                         Mensaje
@@ -193,17 +193,15 @@ export function ProviderCard({ provider }: ProviderCardProps) {
             isOpen={isReportDialogOpen} 
             onOpenChange={setIsReportDialogOpen} 
             providerId={provider.id} 
-            publicationId={provider.gallery?.[0]?.id || 'provider-img'}
+            publicationId={provider.galleryItem.id}
         />
-        {provider.gallery && provider.gallery.length > 0 && (
-            <ImageDetailsDialog
-                isOpen={isDetailsDialogOpen}
-                onOpenChange={setIsDetailsDialogOpen}
-                gallery={provider.gallery}
-                owner={provider}
-                startIndex={0}
-            />
-        )}
+        <ImageDetailsDialog
+            isOpen={isDetailsDialogOpen}
+            onOpenChange={setIsDetailsDialogOpen}
+            gallery={[provider.galleryItem]}
+            owner={provider}
+            startIndex={0}
+        />
         </>
     )
 }
