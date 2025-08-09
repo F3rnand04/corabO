@@ -20,9 +20,9 @@ const mainCategories = [
 ];
 
 export default function HomePage() {
-  const { getRankedFeed, searchQuery, feedView, currentUser } = useCorabo();
+  const { getRankedFeed, searchQuery, feedView, currentUser, users } = useCorabo();
 
-  const rankedFeed = useMemo(() => getRankedFeed(), [getRankedFeed]);
+  const rankedFeed = useMemo(() => getRankedFeed(), [getRankedFeed, users, currentUser]);
   
   const filteredFeed = useMemo(() => {
     const lowerCaseQuery = searchQuery.toLowerCase().trim();
@@ -99,5 +99,3 @@ export default function HomePage() {
     </main>
   );
 }
-
-    
