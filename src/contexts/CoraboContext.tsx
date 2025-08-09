@@ -52,7 +52,6 @@ interface CoraboState {
   isLoadingAuth: boolean;
   deliveryAddress: string;
   exchangeRate: number;
-  getRankedFeed: () => (User)[];
   signInWithGoogle: () => void;
   setSearchQuery: (query: string) => void;
   clearSearchHistory: () => void;
@@ -216,18 +215,15 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, [handleUserCreation, auth]);
   
   const fetchUser = useCallback(async (userId: string): Promise<User | null> => {
-    // Return from local cache if available
     const cachedUser = users.find(u => u.id === userId);
     if (cachedUser) return cachedUser;
 
-    // Fetch from Firestore
     const db = getFirestoreDb();
     const userDocRef = doc(db, 'users', userId);
     try {
         const userSnap = await getDoc(userDocRef);
         if (userSnap.exists()) {
             const fetchedUser = userSnap.data() as User;
-            // Add to local cache
             setUsers(prev => {
                 if (!prev.some(u => u.id === userId)) {
                     return [...prev, fetchedUser];
@@ -248,66 +244,47 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (!currentUser?.id) return;
-  
+
     const db = getFirestoreDb();
     if (!db) {
-      console.error("Firestore DB is not initialized yet.");
-      return;
+        console.error("Firestore DB is not initialized yet.");
+        return;
     }
-  
+
     if (currentUser.profileSetupData?.location) {
-      setDeliveryAddress(currentUser.profileSetupData.location);
+        setDeliveryAddress(currentUser.profileSetupData.location);
     }
-  
+
     const unsubs: (() => void)[] = [];
-    let isMounted = true;
-  
-    // Listen to the current user's document
+
     const userDocRef = doc(db, 'users', currentUser.id);
     unsubs.push(onSnapshot(userDocRef, (doc) => {
-      if (isMounted && doc.exists()) {
-        setCurrentUser(doc.data() as User);
-      }
+        if (doc.exists()) setCurrentUser(doc.data() as User);
     }, (error) => console.error("Current user snapshot error:", error)));
-  
-    // Listen to transactions where the current user is a participant
+
     const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
     unsubs.push(onSnapshot(transactionsQuery, (snapshot) => {
-      if (isMounted) {
         setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
-      }
     }, (error) => console.error("Transactions snapshot error:", error)));
-  
-    // Listen to conversations where the current user is a participant
+
     const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id));
     unsubs.push(onSnapshot(conversationsQuery, (snapshot) => {
-      if (isMounted) {
         setConversations(snapshot.docs.map(doc => doc.data() as Conversation).sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()));
-      }
     }, (error) => console.error("Conversations snapshot error:", error)));
-  
-    // Listen to products if the current user is a provider
+
+    // Corrected products query
     if (currentUser.type === 'provider') {
-      const productsQuery = query(collection(db, "products"), where("providerId", "==", currentUser.id));
-      unsubs.push(onSnapshot(productsQuery, (snapshot) => {
-        if (isMounted) {
-          setProducts(snapshot.docs.map(doc => doc.data() as Product));
-        }
-      }, (error) => console.error("Provider products snapshot error:", error)));
+        const productsQuery = query(collection(db, "products"), where("providerId", "==", currentUser.id));
+        unsubs.push(onSnapshot(productsQuery, (snapshot) => {
+            setProducts(snapshot.docs.map(doc => doc.data() as Product));
+        }, (error) => console.error("Provider products snapshot error:", error)));
     }
-  
+
     return () => {
-      isMounted = false;
-      unsubs.forEach(unsub => unsub());
+        unsubs.forEach(unsub => unsub());
     };
-  }, [currentUser?.id, currentUser?.type]);
-  
+}, [currentUser?.id, currentUser?.type]);
 
-
-  const getRankedFeed = useCallback(() => {
-    // This function is now just a placeholder. The feed logic is handled in page.tsx
-    return users.filter(user => user.type === 'provider');
-  }, [users]);
 
   const getUserMetrics = useCallback((userId: string): UserMetrics => {
     const providerTransactions = transactions.filter(t => t.providerId === userId);
@@ -795,8 +772,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     isLoadingAuth,
     deliveryAddress,
     exchangeRate,
-    getRankedFeed,
-    setDeliveryAddress,
     signInWithGoogle,
     setSearchQuery,
     clearSearchHistory,
@@ -855,6 +830,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     autoVerifyIdWithAI,
     markConversationAsRead,
     getUserMetrics,
+    setDeliveryAddress,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;
