@@ -5,7 +5,7 @@ import { useState, TouchEvent, useEffect, useRef, ChangeEvent } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Send, Plus, Calendar, Wallet, MapPin, ChevronLeft, ChevronRight, ImageIcon, Settings, MessageCircle, Flag, Zap, Megaphone } from 'lucide-react';
+import { Star, Send, Plus, Calendar, Wallet, MapPin, ChevronLeft, ChevronRight, ImageIcon, Settings, MessageCircle, Flag, Zap, Megaphone, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -25,6 +25,7 @@ import { SubscriptionDialog } from '@/components/SubscriptionDialog';
 import { ProductGridCard } from '@/components/ProductGridCard';
 import { ProductDetailsDialog } from '@/components/ProductDetailsDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { collection, query, where, onSnapshot, Unsubscribe, getFirestoreDb, orderBy } from 'firebase/firestore';
 
 
 export default function ProfilePage() {
@@ -32,6 +33,42 @@ export default function ProfilePage() {
   const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, transactions, getAgendaEvents, products, getUserMetrics } = useCorabo();
   const router = useRouter();
   
+  const [gallery, setGallery] = useState<GalleryImage[]>([]);
+  const [isLoadingGallery, setIsLoadingGallery] = useState(true);
+
+  // Effect to load provider-specific gallery
+  useEffect(() => {
+    if (!currentUser) return;
+    
+    // For clients, the gallery is static from their user object and doesn't need a listener
+    if (currentUser.type === 'client') {
+      setGallery(currentUser.gallery || []);
+      setIsLoadingGallery(false);
+      return;
+    }
+
+    // For providers, set up a real-time listener to their personal gallery
+    setIsLoadingGallery(true);
+    const db = getFirestoreDb();
+    const q = query(collection(db, 'users', currentUser.id, 'gallery'), orderBy("createdAt", "desc"));
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const userGallery = querySnapshot.docs.map(doc => doc.data() as GalleryImage);
+        setGallery(userGallery);
+        setIsLoadingGallery(false);
+    }, (error) => {
+        console.error("Error fetching gallery:", error);
+        toast({
+            variant: "destructive",
+            title: "Error al cargar la galería",
+            description: "No se pudieron cargar tus publicaciones. Intenta recargar la página.",
+        });
+        setIsLoadingGallery(false);
+    });
+
+    return () => unsubscribe(); // Cleanup subscription on component unmount
+  }, [currentUser, toast]);
+
   if (!currentUser) {
     return null;
   }
@@ -109,7 +146,7 @@ export default function ProfilePage() {
     removeGalleryImage(currentUser.id, imageId);
     toast({ title: "Publicación Eliminada", description: "La imagen ha sido eliminada de tu galería." });
     setIsDetailsDialogOpen(false);
-    if (currentImageIndex >= (currentUser.gallery?.length ?? 1) - 1) {
+    if (currentImageIndex >= (gallery?.length ?? 1) - 1) {
       setCurrentImageIndex(0);
     }
   };
@@ -147,13 +184,13 @@ export default function ProfilePage() {
 
   const handlePrev = () => {
     setCurrentImageIndex((prevIndex) =>
-      prevIndex === 0 ? (currentUser.gallery?.length ?? 1) - 1 : prevIndex - 1
+      prevIndex === 0 ? (gallery?.length ?? 1) - 1 : prevIndex - 1
     );
   };
 
   const handleNext = () => {
     setCurrentImageIndex((prevIndex) =>
-      prevIndex === (currentUser.gallery?.length ?? 1) - 1 ? 0 : prevIndex + 1
+      prevIndex === (gallery?.length ?? 1) - 1 ? 0 : prevIndex + 1
     );
   };
   
@@ -182,7 +219,7 @@ export default function ProfilePage() {
   };
 
   const handleShareClick = async () => {
-    const currentItem = isProductProvider ? providerProducts[0] : (currentUser.gallery && currentUser.gallery.length > 0 ? currentUser.gallery[currentImageIndex] : null);
+    const currentItem = isProductProvider ? providerProducts[0] : (gallery && gallery.length > 0 ? gallery[currentImageIndex] : null);
     if (!currentItem) return;
 
     const shareData = {
@@ -232,7 +269,6 @@ export default function ProfilePage() {
     setIsCampaignDialogOpen(true);
   }
 
-  const gallery = currentUser.gallery || [];
   const currentImage = gallery.length > 0 ? gallery[currentImageIndex] : null;
   const isPromotionActiveOnCurrentImage = currentImage?.promotion && new Date(currentImage.promotion.expires) > new Date();
   
@@ -382,7 +418,7 @@ export default function ProfilePage() {
           <main className="space-y-4">
             <Tabs defaultValue={isProductProvider ? 'products' : 'publications'} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                 <TabsTrigger value="products">Catálogo ({providerProducts.length})</TabsTrigger>
+                 <TabsTrigger value="products">Catálogo ({isProvider ? providerProducts.length : 0})</TabsTrigger>
                  <TabsTrigger value="publications">Publicaciones ({gallery.length})</TabsTrigger>
               </TabsList>
               
@@ -415,23 +451,26 @@ export default function ProfilePage() {
               <TabsContent value="publications">
                 <Card className="rounded-2xl overflow-hidden shadow-lg mt-2">
                   <CardContent className="p-0">
-                    {gallery.length > 0 ? (
+                    {isLoadingGallery ? (
+                        <div className="w-full aspect-video flex items-center justify-center bg-muted">
+                           <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                        </div>
+                    ) : gallery.length > 0 && currentImage ? (
                       <>
                         <div 
                           className="relative group cursor-pointer"
                           onTouchStart={onTouchStart}
-                          onTouchMove={onTouchMove}
-                          onTouchEnd={onTouchEnd}
+                          onTouchMove={onTouchEnd}
                           onDoubleClick={handleImageDoubleClick}
                         >
                           <Image
-                            src={currentImage!.src}
-                            alt={currentImage!.alt}
+                            src={currentImage.src}
+                            alt={currentImage.alt}
                             width={600}
                             height={400}
                             className="rounded-t-2xl object-cover w-full aspect-[4/3] transition-opacity duration-300"
                             data-ai-hint="professional workspace"
-                            key={currentImage!.src} 
+                            key={currentImage.src} 
                           />
                            <Button 
                               variant="ghost" 

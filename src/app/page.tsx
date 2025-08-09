@@ -7,7 +7,7 @@ import type { User, GalleryImage } from "@/lib/types";
 import { useMemo, useEffect, useState } from "react";
 import { ActivationWarning } from "@/components/ActivationWarning";
 import { Skeleton } from "@/components/ui/skeleton";
-import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
 import { getFirestoreDb } from "@/lib/firebase";
 
 const mainCategories = [
@@ -35,7 +35,8 @@ export default function HomePage() {
       
       const publicationsQuery = query(
         collection(db, "publications"),
-        orderBy("createdAt", "desc")
+        orderBy("createdAt", "desc"),
+        limit(50) // Limit to the last 50 publications for performance
       );
 
       try {
@@ -44,7 +45,7 @@ export default function HomePage() {
 
         const feedDataPromises = publications.map(async (pub) => {
           const owner = await fetchUser(pub.providerId);
-          if (owner && owner.isTransactionsActive) {
+          if (owner && !owner.isPaused) { // Check if owner is not paused
             return { publication: pub, owner };
           }
           return null;
@@ -135,5 +136,3 @@ export default function HomePage() {
     </main>
   );
 }
-
-    
