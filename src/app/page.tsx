@@ -7,7 +7,7 @@ import type { User, GalleryImage } from "@/lib/types";
 import { useMemo, useEffect, useState } from "react";
 import { ActivationWarning } from "@/components/ActivationWarning";
 import { Skeleton } from "@/components/ui/skeleton";
-import { collection, getDocs, query, where, limit, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { getFirestoreDb } from "@/lib/firebase";
 
 const mainCategories = [
@@ -58,8 +58,9 @@ export default function HomePage() {
   }, [currentUser]);
 
   const feedItems = useMemo(() => {
-    return providers.flatMap(p => (p.gallery || []).map(g => ({ ...p, galleryItem: g })) )
-            .sort((a, b) => new Date(b.galleryItem.createdAt).getTime() - new Date(a.galleryItem.createdAt).getTime());
+    return providers.flatMap(p => 
+        (p.gallery || []).map(g => ({ ...p, galleryItem: g })) 
+    ).sort((a, b) => new Date(b.galleryItem.createdAt).getTime() - new Date(a.galleryItem.createdAt).getTime());
   }, [providers]);
 
 
@@ -133,4 +134,3 @@ export default function HomePage() {
     </main>
   );
 }
-

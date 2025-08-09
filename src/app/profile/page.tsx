@@ -420,7 +420,8 @@ export default function ProfilePage() {
                         <div 
                           className="relative group cursor-pointer"
                           onTouchStart={onTouchStart}
-                          onTouchMove={onTouchEnd}
+                          onTouchMove={onTouchMove}
+                          onTouchEnd={onTouchEnd}
                           onDoubleClick={handleImageDoubleClick}
                         >
                           <Image
@@ -514,5 +515,3 @@ export default function ProfilePage() {
     </>
   );
 }
-
-    

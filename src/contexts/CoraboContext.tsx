@@ -237,31 +237,21 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         });
         listeners.push(conversationsUnsub);
 
-        // SAFEGUARD: Only subscribe to products if the user is a provider.
         if (userData.type === 'provider') {
             const productsQuery = query(collection(db, "products"), where("providerId", "==", userData.id));
             const productsUnsub = onSnapshot(productsQuery, (snapshot) => {
                 setProducts(snapshot.docs.map(doc => doc.data() as Product));
             }, (error) => {
                 console.error("Error fetching products:", error);
-                toast({
-                    variant: "destructive",
-                    title: "Error de Permisos",
-                    description: "No se pudieron cargar tus productos. Contacta a soporte.",
-                });
             });
             listeners.push(productsUnsub);
-        } else {
-             setProducts([]); // Ensure products are cleared if user is not a provider
         }
         
         // Listen to own user document for real-time updates
-        const userDocRef = doc(db, 'users', userData.id);
-        const userUnsub = onSnapshot(userDocRef, (doc) => {
+        const userUnsub = onSnapshot(doc(db, 'users', userData.id), (doc) => {
             if (doc.exists()) setCurrentUser(doc.data() as User);
         });
         listeners.push(userUnsub);
-
 
         if (userData.profileSetupData?.location) {
             setDeliveryAddress(userData.profileSetupData.location);
@@ -864,5 +854,3 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
-
-    
