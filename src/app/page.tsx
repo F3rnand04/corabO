@@ -36,15 +36,15 @@ export default function HomePage() {
       const providersQuery = query(
         collection(db, "users"), 
         where("type", "==", "provider"),
-        where("isTransactionsActive", "==", true),
-        orderBy("reputation", "desc"),
-        limit(20)
+        where("isTransactionsActive", "==", true)
       );
 
       try {
         const querySnapshot = await getDocs(providersQuery);
         const providerList = querySnapshot.docs.map(doc => doc.data() as User);
-        setProviders(providerList);
+        // Sort on the client side to avoid complex indexes
+        const sortedProviders = providerList.sort((a, b) => (b.reputation || 0) - (a.reputation || 0));
+        setProviders(sortedProviders);
       } catch (error) {
         console.error("Error fetching providers:", error);
       } finally {
