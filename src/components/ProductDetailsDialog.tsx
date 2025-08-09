@@ -40,7 +40,8 @@ export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductD
     setComments([]); // Also reset comments
   }, [product]);
 
-  if (!product) return null;
+  if (!currentUser || !product) return null;
+
 
   const itemInCart = cart.find(item => item.product.id === product.id);
   const quantityInCart = itemInCart ? itemInCart.quantity : 0;

@@ -11,12 +11,14 @@ import { useCorabo } from "@/contexts/CoraboContext";
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { useRouter } from 'next/navigation';
+import type { ProfileSetupData } from '@/lib/types';
+
 
 interface Step4_GeneralDetailsProps {
   onBack: () => void;
   onNext: () => void;
-  formData: any;
-  setFormData: (data: any) => void;
+  formData: ProfileSetupData;
+  setFormData: (data: ProfileSetupData) => void;
 }
 
 export default function Step4_GeneralDetails({ onBack, onNext, formData, setFormData }: Step4_GeneralDetailsProps) {

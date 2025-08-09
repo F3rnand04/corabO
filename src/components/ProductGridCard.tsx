@@ -23,6 +23,9 @@ export function ProductGridCard({ product, onDoubleClick }: ProductGridCardProps
 
     const cartItem = cart.find(item => item.product.id === product.id);
     const quantityInCart = cartItem?.quantity || 0;
+    
+    if(!currentUser) return null;
+
     const isTransactionReady = currentUser.isTransactionsActive;
 
     const handleLike = () => {

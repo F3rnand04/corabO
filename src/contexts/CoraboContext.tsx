@@ -11,7 +11,7 @@ import { add, subDays, startOfDay, differenceInDays, differenceInHours, differen
 import { credicoraLevels } from '@/lib/types';
 import { getAuth, signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, GoogleAuthProvider, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getFirebaseApp, getFirestoreDb } from '@/lib/firebase';
-import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, enableIndexedDbPersistence, arrayUnion, getDocs, deleteDoc, collectionGroup } from 'firebase/firestore';
+import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, enableIndexedDbPersistence, arrayUnion, getDocs, deleteDoc, collectionGroup, Unsubscribe } from 'firebase/firestore';
 import { createCampaign } from '@/ai/flows/campaign-flow';
 import { acceptProposal as acceptProposalFlow, sendMessage as sendMessageFlow } from '@/ai/flows/message-flow';
 import * as TransactionFlows from '@/ai/flows/transaction-flow';
@@ -202,18 +202,83 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  // Main authentication and data loading effect
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    let listeners: Unsubscribe[] = [];
+
+    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+      // Clean up old listeners before setting new ones
+      listeners.forEach(unsub => unsub());
+      listeners = [];
+      
+      // Clear all user-specific state on auth change
+      setCurrentUser(null);
+      setTransactions([]);
+      setConversations([]);
+      setProducts([]);
+
       if (firebaseUser) {
+        setIsLoadingAuth(true);
         const userData = await handleUserCreation(firebaseUser);
         setCurrentUser(userData);
+
+        const db = getFirestoreDb();
+        
+        // --- Setup Safe Listeners ---
+        const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userData.id));
+        const transactionsUnsub = onSnapshot(transactionsQuery, (snapshot) => {
+            setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
+        });
+        listeners.push(transactionsUnsub);
+
+        const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userData.id));
+        const conversationsUnsub = onSnapshot(conversationsQuery, (snapshot) => {
+            setConversations(snapshot.docs.map(doc => doc.data() as Conversation).sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()));
+        });
+        listeners.push(conversationsUnsub);
+
+        // SAFEGUARD: Only subscribe to products if the user is a provider.
+        if (userData.type === 'provider') {
+            const productsQuery = query(collection(db, "products"), where("providerId", "==", userData.id));
+            const productsUnsub = onSnapshot(productsQuery, (snapshot) => {
+                setProducts(snapshot.docs.map(doc => doc.data() as Product));
+            }, (error) => {
+                console.error("Error fetching products:", error);
+                toast({
+                    variant: "destructive",
+                    title: "Error de Permisos",
+                    description: "No se pudieron cargar tus productos. Contacta a soporte.",
+                });
+            });
+            listeners.push(productsUnsub);
+        } else {
+             setProducts([]); // Ensure products are cleared if user is not a provider
+        }
+        
+        // Listen to own user document for real-time updates
+        const userDocRef = doc(db, 'users', userData.id);
+        const userUnsub = onSnapshot(userDocRef, (doc) => {
+            if (doc.exists()) setCurrentUser(doc.data() as User);
+        });
+        listeners.push(userUnsub);
+
+
+        if (userData.profileSetupData?.location) {
+            setDeliveryAddress(userData.profileSetupData.location);
+        }
+
       } else {
+        // User is signed out
         setCurrentUser(null);
       }
       setIsLoadingAuth(false);
     });
-    return () => unsubscribe();
-  }, [handleUserCreation, auth]);
+
+    return () => {
+      unsubscribeAuth();
+      listeners.forEach(unsub => unsub());
+    };
+  }, [handleUserCreation, auth, toast]);
   
   const fetchUser = useCallback(async (userId: string): Promise<User | null> => {
     // This function can be optimized to check a local cache first
@@ -237,62 +302,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         return null;
     }
   }, []);
-
-  // Secure data loading useEffect
-  useEffect(() => {
-    if (!currentUser?.id) {
-        setTransactions([]);
-        setConversations([]);
-        setProducts([]);
-        setUsers(prev => prev.filter(u => u.id === currentUser?.id));
-        return;
-    };
-
-    const db = getFirestoreDb();
-    const unsubs: (() => void)[] = [];
-
-    const userDocRef = doc(db, 'users', currentUser.id);
-    unsubs.push(onSnapshot(userDocRef, (doc) => {
-        if (doc.exists()) setCurrentUser(doc.data() as User);
-    }));
-
-    if (currentUser.profileSetupData?.location) {
-        setDeliveryAddress(currentUser.profileSetupData.location);
-    }
-
-    const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
-    unsubs.push(onSnapshot(transactionsQuery, (snapshot) => {
-        setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
-    }));
-
-    const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id));
-    unsubs.push(onSnapshot(conversationsQuery, (snapshot) => {
-        setConversations(snapshot.docs.map(doc => doc.data() as Conversation).sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()));
-    }));
-    
-    // SAFEGUARD: Only subscribe to products if the user is a provider.
-    if (currentUser.type === 'provider') {
-        const productsQuery = query(collection(db, "products"), where("providerId", "==", currentUser.id));
-        const unsubProducts = onSnapshot(productsQuery, (snapshot) => {
-            setProducts(snapshot.docs.map(doc => doc.data() as Product));
-        }, (error) => {
-            console.error("Error fetching products:", error);
-            toast({
-                variant: "destructive",
-                title: "Error de Permisos",
-                description: "No se pudieron cargar tus productos. Contacta a soporte.",
-            });
-        });
-        unsubs.push(unsubProducts);
-    } else {
-        setProducts([]); // Ensure products are cleared if user is not a provider
-    }
-    
-    return () => {
-        unsubs.forEach(unsub => unsub());
-    };
-  }, [currentUser, toast]);
-
 
   const getUserMetrics = useCallback((userId: string): UserMetrics => {
     const providerTransactions = transactions.filter(t => t.providerId === userId);
@@ -348,6 +357,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     try {
         await signOut(auth);
         setCurrentUser(null);
+        setProducts([]);
+        setTransactions([]);
+        setConversations([]);
         router.push('/login');
     } catch (error) {
         console.error("Error signing out: ", error);
@@ -852,5 +864,3 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
-
-    
