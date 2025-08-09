@@ -299,7 +299,7 @@ const ActionButton = ({ icon: Icon, label, count, onClick }: { icon: React.Eleme
 
 
 export default function TransactionsPage() {
-    const { transactions, currentUser, getAgendaEvents, confirmPaymentReceived, getUserEffectiveness, subscribeUser } = useCorabo();
+    const { transactions, currentUser, getAgendaEvents, getUserMetrics, subscribeUser } = useCorabo();
     const router = useRouter();
     const isModuleActive = currentUser.isTransactionsActive ?? false;
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
@@ -324,7 +324,7 @@ export default function TransactionsPage() {
     ).reduce((sum, tx) => sum + tx.amount, 0);
 
     const availableCredit = (currentUser.credicoraLimit || 0) - usedCredit;
-    const userEffectiveness = getUserEffectiveness(currentUser.id);
+    const { effectiveness: userEffectiveness, reputation } = getUserMetrics(currentUser.id);
 
 
     // Placeholder data for progression
@@ -450,8 +450,8 @@ export default function TransactionsPage() {
                                         <Separator/>
                                         <div className="space-y-3">
                                             <div className="space-y-1">
-                                                <div className="flex justify-between text-xs font-medium"><span>Reputación</span><span>{currentUser.reputation.toFixed(1)}/5.0</span></div>
-                                                <Progress value={(currentUser.reputation / 5) * 100} />
+                                                <div className="flex justify-between text-xs font-medium"><span>Reputación</span><span>{reputation.toFixed(1)}/5.0</span></div>
+                                                <Progress value={(reputation / 5) * 100} />
                                             </div>
                                             <div className="space-y-1">
                                                 <div className="flex justify-between text-xs font-medium"><span>Efectividad</span><span>{userEffectiveness.toFixed(0)}%</span></div>
