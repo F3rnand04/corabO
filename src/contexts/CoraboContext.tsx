@@ -31,7 +31,8 @@ interface DailyQuote {
 
 interface CoraboState {
   currentUser: User | null;
-  users: User[];
+  users: User[]; // This will now only store fetched users, not all users
+  fetchUser: (userId: string) => Promise<User | null>;
   products: Product[];
   services: Service[];
   cart: CartItem[];
@@ -111,7 +112,7 @@ interface CoraboState {
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
 
 // Import mock data - we'll phase this out
-import { users as mockUsers, services as mockServices, initialTransactions, initialConversations } from '@/lib/mock-data';
+import { services as mockServices, initialTransactions, initialConversations } from '@/lib/mock-data';
 
 export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
@@ -123,7 +124,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   // We still use mock data for these until we migrate them to Firestore
   const [services, setServices] = useState(mockServices);
   
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [users, setUsers] = useState<User[]>([]); // Will only store fetched users
   const [products, setProducts] = useState<Product[]>([]);
   
   // These will be managed by Firestore
@@ -215,6 +216,23 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, [handleUserCreation, auth]);
   
+  const fetchUser = useCallback(async (userId: string): Promise<User | null> => {
+    // Check cache first
+    const cachedUser = users.find(u => u.id === userId);
+    if (cachedUser) return cachedUser;
+
+    const db = getFirestoreDb();
+    const userRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userRef);
+    if (userSnap.exists()) {
+        const user = userSnap.data() as User;
+        // Add to cache
+        setUsers(prev => [...prev, user]);
+        return user;
+    }
+    return null;
+  }, [users]);
+
   const getUserEffectiveness = (userId: string) => {
     const user = users.find(u => u.id === userId);
     if (!user || user.type !== 'provider') return 0;
@@ -285,13 +303,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             setCurrentUser(doc.data() as User);
         }
     }, (error) => console.error("Current user snapshot error:", error)));
-
-    // Listener for all users - THIS IS THE INSECURE PART, REMOVING
-    // unsubs.push(onSnapshot(collection(db, "users"), (snapshot) => {
-    //     if (isMounted) {
-    //         setUsers(snapshot.docs.map(doc => doc.data() as User));
-    //     }
-    // }, (error) => console.error("Users snapshot error:", error)));
 
     // Correct, secure query for transactions
     const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
@@ -867,6 +878,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const value: CoraboState = {
     currentUser,
     users,
+    fetchUser,
     products,
     services,
     cart,

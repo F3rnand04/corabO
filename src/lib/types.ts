@@ -46,6 +46,7 @@ export type GalleryImageComment = {
 
 export type GalleryImage = {
   id: string;
+  providerId: string; // Added to link back to the provider
   type: 'image' | 'video';
   src: string;
   alt: string;
@@ -302,3 +303,5 @@ export type VerificationOutput = {
     nameMatch: boolean;
     idMatch: boolean;
 };
+
+    

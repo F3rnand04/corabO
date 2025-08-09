@@ -5,22 +5,31 @@ import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useCorabo } from "@/contexts/CoraboContext";
-import type { Conversation } from "@/lib/types";
+import type { Conversation, User } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useEffect, useState } from 'react';
 
 interface ConversationCardProps {
     conversation: Conversation;
 }
 
 export function ConversationCard({ conversation }: ConversationCardProps) {
-    const { users, currentUser } = useCorabo();
+    const { currentUser, fetchUser } = useCorabo();
+    const [otherParticipant, setOtherParticipant] = useState<User | null>(null);
+
+    useEffect(() => {
+        if (!currentUser) return;
+        const otherId = conversation.participantIds.find(pId => pId !== currentUser.id);
+        if (otherId) {
+            fetchUser(otherId).then(user => {
+                if(user) setOtherParticipant(user);
+            });
+        }
+    }, [conversation.participantIds, currentUser, fetchUser]);
 
     if (!currentUser) return null;
-
-    const otherParticipantId = conversation.participantIds.find(pId => pId !== currentUser.id);
-    const otherParticipant = users.find(u => u.id === otherParticipantId);
 
     if (!otherParticipant) {
         // Special card for system messages
@@ -97,3 +106,5 @@ export function ConversationCard({ conversation }: ConversationCardProps) {
         </Link>
     );
 }
+
+    

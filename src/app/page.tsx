@@ -4,8 +4,11 @@
 import { useCorabo } from "@/contexts/CoraboContext";
 import { ProviderCard } from "@/components/ProviderCard";
 import type { User, GalleryImage } from "@/lib/types";
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { ActivationWarning } from "@/components/ActivationWarning";
+import { collection, getDocs, limit, query } from "firebase/firestore";
+import { getFirestoreDb } from "@/lib/firebase";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const mainCategories = [
   'Hogar y Reparaciones', 
@@ -20,35 +23,63 @@ const mainCategories = [
 ];
 
 export default function HomePage() {
-  const { getRankedFeed, searchQuery, feedView, currentUser, users } = useCorabo();
+  const { searchQuery, feedView, currentUser, fetchUser } = useCorabo();
+  const [feedData, setFeedData] = useState<(GalleryImage & { provider: User })[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const rankedFeed = useMemo(() => getRankedFeed(), [getRankedFeed, users, currentUser]);
+  useEffect(() => {
+    const fetchFeed = async () => {
+      setIsLoading(true);
+      const db = getFirestoreDb();
+      const publicationsCol = collection(db, 'publications'); // Assuming a top-level publications collection
+      const q = query(publicationsCol, limit(20)); // Get latest 20 publications
+      
+      try {
+        const querySnapshot = await getDocs(q);
+        const publications = await Promise.all(
+            querySnapshot.docs.map(async (doc) => {
+                const pub = doc.data() as GalleryImage;
+                const provider = await fetchUser(pub.providerId); // Fetch provider for each pub
+                return provider ? { ...pub, provider } : null;
+            })
+        );
+        
+        setFeedData(publications.filter(p => p !== null) as (GalleryImage & { provider: User })[]);
+      } catch (error) {
+        console.error("Error fetching feed:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (currentUser) {
+        fetchFeed();
+    }
+  }, [currentUser, fetchUser]);
+
   
   const filteredFeed = useMemo(() => {
+    if (!feedData.length) return [];
+    
     const lowerCaseQuery = searchQuery.toLowerCase().trim();
 
-    if (!lowerCaseQuery) {
-        // Filter by feed view only
-        return rankedFeed.filter(pub => {
-            const providerType = pub.provider.profileSetupData?.providerType || 'professional';
-            if (feedView === 'empresas') return providerType === 'company';
-            return providerType !== 'company';
-        });
-    }
+    // Filter by feed view first
+    let viewFiltered = feedData.filter(pub => {
+        const providerType = pub.provider.profileSetupData?.providerType || 'professional';
+        if (feedView === 'empresas') return providerType === 'company';
+        return providerType !== 'company';
+    });
 
+    if (!lowerCaseQuery) {
+        return viewFiltered;
+    }
+    
     const isCategorySearch = mainCategories.some(cat => cat.toLowerCase() === lowerCaseQuery);
 
-    return rankedFeed.filter(pub => {
+    return viewFiltered.filter(pub => {
         const provider = pub.provider;
         if (!provider) return false;
         
-        const providerType = provider.profileSetupData?.providerType || 'professional';
-
-        // Apply feed view filter first
-        if (feedView === 'empresas' && providerType !== 'company') return false;
-        if (feedView === 'servicios' && providerType === 'company') return false;
-
-        // Then apply search query filter
         if (isCategorySearch) {
             const providerCategories = provider.profileSetupData?.categories || [];
             return providerCategories.some(cat => cat.toLowerCase() === lowerCaseQuery) || provider.profileSetupData?.primaryCategory?.toLowerCase() === lowerCaseQuery;
@@ -64,7 +95,7 @@ export default function HomePage() {
         }
     });
 
-  }, [rankedFeed, searchQuery, feedView]);
+  }, [feedData, searchQuery, feedView]);
 
   const noResultsMessage = () => {
     const baseMessage = feedView === 'empresas' ? "No se encontraron empresas" : "No se encontraron servicios";
@@ -88,7 +119,9 @@ export default function HomePage() {
           <ActivationWarning userType={currentUser.type} />
       )}
       <div className="space-y-4">
-        {filteredFeed.length > 0 ? (
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[400px] w-full rounded-2xl" />)
+        ) : filteredFeed.length > 0 ? (
           filteredFeed.map(pub => pub.provider ? <ProviderCard key={`${pub.provider.id}-${pub.id}`} provider={pub.provider} /> : null)
         ) : (
           <p className="text-center text-muted-foreground pt-16">
@@ -99,3 +132,5 @@ export default function HomePage() {
     </main>
   );
 }
+
+    

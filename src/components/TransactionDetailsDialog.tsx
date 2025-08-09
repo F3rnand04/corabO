@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Dialog,
@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "./ui/badge";
-import type { Transaction } from "@/lib/types";
+import type { Transaction, User } from "@/lib/types";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert, Truck, Banknote, ClipboardCheck, CalendarCheck, Contact, Star, Calendar as CalendarIcon, Upload, Smartphone } from "lucide-react";
 import { Input } from './ui/input';
@@ -69,7 +69,7 @@ function ConfirmPaymentDialog({ onConfirm, onReportThirdParty, onCancel }: { onC
 
 
 export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: TransactionDetailsDialogProps) {
-  const { currentUser, users, sendQuote, acceptQuote, startDispute, completeWork, confirmWorkReceived, acceptAppointment, payCommitment, confirmPaymentReceived, sendMessage } = useCorabo();
+  const { currentUser, fetchUser, sendQuote, acceptQuote, startDispute, completeWork, confirmWorkReceived, acceptAppointment, payCommitment, confirmPaymentReceived, sendMessage } = useCorabo();
   const router = useRouter();
   const { toast } = useToast();
   const [quoteBreakdown, setQuoteBreakdown] = useState('');
@@ -80,6 +80,8 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   const [showPaymentScreen, setShowPaymentScreen] = useState(false);
   const [hasConfirmedReception, setHasConfirmedReception] = useState(false);
   const [showConfirmPaymentDialog, setShowConfirmPaymentDialog] = useState(false);
+  const [otherParty, setOtherParty] = useState<User | null>(null);
+  const [deliveryProvider, setDeliveryProvider] = useState<User | null>(null);
   
   // State for payment form
   const [paymentBank, setPaymentBank] = useState('');
@@ -87,13 +89,22 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   const [paymentReference, setPaymentReference] = useState('');
   const [paymentVoucher, setPaymentVoucher] = useState<File | null>(null);
 
-  if (!transaction) return null;
+  useEffect(() => {
+    if (transaction && currentUser) {
+        const otherId = transaction.providerId === currentUser.id ? transaction.clientId : transaction.providerId;
+        if (otherId) {
+            fetchUser(otherId).then(setOtherParty);
+        }
+        if(transaction.details.deliveryProviderId) {
+            fetchUser(transaction.details.deliveryProviderId).then(setDeliveryProvider);
+        }
+    }
+  }, [transaction, currentUser, fetchUser]);
+
+  if (!transaction || !currentUser) return null;
 
   const isProvider = currentUser?.type === 'provider';
   const isClient = currentUser?.type === 'client';
-  const otherPartyId = transaction.providerId === currentUser?.id ? transaction.clientId : transaction.providerId;
-  const otherParty = users.find(u => u.id === otherPartyId);
-  const deliveryProvider = users.find(u => u.id === transaction.details.deliveryProviderId);
 
   const handleClose = () => {
     setShowRatingScreen(false);
@@ -140,8 +151,8 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   }
 
   const handleContactToReschedule = () => {
-     if(otherPartyId) {
-       const conversationId = sendMessage(otherPartyId, `Hola, vi tu solicitud de cita para el ${new Date(transaction.date).toLocaleDateString()}. Me gustaría discutir otra hora.`, false);
+     if(otherParty?.id) {
+       const conversationId = sendMessage(otherParty.id, `Hola, vi tu solicitud de cita para el ${new Date(transaction.date).toLocaleDateString()}. Me gustaría discutir otra hora.`, false);
        router.push(`/messages/${conversationId}`);
        handleClose();
      }
@@ -322,8 +333,8 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
             <div><span className="font-semibold">Fecha:</span> {new Date(transaction.date).toLocaleDateString()}</div>
             <div><span className="font-semibold">Tipo:</span> {transaction.type}</div>
             <div><span className="font-semibold">Monto:</span> ${transaction.amount.toFixed(2)}</div>
-             <div><span className="font-semibold">Cliente:</span> {isClient ? "Tú" : (users.find(u => u.id === transaction.clientId)?.name)}</div>
-             <div><span className="font-semibold">Proveedor:</span> {isProvider ? "Tú" : (users.find(u => u.id === transaction.providerId)?.name)}</div>
+             <div><span className="font-semibold">Cliente:</span> {isClient ? "Tú" : otherParty?.name}</div>
+             <div><span className="font-semibold">Proveedor:</span> {isProvider ? "Tú" : otherParty?.name}</div>
              {transaction.details.paymentFromThirdParty && (
                 <div className="col-span-2">
                     <Badge variant="destructive">
@@ -442,3 +453,5 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
     </Dialog>
   );
 }
+
+    
