@@ -60,10 +60,13 @@ export const createPublication = ai.defineFlow(
     batch.set(userGalleryRef, galleryItem);
 
     // 2. Create the denormalized public publication for the feed
-    // This logic is now more robust with fallbacks.
+    // CRITICAL FIX: Robustly build ownerData with fallbacks for each property
+    // to prevent errors if profileSetupData or its sub-properties are missing.
     const ownerData: PublicationOwner = {
       id: user.id,
-      name: (user.profileSetupData?.useUsername && user.profileSetupData.username) ? user.profileSetupData.username : user.name,
+      name: (user.profileSetupData?.useUsername && user.profileSetupData.username) 
+            ? user.profileSetupData.username 
+            : user.name,
       profileImage: user.profileImage || '',
       verified: user.verified || false,
       isGpsActive: user.isGpsActive || false,
