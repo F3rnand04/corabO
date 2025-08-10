@@ -141,9 +141,17 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const userCache = useRef<Map<string, User>>(new Map());
 
   const fetchUser = useCallback(async (userId: string): Promise<User | null> => {
+    // Return from cache if available
     if (userCache.current.has(userId)) {
         return userCache.current.get(userId)!;
     }
+    // Check local `users` state first
+    const localUser = users.find(u => u.id === userId);
+    if(localUser) {
+        userCache.current.set(userId, localUser);
+        return localUser;
+    }
+    // Fetch from Firestore as a last resort
     const db = getFirestoreDb();
     const userDocRef = doc(db, 'users', userId);
     const userDocSnap = await getDoc(userDocRef);
@@ -153,7 +161,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         return userData;
     }
     return null;
-  }, []);
+  }, [users]);
 
   const handleUserCreation = useCallback(async (firebaseUser: FirebaseUser): Promise<User> => {
     const db = getFirestoreDb();
@@ -212,8 +220,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       setCurrentUser(null);
       setTransactions([]);
       setConversations([]);
-      
-      // Clear public data on auth change
       setUsers([]);
       setProducts([]);
 
@@ -223,7 +229,21 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
         const db = getFirestoreDb();
         
-        // Listen ONLY to data the current user has explicit permission for.
+        // Listen to all users (for display purposes like chat names, etc.)
+        // THIS IS OFTEN PROBLEMATIC WITH SECURITY RULES.
+        // A better approach in a real app would be to fetch users by ID as needed.
+        listeners.push(onSnapshot(collection(db, "users"), (snapshot) => {
+            const allUsers = snapshot.docs.map(doc => doc.data() as User);
+            setUsers(allUsers);
+            // Update cache whenever users list changes
+            allUsers.forEach(u => userCache.current.set(u.id, u));
+        }));
+        
+        // Listen to all products
+        listeners.push(onSnapshot(collection(db, "products"), (snapshot) => {
+            setProducts(snapshot.docs.map(doc => doc.data() as Product));
+        }));
+
         const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userData.id));
         listeners.push(onSnapshot(transactionsQuery, (snapshot) => {
             setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
@@ -603,9 +623,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
     const userGalleryRef = doc(db, 'users', userId, 'gallery', image.id);
     batch.set(userGalleryRef, image);
-
-    const publicationRef = doc(db, 'publications', image.id);
-    batch.set(publicationRef, image);
     
     await batch.commit();
   };
@@ -613,15 +630,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const removeGalleryImage = async (userId: string, imageId: string) => {
     if(!currentUser) return;
     const db = getFirestoreDb();
-    const batch = writeBatch(db);
     
     const userGalleryRef = doc(db, 'users', userId, 'gallery', imageId);
-    batch.delete(userGalleryRef);
+    await deleteDoc(userGalleryRef);
 
-    const publicationRef = doc(db, 'publications', imageId);
-    batch.delete(publicationRef);
-
-    await batch.commit();
   };
   
   const validateEmail = async (userId: string, emailToValidate: string): Promise<boolean> => {

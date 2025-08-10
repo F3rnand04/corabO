@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MapPin, FileText, Menu, Search, LogOut, User, ShoppingCart, Plus, Minus, X, Wallet, Truck, Star, History as HistoryIcon, Shield, HelpCircle, UserRound } from "lucide-react";
+import { MapPin, FileText, Menu, Search, LogOut, User, ShoppingCart, Plus, Minus, X, Wallet, Truck, Star, History as HistoryIcon, Shield, HelpCircle, UserRound, Contact } from "lucide-react";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -25,7 +25,8 @@ import { Label } from "./ui/label";
 import Image from "next/image";
 import { credicoraLevels, type User as UserType } from "@/lib/types";
 import { ThemeSwitcher } from "./ThemeSwitcher";
-import { UserSwitcher } from "./UserSwitcher";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+
 
 export function Header() {
   const { searchQuery, setSearchQuery, feedView, setFeedView, currentUser, fetchUser, toggleGps, cart, updateCartQuantity, getCartTotal, checkout, getDeliveryCost, logout } = useCorabo();
@@ -84,14 +85,13 @@ export function Header() {
       <div className="container px-2 sm:px-4">
         <div className="flex h-16 items-center justify-between">
           
-          <UserSwitcher />
+          <Link href="/contacts" passHref>
+            <Button variant="ghost" size="icon">
+                <Image src="https://i.postimg.cc/Wz1MTvWK/lg.png" alt="Corabo Logo" width={32} height={32} className="h-8 w-auto"/>
+            </Button>
+          </Link>
 
           <div className="flex items-center space-x-1 sm:space-x-2">
-            <Link href="/contacts" passHref>
-              <Button variant="ghost" size="icon">
-                <UserRound className="h-5 w-5" />
-              </Button>
-            </Link>
             <Button variant="ghost" size="icon" onClick={() => toggleGps(currentUser.id)} onDoubleClick={() => router.push('/map')}>
               <MapPin className={cn("h-5 w-5", currentUser.isGpsActive && "text-green-500")} />
             </Button>
@@ -224,10 +224,19 @@ export function Header() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon">
-                  <Menu className="h-5 w-5" />
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={currentUser.profileImage} alt={currentUser.name} />
+                    <AvatarFallback>
+                        <User className="h-4 w-4" />
+                    </AvatarFallback>
+                  </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => router.push('/profile')}>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Mi Perfil</span>
+                </DropdownMenuItem>
                 {hasCompletedProfileSetup && (
                     <Link href="/profile-setup" passHref>
                       <DropdownMenuItem>

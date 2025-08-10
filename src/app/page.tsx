@@ -23,26 +23,26 @@ const mainCategories = [
 
 export default function HomePage() {
   const { searchQuery, feedView, currentUser } = useCorabo();
-  const [users, setUsers] = useState<User[]>([]);
+  const [providers, setProviders] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadFeed = async () => {
         setIsLoading(true);
         // This flow runs on the server and is allowed to fetch all users.
-        const feedUsers = await getFeed();
-        setUsers(feedUsers.map(item => item.owner));
+        const feedProviders = await getFeed();
+        setProviders(feedProviders);
         setIsLoading(false);
     };
     loadFeed();
   }, []);
 
   const filteredProviders = useMemo(() => {
-    if (!users.length) return [];
+    if (!providers.length) return [];
     
     const lowerCaseQuery = searchQuery.toLowerCase().trim();
 
-    let viewFiltered = users.filter(provider => {
+    let viewFiltered = providers.filter(provider => {
         const providerType = provider.profileSetupData?.providerType || 'professional';
         if (feedView === 'empresas') return providerType === 'company';
         return providerType !== 'company';
@@ -71,7 +71,7 @@ export default function HomePage() {
         }
     });
 
-  }, [users, searchQuery, feedView]);
+  }, [providers, searchQuery, feedView]);
 
   const noResultsMessage = () => {
     const baseMessage = feedView === 'empresas' ? "No se encontraron empresas" : "No se encontraron servicios";
@@ -81,7 +81,7 @@ export default function HomePage() {
     return `${baseMessage} en el feed.`;
   }
 
-  if (isLoading || !currentUser) {
+  if (!currentUser) {
     return (
       <main className="container py-4 space-y-4">
         {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[500px] w-full rounded-2xl" />)}
