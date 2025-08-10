@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Flows for fetching profile-specific data securely.
@@ -7,7 +6,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestoreDb } from '@/lib/firebase-server';
-import { collection, getDocs, query, orderBy, where } from 'firebase/firestore';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import type { GalleryImage, Product } from '@/lib/types';
 
 // Define loose schemas for GalleryImage and Product as Zod can't handle circular types easily.
