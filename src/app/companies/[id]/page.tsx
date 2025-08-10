@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -31,30 +32,39 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { credicoraLevels } from '@/lib/types';
 import { ActivationWarning } from '@/components/ActivationWarning';
+import { getFirestoreDb } from '@/lib/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 export default function CompanyProfilePage() {
   const params = useParams();
-  const { users, products, addContact, isContact, transactions, createAppointmentRequest, currentUser, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, sendMessage, toggleGps, deliveryAddress, setDeliveryAddress, getUserMetrics, fetchUser } = useCorabo();
+  const { users, addContact, isContact, transactions, createAppointmentRequest, currentUser, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, sendMessage, toggleGps, deliveryAddress, setDeliveryAddress, getUserMetrics, fetchUser } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
 
   const [provider, setProvider] = useState<User | null>(null);
+  const [providerProducts, setProviderProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const loadProvider = async () => {
+    const loadProviderData = async () => {
         setIsLoading(true);
         const providerId = params.id as string;
         if (providerId) {
             const fetchedProvider = await fetchUser(providerId);
             setProvider(fetchedProvider);
+
+            if (fetchedProvider?.profileSetupData?.offerType === 'product') {
+                const db = getFirestoreDb();
+                const productsQuery = query(collection(db, 'products'), where("providerId", "==", providerId));
+                const querySnapshot = await getDocs(productsQuery);
+                setProviderProducts(querySnapshot.docs.map(doc => doc.data() as Product));
+            }
         }
         setIsLoading(false);
     };
-    loadProvider();
+    loadProviderData();
   }, [params.id, fetchUser]);
   
-  const providerProducts = provider ? products.filter(p => p.providerId === provider.id) : [];
   const isDeliveryOnly = provider?.profileSetupData?.isOnlyDelivery || false;
   const providerAcceptsCredicora = provider?.profileSetupData?.acceptsCredicora || false;
   const isProductProvider = provider?.profileSetupData?.offerType === 'product';
