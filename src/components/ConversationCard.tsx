@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import Link from 'next/link';
@@ -16,18 +17,17 @@ interface ConversationCardProps {
 }
 
 export function ConversationCard({ conversation }: ConversationCardProps) {
-    const { currentUser, users } = useCorabo();
+    const { currentUser, fetchUser } = useCorabo();
     const [otherParticipant, setOtherParticipant] = useState<User | null>(null);
 
     useEffect(() => {
-        if (!currentUser || !conversation || !users.length) return;
+        if (!currentUser || !conversation) return;
         
         const otherParticipantId = conversation.participantIds.find(pId => pId !== currentUser.id);
         if (otherParticipantId) {
-            const participantData = users.find(u => u.id === otherParticipantId);
-            setOtherParticipant(participantData || null);
+            fetchUser(otherParticipantId).then(setOtherParticipant);
         }
-    }, [conversation, currentUser, users]);
+    }, [conversation, currentUser, fetchUser]);
 
 
     if (!currentUser) return null;
