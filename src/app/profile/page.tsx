@@ -43,7 +43,9 @@ export default function ProfilePage() {
     setIsLoading(true);
     try {
         const galleryData = await getProfileGallery(currentUser.id);
-        setGallery(galleryData);
+        // CRITICAL FIX: Sort publications on the client-side after fetching
+        const sortedGallery = galleryData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setGallery(sortedGallery);
 
         if (currentUser.type === 'provider') {
             const productsData = await getProfileProducts(currentUser.id);

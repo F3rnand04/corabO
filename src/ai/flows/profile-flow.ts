@@ -22,9 +22,11 @@ export const getProfileGallery = ai.defineFlow(
     },
     async (userId) => {
         const db = getFirestoreDb();
+        // CRITICAL FIX: Removed orderBy("createdAt", "desc") which requires a composite index
+        // that cannot be created from here, causing the permission denied error.
+        // Sorting will now be handled on the client-side.
         const galleryQuery = query(
-            collection(db, 'users', userId, 'gallery'),
-            orderBy("createdAt", "desc")
+            collection(db, 'users', userId, 'gallery')
         );
         const snapshot = await getDocs(galleryQuery);
         return snapshot.docs.map(doc => doc.data());
