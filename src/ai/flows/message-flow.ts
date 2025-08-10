@@ -101,11 +101,11 @@ export const acceptProposal = ai.defineFlow(
 
     // SECURITY CHECK: Ensure the acceptor is a participant and is not the sender
     if (!conversation.participantIds.includes(acceptorId)) {
-        throw new Error("Acceptor is not a participant of this conversation.");
+        throw new Error("Permission Denied: Acceptor is not a participant of this conversation.");
     }
     const message = conversation.messages.find(m => m.id === messageId);
     if (!message) throw new Error("Message not found");
-    if (message.senderId === acceptorId) throw new Error("Cannot accept your own proposal");
+    if (message.senderId === acceptorId) throw new Error("Permission Denied: Cannot accept your own proposal.");
 
     if (message.type !== 'proposal' || !message.proposal) throw new Error("Message is not a proposal");
 
