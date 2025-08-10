@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from 'react';
@@ -20,6 +21,7 @@ import { autoVerifyIdWithAI as autoVerifyIdWithAIFlow, type VerificationInput } 
 import { getExchangeRate } from '@/ai/flows/exchange-rate-flow';
 import { sendSmsVerificationCodeFlow, verifySmsCodeFlow } from '@/ai/flows/sms-flow';
 import { getFeed as getFeedFlow } from '@/ai/flows/feed-flow';
+import { createProduct as createProductFlow, createPublication as createPublicationFlow } from '@/ai/flows/publication-flow';
 
 
 type FeedView = 'servicios' | 'empresas';
@@ -55,7 +57,6 @@ interface CoraboState {
   clearSearchHistory: () => void;
   logout: () => void;
   addToCart: (product: Product, quantity: number) => void;
-  addProduct: (product: Product) => void;
   updateCartQuantity: (productId: string, quantity: number) => void;
   removeFromCart: (productId: string) => void;
   getCartTotal: () => number;
@@ -77,7 +78,6 @@ interface CoraboState {
   toggleGps: (userId: string) => void;
   updateUser: (userId: string, updates: Partial<User>) => Promise<void>;
   updateUserProfileImage: (userId: string, imageUrl: string) => Promise<void>;
-  updateUserProfileAndGallery: (userId: string, image: GalleryImage) => void;
   removeGalleryImage: (userId: string, imageId: string) => void;
   validateEmail: (userId: string, emailToValidate: string) => Promise<boolean>;
   sendPhoneVerification: (userId: string, phone: string) => Promise<void>;
@@ -229,8 +229,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       listeners = [];
       
       setCurrentUser(null);
-      // Keep transactions, they will be loaded on demand in the transactions page
-      // setTransactions([]); 
       setConversations([]);
       
       if (firebaseUser) {
@@ -239,7 +237,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         
         const db = getFirestoreDb();
         
-        // This listener is safe, as it's for a single document.
         listeners.push(onSnapshot(doc(db, 'users', userData.id), (doc) => {
             if (doc.exists()) {
               const updatedUserData = doc.data() as User;
@@ -248,7 +245,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             }
         }));
         
-        // This listener is safe.
         const convosQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userData.id), orderBy("lastUpdated", "desc"));
         listeners.push(onSnapshot(convosQuery, (snapshot) => {
             setConversations(snapshot.docs.map(doc => doc.data() as Conversation));
@@ -341,15 +337,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const clearSearchHistory = () => {
     setSearchHistory([]);
   }
-
-  const addProduct = async (product: Product) => {
-    if(!currentUser) return;
-    const db = getFirestoreDb();
-    const productRef = doc(db, 'products', product.id);
-    await setDoc(productRef, product);
-    // Add product to local state immediately for UI responsiveness
-    setProducts(prev => [...prev, product]);
-  };
 
   const addToCart = (product: Product, quantity: number) => {
     if (!currentUser) return;
@@ -610,37 +597,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
      await updateUser(userId, { profileImage: imageUrl });
   };
 
-  const updateUserProfileAndGallery = async (userId: string, image: GalleryImage) => {
-    if (!currentUser) return;
-    const db = getFirestoreDb();
-    const batch = writeBatch(db);
-
-    const userGalleryRef = doc(db, 'users', userId, 'gallery', image.id);
-    batch.set(userGalleryRef, image);
-    
-    // Create denormalized public publication
-    const publicationRef = doc(db, 'publications', image.id);
-    const publicationData: GalleryImage = {
-        ...image,
-        // Denormalize owner data
-        owner: {
-            id: currentUser.id,
-            name: currentUser.profileSetupData?.useUsername ? currentUser.profileSetupData.username : currentUser.name,
-            profileImage: currentUser.profileImage,
-            verified: currentUser.verified,
-            isGpsActive: currentUser.isGpsActive,
-            reputation: currentUser.reputation, // Add reputation
-            profileSetupData: {
-                specialty: currentUser.profileSetupData?.specialty,
-                providerType: currentUser.profileSetupData?.providerType,
-            }
-        },
-    };
-    batch.set(publicationRef, publicationData);
-    
-    await batch.commit();
-  };
-
   const removeGalleryImage = async (userId: string, imageId: string) => {
     if(!currentUser) return;
     const db = getFirestoreDb();
@@ -799,7 +755,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     clearSearchHistory,
     logout,
     addToCart,
-    addProduct,
+    // This is now handled by the backend flow via UploadDialog
+    // addProduct, 
     updateCartQuantity,
     removeFromCart,
     getCartTotal,
@@ -821,7 +778,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     toggleGps,
     updateUser,
     updateUserProfileImage,
-    updateUserProfileAndGallery,
+    // This is now handled by the backend flow via UploadDialog
+    // updateUserProfileAndGallery,
     removeGalleryImage,
     validateEmail,
     sendPhoneVerification,
@@ -869,7 +827,3 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
-
-    
-
-    

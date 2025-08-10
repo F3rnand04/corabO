@@ -18,9 +18,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useCorabo } from '@/contexts/CoraboContext';
 import { useToast } from '@/hooks/use-toast';
-import { UploadCloud, X, Image as ImageIcon, Video, PackagePlus } from 'lucide-react';
-import type { GalleryImage, Product } from '@/lib/types';
+import { UploadCloud, X, Image as ImageIcon, Video, PackagePlus, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import { createPublication, createProduct } from '@/ai/flows/publication-flow';
+
 
 interface UploadDialogProps {
   isOpen: boolean;
@@ -28,13 +29,16 @@ interface UploadDialogProps {
 }
 
 export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
-  const { currentUser, updateUserProfileAndGallery, addProduct } = useCorabo();
+  const { currentUser } = useCorabo();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isProductProvider = currentUser?.profileSetupData?.offerType === 'product';
   const [view, setView] = useState<'selection' | 'upload_gallery' | 'upload_product'>(isProductProvider ? 'selection' : 'upload_gallery');
   
+  // Common state
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // Gallery state
   const [galleryImagePreview, setGalleryImagePreview] = useState<string | null>(null);
   const [galleryDescription, setGalleryDescription] = useState('');
@@ -103,6 +107,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
     setProductName('');
     setProductDescription('');
     setProductPrice('');
+    setIsSubmitting(false);
   };
 
   const handleClose = () => {
@@ -110,55 +115,54 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
     onOpenChange(false);
   };
   
-  const handlePublishGallery = () => {
+  const handlePublishGallery = async () => {
     if (!galleryFile || !galleryImagePreview || !galleryDescription.trim() || !currentUser) {
-      toast({
-        variant: "destructive",
-        title: "Faltan datos",
-        description: "Por favor, selecciona un archivo y añade una descripción.",
-      });
+      toast({ variant: "destructive", title: "Faltan datos" });
       return;
     }
-
-    const newGalleryItem: GalleryImage = {
-      id: `gal-${Date.now()}`,
-      providerId: currentUser.id,
-      type: isVideofile ? 'video' : 'image',
-      src: galleryImagePreview,
-      alt: `Publicación de ${currentUser.name}`,
-      description: galleryDescription,
-      comments: [],
-      createdAt: new Date().toISOString(),
-      aspectRatio: galleryAspectRatio,
-    };
-
-    updateUserProfileAndGallery(currentUser.id, newGalleryItem);
-
-    toast({
-      title: "¡Publicación Exitosa!",
-      description: "Tu nuevo contenido ya está en tu galería.",
-    });
-
-    handleClose();
+    
+    setIsSubmitting(true);
+    try {
+        await createPublication({
+            userId: currentUser.id,
+            description: galleryDescription,
+            imageDataUri: galleryImagePreview,
+            aspectRatio: galleryAspectRatio,
+            type: isVideofile ? 'video' : 'image',
+        });
+        toast({ title: "¡Publicación Exitosa!", description: "Tu nuevo contenido ya está en tu galería." });
+        handleClose();
+    } catch (error) {
+        console.error("Error creating publication:", error);
+        toast({ variant: "destructive", title: "Error al Publicar", description: "No se pudo crear la publicación." });
+    } finally {
+        setIsSubmitting(false);
+    }
   };
 
-  const handlePublishProduct = () => {
+  const handlePublishProduct = async () => {
     if (!productFile || !productImagePreview || !productName.trim() || !productDescription.trim() || !productPrice || !currentUser) {
         toast({ variant: "destructive", title: "Faltan datos", description: "Completa todos los campos del producto." });
         return;
     }
-    const newProduct: Product = {
-      id: `prod-${Date.now()}`,
-      name: productName,
-      description: productDescription,
-      price: parseFloat(productPrice),
-      category: currentUser.profileSetupData?.primaryCategory || 'General',
-      providerId: currentUser.id,
-      imageUrl: productImagePreview,
-    };
-    addProduct(newProduct);
-    toast({ title: "¡Producto Añadido!", description: `${productName} ya está en tu catálogo.` });
-    handleClose();
+
+    setIsSubmitting(true);
+    try {
+        await createProduct({
+            userId: currentUser.id,
+            name: productName,
+            description: productDescription,
+            price: parseFloat(productPrice),
+            imageDataUri: productImagePreview,
+        });
+        toast({ title: "¡Producto Añadido!", description: `${productName} ya está en tu catálogo.` });
+        handleClose();
+    } catch (error) {
+        console.error("Error creating product:", error);
+        toast({ variant: "destructive", title: "Error al Añadir Producto", description: "No se pudo crear el producto." });
+    } finally {
+        setIsSubmitting(false);
+    }
   }
   
   const renderSelectionView = () => (
@@ -242,7 +246,8 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
           <Button variant="outline" onClick={handleClose}>
             Cancelar
           </Button>
-          <Button onClick={handlePublishGallery} disabled={!galleryImagePreview || !galleryDescription.trim()}>
+          <Button onClick={handlePublishGallery} disabled={!galleryImagePreview || !galleryDescription.trim() || isSubmitting}>
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
             Publicar en Galería
           </Button>
         </DialogFooter>
@@ -291,7 +296,10 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
          </div>
         <DialogFooter>
             <Button variant="outline" onClick={handleClose}>Cancelar</Button>
-            <Button onClick={handlePublishProduct} disabled={!productImagePreview || !productName.trim()}>Añadir Producto</Button>
+            <Button onClick={handlePublishProduct} disabled={!productImagePreview || !productName.trim() || isSubmitting}>
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+              Añadir Producto
+            </Button>
         </DialogFooter>
      </>
   );
