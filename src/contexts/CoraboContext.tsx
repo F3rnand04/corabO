@@ -266,16 +266,18 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const effectiveness = totalMeaningfulTransactions > 0 ? (completedTransactions / totalMeaningfulTransactions) * 100 : 0;
   
     let responseTime = "Nuevo";
-    const paymentConfirmations = providerTransactions.filter(t => t.status === 'Pagado' && t.details.paymentReportedDate && t.details.paymentConfirmationDate);
+    const paymentConfirmations = providerTransactions
+        .filter(t => t.status === 'Pagado' && t.details.paymentReportedDate && t.details.paymentConfirmationDate)
+        .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
     if (paymentConfirmations.length > 0) {
-      const totalResponseTime = paymentConfirmations.reduce((acc, t) => {
-        const reported = new Date(t.details.paymentReportedDate!); 
-        const confirmed = new Date(t.details.paymentConfirmationDate!);
-        return acc + differenceInMinutes(confirmed, reported);
-      }, 0);
-      const avgResponseTime = totalResponseTime / paymentConfirmations.length;
-      if (avgResponseTime <= 5) responseTime = "00-05 min";
-      else if (avgResponseTime <= 15) responseTime = "05-15 min";
+      const lastConfirmation = paymentConfirmations[0];
+      const reported = new Date(lastConfirmation.details.paymentReportedDate!); 
+      const confirmed = new Date(lastConfirmation.details.paymentConfirmationDate!);
+      const responseMinutes = differenceInMinutes(confirmed, reported);
+      
+      if (responseMinutes <= 5) responseTime = "00-05 min";
+      else if (responseMinutes <= 15) responseTime = "05-15 min";
       else responseTime = "+15 min";
     }
   
@@ -809,3 +811,5 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
+
+    
