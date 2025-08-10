@@ -7,7 +7,8 @@ import { useMemo, useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { ActivationWarning } from "@/components/ActivationWarning";
-import { getFeed } from "@/ai/flows/feed-flow";
+import { collection, onSnapshot, query, orderBy, limit } from "firebase/firestore";
+import { getFirestoreDb } from "@/lib/firebase";
 
 const mainCategories = [
   'Hogar y Reparaciones', 
@@ -22,27 +23,42 @@ const mainCategories = [
 ];
 
 export default function HomePage() {
-  const { searchQuery, feedView, currentUser } = useCorabo();
-  const [feedItems, setFeedItems] = useState<{ publication: GalleryImage; owner: User }[]>([]);
+  const { searchQuery, feedView, currentUser, users } = useCorabo();
+  const [publications, setPublications] = useState<GalleryImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
-    async function loadFeed() {
-        setIsLoading(true);
-        try {
-            const items = await getFeed();
-            setFeedItems(items);
-        } catch (error) {
-            console.error("Error fetching feed:", error);
-        } finally {
-            setIsLoading(false);
-        }
-    }
-    
-    if (currentUser) {
-        loadFeed();
-    }
+    if (!currentUser) return;
+
+    const db = getFirestoreDb();
+    const publicationsQuery = query(
+        collection(db, "publications"),
+        orderBy("createdAt", "desc"),
+        limit(50)
+    );
+
+    const unsubscribe = onSnapshot(publicationsQuery, (querySnapshot) => {
+        const publicationsData = querySnapshot.docs.map(doc => doc.data() as GalleryImage);
+        setPublications(publicationsData);
+        setIsLoading(false);
+    }, (error) => {
+        console.error("Error fetching publications in real-time:", error);
+        setIsLoading(false);
+    });
+
+    return () => unsubscribe();
   }, [currentUser]);
+
+  const feedItems = useMemo(() => {
+    if (!publications.length || !users.length) return [];
+    
+    return publications.map(pub => {
+        const owner = users.find(u => u.id === pub.providerId);
+        return owner ? { publication: pub, owner } : null;
+    }).filter((item): item is { publication: GalleryImage; owner: User } => item !== null);
+
+  }, [publications, users]);
+
 
   const filteredFeed = useMemo(() => {
     if (!feedItems.length) return [];

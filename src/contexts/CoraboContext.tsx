@@ -37,6 +37,7 @@ interface UserMetrics {
 
 interface CoraboState {
   currentUser: User | null;
+  users: User[];
   cart: CartItem[];
   transactions: Transaction[];
   conversations: Conversation[];
@@ -48,9 +49,6 @@ interface CoraboState {
   isLoadingAuth: boolean;
   deliveryAddress: string;
   exchangeRate: number;
-  products: Product[];
-  users: User[];
-  fetchUser: (userId: string) => Promise<User | null>;
   signInWithGoogle: () => void;
   setSearchQuery: (query: string) => void;
   clearSearchHistory: () => void;
@@ -122,7 +120,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   
   const [users, setUsers] = useState<User[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   
@@ -184,23 +181,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const userCache = useRef<Map<string, User>>(new Map());
-
-  const fetchUser = useCallback(async (userId: string): Promise<User | null> => {
-      if (userCache.current.has(userId)) {
-          return userCache.current.get(userId)!;
-      }
-      const db = getFirestoreDb();
-      const userRef = doc(db, 'users', userId);
-      const userSnap = await getDoc(userRef);
-      if (userSnap.exists()) {
-          const userData = userSnap.data() as User;
-          userCache.current.set(userId, userData);
-          return userData;
-      }
-      return null;
-  }, []);
-
   // Main authentication and data loading effect
   useEffect(() => {
     let listeners: Unsubscribe[] = [];
@@ -212,7 +192,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       setCurrentUser(null);
       setTransactions([]);
       setConversations([]);
-      setProducts([]);
+      setUsers([]);
 
       if (firebaseUser) {
         const userData = await handleUserCreation(firebaseUser);
@@ -226,7 +206,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         });
         listeners.push(transactionsUnsub);
 
-        const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userData.id));
+        const conversationsQuery = query(
+            collection(db, "conversations"), 
+            where("participantIds", "array-contains", userData.id)
+        );
         const conversationsUnsub = onSnapshot(conversationsQuery, (snapshot) => {
             setConversations(snapshot.docs.map(doc => doc.data() as Conversation));
         });
@@ -236,19 +219,13 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             if (doc.exists()) setCurrentUser(doc.data() as User);
         });
         listeners.push(userUnsub);
-
-        // This listener for all products is insecure and should be removed.
-        // It's kept here temporarily to avoid breaking other parts while refactoring.
-        const productsUnsub = onSnapshot(collection(db, "products"), (snapshot) => {
-            setProducts(snapshot.docs.map(doc => doc.data() as Product));
-        });
-        listeners.push(productsUnsub);
         
+        // This listener for all users is broad, but necessary for now
+        // to populate profile cards and other UI elements.
         const usersUnsub = onSnapshot(collection(db, 'users'), (snapshot) => {
             setUsers(snapshot.docs.map(doc => doc.data() as User));
         });
         listeners.push(usersUnsub);
-
 
         if (userData.profileSetupData?.location) {
             setDeliveryAddress(userData.profileSetupData.location);
@@ -756,6 +733,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const value: CoraboState = {
     currentUser,
+    users,
     cart,
     transactions,
     conversations,
@@ -767,9 +745,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     isLoadingAuth,
     deliveryAddress,
     exchangeRate,
-    products,
-    users,
-    fetchUser,
     signInWithGoogle,
     setSearchQuery,
     clearSearchHistory,

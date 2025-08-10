@@ -16,7 +16,15 @@ export function UserSwitcher() {
   const { currentUser, users, isLoadingAuth } = useCorabo();
 
   if (isLoadingAuth || !currentUser) {
-    return <div>Cargando...</div>
+    return (
+        <div className="w-[180px] h-10 flex items-center gap-2">
+            <UserIcon className="h-8 w-8 p-1.5 rounded-full bg-muted text-muted-foreground"/>
+            <div>
+                <div className="h-4 w-20 bg-muted rounded-md animate-pulse"/>
+                <div className="h-3 w-12 bg-muted rounded-md mt-1 animate-pulse"/>
+            </div>
+        </div>
+    );
   }
 
   return (
@@ -28,7 +36,12 @@ export function UserSwitcher() {
                 <UserIcon className="h-4 w-4" />
             </AvatarFallback>
         </Avatar>
-        <SelectValue placeholder="Seleccionar usuario" />
+        <SelectValue asChild>
+          <div>
+            <p className="font-semibold text-sm truncate">{currentUser.name}</p>
+            <p className="text-xs text-muted-foreground capitalize">{currentUser.type}</p>
+          </div>
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         {users.map((user) => (

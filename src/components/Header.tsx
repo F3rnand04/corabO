@@ -25,6 +25,7 @@ import { Label } from "./ui/label";
 import Image from "next/image";
 import { credicoraLevels, type User as UserType } from "@/lib/types";
 import { ThemeSwitcher } from "./ThemeSwitcher";
+import { UserSwitcher } from "./UserSwitcher";
 
 export function Header() {
   const { searchQuery, setSearchQuery, feedView, setFeedView, currentUser, users, toggleGps, cart, updateCartQuantity, getCartTotal, checkout, getDeliveryCost, logout } = useCorabo();
@@ -37,7 +38,7 @@ export function Header() {
   const [useCredicora, setUseCredicora] = useState(false);
   
   const cartTransaction = cart.length > 0 ? currentUser?.transactions?.find(tx => tx.status === 'Carrito Activo' && tx.clientId === currentUser.id) : undefined;
-  const provider = cartTransaction ? users.find(u => u.id === cartTransaction.providerId) : null;
+  const provider = users.find(u => u.id === cartTransaction?.providerId);
 
 
   const isDeliveryOnly = provider?.profileSetupData?.isOnlyDelivery || false;
@@ -74,11 +75,7 @@ export function Header() {
       <div className="container px-2 sm:px-4">
         <div className="flex h-16 items-center justify-between">
           
-          <Link href="/contacts" passHref>
-            <div className="flex items-center w-24 h-10 relative cursor-pointer">
-              <Image src="https://i.postimg.cc/8zWvkhxS/Sin-t-tulo-3.png" alt="Corabo Logo" layout="fill" objectFit="contain" />
-            </div>
-          </Link>
+          <UserSwitcher />
 
           <div className="flex items-center space-x-1 sm:space-x-2">
             

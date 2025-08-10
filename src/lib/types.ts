@@ -1,5 +1,6 @@
 
 
+
 export type Notification = {
   id: string;
   userId: string;
@@ -188,6 +189,7 @@ export type User = {
   createdAt?: string;
   phoneVerificationCode?: string | null;
   phoneVerificationCodeExpires?: string | null;
+  credicoraDetails?: CredicoraLevel;
 };
 
 export type Product = {

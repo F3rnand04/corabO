@@ -36,8 +36,8 @@ export function PublicationCard({ publication, owner, className }: PublicationCa
 
     useEffect(() => {
         setIsSaved(isContact(owner.id));
-        setLikeCount(0);
-        setShareCount(0);
+        setLikeCount(publication.likes || 0); // Use real data if available
+        setShareCount(0); // Share count is ephemeral
     }, [isContact, owner.id, publication]);
 
     const handleSaveContact = () => {
@@ -57,6 +57,7 @@ export function PublicationCard({ publication, owner, className }: PublicationCa
     };
     
     const handleLike = () => {
+        // Here you would also call a backend function to update the like count
         setIsLiked(prev => !prev);
         setLikeCount(prev => (isLiked ? prev - 1 : prev + 1));
     };
@@ -83,12 +84,12 @@ export function PublicationCard({ publication, owner, className }: PublicationCa
         }
     }
 
-    if (!publication) return null;
+    if (!publication || !owner) return null; // Important guard clause
 
     return (
         <>
         <div 
-            className={cn("relative w-full group cursor-pointer", 
+            className={cn("relative w-full group cursor-pointer rounded-lg overflow-hidden shadow-md", 
                 publication.aspectRatio === 'horizontal' ? 'aspect-video' :
                 publication.aspectRatio === 'vertical' ? 'aspect-[4/5]' :
                 'aspect-square',
@@ -104,33 +105,35 @@ export function PublicationCard({ publication, owner, className }: PublicationCa
                 data-ai-hint="service person working" 
             />
             
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
             <Button 
                 variant="ghost" 
                 size="icon" 
-                className="absolute top-2 left-2 z-10 text-white bg-black/20 hover:bg-black/40 rounded-full h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-2 left-2 z-10 text-white bg-black/30 hover:bg-black/50 rounded-full h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
                 onClick={() => setIsReportDialogOpen(true)}
             >
                 <Flag className="w-4 h-4" />
             </Button>
             
-            <div className="absolute bottom-2 right-2 flex flex-col items-end gap-2 text-white">
+            <div className="absolute bottom-2 right-2 flex flex-col items-center gap-4 z-10">
                 <div className="flex flex-col items-center">
                     <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10" onClick={handleLike}>
                         <Star className={cn("w-5 h-5", isLiked && "fill-yellow-400 text-yellow-400")} />
                     </Button>
-                    <span className="text-xs font-bold mt-1 drop-shadow-md">{likeCount}</span>
+                    <span className="text-xs font-bold mt-1 drop-shadow-md text-white">{likeCount}</span>
                 </div>
                 <div className="flex flex-col items-center">
                      <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10" onClick={() => setIsDetailsDialogOpen(true)}>
                         <MessageCircle className="w-5 h-5" />
                      </Button>
-                    <span className="text-xs font-bold mt-1 drop-shadow-md">{publication.comments?.length || 0}</span>
+                    <span className="text-xs font-bold mt-1 drop-shadow-md text-white">{publication.comments?.length || 0}</span>
                 </div>
                  <div className="flex flex-col items-center">
                      <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10" onClick={handleShare}>
                         <Send className="w-5 h-5" />
                      </Button>
-                    <span className="text-xs font-bold mt-1 drop-shadow-md">{shareCount}</span>
+                    <span className="text-xs font-bold mt-1 drop-shadow-md text-white">{shareCount}</span>
                 </div>
                 <div className="flex flex-col items-center">
                      <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10" onClick={handleSaveContact}>
@@ -139,7 +142,7 @@ export function PublicationCard({ publication, owner, className }: PublicationCa
                 </div>
             </div>
 
-            <div className="absolute bottom-0 left-0 p-4 text-white bg-gradient-to-t from-black/60 to-transparent w-full">
+            <div className="absolute bottom-0 left-0 p-4 text-white bg-gradient-to-t from-black/70 to-transparent w-full">
                 <Link href={profileLink} className="font-bold drop-shadow hover:underline">@{owner.profileSetupData?.username || owner.name}</Link>
                 <p className="text-sm drop-shadow-sm line-clamp-2 mt-1">{publication.description}</p>
             </div>
