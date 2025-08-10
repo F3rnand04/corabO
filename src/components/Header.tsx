@@ -19,14 +19,12 @@ import { cn } from "@/lib/utils";
 import { Popover, PopoverTrigger, PopoverContent } from "./ui/popover";
 import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
-import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "./ui/alert-dialog";
-import { Switch } from "./ui/switch";
-import { Label } from "./ui/label";
+import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import Image from "next/image";
 import { credicoraLevels, type User as UserType } from "@/lib/types";
 import { ThemeSwitcher } from "./ThemeSwitcher";
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-
 
 export function Header() {
   const { searchQuery, setSearchQuery, feedView, setFeedView, currentUser, users, toggleGps, cart, updateCartQuantity, getCartTotal, checkout, getDeliveryCost, logout } = useCorabo();
@@ -42,19 +40,22 @@ export function Header() {
   
   const provider = users.find(u => u.id === cartTransaction?.providerId);
 
-  const subtotal = getCartTotal();
-  const deliveryCost = getDeliveryCost();
-
   const handleCheckout = () => {
     if (cartTransaction && currentUser) {
+        const isOnlyDelivery = provider?.profileSetupData?.isOnlyDelivery || false;
         checkout(cartTransaction.id, includeDelivery || isOnlyDelivery, useCredicora);
         setIsCheckoutAlertOpen(false);
         setUseCredicora(false);
     }
   };
   
+  if (!currentUser) return null;
+
   const isOnlyDelivery = provider?.profileSetupData?.isOnlyDelivery || false;
   const providerAcceptsCredicora = provider?.profileSetupData?.acceptsCredicora || false;
+
+  const subtotal = getCartTotal();
+  const deliveryCost = getDeliveryCost();
   const totalWithDelivery = subtotal + ((includeDelivery || isOnlyDelivery) ? deliveryCost : 0);
 
   const userCredicoraLevel = currentUser?.credicoraLevel || 1;
@@ -67,9 +68,6 @@ export function Header() {
   const productInitialPayment = subtotal - financedAmount;
   const totalToPayToday = productInitialPayment + ((includeDelivery || isOnlyDelivery) ? deliveryCost : 0);
   const installmentAmount = financedAmount > 0 ? financedAmount / credicoraDetails.installments : 0;
-
-
-  if (!currentUser) return null;
 
   return (
     <header className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm sticky top-0 z-40">
@@ -215,12 +213,7 @@ export function Header() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={currentUser.profileImage} alt={currentUser.name} />
-                    <AvatarFallback>
-                        <User className="h-4 w-4" />
-                    </AvatarFallback>
-                  </Avatar>
+                   <Menu className="h-6 w-6" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
@@ -297,3 +290,5 @@ export function Header() {
     </header>
   );
 }
+
+    
