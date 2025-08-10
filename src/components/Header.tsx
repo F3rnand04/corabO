@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MapPin, FileText, Menu, Search, LogOut, User, Wallet, History as HistoryIcon, Shield, HelpCircle, Contact } from "lucide-react";
@@ -66,6 +66,9 @@ export function Header() {
           <div className="flex items-center gap-1">
              <Button variant="ghost" size="icon" onClick={() => toggleGps(currentUser.id)} onDoubleClick={() => router.push('/map')}>
                 <MapPin className={cn("h-5 w-5", currentUser.isGpsActive ? "text-green-500" : "text-muted-foreground")} />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => router.push('/transactions')}>
+                <Wallet className="h-5 w-5 text-muted-foreground"/>
             </Button>
             <Button variant="ghost" size="icon" onClick={() => router.push('/quotes')}>
                 <FileText className="h-5 w-5 text-muted-foreground"/>
@@ -136,5 +139,3 @@ export function Header() {
     </header>
   );
 }
-
-    
