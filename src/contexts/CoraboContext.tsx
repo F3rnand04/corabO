@@ -40,10 +40,6 @@ interface UserMetrics {
 
 interface CoraboState {
   currentUser: User | null;
-  // GLOBAL STATES REMOVED TO PREVENT MEMORY LEAKS
-  // users: User[];
-  // products: Product[];
-  // transactions: Transaction[];
   cart: CartItem[];
   searchQuery: string;
   contacts: User[];
@@ -72,7 +68,7 @@ interface CoraboState {
   completeWork: (transactionId: string) => void;
   confirmWorkReceived: (transactionId: string, rating: number, comment?: string) => void;
   startDispute: (transactionId: string) => void;
-  checkout: (transaction: Transaction, withDelivery: boolean, useCredicora: boolean) => void;
+  checkout: (transactionId: string, withDelivery: boolean, useCredicora: boolean) => void;
   addContact: (user: User) => boolean;
   removeContact: (userId: string) => void;
   isContact: (userId: string) => boolean;
@@ -116,6 +112,41 @@ interface CoraboState {
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
+
+const getUserMetrics = (userId: string, transactions: Transaction[]): UserMetrics => {
+    const providerTransactions = transactions.filter(t => t.providerId === userId);
+    
+    const totalMeaningfulTransactions = providerTransactions.filter(t => t.status !== 'Carrito Activo' && t.status !== 'Pre-factura Pendiente').length;
+    if (totalMeaningfulTransactions === 0) {
+        return { reputation: 0, effectiveness: 0, responseTime: "Nuevo" };
+    }
+
+    const ratedTransactions = providerTransactions.filter(t => (t.status === 'Pagado' || t.status === 'Resuelto') && t.details.clientRating);
+    const totalRating = ratedTransactions.reduce((acc, t) => acc + (t.details.clientRating || 0), 0);
+    const reputation = ratedTransactions.length > 0 ? totalRating / ratedTransactions.length : 0;
+  
+    const completedTransactions = providerTransactions.filter(t => t.status === 'Pagado' || t.status === 'Resuelto').length;
+    const effectiveness = totalMeaningfulTransactions > 0 ? (completedTransactions / totalMeaningfulTransactions) * 100 : 0;
+  
+    let responseTime = "Nuevo";
+    const paymentConfirmations = providerTransactions
+        .filter(t => t.status === 'Pagado' && t.details.paymentReportedDate && t.details.paymentConfirmationDate)
+        .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    if (paymentConfirmations.length > 0) {
+      const lastConfirmation = paymentConfirmations[0];
+      const reported = new Date(lastConfirmation.details.paymentReportedDate!); 
+      const confirmed = new Date(lastConfirmation.details.paymentConfirmationDate!);
+      const responseMinutes = differenceInMinutes(confirmed, reported);
+      
+      if (responseMinutes <= 5) responseTime = "00-05 min";
+      else if (responseMinutes <= 15) responseTime = "05-15 min";
+      else responseTime = "+15 min";
+    }
+  
+    return { reputation, effectiveness, responseTime };
+  };
+
 
 export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
@@ -217,72 +248,44 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    let listeners: Unsubscribe[] = [];
+    let unsubscribeUser: Unsubscribe | undefined;
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
-      listeners.forEach(unsub => unsub());
-      listeners = [];
-      setCurrentUser(null);
-      
-      if (firebaseUser) {
-        const userData = await handleUserCreation(firebaseUser);
-        setCurrentUser(userData);
-        
-        const db = getFirestoreDb();
-        listeners.push(onSnapshot(doc(db, 'users', userData.id), (doc) => {
-            if (doc.exists()) {
-              const updatedUserData = doc.data() as User;
-              setCurrentUser(updatedUserData);
-              userCache.current.set(updatedUserData.id, updatedUserData);
-            }
-        }));
-        
-        if (userData.profileSetupData?.location) {
-            setDeliveryAddress(userData.profileSetupData.location);
+        // Clean up previous user listener before setting a new one
+        if (unsubscribeUser) {
+            unsubscribeUser();
+            unsubscribeUser = undefined;
         }
-      }
-      setIsLoadingAuth(false);
+        setCurrentUser(null);
+
+        if (firebaseUser) {
+            const userData = await handleUserCreation(firebaseUser);
+            // No need to set user here, the listener below will do it.
+
+            const db = getFirestoreDb();
+            unsubscribeUser = onSnapshot(doc(db, 'users', userData.id), (doc) => {
+                if (doc.exists()) {
+                    const updatedUserData = doc.data() as User;
+                    setCurrentUser(updatedUserData);
+                    userCache.current.set(updatedUserData.id, updatedUserData);
+
+                    if (updatedUserData.profileSetupData?.location) {
+                        setDeliveryAddress(updatedUserData.profileSetupData.location);
+                    }
+                }
+            });
+        }
+        
+        setIsLoadingAuth(false);
     });
 
     return () => {
-      unsubscribeAuth();
-      listeners.forEach(unsub => unsub());
+        unsubscribeAuth();
+        if (unsubscribeUser) {
+            unsubscribeUser();
+        }
     };
-  }, [handleUserCreation, auth, toast]);
-  
-  const getUserMetrics = useCallback((userId: string, transactions: Transaction[]): UserMetrics => {
-    const providerTransactions = transactions.filter(t => t.providerId === userId);
-    
-    const totalMeaningfulTransactions = providerTransactions.filter(t => t.status !== 'Carrito Activo' && t.status !== 'Pre-factura Pendiente').length;
-    if (totalMeaningfulTransactions === 0) {
-        return { reputation: 0, effectiveness: 0, responseTime: "Nuevo" };
-    }
-
-    const ratedTransactions = providerTransactions.filter(t => (t.status === 'Pagado' || t.status === 'Resuelto') && t.details.clientRating);
-    const totalRating = ratedTransactions.reduce((acc, t) => acc + (t.details.clientRating || 0), 0);
-    const reputation = ratedTransactions.length > 0 ? totalRating / ratedTransactions.length : 0;
-  
-    const completedTransactions = providerTransactions.filter(t => t.status === 'Pagado' || t.status === 'Resuelto').length;
-    const effectiveness = totalMeaningfulTransactions > 0 ? (completedTransactions / totalMeaningfulTransactions) * 100 : 0;
-  
-    let responseTime = "Nuevo";
-    const paymentConfirmations = providerTransactions
-        .filter(t => t.status === 'Pagado' && t.details.paymentReportedDate && t.details.paymentConfirmationDate)
-        .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-    if (paymentConfirmations.length > 0) {
-      const lastConfirmation = paymentConfirmations[0];
-      const reported = new Date(lastConfirmation.details.paymentReportedDate!); 
-      const confirmed = new Date(lastConfirmation.details.paymentConfirmationDate!);
-      const responseMinutes = differenceInMinutes(confirmed, reported);
-      
-      if (responseMinutes <= 5) responseTime = "00-05 min";
-      else if (responseMinutes <= 15) responseTime = "05-15 min";
-      else responseTime = "+15 min";
-    }
-  
-    return { reputation, effectiveness, responseTime };
-  }, []);
+}, [handleUserCreation, auth]);
 
 
   const signInWithGoogle = async () => {
@@ -412,9 +415,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const db = getFirestoreDb();
     const userDocRef = doc(db, 'users', userId);
     await updateDoc(userDocRef, updates);
-    if (currentUser?.id === userId) {
-      setCurrentUser(prev => prev ? { ...prev, ...updates } : null);
-    }
+    // State will be updated by the onSnapshot listener, no need to call setCurrentUser here.
   };
 
   const completeInitialSetup = async (userId: string, data: { lastName: string; idNumber: string; birthDate: string }) => {
@@ -579,7 +580,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const requestService = (service: Service) => {};
   const requestQuoteFromGroup = (serviceName: string, items: string[], groupOrProvider: string): boolean => { return true; };
-  const checkout = (transaction: Transaction, withDelivery: boolean, useCredicora: boolean) => {};
+  const checkout = (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {};
   
   const updateUserProfileImage = async (userId: string, imageUrl: string) => {
      await updateUser(userId, { profileImage: imageUrl });
@@ -714,7 +715,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       };
 
       await updateDoc(userRef, updates);
-      setCurrentUser(prevUser => prevUser ? { ...prevUser, ...updates } : null);
   };
   
   const deactivateTransactions = (userId: string) => {};
@@ -726,10 +726,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const value: CoraboState = {
     currentUser,
-    // users: [], // Removed
-    // products: [], // Removed
     cart,
-    // transactions: [], // Removed
     searchQuery,
     contacts,
     feedView,
@@ -811,5 +808,3 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
-
-    
