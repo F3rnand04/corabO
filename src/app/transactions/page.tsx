@@ -39,7 +39,7 @@ import { credicoraLevels } from "@/lib/types";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ActivationWarning } from "@/components/ActivationWarning";
 import { getFirestoreDb } from "@/lib/firebase";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { collection, onSnapshot, query, where, Unsubscribe } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 
 
@@ -143,10 +143,12 @@ const ActionButton = ({ icon: Icon, label, count, onClick }: { icon: React.Eleme
 
 
 export default function TransactionsPage() {
-    const { currentUser, getAgendaEvents, getUserMetrics, subscribeUser, transactions, isLoadingAuth } = useCorabo();
+    const { currentUser, getAgendaEvents, getUserMetrics, subscribeUser } = useCorabo();
     const router = useRouter();
     const { toast } = useToast();
 
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
     const [chartType, setChartType] = useState<'line' | 'pie'>('line');
     const [showSensitiveData, setShowSensitiveData] = useState(true);
@@ -154,11 +156,33 @@ export default function TransactionsPage() {
     const [view, setView] = useState<'summary' | 'pending' | 'history' | 'commitments'>('summary');
     const [isProgressionOpen, setIsProgressionOpen] = useState(false);
 
+    useEffect(() => {
+        if (!currentUser) {
+            setIsLoading(false);
+            return;
+        };
 
-    if (isLoadingAuth) {
+        setIsLoading(true);
+        const db = getFirestoreDb();
+        const q = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
+            setIsLoading(false);
+        }, (error) => {
+            console.error("Error fetching transactions: ", error);
+            toast({ variant: 'destructive', title: "Error", description: "No se pudieron cargar las transacciones."});
+            setIsLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [currentUser, toast]);
+
+
+    if (isLoading) {
          return (
             <div className="space-y-4 p-4">
-                <Skeleton className="h-16 w-full" />
+                <TransactionsHeader onBackToSummary={() => setView('summary')} currentView={view} />
                 <Skeleton className="h-64 w-full" />
                 <Skeleton className="h-24 w-full" />
                 <Skeleton className="h-32 w-full" />

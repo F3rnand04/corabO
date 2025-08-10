@@ -40,6 +40,7 @@ interface UserMetrics {
 
 interface CoraboState {
   currentUser: User | null;
+  users: User[];
   products: Product[];
   cart: CartItem[];
   transactions: Transaction[];
@@ -122,6 +123,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   
+  const [users, setUsers] = useState<User[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -257,22 +259,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             console.error("Error fetching conversations: ", error);
         }));
 
-        // Listener for transactions
-        const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userData.id));
-        listeners.push(onSnapshot(transactionsQuery, (snapshot) => {
-            setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
-        }, (error) => {
-            console.error("Error fetching transactions: ", error);
-            // Don't show toast for permissions errors during initial load
-            if (error.code !== 'permission-denied') {
-              toast({ variant: 'destructive', title: "Error", description: "No se pudieron cargar las transacciones."});
-            }
-        }));
-
         if (userData.profileSetupData?.location) {
             setDeliveryAddress(userData.profileSetupData.location);
         }
-
       }
       setIsLoadingAuth(false);
     });
@@ -756,6 +745,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const value: CoraboState = {
     currentUser,
+    users,
     products,
     cart,
     transactions,
@@ -827,8 +817,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     fetchUser,
     setDeliveryAddress,
     getFeed,
-    // This was missing from the context value, which broke other components
-    users: [], 
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;
