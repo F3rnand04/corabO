@@ -111,7 +111,6 @@ interface CoraboState {
   getUserMetrics: (userId: string) => UserMetrics;
   fetchUser: (userId: string) => Promise<User | null>;
   getFeed: () => Promise<GalleryImage[]>;
-  users: User[];
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -126,7 +125,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
   
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchQuery, _setSearchQuery] = useState('');
@@ -143,12 +141,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const userCache = useRef<Map<string, User>>(new Map());
 
   const fetchUser = useCallback(async (userId: string): Promise<User | null> => {
-    // Return from cache if available
     if (userCache.current.has(userId)) {
         return userCache.current.get(userId)!;
     }
-    
-    // Fetch from Firestore as a last resort
     const db = getFirestoreDb();
     const userDocRef = doc(db, 'users', userId);
     const userDocSnap = await getDoc(userDocRef);
@@ -180,7 +175,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const userDocSnap = await getDoc(userDocRef);
     
     if (userDocSnap.exists()) {
-      return userDocSnap.data() as User;
+      const existingUser = userDocSnap.data() as User;
+      userCache.current.set(existingUser.id, existingUser);
+      return existingUser;
     } else {
       const nameParts = (firebaseUser.displayName || 'Usuario Nuevo').split(' ');
       const firstName = nameParts[0];
@@ -216,6 +213,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       };
       
       await setDoc(userDocRef, newUser);
+      userCache.current.set(newUser.id, newUser);
       return newUser;
     }
   }, []);
@@ -225,11 +223,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     let listeners: Unsubscribe[] = [];
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+      // Clean up old listeners
       listeners.forEach(unsub => unsub());
       listeners = [];
       
+      // Reset state on auth change
       setCurrentUser(null);
       setConversations([]);
+      setTransactions([]);
       
       if (firebaseUser) {
         const userData = await handleUserCreation(firebaseUser);
@@ -237,7 +238,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         
         const db = getFirestoreDb();
 
-        // Safe: Listen to the current user's document
+        // Listener for current user's document
         listeners.push(onSnapshot(doc(db, 'users', userData.id), (doc) => {
             if (doc.exists()) {
               const updatedUserData = doc.data() as User;
@@ -246,15 +247,26 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             }
         }));
         
-        // Safe: Query for conversations containing the current user's ID
+        // Listener for conversations
         const convosQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userData.id));
         listeners.push(onSnapshot(convosQuery, (snapshot) => {
             const serverConversations = snapshot.docs.map(doc => doc.data() as Conversation);
-            // Sort on the client side
             const sortedConversations = serverConversations.sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime());
             setConversations(sortedConversations);
         }, (error) => {
             console.error("Error fetching conversations: ", error);
+        }));
+
+        // Listener for transactions
+        const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userData.id));
+        listeners.push(onSnapshot(transactionsQuery, (snapshot) => {
+            setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
+        }, (error) => {
+            console.error("Error fetching transactions: ", error);
+            // Don't show toast for permissions errors during initial load
+            if (error.code !== 'permission-denied') {
+              toast({ variant: 'destructive', title: "Error", description: "No se pudieron cargar las transacciones."});
+            }
         }));
 
         if (userData.profileSetupData?.location) {
@@ -761,8 +773,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     clearSearchHistory,
     logout,
     addToCart,
-    // This is now handled by the backend flow via UploadDialog
-    // addProduct, 
     updateCartQuantity,
     removeFromCart,
     getCartTotal,
@@ -784,8 +794,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     toggleGps,
     updateUser,
     updateUserProfileImage,
-    // This is now handled by the backend flow via UploadDialog
-    // updateUserProfileAndGallery,
     removeGalleryImage,
     validateEmail,
     sendPhoneVerification,
@@ -818,8 +826,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     getUserMetrics,
     fetchUser,
     setDeliveryAddress,
-    users,
     getFeed,
+    // This was missing from the context value, which broke other components
+    users: [], 
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;

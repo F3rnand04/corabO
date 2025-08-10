@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { Home, Settings, Wallet, ShoppingCart, TrendingUp, PieChart, Eye, EyeOff, Calendar, Info, FileText, Banknote, ShieldAlert, LogOut, Star, Plus, Minus, X, Truck, ListChecks, History, CalendarClock, ChevronLeft, ChevronDown, CheckCircle, TrendingDown } from "lucide-react";
+import { Home, Settings, Wallet, ShoppingCart, TrendingUp, PieChart, Eye, EyeOff, Calendar, Info, FileText, Banknote, ShieldAlert, LogOut, Star, Plus, Minus, X, Truck, ListChecks, History, CalendarClock, ChevronLeft, ChevronDown, CheckCircle, TrendingDown, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from 'next/link';
 import TransactionsLineChart from "@/components/charts/TransactionsLineChart";
@@ -143,7 +143,7 @@ const ActionButton = ({ icon: Icon, label, count, onClick }: { icon: React.Eleme
 
 
 export default function TransactionsPage() {
-    const { currentUser, getAgendaEvents, getUserMetrics, subscribeUser, transactions } = useCorabo();
+    const { currentUser, getAgendaEvents, getUserMetrics, subscribeUser, transactions, isLoadingAuth } = useCorabo();
     const router = useRouter();
     const { toast } = useToast();
 
@@ -153,40 +153,23 @@ export default function TransactionsPage() {
     const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
     const [view, setView] = useState<'summary' | 'pending' | 'history' | 'commitments'>('summary');
     const [isProgressionOpen, setIsProgressionOpen] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
 
 
-    useEffect(() => {
-        if (!currentUser) {
-            setIsLoading(false);
-            return;
-        }
-        if (!currentUser.isTransactionsActive) {
-            setIsLoading(false);
-            return;
-        }
-
-        // The logic is moved from context to here, making it page-specific and solving the permissions issue
-        const db = getFirestoreDb();
-        const q = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
-        
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            // State is now managed locally within this component
-            // setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
-            setIsLoading(false);
-        }, (error) => {
-            console.error("Error fetching transactions:", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'No se pudieron cargar las transacciones.' });
-            setIsLoading(false);
-        });
-
-        return () => unsubscribe();
-    }, [currentUser, toast]);
+    if (isLoadingAuth) {
+         return (
+            <div className="space-y-4 p-4">
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-64 w-full" />
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-32 w-full" />
+            </div>
+        )
+    }
 
     if (!currentUser) {
         return (
             <div className="flex items-center justify-center min-h-screen">
-                <Skeleton className="h-12 w-12 rounded-full" />
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
             </div>
         );
     }
@@ -277,16 +260,6 @@ export default function TransactionsPage() {
     }
 
     const renderContent = () => {
-        if (isLoading) {
-            return (
-                <div className="space-y-4">
-                    <Skeleton className="h-64 w-full" />
-                    <Skeleton className="h-24 w-full" />
-                    <Skeleton className="h-32 w-full" />
-                </div>
-            )
-        }
-
         switch (view) {
             case 'pending':
                 return <TransactionList title="Lista de Pendientes" transactions={pendingTx} onTransactionClick={handleTransactionClick} />;
@@ -495,8 +468,3 @@ export default function TransactionsPage() {
         </div>
     );
 }
-    
-
-    
-
-    
