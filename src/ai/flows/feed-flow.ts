@@ -16,48 +16,28 @@ const FeedItemSchema = z.object({
     owner: z.any(),
 });
 
-const FeedOutputSchema = z.array(FeedItemSchema);
-
 export const getFeed = ai.defineFlow(
     {
         name: 'getFeedFlow',
         inputSchema: z.void(),
-        outputSchema: FeedOutputSchema,
+        outputSchema: z.array(z.any()), // Output an array of users
     },
     async () => {
         const db = getFirestoreDb();
-        const publicationsQuery = query(
-            collection(db, "publications"),
-            orderBy("createdAt", "desc"),
-            limit(50)
+        // This query runs on the server, where it has permissions to read the users collection.
+        const usersQuery = query(
+            collection(db, "users"),
+            where("type", "==", "provider"),
+            where("isPaused", "==", false)
         );
 
-        const querySnapshot = await getDocs(publicationsQuery);
+        const querySnapshot = await getDocs(usersQuery);
         if (querySnapshot.empty) {
             return [];
         }
 
-        const publications = querySnapshot.docs.map(doc => doc.data() as GalleryImage);
+        const users = querySnapshot.docs.map(doc => doc.data() as User);
         
-        const ownerIds = [...new Set(publications.map(p => p.providerId))];
-        const ownerPromises = ownerIds.map(id => getDoc(doc(db, 'users', id)));
-        const ownerSnapshots = await Promise.all(ownerPromises);
-        
-        const ownersMap = new Map<string, User>();
-        ownerSnapshots.forEach(snap => {
-            if (snap.exists()) {
-                ownersMap.set(snap.id, snap.data() as User);
-            }
-        });
-
-        const feedItems = publications.map(pub => {
-            const owner = ownersMap.get(pub.providerId);
-            if (owner && !owner.isPaused) {
-                return { publication: pub, owner };
-            }
-            return null;
-        }).filter(item => item !== null);
-
-        return feedItems as any;
+        return users;
     }
 );

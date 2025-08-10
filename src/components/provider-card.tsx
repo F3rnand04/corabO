@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import Image from "next/image";
@@ -25,7 +24,7 @@ interface ProviderCardProps {
 }
 
 export function ProviderCard({ provider }: ProviderCardProps) {
-    const { addContact, sendMessage, products, isContact } = useCorabo();
+    const { addContact, sendMessage, isContact } = useCorabo();
     const router = useRouter();
     const { toast } = useToast();
     const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
@@ -71,9 +70,6 @@ export function ProviderCard({ provider }: ProviderCardProps) {
     const mainImage = provider.gallery && provider.gallery.length > 0 ? provider.gallery[0].src : "https://placehold.co/600x400.png";
     const mainImageAlt = provider.gallery && provider.gallery.length > 0 ? provider.gallery[0].alt : displayName;
     
-    const providerProductsCount = products.filter(p => p.providerId === provider.id).length;
-
-
     return (
         <>
         <Card className="rounded-2xl overflow-hidden shadow-md">

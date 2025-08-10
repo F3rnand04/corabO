@@ -212,7 +212,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       setCurrentUser(null);
       setTransactions([]);
       setConversations([]);
+      
+      // Clear public data on auth change
       setUsers([]);
+      setProducts([]);
 
       if (firebaseUser) {
         const userData = await handleUserCreation(firebaseUser);
@@ -220,35 +223,23 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
         const db = getFirestoreDb();
         
+        // Listen ONLY to data the current user has explicit permission for.
         const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userData.id));
-        const transactionsUnsub = onSnapshot(transactionsQuery, (snapshot) => {
+        listeners.push(onSnapshot(transactionsQuery, (snapshot) => {
             setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
-        });
-        listeners.push(transactionsUnsub);
+        }));
 
         const conversationsQuery = query(
             collection(db, "conversations"), 
             where("participantIds", "array-contains", userData.id)
         );
-        const conversationsUnsub = onSnapshot(conversationsQuery, (snapshot) => {
+        listeners.push(onSnapshot(conversationsQuery, (snapshot) => {
             setConversations(snapshot.docs.map(doc => doc.data() as Conversation));
-        });
-        listeners.push(conversationsUnsub);
+        }));
         
-        const userUnsub = onSnapshot(doc(db, 'users', userData.id), (doc) => {
+        listeners.push(onSnapshot(doc(db, 'users', userData.id), (doc) => {
             if (doc.exists()) setCurrentUser(doc.data() as User);
-        });
-        listeners.push(userUnsub);
-        
-        // This is a potential source of permission errors. Caching might be better.
-        // For now, let's load all users once for simplicity in UI rendering.
-        const usersCollection = await getDocs(collection(db, 'users'));
-        setUsers(usersCollection.docs.map(d => d.data() as User));
-        
-        // Load all products once
-        const productsCollection = await getDocs(collection(db, 'products'));
-        setProducts(productsCollection.docs.map(d => d.data() as Product));
-
+        }));
 
         if (userData.profileSetupData?.location) {
             setDeliveryAddress(userData.profileSetupData.location);
@@ -342,6 +333,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const db = getFirestoreDb();
     const productRef = doc(db, 'products', product.id);
     await setDoc(productRef, product);
+    // Add product to local state immediately for UI responsiveness
+    setProducts(prev => [...prev, product]);
   };
 
   const addToCart = (product: Product, quantity: number) => {
@@ -426,7 +419,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const isContact = (userId: string) => {
-    return contacts.some(c => c.id === userId);
+    return contacts.some(c => c.id !== userId);
   };
   
   const updateUser = async (userId: string, updates: Partial<User>) => {
