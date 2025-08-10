@@ -16,13 +16,20 @@ interface ConversationCardProps {
 }
 
 export function ConversationCard({ conversation }: ConversationCardProps) {
-    const { currentUser, users } = useCorabo();
+    const { currentUser, fetchUser } = useCorabo();
+    const [otherParticipant, setOtherParticipant] = useState<User | null>(null);
+
+    useEffect(() => {
+        if (!currentUser || !conversation) return;
+        
+        const otherParticipantId = conversation.participantIds.find(pId => pId !== currentUser.id);
+        if (otherParticipantId) {
+            fetchUser(otherParticipantId).then(setOtherParticipant);
+        }
+    }, [conversation, currentUser, fetchUser]);
+
 
     if (!currentUser) return null;
-
-    const otherParticipantId = conversation.participantIds.find(pId => pId !== currentUser.id);
-    const otherParticipant = users.find(u => u.id === otherParticipantId);
-
 
     if (!otherParticipant) {
         // Special card for system messages

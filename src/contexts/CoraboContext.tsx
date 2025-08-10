@@ -37,7 +37,6 @@ interface UserMetrics {
 
 interface CoraboState {
   currentUser: User | null;
-  users: User[];
   products: Product[];
   cart: CartItem[];
   transactions: Transaction[];
@@ -121,7 +120,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   
-  const [users, setUsers] = useState<User[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -145,12 +143,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     if (userCache.current.has(userId)) {
         return userCache.current.get(userId)!;
     }
-    // Check local `users` state first
-    const localUser = users.find(u => u.id === userId);
-    if(localUser) {
-        userCache.current.set(userId, localUser);
-        return localUser;
-    }
+    
     // Fetch from Firestore as a last resort
     const db = getFirestoreDb();
     const userDocRef = doc(db, 'users', userId);
@@ -161,7 +154,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         return userData;
     }
     return null;
-  }, [users]);
+  }, []);
 
   const handleUserCreation = useCallback(async (firebaseUser: FirebaseUser): Promise<User> => {
     const db = getFirestoreDb();
@@ -220,7 +213,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       setCurrentUser(null);
       setTransactions([]);
       setConversations([]);
-      setUsers([]);
       setProducts([]);
 
       if (firebaseUser) {
@@ -228,16 +220,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         setCurrentUser(userData);
 
         const db = getFirestoreDb();
-        
-        // Listen to all users (for display purposes like chat names, etc.)
-        // THIS IS OFTEN PROBLEMATIC WITH SECURITY RULES.
-        // A better approach in a real app would be to fetch users by ID as needed.
-        listeners.push(onSnapshot(collection(db, "users"), (snapshot) => {
-            const allUsers = snapshot.docs.map(doc => doc.data() as User);
-            setUsers(allUsers);
-            // Update cache whenever users list changes
-            allUsers.forEach(u => userCache.current.set(u.id, u));
-        }));
         
         // Listen to all products
         listeners.push(onSnapshot(collection(db, "products"), (snapshot) => {
@@ -761,7 +743,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const value: CoraboState = {
     currentUser,
-    users,
     products,
     cart,
     transactions,
