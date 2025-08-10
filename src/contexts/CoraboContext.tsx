@@ -245,9 +245,19 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             }
         }));
         
-        const convosQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userData.id), orderBy("lastUpdated", "desc"));
+        const convosQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userData.id));
         listeners.push(onSnapshot(convosQuery, (snapshot) => {
-            setConversations(snapshot.docs.map(doc => doc.data() as Conversation));
+            const serverConversations = snapshot.docs.map(doc => doc.data() as Conversation);
+            // Sort on the client side
+            const sortedConversations = serverConversations.sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime());
+            setConversations(sortedConversations);
+        }, (error) => {
+            console.error("Error fetching conversations: ", error);
+            toast({
+                variant: 'destructive',
+                title: 'Error de Conexión',
+                description: 'No se pudieron cargar tus conversaciones. Por favor, recarga la página.'
+            });
         }));
 
 
@@ -263,7 +273,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       unsubscribeAuth();
       listeners.forEach(unsub => unsub());
     };
-  }, [handleUserCreation, auth]);
+  }, [handleUserCreation, auth, toast]);
   
   const getUserMetrics = useCallback((userId: string): UserMetrics => {
     const providerTransactions = transactions.filter(t => t.providerId === userId);
