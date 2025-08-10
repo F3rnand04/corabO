@@ -109,6 +109,7 @@ interface CoraboState {
   autoVerifyIdWithAI: (input: VerificationInput) => Promise<VerificationOutput>;
   getUserMetrics: (userId: string) => UserMetrics;
   fetchUser: (userId: string) => Promise<User | null>;
+  users: User[];
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -123,6 +124,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchQuery, _setSearchQuery] = useState('');
@@ -143,6 +145,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     if (userCache.current.has(userId)) {
         return userCache.current.get(userId)!;
     }
+    const cachedUser = users.find(u => u.id === userId);
+    if(cachedUser) {
+        userCache.current.set(userId, cachedUser);
+        return cachedUser;
+    }
     
     // Fetch from Firestore as a last resort
     const db = getFirestoreDb();
@@ -154,7 +161,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         return userData;
     }
     return null;
-  }, []);
+  }, [users]);
 
   const handleUserCreation = useCallback(async (firebaseUser: FirebaseUser): Promise<User> => {
     const db = getFirestoreDb();
@@ -214,6 +221,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       setTransactions([]);
       setConversations([]);
       setProducts([]);
+      setUsers([]);
 
       if (firebaseUser) {
         const userData = await handleUserCreation(firebaseUser);
@@ -221,28 +229,30 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
         const db = getFirestoreDb();
         
-        // Listen to all products
         listeners.push(onSnapshot(collection(db, "products"), (snapshot) => {
             setProducts(snapshot.docs.map(doc => doc.data() as Product));
         }));
-
+        
         const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userData.id));
         listeners.push(onSnapshot(transactionsQuery, (snapshot) => {
             setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
         }));
 
-        const conversationsQuery = query(
-            collection(db, "conversations"), 
-            where("participantIds", "array-contains", userData.id)
-        );
-        listeners.push(onSnapshot(conversationsQuery, (snapshot) => {
-            setConversations(snapshot.docs.map(doc => doc.data() as Conversation));
-        }));
+        // This query requires a composite index. Without it, it will fail with permission errors.
+        // Let's load conversations in the messages page instead to avoid this global listener.
+        // const conversationsQuery = query(
+        //     collection(db, "conversations"), 
+        //     where("participantIds", "array-contains", userData.id),
+        //     orderBy("lastUpdated", "desc")
+        // );
+        // listeners.push(onSnapshot(conversationsQuery, (snapshot) => {
+        //     setConversations(snapshot.docs.map(doc => doc.data() as Conversation));
+        // }));
         
         listeners.push(onSnapshot(doc(db, 'users', userData.id), (doc) => {
             if (doc.exists()) setCurrentUser(doc.data() as User);
         }));
-
+        
         if (userData.profileSetupData?.location) {
             setDeliveryAddress(userData.profileSetupData.location);
         }
@@ -815,6 +825,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     getUserMetrics,
     fetchUser,
     setDeliveryAddress,
+    users,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;
