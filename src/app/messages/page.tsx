@@ -50,7 +50,9 @@ export default function MessagesPage() {
 
         setIsLoading(true);
         const db = getFirestoreDb();
-        // This query is now safe. It only filters by participant.
+        // CRITICAL FIX: Removed orderBy("lastUpdated", "desc") which requires a composite index
+        // that cannot be created from here, causing the permission denied error.
+        // Sorting will now be handled on the client-side.
         const convosQuery = query(
             collection(db, "conversations"), 
             where("participantIds", "array-contains", currentUser.id)
