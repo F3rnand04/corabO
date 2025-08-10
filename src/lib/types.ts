@@ -54,6 +54,7 @@ export type PublicationOwner = {
   profileSetupData?: {
     specialty?: string;
     providerType?: 'professional' | 'company';
+    username?: string;
   }
 };
 

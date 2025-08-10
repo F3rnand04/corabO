@@ -70,6 +70,7 @@ export const createPublication = ai.defineFlow(
       profileSetupData: {
         specialty: user.profileSetupData?.specialty || '',
         providerType: user.profileSetupData?.providerType || 'professional',
+        username: user.profileSetupData?.username || user.name.replace(/\s+/g, '').toLowerCase(),
       },
     };
 

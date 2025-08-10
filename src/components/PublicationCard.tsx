@@ -3,7 +3,7 @@
 
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import type { GalleryImage } from "@/lib/types";
+import type { GalleryImage, PublicationOwner } from "@/lib/types";
 import { Star, Bookmark, Send, MessageCircle, Flag } from "lucide-react";
 import Link from "next/link";
 import { useCorabo } from "@/contexts/CoraboContext";
@@ -15,7 +15,7 @@ import { ImageDetailsDialog } from "./ImageDetailsDialog";
 import { useToast } from "@/hooks/use-toast";
 
 interface PublicationCardProps {
-    publication: GalleryImage & { owner: NonNullable<GalleryImage['owner']> }; // Ensure owner is present
+    publication: GalleryImage & { owner?: PublicationOwner }; // owner is optional for safety
     className?: string;
 }
 
@@ -32,18 +32,23 @@ export function PublicationCard({ publication, className }: PublicationCardProps
     const [shareCount, setShareCount] = useState(0);
 
     const { owner } = publication;
+    
+    // CRITICAL FIX: Add a guard clause. If owner data is missing, don't render the card.
+    if (!owner || !owner.id) {
+        return null; 
+    }
+    
     const profileLink = `/companies/${owner.id}`;
 
     useEffect(() => {
-        if (!currentUser) return;
+        if (!currentUser || !owner) return;
         setIsSaved(isContact(owner.id));
         setLikeCount(publication.likes || 0);
-        setShareCount(0);
-    }, [isContact, owner.id, publication, currentUser]);
+        setShareCount(0); // Reset on each render
+    }, [isContact, owner.id, publication, currentUser, owner]);
 
     const handleSaveContact = () => {
-        // Since owner is guaranteed to exist, we can assert it.
-        // A better approach might be to fetch the full user object if needed.
+        // Since owner is guaranteed to exist by the guard clause, we can proceed.
         const success = addContact(owner as any);
         if (success) {
             toast({
@@ -87,7 +92,8 @@ export function PublicationCard({ publication, className }: PublicationCardProps
         }
     }
 
-    if (!publication || !owner) return null; // Important guard clause
+    // Display name logic with fallback
+    const displayName = owner.profileSetupData?.username || owner.name || 'Usuario Corabo';
 
     return (
         <>
@@ -146,7 +152,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
             </div>
 
             <div className="absolute bottom-0 left-0 p-4 text-white bg-gradient-to-t from-black/70 to-transparent w-full">
-                <Link href={profileLink} className="font-bold drop-shadow hover:underline">@{owner.profileSetupData?.username || owner.name}</Link>
+                <Link href={profileLink} className="font-bold drop-shadow hover:underline">@{displayName}</Link>
                 <p className="text-sm drop-shadow-sm line-clamp-2 mt-1">{publication.description}</p>
             </div>
         </div>
