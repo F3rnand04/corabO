@@ -49,6 +49,20 @@ function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary:
     const isModuleActive = currentUser?.isTransactionsActive ?? false;
     const [isDeactivationAlertOpen, setIsDeactivationAlertOpen] = useState(false);
     
+    // This state is local to the header now
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+
+    useEffect(() => {
+        if (!currentUser) return;
+        const db = getFirestoreDb();
+        const txQuery = query(collection(db, 'transactions'), where('participantIds', 'array-contains', currentUser.id));
+        const unsubscribe = onSnapshot(txQuery, (snapshot) => {
+            setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
+        });
+        return () => unsubscribe();
+    }, [currentUser]);
+
+
     if (!currentUser) return null;
 
     const handleDeactivation = () => {
@@ -83,7 +97,7 @@ function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary:
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuLabel>Ajustes de Registro</DropdownMenuLabel>
                                         <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={downloadTransactionsPDF}>
+                                        <DropdownMenuItem onClick={() => downloadTransactionsPDF(transactions)}>
                                             <FileText className="mr-2 h-4 w-4" />
                                             <span>Imprimir Registro (PDF)</span>
                                         </DropdownMenuItem>
@@ -193,7 +207,6 @@ export default function TransactionsPage() {
     const isModuleActive = currentUser.isTransactionsActive ?? false;
     const isProvider = currentUser.type === 'provider';
     
-    // The functions getAgendaEvents and getUserMetrics now receive transactions as a parameter
     const agendaEvents = getAgendaEvents(transactions);
     const userCredicoraLevel = currentUser.credicoraLevel || 1;
     const credicoraDetails = credicoraLevels[userCredicoraLevel.toString()];
@@ -488,3 +501,4 @@ export default function TransactionsPage() {
         </div>
     );
 }
+

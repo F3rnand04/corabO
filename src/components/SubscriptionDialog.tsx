@@ -1,7 +1,8 @@
 
+
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -17,6 +18,10 @@ import { useCorabo } from "@/contexts/CoraboContext";
 import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Label } from './ui/label';
 import { cn } from '@/lib/utils';
+import type { Transaction } from '@/lib/types';
+import { getFirestoreDb } from '@/lib/firebase';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+
 
 interface SubscriptionDialogProps {
   isOpen: boolean;
@@ -67,20 +72,37 @@ const plans = {
 
 
 export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogProps) {
-  const { currentUser, transactions, subscribeUser, checkIfShouldBeEnterprise } = useCorabo();
+  const { currentUser, subscribeUser, checkIfShouldBeEnterprise } = useCorabo();
   const [paymentCycle, setPaymentCycle] = useState<'monthly' | 'annually'>('monthly');
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    const db = getFirestoreDb();
+    const txQuery = query(collection(db, 'transactions'), where('participantIds', 'array-contains', currentUser.id));
+    const unsubscribe = onSnapshot(txQuery, (snapshot) => {
+      setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
+    });
+    return () => unsubscribe();
+  }, [currentUser]);
+
+
+  if (!currentUser) {
+    return null;
+  }
+  
 
   const getPlanKey = (): keyof typeof plans => {
-    const professionalCategories = ['Salud y Bienestar', 'Educación', 'Automotriz y Repuestos', 'Alimentos y Restaurantes'];
     
-    if (checkIfShouldBeEnterprise(currentUser.id)) {
+    if (checkIfShouldBeEnterprise(currentUser.id, transactions)) {
       return 'company';
     }
     
     if (currentUser.type === 'client') {
       return 'personal';
     }
-
+    
+    const professionalCategories = ['Salud y Bienestar', 'Educación', 'Automotriz y Repuestos', 'Alimentos y Restaurantes'];
     if (currentUser.type === 'provider') {
       const completedJobs = transactions.filter(
         tx => tx.providerId === currentUser.id && (tx.status === 'Pagado' || tx.status === 'Resuelto')

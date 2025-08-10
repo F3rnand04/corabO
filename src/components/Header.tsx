@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState } from "react";
@@ -25,14 +26,45 @@ import { Separator } from "./ui/separator";
 import { Label } from "./ui/label";
 import { Switch } from "./ui/switch";
 import { credicoraLevels } from "@/lib/types";
+import { useEffect } from 'react';
+import { getFirestoreDb } from '@/lib/firebase';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import type { Transaction, User as UserType } from '@/lib/types';
+
 
 export function Header() {
-  const { searchQuery, setSearchQuery, feedView, setFeedView, currentUser, toggleGps, logout, searchHistory, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, users, transactions } = useCorabo();
+  const { searchQuery, setSearchQuery, feedView, setFeedView, currentUser, toggleGps, logout, searchHistory, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout } = useCorabo();
   const router = useRouter();
 
   const [isCheckoutAlertOpen, setIsCheckoutAlertOpen] = useState(false);
   const [includeDelivery, setIncludeDelivery] = useState(false);
   const [useCredicora, setUseCredicora] = useState(false);
+  
+  // These states are now local to the component, not from context
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [users, setUsers] = useState<UserType[]>([]);
+
+
+  useEffect(() => {
+    if (!currentUser) return;
+    const db = getFirestoreDb();
+    
+    const txQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
+    const usersQuery = query(collection(db, "users"));
+
+    const unsubTransactions = onSnapshot(txQuery, (snapshot) => {
+        setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
+    });
+    
+    const unsubUsers = onSnapshot(usersQuery, (snapshot) => {
+        setUsers(snapshot.docs.map(doc => doc.data() as UserType));
+    });
+
+    return () => {
+        unsubTransactions();
+        unsubUsers();
+    };
+  }, [currentUser]);
 
 
   if (!currentUser) {
@@ -53,7 +85,7 @@ export function Header() {
 
   const handleCheckout = () => {
     if (cartTransaction) {
-        checkout(cartTransaction.id, includeDelivery, useCredicora);
+        checkout(cartTransaction, includeDelivery, useCredicora);
         setIsCheckoutAlertOpen(false);
         setUseCredicora(false);
     }

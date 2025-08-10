@@ -40,10 +40,11 @@ interface UserMetrics {
 
 interface CoraboState {
   currentUser: User | null;
-  users: User[];
-  products: Product[];
+  // GLOBAL STATES REMOVED TO PREVENT MEMORY LEAKS
+  // users: User[];
+  // products: Product[];
+  // transactions: Transaction[];
   cart: CartItem[];
-  transactions: Transaction[];
   searchQuery: string;
   contacts: User[];
   feedView: FeedView;
@@ -71,7 +72,7 @@ interface CoraboState {
   completeWork: (transactionId: string) => void;
   confirmWorkReceived: (transactionId: string, rating: number, comment?: string) => void;
   startDispute: (transactionId: string) => void;
-  checkout: (transactionId: string, withDelivery: boolean, useCredicora: boolean) => void;
+  checkout: (transaction: Transaction, withDelivery: boolean, useCredicora: boolean) => void;
   addContact: (user: User) => boolean;
   removeContact: (userId: string) => void;
   isContact: (userId: string) => boolean;
@@ -88,16 +89,16 @@ interface CoraboState {
   subscribeUser: (userId: string, planName: string, amount: number) => void;
   activateTransactions: (userId: string, paymentDetails: any) => void;
   deactivateTransactions: (userId: string) => void;
-  downloadTransactionsPDF: () => void;
+  downloadTransactionsPDF: (transactions: Transaction[]) => void;
   sendMessage: (recipientId: string, text: string, createOnly?: boolean) => string;
   sendProposalMessage: (conversationId: string, proposal: AgreementProposal) => void;
   acceptProposal: (conversationId: string, messageId: string) => void;
   createAppointmentRequest: (request: Omit<AppointmentRequest, 'clientId'>) => void;
-  getAgendaEvents: () => { date: Date; type: 'payment' | 'task'; description: string, transactionId: string }[];
+  getAgendaEvents: (transactions: Transaction[]) => { date: Date; type: 'payment' | 'task'; description: string, transactionId: string }[];
   addCommentToImage: (ownerId: string, imageId: string, commentText: string) => void;
   removeCommentFromImage: (ownerId: string, imageId: string, commentIndex: number) => void;
   getCartItemQuantity: (productId: string) => number;
-  checkIfShouldBeEnterprise: (providerId: string) => boolean;
+  checkIfShouldBeEnterprise: (providerId: string, transactions: Transaction[]) => boolean;
   activatePromotion: (details: { imageId: string, promotionText: string, cost: number }) => void;
   createCampaign: typeof createCampaign;
   createPublication: typeof createPublicationFlow;
@@ -110,7 +111,7 @@ interface CoraboState {
   rejectUserId: (userId: string) => void;
   setIdVerificationPending: (userId: string, documentUrl: string) => Promise<void>;
   autoVerifyIdWithAI: (input: VerificationInput) => Promise<VerificationOutput>;
-  getUserMetrics: (userId: string) => UserMetrics;
+  getUserMetrics: (userId: string, transactions: Transaction[]) => UserMetrics;
   fetchUser: (userId: string) => Promise<User | null>;
   getFeed: () => Promise<GalleryImage[]>;
 }
@@ -123,11 +124,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  
-  // State is now simplified, transactions will be fetched by the specific page
-  const [users, setUsers] = useState<User[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
   
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchQuery, _setSearchQuery] = useState('');
@@ -160,7 +156,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const getFeed = useCallback(async (): Promise<GalleryImage[]> => {
       try {
-          // This flow is now safe and doesn't require complex indexes
           return await getFeedFlow();
       } catch (error) {
           console.error("Error fetching feed via Genkit flow:", error);
@@ -222,15 +217,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  // Main authentication and data loading effect
   useEffect(() => {
     let listeners: Unsubscribe[] = [];
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
-      // Clean up old listeners
       listeners.forEach(unsub => unsub());
       listeners = [];
-      
       setCurrentUser(null);
       
       if (firebaseUser) {
@@ -238,8 +230,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         setCurrentUser(userData);
         
         const db = getFirestoreDb();
-
-        // Listener for current user's document
         listeners.push(onSnapshot(doc(db, 'users', userData.id), (doc) => {
             if (doc.exists()) {
               const updatedUserData = doc.data() as User;
@@ -247,9 +237,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
               userCache.current.set(updatedUserData.id, updatedUserData);
             }
         }));
-
-        // **REMOVED** transaction and conversation listeners to prevent blocking error.
-        // Data will now be fetched on demand by the relevant pages.
         
         if (userData.profileSetupData?.location) {
             setDeliveryAddress(userData.profileSetupData.location);
@@ -264,7 +251,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [handleUserCreation, auth, toast]);
   
-  const getUserMetrics = useCallback((userId: string): UserMetrics => {
+  const getUserMetrics = useCallback((userId: string, transactions: Transaction[]): UserMetrics => {
     const providerTransactions = transactions.filter(t => t.providerId === userId);
     
     const totalMeaningfulTransactions = providerTransactions.filter(t => t.status !== 'Carrito Activo' && t.status !== 'Pre-factura Pendiente').length;
@@ -294,7 +281,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
   
     return { reputation, effectiveness, responseTime };
-  }, [transactions]);
+  }, []);
 
 
   const signInWithGoogle = async () => {
@@ -591,7 +578,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const requestService = (service: Service) => {};
   const requestQuoteFromGroup = (serviceName: string, items: string[], groupOrProvider: string): boolean => { return true; };
-  const checkout = (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {};
+  const checkout = (transaction: Transaction, withDelivery: boolean, useCredicora: boolean) => {};
   
   const updateUserProfileImage = async (userId: string, imageUrl: string) => {
      await updateUser(userId, { profileImage: imageUrl });
@@ -730,19 +717,19 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const deactivateTransactions = (userId: string) => {};
-  const downloadTransactionsPDF = () => {};
-  const getAgendaEvents = () => { return []; };
+  const downloadTransactionsPDF = (transactions: Transaction[]) => {};
+  const getAgendaEvents = (transactions: Transaction[]): { date: Date; type: 'payment' | 'task'; description: string, transactionId: string }[] => { return []; };
   const addCommentToImage = (ownerId: string, imageId: string, commentText: string) => {};
   const removeCommentFromImage = (ownerId: string, imageId: string, commentIndex: number) => {};
-  const checkIfShouldBeEnterprise = (providerId: string): boolean => { return false; };
+  const checkIfShouldBeEnterprise = (providerId: string, transactions: Transaction[]): boolean => { return false; };
   const activatePromotion = (details: { imageId: string, promotionText: string, cost: number }) => {};
   
   const value: CoraboState = {
     currentUser,
-    users,
-    products,
+    // users,
+    // products,
     cart,
-    transactions,
+    // transactions,
     searchQuery,
     contacts,
     feedView,
