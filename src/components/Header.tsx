@@ -29,7 +29,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 
 export function Header() {
-  const { searchQuery, setSearchQuery, feedView, setFeedView, currentUser, fetchUser, toggleGps, cart, updateCartQuantity, getCartTotal, checkout, getDeliveryCost, logout } = useCorabo();
+  const { searchQuery, setSearchQuery, feedView, setFeedView, currentUser, users, toggleGps, cart, updateCartQuantity, getCartTotal, checkout, getDeliveryCost, logout } = useCorabo();
   const router = useRouter();
   
   const hasCompletedProfileSetup = !!currentUser?.profileSetupData;
@@ -40,15 +40,7 @@ export function Header() {
   
   const cartTransaction = cart.length > 0 ? currentUser?.transactions?.find(tx => tx.status === 'Carrito Activo' && tx.clientId === currentUser.id) : undefined;
   
-  const [provider, setProvider] = useState<UserType | null>(null);
-
-  useEffect(() => {
-    if (cartTransaction?.providerId) {
-        fetchUser(cartTransaction.providerId).then(setProvider);
-    } else {
-        setProvider(null);
-    }
-  }, [cartTransaction, fetchUser]);
+  const provider = users.find(u => u.id === cartTransaction?.providerId);
 
   const subtotal = getCartTotal();
   const deliveryCost = getDeliveryCost();
@@ -64,7 +56,7 @@ export function Header() {
     }
   };
   
-  const totalWithDelivery = subtotal + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
+  const totalWithDelivery = subtotal + ((includeDelivery || isOnlyDelivery) ? deliveryCost : 0);
 
   const userCredicoraLevel = currentUser?.credicoraLevel || 1;
   const credicoraDetails = credicoraLevels[userCredicoraLevel.toString()];
@@ -74,7 +66,7 @@ export function Header() {
   const potentialFinancing = subtotal * financingPercentage;
   const financedAmount = useCredicora ? Math.min(potentialFinancing, creditLimit) : 0;
   const productInitialPayment = subtotal - financedAmount;
-  const totalToPayToday = productInitialPayment + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
+  const totalToPayToday = productInitialPayment + ((includeDelivery || isOnlyDelivery) ? deliveryCost : 0);
   const installmentAmount = financedAmount > 0 ? financedAmount / credicoraDetails.installments : 0;
 
 
