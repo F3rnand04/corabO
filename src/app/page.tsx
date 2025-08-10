@@ -2,14 +2,16 @@
 "use client";
 
 import { PublicationCard } from "@/components/PublicationCard";
-import type { GalleryImage } from "@/lib/types";
+import type { GalleryImage, PublicationOwner } from "@/lib/types";
 import { useMemo, useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { ActivationWarning } from "@/components/ActivationWarning";
 
 // The owner data is now embedded in the publication object
-interface PublicationWithOwner extends GalleryImage {}
+interface PublicationWithOwner extends GalleryImage {
+    owner: PublicationOwner
+}
 
 export default function HomePage() {
   const { searchQuery, feedView, currentUser, getFeed } = useCorabo();
@@ -22,7 +24,7 @@ export default function HomePage() {
         setIsLoading(true);
         try {
             const feedData = await getFeed();
-            setPublications(feedData);
+            setPublications(feedData as PublicationWithOwner[]);
         } catch (error) {
             console.error("Error fetching feed:", error);
             // Optionally, show a toast to the user
@@ -85,7 +87,7 @@ export default function HomePage() {
        
         <div className="space-y-4">
         {filteredPublications.length > 0 ? (
-            filteredPublications.map(item => <PublicationCard key={item.id} publication={item} owner={item.owner!} />)
+            filteredPublications.map(item => <PublicationCard key={item.id} publication={item} />)
         ) : (
             <p className="text-center text-muted-foreground pt-16">
             {noResultsMessage()}

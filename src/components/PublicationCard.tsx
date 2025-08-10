@@ -3,7 +3,7 @@
 
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import type { User as UserType, GalleryImage } from "@/lib/types";
+import type { GalleryImage } from "@/lib/types";
 import { Star, Bookmark, Send, MessageCircle, Flag } from "lucide-react";
 import Link from "next/link";
 import { useCorabo } from "@/contexts/CoraboContext";
@@ -15,13 +15,12 @@ import { ImageDetailsDialog } from "./ImageDetailsDialog";
 import { useToast } from "@/hooks/use-toast";
 
 interface PublicationCardProps {
-    publication: GalleryImage;
-    owner: UserType;
+    publication: GalleryImage & { owner: NonNullable<GalleryImage['owner']> }; // Ensure owner is present
     className?: string;
 }
 
-export function PublicationCard({ publication, owner, className }: PublicationCardProps) {
-    const { addContact, isContact, sendMessage } = useCorabo();
+export function PublicationCard({ publication, className }: PublicationCardProps) {
+    const { addContact, isContact, sendMessage, currentUser } = useCorabo();
     const router = useRouter();
     const { toast } = useToast();
     
@@ -32,16 +31,20 @@ export function PublicationCard({ publication, owner, className }: PublicationCa
     const [likeCount, setLikeCount] = useState(0);
     const [shareCount, setShareCount] = useState(0);
 
+    const { owner } = publication;
     const profileLink = `/companies/${owner.id}`;
 
     useEffect(() => {
+        if (!currentUser) return;
         setIsSaved(isContact(owner.id));
-        setLikeCount(publication.likes || 0); // Use real data if available
-        setShareCount(0); // Share count is ephemeral
-    }, [isContact, owner.id, publication]);
+        setLikeCount(publication.likes || 0);
+        setShareCount(0);
+    }, [isContact, owner.id, publication, currentUser]);
 
     const handleSaveContact = () => {
-        const success = addContact(owner);
+        // Since owner is guaranteed to exist, we can assert it.
+        // A better approach might be to fetch the full user object if needed.
+        const success = addContact(owner as any);
         if (success) {
             toast({
                 title: "¡Contacto Guardado!",

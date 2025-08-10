@@ -3,14 +3,14 @@
 /**
  * @fileOverview Flows for creating publications and products securely on the backend.
  *
- * - createPublicationFlow - Handles creating a new gallery post and its public copy.
- * - createProductFlow - Handles creating a new product in the catalog.
+ * - createPublication - Handles creating a new gallery post and its public copy.
+ * - createProduct - Handles creating a new product in the catalog.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestoreDb } from '@/lib/firebase-server';
-import { doc, getDoc, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, setDoc, writeBatch } from 'firebase/firestore';
 import type { GalleryImage, Product, User, PublicationOwner } from '@/lib/types';
 
 // --- Create Publication Flow ---
@@ -41,7 +41,7 @@ export const createPublication = ai.defineFlow(
     }
     const user = userSnap.data() as User;
 
-    const publicationId = `gal-${Date.now()}`;
+    const publicationId = `pub-${Date.now()}`;
 
     // 1. Create the private gallery item
     const galleryItem: GalleryImage = {
