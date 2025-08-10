@@ -32,8 +32,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { credicoraLevels } from '@/lib/types';
 import { ActivationWarning } from '@/components/ActivationWarning';
-import { getFirestoreDb } from '@/lib/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { getProfileGallery, getProfileProducts } from '@/ai/flows/profile-flow';
 
 export default function CompanyProfilePage() {
   const params = useParams();
@@ -42,6 +41,7 @@ export default function CompanyProfilePage() {
   const router = useRouter();
 
   const [provider, setProvider] = useState<User | null>(null);
+  const [providerGallery, setProviderGallery] = useState<GalleryImage[]>([]);
   const [providerProducts, setProviderProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -53,11 +53,14 @@ export default function CompanyProfilePage() {
             const fetchedProvider = await fetchUser(providerId);
             setProvider(fetchedProvider);
 
-            if (fetchedProvider?.profileSetupData?.offerType === 'product') {
-                const db = getFirestoreDb();
-                const productsQuery = query(collection(db, 'products'), where("providerId", "==", providerId));
-                const querySnapshot = await getDocs(productsQuery);
-                setProviderProducts(querySnapshot.docs.map(doc => doc.data() as Product));
+            if(fetchedProvider) {
+                const galleryData = await getProfileGallery(providerId);
+                setProviderGallery(galleryData);
+
+                if (fetchedProvider.profileSetupData?.offerType === 'product') {
+                    const productsData = await getProfileProducts(providerId);
+                    setProviderProducts(productsData);
+                }
             }
         }
         setIsLoading(false);
@@ -225,7 +228,7 @@ export default function CompanyProfilePage() {
     };
 
 
-  const gallery: GalleryImage[] = provider.gallery || [];
+  const gallery: GalleryImage[] = providerGallery || [];
   
   const displayName = provider.profileSetupData?.useUsername 
         ? provider.profileSetupData.username || provider.name 

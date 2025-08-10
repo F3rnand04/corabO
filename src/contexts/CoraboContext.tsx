@@ -100,6 +100,8 @@ interface CoraboState {
   checkIfShouldBeEnterprise: (providerId: string) => boolean;
   activatePromotion: (details: { imageId: string, promotionText: string, cost: number }) => void;
   createCampaign: typeof createCampaign;
+  createPublication: typeof createPublicationFlow;
+  createProduct: typeof createProductFlow;
   setDeliveryAddress: (address: string) => void;
   markConversationAsRead: (conversationId: string) => void;
   toggleUserPause: (userId: string, currentIsPaused: boolean) => void;
@@ -796,6 +798,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     checkIfShouldBeEnterprise,
     activatePromotion,
     createCampaign,
+    createPublication: createPublicationFlow,
+    createProduct: createProductFlow,
     toggleUserPause,
     verifyCampaignPayment,
     verifyUserId,

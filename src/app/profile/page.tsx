@@ -26,8 +26,7 @@ import { ProductGridCard } from '@/components/ProductGridCard';
 import { ProductDetailsDialog } from '@/components/ProductDetailsDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { collection, onSnapshot, query, orderBy, where } from "firebase/firestore";
-import { getFirestoreDb } from "@/lib/firebase";
+import { getProfileGallery, getProfileProducts } from '@/ai/flows/profile-flow';
 
 
 export default function ProfilePage() {
@@ -42,43 +41,25 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!currentUser) return;
     
-    setIsLoading(true);
-    const db = getFirestoreDb();
-    
-    // Listener for Gallery
-    const galleryQuery = query(
-        collection(db, 'users', currentUser.id, 'gallery'),
-        orderBy("createdAt", "desc")
-    );
-    const galleryUnsub = onSnapshot(galleryQuery, (snapshot) => {
-        setGallery(snapshot.docs.map(doc => doc.data() as GalleryImage));
-        setIsLoading(false); // Stop loading once gallery is fetched
-    }, (error) => {
-        console.error("Error fetching gallery:", error);
-        toast({ variant: "destructive", title: "Error al cargar la galería" });
-        setIsLoading(false);
-    });
+    const loadProfileData = async () => {
+        setIsLoading(true);
+        try {
+            const galleryData = await getProfileGallery(currentUser.id);
+            setGallery(galleryData);
 
-    let productsUnsub = () => {};
-    if (currentUser.type === 'provider') {
-        const productsQuery = query(
-            collection(db, 'products'),
-            where("providerId", "==", currentUser.id)
-        );
-        productsUnsub = onSnapshot(productsQuery, (snapshot) => {
-            setProducts(snapshot.docs.map(doc => doc.data() as Product));
-        }, (error) => {
-            console.error("Error fetching products:", error);
-            toast({ variant: "destructive", title: "Error al cargar los productos" });
-        });
-    } else {
-        setIsLoading(false); // If not a provider, no products to load
-    }
-    
-    return () => {
-        galleryUnsub();
-        productsUnsub();
+            if (currentUser.type === 'provider') {
+                const productsData = await getProfileProducts(currentUser.id);
+                setProducts(productsData);
+            }
+        } catch (error) {
+            console.error("Error loading profile data:", error);
+            toast({ variant: 'destructive', title: 'Error al cargar el perfil' });
+        } finally {
+            setIsLoading(false);
+        }
     };
+    
+    loadProfileData();
 
   }, [currentUser, toast]);
 
