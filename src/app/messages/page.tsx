@@ -1,15 +1,19 @@
 
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ChevronLeft, Search, SquarePen } from 'lucide-react';
+import { ChevronLeft, Search, SquarePen, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ConversationCard } from '@/components/ConversationCard';
 import type { Conversation } from '@/lib/types';
 import { ActivationWarning } from '@/components/ActivationWarning';
+import { getFirestoreDb } from '@/lib/firebase';
+import { collection, query, where, onSnapshot, Unsubscribe } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 function MessagesHeader() {
@@ -33,33 +37,71 @@ function MessagesHeader() {
 
 
 export default function MessagesPage() {
-    const { conversations, users, currentUser } = useCorabo();
+    const { currentUser, fetchUser } = useCorabo();
     const [searchQuery, setSearchQuery] = useState('');
+    const [conversations, setConversations] = useState<Conversation[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    // This effect will run when the component mounts and currentUser is available.
+    useEffect(() => {
+        if (!currentUser) return;
+
+        setIsLoading(true);
+        const db = getFirestoreDb();
+        const convosQuery = query(
+            collection(db, "conversations"), 
+            where("participantIds", "array-contains", currentUser.id)
+        );
+
+        const unsubscribe = onSnapshot(convosQuery, (snapshot) => {
+            const serverConversations = snapshot.docs.map(doc => doc.data() as Conversation);
+            const sortedConversations = serverConversations.sort((a, b) => 
+                new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
+            );
+            setConversations(sortedConversations);
+            setIsLoading(false);
+        }, (error) => {
+            console.error("Error fetching conversations on page: ", error);
+            setIsLoading(false);
+        });
+
+        // Cleanup subscription on unmount
+        return () => unsubscribe();
+    }, [currentUser]);
+
 
     const isClientWithInactiveTransactions = currentUser?.type === 'client' && !currentUser?.isTransactionsActive;
 
     const filteredConversations = conversations.filter(convo => {
         if (!currentUser) return false;
-        const otherParticipantId = convo.participantIds.find(pId => pId !== currentUser.id);
-        const otherParticipant = users.find(u => u.id === otherParticipantId);
-        if (!otherParticipant) {
-             // Handle system conversations
-            if (convo.id.includes('corabo-admin')) {
-                return 'corabo admin'.includes(searchQuery.toLowerCase());
-            }
-            return false;
-        };
-
-        const lastMessage = convo.messages[convo.messages.length - 1];
-        
-        const lowerCaseQuery = searchQuery.toLowerCase();
-
-        const nameMatch = otherParticipant.name.toLowerCase().includes(lowerCaseQuery);
-        
-        const messageMatch = lastMessage?.text ? lastMessage.text.toLowerCase().includes(lowerCaseQuery) : false;
-
-        return nameMatch || messageMatch;
+        // The filtering logic for search will be improved later once we have the user objects.
+        // For now, let's just return all conversations.
+        return true;
     });
+    
+    const renderContent = () => {
+        if (isLoading) {
+            return (
+                 <div className="space-y-2 px-4">
+                    {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}
+                 </div>
+            )
+        }
+        if (filteredConversations.length > 0) {
+            return (
+                 <div className="space-y-2 px-4 pb-24">
+                    {filteredConversations.map(convo => (
+                        <ConversationCard key={convo.id} conversation={convo} />
+                    ))}
+                </div>
+            )
+        }
+        return (
+            <div className="text-center py-20">
+                <p className="text-muted-foreground">No tienes conversaciones.</p>
+            </div>
+        )
+    }
 
     return (
         <div className="flex flex-col h-screen bg-muted/20">
@@ -79,17 +121,7 @@ export default function MessagesPage() {
                 </div>
             </div>
             <main className="flex-1 overflow-y-auto">
-                <div className="container space-y-2 px-4 pb-24">
-                    {filteredConversations.length > 0 ? (
-                        filteredConversations.map(convo => (
-                            <ConversationCard key={convo.id} conversation={convo} />
-                        ))
-                    ) : (
-                         <div className="text-center py-20">
-                            <p className="text-muted-foreground">No se encontraron conversaciones.</p>
-                        </div>
-                    )}
-                </div>
+                {renderContent()}
             </main>
         </div>
     );

@@ -249,16 +249,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             }
         }));
         
-        // Listener for conversations
-        const convosQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userData.id));
-        listeners.push(onSnapshot(convosQuery, (snapshot) => {
-            const serverConversations = snapshot.docs.map(doc => doc.data() as Conversation);
-            const sortedConversations = serverConversations.sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime());
-            setConversations(sortedConversations);
-        }, (error) => {
-            console.error("Error fetching conversations: ", error);
-        }));
-
         if (userData.profileSetupData?.location) {
             setDeliveryAddress(userData.profileSetupData.location);
         }

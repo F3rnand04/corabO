@@ -143,7 +143,7 @@ const ActionButton = ({ icon: Icon, label, count, onClick }: { icon: React.Eleme
 
 
 export default function TransactionsPage() {
-    const { currentUser, getAgendaEvents, getUserMetrics, subscribeUser } = useCorabo();
+    const { currentUser, getAgendaEvents, getUserMetrics, subscribeUser, fetchUser } = useCorabo();
     const router = useRouter();
     const { toast } = useToast();
 
@@ -167,7 +167,8 @@ export default function TransactionsPage() {
         const q = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
+            const serverTransactions = snapshot.docs.map(doc => doc.data() as Transaction);
+            setTransactions(serverTransactions);
             setIsLoading(false);
         }, (error) => {
             console.error("Error fetching transactions: ", error);
@@ -181,11 +182,13 @@ export default function TransactionsPage() {
 
     if (isLoading) {
          return (
-            <div className="space-y-4 p-4">
+            <div className="bg-muted/20 min-h-screen">
                 <TransactionsHeader onBackToSummary={() => setView('summary')} currentView={view} />
-                <Skeleton className="h-64 w-full" />
-                <Skeleton className="h-24 w-full" />
-                <Skeleton className="h-32 w-full" />
+                <div className="container py-6 space-y-4">
+                    <Skeleton className="h-64 w-full" />
+                    <Skeleton className="h-24 w-full" />
+                    <Skeleton className="h-32 w-full" />
+                </div>
             </div>
         )
     }
