@@ -37,7 +37,7 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 
 export default function CompanyProfilePage() {
   const params = useParams();
-  const { users, addContact, isContact, transactions, createAppointmentRequest, currentUser, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, sendMessage, toggleGps, deliveryAddress, setDeliveryAddress, getUserMetrics, fetchUser } = useCorabo();
+  const { addContact, isContact, transactions, createAppointmentRequest, currentUser, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, sendMessage, toggleGps, deliveryAddress, setDeliveryAddress, getUserMetrics, fetchUser } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
 

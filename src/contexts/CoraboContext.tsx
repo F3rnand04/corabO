@@ -143,10 +143,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const userCache = useRef<Map<string, User>>(new Map());
 
   const fetchUser = useCallback(async (userId: string): Promise<User | null> => {
-    // Return from local state if available (most efficient)
-    const foundUserInState = users.find(u => u.id === userId);
-    if(foundUserInState) return foundUserInState;
-
     // Return from cache if available
     if (userCache.current.has(userId)) {
         return userCache.current.get(userId)!;
@@ -159,11 +155,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     if (userDocSnap.exists()) {
         const userData = userDocSnap.data() as User;
         userCache.current.set(userId, userData);
-        setUsers(prev => [...prev, userData]); // Add to global state for future use
         return userData;
     }
     return null;
-  }, [users]);
+  }, []);
   
   const getFeed = useCallback(async (): Promise<GalleryImage[]> => {
       try {
@@ -235,7 +230,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       
       setCurrentUser(null);
       setConversations([]);
-      setUsers([]);
       
       if (firebaseUser) {
         const userData = await handleUserCreation(firebaseUser);
@@ -261,15 +255,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             setConversations(sortedConversations);
         }, (error) => {
             console.error("Error fetching conversations: ", error);
-        }));
-
-        // Fetch all users to have them available in a safe way for display purposes
-        const usersQuery = query(collection(db, "users"));
-        listeners.push(onSnapshot(usersQuery, (snapshot) => {
-            const allUsers = snapshot.docs.map(doc => doc.data() as User);
-            setUsers(allUsers);
-        }, (error) => {
-            console.error("Error fetching users: ", error);
         }));
 
         if (userData.profileSetupData?.location) {
