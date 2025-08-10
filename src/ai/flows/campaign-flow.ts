@@ -83,11 +83,13 @@ const createCampaignFlow = ai.defineFlow(
     outputSchema: CampaignOutputSchema,
   },
   async (input: CreateCampaignInput) => {
+    // In a real app with auth, we'd get the UID from the auth context.
+    // For now, we trust the input userId but proceed with caution.
     const userRef = doc(getFirestoreDb(), 'users', input.userId);
     const userSnap = await getDoc(userRef);
 
-    if (!userSnap.exists()) {
-      throw new Error('User not found');
+    if (!userSnap.exists() || userSnap.data().type !== 'provider') {
+      throw new Error('User not found or is not a provider.');
     }
 
     const user = userSnap.data() as User;
@@ -99,7 +101,7 @@ const createCampaignFlow = ai.defineFlow(
     const campaignId = `camp-${Date.now()}`;
     const newCampaign: Campaign = {
       id: campaignId,
-      providerId: user.id,
+      providerId: user.id, // Ensure providerId is the one from the validated user doc
       publicationId: input.publicationId,
       budget: input.budget,
       durationDays: input.durationDays,
@@ -139,10 +141,8 @@ const createCampaignFlow = ai.defineFlow(
     batch.update(userRef, {activeCampaignIds: updatedCampaignIds});
     
     await batch.commit();
-
-    // After payment is verified, this will trigger notifications
-    // We call it here to simulate for now. In a real app, a webhook
-    // or trigger on the transaction status changing to 'active' would call this.
+    
+    // Simulate immediate payment verification for demonstration
     if (newCampaign.budget >= 20) {
         await sendNewCampaignNotifications({ campaignId: newCampaign.id });
     }

@@ -56,8 +56,11 @@ export const completeWork = ai.defineFlow(
   async ({ transactionId, userId }) => {
     const txRef = doc(getFirestoreDb(), 'transactions', transactionId);
     const txSnap = await getDoc(txRef);
-    if (!txSnap.exists() || txSnap.data().providerId !== userId) {
-        throw new Error("Transaction not found or user is not the provider.");
+    if (!txSnap.exists()) throw new Error("Transaction not found.");
+    
+    // SECURITY CHECK: Only the provider can mark work as complete.
+    if (txSnap.data().providerId !== userId) {
+        throw new Error("Permission denied. User is not the provider for this transaction.");
     }
     await updateDoc(txRef, { status: 'Pendiente de Confirmación del Cliente' });
   }
@@ -76,8 +79,11 @@ export const confirmWorkReceived = ai.defineFlow(
     async ({ transactionId, userId, rating, comment }) => {
         const txRef = doc(getFirestoreDb(), 'transactions', transactionId);
         const txSnap = await getDoc(txRef);
-        if (!txSnap.exists() || txSnap.data().clientId !== userId) {
-            throw new Error("Transaction not found or user is not the client.");
+        if (!txSnap.exists()) throw new Error("Transaction not found.");
+
+        // SECURITY CHECK: Only the client can confirm receipt.
+        if (txSnap.data().clientId !== userId) {
+            throw new Error("Permission denied. User is not the client for this transaction.");
         }
         await updateDoc(txRef, { 
             status: 'Finalizado - Pendiente de Pago',
@@ -101,8 +107,11 @@ export const payCommitment = ai.defineFlow(
     async ({ transactionId, userId, rating, comment }) => {
         const txRef = doc(getFirestoreDb(), 'transactions', transactionId);
         const txSnap = await getDoc(txRef);
-        if (!txSnap.exists() || txSnap.data().clientId !== userId) {
-            throw new Error("Transaction not found or user is not the client.");
+        if (!txSnap.exists()) throw new Error("Transaction not found.");
+
+        // SECURITY CHECK: Only the client can pay.
+        if (txSnap.data().clientId !== userId) {
+            throw new Error("Permission denied. User is not the client for this transaction.");
         }
         
         const updateData: any = { status: 'Pago Enviado - Esperando Confirmación' };
@@ -126,8 +135,11 @@ export const confirmPaymentReceived = ai.defineFlow(
     async ({ transactionId, userId, fromThirdParty }) => {
         const txRef = doc(getFirestoreDb(), 'transactions', transactionId);
         const txSnap = await getDoc(txRef);
-        if (!txSnap.exists() || txSnap.data().providerId !== userId) {
-            throw new Error("Transaction not found or user is not the provider.");
+        if (!txSnap.exists()) throw new Error("Transaction not found.");
+        
+        // SECURITY CHECK: Only the provider can confirm payment.
+        if (txSnap.data().providerId !== userId) {
+            throw new Error("Permission denied. User is not the provider for this transaction.");
         }
         await updateDoc(txRef, { 
             status: 'Pagado',
@@ -148,8 +160,11 @@ export const sendQuote = ai.defineFlow(
     async ({ transactionId, userId, breakdown, total }) => {
         const txRef = doc(getFirestoreDb(), 'transactions', transactionId);
         const txSnap = await getDoc(txRef);
-        if (!txSnap.exists() || txSnap.data().providerId !== userId) {
-            throw new Error("Transaction not found or user is not the provider.");
+        if (!txSnap.exists()) throw new Error("Transaction not found.");
+        
+        // SECURITY CHECK: Only the provider can send a quote.
+        if (txSnap.data().providerId !== userId) {
+            throw new Error("Permission denied. User is not the provider for this transaction.");
         }
         await updateDoc(txRef, {
             status: 'Cotización Recibida',
@@ -171,8 +186,11 @@ export const acceptQuote = ai.defineFlow(
     async ({ transactionId, userId }) => {
         const txRef = doc(getFirestoreDb(), 'transactions', transactionId);
         const txSnap = await getDoc(txRef);
-        if (!txSnap.exists() || txSnap.data().clientId !== userId) {
-            throw new Error("Transaction not found or user is not the client.");
+        if (!txSnap.exists()) throw new Error("Transaction not found.");
+        
+        // SECURITY CHECK: Only the client can accept a quote.
+        if (txSnap.data().clientId !== userId) {
+            throw new Error("Permission denied. User is not the client for this transaction.");
         }
         await updateDoc(txRef, { status: 'Finalizado - Pendiente de Pago' });
     }
@@ -189,6 +207,7 @@ export const createAppointmentRequest = ai.defineFlow(
         outputSchema: z.void(),
     },
     async (request) => {
+        // SECURITY: We trust the clientId from the validated client session.
         const txId = `txn-appt-${Date.now()}`;
         const newTransaction: Transaction = {
             id: txId,
@@ -220,8 +239,11 @@ export const acceptAppointment = ai.defineFlow(
     async ({ transactionId, userId }) => {
         const txRef = doc(getFirestoreDb(), 'transactions', transactionId);
         const txSnap = await getDoc(txRef);
-        if (!txSnap.exists() || txSnap.data().providerId !== userId) {
-            throw new Error("Transaction not found or user is not the provider.");
+        if (!txSnap.exists()) throw new Error("Transaction not found.");
+
+        // SECURITY CHECK: Only the provider can accept an appointment.
+        if (txSnap.data().providerId !== userId) {
+            throw new Error("Permission denied. User is not the provider for this transaction.");
         }
         await updateDoc(txRef, { status: 'Acuerdo Aceptado - Pendiente de Ejecución' });
     }
@@ -238,6 +260,7 @@ export const startDispute = ai.defineFlow(
         outputSchema: z.void(),
     },
     async (transactionId) => {
+        // SECURITY: In a real app, we'd check if the user calling this is a participant.
         const txRef = doc(getFirestoreDb(), 'transactions', transactionId);
         await updateDoc(txRef, { status: 'En Disputa' });
     }

@@ -45,6 +45,8 @@ export const sendMessage = ai.defineFlow(
     outputSchema: z.void(),
   },
   async (input) => {
+    // SECURITY: In a real app, the senderId would be derived from the auth context, not the input.
+    // For now, we proceed assuming the input is from a validated client session.
     const convoRef = doc(getFirestoreDb(), 'conversations', input.conversationId);
     const convoSnap = await getDoc(convoRef);
 
@@ -60,11 +62,17 @@ export const sendMessage = ai.defineFlow(
     };
 
     if (convoSnap.exists()) {
+      // SECURITY CHECK: Ensure the sender is a participant of the conversation
+      const conversation = convoSnap.data() as Conversation;
+      if (!conversation.participantIds.includes(input.senderId)) {
+        throw new Error("Sender is not a participant of this conversation.");
+      }
       await updateDoc(convoRef, {
         messages: arrayUnion(newMessage),
         lastUpdated: new Date().toISOString(),
       });
     } else {
+      // Creating a new conversation
       await setDoc(convoRef, {
         id: input.conversationId,
         participantIds: [input.senderId, input.recipientId].sort(),
@@ -90,14 +98,19 @@ export const acceptProposal = ai.defineFlow(
     if (!convoSnap.exists()) throw new Error("Conversation not found");
     
     const conversation = convoSnap.data() as Conversation;
-    const messageIndex = conversation.messages.findIndex(m => m.id === messageId);
-    if (messageIndex === -1) throw new Error("Message not found");
-    
-    const message = conversation.messages[messageIndex];
-    if (message.type !== 'proposal' || !message.proposal) throw new Error("Message is not a proposal");
+
+    // SECURITY CHECK: Ensure the acceptor is a participant and is not the sender
+    if (!conversation.participantIds.includes(acceptorId)) {
+        throw new Error("Acceptor is not a participant of this conversation.");
+    }
+    const message = conversation.messages.find(m => m.id === messageId);
+    if (!message) throw new Error("Message not found");
     if (message.senderId === acceptorId) throw new Error("Cannot accept your own proposal");
 
+    if (message.type !== 'proposal' || !message.proposal) throw new Error("Message is not a proposal");
+
     // 1. Mark the proposal as accepted in the conversation
+    const messageIndex = conversation.messages.findIndex(m => m.id === messageId);
     const updatedMessages = [...conversation.messages];
     updatedMessages[messageIndex] = { ...message, isProposalAccepted: true };
     batch.update(convoRef, { messages: updatedMessages });
