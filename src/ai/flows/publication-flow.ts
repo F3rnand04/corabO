@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Flows for creating publications and products securely on the backend.
@@ -60,16 +59,17 @@ export const createPublication = ai.defineFlow(
     batch.set(userGalleryRef, galleryItem);
 
     // 2. Create the denormalized public publication for the feed
+    // This is the critical fix: ensuring all required owner data is populated.
     const ownerData: PublicationOwner = {
       id: user.id,
       name: user.profileSetupData?.useUsername ? user.profileSetupData.username || user.name : user.name,
       profileImage: user.profileImage,
-      verified: user.verified,
-      isGpsActive: user.isGpsActive,
-      reputation: user.reputation,
+      verified: user.verified || false,
+      isGpsActive: user.isGpsActive || false,
+      reputation: user.reputation || 0,
       profileSetupData: {
-        specialty: user.profileSetupData?.specialty,
-        providerType: user.profileSetupData?.providerType,
+        specialty: user.profileSetupData?.specialty || '',
+        providerType: user.profileSetupData?.providerType || 'professional',
       },
     };
 
