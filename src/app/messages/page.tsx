@@ -12,7 +12,7 @@ import { ConversationCard } from '@/components/ConversationCard';
 import type { Conversation } from '@/lib/types';
 import { ActivationWarning } from '@/components/ActivationWarning';
 import { getFirestoreDb } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, Unsubscribe } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
 
@@ -37,17 +37,21 @@ function MessagesHeader() {
 
 
 export default function MessagesPage() {
-    const { currentUser, fetchUser } = useCorabo();
+    const { currentUser } = useCorabo();
     const [searchQuery, setSearchQuery] = useState('');
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     // This effect will run when the component mounts and currentUser is available.
     useEffect(() => {
-        if (!currentUser) return;
+        if (!currentUser) {
+            setIsLoading(false);
+            return;
+        }
 
         setIsLoading(true);
         const db = getFirestoreDb();
+        // This query is now safe. It only filters by participant.
         const convosQuery = query(
             collection(db, "conversations"), 
             where("participantIds", "array-contains", currentUser.id)
@@ -55,6 +59,7 @@ export default function MessagesPage() {
 
         const unsubscribe = onSnapshot(convosQuery, (snapshot) => {
             const serverConversations = snapshot.docs.map(doc => doc.data() as Conversation);
+            // Sorting is now handled on the client-side to avoid the complex query.
             const sortedConversations = serverConversations.sort((a, b) => 
                 new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
             );

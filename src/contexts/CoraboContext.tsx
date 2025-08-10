@@ -44,7 +44,6 @@ interface CoraboState {
   products: Product[];
   cart: CartItem[];
   transactions: Transaction[];
-  conversations: Conversation[];
   searchQuery: string;
   contacts: User[];
   feedView: FeedView;
@@ -126,7 +125,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [conversations, setConversations] = useState<Conversation[]>([]);
   
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchQuery, _setSearchQuery] = useState('');
@@ -231,7 +229,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       
       // Reset state on auth change
       setCurrentUser(null);
-      setConversations([]);
       setTransactions([]);
       
       if (firebaseUser) {
@@ -317,7 +314,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         await signOut(auth);
         setCurrentUser(null);
         setTransactions([]);
-        setConversations([]);
         router.push('/login');
     } catch (error) {
         console.error("Error signing out: ", error);
@@ -481,7 +477,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const sendProposalMessage = async (conversationId: string, proposal: AgreementProposal) => {
     if (!currentUser) return;
     try {
-        const recipient = conversations.find(c => c.id === conversationId)?.participantIds.find(p => p !== currentUser.id);
+        const conversationDoc = await getDoc(doc(getFirestoreDb(), 'conversations', conversationId));
+        if (!conversationDoc.exists()) throw new Error("Conversation not found");
+
+        const recipient = conversationDoc.data()?.participantIds.find((p: string) => p !== currentUser.id);
         if (!recipient) throw new Error("Recipient not found");
         
         await sendMessageFlow({
@@ -739,7 +738,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     products,
     cart,
     transactions,
-    conversations,
     searchQuery,
     contacts,
     feedView,

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -7,12 +8,12 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChevronLeft, Send, Paperclip, CheckCheck, MapPin, Calendar, FileText, PlusCircle, Handshake, Star, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, Send, Paperclip, CheckCheck, MapPin, Calendar, FileText, PlusCircle, Handshake, Star, AlertTriangle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { Message, User, AgreementProposal } from '@/lib/types';
+import type { Message, User, AgreementProposal, Conversation } from '@/lib/types';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { BusinessHoursStatus } from '@/components/BusinessHoursStatus';
@@ -20,6 +21,8 @@ import { Separator } from '@/components/ui/separator';
 import { ProposalDialog } from '@/components/ProposalDialog';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { getFirestoreDb } from '@/lib/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 
 
 function ChatHeader({ 
@@ -203,21 +206,48 @@ function MessageBubble({ msg, isCurrentUser, onAccept, canAcceptProposal }: { ms
 export default function ChatPage() {
   const params = useParams();
   const router = useRouter();
-  const { conversations, users, currentUser, sendMessage, acceptProposal, markConversationAsRead } = useCorabo();
+  const { currentUser, sendMessage, acceptProposal, markConversationAsRead, fetchUser } = useCorabo();
+  
+  const [conversation, setConversation] = useState<Conversation | null>(null);
+  const [otherParticipant, setOtherParticipant] = useState<User | null>(null);
   const [newMessage, setNewMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
   const [isProposalDialogOpen, setIsProposalDialogOpen] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   
   const conversationId = params.id as string;
-  const conversation = conversations.find(c => c.id === conversationId);
-  
-  const otherParticipantId = conversation?.participantIds.find(pId => pId !== currentUser?.id);
-  const otherParticipant = users.find(u => u.id === otherParticipantId);
 
-  const isProvider = currentUser?.type === 'provider';
-  const canAcceptProposal = currentUser?.isTransactionsActive ?? false;
+  useEffect(() => {
+    if (!currentUser || !conversationId) return;
 
-  const showProviderWarning = isProvider && (!otherParticipant?.isTransactionsActive);
+    const db = getFirestoreDb();
+    const convoRef = doc(db, 'conversations', conversationId);
+
+    // Subscribe to real-time updates for this specific conversation
+    const unsubscribe = onSnapshot(convoRef, async (docSnap) => {
+        if (docSnap.exists()) {
+            const convoData = docSnap.data() as Conversation;
+            setConversation(convoData);
+            
+            // If other participant is not loaded yet, fetch them
+            if (!otherParticipant) {
+                const otherId = convoData.participantIds.find(pId => pId !== currentUser.id);
+                if (otherId) {
+                    const participantData = await fetchUser(otherId);
+                    setOtherParticipant(participantData);
+                }
+            }
+            markConversationAsRead(conversationId);
+        } else {
+            console.error("Conversation not found");
+        }
+        setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [conversationId, currentUser, otherParticipant, fetchUser, markConversationAsRead]);
+
   
   useEffect(() => {
     // Scroll to the bottom when messages change
@@ -229,21 +259,19 @@ export default function ChatPage() {
     }
   }, [conversation?.messages]);
 
-  useEffect(() => {
-    // Mark messages as read when component mounts and conversation is available
-    if (conversation && currentUser) {
-      markConversationAsRead(conversation.id);
-    }
-  }, [conversation, currentUser, markConversationAsRead]);
 
-  if (!currentUser || !conversation || !otherParticipant) {
+  if (isLoading || !currentUser || !conversation || !otherParticipant) {
     return (
       <div className="flex flex-col h-screen items-center justify-center">
-        <p>Conversación no encontrada o cargando...</p>
-        <Button onClick={() => router.push('/messages')} className="mt-4">Volver a Mensajes</Button>
+        <Loader2 className="w-8 h-8 animate-spin"/>
       </div>
     );
   }
+
+  const isProvider = currentUser?.type === 'provider';
+  const canAcceptProposal = currentUser?.isTransactionsActive ?? false;
+  const showProviderWarning = isProvider && (!otherParticipant?.isTransactionsActive);
+
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -257,12 +285,6 @@ export default function ChatPage() {
     const formattedDate = format(date, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: es });
     const messageText = `¡Hola! Me gustaría solicitar una cita para el ${formattedDate}. ¿Estás disponible?`;
     sendMessage(otherParticipant.id, messageText);
-    
-    // Simulate provider accepting and creating the commitment
-    setTimeout(() => {
-        const appointmentMessage = `¡Claro! Te enviaré una propuesta formal para que la aceptes y creemos el compromiso.`;
-        sendMessage(otherParticipant.id, appointmentMessage);
-    }, 1500)
   }
 
   return (
