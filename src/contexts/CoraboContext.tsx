@@ -245,6 +245,15 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
               userCache.current.set(updatedUserData.id, updatedUserData);
             }
         }));
+
+        // Listener for transactions
+        const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userData.id));
+        listeners.push(onSnapshot(transactionsQuery, (snapshot) => {
+          setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
+        }, (error) => {
+          console.error("Error fetching transactions in context: ", error);
+          // Do not toast here as it can be noisy. The component will handle display.
+        }));
         
         if (userData.profileSetupData?.location) {
             setDeliveryAddress(userData.profileSetupData.location);
@@ -818,3 +827,5 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
+
+    

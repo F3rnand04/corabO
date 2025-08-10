@@ -143,55 +143,17 @@ const ActionButton = ({ icon: Icon, label, count, onClick }: { icon: React.Eleme
 
 
 export default function TransactionsPage() {
-    const { currentUser, getAgendaEvents, getUserMetrics, subscribeUser, fetchUser } = useCorabo();
+    const { currentUser, transactions, getAgendaEvents, getUserMetrics, subscribeUser } = useCorabo();
     const router = useRouter();
     const { toast } = useToast();
 
-    const [transactions, setTransactions] = useState<Transaction[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false); // No longer loading from here initially
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
     const [chartType, setChartType] = useState<'line' | 'pie'>('line');
     const [showSensitiveData, setShowSensitiveData] = useState(true);
     const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
     const [view, setView] = useState<'summary' | 'pending' | 'history' | 'commitments'>('summary');
     const [isProgressionOpen, setIsProgressionOpen] = useState(false);
-
-    useEffect(() => {
-        if (!currentUser) {
-            setIsLoading(false);
-            return;
-        };
-
-        setIsLoading(true);
-        const db = getFirestoreDb();
-        const q = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
-
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const serverTransactions = snapshot.docs.map(doc => doc.data() as Transaction);
-            setTransactions(serverTransactions);
-            setIsLoading(false);
-        }, (error) => {
-            console.error("Error fetching transactions: ", error);
-            toast({ variant: 'destructive', title: "Error", description: "No se pudieron cargar las transacciones."});
-            setIsLoading(false);
-        });
-
-        return () => unsubscribe();
-    }, [currentUser, toast]);
-
-
-    if (isLoading) {
-         return (
-            <div className="bg-muted/20 min-h-screen">
-                <TransactionsHeader onBackToSummary={() => setView('summary')} currentView={view} />
-                <div className="container py-6 space-y-4">
-                    <Skeleton className="h-64 w-full" />
-                    <Skeleton className="h-24 w-full" />
-                    <Skeleton className="h-32 w-full" />
-                </div>
-            </div>
-        )
-    }
 
     if (!currentUser) {
         return (
@@ -495,3 +457,5 @@ export default function TransactionsPage() {
         </div>
     );
 }
+
+    
