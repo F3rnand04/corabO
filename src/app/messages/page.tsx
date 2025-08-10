@@ -12,7 +12,7 @@ import { ConversationCard } from '@/components/ConversationCard';
 import type { Conversation } from '@/lib/types';
 import { ActivationWarning } from '@/components/ActivationWarning';
 import { getFirestoreDb } from '@/lib/firebase';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
 
@@ -37,7 +37,7 @@ function MessagesHeader() {
 
 
 export default function MessagesPage() {
-    const { currentUser } = useCorabo();
+    const { currentUser, users } = useCorabo();
     const [searchQuery, setSearchQuery] = useState('');
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -79,9 +79,20 @@ export default function MessagesPage() {
 
     const filteredConversations = conversations.filter(convo => {
         if (!currentUser) return false;
-        // The filtering logic for search will be improved later once we have the user objects.
-        // For now, let's just return all conversations.
-        return true;
+        
+        const otherParticipantId = convo.participantIds.find(pId => pId !== currentUser.id);
+        const otherParticipant = users.find(u => u.id === otherParticipantId);
+        
+        if (!otherParticipant) return false;
+
+        const lowerCaseQuery = searchQuery.toLowerCase().trim();
+        if (!lowerCaseQuery) return true;
+
+        const nameMatch = otherParticipant.name.toLowerCase().includes(lowerCaseQuery);
+        const lastMessageText = convo.messages[convo.messages.length - 1]?.text || '';
+        const messageMatch = lastMessageText.toLowerCase().includes(lowerCaseQuery);
+        
+        return nameMatch || messageMatch;
     });
     
     const renderContent = () => {
