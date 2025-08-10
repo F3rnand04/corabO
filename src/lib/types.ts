@@ -1,6 +1,5 @@
 
 
-
 export type Notification = {
   id: string;
   userId: string;
@@ -45,6 +44,19 @@ export type GalleryImageComment = {
   profileImage?: string;
 };
 
+export type PublicationOwner = {
+  id: string;
+  name: string;
+  profileImage: string;
+  verified?: boolean;
+  isGpsActive?: boolean;
+  reputation?: number;
+  profileSetupData?: {
+    specialty?: string;
+    providerType?: 'professional' | 'company';
+  }
+};
+
 export type GalleryImage = {
   id: string;
   providerId: string;
@@ -61,6 +73,8 @@ export type GalleryImage = {
   };
   campaignId?: string;
   aspectRatio?: 'square' | 'horizontal' | 'vertical';
+  likes?: number;
+  owner?: PublicationOwner; // Denormalized owner data
 };
 
 export type CredicoraLevel = {

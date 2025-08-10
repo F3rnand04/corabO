@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from 'react';
-import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest } from '@/lib/types';
+import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest, PublicationOwner } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation";
 import jsPDF from 'jspdf';
@@ -19,6 +19,7 @@ import * as NotificationFlows from '@/ai/flows/notification-flow';
 import { autoVerifyIdWithAI as autoVerifyIdWithAIFlow, type VerificationInput } from '@/ai/flows/verification-flow';
 import { getExchangeRate } from '@/ai/flows/exchange-rate-flow';
 import { sendSmsVerificationCodeFlow, verifySmsCodeFlow } from '@/ai/flows/sms-flow';
+import { getFeed as getFeedFlow } from '@/ai/flows/feed-flow';
 
 
 type FeedView = 'servicios' | 'empresas';
@@ -109,6 +110,7 @@ interface CoraboState {
   autoVerifyIdWithAI: (input: VerificationInput) => Promise<VerificationOutput>;
   getUserMetrics: (userId: string) => UserMetrics;
   fetchUser: (userId: string) => Promise<User | null>;
+  getFeed: () => Promise<GalleryImage[]>;
   users: User[];
 }
 
@@ -145,11 +147,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     if (userCache.current.has(userId)) {
         return userCache.current.get(userId)!;
     }
-    const cachedUser = users.find(u => u.id === userId);
-    if(cachedUser) {
-        userCache.current.set(userId, cachedUser);
-        return cachedUser;
-    }
     
     // Fetch from Firestore as a last resort
     const db = getFirestoreDb();
@@ -161,7 +158,21 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         return userData;
     }
     return null;
-  }, [users]);
+  }, []);
+  
+  const getFeed = useCallback(async (): Promise<GalleryImage[]> => {
+      try {
+          return await getFeedFlow();
+      } catch (error) {
+          console.error("Error fetching feed via Genkit flow:", error);
+          toast({
+              variant: 'destructive',
+              title: 'Error al Cargar Contenido',
+              description: 'No se pudo obtener el contenido del feed. Intenta más tarde.'
+          });
+          return [];
+      }
+  }, [toast]);
 
   const handleUserCreation = useCallback(async (firebaseUser: FirebaseUser): Promise<User> => {
     const db = getFirestoreDb();
@@ -220,39 +231,34 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       setCurrentUser(null);
       setTransactions([]);
       setConversations([]);
-      setProducts([]);
-      setUsers([]);
-
+      
       if (firebaseUser) {
         const userData = await handleUserCreation(firebaseUser);
         setCurrentUser(userData);
 
         const db = getFirestoreDb();
         
-        listeners.push(onSnapshot(collection(db, "products"), (snapshot) => {
-            setProducts(snapshot.docs.map(doc => doc.data() as Product));
-        }));
-        
         const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userData.id));
         listeners.push(onSnapshot(transactionsQuery, (snapshot) => {
             setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
         }));
-
-        // This query requires a composite index. Without it, it will fail with permission errors.
-        // Let's load conversations in the messages page instead to avoid this global listener.
-        // const conversationsQuery = query(
-        //     collection(db, "conversations"), 
-        //     where("participantIds", "array-contains", userData.id),
-        //     orderBy("lastUpdated", "desc")
-        // );
-        // listeners.push(onSnapshot(conversationsQuery, (snapshot) => {
-        //     setConversations(snapshot.docs.map(doc => doc.data() as Conversation));
-        // }));
         
         listeners.push(onSnapshot(doc(db, 'users', userData.id), (doc) => {
-            if (doc.exists()) setCurrentUser(doc.data() as User);
+            if (doc.exists()) {
+              const updatedUserData = doc.data() as User;
+              setCurrentUser(updatedUserData);
+              // Update user in cache
+              userCache.current.set(updatedUserData.id, updatedUserData);
+            }
         }));
         
+        // Listen to conversations safely
+        const convosQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userData.id), orderBy("lastUpdated", "desc"));
+        listeners.push(onSnapshot(convosQuery, (snapshot) => {
+            setConversations(snapshot.docs.map(doc => doc.data() as Conversation));
+        }));
+
+
         if (userData.profileSetupData?.location) {
             setDeliveryAddress(userData.profileSetupData.location);
         }
@@ -616,15 +622,42 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const userGalleryRef = doc(db, 'users', userId, 'gallery', image.id);
     batch.set(userGalleryRef, image);
     
+    // Create denormalized public publication
+    const publicationRef = doc(db, 'publications', image.id);
+    const publicationData: GalleryImage = {
+        ...image,
+        // Denormalize owner data
+        owner: {
+            id: currentUser.id,
+            name: currentUser.profileSetupData?.useUsername ? currentUser.profileSetupData.username : currentUser.name,
+            profileImage: currentUser.profileImage,
+            verified: currentUser.verified,
+            isGpsActive: currentUser.isGpsActive,
+            reputation: currentUser.reputation, // Add reputation
+            profileSetupData: {
+                specialty: currentUser.profileSetupData?.specialty,
+                providerType: currentUser.profileSetupData?.providerType,
+            }
+        },
+    };
+    batch.set(publicationRef, publicationData);
+    
     await batch.commit();
   };
 
   const removeGalleryImage = async (userId: string, imageId: string) => {
     if(!currentUser) return;
     const db = getFirestoreDb();
+    const batch = writeBatch(db);
     
     const userGalleryRef = doc(db, 'users', userId, 'gallery', imageId);
-    await deleteDoc(userGalleryRef);
+    batch.delete(userGalleryRef);
+
+    // Also delete the public publication
+    const publicationRef = doc(db, 'publications', imageId);
+    batch.delete(publicationRef);
+
+    await batch.commit();
 
   };
   
@@ -826,6 +859,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     fetchUser,
     setDeliveryAddress,
     users,
+    getFeed,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;

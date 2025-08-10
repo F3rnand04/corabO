@@ -1,80 +1,66 @@
 
 "use client";
 
-import { ProviderCard } from "@/components/provider-card";
-import type { User } from "@/lib/types";
+import { PublicationCard } from "@/components/PublicationCard";
+import type { GalleryImage } from "@/lib/types";
 import { useMemo, useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { ActivationWarning } from "@/components/ActivationWarning";
-import { getFeed } from "@/ai/flows/feed-flow";
 
-const mainCategories = [
-  'Hogar y Reparaciones', 
-  'Tecnología y Soporte', 
-  'Automotriz y Repuestos', 
-  'Alimentos y Restaurantes', 
-  'Salud y Bienestar', 
-  'Educación', 
-  'Eventos', 
-  'Belleza', 
-  'Fletes y Delivery'
-];
+// The owner data is now embedded in the publication object
+interface PublicationWithOwner extends GalleryImage {}
 
 export default function HomePage() {
-  const { searchQuery, feedView, currentUser } = useCorabo();
-  const [providers, setProviders] = useState<User[]>([]);
+  const { searchQuery, feedView, currentUser, getFeed } = useCorabo();
+  const [publications, setPublications] = useState<PublicationWithOwner[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Fetch the feed using the secure backend flow
     const loadFeed = async () => {
         setIsLoading(true);
-        // This flow runs on the server and is allowed to fetch all users.
-        const feedProviders = await getFeed();
-        setProviders(feedProviders);
-        setIsLoading(false);
+        try {
+            const feedData = await getFeed();
+            setPublications(feedData);
+        } catch (error) {
+            console.error("Error fetching feed:", error);
+            // Optionally, show a toast to the user
+        } finally {
+            setIsLoading(false);
+        }
     };
     loadFeed();
-  }, []);
+  }, [getFeed]);
 
-  const filteredProviders = useMemo(() => {
-    if (!providers.length) return [];
+  const filteredPublications = useMemo(() => {
+    if (!publications.length) return [];
     
-    const lowerCaseQuery = searchQuery.toLowerCase().trim();
-
-    let viewFiltered = providers.filter(provider => {
-        const providerType = provider.profileSetupData?.providerType || 'professional';
+    let viewFiltered = publications.filter(item => {
+        // Use the denormalized owner data
+        const providerType = item.owner?.profileSetupData?.providerType || 'professional';
         if (feedView === 'empresas') return providerType === 'company';
         return providerType !== 'company';
     });
-
-    if (!lowerCaseQuery) {
+    
+    if (!searchQuery) {
         return viewFiltered;
     }
     
-    const isCategorySearch = mainCategories.some(cat => cat.toLowerCase() === lowerCaseQuery);
+    const lowerCaseQuery = searchQuery.toLowerCase().trim();
 
-    return viewFiltered.filter(provider => {
-        if (isCategorySearch) {
-            const providerCategories = provider.profileSetupData?.categories || [];
-            return providerCategories.some(cat => cat.toLowerCase() === lowerCaseQuery) || provider.profileSetupData?.primaryCategory?.toLowerCase() === lowerCaseQuery;
-        } else {
-            const providerName = provider.profileSetupData?.useUsername 
-                ? provider.profileSetupData.username 
-                : provider.name;
-            const providerNameMatch = providerName?.toLowerCase().includes(lowerCaseQuery);
-            const specialtyMatch = provider.profileSetupData?.specialty?.toLowerCase().includes(lowerCaseQuery);
-            // Additionally search in publications description
-            const publicationMatch = provider.gallery?.some(p => p.description.toLowerCase().includes(lowerCaseQuery));
+    return viewFiltered.filter(item => {
+        const ownerNameMatch = item.owner?.name.toLowerCase().includes(lowerCaseQuery);
+        const specialtyMatch = item.owner?.profileSetupData?.specialty?.toLowerCase().includes(lowerCaseQuery);
+        const publicationMatch = item.description.toLowerCase().includes(lowerCaseQuery);
 
-            return publicationMatch || providerNameMatch || specialtyMatch;
-        }
+        return ownerNameMatch || specialtyMatch || publicationMatch;
     });
 
-  }, [providers, searchQuery, feedView]);
+  }, [publications, searchQuery, feedView]);
 
   const noResultsMessage = () => {
-    const baseMessage = feedView === 'empresas' ? "No se encontraron empresas" : "No se encontraron servicios";
+    const baseMessage = feedView === 'empresas' ? "No se encontraron empresas" : "No se encontraron publicaciones";
     if (searchQuery) {
         return `${baseMessage} para "${searchQuery}".`;
     }
@@ -100,8 +86,8 @@ export default function HomePage() {
           </div>
         ) : (
             <div className="space-y-4">
-            {filteredProviders.length > 0 ? (
-              filteredProviders.map(provider => <ProviderCard key={provider.id} provider={provider} />)
+            {filteredPublications.length > 0 ? (
+              filteredPublications.map(item => <PublicationCard key={item.id} publication={item} owner={item.owner!} />)
             ) : (
               <p className="text-center text-muted-foreground pt-16">
                 {noResultsMessage()}
