@@ -6,19 +6,36 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { CheckCircle } from 'lucide-react';
+import { sendNewCampaignNotifications } from '@/ai/flows/notification-flow';
+import { useToast } from '../hooks/use-toast';
 
 export function PaymentVerificationTab() {
   const { transactions, users, verifyCampaignPayment } = useCorabo();
+  const { toast } = useToast();
 
   const pendingPayments = transactions.filter(
     tx => tx.type === 'Sistema' && tx.status === 'Pago Enviado - Esperando Confirmación'
   );
 
+  const handleVerifyAndNotify = async (transactionId: string, campaignId: string) => {
+      // First, verify the payment and activate the campaign
+      await verifyCampaignPayment(transactionId, campaignId);
+      
+      // Then, send the notifications
+      try {
+        await sendNewCampaignNotifications({ campaignId });
+        toast({ title: "Campaña Activada y Notificada", description: "La campaña está activa y los usuarios han sido notificados." });
+      } catch (error) {
+        console.error("Error sending campaign notifications:", error);
+        toast({ variant: "destructive", title: "Error de Notificación", description: "La campaña se activó, pero falló el envío de notificaciones." });
+      }
+  };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Verificación de Pagos de Campañas</CardTitle>
-        <CardDescription>Aprueba los pagos para activar las campañas de los proveedores.</CardDescription>
+        <CardDescription>Aprueba los pagos para activar las campañas de los proveedores y notificar a los usuarios.</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="border rounded-md">
@@ -46,11 +63,11 @@ export function PaymentVerificationTab() {
                       <TableCell className="text-right">
                         <Button 
                           size="sm" 
-                          onClick={() => campaignId && verifyCampaignPayment(tx.id, campaignId)}
+                          onClick={() => campaignId && handleVerifyAndNotify(tx.id, campaignId)}
                           disabled={!campaignId}
                         >
                           <CheckCircle className="mr-2 h-4 w-4" />
-                          Verificar y Activar
+                          Verificar y Notificar
                         </Button>
                       </TableCell>
                     </TableRow>

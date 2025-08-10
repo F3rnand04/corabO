@@ -82,7 +82,7 @@ function levenshteinDistance(a: string, b: string): number {
     return matrix[b.length][a.length];
 }
 
-function calculateSimilarity(a: string, b: string): number {
+function calculateNameSimilarity(a: string, b: string): number {
     const longer = a.length > b.length ? a : b;
     const shorter = a.length > b.length ? b : a;
     if (longer.length === 0) {
@@ -124,9 +124,10 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
     const extractedNameLower = normalizeName(output.extractedName);
     const recordNameLower = normalizeName(input.nameInRecord);
 
-    // Flexible name matching: Check if all parts of the recorded name are present in the extracted name.
-    // This handles cases where the document has more names (e.g., middle names) than the profile.
-    const nameMatch = recordNameLower.split(' ').every(part => extractedNameLower.includes(part));
+    // Flexible name matching using Levenshtein distance.
+    // A similarity of 80% is a reasonable threshold for a match, accounting for OCR errors or typos.
+    const nameSimilarity = calculateNameSimilarity(recordNameLower, extractedNameLower);
+    const nameMatch = nameSimilarity >= 0.8;
 
     return {
       extractedName: output.extractedName,

@@ -18,7 +18,6 @@ import {
 } from '@/lib/types';
 import { getFirestoreDb } from '@/lib/firebase-server'; // Use server-side firebase
 import {collection, doc, getDoc, getDocs, query, writeBatch, where} from 'firebase/firestore';
-import { sendNewCampaignNotifications } from './notification-flow';
 
 
 const CreateCampaignInputSchema = z.object({
@@ -110,6 +109,8 @@ const createCampaignFlow = ai.defineFlow(
       status: 'pending_payment',
       stats: {impressions: 0, reach: 0, clicks: 0, messages: 0},
       ...input,
+      // Business Rule: Credicora financing is only applicable if the final budget is >= $20
+      financedWithCredicora: input.financedWithCredicora && input.budget >= 20,
     };
 
     const campaignRef = doc(getFirestoreDb(), 'campaigns', newCampaign.id);
@@ -128,7 +129,7 @@ const createCampaignFlow = ai.defineFlow(
       participantIds: [user.id, 'corabo-admin'],
       details: {
         system: `Pago de campaña publicitaria: ${newCampaign.id}`,
-        paymentMethod: input.financedWithCredicora ? 'credicora' : 'direct',
+        paymentMethod: newCampaign.financedWithCredicora ? 'credicora' : 'direct',
         paymentVoucherUrl: 'https://i.postimg.cc/L8y2zWc2/vzla-id.png' // Placeholder for voucher
       },
     };
@@ -142,11 +143,9 @@ const createCampaignFlow = ai.defineFlow(
     
     await batch.commit();
     
-    // Simulate immediate payment verification for demonstration
-    if (newCampaign.budget >= 20) {
-        await sendNewCampaignNotifications({ campaignId: newCampaign.id });
-    }
-
+    // Notification is now handled by the admin panel upon payment verification,
+    // ensuring campaigns are not announced before they are paid and active.
+    
     return newCampaign;
   }
 );

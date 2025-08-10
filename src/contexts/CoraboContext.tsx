@@ -679,11 +679,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         type: profileType,
     };
     
+    await updateUser(userId, updates);
+    
+    // Centrally trigger welcome notification from the context after the state has been successfully updated
     if (wasClient && isNowProvider) {
       NotificationFlows.sendWelcomeToProviderNotification({ userId });
     }
-    
-    await updateUser(userId, updates);
   };
 
   const subscribeUser = (userId: string, planName: string, amount: number) => {
