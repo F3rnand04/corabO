@@ -5,79 +5,23 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { Home, Settings, Wallet, ListChecks, History, CalendarClock, ChevronLeft, ChevronDown, CheckCircle, TrendingDown, Loader2 } from "lucide-react";
+import { Home, Settings, Wallet, ListChecks, History, CalendarClock, ChevronLeft, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import Link from 'next/link';
-import TransactionsLineChart from "@/components/charts/TransactionsLineChart";
 import TransactionsPieChart from "@/components/charts/TransactionsPieChart";
 import { TransactionDetailsDialog } from "@/components/TransactionDetailsDialog";
 import type { Transaction } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { SubscriptionDialog } from "@/components/SubscriptionDialog";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { TransactionList } from "@/components/TransactionList";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Day, type DayProps } from 'react-day-picker';
-import { cn } from "@/lib/utils";
-import { credicoraLevels } from "@/lib/types";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ActivationWarning } from "@/components/ActivationWarning";
 import { getFirestoreDb } from "@/lib/firebase";
-import { collection, onSnapshot, query, where, Unsubscribe } from "firebase/firestore";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 
 
 function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary: () => void, currentView: string }) {
     const router = useRouter();
-    const { currentUser, deactivateTransactions, downloadTransactionsPDF } = useCorabo();
-    const isModuleActive = currentUser?.isTransactionsActive ?? false;
-    const [isDeactivationAlertOpen, setIsDeactivationAlertOpen] = useState(false);
     
-    // Este estado es local al header, no necesita estar en el contexto principal
-    const [transactions, setTransactions] = useState<Transaction[]>([]);
-
-    useEffect(() => {
-        if (!currentUser) return;
-        const db = getFirestoreDb();
-        const txQuery = query(collection(db, 'transactions'), where('participantIds', 'array-contains', currentUser.id));
-        const unsubscribe = onSnapshot(txQuery, (snapshot) => {
-            const serverTransactions = snapshot.docs.map(doc => {
-                const data = doc.data() as Transaction;
-                // Pre-process to ensure serializability if needed, though this component doesn't pass it down
-                return {
-                    ...data,
-                    date: new Date(data.date).toISOString(), // Example of ensuring date is a string
-                };
-            });
-            setTransactions(serverTransactions);
-        });
-        return () => unsubscribe();
-    }, [currentUser]);
-
-
-    if (!currentUser) return null;
-
-    const handleDeactivation = () => {
-        deactivateTransactions(currentUser.id);
-        setIsDeactivationAlertOpen(false);
-    };
-
-    const navigateToSettings = () => {
-        router.push('/transactions/settings');
-    }
-
     return (
         <header className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
             <div className="container px-4 sm:px-6">
@@ -89,30 +33,9 @@ function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary:
                         <Wallet className="h-6 w-6 text-muted-foreground" />
                         <h1 className="text-lg font-semibold">Registro de Transacciones</h1>
                     </div>
-                    <div className="flex items-center">
-                        {isModuleActive ? (
-                            <AlertDialog open={isDeactivationAlertOpen} onOpenChange={setIsDeactivationAlertOpen}>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon">
-                                            <Settings className="h-6 w-6 text-muted-foreground" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        {/* ... Dropdown items ... */}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                                <AlertDialogContent>
-                                    {/* ... Alert Dialog content ... */}
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        ) : (
-                            <Button variant="ghost" size="icon" onClick={navigateToSettings}>
-                                <Settings className="h-6 w-6 text-green-500 animate-pulse" />
-                            </Button>
-                        )}
-
-                    </div>
+                    <Button variant="ghost" size="icon" onClick={() => router.push('/transactions/settings')}>
+                        <Settings className="h-6 w-6 text-muted-foreground" />
+                    </Button>
                 </div>
             </div>
         </header>
@@ -121,7 +44,7 @@ function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary:
 
 const ActionButton = ({ icon: Icon, label, count, onClick }: { icon: React.ElementType, label: string, count: number, onClick: () => void }) => (
     <Button variant="outline" className="flex flex-col h-24 w-full items-center justify-center gap-1 relative" onClick={onClick}>
-        {count > 0 && <Badge variant="destructive" className="absolute top-2 right-2">{count}</Badge>}
+        {count > 0 && <span className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">{count}</span>}
         <Icon className="w-8 h-8 text-primary" />
         <span className="text-xs text-center">{label}</span>
     </Button>
@@ -129,7 +52,7 @@ const ActionButton = ({ icon: Icon, label, count, onClick }: { icon: React.Eleme
 
 
 export default function TransactionsPage() {
-    const { currentUser, getAgendaEvents, getUserMetrics } = useCorabo();
+    const { currentUser, getUserMetrics } = useCorabo();
     const { toast } = useToast();
     
     const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -153,7 +76,6 @@ export default function TransactionsPage() {
         const unsubscribe = onSnapshot(txQuery, (snapshot) => {
             const serverTransactions = snapshot.docs.map(doc => {
                  const data = doc.data();
-                 // CRITICAL FIX: Ensure all date fields are serializable strings
                  return {
                     ...data,
                     id: doc.id,
@@ -228,7 +150,6 @@ export default function TransactionsPage() {
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between pb-2">
                                 <CardTitle>Resumen de Movimientos</CardTitle>
-                                {/* Chart controls can go here */}
                             </CardHeader>
                             <CardContent className="h-[250px] flex items-center justify-center">
                                 <TransactionsPieChart transactions={transactions} />
@@ -288,5 +209,3 @@ export default function TransactionsPage() {
         </div>
     );
 }
-
-    

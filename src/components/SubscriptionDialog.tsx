@@ -19,8 +19,6 @@ import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Label } from './ui/label';
 import { cn } from '@/lib/utils';
 import type { Transaction } from '@/lib/types';
-import { getFirestoreDb } from '@/lib/firebase';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
 
 
 interface SubscriptionDialogProps {
@@ -72,49 +70,32 @@ const plans = {
 
 
 export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogProps) {
-  const { currentUser, subscribeUser, checkIfShouldBeEnterprise } = useCorabo();
+  const { currentUser, subscribeUser } = useCorabo();
   const [paymentCycle, setPaymentCycle] = useState<'monthly' | 'annually'>('monthly');
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-
-  useEffect(() => {
-    if (!currentUser) return;
-    const db = getFirestoreDb();
-    const txQuery = query(collection(db, 'transactions'), where('participantIds', 'array-contains', currentUser.id));
-    const unsubscribe = onSnapshot(txQuery, (snapshot) => {
-      setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
-    });
-    return () => unsubscribe();
-  }, [currentUser]);
-
 
   if (!currentUser) {
     return null;
   }
   
-
   const getPlanKey = (): keyof typeof plans => {
-    
-    if (checkIfShouldBeEnterprise(currentUser.id, transactions)) {
-      return 'company';
+    const isCompany = currentUser.profileSetupData?.providerType === 'company';
+    if (isCompany) {
+        return 'company';
     }
-    
+
     if (currentUser.type === 'client') {
       return 'personal';
     }
     
+    // Simplified logic for professional plan, avoiding complex queries
     const professionalCategories = ['Salud y Bienestar', 'Educación', 'Automotriz y Repuestos', 'Alimentos y Restaurantes'];
     if (currentUser.type === 'provider') {
-      const completedJobs = transactions.filter(
-        tx => tx.providerId === currentUser.id && (tx.status === 'Pagado' || tx.status === 'Resuelto')
-      ).length;
-      
       const primaryCategory = currentUser.profileSetupData?.primaryCategory || '';
       const offerType = currentUser.profileSetupData?.offerType;
 
       if (
         offerType === 'product' ||
-        professionalCategories.includes(primaryCategory) ||
-        completedJobs > 15
+        professionalCategories.includes(primaryCategory)
       ) {
         return 'professional';
       }

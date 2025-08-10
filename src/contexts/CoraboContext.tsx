@@ -98,7 +98,6 @@ interface CoraboState {
   addCommentToImage: (ownerId: string, imageId: string, commentText: string) => void;
   removeCommentFromImage: (ownerId: string, imageId: string, commentIndex: number) => void;
   getCartItemQuantity: (productId: string) => number;
-  checkIfShouldBeEnterprise: (providerId: string, transactions: Transaction[]) => boolean;
   activatePromotion: (details: { imageId: string, promotionText: string, cost: number }) => void;
   createCampaign: typeof createCampaign;
   createPublication: typeof createPublicationFlow;
@@ -721,15 +720,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const getAgendaEvents = (transactions: Transaction[]): { date: Date; type: 'payment' | 'task'; description: string, transactionId: string }[] => { return []; };
   const addCommentToImage = (ownerId: string, imageId: string, commentText: string) => {};
   const removeCommentFromImage = (ownerId: string, imageId: string, commentIndex: number) => {};
-  const checkIfShouldBeEnterprise = (providerId: string, transactions: Transaction[]): boolean => { return false; };
   const activatePromotion = (details: { imageId: string, promotionText: string, cost: number }) => {};
   
   const value: CoraboState = {
     currentUser,
-    // users,
-    // products,
+    // users: [], // Removed
+    // products: [], // Removed
     cart,
-    // transactions,
+    // transactions: [], // Removed
     searchQuery,
     contacts,
     feedView,
@@ -783,7 +781,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     addCommentToImage,
     removeCommentFromImage,
     getCartItemQuantity,
-    checkIfShouldBeEnterprise,
     activatePromotion,
     createCampaign,
     createPublication: createPublicationFlow,
@@ -812,5 +809,3 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
-
-    
