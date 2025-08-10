@@ -122,6 +122,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   
+  // State is now simplified, transactions will be fetched by the specific page
   const [users, setUsers] = useState<User[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -157,6 +158,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const getFeed = useCallback(async (): Promise<GalleryImage[]> => {
       try {
+          // This flow is now safe and doesn't require complex indexes
           return await getFeedFlow();
       } catch (error) {
           console.error("Error fetching feed via Genkit flow:", error);
@@ -227,9 +229,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       listeners.forEach(unsub => unsub());
       listeners = [];
       
-      // Reset state on auth change
       setCurrentUser(null);
-      setTransactions([]);
       
       if (firebaseUser) {
         const userData = await handleUserCreation(firebaseUser);
@@ -246,14 +246,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             }
         }));
 
-        // Listener for transactions
-        const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userData.id));
-        listeners.push(onSnapshot(transactionsQuery, (snapshot) => {
-          setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
-        }, (error) => {
-          console.error("Error fetching transactions in context: ", error);
-          // Do not toast here as it can be noisy. The component will handle display.
-        }));
+        // **REMOVED** transaction and conversation listeners to prevent blocking error.
+        // Data will now be fetched on demand by the relevant pages.
         
         if (userData.profileSetupData?.location) {
             setDeliveryAddress(userData.profileSetupData.location);
@@ -322,7 +316,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     try {
         await signOut(auth);
         setCurrentUser(null);
-        setTransactions([]);
         router.push('/login');
     } catch (error) {
         console.error("Error signing out: ", error);
