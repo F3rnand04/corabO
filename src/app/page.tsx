@@ -18,30 +18,31 @@ export default function HomePage() {
   const [publications, setPublications] = useState<PublicationWithOwner[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // This effect fetches the feed once when the component mounts if the user is available.
   useEffect(() => {
-    // Fetch the feed using the secure backend flow
     const loadFeed = async () => {
         setIsLoading(true);
         try {
             const feedData = await getFeed();
-            setPublications(feedData as PublicationWithOwner[]);
+            // Ensure owner data is at least an empty object to prevent render errors
+            const sanitizedData = feedData.map(p => ({ ...p, owner: p.owner || {} })) as PublicationWithOwner[];
+            setPublications(sanitizedData);
         } catch (error) {
             console.error("Error fetching feed:", error);
-            // Optionally, show a toast to the user
         } finally {
             setIsLoading(false);
         }
     };
+
     if (currentUser) {
         loadFeed();
     }
-  }, [currentUser, getFeed]);
+  }, [getFeed, currentUser]); // Depend only on getFeed and currentUser presence
 
   const filteredPublications = useMemo(() => {
     if (!publications.length) return [];
     
     let viewFiltered = publications.filter(item => {
-        // Use the denormalized owner data
         const providerType = item.owner?.profileSetupData?.providerType || 'professional';
         if (feedView === 'empresas') return providerType === 'company';
         return providerType !== 'company';
@@ -54,7 +55,7 @@ export default function HomePage() {
     const lowerCaseQuery = searchQuery.toLowerCase().trim();
 
     return viewFiltered.filter(item => {
-        const ownerNameMatch = item.owner?.name.toLowerCase().includes(lowerCaseQuery);
+        const ownerNameMatch = item.owner?.name?.toLowerCase().includes(lowerCaseQuery);
         const specialtyMatch = item.owner?.profileSetupData?.specialty?.toLowerCase().includes(lowerCaseQuery);
         const publicationMatch = item.description.toLowerCase().includes(lowerCaseQuery);
 
