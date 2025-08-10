@@ -32,7 +32,7 @@ const statusInfo: { [key: string]: { icon: React.ElementType, color: string, lab
     'En Reparto': { icon: Truck, color: 'text-blue-500', label: 'En Reparto' },
   };
 
-const TransactionItem = ({ transaction, onClick, otherParty }: { transaction: Transaction, onClick: (transaction: Transaction) => void, otherParty?: User }) => {
+const TransactionItem = ({ transaction, onClick, otherParty }: { transaction: Transaction, onClick: (transaction: Transaction) => void, otherParty?: User | null }) => {
     
     const Icon = statusInfo[transaction.status]?.icon || AlertTriangle;
     const iconColor = statusInfo[transaction.status]?.color || 'text-gray-500';
@@ -96,6 +96,8 @@ const TransactionItem = ({ transaction, onClick, otherParty }: { transaction: Tr
 
 export function TransactionList({ title, transactions, onTransactionClick }: TransactionListProps) {
   const { users, currentUser } = useCorabo();
+  
+  if(!currentUser) return null;
 
   return (
     <Card>

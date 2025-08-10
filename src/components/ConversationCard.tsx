@@ -16,17 +16,18 @@ interface ConversationCardProps {
 }
 
 export function ConversationCard({ conversation }: ConversationCardProps) {
-    const { currentUser, fetchUser } = useCorabo();
+    const { currentUser, users } = useCorabo();
     const [otherParticipant, setOtherParticipant] = useState<User | null>(null);
 
     useEffect(() => {
-        if (!currentUser || !conversation) return;
+        if (!currentUser || !conversation || !users.length) return;
         
         const otherParticipantId = conversation.participantIds.find(pId => pId !== currentUser.id);
         if (otherParticipantId) {
-            fetchUser(otherParticipantId).then(setOtherParticipant);
+            const participantData = users.find(u => u.id === otherParticipantId);
+            setOtherParticipant(participantData || null);
         }
-    }, [conversation, currentUser, fetchUser]);
+    }, [conversation, currentUser, users]);
 
 
     if (!currentUser) return null;

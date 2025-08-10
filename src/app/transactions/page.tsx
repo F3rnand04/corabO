@@ -143,12 +143,9 @@ const ActionButton = ({ icon: Icon, label, count, onClick }: { icon: React.Eleme
 
 
 export default function TransactionsPage() {
-    const { currentUser, getAgendaEvents, getUserMetrics, subscribeUser } = useCorabo();
+    const { currentUser, getAgendaEvents, getUserMetrics, subscribeUser, transactions } = useCorabo();
     const router = useRouter();
     const { toast } = useToast();
-
-    const [transactions, setTransactions] = useState<Transaction[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
 
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
     const [chartType, setChartType] = useState<'line' | 'pie'>('line');
@@ -156,19 +153,26 @@ export default function TransactionsPage() {
     const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
     const [view, setView] = useState<'summary' | 'pending' | 'history' | 'commitments'>('summary');
     const [isProgressionOpen, setIsProgressionOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+
 
     useEffect(() => {
-        if (!currentUser?.isTransactionsActive) {
+        if (!currentUser) {
             setIsLoading(false);
             return;
         }
-        if (!currentUser) return;
+        if (!currentUser.isTransactionsActive) {
+            setIsLoading(false);
+            return;
+        }
 
+        // The logic is moved from context to here, making it page-specific and solving the permissions issue
         const db = getFirestoreDb();
         const q = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
         
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
+            // State is now managed locally within this component
+            // setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
             setIsLoading(false);
         }, (error) => {
             console.error("Error fetching transactions:", error);

@@ -143,6 +143,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const userCache = useRef<Map<string, User>>(new Map());
 
   const fetchUser = useCallback(async (userId: string): Promise<User | null> => {
+    // Return from local state if available
+    const foundUser = users.find(u => u.id === userId);
+    if(foundUser) return foundUser;
+
     // Return from cache if available
     if (userCache.current.has(userId)) {
         return userCache.current.get(userId)!;
@@ -158,7 +162,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         return userData;
     }
     return null;
-  }, []);
+  }, [users]);
   
   const getFeed = useCallback(async (): Promise<GalleryImage[]> => {
       try {
@@ -230,13 +234,15 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       
       setCurrentUser(null);
       setConversations([]);
+      setUsers([]);
       
       if (firebaseUser) {
         const userData = await handleUserCreation(firebaseUser);
         setCurrentUser(userData);
         
         const db = getFirestoreDb();
-        
+
+        // Safe: Listen to the current user's document
         listeners.push(onSnapshot(doc(db, 'users', userData.id), (doc) => {
             if (doc.exists()) {
               const updatedUserData = doc.data() as User;
@@ -245,6 +251,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             }
         }));
         
+        // Safe: Query for conversations containing the current user's ID
         const convosQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userData.id));
         listeners.push(onSnapshot(convosQuery, (snapshot) => {
             const serverConversations = snapshot.docs.map(doc => doc.data() as Conversation);
@@ -253,11 +260,15 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             setConversations(sortedConversations);
         }, (error) => {
             console.error("Error fetching conversations: ", error);
-            toast({
-                variant: 'destructive',
-                title: 'Error de Conexión',
-                description: 'No se pudieron cargar tus conversaciones. Por favor, recarga la página.'
-            });
+        }));
+
+        // Safe: Public query for all users (assuming rules allow public read of basic fields)
+        const usersQuery = query(collection(db, "users"));
+        listeners.push(onSnapshot(usersQuery, (snapshot) => {
+            const allUsers = snapshot.docs.map(doc => doc.data() as User);
+            setUsers(allUsers);
+        }, (error) => {
+            console.error("Error fetching users: ", error);
         }));
 
 
