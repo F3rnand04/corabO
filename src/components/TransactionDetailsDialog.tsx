@@ -125,7 +125,10 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   };
 
   const handlePayCommitment = () => {
-    if (!paymentReference || !paymentVoucher) return;
+    if (!paymentReference || !paymentVoucher) {
+        toast({ variant: 'destructive', title: 'Faltan datos', description: 'Sube el comprobante y añade la referencia.' });
+        return;
+    }
     payCommitment(transaction.id, rating, comment);
     toast({ title: 'Pago registrado', description: 'El proveedor verificará el pago.' });
     handleClose();
@@ -453,5 +456,3 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
     </Dialog>
   );
 }
-
-    

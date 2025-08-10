@@ -53,7 +53,6 @@ export default function TransactionsSettingsPage() {
     const { toast } = useToast();
     const router = useRouter();
 
-    // This is the key change: determine the initial step based on the user's verification status.
     const [step, setStep] = useState(() => currentUser?.idVerificationStatus === 'verified' ? 2 : 1);
     
     // Step 1 state
@@ -85,7 +84,6 @@ export default function TransactionsSettingsPage() {
     const [accountVerificationError, setAccountVerificationError] = useState<string | null>(null);
     
     useEffect(() => {
-        // If the user's status changes (e.g., after verification), ensure the step is correct.
         if (currentUser?.idVerificationStatus === 'verified' && step === 1) {
             setStep(2);
         }
@@ -133,6 +131,10 @@ export default function TransactionsSettingsPage() {
 
             if (!result.nameMatch || !result.idMatch) {
                 setIdVerificationError("Los datos no coinciden. Si crees que hubo un error durante tu registro inicial, por favor");
+            } else {
+                // Automatically move to the next step on success
+                toast({ title: "¡Verificación Exitosa!", description: "Tus datos coinciden. Ahora, configura tus métodos de pago." });
+                setStep(2);
             }
 
         } catch (error) {
@@ -254,17 +256,14 @@ export default function TransactionsSettingsPage() {
                                 )}
                             </div>
                             
-                            {!verificationResult && (
-                               <Button 
-                                    className="w-full" 
-                                    size="lg" 
-                                    onClick={handleVerifyDocument}
-                                    disabled={isVerifyingId || !idImage}
-                                >
-                                    {isVerifyingId ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verificando...</> : "Enviar y Verificar Documento"}
-                                </Button>
-                            )}
-
+                            <Button 
+                                className="w-full" 
+                                size="lg" 
+                                onClick={handleVerifyDocument}
+                                disabled={isVerifyingId || !idImage}
+                            >
+                                {isVerifyingId ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verificando...</> : "Enviar y Verificar Documento"}
+                            </Button>
 
                             {idVerificationError && (
                                 <Alert variant="destructive">
@@ -277,7 +276,7 @@ export default function TransactionsSettingsPage() {
                                 </Alert>
                             )}
 
-                             {verificationResult && (
+                             {verificationResult && !idVerificationError && (
                                 <div className="space-y-4">
                                      <Card>
                                         <CardHeader>
@@ -297,10 +296,6 @@ export default function TransactionsSettingsPage() {
                                             </div>
                                         </CardContent>
                                     </Card>
-                                    
-                                     <Button className="w-full" onClick={() => setStep(2)} disabled={!verificationResult.nameMatch || !verificationResult.idMatch}>
-                                        Continuar al Siguiente Paso
-                                    </Button>
                                 </div>
                             )}
                             

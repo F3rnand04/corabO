@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import {
@@ -29,12 +28,13 @@ export function AdvancedQuoteDialog({ isOpen, onOpenChange, selectedOption }: Ad
 
   const handlePayPerQuote = () => {
     onOpenChange(false);
-    router.push(`/quotes/payment?from=advanced-dialog&option=${selectedOption}`);
+    // This now redirects to the PRO page which handles the payment logic internally
+    router.push(`/quotes/pro?option=${selectedOption}`);
   }
 
   const handleSubscribe = () => {
     if(!currentUser) return;
-    // This will now redirect to the payment page
+    // This will now redirect to the payment page for the subscription
     subscribeUser(currentUser.id, "Plan Personal", 5);
     onOpenChange(false);
   }
@@ -58,8 +58,7 @@ export function AdvancedQuoteDialog({ isOpen, onOpenChange, selectedOption }: Ad
             <div className="p-4 border rounded-lg hover:border-primary transition-all">
                 <h3 className="font-semibold">Llega a más de 10 cotizaciones personalizadas</h3>
                 <p className="text-sm text-muted-foreground mt-1">Tu solicitud será destacada y enviada a proveedores premium y verificados.</p>
-                <p className="text-lg font-bold my-2">$3.00 - $5.00</p>
-                <Button className="w-full" onClick={handlePayPerQuote}>
+                <Button className="w-full mt-4" onClick={handlePayPerQuote}>
                     Pagar y Continuar <ArrowRight className="ml-2 h-4 w-4"/>
                 </Button>
             </div>
