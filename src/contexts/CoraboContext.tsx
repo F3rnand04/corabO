@@ -211,7 +211,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         listeners.push(transactionsUnsub);
 
         // Subscribe to user's conversations
-        const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userData.id), orderBy("lastUpdated", "desc"));
+        const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userData.id));
         const conversationsUnsub = onSnapshot(conversationsQuery, (snapshot) => {
             setConversations(snapshot.docs.map(doc => doc.data() as Conversation));
         });
@@ -833,3 +833,5 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
+
+    
