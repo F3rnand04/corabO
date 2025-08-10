@@ -27,7 +27,7 @@ import { credicoraLevels, type User as UserType } from "@/lib/types";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 
 export function Header() {
-  const { searchQuery, setSearchQuery, feedView, setFeedView, currentUser, fetchUser, toggleGps, cart, updateCartQuantity, getCartTotal, checkout, getDeliveryCost, logout } = useCorabo();
+  const { searchQuery, setSearchQuery, feedView, setFeedView, currentUser, users, toggleGps, cart, updateCartQuantity, getCartTotal, checkout, getDeliveryCost, logout } = useCorabo();
   const router = useRouter();
   
   const hasCompletedProfileSetup = !!currentUser?.profileSetupData;
@@ -35,17 +35,10 @@ export function Header() {
   const [isCheckoutAlertOpen, setIsCheckoutAlertOpen] = useState(false);
   const [includeDelivery, setIncludeDelivery] = useState(false);
   const [useCredicora, setUseCredicora] = useState(false);
-  const [provider, setProvider] = useState<UserType | null>(null);
-
-  const cartTransaction = cart.length > 0 ? currentUser?.transactions?.find(tx => tx.status === 'Carrito Activo' && tx.clientId === currentUser.id) : undefined;
   
-  useEffect(() => {
-    if (cartTransaction?.providerId) {
-      fetchUser(cartTransaction.providerId).then(setProvider);
-    } else {
-      setProvider(null);
-    }
-  }, [cartTransaction, fetchUser]);
+  const cartTransaction = cart.length > 0 ? currentUser?.transactions?.find(tx => tx.status === 'Carrito Activo' && tx.clientId === currentUser.id) : undefined;
+  const provider = cartTransaction ? users.find(u => u.id === cartTransaction.providerId) : null;
+
 
   const isDeliveryOnly = provider?.profileSetupData?.isOnlyDelivery || false;
   const providerAcceptsCredicora = provider?.profileSetupData?.acceptsCredicora || false;

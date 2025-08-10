@@ -48,7 +48,9 @@ interface CoraboState {
   isLoadingAuth: boolean;
   deliveryAddress: string;
   exchangeRate: number;
-  // products: Product[]; // Removed from global state
+  products: Product[];
+  users: User[];
+  fetchUser: (userId: string) => Promise<User | null>;
   signInWithGoogle: () => void;
   setSearchQuery: (query: string) => void;
   clearSearchHistory: () => void;
@@ -119,6 +121,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   
+  const [users, setUsers] = useState<User[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   
@@ -180,19 +184,35 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const userCache = useRef<Map<string, User>>(new Map());
+
+  const fetchUser = useCallback(async (userId: string): Promise<User | null> => {
+      if (userCache.current.has(userId)) {
+          return userCache.current.get(userId)!;
+      }
+      const db = getFirestoreDb();
+      const userRef = doc(db, 'users', userId);
+      const userSnap = await getDoc(userRef);
+      if (userSnap.exists()) {
+          const userData = userSnap.data() as User;
+          userCache.current.set(userId, userData);
+          return userData;
+      }
+      return null;
+  }, []);
+
   // Main authentication and data loading effect
   useEffect(() => {
     let listeners: Unsubscribe[] = [];
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
-      // Clean up previous listeners
       listeners.forEach(unsub => unsub());
       listeners = [];
       
-      // Reset state
       setCurrentUser(null);
       setTransactions([]);
       setConversations([]);
+      setProducts([]);
 
       if (firebaseUser) {
         const userData = await handleUserCreation(firebaseUser);
@@ -200,25 +220,35 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
         const db = getFirestoreDb();
         
-        // Subscribe to user's transactions
         const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userData.id));
         const transactionsUnsub = onSnapshot(transactionsQuery, (snapshot) => {
             setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
         });
         listeners.push(transactionsUnsub);
 
-        // Subscribe to user's conversations
         const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userData.id));
         const conversationsUnsub = onSnapshot(conversationsQuery, (snapshot) => {
             setConversations(snapshot.docs.map(doc => doc.data() as Conversation));
         });
         listeners.push(conversationsUnsub);
         
-        // Subscribe to user document itself for real-time profile updates
         const userUnsub = onSnapshot(doc(db, 'users', userData.id), (doc) => {
             if (doc.exists()) setCurrentUser(doc.data() as User);
         });
         listeners.push(userUnsub);
+
+        // This listener for all products is insecure and should be removed.
+        // It's kept here temporarily to avoid breaking other parts while refactoring.
+        const productsUnsub = onSnapshot(collection(db, "products"), (snapshot) => {
+            setProducts(snapshot.docs.map(doc => doc.data() as Product));
+        });
+        listeners.push(productsUnsub);
+        
+        const usersUnsub = onSnapshot(collection(db, 'users'), (snapshot) => {
+            setUsers(snapshot.docs.map(doc => doc.data() as User));
+        });
+        listeners.push(usersUnsub);
+
 
         if (userData.profileSetupData?.location) {
             setDeliveryAddress(userData.profileSetupData.location);
@@ -737,7 +767,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     isLoadingAuth,
     deliveryAddress,
     exchangeRate,
-    // products, // Removed from context
+    products,
+    users,
+    fetchUser,
     signInWithGoogle,
     setSearchQuery,
     clearSearchHistory,

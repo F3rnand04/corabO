@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -55,7 +54,6 @@ export default function CompanyProfilePage() {
     loadProvider();
   }, [params.id, fetchUser]);
   
-  // Define provider-dependent variables at the top
   const providerProducts = provider ? products.filter(p => p.providerId === provider.id) : [];
   const isDeliveryOnly = provider?.profileSetupData?.isOnlyDelivery || false;
   const providerAcceptsCredicora = provider?.profileSetupData?.acceptsCredicora || false;
@@ -85,7 +83,6 @@ export default function CompanyProfilePage() {
   
   const minSwipeDistance = 50;
 
-  // Local state for interactions
   const [starCount, setStarCount] = useState(Math.floor(Math.random() * 5000));
   const [isLiked, setIsLiked] = useState(false);
   const [shareCount, setShareCount] = useState(Math.floor(Math.random() * 1000));
@@ -95,7 +92,6 @@ export default function CompanyProfilePage() {
   const [isSaved, setIsSaved] = useState(false);
   
   useEffect(() => {
-    // This effect helps avoid hydration mismatches for client-specific logic like GPS status
     setGpsReady(true);
   }, []);
 
@@ -105,7 +101,6 @@ export default function CompanyProfilePage() {
     }
   }, [isContact, provider]);
 
-  // Set default delivery address when opening checkout
   useEffect(() => {
       if(isCheckoutAlertOpen && currentUser?.profileSetupData?.location) {
           setDeliveryAddress(currentUser.profileSetupData.location);
@@ -132,9 +127,8 @@ export default function CompanyProfilePage() {
   const credicoraDetails = credicoraLevels[userCredicoraLevel.toString()];
   const creditLimit = currentUser?.credicoraLimit || 0;
 
-  // New calculation logic
   const financingPercentage = 1 - credicoraDetails.initialPaymentPercentage;
-  const potentialFinancing = subtotal * financingPercentage; // Financing only on products
+  const potentialFinancing = subtotal * financingPercentage;
   const financedAmount = useCredicora ? Math.min(potentialFinancing, creditLimit) : 0;
   const productInitialPayment = subtotal - financedAmount;
   const totalToPayToday = productInitialPayment + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
@@ -592,7 +586,6 @@ export default function CompanyProfilePage() {
           </div>
           
           <main className="px-2">
-            {/* Main Content Card */}
             <Card className="rounded-2xl overflow-hidden shadow-lg relative">
               <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
                 <Button variant="ghost" size="icon" className="text-muted-foreground bg-white/50 rounded-full" onClick={handleDirectMessage}>
@@ -604,7 +597,6 @@ export default function CompanyProfilePage() {
               </div>
               <CardContent className="p-0">
                {isProductProvider ? (
-                  // PRODUCT VIEW
                   <div>
                       <div className="p-4 border-b">
                         <h3 className="text-lg font-semibold text-center flex items-center justify-center gap-2"><Package className='w-5 h-5'/> Productos</h3>
@@ -624,7 +616,6 @@ export default function CompanyProfilePage() {
                       )}
                   </div>
                 ) : (
-                  // SERVICE (GALLERY) VIEW
                   <>
                     {currentImage && (
                       <div 
@@ -712,7 +703,6 @@ export default function CompanyProfilePage() {
                       </div>
                     </div>
 
-                    {/* Gallery Grid */}
                     <div className="p-2 grid grid-cols-3 gap-1">
                         {profileData.gallery.map((thumb, index) => (
                             <div 
@@ -802,5 +792,3 @@ export default function CompanyProfilePage() {
     </>
   );
 }
-
-    

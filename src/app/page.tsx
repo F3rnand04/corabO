@@ -34,7 +34,6 @@ export default function HomePage() {
             setFeedItems(items);
         } catch (error) {
             console.error("Error fetching feed:", error);
-            // Optionally, set an error state to show a message to the user
         } finally {
             setIsLoading(false);
         }
@@ -63,7 +62,7 @@ export default function HomePage() {
     const isCategorySearch = mainCategories.some(cat => cat.toLowerCase() === lowerCaseQuery);
 
     return viewFiltered.filter(item => {
-        if (!item) return false;
+        if (!item || !item.owner) return false;
         
         if (isCategorySearch) {
             const providerCategories = item.owner.profileSetupData?.categories || [];

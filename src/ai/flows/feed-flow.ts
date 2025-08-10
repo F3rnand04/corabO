@@ -52,14 +52,12 @@ export const getFeed = ai.defineFlow(
 
         const feedItems = publications.map(pub => {
             const owner = ownersMap.get(pub.providerId);
-            // Ensure owner exists and is not paused before adding to feed
             if (owner && !owner.isPaused) {
                 return { publication: pub, owner };
             }
             return null;
-        }).filter(Boolean); // Filter out any null entries
+        }).filter(item => item !== null);
 
-        // Cast to 'any' to align with the simplified Zod schema
         return feedItems as any;
     }
 );
