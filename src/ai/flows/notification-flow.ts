@@ -108,32 +108,38 @@ export const sendNewCampaignNotifications = ai.defineFlow({
     const targetCategory = provider.profileSetupData?.primaryCategory;
     if (!targetCategory) return;
 
-    const usersRef = collection(db, 'users');
-    const q = query(
-        usersRef,
-        where('type', '==', 'client'),
-        where('profileSetupData.categories', 'array-contains', targetCategory)
-    );
+    // CRITICAL FIX: The previous composite query (where type and array-contains)
+    // was causing a "Missing or insufficient permissions" error because it
+    // requires a composite index that can't be created from here.
+    // The fix is to perform a simpler query and filter in the backend code.
 
+    const usersRef = collection(db, 'users');
+    // 1. Fetch all clients with a simple query.
+    const q = query(usersRef, where('type', '==', 'client'));
     const querySnapshot = await getDocs(q);
     const batch = writeBatch(db);
 
+    // 2. Filter the results in the backend code.
     querySnapshot.forEach(docSnap => {
         const client = docSnap.data() as User;
-        const notificationId = `notif-${client.id}-${campaignId}`;
-        const notificationRef = doc(db, 'notifications', notificationId);
         
-        const newNotification: Notification = {
-            id: notificationId,
-            userId: client.id,
-            type: 'new_campaign',
-            title: `Nueva oferta de ${provider.name}`,
-            message: `Una nueva campaña de "${provider.profileSetupData?.specialty}" podría interesarte.`,
-            link: `/companies/${provider.id}`,
-            isRead: false,
-            timestamp: new Date().toISOString(),
-        };
-        batch.set(notificationRef, newNotification);
+        // Check if the client's categories include the target category
+        if(client.profileSetupData?.categories?.includes(targetCategory)) {
+            const notificationId = `notif-${client.id}-${campaignId}`;
+            const notificationRef = doc(db, 'notifications', notificationId);
+            
+            const newNotification: Notification = {
+                id: notificationId,
+                userId: client.id,
+                type: 'new_campaign',
+                title: `Nueva oferta de ${provider.name}`,
+                message: `Una nueva campaña de "${provider.profileSetupData?.specialty}" podría interesarte.`,
+                link: `/companies/${provider.id}`,
+                isRead: false,
+                timestamp: new Date().toISOString(),
+            };
+            batch.set(notificationRef, newNotification);
+        }
     });
 
     await batch.commit();
