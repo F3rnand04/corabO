@@ -49,6 +49,8 @@ export function Header() {
     }
   }, [cartTransaction, fetchUser]);
 
+  const subtotal = getCartTotal();
+  const deliveryCost = getDeliveryCost();
 
   const isDeliveryOnly = provider?.profileSetupData?.isOnlyDelivery || false;
   const providerAcceptsCredicora = provider?.profileSetupData?.acceptsCredicora || false;
@@ -61,8 +63,6 @@ export function Header() {
     }
   };
   
-  const deliveryCost = getDeliveryCost();
-  const subtotal = getCartTotal();
   const totalWithDelivery = subtotal + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
 
   const userCredicoraLevel = currentUser?.credicoraLevel || 1;
@@ -73,7 +73,7 @@ export function Header() {
   const potentialFinancing = subtotal * financingPercentage;
   const financedAmount = useCredicora ? Math.min(potentialFinancing, creditLimit) : 0;
   const productInitialPayment = subtotal - financedAmount;
-  const totalToPayToday = productInitialPayment + ((includeDelivery || isOnlyDelivery) ? deliveryCost : 0);
+  const totalToPayToday = productInitialPayment + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
   const installmentAmount = financedAmount > 0 ? financedAmount / credicoraDetails.installments : 0;
 
 
