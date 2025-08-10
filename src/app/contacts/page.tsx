@@ -92,7 +92,7 @@ export default function ContactsPage() {
                     label="Correo:"
                     value={currentUser.email}
                     initialStatus={currentUser.emailValidated ? 'validated' : 'idle'}
-                    onValidate={(email) => validateEmail(currentUser.id, email)}
+                    onValidate={() => validateEmail(currentUser.id, currentUser.email)}
                     onValueChange={(value) => updateUser(currentUser.id, { email: value })}
                     type="email"
                 />
