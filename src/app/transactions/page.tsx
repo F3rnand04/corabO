@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -38,17 +38,22 @@ import { cn } from "@/lib/utils";
 import { credicoraLevels } from "@/lib/types";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ActivationWarning } from "@/components/ActivationWarning";
+import { getFirestoreDb } from "@/lib/firebase";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
 
 
 function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary: () => void, currentView: string }) {
     const router = useRouter();
     const { currentUser, users, deactivateTransactions, downloadTransactionsPDF, cart, updateCartQuantity, getCartTotal, checkout, getDeliveryCost } = useCorabo();
-    const isModuleActive = currentUser.isTransactionsActive ?? false;
+    const isModuleActive = currentUser?.isTransactionsActive ?? false;
     const [isDeactivationAlertOpen, setIsDeactivationAlertOpen] = useState(false);
     const [isCheckoutAlertOpen, setIsCheckoutAlertOpen] = useState(false);
     const [includeDelivery, setIncludeDelivery] = useState(false);
     const [useCredicora, setUseCredicora] = useState(false);
     
+    if (!currentUser) return null;
+
     const totalCartItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
     const handleDeactivation = () => {
@@ -299,17 +304,51 @@ const ActionButton = ({ icon: Icon, label, count, onClick }: { icon: React.Eleme
 
 
 export default function TransactionsPage() {
-    const { transactions, currentUser, getAgendaEvents, getUserMetrics, subscribeUser } = useCorabo();
+    const { currentUser, getAgendaEvents, getUserMetrics, subscribeUser } = useCorabo();
     const router = useRouter();
-    const isModuleActive = currentUser.isTransactionsActive ?? false;
+    const { toast } = useToast();
+
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
     const [chartType, setChartType] = useState<'line' | 'pie'>('line');
     const [showSensitiveData, setShowSensitiveData] = useState(true);
-    const { toast } = useToast();
     const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
     const [view, setView] = useState<'summary' | 'pending' | 'history' | 'commitments'>('summary');
     const [isProgressionOpen, setIsProgressionOpen] = useState(false);
 
+    useEffect(() => {
+        if (!currentUser?.isTransactionsActive) {
+            setIsLoading(false);
+            return;
+        }
+        if (!currentUser) return;
+
+        const db = getFirestoreDb();
+        const q = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
+        
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
+            setIsLoading(false);
+        }, (error) => {
+            console.error("Error fetching transactions:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'No se pudieron cargar las transacciones.' });
+            setIsLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [currentUser, toast]);
+
+    if (!currentUser) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <Skeleton className="h-12 w-12 rounded-full" />
+            </div>
+        );
+    }
+
+    const isModuleActive = currentUser.isTransactionsActive ?? false;
     const isProvider = currentUser.type === 'provider';
     
     const agendaEvents = getAgendaEvents();
@@ -394,11 +433,17 @@ export default function TransactionsPage() {
         }
     }
 
-    const navigateToSettings = () => {
-        router.push('/transactions/settings');
-    }
-
     const renderContent = () => {
+        if (isLoading) {
+            return (
+                <div className="space-y-4">
+                    <Skeleton className="h-64 w-full" />
+                    <Skeleton className="h-24 w-full" />
+                    <Skeleton className="h-32 w-full" />
+                </div>
+            )
+        }
+
         switch (view) {
             case 'pending':
                 return <TransactionList title="Lista de Pendientes" transactions={pendingTx} onTransactionClick={handleTransactionClick} />;
@@ -607,3 +652,5 @@ export default function TransactionsPage() {
         </div>
     );
 }
+
+    

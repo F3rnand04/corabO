@@ -229,30 +229,26 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       listeners = [];
       
       setCurrentUser(null);
-      setTransactions([]);
+      // Keep transactions, they will be loaded on demand in the transactions page
+      // setTransactions([]); 
       setConversations([]);
       
       if (firebaseUser) {
         const userData = await handleUserCreation(firebaseUser);
         setCurrentUser(userData);
-
+        
         const db = getFirestoreDb();
         
-        const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userData.id));
-        listeners.push(onSnapshot(transactionsQuery, (snapshot) => {
-            setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
-        }));
-        
+        // This listener is safe, as it's for a single document.
         listeners.push(onSnapshot(doc(db, 'users', userData.id), (doc) => {
             if (doc.exists()) {
               const updatedUserData = doc.data() as User;
               setCurrentUser(updatedUserData);
-              // Update user in cache
               userCache.current.set(updatedUserData.id, updatedUserData);
             }
         }));
         
-        // Listen to conversations safely
+        // This listener is safe.
         const convosQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userData.id), orderBy("lastUpdated", "desc"));
         listeners.push(onSnapshot(convosQuery, (snapshot) => {
             setConversations(snapshot.docs.map(doc => doc.data() as Conversation));
@@ -873,3 +869,5 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
+
+    
