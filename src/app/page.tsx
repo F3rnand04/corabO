@@ -30,8 +30,10 @@ export default function HomePage() {
             setIsLoading(false);
         }
     };
-    loadFeed();
-  }, [getFeed]);
+    if (currentUser) {
+        loadFeed();
+    }
+  }, [currentUser, getFeed]);
 
   const filteredPublications = useMemo(() => {
     if (!publications.length) return [];
@@ -67,7 +69,7 @@ export default function HomePage() {
     return `${baseMessage} en el feed.`;
   }
 
-  if (!currentUser) {
+  if (isLoading || !currentUser) {
     return (
       <main className="container py-4 space-y-4">
         {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[500px] w-full rounded-2xl" />)}
@@ -80,21 +82,16 @@ export default function HomePage() {
        {currentUser && !currentUser.isTransactionsActive && (
           <ActivationWarning userType={currentUser.type} />
       )}
-       {isLoading ? (
-          <div className="space-y-4">
-            {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[500px] w-full rounded-2xl" />)}
-          </div>
+       
+        <div className="space-y-4">
+        {filteredPublications.length > 0 ? (
+            filteredPublications.map(item => <PublicationCard key={item.id} publication={item} owner={item.owner!} />)
         ) : (
-            <div className="space-y-4">
-            {filteredPublications.length > 0 ? (
-              filteredPublications.map(item => <PublicationCard key={item.id} publication={item} owner={item.owner!} />)
-            ) : (
-              <p className="text-center text-muted-foreground pt-16">
-                {noResultsMessage()}
-              </p>
-            )}
-            </div>
+            <p className="text-center text-muted-foreground pt-16">
+            {noResultsMessage()}
+            </p>
         )}
+        </div>
     </main>
   );
 }

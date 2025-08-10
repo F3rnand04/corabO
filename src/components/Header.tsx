@@ -27,7 +27,7 @@ import { Switch } from "./ui/switch";
 import { credicoraLevels } from "@/lib/types";
 
 export function Header() {
-  const { searchQuery, setSearchQuery, feedView, setFeedView, currentUser, toggleGps, logout, searchHistory, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, users } = useCorabo();
+  const { searchQuery, setSearchQuery, feedView, setFeedView, currentUser, toggleGps, logout, searchHistory, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, users, transactions } = useCorabo();
   const router = useRouter();
 
   const [isCheckoutAlertOpen, setIsCheckoutAlertOpen] = useState(false);
@@ -49,7 +49,7 @@ export function Header() {
   }
 
   const totalCartItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const cartTransaction = cart.length > 0 ? currentUser.transactions?.find(tx => tx.status === 'Carrito Activo' && tx.clientId === currentUser.id) : undefined;
+  const cartTransaction = cart.length > 0 ? transactions.find(tx => tx.clientId === currentUser?.id && tx.status === 'Carrito Activo') : undefined;
 
   const handleCheckout = () => {
     if (cartTransaction) {
@@ -236,7 +236,7 @@ export function Header() {
                   </DropdownMenuItem>
                    <DropdownMenuItem onClick={() => router.push('/transactions')}>
                     <Wallet className="mr-2 h-4 w-4" />
-                    <span>Mi Billetera</span>
+                    <span>Registro de Transacciones</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push('/search-history')}>
                     <HistoryIcon className="mr-2 h-4 w-4" />
@@ -308,5 +308,3 @@ export function Header() {
     </header>
   );
 }
-
-    
