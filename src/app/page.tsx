@@ -26,7 +26,11 @@ export default function HomePage() {
             const feedData = await getFeed();
             // Ensure owner data is at least an empty object to prevent render errors
             const sanitizedData = feedData.map(p => ({ ...p, owner: p.owner || {} })) as PublicationWithOwner[];
-            setPublications(sanitizedData);
+            
+            // CRITICAL FIX: Sort publications on the client-side after fetching
+            const sortedData = sanitizedData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            
+            setPublications(sortedData);
         } catch (error) {
             console.error("Error fetching feed:", error);
         } finally {
