@@ -48,7 +48,7 @@ interface CoraboState {
   isLoadingAuth: boolean;
   deliveryAddress: string;
   exchangeRate: number;
-  products: Product[];
+  // products: Product[]; // Removed from global state
   signInWithGoogle: () => void;
   setSearchQuery: (query: string) => void;
   clearSearchHistory: () => void;
@@ -108,7 +108,6 @@ interface CoraboState {
   setIdVerificationPending: (userId: string, documentUrl: string) => Promise<void>;
   autoVerifyIdWithAI: (input: VerificationInput) => Promise<VerificationOutput>;
   getUserMetrics: (userId: string) => UserMetrics;
-  fetchUser: (userId: string) => Promise<User | null>;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -122,7 +121,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
   
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchQuery, _setSearchQuery] = useState('');
@@ -195,7 +193,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       setCurrentUser(null);
       setTransactions([]);
       setConversations([]);
-      // Do NOT reset products here, it is loaded globally by a secure flow.
 
       if (firebaseUser) {
         const userData = await handleUserCreation(firebaseUser);
@@ -727,25 +724,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const checkIfShouldBeEnterprise = (providerId: string): boolean => { return false; };
   const activatePromotion = (details: { imageId: string, promotionText: string, cost: number }) => {};
   
-  const userCache = useRef<Map<string, User>>(new Map());
-
-  const fetchUser = useCallback(async (userId: string): Promise<User | null> => {
-    if (userCache.current.has(userId)) {
-      return userCache.current.get(userId)!;
-    }
-    
-    const db = getFirestoreDb();
-    const userDocRef = doc(db, 'users', userId);
-    const userDocSnap = await getDoc(userDocRef);
-
-    if (userDocSnap.exists()) {
-      const userData = userDocSnap.data() as User;
-      userCache.current.set(userId, userData);
-      return userData;
-    }
-    return null;
-  }, []);
-
   const value: CoraboState = {
     currentUser,
     cart,
@@ -759,7 +737,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     isLoadingAuth,
     deliveryAddress,
     exchangeRate,
-    products,
+    // products, // Removed from context
     signInWithGoogle,
     setSearchQuery,
     clearSearchHistory,
@@ -819,7 +797,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     markConversationAsRead,
     getUserMetrics,
     setDeliveryAddress,
-    fetchUser,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;
@@ -833,5 +810,3 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
-
-    

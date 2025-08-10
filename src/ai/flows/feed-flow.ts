@@ -6,12 +6,13 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { getFirestoreDb } from '@/lib/firebase-server'; // Use server-side firebase
+import { getFirestoreDb } from '@/lib/firebase-server';
 import { collection, getDocs, query, orderBy, limit, doc, getDoc } from 'firebase/firestore';
 import type { User, GalleryImage } from '@/lib/types';
 
+// Use z.any() for complex, nested, or circular types to avoid Zod errors.
 const FeedItemSchema = z.object({
-    publication: z.any(), // Zod doesn't have a direct circular reference solution, so we use any for complex types
+    publication: z.any(),
     owner: z.any(),
 });
 
@@ -32,10 +33,12 @@ export const getFeed = ai.defineFlow(
         );
 
         const querySnapshot = await getDocs(publicationsQuery);
+        if (querySnapshot.empty) {
+            return [];
+        }
+
         const publications = querySnapshot.docs.map(doc => doc.data() as GalleryImage);
         
-        // This is a simplified approach for batch-fetching owners.
-        // In a high-traffic app, you might want to cache user data or denormalize it.
         const ownerIds = [...new Set(publications.map(p => p.providerId))];
         const ownerPromises = ownerIds.map(id => getDoc(doc(db, 'users', id)));
         const ownerSnapshots = await Promise.all(ownerPromises);
@@ -49,12 +52,14 @@ export const getFeed = ai.defineFlow(
 
         const feedItems = publications.map(pub => {
             const owner = ownersMap.get(pub.providerId);
+            // Ensure owner exists and is not paused before adding to feed
             if (owner && !owner.isPaused) {
                 return { publication: pub, owner };
             }
             return null;
-        }).filter(Boolean);
+        }).filter(Boolean); // Filter out any null entries
 
-        return feedItems as any; // Cast as any to satisfy Zod schema
+        // Cast to 'any' to align with the simplified Zod schema
+        return feedItems as any;
     }
 );

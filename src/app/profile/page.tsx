@@ -26,8 +26,7 @@ import { ProductGridCard } from '@/components/ProductGridCard';
 import { ProductDetailsDialog } from '@/components/ProductDetailsDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { collection, query, where, onSnapshot, Unsubscribe, orderBy } from 'firebase/firestore';
-import { getFirestoreDb } from '@/lib/firebase';
+import { getProfileGallery, getProfileProducts } from '@/ai/flows/profile-flow';
 
 
 export default function ProfilePage() {
@@ -39,41 +38,28 @@ export default function ProfilePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Effect to load provider-specific gallery and products using real-time listeners
+  // Effect to load provider-specific gallery and products using secure flows
   useEffect(() => {
     if (!currentUser) return;
-    setIsLoading(true);
-
-    const db = getFirestoreDb();
-    const listeners: Unsubscribe[] = [];
-
-    // Gallery listener
-    const galleryQuery = query(collection(db, 'users', currentUser.id, 'gallery'), orderBy("createdAt", "desc"));
-    const galleryUnsub = onSnapshot(galleryQuery, (snapshot) => {
-        setGallery(snapshot.docs.map(doc => doc.data() as GalleryImage));
-        setIsLoading(false);
-    }, (error) => {
-        console.error("Error fetching gallery:", error);
-        toast({ variant: "destructive", title: "Error al cargar la galería" });
-        setIsLoading(false);
-    });
-    listeners.push(galleryUnsub);
-
-    // Products listener (only for providers)
-    if (currentUser.type === 'provider') {
-        const productsQuery = query(collection(db, 'products'), where("providerId", "==", currentUser.id));
-        const productsUnsub = onSnapshot(productsQuery, (snapshot) => {
-            setProducts(snapshot.docs.map(doc => doc.data() as Product));
-        }, (error) => {
-            console.error("Error fetching products:", error);
-            toast({ variant: "destructive", title: "Error al cargar productos" });
-        });
-        listeners.push(productsUnsub);
+    
+    async function loadProfileData() {
+        setIsLoading(true);
+        try {
+            const [galleryData, productsData] = await Promise.all([
+                getProfileGallery(currentUser!.id),
+                currentUser!.type === 'provider' ? getProfileProducts(currentUser!.id) : Promise.resolve([])
+            ]);
+            setGallery(galleryData);
+            setProducts(productsData);
+        } catch (error) {
+            console.error("Error loading profile data:", error);
+            toast({ variant: "destructive", title: "Error al cargar el perfil" });
+        } finally {
+            setIsLoading(false);
+        }
     }
-
-    return () => {
-        listeners.forEach(unsub => unsub());
-    };
+    
+    loadProfileData();
 
   }, [currentUser, toast]);
 

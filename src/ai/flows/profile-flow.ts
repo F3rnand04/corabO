@@ -6,7 +6,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { getFirestoreDb } from '@/lib/firebase-server'; // Use server-side firebase
+import { getFirestoreDb } from '@/lib/firebase-server';
 import { collection, getDocs, query, orderBy, where } from 'firebase/firestore';
 import type { GalleryImage, Product } from '@/lib/types';
 
@@ -27,7 +27,7 @@ export const getProfileGallery = ai.defineFlow(
             orderBy("createdAt", "desc")
         );
         const snapshot = await getDocs(galleryQuery);
-        return snapshot.docs.map(doc => doc.data() as GalleryImage);
+        return snapshot.docs.map(doc => doc.data());
     }
 );
 
@@ -44,6 +44,6 @@ export const getProfileProducts = ai.defineFlow(
             where("providerId", "==", userId)
         );
         const snapshot = await getDocs(productsQuery);
-        return snapshot.docs.map(doc => doc.data() as Product);
+        return snapshot.docs.map(doc => doc.data());
     }
 );
