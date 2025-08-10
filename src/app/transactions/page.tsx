@@ -143,17 +143,44 @@ const ActionButton = ({ icon: Icon, label, count, onClick }: { icon: React.Eleme
 
 
 export default function TransactionsPage() {
-    const { currentUser, transactions, getAgendaEvents, getUserMetrics, subscribeUser } = useCorabo();
+    const { currentUser, getAgendaEvents, getUserMetrics, subscribeUser } = useCorabo();
     const router = useRouter();
     const { toast } = useToast();
-
-    const [isLoading, setIsLoading] = useState(false); // No longer loading from here initially
+    
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
     const [chartType, setChartType] = useState<'line' | 'pie'>('line');
     const [showSensitiveData, setShowSensitiveData] = useState(true);
     const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
     const [view, setView] = useState<'summary' | 'pending' | 'history' | 'commitments'>('summary');
     const [isProgressionOpen, setIsProgressionOpen] = useState(false);
+
+    useEffect(() => {
+        if (!currentUser) {
+            setIsLoading(false);
+            return;
+        }
+
+        setIsLoading(true);
+        const db = getFirestoreDb();
+        const txQuery = query(
+            collection(db, "transactions"),
+            where("participantIds", "array-contains", currentUser.id)
+        );
+
+        const unsubscribe = onSnapshot(txQuery, (snapshot) => {
+            const serverTransactions = snapshot.docs.map(doc => doc.data() as Transaction);
+            setTransactions(serverTransactions);
+            setIsLoading(false);
+        }, (error) => {
+            console.error("Error fetching transactions: ", error);
+            setIsLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [currentUser]);
+
 
     if (!currentUser) {
         return (
@@ -166,11 +193,11 @@ export default function TransactionsPage() {
     const isModuleActive = currentUser.isTransactionsActive ?? false;
     const isProvider = currentUser.type === 'provider';
     
-    const agendaEvents = getAgendaEvents();
+    // The functions getAgendaEvents and getUserMetrics now receive transactions as a parameter
+    const agendaEvents = getAgendaEvents(transactions);
     const userCredicoraLevel = currentUser.credicoraLevel || 1;
     const credicoraDetails = credicoraLevels[userCredicoraLevel.toString()];
 
-    // Calculate used credit
     const usedCredit = transactions.filter(tx => 
         tx.clientId === currentUser.id && 
         tx.status === 'Acuerdo Aceptado - Pendiente de Ejecución' && 
@@ -178,10 +205,8 @@ export default function TransactionsPage() {
     ).reduce((sum, tx) => sum + tx.amount, 0);
 
     const availableCredit = (currentUser.credicoraLimit || 0) - usedCredit;
-    const { effectiveness, reputation } = getUserMetrics(currentUser.id);
+    const { effectiveness, reputation } = getUserMetrics(currentUser.id, transactions);
 
-
-    // Placeholder data for progression
     const completedTransactions = transactions.filter(t => (t.clientId === currentUser.id || t.providerId === currentUser.id) && (t.status === 'Pagado' || t.status === 'Resuelto')).length;
     const transactionsForNextLevel = credicoraDetails.transactionsForNextLevel || 25;
     
@@ -230,9 +255,8 @@ export default function TransactionsPage() {
 
 
     const handleTransactionClick = (transaction: Transaction) => {
-        // Provider specific action
         if (isProvider && transaction.status === 'Pago Enviado - Esperando Confirmación') {
-            setSelectedTransaction(transaction); // Open dialog to confirm
+            setSelectedTransaction(transaction);
         } else {
             setSelectedTransaction(transaction);
         }
@@ -249,6 +273,13 @@ export default function TransactionsPage() {
     }
 
     const renderContent = () => {
+        if (isLoading) {
+            return <div className="space-y-4">
+                <Skeleton className="h-64 w-full" />
+                <Skeleton className="h-32 w-full" />
+                <Skeleton className="h-48 w-full" />
+            </div>
+        }
         switch (view) {
             case 'pending':
                 return <TransactionList title="Lista de Pendientes" transactions={pendingTx} onTransactionClick={handleTransactionClick} />;
@@ -457,5 +488,3 @@ export default function TransactionsPage() {
         </div>
     );
 }
-
-    

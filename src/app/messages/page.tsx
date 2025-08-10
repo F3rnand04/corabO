@@ -36,7 +36,7 @@ function MessagesHeader() {
 
 
 export default function MessagesPage() {
-    const { currentUser, users } = useCorabo();
+    const { currentUser } = useCorabo();
     const [searchQuery, setSearchQuery] = useState('');
     const [conversations, setConversations] = useState<Conversation[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -79,19 +79,16 @@ export default function MessagesPage() {
     const filteredConversations = conversations.filter(convo => {
         if (!currentUser) return false;
         
-        const otherParticipantId = convo.participantIds.find(pId => pId !== currentUser.id);
-        const otherParticipant = users.find(u => u.id === otherParticipantId);
-        
-        if (!otherParticipant) return false;
-
+        // In a fully robust app, we would fetch user data here if not available.
+        // For now, we assume the other participant's data will be fetched inside ConversationCard.
         const lowerCaseQuery = searchQuery.toLowerCase().trim();
         if (!lowerCaseQuery) return true;
-
-        const nameMatch = otherParticipant.name.toLowerCase().includes(lowerCaseQuery);
+        
+        // This search is basic. A more advanced implementation would require fetching participant names.
         const lastMessageText = convo.messages[convo.messages.length - 1]?.text || '';
         const messageMatch = lastMessageText.toLowerCase().includes(lowerCaseQuery);
         
-        return nameMatch || messageMatch;
+        return messageMatch;
     });
     
     const renderContent = () => {
