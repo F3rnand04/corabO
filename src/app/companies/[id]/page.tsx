@@ -11,7 +11,7 @@ import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, Mess
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { useState, TouchEvent, useEffect } from 'react';
+import { useState, TouchEvent, useEffect, useCallback } from 'react';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
 import type { User, GalleryImage, Product, Transaction, AppointmentRequest } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -45,28 +45,38 @@ export default function CompanyProfilePage() {
   const [providerProducts, setProviderProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const loadProviderData = async () => {
-        setIsLoading(true);
-        const providerId = params.id as string;
-        if (providerId) {
-            const fetchedProvider = await fetchUser(providerId);
-            setProvider(fetchedProvider);
+  const loadProviderData = useCallback(async () => {
+    const providerId = params.id as string;
+    if (!providerId) {
+        setIsLoading(false);
+        return;
+    };
+    
+    setIsLoading(true);
+    try {
+        const fetchedProvider = await fetchUser(providerId);
+        setProvider(fetchedProvider);
 
-            if(fetchedProvider) {
-                const galleryData = await getProfileGallery(providerId);
-                setProviderGallery(galleryData);
+        if (fetchedProvider) {
+            const galleryData = await getProfileGallery(providerId);
+            setProviderGallery(galleryData);
 
-                if (fetchedProvider.profileSetupData?.offerType === 'product') {
-                    const productsData = await getProfileProducts(providerId);
-                    setProviderProducts(productsData);
-                }
+            if (fetchedProvider.profileSetupData?.offerType === 'product') {
+                const productsData = await getProfileProducts(providerId);
+                setProviderProducts(productsData);
             }
         }
+    } catch (error) {
+        console.error("Error loading provider data:", error);
+        toast({ variant: "destructive", title: "Error", description: "No se pudo cargar el perfil del proveedor." });
+    } finally {
         setIsLoading(false);
-    };
+    }
+  }, [params.id, fetchUser, toast]);
+
+  useEffect(() => {
     loadProviderData();
-  }, [params.id, fetchUser]);
+  }, [loadProviderData]);
   
   const isDeliveryOnly = provider?.profileSetupData?.isOnlyDelivery || false;
   const providerAcceptsCredicora = provider?.profileSetupData?.acceptsCredicora || false;

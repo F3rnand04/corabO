@@ -17,6 +17,10 @@ export default function ProfileFooter() {
   const { currentUser } = useCorabo();
   const [isUploadOpen, setIsUploadOpen] = useState(false);
 
+  if (!currentUser) {
+    return null;
+  }
+
   const isProvider = currentUser.type === 'provider';
 
   const handleCentralButtonClick = () => {

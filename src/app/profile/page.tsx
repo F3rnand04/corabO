@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, TouchEvent, useEffect, useRef, ChangeEvent } from 'react';
+import { useState, TouchEvent, useEffect, useRef, ChangeEvent, useCallback } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
@@ -37,31 +37,29 @@ export default function ProfilePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Effect to load provider-specific gallery and products using secure flows
-  useEffect(() => {
+  const loadProfileData = useCallback(async () => {
     if (!currentUser) return;
     
-    const loadProfileData = async () => {
-        setIsLoading(true);
-        try {
-            const galleryData = await getProfileGallery(currentUser.id);
-            setGallery(galleryData);
+    setIsLoading(true);
+    try {
+        const galleryData = await getProfileGallery(currentUser.id);
+        setGallery(galleryData);
 
-            if (currentUser.type === 'provider') {
-                const productsData = await getProfileProducts(currentUser.id);
-                setProducts(productsData);
-            }
-        } catch (error) {
-            console.error("Error loading profile data:", error);
-            toast({ variant: 'destructive', title: 'Error al cargar el perfil' });
-        } finally {
-            setIsLoading(false);
+        if (currentUser.type === 'provider') {
+            const productsData = await getProfileProducts(currentUser.id);
+            setProducts(productsData);
         }
-    };
-    
-    loadProfileData();
-
+    } catch (error) {
+        console.error("Error loading profile data:", error);
+        toast({ variant: 'destructive', title: 'Error al cargar el perfil' });
+    } finally {
+        setIsLoading(false);
+    }
   }, [currentUser, toast]);
+
+  useEffect(() => {
+    loadProfileData();
+  }, [loadProfileData]);
 
   const router = useRouter();
 
@@ -458,6 +456,7 @@ export default function ProfilePage() {
                         <div 
                           className="relative group cursor-pointer"
                           onTouchStart={onTouchStart}
+                          onTouchMove={onTouchMove}
                           onTouchEnd={onTouchEnd}
                           onDoubleClick={handleImageDoubleClick}
                         >

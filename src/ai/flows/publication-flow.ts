@@ -37,7 +37,7 @@ export const createPublication = ai.defineFlow(
     const userRef = doc(db, 'users', userId);
     const userSnap = await getDoc(userRef);
     if (!userSnap.exists()) {
-      throw new Error('User not found');
+      throw new Error('User not found. Cannot create publication for a non-existent user.');
     }
     const user = userSnap.data() as User;
 
@@ -60,11 +60,11 @@ export const createPublication = ai.defineFlow(
     batch.set(userGalleryRef, galleryItem);
 
     // 2. Create the denormalized public publication for the feed
-    // This is the critical fix: ensuring all required owner data is populated robustly.
+    // This logic is now more robust with fallbacks.
     const ownerData: PublicationOwner = {
       id: user.id,
       name: (user.profileSetupData?.useUsername && user.profileSetupData.username) ? user.profileSetupData.username : user.name,
-      profileImage: user.profileImage,
+      profileImage: user.profileImage || '',
       verified: user.verified || false,
       isGpsActive: user.isGpsActive || false,
       reputation: user.reputation || 0,
@@ -109,7 +109,7 @@ export const createProduct = ai.defineFlow(
         const db = getFirestoreDb();
         const userSnap = await getDoc(doc(db, 'users', userId));
         if (!userSnap.exists()) {
-            throw new Error('User not found');
+            throw new Error('User not found. Cannot create product for a non-existent user.');
         }
         const user = userSnap.data() as User;
         

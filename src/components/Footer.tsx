@@ -2,7 +2,7 @@
 "use client";
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Home, PlaySquare, Search, MessageSquare, Upload, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -10,13 +10,16 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useState } from 'react';
 import { UploadDialog } from './UploadDialog';
-import { useRouter } from 'next/navigation';
  
 export function Footer() {
   const pathname = usePathname();
   const router = useRouter();
   const { currentUser } = useCorabo();
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+
+  if (!currentUser) {
+    return null;
+  }
 
   const isProvider = currentUser.type === 'provider';
   const isProfilePage = pathname === '/profile';
@@ -51,6 +54,7 @@ export function Footer() {
   }
 
   const getProfileOrSettingsButton = () => {
+    // Show settings gear ONLY when on the /profile page
     if (isProfilePage) {
       return (
          <Link href="/profile-setup" passHref>
@@ -61,6 +65,7 @@ export function Footer() {
       );
     }
     
+    // Show avatar on all other pages
     return (
        <Link href="/profile" passHref>
           <Button variant="ghost" className={cn("flex-col h-auto p-1 text-muted-foreground hover:text-primary")}>
