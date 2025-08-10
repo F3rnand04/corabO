@@ -31,10 +31,11 @@ import { getProfileGallery, getProfileProducts } from '@/ai/flows/profile-flow';
 
 export default function ProfilePage() {
   const { toast } = useToast();
-  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, transactions, getAgendaEvents, getUserMetrics } = useCorabo();
+  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, getAgendaEvents, getUserMetrics } = useCorabo();
   
   const [gallery, setGallery] = useState<GalleryImage[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]); // This should be fetched locally now
   const [isLoading, setIsLoading] = useState(true);
 
   const loadProfileData = useCallback(async () => {
@@ -42,8 +43,8 @@ export default function ProfilePage() {
     
     setIsLoading(true);
     try {
+        // Fetch data using the new specific flows
         const galleryData = await getProfileGallery(currentUser.id);
-        // CRITICAL FIX: Sort publications on the client-side after fetching
         const sortedGallery = galleryData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         setGallery(sortedGallery);
 
@@ -51,6 +52,9 @@ export default function ProfilePage() {
             const productsData = await getProfileProducts(currentUser.id);
             setProducts(productsData);
         }
+        // In a real app, transactions would also be fetched here if needed for this page
+        // For now, we use an empty array.
+        setTransactions([]);
     } catch (error) {
         console.error("Error loading profile data:", error);
         toast({ variant: 'destructive', title: 'Error al cargar el perfil' });
@@ -60,8 +64,11 @@ export default function ProfilePage() {
   }, [currentUser, toast]);
 
   useEffect(() => {
-    loadProfileData();
-  }, [loadProfileData]);
+    // Only load data if currentUser is available
+    if(currentUser){
+        loadProfileData();
+    }
+  }, [currentUser, loadProfileData]);
 
   const router = useRouter();
 
@@ -95,11 +102,11 @@ export default function ProfilePage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const agendaEvents = getAgendaEvents();
+  const agendaEvents = getAgendaEvents(transactions);
   const paymentCommitmentDates = agendaEvents.filter(e => e.type === 'payment').map(e => new Date(e.date));
   const taskDates = agendaEvents.filter(e => e.type === 'task').map(e => new Date(e.date));
 
-  const { reputation, effectiveness, responseTime } = getUserMetrics(currentUser.id);
+  const { reputation, effectiveness, responseTime } = getUserMetrics(currentUser.id, transactions);
   const isNewProvider = responseTime === 'Nuevo';
 
 
