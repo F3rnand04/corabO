@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MapPin, FileText, Menu, Search, LogOut, User, ShoppingCart, Plus, Minus, X, Wallet, Truck, Star, History as HistoryIcon, Shield, HelpCircle } from "lucide-react";
+import { MapPin, FileText, Menu, Search, LogOut, User, ShoppingCart, Plus, Minus, X, Wallet, Truck, Star, History as HistoryIcon, Shield, HelpCircle, UserRound } from "lucide-react";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -28,7 +28,7 @@ import { ThemeSwitcher } from "./ThemeSwitcher";
 import { UserSwitcher } from "./UserSwitcher";
 
 export function Header() {
-  const { searchQuery, setSearchQuery, feedView, setFeedView, currentUser, users, toggleGps, cart, updateCartQuantity, getCartTotal, checkout, getDeliveryCost, logout } = useCorabo();
+  const { searchQuery, setSearchQuery, feedView, setFeedView, currentUser, fetchUser, toggleGps, cart, updateCartQuantity, getCartTotal, checkout, getDeliveryCost, logout } = useCorabo();
   const router = useRouter();
   
   const hasCompletedProfileSetup = !!currentUser?.profileSetupData;
@@ -38,7 +38,16 @@ export function Header() {
   const [useCredicora, setUseCredicora] = useState(false);
   
   const cartTransaction = cart.length > 0 ? currentUser?.transactions?.find(tx => tx.status === 'Carrito Activo' && tx.clientId === currentUser.id) : undefined;
-  const provider = users.find(u => u.id === cartTransaction?.providerId);
+  
+  const [provider, setProvider] = useState<UserType | null>(null);
+
+  useEffect(() => {
+    if (cartTransaction?.providerId) {
+        fetchUser(cartTransaction.providerId).then(setProvider);
+    } else {
+        setProvider(null);
+    }
+  }, [cartTransaction, fetchUser]);
 
 
   const isDeliveryOnly = provider?.profileSetupData?.isOnlyDelivery || false;
@@ -64,7 +73,7 @@ export function Header() {
   const potentialFinancing = subtotal * financingPercentage;
   const financedAmount = useCredicora ? Math.min(potentialFinancing, creditLimit) : 0;
   const productInitialPayment = subtotal - financedAmount;
-  const totalToPayToday = productInitialPayment + ((includeDelivery || isDeliveryOnly) ? deliveryCost : 0);
+  const totalToPayToday = productInitialPayment + ((includeDelivery || isOnlyDelivery) ? deliveryCost : 0);
   const installmentAmount = financedAmount > 0 ? financedAmount / credicoraDetails.installments : 0;
 
 
@@ -78,7 +87,11 @@ export function Header() {
           <UserSwitcher />
 
           <div className="flex items-center space-x-1 sm:space-x-2">
-            
+            <Link href="/contacts" passHref>
+              <Button variant="ghost" size="icon">
+                <UserRound className="h-5 w-5" />
+              </Button>
+            </Link>
             <Button variant="ghost" size="icon" onClick={() => toggleGps(currentUser.id)} onDoubleClick={() => router.push('/map')}>
               <MapPin className={cn("h-5 w-5", currentUser.isGpsActive && "text-green-500")} />
             </Button>

@@ -10,15 +10,16 @@ import {
 } from "@/components/ui/select";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { User as UserIcon } from "lucide-react";
+import { User as UserIcon, Building } from "lucide-react";
+import Image from "next/image";
 
 export function UserSwitcher() {
   const { currentUser, users, isLoadingAuth } = useCorabo();
 
   if (isLoadingAuth || !currentUser) {
     return (
-        <div className="w-[180px] h-10 flex items-center gap-2">
-            <UserIcon className="h-8 w-8 p-1.5 rounded-full bg-muted text-muted-foreground"/>
+        <div className="w-auto h-10 flex items-center gap-2">
+            <Image src="https://i.postimg.cc/Wz1MTvWK/lg.png" alt="Corabo Logo" width={32} height={32} className="h-8 w-auto"/>
             <div>
                 <div className="h-4 w-20 bg-muted rounded-md animate-pulse"/>
                 <div className="h-3 w-12 bg-muted rounded-md mt-1 animate-pulse"/>

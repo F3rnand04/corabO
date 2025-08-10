@@ -38,6 +38,7 @@ interface UserMetrics {
 interface CoraboState {
   currentUser: User | null;
   users: User[];
+  products: Product[];
   cart: CartItem[];
   transactions: Transaction[];
   conversations: Conversation[];
@@ -108,6 +109,7 @@ interface CoraboState {
   setIdVerificationPending: (userId: string, documentUrl: string) => Promise<void>;
   autoVerifyIdWithAI: (input: VerificationInput) => Promise<VerificationOutput>;
   getUserMetrics: (userId: string) => UserMetrics;
+  fetchUser: (userId: string) => Promise<User | null>;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -120,6 +122,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   
   const [users, setUsers] = useState<User[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   
@@ -135,6 +138,23 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const app = getFirebaseApp();
   const auth = getAuth(app);
   
+  const userCache = useRef<Map<string, User>>(new Map());
+
+  const fetchUser = useCallback(async (userId: string): Promise<User | null> => {
+    if (userCache.current.has(userId)) {
+        return userCache.current.get(userId)!;
+    }
+    const db = getFirestoreDb();
+    const userDocRef = doc(db, 'users', userId);
+    const userDocSnap = await getDoc(userDocRef);
+    if (userDocSnap.exists()) {
+        const userData = userDocSnap.data() as User;
+        userCache.current.set(userId, userData);
+        return userData;
+    }
+    return null;
+  }, []);
+
   const handleUserCreation = useCallback(async (firebaseUser: FirebaseUser): Promise<User> => {
     const db = getFirestoreDb();
     const userDocRef = doc(db, 'users', firebaseUser.uid);
@@ -220,12 +240,15 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         });
         listeners.push(userUnsub);
         
-        // This listener for all users is broad, but necessary for now
-        // to populate profile cards and other UI elements.
-        const usersUnsub = onSnapshot(collection(db, 'users'), (snapshot) => {
-            setUsers(snapshot.docs.map(doc => doc.data() as User));
-        });
-        listeners.push(usersUnsub);
+        // This is a potential source of permission errors. Caching might be better.
+        // For now, let's load all users once for simplicity in UI rendering.
+        const usersCollection = await getDocs(collection(db, 'users'));
+        setUsers(usersCollection.docs.map(d => d.data() as User));
+        
+        // Load all products once
+        const productsCollection = await getDocs(collection(db, 'products'));
+        setProducts(productsCollection.docs.map(d => d.data() as Product));
+
 
         if (userData.profileSetupData?.location) {
             setDeliveryAddress(userData.profileSetupData.location);
@@ -403,8 +426,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const isContact = (userId: string) => {
-    return contacts.some(c => c.id !== userId);
-  }
+    return contacts.some(c => c.id === userId);
+  };
   
   const updateUser = async (userId: string, updates: Partial<User>) => {
     const db = getFirestoreDb();
@@ -734,6 +757,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const value: CoraboState = {
     currentUser,
     users,
+    products,
     cart,
     transactions,
     conversations,
@@ -803,6 +827,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     autoVerifyIdWithAI,
     markConversationAsRead,
     getUserMetrics,
+    fetchUser,
     setDeliveryAddress,
   };
 
