@@ -148,6 +148,21 @@ export function ProfileHeader() {
                  </div>
             </div>
         </div>
+
+        <div className="flex items-center gap-2 mt-4">
+            {isProvider && (
+                <Button variant="outline" className="flex-1" onClick={() => setIsCampaignDialogOpen(true)}>
+                    <Megaphone className="w-4 h-4 mr-2"/>
+                    Gestionar Campañas
+                </Button>
+            )}
+            <Button asChild variant="outline" className="flex-1">
+                <Link href="/emprende">
+                    <Zap className="w-4 h-4 mr-2"/>
+                    Emprende por Hoy
+                </Link>
+            </Button>
+        </div>
         
         <div className="flex justify-around font-semibold text-center border-b mt-4">
             <Button asChild variant="ghost" className="flex-1 p-3 rounded-none text-muted-foreground data-[active=true]:text-primary data-[active=true]:border-b-2 data-[active=true]:border-primary" data-active={pathname === '/profile/publications'}>
