@@ -1,11 +1,12 @@
 
+
 'use client';
 
 import { useState, useEffect, useRef, ChangeEvent, useCallback } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Megaphone, Zap, Plus, Package } from 'lucide-react';
+import { Star, Megaphone, Zap, Plus, Package, Wallet, MapPin, Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
@@ -14,16 +15,24 @@ import { useRouter } from 'next/navigation';
 import { CampaignDialog } from '@/components/CampaignDialog';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Calendar } from './ui/calendar';
+import { format } from 'date-fns';
+import { TransactionDetailsDialog } from './TransactionDetailsDialog';
+import type { Transaction } from '@/lib/types';
+import { SubscriptionDialog } from './SubscriptionDialog';
 
 
 export function ProfileHeader() {
   const { toast } = useToast();
-  const { currentUser, updateUserProfileImage, getUserMetrics, transactions } = useCorabo();
+  const { currentUser, updateUserProfileImage, getUserMetrics, transactions, getAgendaEvents, toggleGps } = useCorabo();
   
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isCampaignDialogOpen, setIsCampaignDialogOpen] = useState(false);
+  const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
   if (!currentUser) return null;
 
@@ -81,9 +90,19 @@ export function ProfileHeader() {
     : currentUser.name;
   const specialty = currentUser.profileSetupData?.specialty || 'Sin especialidad';
 
-  const galleryCount = currentUser.gallery?.length || 0;
-  // Placeholder for product count. In a real scenario, this would also come from context or a dedicated query.
-  const productCount = currentUser.profileSetupData?.offerType === 'product' ? (currentUser.gallery?.filter(p => p.type === 'product').length || 0) : 0;
+  const galleryCount = currentUser.gallery?.filter(p => p.type !== 'product').length || 0;
+  const productCount = currentUser.gallery?.filter(p => p.type === 'product').length || 0;
+
+  const agendaEvents = getAgendaEvents(transactions);
+  const eventDates = agendaEvents.map(e => e.date);
+
+  const handleDayClick = (day: Date) => {
+    const eventOnDay = agendaEvents.find(e => format(e.date, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd'));
+    if(eventOnDay) {
+        const tx = transactions.find(t => t.id === eventOnDay.transactionId);
+        if(tx) setSelectedTransaction(tx);
+    }
+  }
 
 
   return (
@@ -122,10 +141,44 @@ export function ProfileHeader() {
           </div>
         </div>
         
-         <Card className="mt-4">
-            <CardContent className="p-2 flex justify-end gap-2">
-                {isProvider && <Button variant="outline" className="flex-1 rounded-full text-xs h-8 px-4 font-bold" onClick={handleCampaignClick}><Megaphone className="w-4 h-4 mr-2 text-purple-500"/>Gestionar Campañas</Button>}
-                <Button variant="secondary" className="flex-1 rounded-full text-xs h-8 px-4 font-bold" onClick={handlePromotionClick}><Zap className="w-4 h-4 mr-2 text-yellow-500"/>Emprende por Hoy</Button>
+        <Card className="mt-4">
+            <CardContent className="p-2 flex flex-col gap-2">
+                 {!currentUser.isSubscribed && (
+                    <Button variant="link" size="sm" className="h-auto p-0 text-red-500/80 hover:text-red-500 text-xs" onClick={() => setIsSubscriptionDialogOpen(true)}>
+                        Suscribir
+                    </Button>
+                 )}
+                 <div className="flex justify-end gap-2">
+                     <Popover>
+                        <PopoverTrigger asChild>
+                             <Button variant="outline" className="flex-1 rounded-full text-xs h-8 px-4 font-bold">
+                                <CalendarIcon className="w-4 h-4 mr-2 text-blue-500"/>Agenda
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                            <Calendar
+                                mode="multiple"
+                                selected={eventDates}
+                                onDayClick={handleDayClick}
+                            />
+                            <div className="p-2 border-t text-center text-xs text-muted-foreground">
+                                Días con eventos están resaltados.
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                     <Button variant="outline" asChild className="flex-1 rounded-full text-xs h-8 px-4 font-bold">
+                        <Link href="/transactions">
+                            <Wallet className="w-4 h-4 mr-2 text-green-500"/>Registro
+                        </Link>
+                    </Button>
+                    <Button variant="outline" className="flex-1 rounded-full text-xs h-8 px-4 font-bold" onClick={() => toggleGps(currentUser.id)}>
+                        <MapPin className={cn("w-4 h-4 mr-2", currentUser.isGpsActive ? "text-green-500" : "text-muted-foreground")}/>GPS
+                    </Button>
+                 </div>
+                 <div className="flex justify-end gap-2">
+                    {isProvider && <Button variant="secondary" className="flex-1 rounded-full text-xs h-8 px-4 font-bold" onClick={handleCampaignClick}><Megaphone className="w-4 h-4 mr-2 text-purple-500"/>Gestionar Campañas</Button>}
+                    <Button variant="secondary" className="flex-1 rounded-full text-xs h-8 px-4 font-bold" onClick={handlePromotionClick}><Zap className="w-4 h-4 mr-2 text-yellow-500"/>Emprende por Hoy</Button>
+                </div>
             </CardContent>
         </Card>
 
@@ -141,6 +194,13 @@ export function ProfileHeader() {
         </div>
       </header>
       {isProvider && <CampaignDialog isOpen={isCampaignDialogOpen} onOpenChange={setIsCampaignDialogOpen} />}
+      <SubscriptionDialog isOpen={isSubscriptionDialogOpen} onOpenChange={setIsSubscriptionDialogOpen} />
+      <TransactionDetailsDialog 
+        isOpen={!!selectedTransaction}
+        onOpenChange={() => setSelectedTransaction(null)}
+        transaction={selectedTransaction}
+       />
     </>
   );
 }
+
