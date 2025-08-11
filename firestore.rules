@@ -4,61 +4,79 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
   
-    // --- REGLAS GENERALES ---
-    // Cualquiera puede leer la información pública de los usuarios y las publicaciones
-    match /users/{userId} {
-      allow read; 
-      // Solo el usuario autenticado y dueño del perfil puede escribir en su propio documento.
-      allow write: if request.auth != null && request.auth.uid == userId;
-      
-      // Cualquiera puede leer la galería de un usuario
-      match /gallery/{imageId} {
-        allow read;
-        // Solo el dueño del perfil puede escribir en su galería
-        allow write: if request.auth != null && request.auth.uid == userId;
-      }
+    // Función de ayuda para verificar si un usuario está autenticado
+    function isAuthenticated() {
+      return request.auth != null;
     }
     
-    // Cualquiera puede leer las publicaciones públicas del feed.
-    match /publications/{publicationId} {
-      allow read;
-      // Solo el backend (o un usuario autenticado que coincida con el providerId) puede crear o modificar publicaciones.
-      // Esta es una regla simplificada; en producción sería más estricta (solo backend).
-      allow write: if request.auth != null && request.resource.data.providerId == request.auth.uid;
+    // Función para verificar si el usuario que hace la solicitud es el dueño del documento
+    function isOwner(userId) {
+      return request.auth.uid == userId;
     }
     
-    // Cualquiera puede leer productos.
-    match /products/{productId} {
-        allow read;
-        // Solo el proveedor dueño del producto puede escribir
-        allow write: if request.auth != null && request.resource.data.providerId == request.auth.uid;
+    // Función para verificar si el usuario es un participante de un documento (transacción, conversación)
+    function isParticipant(resource) {
+        return request.auth.uid in resource.data.participantIds;
     }
 
-    // --- REGLAS DE TRANSACCIONES Y MENAJES (Más restrictivas) ---
-    
-    // Solo los participantes de una transacción pueden leer o escribir en ella.
-    match /transactions/{transactionId} {
-      allow read, write: if request.auth != null && request.auth.uid in resource.data.participantIds;
+    // Colección de Usuarios
+    match /users/{userId} {
+      // Cualquiera puede leer perfiles públicos.
+      allow read: if isAuthenticated();
+      
+      // Un usuario solo puede crear su propio perfil.
+      allow create: if isOwner(userId);
+      
+      // Un usuario solo puede actualizar su propio perfil, pero no puede asignarse roles.
+      allow update: if isOwner(userId) && !("role" in request.resource.data);
     }
     
-    // Solo los participantes de una conversación pueden leer o escribir en ella.
+    // Colección de Publicaciones (el feed público)
+    match /publications/{publicationId} {
+        // Cualquiera puede leer las publicaciones.
+        allow read: if isAuthenticated();
+        
+        // Solo el proveedor dueño puede crear, actualizar o borrar su publicación.
+        allow write: if isOwner(request.resource.data.providerId);
+    }
+    
+     // Subcolección de galería de un usuario
+    match /users/{userId}/gallery/{imageId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId);
+    }
+    
+    // Colección de Productos
+    match /products/{productId} {
+        allow read: if isAuthenticated();
+        // Solo el proveedor puede crear o modificar sus productos.
+        allow write: if isOwner(request.resource.data.providerId);
+    }
+    
+    // Colección de Conversaciones
     match /conversations/{conversationId} {
-       allow read, write: if request.auth != null && request.auth.uid in resource.data.participantIds;
+        // Solo los participantes de la conversación pueden leerla o escribir en ella.
+        allow read, write: if isParticipant(resource);
     }
     
-    // Los administradores tienen acceso a colecciones especiales
-    match /campaigns/{campaignId} {
-      // Cualquiera puede leer campañas activas (simplificado).
-      allow read: if resource.data.status == 'active';
-      // Solo el backend (simulado con usuario autenticado) puede escribir
-      allow write: if request.auth != null; 
+    // Colección de Transacciones
+    match /transactions/{transactionId} {
+        // Solo los participantes de la transacción pueden acceder a ella.
+        allow read, write: if isParticipant(resource);
     }
     
+    // Colección de Notificaciones
     match /notifications/{notificationId} {
-      // El usuario solo puede leer sus propias notificaciones
-      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
-      // Solo el backend (simulado con usuario autenticado) puede escribir
-      allow write: if request.auth != null;
+        // Solo el destinatario de la notificación puede leerla o escribir en ella.
+        allow read, write: if isOwner(resource.data.userId);
+    }
+    
+    // Colección de Campañas
+    match /campaigns/{campaignId} {
+        // Cualquiera puede leer los datos de una campaña.
+        allow read: if isAuthenticated();
+        // Solo el proveedor puede crear o actualizar su campaña.
+        allow write: if isOwner(request.resource.data.providerId);
     }
   }
 }
