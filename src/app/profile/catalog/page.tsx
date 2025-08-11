@@ -27,7 +27,6 @@ export default function CatalogPage() {
     if (!currentUser) return;
     setIsLoading(true);
     try {
-      // Correctly call the Genkit flow to get products.
       const productData = await getProfileProducts({ userId: currentUser.id, limitNum: 50 });
       setProducts(productData.products);
     } catch (error) {
@@ -43,13 +42,23 @@ export default function CatalogPage() {
   }, [currentUser, toast]);
 
   useEffect(() => {
-    loadProducts();
-  }, [loadProducts]);
+    if (currentUser) {
+        loadProducts();
+    }
+  }, [currentUser, loadProducts]);
   
   const openProductDetailsDialog = (product: Product) => {
     setSelectedProduct(product);
     setIsProductDetailsDialogOpen(true);
   };
+
+  if (!currentUser) {
+    return (
+      <div className="flex items-center justify-center pt-20">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <>
