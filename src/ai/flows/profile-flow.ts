@@ -21,30 +21,29 @@ export const getProfileGallery = ai.defineFlow(
     },
     async ({ userId, limitNum = 9, startAfterDocId }) => {
         const db = getFirestoreDb();
-        const galleryCollection = collection(db, 'users', userId, 'gallery');
+        // CORRECTED: Query the unified 'publications' collection
+        const publicationsCollection = collection(db, 'publications');
 
-        // CRITICAL FIX: Removed orderBy('createdAt', 'desc') from the query.
-        // The combination of filtering on a subcollection (implicitly by userId in the rules)
-        // and ordering by another field requires a composite index.
-        // The sorting will now be handled in the backend code after fetching.
+        // This query requires a composite index on (providerId, type, createdAt).
+        // This must be created in the Firebase console.
         const q: any[] = [
+            where("providerId", "==", userId),
+            where("type", "in", ["image", "video"]), // Filter for gallery items
+            orderBy('createdAt', 'desc'),
             limit(limitNum)
         ];
 
         if (startAfterDocId) {
-            const startAfterDoc = await getDoc(doc(db, 'users', userId, 'gallery', startAfterDocId));
+            const startAfterDoc = await getDoc(doc(db, 'publications', startAfterDocId));
             if (startAfterDoc.exists()) {
               q.push(startAfter(startAfterDoc));
             }
         } 
         
-        const galleryQuery = query(galleryCollection, ...q);
+        const galleryQuery = query(publicationsCollection, ...q);
         const snapshot = await getDocs(galleryQuery);
         
-        // Sorting is now done in the backend code after fetching to avoid complex queries.
-        const gallery = snapshot.docs
-            .map(doc => doc.data() as GalleryImage)
-            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        const gallery = snapshot.docs.map(doc => doc.data() as GalleryImage);
 
         const lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
 
@@ -63,27 +62,40 @@ export const getProfileProducts = ai.defineFlow(
     },
     async ({ userId, limitNum = 10, startAfterDocId }) => {
         const db = getFirestoreDb();
-        const productsCollection = collection(db, 'products');
+        // CORRECTED: Query the unified 'publications' collection
+        const publicationsCollection = collection(db, 'publications');
 
-        // This query requires a composite index on (providerId, name).
-        // This has been added to firestore.indexes.json to resolve the error.
+        // This query requires a composite index on (providerId, type, name).
         const q: any[] = [
             where("providerId", "==", userId),
-            orderBy("name"),
+            where("type", "==", "product"), // Filter for products
+            orderBy("productDetails.name"),
             limit(limitNum)
         ];
 
         if (startAfterDocId) {
-            const startAfterDoc = await getDoc(doc(db, "products", startAfterDocId));
+            const startAfterDoc = await getDoc(doc(db, "publications", startAfterDocId));
             if(startAfterDoc.exists()){
                 q.push(startAfter(startAfterDoc));
             }
         }
         
-        const productsQuery = query(productsCollection, ...q);
+        const productsQuery = query(publicationsCollection, ...q);
         
         const snapshot = await getDocs(productsQuery);
-        const products = snapshot.docs.map(doc => doc.data() as Product);
+        // Map the publication document to a Product type for the frontend
+        const products = snapshot.docs.map(doc => {
+            const data = doc.data() as GalleryImage;
+            return {
+                id: data.id,
+                name: data.productDetails?.name || 'Producto sin nombre',
+                description: data.description,
+                price: data.productDetails?.price || 0,
+                category: data.productDetails?.category || 'General',
+                providerId: data.providerId,
+                imageUrl: data.src,
+            } as Product;
+        });
         const lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
 
         return { products, lastVisibleDocId: lastVisibleDoc?.id };
