@@ -19,9 +19,10 @@ export const getFeed = ai.defineFlow(
         const db = getFirestoreDb();
         const publicationsCollection = collection(db, "publications");
 
-        // CRITICAL FIX: The orderBy clause is removed to prevent complex query errors.
-        // Sorting will be handled client-side or in backend logic after fetching.
+        // The orderBy clause is required for pagination cursors (startAfter) to work correctly.
+        // We order by creation date to get a chronological feed.
         const q: any[] = [
+            orderBy('createdAt', 'desc'),
             limit(limitNum)
         ];
 
@@ -39,10 +40,7 @@ export const getFeed = ai.defineFlow(
             return { publications: [], lastVisibleDocId: undefined };
         }
         
-        // Sorting is now handled in the backend code after fetching.
-        const publications = querySnapshot.docs
-            .map(doc => doc.data() as GalleryImage)
-            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        const publications = querySnapshot.docs.map(doc => doc.data() as GalleryImage);
             
         const lastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
         
