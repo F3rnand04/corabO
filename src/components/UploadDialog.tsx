@@ -53,11 +53,13 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
   const [productPrice, setProductPrice] = useState('');
 
   const handleFileSelect = (type: 'gallery' | 'product') => {
-    fileInputRef.current?.click();
-    if(type === 'gallery') {
-        fileInputRef.current?.setAttribute('accept', 'image/*,video/*');
-    } else {
-        fileInputref.current?.setAttribute('accept', 'image/*');
+    if (fileInputRef.current) {
+        if (type === 'gallery') {
+            fileInputRef.current.setAttribute('accept', 'image/*,video/*');
+        } else {
+            fileInputRef.current.setAttribute('accept', 'image/*');
+        }
+        fileInputRef.current.click();
     }
   };
 
