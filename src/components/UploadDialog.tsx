@@ -1,8 +1,8 @@
-
 "use client";
 
 import { useState, useRef, ChangeEvent } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import {
   Dialog,
   DialogContent,
@@ -31,6 +31,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
   const { currentUser, createPublication, createProduct } = useCorabo();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
   if (!currentUser) return null;
 
@@ -136,6 +137,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
         await createPublication(publicationData);
         toast({ title: "¡Publicación Exitosa!", description: "Tu nuevo contenido ya está en tu galería." });
         handleClose();
+        router.refresh();
     } catch (error) {
         console.error("Error creating publication:", error);
         toast({ variant: "destructive", title: "Error al Publicar", description: "No se pudo crear la publicación." });
@@ -162,6 +164,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
         await createProduct(productData);
         toast({ title: "¡Producto Añadido!", description: `${productName} ya está en tu catálogo.` });
         handleClose();
+        router.refresh();
     } catch (error) {
         console.error("Error creating product:", error);
         toast({ variant: "destructive", title: "Error al Añadir Producto", description: "No se pudo crear el producto." });
