@@ -788,16 +788,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       if (!currentUser) return;
       const db = getFirestoreDb();
       const userRef = doc(db, 'users', userId);
-      const initialCreditLimit = credicoraLevels['1'].creditLimit;
-
-      const cleanedPaymentDetails = { ...paymentDetails };
       
       const updates = {
           isTransactionsActive: true,
-          credicoraLimit: initialCreditLimit,
           profileSetupData: {
               ...currentUser.profileSetupData,
-              paymentDetails: cleanedPaymentDetails,
+              paymentDetails: paymentDetails,
           },
       };
 

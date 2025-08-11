@@ -53,7 +53,7 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
   
   const getCategoryName = (id: string) => allCategories.find(c => c.id === id)?.name || id;
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
     if (!currentUser) return;
     if (!hasAcceptedPolicies) {
         toast({
@@ -64,7 +64,7 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
         return;
     }
     
-    updateFullProfile(currentUser.id, formData, profileType);
+    await updateFullProfile(currentUser.id, formData, profileType);
     
     if (isProvider && !currentUser.isTransactionsActive) {
       toast({

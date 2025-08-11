@@ -1,17 +1,18 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, ChangeEvent } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronLeft, Banknote, Smartphone, AlertTriangle, FileText, Loader2 } from "lucide-react";
+import { ChevronLeft, Banknote, Smartphone, AlertTriangle, FileText, Upload, UserCheck, ShieldCheck, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCorabo } from '@/contexts/CoraboContext';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import Image from 'next/image';
 
 function SettingsHeader() {
     const router = useRouter();
@@ -22,7 +23,7 @@ function SettingsHeader() {
                     <Button variant="ghost" size="icon" onClick={() => router.back()}>
                         <ChevronLeft className="h-6 w-6" />
                     </Button>
-                    <h1 className="text-lg font-semibold">Ajustes de Registro</h1>
+                    <h1 className="text-lg font-semibold">Activación de Registro</h1>
                     <div className="w-8"></div>
                 </div>
             </div>
@@ -30,169 +31,177 @@ function SettingsHeader() {
     );
 }
 
-function PaymentMethodEditor({
-    method,
-    details,
-    onSave,
-}: {
-    method: 'account' | 'mobile' | 'crypto';
-    details: any;
-    onSave: (method: 'account' | 'mobile' | 'crypto', newDetails: any) => void;
-}) {
-    const [isEditing, setIsEditing] = useState(false);
-    const [editableDetails, setEditableDetails] = useState(details);
-
-    const handleSave = () => {
-        onSave(method, editableDetails);
-        setIsEditing(false);
-    };
-
-    const icons = {
-        account: <Banknote className="w-5 h-5" />,
-        mobile: <Smartphone className="w-5 h-5" />,
-        crypto: <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.714 6.556H14.15l2.031 2.031-2.03 2.032h2.563l2.032-2.031-2.03-2.032Zm-4.582 4.583H9.57l2.032 2.03-2.031 2.031h2.562l2.032-2.03-2.032-2.032Zm-4.582 0H5.087l2.032 2.03-2.032 2.031H7.55l2.032-2.03-2.032-2.032Zm9.164-2.551h2.563l-2.032 2.031 2.032 2.03h-2.563l-2.031-2.031 2.031-2.03Zm-4.582-4.582H9.57l2.032 2.03-2.031 2.032h2.562l2.032-2.03-2.032-2.031Zm4.582 9.164h2.563l-2.032 2.031 2.032 2.03h-2.563l-2.031-2.031 2.031-2.03ZM9.62 2.01l-7.61 7.61 2.032 2.031 7.61-7.61L9.62 2.01Zm0 17.98l-7.61-7.61 2.032-2.032 7.61 7.61-2.032 2.032Z" fill="#F0B90B"></path></svg>
-    };
-
-    const titles = { account: 'Cuenta Bancaria', mobile: 'Pago Móvil', crypto: 'Binance Pay' };
-    const fieldsToEdit = {
-        account: { label: 'Número de Cuenta', field: 'accountNumber' },
-        mobile: { label: 'Número de Teléfono', field: 'mobilePaymentPhone' },
-        crypto: { label: 'Correo de Binance', field: 'binanceEmail' },
-    };
-
-    return (
-        <div className="space-y-4 rounded-md border p-4">
-            <div className="flex items-center justify-between">
-                <h4 className="flex items-center gap-2 font-medium">{icons[method]} {titles[method]}</h4>
-                {!isEditing && <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>Editar</Button>}
-            </div>
-            {isEditing ? (
-                <div className="space-y-4 pt-4 border-t">
-                    <div className="space-y-2">
-                        <Label htmlFor={`${method}-field`}>{fieldsToEdit[method].label}</Label>
-                        <Input
-                            id={`${method}-field`}
-                            value={editableDetails[fieldsToEdit[method].field]}
-                            onChange={(e) => setEditableDetails({ ...editableDetails, [fieldsToEdit[method].field]: e.target.value })}
-                        />
-                    </div>
-                    <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="sm" onClick={() => { setIsEditing(false); setEditableDetails(details); }}>Cancelar</Button>
-                        <Button size="sm" onClick={handleSave}>Guardar</Button>
-                    </div>
-                </div>
-            ) : (
-                <div className="text-sm text-muted-foreground">
-                    <p><strong>{details.bankName || 'Binance'}</strong></p>
-                    <p className="font-mono">{details.accountNumber || details.mobilePaymentPhone || details.binanceEmail}</p>
-                </div>
-            )}
-        </div>
-    );
-}
-
 export default function TransactionsSettingsPage() {
-    const { currentUser, updateUser, deactivateTransactions } = useCorabo();
+    const { currentUser, activateTransactions, setIdVerificationPending } = useCorabo();
     const { toast } = useToast();
     const router = useRouter();
+
+    const [step, setStep] = useState(1);
+    const [idDocumentFile, setIdDocumentFile] = useState<File | null>(null);
+    const [idDocumentPreview, setIdDocumentPreview] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const [paymentDetails, setPaymentDetails] = useState({
+        account: { active: true, bankName: '', accountNumber: '' },
+        mobile: { active: true, bankName: '', mobilePaymentPhone: '' },
+        crypto: { active: false, binanceEmail: '', validated: false }
+    });
 
     if (!currentUser) {
         return <div className="flex items-center justify-center min-h-screen"><Loader2 className="animate-spin" /></div>;
     }
 
-    const handleSaveChanges = async (method: 'account' | 'mobile' | 'crypto', newDetails: any) => {
-        if (!currentUser.profileSetupData?.paymentDetails) return;
-
-        const updatedPaymentDetails = {
-            ...currentUser.profileSetupData.paymentDetails,
-            [method]: newDetails,
-        };
-
-        await updateUser(currentUser.id, {
-            profileSetupData: {
-                ...currentUser.profileSetupData,
-                paymentDetails: updatedPaymentDetails,
-            },
-        });
-
-        toast({ title: "Método de Pago Actualizado", description: "Tus cambios han sido guardados." });
+    const handleIdFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setIdDocumentFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => setIdDocumentPreview(reader.result as string);
+            reader.readAsDataURL(file);
+        }
+    };
+    
+    const handleSubmitVerification = async () => {
+        if (!idDocumentFile) {
+            toast({ variant: 'destructive', title: 'Falta Documento', description: 'Por favor, sube una imagen de tu documento de identidad.' });
+            return;
+        }
+        setIsSubmitting(true);
+        // Simulating upload and getting a URL
+        const simulatedUrl = `https://i.postimg.cc/L8y2zWc2/vzla-id.png`; 
+        try {
+            await setIdVerificationPending(currentUser.id, simulatedUrl);
+            toast({ title: 'Documento Enviado', description: 'Tu documento está siendo revisado. Te notificaremos cuando se apruebe.' });
+            setStep(2);
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo enviar el documento.' });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
-    const paymentDetails = currentUser.profileSetupData?.paymentDetails;
+    const handleActivateModule = () => {
+        const activeMethods = Object.values(paymentDetails).filter(p => p.active);
+        if(activeMethods.length === 0) {
+            toast({ variant: 'destructive', title: 'Falta Método de Pago', description: 'Debes configurar al menos un método de pago.' });
+            return;
+        }
+        activateTransactions(currentUser.id, paymentDetails);
+        toast({ title: "¡Módulo Activado!", description: "Ahora puedes realizar y recibir pagos de forma segura." });
+        router.push('/transactions');
+    };
+
+    const renderStepContent = () => {
+        switch(step) {
+            case 1: // Identity Verification
+                return (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><UserCheck className="w-5 h-5"/> Paso 1: Verificación de Identidad</CardTitle>
+                            <CardDescription>Para la seguridad de todos, necesitamos verificar tu identidad. Sube una foto clara de tu cédula.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="id-upload">Documento de Identidad (Cédula)</Label>
+                                {idDocumentPreview ? (
+                                    <div className="relative w-full aspect-video border rounded-md overflow-hidden">
+                                        <Image src={idDocumentPreview} alt="Vista previa de ID" layout="fill" objectFit="contain" />
+                                    </div>
+                                ) : (
+                                    <Label htmlFor="id-upload" className="w-full aspect-video border-2 border-dashed rounded-md flex flex-col items-center justify-center cursor-pointer hover:bg-muted/50">
+                                        <Upload className="w-8 h-8 text-muted-foreground" />
+                                        <span className="mt-2 text-sm text-muted-foreground">Haz clic para subir imagen</span>
+                                    </Label>
+                                )}
+                                <Input id="id-upload" type="file" className="hidden" accept="image/*" onChange={handleIdFileChange} />
+                            </div>
+                             <Button className="w-full" onClick={handleSubmitVerification} disabled={!idDocumentFile || isSubmitting}>
+                                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                                Enviar y Verificar Documento
+                             </Button>
+                        </CardContent>
+                    </Card>
+                );
+            case 2: // Payment Setup
+                return (
+                     <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><Banknote className="w-5 h-5"/> Paso 2: Registro de Pagos</CardTitle>
+                            <CardDescription>Configura los métodos por los cuales recibirás pagos. Puedes activar varios.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {/* Bank Account */}
+                            <div className="space-y-2 border p-3 rounded-md">
+                                <div className="flex items-center justify-between">
+                                    <Label htmlFor="account-active" className="font-semibold flex items-center gap-2"><Banknote className="w-4 h-4"/> Cuenta Bancaria</Label>
+                                    <Checkbox id="account-active" checked={paymentDetails.account.active} onCheckedChange={(c) => setPaymentDetails(p => ({...p, account: {...p.account, active: !!c}}))} />
+                                </div>
+                                {paymentDetails.account.active && <div className="space-y-2 pt-2">
+                                    <Input placeholder="Nombre del Banco" value={paymentDetails.account.bankName} onChange={e => setPaymentDetails(p => ({...p, account: {...p.account, bankName: e.target.value}}))} />
+                                    <Input placeholder="Número de Cuenta (20 dígitos)" value={paymentDetails.account.accountNumber} onChange={e => setPaymentDetails(p => ({...p, account: {...p.account, accountNumber: e.target.value}}))} />
+                                </div>}
+                            </div>
+                             {/* Mobile Payment */}
+                            <div className="space-y-2 border p-3 rounded-md">
+                                <div className="flex items-center justify-between">
+                                    <Label htmlFor="mobile-active" className="font-semibold flex items-center gap-2"><Smartphone className="w-4 h-4"/> Pago Móvil</Label>
+                                    <Checkbox id="mobile-active" checked={paymentDetails.mobile.active} onCheckedChange={(c) => setPaymentDetails(p => ({...p, mobile: {...p.mobile, active: !!c}}))} />
+                                </div>
+                                {paymentDetails.mobile.active && <div className="space-y-2 pt-2">
+                                    <Input placeholder="Banco" value={paymentDetails.mobile.bankName} onChange={e => setPaymentDetails(p => ({...p, mobile: {...p.mobile, bankName: e.target.value}}))} />
+                                    <Input placeholder="Teléfono" value={paymentDetails.mobile.mobilePaymentPhone} onChange={e => setPaymentDetails(p => ({...p, mobile: {...p.mobile, mobilePaymentPhone: e.target.value}}))} />
+                                </div>}
+                            </div>
+                             {/* Crypto */}
+                            <div className="space-y-2 border p-3 rounded-md">
+                                <div className="flex items-center justify-between">
+                                    <Label htmlFor="crypto-active" className="font-semibold flex items-center gap-2"><svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.714 6.556H14.15l2.031 2.031-2.03 2.032h2.563l2.032-2.031-2.03-2.032Zm-4.582 4.583H9.57l2.032 2.03-2.031 2.031h2.562l2.032-2.03-2.032-2.032Zm-4.582 0H5.087l2.032 2.03-2.032 2.031H7.55l2.032-2.03-2.032-2.032Zm9.164-2.551h2.563l-2.032 2.031 2.032 2.03h-2.563l-2.031-2.031 2.031-2.03Zm-4.582-4.582H9.57l2.032 2.03-2.031 2.032h2.562l2.032-2.03-2.032-2.031Zm4.582 9.164h2.563l-2.032 2.031 2.032 2.03h-2.563l-2.031-2.031 2.031-2.03ZM9.62 2.01l-7.61 7.61 2.032 2.031 7.61-7.61L9.62 2.01Zm0 17.98l-7.61-7.61 2.032-2.032 7.61 7.61-2.032 2.032Z" fill="#F0B90B"></path></svg> Binance Pay</Label>
+                                    <Checkbox id="crypto-active" checked={paymentDetails.crypto.active} onCheckedChange={(c) => setPaymentDetails(p => ({...p, crypto: {...p.crypto, active: !!c}}))} />
+                                </div>
+                                {paymentDetails.crypto.active && <div className="space-y-2 pt-2">
+                                     <Input placeholder="Correo asociado a Binance Pay" value={paymentDetails.crypto.binanceEmail} onChange={e => setPaymentDetails(p => ({...p, crypto: {...p.crypto, binanceEmail: e.target.value}}))} />
+                                </div>}
+                            </div>
+                            <Button className="w-full" onClick={handleActivateModule}>
+                                <ShieldCheck className="mr-2 h-4 w-4"/>
+                                Guardar Métodos y Activar Módulo
+                            </Button>
+                        </CardContent>
+                    </Card>
+                );
+            default:
+                return null;
+        }
+    }
+
 
     return (
         <>
             <SettingsHeader />
             <main className="container py-8 max-w-2xl mx-auto space-y-8">
-                <Card>
+               {currentUser.isTransactionsActive ? (
+                 <Card>
                     <CardHeader>
-                        <CardTitle>Métodos de Pago Registrados</CardTitle>
-                        <CardDescription>
-                            Aquí puedes ver y actualizar la información donde recibirás tus pagos.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        {paymentDetails?.account?.active && (
-                            <PaymentMethodEditor method="account" details={paymentDetails.account} onSave={handleSaveChanges} />
-                        )}
-                        {paymentDetails?.mobile?.active && (
-                            <PaymentMethodEditor method="mobile" details={paymentDetails.mobile} onSave={handleSaveChanges} />
-                        )}
-                        {paymentDetails?.crypto?.active && (
-                            <PaymentMethodEditor method="crypto" details={paymentDetails.crypto} onSave={handleSaveChanges} />
-                        )}
-                        {!paymentDetails?.account?.active && !paymentDetails?.mobile?.active && !paymentDetails?.crypto?.active && (
-                            <p className="text-sm text-muted-foreground text-center py-4">No tienes métodos de pago activos.</p>
-                        )}
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><FileText className="w-5 h-5"/> Políticas y Términos</CardTitle>
-                        <CardDescription>
-                            Revisa las políticas que rigen el uso del registro de transacciones.
-                        </CardDescription>
+                        <CardTitle>Módulo de Transacciones Activo</CardTitle>
+                        <CardDescription>Ya puedes realizar y recibir pagos de forma segura en Corabo.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Button variant="outline" className="w-full" asChild>
-                            <a href="/policies" target="_blank">Ver Políticas de Servicio y Privacidad</a>
-                        </Button>
+                        <p className="text-sm text-muted-foreground">Si necesitas desactivar tu registro o cambiar tus métodos de pago, contacta a soporte.</p>
+                        <Button className="w-full mt-4" onClick={() => router.push('/transactions')}>Ir a mi Registro</Button>
                     </CardContent>
-                </Card>
-
-                <Card className="border-destructive">
-                    <CardHeader>
-                        <CardTitle className="text-destructive flex items-center gap-2"><AlertTriangle className="w-5 h-5"/> Zona de Peligro</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                         <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="destructive" className="w-full">Desactivar Registro de Transacciones</Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>¿Estás seguro que quieres desactivar el registro?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        Esta acción es reversible, pero mientras esté desactivado, no podrás realizar ni recibir pagos a través de la plataforma, y tus clientes no podrán contratarte.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction
-                                        className="bg-destructive hover:bg-destructive/90"
-                                        onClick={() => {
-                                            deactivateTransactions(currentUser.id);
-                                            router.push('/transactions');
-                                        }}
-                                    >
-                                        Sí, desactivar
-                                    </AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    </CardContent>
-                </Card>
+                 </Card>
+               ) : (
+                <>
+                    <Alert variant="destructive">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertTitle>¡Atención!</AlertTitle>
+                        <AlertDescription>
+                            Para poder recibir pagos y gestionar tus ingresos de forma segura, debes completar los siguientes pasos.
+                        </AlertDescription>
+                    </Alert>
+                    {renderStepContent()}
+                </>
+               )}
             </main>
         </>
     );
