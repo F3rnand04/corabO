@@ -57,7 +57,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
     if(type === 'gallery') {
         fileInputRef.current?.setAttribute('accept', 'image/*,video/*');
     } else {
-        fileInputRef.current?.setAttribute('accept', 'image/*');
+        fileInputref.current?.setAttribute('accept', 'image/*');
     }
   };
 
