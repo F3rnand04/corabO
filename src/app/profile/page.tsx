@@ -99,6 +99,7 @@ export default function ProfilePage() {
   }
 
   const { reputation, effectiveness, responseTime } = getUserMetrics(currentUser.id, transactions);
+  const completedJobs = transactions.filter(t => t.providerId === currentUser.id && (t.status === 'Pagado' || t.status === 'Resuelto')).length;
   const isNewProvider = responseTime === 'Nuevo';
   
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -245,21 +246,26 @@ export default function ProfilePage() {
               )}
             </div>
             
-            <Card className="mt-4">
-                <CardContent className="p-2 space-y-2">
+            <div className="flex justify-around text-center text-sm text-muted-foreground pt-4 pb-2">
+                 <div className="cursor-pointer" onClick={() => setActiveTab('publications')}>
+                    <span className="font-semibold text-foreground">{gallery?.length || 0}</span> Publicaciones
+                </div>
+                {isProductProvider ? (
+                     <div className="cursor-pointer" onClick={() => setActiveTab('catalog')}>
+                        <span className="font-semibold text-foreground">{products.length}</span> Productos
+                    </div>
+                 ) : (
+                     <div>
+                        <span className="font-semibold text-foreground">{completedJobs}</span> Trab. Realizados
+                    </div>
+                 )}
+            </div>
+
+            <Card className="mt-2">
+                <CardContent className="p-2">
                     <div className="flex justify-end gap-2">
                         {isProvider && <Button variant="outline" className="flex-1 rounded-full text-xs h-8 px-4 font-bold" onClick={handleCampaignClick}><Megaphone className="w-4 h-4 mr-2 text-purple-500"/>Gestionar Campañas</Button>}
                         <Button variant="secondary" className="flex-1 rounded-full text-xs h-8 px-4 font-bold" onClick={handlePromotionClick}><Zap className="w-4 h-4 mr-2 text-yellow-500"/>Emprende por Hoy</Button>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 pt-2">
-                        <Button variant={activeTab === 'publications' ? "default" : "ghost"} className="flex-col h-14" onClick={() => setActiveTab('publications')}>
-                             <span className="font-bold text-lg">{gallery?.length || 0}</span>
-                             <span className="text-xs">Publicaciones</span>
-                        </Button>
-                        <Button variant={activeTab === 'catalog' ? "default" : "ghost"} className="flex-col h-14" onClick={() => setActiveTab('catalog')}>
-                             <span className="font-bold text-lg">{products.length}</span>
-                             <span className="text-xs">Productos</span>
-                        </Button>
                     </div>
                 </CardContent>
             </Card>
