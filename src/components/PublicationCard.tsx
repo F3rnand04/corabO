@@ -3,8 +3,8 @@
 
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import type { GalleryImage, PublicationOwner } from "@/lib/types";
-import { Star, Bookmark, Send, MessageCircle, Flag } from "lucide-react";
+import type { GalleryImage, PublicationOwner, User } from "@/lib/types";
+import { Star, Bookmark, Send, MessageCircle, Flag, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { useState, useEffect } from "react";
@@ -13,6 +13,10 @@ import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { ImageDetailsDialog } from "./ImageDetailsDialog";
 import { useToast } from "@/hooks/use-toast";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Badge } from "./ui/badge";
+import { Separator } from "./ui/separator";
+
 
 interface PublicationCardProps {
     publication: GalleryImage & { owner?: PublicationOwner }; // owner is optional for safety
@@ -20,7 +24,7 @@ interface PublicationCardProps {
 }
 
 export function PublicationCard({ publication, className }: PublicationCardProps) {
-    const { addContact, isContact, sendMessage, currentUser } = useCorabo();
+    const { addContact, isContact, sendMessage, currentUser, getUserMetrics, transactions } = useCorabo();
     const router = useRouter();
     const { toast } = useToast();
     
@@ -33,23 +37,23 @@ export function PublicationCard({ publication, className }: PublicationCardProps
 
     const { owner } = publication;
     
-    // CRITICAL FIX: Add a guard clause. If owner data is missing, don't render the card.
     if (!owner || !owner.id) {
         return null; 
     }
     
     const profileLink = `/companies/${owner.id}`;
+    const { reputation, effectiveness, responseTime } = getUserMetrics(owner.id, transactions);
+    const isNewProvider = responseTime === 'Nuevo';
 
     useEffect(() => {
         if (!currentUser || !owner) return;
         setIsSaved(isContact(owner.id));
         setLikeCount(publication.likes || 0);
-        setShareCount(0); // Reset on each render
+        setShareCount(0);
     }, [isContact, owner.id, publication, currentUser, owner]);
 
     const handleSaveContact = () => {
-        // Since owner is guaranteed to exist by the guard clause, we can proceed.
-        const success = addContact(owner as any);
+        const success = addContact(owner as User);
         if (success) {
             toast({
                 title: "¡Contacto Guardado!",
@@ -65,7 +69,6 @@ export function PublicationCard({ publication, className }: PublicationCardProps
     };
     
     const handleLike = () => {
-        // Here you would also call a backend function to update the like count
         setIsLiked(prev => !prev);
         setLikeCount(prev => (isLiked ? prev - 1 : prev + 1));
     };
@@ -92,70 +95,83 @@ export function PublicationCard({ publication, className }: PublicationCardProps
         }
     }
 
-    // Display name logic with fallback
     const displayName = owner.profileSetupData?.username || owner.name || 'Usuario Corabo';
-
+    const specialty = owner.profileSetupData?.specialty || "Especialidad no definida";
+    
     return (
         <>
-        <div 
-            className={cn("relative w-full group cursor-pointer rounded-lg overflow-hidden shadow-md", 
-                publication.aspectRatio === 'horizontal' ? 'aspect-video' :
-                publication.aspectRatio === 'vertical' ? 'aspect-[4/5]' :
-                'aspect-square',
-                className
-            )} 
-            onDoubleClick={() => setIsDetailsDialogOpen(true)}
-        >
-            <Image 
-                src={publication.src} 
-                alt={publication.alt} 
-                layout="fill" 
-                objectFit="cover" 
-                data-ai-hint="service person working" 
-            />
-            
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+        <div className={cn("flex flex-col rounded-2xl overflow-hidden shadow-lg border bg-card", className)}>
+            {/* Card Header */}
+            <div className="flex items-center p-3 gap-3">
+                <Link href={profileLink} className="flex-shrink-0">
+                    <Avatar>
+                        <AvatarImage src={owner.profileImage} alt={owner.name} />
+                        <AvatarFallback>{owner.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                </Link>
+                <div className="flex-grow">
+                    <Link href={profileLink} className="font-semibold text-sm hover:underline flex items-center gap-1.5">
+                        {displayName}
+                        {owner.verified && <CheckCircle className="w-4 h-4 text-blue-500" />}
+                    </Link>
+                    <p className="text-xs text-muted-foreground">{specialty}</p>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => sendMessage(owner.id, `¡Hola! Me interesa tu publicación.`, true)}>
+                    Contactar
+                </Button>
+            </div>
 
-            <Button 
-                variant="ghost" 
-                size="icon" 
-                className="absolute top-2 left-2 z-10 text-white bg-black/30 hover:bg-black/50 rounded-full h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={() => setIsReportDialogOpen(true)}
+            {/* Image Content */}
+            <div 
+                className="relative w-full group cursor-pointer" 
+                onDoubleClick={() => setIsDetailsDialogOpen(true)}
             >
-                <Flag className="w-4 h-4" />
-            </Button>
+                <Image 
+                    src={publication.src} 
+                    alt={publication.alt} 
+                    width={500}
+                    height={500}
+                    className={cn("w-full h-auto", 
+                        publication.aspectRatio === 'horizontal' ? 'aspect-video' :
+                        publication.aspectRatio === 'vertical' ? 'aspect-[4/5]' :
+                        'aspect-square'
+                    )}
+                    objectFit="cover"
+                    data-ai-hint="service person working" 
+                />
+            </div>
             
-            <div className="absolute bottom-2 right-2 flex flex-col items-center gap-4 z-10">
-                <div className="flex flex-col items-center">
-                    <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10" onClick={handleLike}>
-                        <Star className={cn("w-5 h-5", isLiked && "fill-yellow-400 text-yellow-400")} />
-                    </Button>
-                    <span className="text-xs font-bold mt-1 drop-shadow-md text-white">{likeCount}</span>
-                </div>
-                <div className="flex flex-col items-center">
-                     <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10" onClick={() => setIsDetailsDialogOpen(true)}>
-                        <MessageCircle className="w-5 h-5" />
-                     </Button>
-                    <span className="text-xs font-bold mt-1 drop-shadow-md text-white">{publication.comments?.length || 0}</span>
-                </div>
-                 <div className="flex flex-col items-center">
-                     <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10" onClick={handleShare}>
-                        <Send className="w-5 h-5" />
-                     </Button>
-                    <span className="text-xs font-bold mt-1 drop-shadow-md text-white">{shareCount}</span>
-                </div>
-                <div className="flex flex-col items-center">
-                     <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/40 rounded-full h-10 w-10" onClick={handleSaveContact}>
-                        <Bookmark className={cn("w-5 h-5", isSaved && "fill-primary text-primary")} />
-                     </Button>
-                </div>
-            </div>
+             {/* Card Actions */}
+             <div className="flex items-center p-2">
+                 <Button variant="ghost" className="flex-1" onClick={handleLike}>
+                    <Star className={cn("w-5 h-5", isLiked && "text-yellow-400 fill-yellow-400")} />
+                    <span className="ml-2 text-xs">{likeCount}</span>
+                </Button>
+                 <Button variant="ghost" className="flex-1" onClick={() => setIsDetailsDialogOpen(true)}>
+                    <MessageCircle className="w-5 h-5"/>
+                    <span className="ml-2 text-xs">{publication.comments?.length || 0}</span>
+                </Button>
+                 <Button variant="ghost" className="flex-1" onClick={handleShare}>
+                    <Send className="w-5 h-5"/>
+                    <span className="ml-2 text-xs">{shareCount}</span>
+                </Button>
+                 <Button variant="ghost" className="flex-1" onClick={handleSaveContact}>
+                    <Bookmark className={cn("w-5 h-5", isSaved && "text-primary fill-primary")}/>
+                </Button>
+             </div>
 
-            <div className="absolute bottom-0 left-0 p-4 text-white bg-gradient-to-t from-black/70 to-transparent w-full">
-                <Link href={profileLink} className="font-bold drop-shadow hover:underline">@{displayName}</Link>
-                <p className="text-sm drop-shadow-sm line-clamp-2 mt-1">{publication.description}</p>
-            </div>
+             {/* Card Footer */}
+             <div className="px-4 pb-4">
+                 <p className="text-sm">
+                    <Link href={profileLink} className="font-semibold hover:underline">{displayName}</Link>
+                    <span className="text-muted-foreground ml-1">{publication.description}</span>
+                 </p>
+                 <p className="text-xs text-muted-foreground mt-2 uppercase cursor-pointer hover:underline" onClick={() => setIsDetailsDialogOpen(true)}>
+                    Ver los {publication.comments?.length || 0} comentarios
+                 </p>
+             </div>
         </div>
+
         <ReportDialog 
             isOpen={isReportDialogOpen} 
             onOpenChange={setIsReportDialogOpen} 
@@ -166,9 +182,10 @@ export function PublicationCard({ publication, className }: PublicationCardProps
             isOpen={isDetailsDialogOpen}
             onOpenChange={setIsDetailsDialogOpen}
             gallery={[publication]}
-            owner={owner}
+            owner={owner as User}
             startIndex={0}
         />
         </>
     );
 }
+
