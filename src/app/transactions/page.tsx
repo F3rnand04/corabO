@@ -19,6 +19,7 @@ import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { credicoraLevels } from "@/lib/types";
 import Link from "next/link";
+import { SubscriptionDialog } from "@/components/SubscriptionDialog";
 
 
 function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary: () => void, currentView: string }) {
@@ -60,6 +61,7 @@ export default function TransactionsPage() {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+    const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
     const [view, setView] = useState<'summary' | 'pending' | 'history' | 'commitments'>('summary');
     
     useEffect(() => {
@@ -204,6 +206,23 @@ export default function TransactionsPage() {
                                 </div>
                             </CardContent>
                         </Card>
+                        
+                        {!currentUser.isSubscribed && (
+                            <Card className="bg-gradient-to-r from-primary/10 to-blue-500/10 border-primary/20">
+                                <CardContent className="p-6 text-center">
+                                <div className="mx-auto bg-primary/20 text-primary w-12 h-12 rounded-full flex items-center justify-center mb-4">
+                                    <Star className="w-6 h-6" />
+                                </div>
+                                <h3 className="text-xl font-bold">¡Desbloquea tu Potencial!</h3>
+                                <p className="text-muted-foreground mt-2 mb-4">
+                                    Obtén tu insignia de verificado, llega a más clientes y accede a beneficios exclusivos.
+                                </p>
+                                <Button onClick={() => setIsSubscriptionDialogOpen(true)}>
+                                    Ver Planes de Suscripción
+                                </Button>
+                                </CardContent>
+                            </Card>
+                        )}
                     </div>
                 );
         }
@@ -229,6 +248,7 @@ export default function TransactionsPage() {
                 onOpenChange={() => setSelectedTransaction(null)}
                 transaction={selectedTransaction}
             />
+            <SubscriptionDialog isOpen={isSubscriptionDialogOpen} onOpenChange={setIsSubscriptionDialogOpen} />
         </div>
     );
 }
