@@ -35,15 +35,10 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [isProductDetailsDialogOpen, setIsProductDetailsDialogOpen] = useState(false);
   const [isCampaignDialogOpen, setIsCampaignDialogOpen] = useState(false);
 
   const isProvider = currentUser?.type === 'provider';
-  const isProductProvider = isProvider && currentUser?.profileSetupData?.offerType === 'product';
   
-  const [activeTab, setActiveTab] = useState<'publications' | 'catalog'>(isProductProvider ? 'catalog' : 'publications');
-
   const loadProfileData = useCallback(async () => {
     if (!currentUser?.id) {
         setIsLoading(false);
@@ -55,18 +50,17 @@ export default function ProfilePage() {
     try {
         const isProdProvider = currentUser.profileSetupData?.offerType === 'product';
         
-        // Siempre cargar la galería porque la pestaña siempre está visible
+        // Always load gallery count
         const { getProfileGallery } = await import('@/ai/flows/profile-flow');
         const galleryData = await getProfileGallery({ userId: currentUser.id, limitNum: 50 });
         setGallery(galleryData.gallery);
 
+        // Load product count if applicable
         if (isProdProvider) {
             const { products: newProducts } = await getProfileProducts({ userId: currentUser.id, limitNum: 50 });
             setProducts(newProducts);
         }
         
-        setActiveTab(isProdProvider ? 'catalog' : 'publications');
-
     } catch (error) {
         console.error("Error fetching profile data:", error);
         toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cargar tu perfil.' });
@@ -111,11 +105,6 @@ export default function ProfilePage() {
   
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
-  };
-  
-  const openProductDetailsDialog = (product: Product) => {
-    setSelectedProduct(product);
-    setIsProductDetailsDialogOpen(true);
   };
   
   const handlePromotionClick = () => {
@@ -199,26 +188,12 @@ export default function ProfilePage() {
             </Card>
 
             <div className="flex justify-around font-semibold text-center border-b mt-2">
-                <Button
-                    variant="ghost"
-                    className={cn(
-                    "flex-1 p-3 rounded-none",
-                    activeTab === 'publications' ? "text-primary border-b-2 border-primary" : "text-muted-foreground"
-                    )}
-                    onClick={() => router.push('/profile/publications')}
-                >
-                   {`Publicaciones ${gallery.length}`}
+                <Button asChild variant="ghost" className="flex-1 p-3 rounded-none text-primary border-b-2 border-primary">
+                   <Link href="/profile/publications">{`Publicaciones ${gallery.length}`}</Link>
                 </Button>
                 {isProvider && (
-                    <Button
-                        variant="ghost"
-                        className={cn(
-                        "flex-1 p-3 rounded-none",
-                        activeTab === 'catalog' ? "text-primary border-b-2 border-primary" : "text-muted-foreground"
-                        )}
-                        onClick={() => setActiveTab('catalog')}
-                    >
-                        {isProductProvider ? `Catálogo ${products.length}` : `Trabajos 0`}
+                    <Button asChild variant="ghost" className="flex-1 p-3 rounded-none text-muted-foreground">
+                        <Link href="/profile/catalog">{`Catálogo ${products.length}`}</Link>
                     </Button>
                 )}
             </div>
@@ -226,50 +201,16 @@ export default function ProfilePage() {
           </header>
 
           <main className="space-y-4 mt-4">
-             {activeTab === 'catalog' && (
-                 <div>
-                  {isLoading ? (
-                      <div className="grid grid-cols-2 gap-2">
-                        {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="aspect-square rounded-lg" />)}
-                      </div>
-                  ) : products.length > 0 ? (
-                    <div className='p-2 grid grid-cols-2 gap-2'>
-                      {products.map(product => (
-                        <ProductGridCard 
-                          key={product.id} 
-                          product={product}
-                          onDoubleClick={() => openProductDetailsDialog(product)}
-                         />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="w-full aspect-video bg-muted flex flex-col items-center justify-center text-center p-4 rounded-lg">
-                        <Package className="w-16 h-16 text-muted-foreground mb-4" />
-                        <h3 className="font-bold text-lg text-foreground">Tu catálogo está vacío</h3>
-                        <p className="text-muted-foreground text-sm">Haz clic en el botón (+) en el pie de página para añadir tu primer producto.</p>
-                    </div>
-                  )}
-              </div>
-            )}
-             {activeTab === 'publications' && gallery.length === 0 && (
-                <div className="w-full aspect-video bg-muted flex flex-col items-center justify-center text-center p-4 rounded-lg">
-                    <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
-                    <h3 className="font-bold text-lg text-foreground">Tu galería está vacía</h3>
-                    <p className="text-muted-foreground text-sm">Haz clic en el botón (+) en el pie de página para añadir tu primera publicación.</p>
-                </div>
-            )}
+            <div className="w-full aspect-video bg-muted flex flex-col items-center justify-center text-center p-4 rounded-lg">
+                <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
+                <h3 className="font-bold text-lg text-foreground">Tu Perfil</h3>
+                <p className="text-muted-foreground text-sm">Navega a Publicaciones o Catálogo para ver tu contenido.</p>
+            </div>
           </main>
         </div>
       </div>
       {isProvider && <CampaignDialog isOpen={isCampaignDialogOpen} onOpenChange={setIsCampaignDialogOpen} />}
       <SubscriptionDialog isOpen={isSubscriptionDialogOpen} onOpenChange={setIsSubscriptionDialogOpen} />
-      {selectedProduct && (
-        <ProductDetailsDialog
-            isOpen={isProductDetailsDialogOpen}
-            onOpenChange={setIsProductDetailsDialogOpen}
-            product={selectedProduct}
-        />
-      )}
     </>
   );
 }
