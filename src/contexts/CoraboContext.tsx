@@ -177,13 +177,17 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const getProfileGallery = useCallback(async (params: z.infer<typeof GetProfileGalleryInputSchema>): Promise<z.infer<typeof GetProfileGalleryOutputSchema>> => {
       try {
-          return await getProfileGalleryFlow(params);
+          const result = await getProfileGalleryFlow(params);
+          if(currentUser?.id === params.userId){
+              setCurrentUser(prevUser => prevUser ? ({...prevUser, gallery: result.gallery}) : null);
+          }
+          return result;
       } catch (error) {
           console.error("Error fetching gallery via Genkit flow:", error);
           toast({ variant: 'destructive', title: 'Error al Cargar Galería' });
           return { gallery: [], lastVisibleDocId: undefined };
       }
-  }, [toast]);
+  }, [toast, currentUser?.id]);
 
   const getProfileProducts = useCallback(async (params: z.infer<typeof GetProfileProductsInputSchema>): Promise<z.infer<typeof GetProfileProductsOutputSchema>> => {
     try {
@@ -593,14 +597,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return createCampaignFlow({ ...data, userId: currentUser.id });
   };
 
-  const createPublication = (data: CreatePublicationInput) => {
-    if (!currentUser) return Promise.reject("User not authenticated");
-      return createPublicationFlow(data);
+  const createPublication = async (data: CreatePublicationInput) => {
+    if (!currentUser) throw new Error("User not authenticated");
+    await createPublicationFlow(data);
   };
   
-  const createProduct = (data: CreateProductInput) => {
-    if (!currentUser) return Promise.reject("User not authenticated");
-      return createProductFlow(data);
+  const createProduct = async (data: CreateProductInput) => {
+    if (!currentUser) throw new Error("User not authenticated");
+    await createProductFlow(data);
   };
 
   const checkout = (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {};
@@ -870,5 +874,3 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
-
-    

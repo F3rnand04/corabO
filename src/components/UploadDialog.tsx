@@ -19,6 +19,7 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import { useToast } from '@/hooks/use-toast';
 import { UploadCloud, X, Image as ImageIcon, Video, PackagePlus, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import type { CreatePublicationInput, CreateProductInput } from '@/lib/types';
 
 
 interface UploadDialogProps {
@@ -125,13 +126,14 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
     
     setIsSubmitting(true);
     try {
-        await createPublication({
+        const publicationData: CreatePublicationInput = {
             userId: currentUser.id,
             description: galleryDescription,
             imageDataUri: galleryImagePreview,
             aspectRatio: galleryAspectRatio,
             type: isVideofile ? 'video' : 'image',
-        });
+        };
+        await createPublication(publicationData);
         toast({ title: "¡Publicación Exitosa!", description: "Tu nuevo contenido ya está en tu galería." });
         handleClose();
     } catch (error) {
@@ -150,13 +152,14 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
 
     setIsSubmitting(true);
     try {
-        await createProduct({
+        const productData: CreateProductInput = {
             userId: currentUser.id,
             name: productName,
             description: productDescription,
             price: parseFloat(productPrice),
             imageDataUri: productImagePreview,
-        });
+        };
+        await createProduct(productData);
         toast({ title: "¡Producto Añadido!", description: `${productName} ya está en tu catálogo.` });
         handleClose();
     } catch (error) {
