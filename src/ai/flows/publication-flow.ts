@@ -64,9 +64,7 @@ export const createPublication = ai.defineFlow(
     // to prevent errors if profileSetupData or its sub-properties are missing.
     const ownerData: PublicationOwner = {
       id: user.id,
-      name: (user.profileSetupData?.useUsername && user.profileSetupData.username) 
-            ? user.profileSetupData.username 
-            : user.name,
+      name: user.profileSetupData?.useUsername ? (user.profileSetupData.username || user.name) : user.name,
       profileImage: user.profileImage || '',
       verified: user.verified || false,
       isGpsActive: user.isGpsActive || false,

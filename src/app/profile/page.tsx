@@ -61,10 +61,10 @@ export default function ProfilePage() {
   }, [currentUser, toast]);
 
   useEffect(() => {
-    if(currentUser){
+    if(currentUser?.id){
         loadProfileData();
     }
-  }, [currentUser, loadProfileData]);
+  }, [currentUser?.id, loadProfileData]);
 
   const router = useRouter();
 
