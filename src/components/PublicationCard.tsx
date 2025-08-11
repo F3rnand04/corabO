@@ -5,7 +5,7 @@
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import type { GalleryImage, PublicationOwner, User } from "@/lib/types";
-import { Star, Bookmark, Send, MessageCircle, Flag, CheckCircle } from "lucide-react";
+import { Star, Bookmark, Send, MessageCircle, Flag, CheckCircle, MapPin } from "lucide-react";
 import Link from "next/link";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { useState, useEffect } from "react";
@@ -133,9 +133,15 @@ export function PublicationCard({ publication, className }: PublicationCardProps
                         )}
                     </div>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => sendMessage(owner.id, `¡Hola! Me interesa tu publicación.`, true)}>
-                    Contactar
-                </Button>
+                <div className="flex flex-col items-end">
+                    <Button variant="ghost" size="sm" onClick={() => sendMessage(owner.id, `¡Hola! Me interesa tu publicación.`, true)}>
+                        Contactar
+                    </Button>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                        <MapPin className={cn("h-3 w-3", owner.isGpsActive && "text-green-500")} />
+                        <span>~1.5 km</span>
+                    </div>
+                </div>
             </div>
 
             {/* Image Content */}
