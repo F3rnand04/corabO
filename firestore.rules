@@ -2,55 +2,43 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Reglas para la colección 'users'
-    match /users/{userId} {
-      // Un usuario solo puede leer, escribir y actualizar su propio documento.
-      allow read, write, update: if request.auth != null && request.auth.uid == userId;
-      // Nadie puede eliminar un documento de usuario (por seguridad).
-      allow delete: if false;
+  
+    // Allow authorized users to call backend flows
+    match /flows/{flowName} {
+      allow call: if true;
     }
-
-    // Reglas para la colección 'publications'
+  
+    // Publications can be read by anyone, but only created/updated/deleted by the owner
     match /publications/{publicationId} {
-      // Cualquier usuario autenticado puede leer todas las publicaciones.
       allow read: if request.auth != null;
-
-      // El propietario de la publicación puede actualizarla y eliminarla.
-      allow update, delete: if request.auth != null && request.auth.uid == resource.data.providerId;
-
-      // CORRECCIÓN: Se flexibiliza la regla de creación para ser compatible con 'writeBatch'.
-      // La seguridad se delega al flujo de backend, que ya garantiza que el providerId es el uid del usuario.
-      // Esto permite que la operación de escritura en lote se complete sin errores de permisos.
-      allow create: if request.auth != null;
+      allow create: if request.auth.uid == request.resource.data.providerId;
+      allow update, delete: if request.auth.uid == resource.data.providerId;
     }
 
-    // Reglas para la colección 'conversations'
-    match /conversations/{conversationId} {
-      // Un usuario solo puede acceder a una conversación si es participante.
+    // Users can only read/write their own document
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Transactions can only be read/written by participants
+    match /transactions/{transactionId} {
       allow read, write: if request.auth != null && request.auth.uid in resource.data.participantIds;
     }
 
-    // Reglas para la colección 'transactions'
-    match /transactions/{transactionId} {
-       // Un usuario solo puede acceder a una transacción si es participante.
-      allow read, write, create: if request.auth != null && request.auth.uid in resource.data.participantIds;
+    // Conversations can only be read/written by participants
+    match /conversations/{conversationId} {
+      allow read, write: if request.auth != null && request.auth.uid in resource.data.participantIds;
     }
     
-    // Reglas para la colección 'campaigns'
+     // Campaigns can be read by anyone, but only managed by the owner
     match /campaigns/{campaignId} {
-      // El creador de la campaña puede leerla, actualizarla y borrarla
-      allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.providerId;
-      // Cualquier usuario autenticado puede leer las campañas
-      allow list: if request.auth != null;
-      // El flujo del backend crea la campaña
-      allow create: if request.auth != null;
+      allow read: if request.auth != null;
+      allow create, update, delete: if request.auth.uid == request.resource.data.providerId || request.auth.uid == resource.data.providerId;
     }
-
-    // Reglas para la colección 'notifications'
+    
+     // Notifications are private to each user
     match /notifications/{notificationId} {
-        // Solo el usuario destinatario puede acceder a sus notificaciones.
-        allow read, write, create, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
     }
   }
 }
