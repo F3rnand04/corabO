@@ -33,38 +33,12 @@ import type { Transaction, User as UserType } from '@/lib/types';
 
 
 export function Header() {
-  const { searchQuery, setSearchQuery, feedView, setFeedView, currentUser, toggleGps, logout, searchHistory, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout } = useCorabo();
+  const { searchQuery, setSearchQuery, feedView, setFeedView, currentUser, toggleGps, logout, searchHistory, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, users, transactions } = useCorabo();
   const router = useRouter();
 
   const [isCheckoutAlertOpen, setIsCheckoutAlertOpen] = useState(false);
   const [includeDelivery, setIncludeDelivery] = useState(false);
   const [useCredicora, setUseCredicora] = useState(false);
-  
-  // These states are now local to the component, not from context
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [users, setUsers] = useState<UserType[]>([]);
-
-
-  useEffect(() => {
-    if (!currentUser) return;
-    const db = getFirestoreDb();
-    
-    const txQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
-    const usersQuery = query(collection(db, "users"));
-
-    const unsubTransactions = onSnapshot(txQuery, (snapshot) => {
-        setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
-    });
-    
-    const unsubUsers = onSnapshot(usersQuery, (snapshot) => {
-        setUsers(snapshot.docs.map(doc => doc.data() as UserType));
-    });
-
-    return () => {
-        unsubTransactions();
-        unsubUsers();
-    };
-  }, [currentUser]);
 
 
   if (!currentUser) {
@@ -81,11 +55,11 @@ export function Header() {
   }
 
   const totalCartItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const cartTransaction = cart.length > 0 ? transactions.find(tx => tx.clientId === currentUser?.id && tx.status === 'Carrito Activo') : undefined;
+  const cartTransaction = cart.length > 0 ? transactions.find(tx => tx.clientId === currentUser?.id && tx.providerId === cart[0].product.providerId && tx.status === 'Carrito Activo') : undefined;
 
   const handleCheckout = () => {
     if (cartTransaction) {
-        checkout(cartTransaction, includeDelivery, useCredicora);
+        checkout(cartTransaction.id, includeDelivery, useCredicora);
         setIsCheckoutAlertOpen(false);
         setUseCredicora(false);
     }
@@ -177,7 +151,7 @@ export function Header() {
                     </AlertDialogHeader>
                     <div className="py-4 space-y-4">
                         {(() => {
-                            const provider = users.find(u => u.id === cartTransaction?.providerId);
+                            const provider = users.find(u => u.id === cart[0]?.product.providerId);
                             const isOnlyDelivery = provider?.profileSetupData?.isOnlyDelivery || false;
                             const providerAcceptsCredicora = provider?.profileSetupData?.acceptsCredicora || false;
 

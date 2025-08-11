@@ -13,7 +13,7 @@ import { credicoraLevels } from '@/lib/types';
 import { getAuth, signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, GoogleAuthProvider, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getFirebaseApp, getFirestoreDb } from '@/lib/firebase';
 import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, enableIndexedDbPersistence, arrayUnion, getDocs, deleteDoc, collectionGroup, Unsubscribe, orderBy } from 'firebase/firestore';
-import { createCampaign } from '@/ai/flows/campaign-flow';
+import { createCampaign as createCampaignFlow, type CreateCampaignInput } from '@/ai/flows/campaign-flow';
 import { acceptProposal as acceptProposalFlow, sendMessage as sendMessageFlow } from '@/ai/flows/message-flow';
 import * as TransactionFlows from '@/ai/flows/transaction-flow';
 import * as NotificationFlows from '@/ai/flows/notification-flow';
@@ -40,6 +40,8 @@ interface UserMetrics {
 
 interface CoraboState {
   currentUser: User | null;
+  users: User[];
+  transactions: Transaction[];
   cart: CartItem[];
   searchQuery: string;
   contacts: User[];
@@ -95,7 +97,7 @@ interface CoraboState {
   removeCommentFromImage: (ownerId: string, imageId: string, commentIndex: number) => void;
   getCartItemQuantity: (productId: string) => number;
   activatePromotion: (details: { imageId: string, promotionText: string, cost: number }) => void;
-  createCampaign: typeof createCampaign;
+  createCampaign: (data: CreateCampaignInput) => Promise<void>;
   createPublication: (data: CreatePublicationInput) => Promise<void>;
   createProduct: (data: CreateProductInput) => Promise<void>;
   setDeliveryAddress: (address: string) => void;
@@ -118,6 +120,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -225,9 +230,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         
         if (firebaseUser) {
             const userData = await handleUserCreation(firebaseUser);
-            // No need to set user here, the listener below will do it.
 
             const db = getFirestoreDb();
+            
+            // Listener for the current user's document
             const userListener = onSnapshot(doc(db, 'users', userData.id), (doc) => {
                 if (doc.exists()) {
                     const updatedUserData = doc.data() as User;
@@ -242,9 +248,26 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
                 }
                  setIsLoadingAuth(false);
             });
-             listeners.current.set('currentUser', userListener);
+            listeners.current.set('currentUser', userListener);
+
+            // Listener for all users
+            const usersListener = onSnapshot(collection(db, 'users'), (snapshot) => {
+                const allUsers = snapshot.docs.map(doc => doc.data() as User);
+                setUsers(allUsers);
+            });
+            listeners.current.set('allUsers', usersListener);
+
+            // Listener for transactions involving the current user
+            const transactionsListener = onSnapshot(query(collection(db, 'transactions'), where('participantIds', 'array-contains', userData.id)), (snapshot) => {
+                const userTransactions = snapshot.docs.map(doc => doc.data() as Transaction);
+                setTransactions(userTransactions);
+            });
+            listeners.current.set('transactions', transactionsListener);
+
         } else {
             setCurrentUser(null);
+            setUsers([]);
+            setTransactions([]);
             userCache.current.clear();
             setIsLoadingAuth(false);
         }
@@ -254,7 +277,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         unsubscribeAuth();
         cleanup();
     };
-}, [handleUserCreation, auth]);
+  }, [handleUserCreation, auth]);
 
 
   const signInWithGoogle = async () => {
@@ -304,8 +327,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         return;
     }
     
-    // In a real app, you would fetch provider data here. We simulate for now.
-    const isProviderTransactionReady = true; 
+    const provider = users.find(u => u.id === product.providerId);
+    const isProviderTransactionReady = provider?.isTransactionsActive; 
 
     if (!isProviderTransactionReady) {
         toast({
@@ -375,7 +398,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const isContact = (userId: string) => {
-    return contacts.some(c => c.id !== userId);
+    return contacts.some(c => c.id === userId);
   };
   
   const updateUser = async (userId: string, updates: Partial<User>) => {
@@ -544,12 +567,19 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return await autoVerifyIdWithAIFlow(input);
   };
 
+  const createCampaign = (data: CreateCampaignInput) => {
+    if (!currentUser) return Promise.reject("User not authenticated");
+    return createCampaignFlow({ ...data, userId: currentUser.id });
+  };
+
   const createPublication = (data: CreatePublicationInput) => {
-    return createPublicationFlow(data);
+    if (!currentUser) return Promise.reject("User not authenticated");
+    return createPublicationFlow({ ...data, userId: currentUser.id });
   };
   
   const createProduct = (data: CreateProductInput) => {
-      return createProductFlow(data);
+    if (!currentUser) return Promise.reject("User not authenticated");
+      return createProductFlow({ ...data, userId: currentUser.id });
   };
 
   const checkout = (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {};
@@ -715,7 +745,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const effectiveness =
       (completedTransactions.length / transactions.filter((tx) => tx.providerId === userId).length) * 100;
     
-    const lastTransaction = completedTransactions[completedTransactions.length - 1];
+    const lastTransaction = completedTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
     if (!lastTransaction) return { reputation, effectiveness, responseTime: 'Nuevo' };
     
     const requestDate = new Date(lastTransaction.date);
@@ -732,6 +762,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const value: CoraboState = {
     currentUser,
+    users,
+    transactions,
     cart,
     searchQuery,
     contacts,
