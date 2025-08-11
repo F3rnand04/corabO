@@ -421,7 +421,27 @@ export default function ProfilePage() {
               </div>
             </div>
             
-            <div className="flex justify-end gap-2 py-4">
+             <div className="flex justify-around text-center text-xs text-muted-foreground pt-4 pb-2">
+                <div>
+                    <p className="font-semibold text-lg text-foreground">{gallery?.length || 0}</p>
+                    <p>Publicaciones</p>
+                </div>
+                {isProvider ? (
+                    isProductProvider ? (
+                        <div>
+                            <p className="font-semibold text-lg text-foreground">{products?.length || 0}</p>
+                            <p>Catálogo</p>
+                        </div>
+                    ) : (
+                        <div>
+                            <p className="font-semibold text-lg text-foreground">{transactions.filter(t => t.providerId === currentUser.id && (t.status === 'Pagado' || t.status === 'Resuelto')).length}</p>
+                            <p>Trab. Realizados</p>
+                        </div>
+                    )
+                ) : null}
+            </div>
+
+            <div className="flex justify-end gap-2 pb-2">
               {isProvider && (
                 <Button 
                   variant="outline" 
