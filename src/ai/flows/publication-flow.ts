@@ -22,32 +22,11 @@ export const createPublication = ai.defineFlow(
     inputSchema: CreatePublicationInputSchema,
     outputSchema: z.void(),
   },
-  async ({ userId, description, imageDataUri, aspectRatio, type }) => {
+  async ({ userId, description, imageDataUri, aspectRatio, type, owner }) => {
     const db = getFirestoreDb();
     const batch = writeBatch(db);
 
-    const userRef = doc(db, 'users', userId);
-    const userSnap = await getDoc(userRef);
-    if (!userSnap.exists()) {
-      throw new Error('User not found. Cannot create publication for a non-existent user.');
-    }
-    const user = userSnap.data() as User;
-
     const publicationId = `pub-${Date.now()}`;
-
-    const ownerData: PublicationOwner = {
-        id: user.id,
-        name: user.profileSetupData?.useUsername ? (user.profileSetupData.username ?? user.name) : user.name,
-        profileImage: user.profileImage ?? '',
-        verified: user.verified ?? false,
-        isGpsActive: user.isGpsActive ?? false,
-        reputation: user.reputation ?? 0,
-        profileSetupData: {
-            specialty: user.profileSetupData?.specialty ?? '',
-            providerType: user.profileSetupData?.providerType ?? 'professional',
-            username: user.profileSetupData?.username ?? user.name.replace(/\s+/g, '').toLowerCase(),
-        },
-    };
 
     // Create the denormalized public publication for the feed
     const publicPublication: GalleryImage = {
@@ -61,7 +40,7 @@ export const createPublication = ai.defineFlow(
       comments: [],
       aspectRatio,
       likes: 0,
-      owner: ownerData,
+      owner: owner, // Use the owner data passed from the client
     };
     
     const publicationRef = doc(db, 'publications', publicationId);

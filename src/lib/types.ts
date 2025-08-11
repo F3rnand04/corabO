@@ -378,6 +378,7 @@ export const CreatePublicationInputSchema = z.object({
   imageDataUri: z.string(),
   aspectRatio: z.enum(['square', 'horizontal', 'vertical']),
   type: z.enum(['image', 'video', 'product']),
+  owner: z.any(), // Sending the denormalized owner data from client
 });
 export type CreatePublicationInput = z.infer<typeof CreatePublicationInputSchema>;
 

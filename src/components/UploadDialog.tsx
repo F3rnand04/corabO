@@ -20,7 +20,7 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import { useToast } from '@/hooks/use-toast';
 import { UploadCloud, X, Image as ImageIcon, Video, PackagePlus, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import type { CreatePublicationInput, CreateProductInput } from '@/lib/types';
+import type { CreatePublicationInput, CreateProductInput, PublicationOwner } from '@/lib/types';
 
 
 interface UploadDialogProps {
@@ -129,12 +129,28 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
     
     setIsSubmitting(true);
     try {
-        const publicationData: CreatePublicationInput = {
+        // Construct the owner object from the currentUser
+        const ownerData: PublicationOwner = {
+            id: currentUser.id,
+            name: currentUser.profileSetupData?.useUsername ? (currentUser.profileSetupData.username ?? currentUser.name) : currentUser.name,
+            profileImage: currentUser.profileImage ?? '',
+            verified: currentUser.verified ?? false,
+            isGpsActive: currentUser.isGpsActive ?? false,
+            reputation: currentUser.reputation ?? 0,
+            profileSetupData: {
+                specialty: currentUser.profileSetupData?.specialty ?? '',
+                providerType: currentUser.profileSetupData?.providerType ?? 'professional',
+                username: currentUser.profileSetupData?.username ?? currentUser.name.replace(/\s+/g, '').toLowerCase(),
+            },
+        };
+
+        const publicationData = {
             userId: currentUser.id,
             description: galleryDescription,
             imageDataUri: galleryImagePreview,
             aspectRatio: galleryAspectRatio,
             type: isVideofile ? 'video' : 'image',
+            owner: ownerData,
         };
         await createPublication(publicationData);
         toast({ title: "¡Publicación Exitosa!", description: "Tu nuevo contenido ya está en tu galería." });
