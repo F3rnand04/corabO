@@ -32,7 +32,7 @@ import { getProfileGallery, getProfileProducts } from '@/ai/flows/profile-flow';
 
 export default function ProfilePage() {
   const { toast } = useToast();
-  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, getAgendaEvents, getUserMetrics, transactions, createPublication } = useCorabo();
+  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, getAgendaEvents, getUserMetrics, transactions, createPublication, getProfileGallery: getGalleryFromContext, getProfileProducts: getProductsFromContext } = useCorabo();
   
   const [gallery, setGallery] = useState<GalleryImage[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -59,7 +59,7 @@ export default function ProfilePage() {
     }
 
     try {
-        const { gallery: newGallery, lastVisibleDocId } = await getProfileGallery({ userId: currentUser.id, limitNum: 9, startAfterDocId });
+        const { gallery: newGallery, lastVisibleDocId } = await getGalleryFromContext({ userId: currentUser.id, limitNum: 9, startAfterDocId });
         setGallery(prev => isInitial ? newGallery : [...prev, ...newGallery]);
         setGalleryLastVisible(lastVisibleDocId);
         if (!lastVisibleDocId || newGallery.length < 9) setHasMoreGallery(false);
@@ -69,7 +69,7 @@ export default function ProfilePage() {
         if(isInitial) setIsLoading(false);
         setIsFetchingMoreGallery(false);
     }
-  }, [currentUser?.id, isFetchingMoreGallery]);
+  }, [currentUser?.id, isFetchingMoreGallery, getGalleryFromContext]);
 
   const loadProducts = useCallback(async (startAfterDocId?: string, isInitial = false) => {
     if (!currentUser?.id || (isFetchingMoreProducts && !isInitial)) return;
@@ -82,7 +82,7 @@ export default function ProfilePage() {
     }
 
     try {
-        const { products: newProducts, lastVisibleDocId } = await getProfileProducts({ userId: currentUser.id, limitNum: 10, startAfterDocId });
+        const { products: newProducts, lastVisibleDocId } = await getProductsFromContext({ userId: currentUser.id, limitNum: 10, startAfterDocId });
         setProducts(prev => isInitial ? newProducts : [...prev, ...newProducts]);
         setProductsLastVisible(lastVisibleDocId);
         if (!lastVisibleDocId || newProducts.length < 10) setHasMoreProducts(false);
@@ -92,7 +92,7 @@ export default function ProfilePage() {
         if(isInitial) setIsLoading(false);
         setIsFetchingMoreProducts(false);
     }
-  }, [currentUser?.id, isFetchingMoreProducts]);
+  }, [currentUser?.id, isFetchingMoreProducts, getProductsFromContext]);
 
   useEffect(() => {
     if (currentUser?.id) {
