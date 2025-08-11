@@ -38,7 +38,6 @@ export function Footer() {
   };
 
   const CentralButtonIcon = isProfilePage ? Upload : Search;
-  const RightButtonIcon = isProfilePage ? Settings : Avatar;
 
   return (
     <>
@@ -70,8 +69,8 @@ export function Footer() {
                 </Button>
             </Link>
 
-            <Link href={isProfilePage ? "/profile-setup" : "/profile"} passHref>
-                <Button variant="ghost" className={cn("flex-col h-auto p-1 text-muted-foreground hover:text-primary")}>
+            <Link href={isProfilePage ? "/profile-setup" : "/contacts"} passHref>
+                <Button variant="ghost" className={cn("flex-col h-auto p-1 text-muted-foreground hover:text-primary", pathname.startsWith('/contacts') && "text-primary")}>
                     {isProfilePage ? (
                         <Settings className="w-6 h-6" />
                     ) : (
