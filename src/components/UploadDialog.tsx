@@ -20,7 +20,6 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import { useToast } from '@/hooks/use-toast';
 import { UploadCloud, X, Image as ImageIcon, Video, PackagePlus, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { createPublication, createProduct } from '@/ai/flows/publication-flow';
 
 
 interface UploadDialogProps {
@@ -29,7 +28,7 @@ interface UploadDialogProps {
 }
 
 export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
-  const { currentUser } = useCorabo();
+  const { currentUser, createPublication, createProduct } = useCorabo();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 

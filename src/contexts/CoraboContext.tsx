@@ -21,7 +21,7 @@ import { autoVerifyIdWithAI as autoVerifyIdWithAIFlow, type VerificationInput } 
 import { getExchangeRate } from '@/ai/flows/exchange-rate-flow';
 import { sendSmsVerificationCodeFlow, verifySmsCodeFlow } from '@/ai/flows/sms-flow';
 import { getFeed as getFeedFlow } from '@/ai/flows/feed-flow';
-import { createProduct as createProductFlow, createPublication as createPublicationFlow } from '@/ai/flows/publication-flow';
+import { createProduct as createProductFlow, createPublication as createPublicationFlow, type CreatePublicationInput, type CreateProductInput } from '@/ai/flows/publication-flow';
 
 
 type FeedView = 'servicios' | 'empresas';
@@ -96,8 +96,8 @@ interface CoraboState {
   getCartItemQuantity: (productId: string) => number;
   activatePromotion: (details: { imageId: string, promotionText: string, cost: number }) => void;
   createCampaign: typeof createCampaign;
-  createPublication: typeof createPublicationFlow;
-  createProduct: typeof createProductFlow;
+  createPublication: (data: CreatePublicationInput) => Promise<void>;
+  createProduct: (data: CreateProductInput) => Promise<void>;
   setDeliveryAddress: (address: string) => void;
   markConversationAsRead: (conversationId: string) => void;
   toggleUserPause: (userId: string, currentIsPaused: boolean) => void;
@@ -577,6 +577,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return await autoVerifyIdWithAIFlow(input);
   };
 
+  const createPublication = (data: CreatePublicationInput) => {
+    return createPublicationFlow(data);
+  };
+  
+  const createProduct = (data: CreateProductInput) => {
+      return createProductFlow(data);
+  };
+
 
   const requestService = (service: Service) => {};
   const requestQuoteFromGroup = (serviceName: string, items: string[], groupOrProvider: string): boolean => { return true; };
@@ -782,8 +790,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     getCartItemQuantity,
     activatePromotion,
     createCampaign,
-    createPublication: createPublicationFlow,
-    createProduct: createProductFlow,
+    createPublication,
+    createProduct,
     toggleUserPause,
     verifyCampaignPayment,
     verifyUserId,
