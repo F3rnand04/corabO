@@ -1,11 +1,66 @@
-rules_version = '2';
 
+rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Regla temporal para depuración: Permite el acceso público a toda la base de datos.
-    // Esto es inseguro para producción y debe ser revertido.
-    match /{document=**} {
-      allow read, write: if true;
+  
+    // Función para verificar si un usuario es participante de una transacción o conversación
+    function isParticipant(resourceId) {
+      return request.auth.uid in get(/databases/$(database)/documents/$(resourceId)/$(request.resource.data.id)).data.participantIds;
+    }
+
+    // Reglas para la colección 'users'
+    match /users/{userId} {
+      // Un usuario solo puede leer y escribir en su propio documento
+      allow read, write: if request.auth.uid == userId;
+
+      // Un usuario puede leer la galería de otro, pero solo el dueño puede escribir en ella
+      match /gallery/{publicationId} {
+        allow read;
+        allow write: if request.auth.uid == userId;
+      }
+    }
+    
+    // Reglas para la colección pública 'publications'
+    match /publications/{publicationId} {
+        allow read;
+        // Solo se puede crear si el usuario está autenticado y es el dueño
+        allow create: if request.auth.uid == request.resource.data.providerId;
+        // Solo el dueño puede actualizar o eliminar
+        allow update, delete: if request.auth.uid == resource.data.providerId;
+    }
+    
+    // Reglas para la colección pública 'products'
+    match /products/{productId} {
+        allow read;
+        allow create: if request.auth.uid == request.resource.data.providerId;
+        allow update, delete: if request.auth.uid == resource.data.providerId;
+    }
+    
+    // Reglas para la colección pública 'campaigns'
+    match /campaigns/{campaignId} {
+        allow read;
+        allow create: if request.auth.uid == request.resource.data.providerId;
+        allow update, delete: if request.auth.uid == resource.data.providerId;
+    }
+
+    // Reglas para la colección 'transactions'
+    match /transactions/{transactionId} {
+      // Solo los participantes de la transacción pueden leer o escribir
+      allow read, write: if request.auth.uid in resource.data.participantIds;
+    }
+
+    // Reglas para la colección 'conversations'
+    match /conversations/{conversationId} {
+      // Solo los participantes de la conversación pueden leer o escribir
+      allow read, write: if request.auth.uid in resource.data.participantIds;
+    }
+    
+    // Reglas para la colección 'notifications'
+    match /notifications/{notificationId} {
+        // Un usuario solo puede leer y crear sus propias notificaciones
+        allow read, create: if request.auth.uid == request.resource.data.userId;
+        // Nadie puede actualizar o eliminar notificaciones directamente
+        allow update, delete: if false;
     }
   }
 }

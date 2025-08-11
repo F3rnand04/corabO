@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import Image from "next/image";
@@ -79,11 +80,11 @@ export function ProductGridCard({ product, onDoubleClick }: ProductGridCardProps
                     ) : (
                         <div className="flex items-center gap-1 bg-background text-foreground rounded-full h-8 shadow-md">
                             <Button variant="ghost" size="icon" className="h-full w-8 rounded-full" onClick={() => handleUpdateQuantity(quantityInCart - 1)}>
-                                <Minus className="h-4 w-4" />
+                                <Minus className="h-4 h-4" />
                             </Button>
                             <span className="text-sm font-bold w-4 text-center">{quantityInCart}</span>
                              <Button variant="ghost" size="icon" className="h-full w-8 rounded-full" onClick={() => handleUpdateQuantity(quantityInCart + 1)}>
-                                <Plus className="h-4 w-4" />
+                                <Plus className="h-4 h-4" />
                             </Button>
                         </div>
                     )}
