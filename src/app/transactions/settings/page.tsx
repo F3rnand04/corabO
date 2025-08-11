@@ -91,7 +91,7 @@ function PaymentMethodCard({
 }
 
 export default function TransactionsSettingsPage() {
-    const { currentUser, deactivateTransactions, updateUser, validateEmail, sendPhoneVerification, verifyPhoneCode } = useCorabo();
+    const { currentUser, deactivateTransactions, updateUser, validateEmail, sendPhoneVerification, verifyPhoneCode, sendMessage } = useCorabo();
     const { toast } = useToast();
     const router = useRouter();
 
@@ -117,8 +117,7 @@ export default function TransactionsSettingsPage() {
     }
 
     if (!currentUser.isTransactionsActive) {
-      // This will redirect to the activation flow if the user is not yet active.
-      router.replace('/transactions/activate');
+      router.replace('/profile');
       return null;
     }
     
@@ -134,17 +133,27 @@ export default function TransactionsSettingsPage() {
     };
     
     const handleSaveChanges = () => {
-        // Here you would call a function from your context to save the changes
         const updatedProfileData = {
             ...currentUser.profileSetupData,
             paymentDetails: {
                 ...currentUser.profileSetupData?.paymentDetails,
                 ...paymentDetails,
+                // Ensure the crypto email is always the user's main email
+                crypto: {
+                    ...paymentDetails.crypto,
+                    binanceEmail: currentUser.email,
+                }
             }
         };
         updateUser(currentUser.id, { profileSetupData: updatedProfileData });
         toast({ title: "Cambios Guardados", description: "Tus métodos de pago han sido actualizados." });
     }
+
+    const handleContactSupportForEmailChange = () => {
+        const supportMessage = "Hola, necesito ayuda para cambiar el correo electrónico asociado a mi Binance Pay ID.";
+        const conversationId = sendMessage('corabo-admin', supportMessage);
+        router.push(`/messages/${conversationId}`);
+    };
 
     return (
         <>
@@ -226,22 +235,21 @@ export default function TransactionsSettingsPage() {
                             />
                         </PaymentMethodCard>
 
-                         <div className="border p-4 rounded-lg space-y-3">
-                            <div className="flex items-center justify-between">
-                                <h4 className="font-semibold flex items-center gap-2"><KeyRound className="w-5 h-5"/>Binance (Pay ID)</h4>
-                                <Switch checked={paymentDetails.crypto.active} onCheckedChange={(checked) => handleToggle('crypto', checked)} />
-                            </div>
-                            <div className="space-y-4 pt-4 border-t">
-                                <div className="space-y-1">
-                                    <Label>Correo / Pay ID</Label>
-                                    <Input 
-                                      value={paymentDetails.crypto.binanceEmail} 
-                                      onChange={(e) => handleValueChange('crypto', 'binanceEmail', e.target.value)} 
-                                      disabled={!paymentDetails.crypto.active}
-                                    />
+                         <PaymentMethodCard
+                            icon={KeyRound}
+                            title="Binance (Pay ID)"
+                            isActive={paymentDetails.crypto.active}
+                            onToggle={(checked) => handleToggle('crypto', checked)}
+                        >
+                             <div className="space-y-1">
+                                <Label>Correo Asociado</Label>
+                                <div className="text-sm p-2 bg-muted rounded-md flex justify-between items-center">
+                                    <span className="font-mono">{currentUser.email}</span>
+                                    <Button variant="link" size="sm" className="p-0 h-auto" onClick={handleContactSupportForEmailChange}>Cambiar</Button>
                                 </div>
-                            </div>
-                        </div>
+                                <p className="text-xs text-muted-foreground">Por seguridad, tu Pay ID está vinculado a tu correo de registro.</p>
+                             </div>
+                        </PaymentMethodCard>
 
                         <Button className="w-full" onClick={handleSaveChanges}>
                             <ShieldCheck className="mr-2 h-4 w-4"/> Guardar Cambios
