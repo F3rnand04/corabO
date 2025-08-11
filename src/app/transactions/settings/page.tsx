@@ -13,6 +13,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ValidationItem } from '@/components/ValidationItem';
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,6 +28,25 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import Link from 'next/link';
+
+const venezuelanBanks = [
+    "Banco de Venezuela",
+    "Banesco",
+    "Banco Mercantil",
+    "Banco Provincial",
+    "BOD",
+    "BNC",
+    "Banco del Tesoro",
+    "Bicentenario Banco Universal",
+    "Banplus",
+    "Bancaribe",
+    "Banco Sofitasa",
+    "Banco Plaza",
+    "100% Banco",
+    "Mi Banco",
+    "Bancrecer",
+    "Otros"
+];
 
 function SettingsHeader() {
     const router = useRouter();
@@ -63,26 +85,26 @@ function PaymentMethodCard({
                 <h4 className="font-semibold flex items-center gap-2"><Icon className="w-5 h-5"/>{title}</h4>
                 <Switch checked={isActive} onCheckedChange={onToggle} />
             </div>
-            {isActive && <div className="space-y-2 pt-2 border-t">{children}</div>}
+            {isActive && <div className="space-y-4 pt-4 border-t">{children}</div>}
         </div>
     )
 }
 
 export default function TransactionsSettingsPage() {
-    const { currentUser, deactivateTransactions } = useCorabo();
+    const { currentUser, deactivateTransactions, updateUser, validateEmail, sendPhoneVerification, verifyPhoneCode } = useCorabo();
     const { toast } = useToast();
     const router = useRouter();
 
     const [paymentDetails, setPaymentDetails] = useState({
         account: {
             active: currentUser?.profileSetupData?.paymentDetails?.account?.active ?? true,
-            bankName: currentUser?.profileSetupData?.paymentDetails?.account?.bankName ?? 'Banco de Venezuela',
-            accountNumber: currentUser?.profileSetupData?.paymentDetails?.account?.accountNumber ?? '01020544160000005424'
+            bankName: currentUser?.profileSetupData?.paymentDetails?.account?.bankName ?? '',
+            accountNumber: currentUser?.profileSetupData?.paymentDetails?.account?.accountNumber ?? ''
         },
         mobile: {
             active: currentUser?.profileSetupData?.paymentDetails?.mobile?.active ?? true,
-            bankName: currentUser?.profileSetupData?.paymentDetails?.mobile?.bankName ?? 'Banco de Venezuela',
-            mobilePaymentPhone: currentUser?.profileSetupData?.paymentDetails?.mobile?.mobilePaymentPhone ?? '04128978405'
+            bankName: currentUser?.profileSetupData?.paymentDetails?.mobile?.bankName ?? '',
+            mobilePaymentPhone: currentUser?.profileSetupData?.paymentDetails?.mobile?.mobilePaymentPhone ?? currentUser?.phone ?? ''
         },
         crypto: {
             active: currentUser?.profileSetupData?.paymentDetails?.crypto?.active ?? false,
@@ -91,12 +113,10 @@ export default function TransactionsSettingsPage() {
     });
 
     if (!currentUser) {
-        // AppLayout should handle redirection, but this is a safeguard
         return null;
     }
 
     if (!currentUser.isTransactionsActive) {
-        // If the module is not active, redirect to the activation flow
         router.replace('/transactions/activate');
         return null;
     }
@@ -114,7 +134,14 @@ export default function TransactionsSettingsPage() {
     
     const handleSaveChanges = () => {
         // Here you would call a function from your context to save the changes
-        // For now, we just show a toast
+        const updatedProfileData = {
+            ...currentUser.profileSetupData,
+            paymentDetails: {
+                ...currentUser.profileSetupData?.paymentDetails,
+                ...paymentDetails,
+            }
+        };
+        updateUser(currentUser.id, { profileSetupData: updatedProfileData });
         toast({ title: "Cambios Guardados", description: "Tus métodos de pago han sido actualizados." });
     }
 
@@ -140,9 +167,21 @@ export default function TransactionsSettingsPage() {
                                 <Label>Titular</Label>
                                 <Input value={`${currentUser.name} ${currentUser.lastName || ''}`} disabled />
                             </div>
-                            <div className="space-y-1">
+                            <div className="space-y-2">
                                 <Label>Banco</Label>
-                                <Input value={paymentDetails.account.bankName} onChange={(e) => handleValueChange('account', 'bankName', e.target.value)} />
+                                <Select
+                                  value={paymentDetails.account.bankName}
+                                  onValueChange={(value) => handleValueChange('account', 'bankName', value)}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecciona un banco" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {venezuelanBanks.map(bank => (
+                                      <SelectItem key={bank} value={bank}>{bank}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
                             </div>
                             <div className="space-y-1">
                                 <Label>Número de Cuenta</Label>
@@ -160,14 +199,30 @@ export default function TransactionsSettingsPage() {
                                 <Label>Cédula</Label>
                                 <Input value={currentUser.idNumber} disabled />
                             </div>
-                            <div className="space-y-1">
-                                <Label>Teléfono</Label>
-                                <Input value={paymentDetails.mobile.mobilePaymentPhone} onChange={(e) => handleValueChange('mobile', 'mobilePaymentPhone', e.target.value)} />
-                            </div>
-                             <div className="space-y-1">
+                            <div className="space-y-2">
                                 <Label>Banco</Label>
-                                <Input value={paymentDetails.mobile.bankName} onChange={(e) => handleValueChange('mobile', 'bankName', e.target.value)} />
+                                <Select
+                                  value={paymentDetails.mobile.bankName}
+                                  onValueChange={(value) => handleValueChange('mobile', 'bankName', value)}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Selecciona un banco" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {venezuelanBanks.map(bank => (
+                                      <SelectItem key={bank} value={bank}>{bank}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
                             </div>
+                             <ValidationItem
+                                label="Teléfono:"
+                                value={currentUser.phone}
+                                initialStatus={currentUser.phoneValidated ? 'validated' : 'idle'}
+                                onValidate={() => sendPhoneVerification(currentUser.id, currentUser.phone)}
+                                onValueChange={(value) => updateUser(currentUser.id, { phone: value })}
+                                type="phone"
+                            />
                         </PaymentMethodCard>
 
                          <PaymentMethodCard

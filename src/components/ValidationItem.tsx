@@ -6,8 +6,9 @@ import { useState } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, Loader2 } from 'lucide-react';
 import { useCorabo } from '@/contexts/CoraboContext';
+import { cn } from '@/lib/utils';
 
 type ValidationStatus = 'idle' | 'pending' | 'validated';
 
@@ -30,6 +31,7 @@ export function ValidationItem({
 }: ValidationItemProps) {
     const { currentUser, sendPhoneVerification, verifyPhoneCode } = useCorabo();
     const [status, setStatus] = useState<ValidationStatus>(initialStatus);
+    const [isLoading, setIsLoading] = useState(false);
     const [inputCode, setInputCode] = useState('');
     const [currentValue, setCurrentValue] = useState(initialValue);
     const { toast } = useToast();
@@ -40,28 +42,34 @@ export function ValidationItem({
             return;
         }
 
-        if (type === 'phone' && currentUser) {
-            await sendPhoneVerification(currentUser.id, currentValue);
-            setStatus('pending');
-        } else if (onValidate) {
-            await onValidate(currentValue); // For email
-            setStatus('pending');
+        setIsLoading(true);
+        try {
+            if (type === 'phone' && currentUser) {
+                await sendPhoneVerification(currentUser.id, currentValue);
+                setStatus('pending');
+            } else if (onValidate) {
+                await onValidate(currentValue); // For email
+                setStatus('pending');
+            }
+        } finally {
+            setIsLoading(false);
         }
     };
     
     const handleVerifyCode = async () => {
-        if (type === 'phone' && currentUser) {
-            const success = await verifyPhoneCode(currentUser.id, inputCode);
-            if(success) {
-                setStatus('validated');
-            }
-        } else {
-            // Logic for email, which might be different or handled by onValidate completely
-            // This part might need adjustment if email verification logic changes.
-            if(onValidate){
-                const success = await onValidate(inputCode); // This is a simplification
+        setIsLoading(true);
+        try {
+            if (type === 'phone' && currentUser) {
+                const success = await verifyPhoneCode(currentUser.id, inputCode);
+                if(success) {
+                    setStatus('validated');
+                }
+            } else if(onValidate){
+                const success = await onValidate(inputCode);
                 if(success) setStatus('validated');
             }
+        } finally {
+            setIsLoading(false);
         }
     };
     
@@ -92,13 +100,14 @@ export function ValidationItem({
                         }}
                     />
                 </div>
-                <Button variant="link" className="p-0 h-auto text-sm font-semibold" onClick={handleStartValidation}>
-                    Validar
+                <Button variant="link" className="p-0 h-auto text-sm font-semibold" onClick={handleStartValidation} disabled={isLoading}>
+                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Validar'}
                 </Button>
             </div>
          )
      }
 
+    // Pending status
     return (
         <div className="flex items-center justify-between mt-1 h-9">
             <div className="flex items-center gap-2">
@@ -115,8 +124,8 @@ export function ValidationItem({
                     value={inputCode}
                     onChange={(e) => setInputCode(e.target.value)}
                 />
-                <Button size="sm" className="h-8 text-xs" onClick={handleVerifyCode}>
-                    Verificar
+                <Button size="sm" className="h-8 text-xs" onClick={handleVerifyCode} disabled={isLoading}>
+                     {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Verificar'}
                 </Button>
             </div>
         </div>
