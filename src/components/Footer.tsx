@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import Link from 'next/link';
@@ -36,47 +37,8 @@ export function Footer() {
     }
   };
 
-  const getCentralButton = () => {
-      let Icon = Search;
-      if (isProfilePage) {
-          Icon = Upload;
-      }
-      return (
-        <Button
-            key="central-action"
-            onClick={handleCentralButtonClick}
-            size="icon"
-            className="relative -top-4 w-16 h-16 rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90"
-        >
-            <Icon className="w-8 h-8" />
-        </Button>
-      )
-  }
-
-  const getProfileOrSettingsButton = () => {
-    // Show settings gear ONLY when on the /profile page
-    if (isProfilePage) {
-      return (
-         <Link href="/profile-setup" passHref>
-            <Button variant="ghost" className={cn("flex-col h-auto p-1 text-muted-foreground hover:text-primary", pathname.startsWith('/profile-setup') && "text-primary")}>
-              <Settings className="w-6 h-6" />
-            </Button>
-        </Link>
-      );
-    }
-    
-    // Show avatar on all other pages
-    return (
-       <Link href="/profile" passHref>
-          <Button variant="ghost" className={cn("flex-col h-auto p-1 text-muted-foreground hover:text-primary")}>
-            <Avatar className={cn("w-7 h-7", isProfilePage && "ring-2 ring-primary")}>
-                <AvatarImage src={currentUser.profileImage} alt={currentUser.name} />
-                <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
-            </Avatar>
-          </Button>
-      </Link>
-    );
-  }
+  const CentralButtonIcon = isProfilePage ? Upload : Search;
+  const RightButtonIcon = isProfilePage ? Settings : Avatar;
 
   return (
     <>
@@ -93,7 +55,14 @@ export function Footer() {
                 </Button>
             </Link>
 
-            {getCentralButton()}
+            <Button
+                key="central-action"
+                onClick={handleCentralButtonClick}
+                size="icon"
+                className="relative -top-4 w-16 h-16 rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+                <CentralButtonIcon className="w-8 h-8" />
+            </Button>
             
             <Link href="/messages" passHref>
                 <Button variant="ghost" className={cn("flex-col h-auto p-1 text-muted-foreground hover:text-primary", pathname.startsWith('/messages') && "text-primary")}>
@@ -101,7 +70,19 @@ export function Footer() {
                 </Button>
             </Link>
 
-            {getProfileOrSettingsButton()}
+            <Link href={isProfilePage ? "/profile-setup" : "/profile"} passHref>
+                <Button variant="ghost" className={cn("flex-col h-auto p-1 text-muted-foreground hover:text-primary")}>
+                    {isProfilePage ? (
+                        <Settings className="w-6 h-6" />
+                    ) : (
+                        <Avatar className={cn("w-7 h-7")}>
+                            <AvatarImage src={currentUser.profileImage} alt={currentUser.name} />
+                            <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                    )}
+                </Button>
+            </Link>
+
         </div>
       </footer>
       <UploadDialog isOpen={isUploadOpen} onOpenChange={setIsUploadOpen} />
