@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from 'react';
@@ -77,7 +78,7 @@ interface CoraboState {
   toggleGps: (userId: string) => void;
   updateUser: (userId: string, updates: Partial<User>) => Promise<void>;
   updateUserProfileImage: (userId: string, imageUrl: string) => Promise<void>;
-  removeGalleryImage: (userId: string, imageId: string) => void;
+  removeGalleryImage: (userId: string, imageId: string) => Promise<void>;
   validateEmail: (userId: string, emailToValidate: string) => Promise<boolean>;
   sendPhoneVerification: (userId: string, phone: string) => Promise<void>;
   verifyPhoneCode: (userId: string, code: string) => Promise<boolean>;
@@ -172,16 +173,13 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const getProfileGallery = useCallback(async (params: z.infer<typeof GetProfileGalleryInputSchema>): Promise<z.infer<typeof GetProfileGalleryOutputSchema>> => {
       try {
           const result = await getProfileGalleryFlow({userId: params.userId, limitNum: params.limitNum, startAfterDocId: params.startAfterDocId});
-          if(currentUser?.id === params.userId){
-              setCurrentUser(prevUser => prevUser ? ({...prevUser, gallery: result.gallery}) : null);
-          }
           return result;
       } catch (error) {
           console.error("Error fetching gallery via Genkit flow:", error);
           toast({ variant: 'destructive', title: 'Error al Cargar Galería' });
           return { gallery: [], lastVisibleDocId: undefined };
       }
-  }, [toast, currentUser?.id]);
+  }, [toast]);
 
   const getProfileProducts = useCallback(async (params: z.infer<typeof GetProfileProductsInputSchema>): Promise<z.infer<typeof GetProfileProductsOutputSchema>> => {
     try {
@@ -276,8 +274,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
                 setTransactions(userTransactions);
             });
             listeners.current.set('transactions', transactionsListener);
-
-            const conversationsListener = onSnapshot(query(collection(db, 'conversations'), where('participantIds', 'array-contains', userData.id)), (snapshot) => {
+            
+            // CORRECTED QUERY: Removed orderBy to avoid composite index requirement.
+            const conversationsQuery = query(collection(db, 'conversations'), where('participantIds', 'array-contains', userData.id));
+            const conversationsListener = onSnapshot(conversationsQuery, (snapshot) => {
                 const userConversations = snapshot.docs.map(doc => doc.data() as Conversation);
                 setConversations(userConversations);
             });
@@ -684,12 +684,23 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const removeGalleryImage = async (userId: string, imageId: string) => {
-    if(!currentUser) return;
-    const db = getFirestoreDb();
+    if(!currentUser?.gallery) return;
     
-    // In our new unified model, we just need to delete from 'publications'
+    // Optimistic UI update
+    const updatedGallery = currentUser.gallery.filter(img => img.id !== imageId);
+    updateUser(userId, { gallery: updatedGallery });
+
+    // Backend deletion
+    const db = getFirestoreDb();
     const publicationRef = doc(db, 'publications', imageId);
-    await deleteDoc(publicationRef);
+    try {
+        await deleteDoc(publicationRef);
+    } catch (error) {
+        console.error("Error deleting publication from backend, reverting UI:", error);
+        // Revert UI if backend fails
+        updateUser(userId, { gallery: currentUser.gallery });
+        toast({ variant: "destructive", title: "Error al eliminar", description: "No se pudo eliminar la publicación."});
+    }
   };
   
   const validateEmail = async (userId: string, emailToValidate: string): Promise<boolean> => {

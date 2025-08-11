@@ -40,25 +40,29 @@ export default function MessagesPage() {
 
     useEffect(() => {
         if (currentUser) {
+            // El listener en el contexto se encarga de las actualizaciones.
+            // Solo necesitamos saber cuándo dejar de mostrar el esqueleto de carga.
             setIsLoading(false);
         }
-    }, [currentUser, conversations]);
+    }, [currentUser]);
 
 
     const isClientWithInactiveTransactions = currentUser?.type === 'client' && !currentUser?.isTransactionsActive;
     
-    // Sort conversations locally on each render
+    // Ordenar conversaciones localmente en cada render
     const sortedConversations = [...conversations].sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime());
 
     const filteredConversations = sortedConversations.filter(convo => {
         if (!currentUser) return false;
         
+        // La búsqueda por nombre de participante se hará en ConversationCard, aquí solo filtramos por texto
         const lowerCaseQuery = searchQuery.toLowerCase().trim();
         if (!lowerCaseQuery) return true;
         
         const lastMessageText = convo.messages[convo.messages.length - 1]?.text || '';
         const messageMatch = lastMessageText.toLowerCase().includes(lowerCaseQuery);
         
+        // En una futura implementación, también buscaríamos por el nombre del otro participante
         return messageMatch;
     });
     

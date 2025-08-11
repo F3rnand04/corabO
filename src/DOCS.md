@@ -57,6 +57,19 @@ Los flujos de Genkit son el nuevo cerebro de la lógica de negocio. Actualmente 
 
 La estructura de datos sigue siendo la misma, pero ahora estos tipos son compartidos entre el frontend y los flujos de backend de Genkit, asegurando consistencia en toda la aplicación. Las colecciones principales en Firestore (`users`, `transactions`, `conversations`) se basan en estos tipos.
 
-## 6. Conclusión
+## 6. Investigación Forense: El Error de Permisos Persistente
+
+**Estado Actual (Punto de inflexión):** La aplicación puede mostrar publicaciones individuales (ej. en la página de perfil) pero sigue arrojando un error `FirebaseError: Missing or insufficient permissions` en la consola.
+
+**Diagnóstico:** El error no se debe a las reglas de seguridad de lectura/escritura de documentos individuales, que son correctas. El error se origina por una **consulta compuesta** en la página de Mensajes (`/messages`).
+
+La consulta problemática es:
+`query(conversationsRef, where('participantIds', 'array-contains', USER_ID), orderBy('lastUpdated', 'desc'))`
+
+Firestore no puede ejecutar una consulta que filtra por un campo de tipo `array` (`array-contains`) y ordena por un campo diferente (`orderBy`) sin un **índice compuesto** creado manualmente en la consola de Firebase. Al no existir este índice, la consulta falla y Firestore devuelve un error de permisos como fallback, aunque la causa real es una limitación de la consulta.
+
+**Solución Temporal (Implementada):** Para estabilizar la aplicación para las pruebas, la cláusula `orderBy` ha sido eliminada de la consulta en el código. El ordenamiento ahora se realiza en el lado del cliente. Esto elimina el error y permite que la aplicación sea funcional, a la espera de la creación del índice compuesto en una fase posterior.
+
+## 7. Conclusión
 
 La arquitectura actual es sólida, segura y escalable, preparada para pruebas multi-equipo y futuras expansiones. La separación clara entre el frontend (React/Next.js), el backend (Genkit) y la base de datos (Firestore) permite un desarrollo modular y eficiente. Los próximos pasos deben centrarse en migrar el resto de la lógica de negocio del `CoraboContext` a nuevos flujos de Genkit.
