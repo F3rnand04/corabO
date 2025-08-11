@@ -10,8 +10,6 @@ import { useRouter } from 'next/navigation';
 import { ConversationCard } from '@/components/ConversationCard';
 import type { Conversation } from '@/lib/types';
 import { ActivationWarning } from '@/components/ActivationWarning';
-import { getFirestoreDb } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
 
@@ -36,50 +34,27 @@ function MessagesHeader() {
 
 
 export default function MessagesPage() {
-    const { currentUser } = useCorabo();
+    const { currentUser, conversations } = useCorabo();
     const [searchQuery, setSearchQuery] = useState('');
-    const [conversations, setConversations] = useState<Conversation[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    // This effect will run when the component mounts and currentUser is available.
     useEffect(() => {
-        if (!currentUser) {
+        // We now rely on the global context listener.
+        // This effect just manages the loading state based on context data.
+        if (currentUser) {
+            setIsLoading(conversations.length === 0);
+        } else {
             setIsLoading(false);
-            return;
         }
-
-        setIsLoading(true);
-        const db = getFirestoreDb();
-        
-        // CRITICAL FIX: The complex query `orderBy("lastUpdated", "desc")` is removed
-        // because it requires a composite index that cannot be created from here,
-        // which was causing the permission denied error.
-        const convosQuery = query(
-            collection(db, "conversations"), 
-            where("participantIds", "array-contains", currentUser.id)
-        );
-
-        const unsubscribe = onSnapshot(convosQuery, (snapshot) => {
-            const serverConversations = snapshot.docs.map(doc => doc.data() as Conversation);
-            
-            // The sorting is now handled on the client-side after fetching.
-            serverConversations.sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime());
-            
-            setConversations(serverConversations);
-            setIsLoading(false);
-        }, (error) => {
-            console.error("Error fetching conversations on page: ", error);
-            setIsLoading(false);
-        });
-
-        // Cleanup subscription on unmount
-        return () => unsubscribe();
-    }, [currentUser]);
+    }, [currentUser, conversations]);
 
 
     const isClientWithInactiveTransactions = currentUser?.type === 'client' && !currentUser?.isTransactionsActive;
+    
+    // Sort conversations locally on each render
+    const sortedConversations = [...conversations].sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime());
 
-    const filteredConversations = conversations.filter(convo => {
+    const filteredConversations = sortedConversations.filter(convo => {
         if (!currentUser) return false;
         
         // In a fully robust app, we would fetch user data here if not available.

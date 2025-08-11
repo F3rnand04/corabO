@@ -20,8 +20,6 @@ import { Separator } from '@/components/ui/separator';
 import { ProposalDialog } from '@/components/ProposalDialog';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { getFirestoreDb } from '@/lib/firebase';
-import { doc, onSnapshot } from 'firebase/firestore';
 
 
 function ChatHeader({ 
@@ -205,9 +203,8 @@ function MessageBubble({ msg, isCurrentUser, onAccept, canAcceptProposal }: { ms
 export default function ChatPage() {
   const params = useParams();
   const router = useRouter();
-  const { currentUser, sendMessage, acceptProposal, markConversationAsRead, fetchUser } = useCorabo();
+  const { currentUser, conversations, sendMessage, acceptProposal, markConversationAsRead, fetchUser } = useCorabo();
   
-  const [conversation, setConversation] = useState<Conversation | null>(null);
   const [otherParticipant, setOtherParticipant] = useState<User | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -217,35 +214,31 @@ export default function ChatPage() {
   
   const conversationId = params.id as string;
 
+  // Get the specific conversation from the global state
+  const conversation = conversations.find(c => c.id === conversationId);
+
   useEffect(() => {
-    if (!currentUser || !conversationId) return;
+    if (!currentUser || !conversation) {
+        setIsLoading(conversations.length === 0); // Still loading if no conversations yet
+        return;
+    };
 
-    const db = getFirestoreDb();
-    const convoRef = doc(db, 'conversations', conversationId);
-
-    // Subscribe to real-time updates for this specific conversation
-    const unsubscribe = onSnapshot(convoRef, async (docSnap) => {
-        if (docSnap.exists()) {
-            const convoData = docSnap.data() as Conversation;
-            setConversation(convoData);
-            
-            // If other participant is not loaded yet, fetch them
-            if (!otherParticipant) {
-                const otherId = convoData.participantIds.find(pId => pId !== currentUser.id);
-                if (otherId) {
-                    const participantData = await fetchUser(otherId);
-                    setOtherParticipant(participantData);
-                }
-            }
-            markConversationAsRead(conversationId);
+    const otherId = conversation.participantIds.find(pId => pId !== currentUser.id);
+    if (otherId) {
+        // Fetch user data if not already fetched
+        if (otherId !== otherParticipant?.id) {
+            fetchUser(otherId).then(participantData => {
+                setOtherParticipant(participantData);
+                setIsLoading(false);
+            });
         } else {
-            console.error("Conversation not found");
+             setIsLoading(false);
         }
-        setIsLoading(false);
-    });
+    }
+    
+    markConversationAsRead(conversationId);
 
-    return () => unsubscribe();
-  }, [conversationId, currentUser, otherParticipant, fetchUser, markConversationAsRead]);
+  }, [conversationId, currentUser, conversation, otherParticipant?.id, fetchUser, markConversationAsRead, conversations]);
 
   
   useEffect(() => {
@@ -259,7 +252,7 @@ export default function ChatPage() {
   }, [conversation?.messages]);
 
 
-  if (isLoading || !currentUser || !conversation || !otherParticipant) {
+  if (isLoading || !currentUser || !otherParticipant || !conversation) {
     return (
       <div className="flex flex-col h-screen items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin"/>

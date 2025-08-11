@@ -44,6 +44,7 @@ interface CoraboState {
   currentUser: User | null;
   users: User[];
   transactions: Transaction[];
+  conversations: Conversation[];
   cart: CartItem[];
   searchQuery: string;
   contacts: User[];
@@ -126,6 +127,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
 
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   
@@ -191,8 +193,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         toast({ variant: 'destructive', title: 'Error al Cargar Productos' });
         return { products: [], lastVisibleDocId: undefined };
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [toast]);
 
 
   const handleUserCreation = useCallback(async (firebaseUser: FirebaseUser): Promise<User> => {
@@ -290,10 +291,18 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             });
             listeners.current.set('transactions', transactionsListener);
 
+            // Listener for conversations involving the current user
+            const conversationsListener = onSnapshot(query(collection(db, 'conversations'), where('participantIds', 'array-contains', userData.id)), (snapshot) => {
+                const userConversations = snapshot.docs.map(doc => doc.data() as Conversation);
+                setConversations(userConversations);
+            });
+            listeners.current.set('conversations', conversationsListener);
+
         } else {
             setCurrentUser(null);
             setUsers([]);
             setTransactions([]);
+            setConversations([]);
             userCache.current.clear();
             setIsLoadingAuth(false);
         }
@@ -790,6 +799,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     currentUser,
     users,
     transactions,
+    conversations,
     cart,
     searchQuery,
     contacts,
