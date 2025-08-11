@@ -1,11 +1,13 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // REGLA DE DESARROLLO: Permite acceso público total para facilitar las pruebas.
-    // Esto elimina cualquier error de "permisos insuficientes" durante la refactorización.
-    // ¡IMPORTANTE! Se debe asegurar antes de pasar a producción.
+    // ATENCIÓN: Estas reglas son permisivas y solo para desarrollo.
+    // Permiten que cualquier usuario, autenticado o no, lea y escriba
+    // en cualquier parte de la base de datos.
+    // Es CRUCIAL implementar reglas de seguridad más estrictas
+    // antes de pasar a producción.
     match /{document=**} {
       allow read, write: if true;
     }
