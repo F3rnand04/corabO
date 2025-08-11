@@ -17,6 +17,7 @@ export const getFeed = ai.defineFlow(
     },
     async ({ limitNum = 5, startAfterDocId }) => {
         const db = getFirestoreDb();
+        // CORRECTED: Query the unified 'publications' collection instead of 'products'.
         const publicationsCollection = collection(db, "publications");
 
         // The orderBy clause is required for pagination cursors (startAfter) to work correctly.
@@ -27,6 +28,7 @@ export const getFeed = ai.defineFlow(
         ];
 
         if (startAfterDocId) {
+            // CORRECTED: The cursor document must also be from the 'publications' collection.
             const startAfterDocSnap = await getDoc(doc(db, "publications", startAfterDocId));
             if (startAfterDocSnap.exists()) {
                 q.push(startAfter(startAfterDocSnap));
