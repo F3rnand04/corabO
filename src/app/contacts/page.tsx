@@ -6,7 +6,7 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
-import { ChevronLeft, Copy, MessageSquare, X, CheckCircle } from 'lucide-react';
+import { ChevronLeft, Copy, MessageSquare, X, CheckCircle, Star } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ValidationItem } from '@/components/ValidationItem';
 import { SubscriptionDialog } from '@/components/SubscriptionDialog';
@@ -108,7 +108,22 @@ export default function ContactsPage() {
             </div>
         </div>
 
-        <ContactSupportCard />
+        {!currentUser.isSubscribed && (
+          <Card className="mt-8 bg-gradient-to-r from-primary/10 to-blue-500/10 border-primary/20">
+            <CardContent className="p-6 text-center">
+              <div className="mx-auto bg-primary/20 text-primary w-12 h-12 rounded-full flex items-center justify-center mb-4">
+                <Star className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold">Desbloquea tu Potencial</h3>
+              <p className="text-muted-foreground mt-2 mb-4">
+                Obtén tu insignia de verificado, llega a más clientes y accede a beneficios exclusivos.
+              </p>
+              <Button onClick={() => setIsSubscriptionDialogOpen(true)}>
+                Ver Planes de Suscripción
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Contacts List */}
         <h2 className="text-xl font-bold mb-4 px-2 mt-8">Mis Contactos Guardados</h2>
