@@ -32,7 +32,7 @@ import { getProfileGallery, getProfileProducts } from '@/ai/flows/profile-flow';
 
 export default function ProfilePage() {
   const { toast } = useToast();
-  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, getAgendaEvents, getUserMetrics, transactions, getProfileGallery: getGalleryContext, getProfileProducts: getProductsContext } = useCorabo();
+  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, getAgendaEvents, getUserMetrics, transactions } = useCorabo();
   
   const [gallery, setGallery] = useState<GalleryImage[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -48,51 +48,62 @@ export default function ProfilePage() {
   const [hasMoreProducts, setHasMoreProducts] = useState(true);
   const [isFetchingMoreProducts, setIsFetchingMoreProducts] = useState(false);
   
-  const loadGallery = useCallback(async (startAfterDocId?: string) => {
-    if (!currentUser?.id || isFetchingMoreGallery) return;
-    setIsFetchingMoreGallery(true);
+  const loadGallery = useCallback(async (startAfterDocId?: string, isInitial = false) => {
+    if (!currentUser?.id || (isFetchingMoreGallery && !isInitial)) return;
+    if (isInitial) {
+        setIsLoading(true);
+        setHasMoreGallery(true);
+    } else {
+        setIsFetchingMoreGallery(true);
+    }
+
     try {
-        const { gallery: newGallery, lastVisibleDocId } = await getGalleryContext({ userId: currentUser.id, startAfterDocId });
-        setGallery(prev => startAfterDocId ? [...prev, ...newGallery] : newGallery);
+        const { gallery: newGallery, lastVisibleDocId } = await getProfileGallery({ userId: currentUser.id, startAfterDocId });
+        setGallery(prev => isInitial ? newGallery : [...prev, ...newGallery]);
         setGalleryLastVisible(lastVisibleDocId);
         if (!lastVisibleDocId || newGallery.length < 9) setHasMoreGallery(false);
     } catch (error) {
         console.error("Error fetching gallery:", error);
     } finally {
+        if(isInitial) setIsLoading(false);
         setIsFetchingMoreGallery(false);
     }
-  }, [currentUser?.id, getGalleryContext, isFetchingMoreGallery]);
+  }, [currentUser?.id, isFetchingMoreGallery]);
 
-  const loadProducts = useCallback(async (startAfterDocId?: string) => {
-    if (!currentUser?.id || isFetchingMoreProducts) return;
-    setIsFetchingMoreProducts(true);
+  const loadProducts = useCallback(async (startAfterDocId?: string, isInitial = false) => {
+    if (!currentUser?.id || (isFetchingMoreProducts && !isInitial)) return;
+     if (isInitial) {
+        setIsLoading(true);
+        setHasMoreProducts(true);
+    } else {
+        setIsFetchingMoreProducts(true);
+    }
+
     try {
-        const { products: newProducts, lastVisibleDocId } = await getProductsContext({ userId: currentUser.id, startAfterDocId });
-        setProducts(prev => startAfterDocId ? [...prev, ...newProducts] : newProducts);
+        const { products: newProducts, lastVisibleDocId } = await getProfileProducts({ userId: currentUser.id, startAfterDocId });
+        setProducts(prev => isInitial ? newProducts : [...prev, ...newProducts]);
         setProductsLastVisible(lastVisibleDocId);
         if (!lastVisibleDocId || newProducts.length < 10) setHasMoreProducts(false);
     } catch (error) {
         console.error("Error fetching products:", error);
     } finally {
+        if(isInitial) setIsLoading(false);
         setIsFetchingMoreProducts(false);
     }
-  }, [currentUser?.id, getProductsContext, isFetchingMoreProducts]);
+  }, [currentUser?.id, isFetchingMoreProducts]);
 
   useEffect(() => {
     if (currentUser?.id) {
-      setIsLoading(true);
-      setHasMoreGallery(true);
-      setHasMoreProducts(true);
-
-      const galleryPromise = loadGallery();
-      const productsPromise = currentUser.type === 'provider' ? loadProducts() : Promise.resolve();
-      
-      Promise.all([galleryPromise, productsPromise]).finally(() => {
-        setIsLoading(false);
-      });
+        setIsLoading(true);
+        const galleryPromise = loadGallery(undefined, true);
+        const productsPromise = currentUser.type === 'provider' ? loadProducts(undefined, true) : Promise.resolve();
+        
+        Promise.all([galleryPromise, productsPromise]).finally(() => {
+            setIsLoading(false);
+        });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser?.id, currentUser?.type]);
+  }, [currentUser?.id]);
 
   const router = useRouter();
 
@@ -601,3 +612,4 @@ export default function ProfilePage() {
     </>
   );
 }
+
