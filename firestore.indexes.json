@@ -2,21 +2,6 @@
 {
   "indexes": [
     {
-      "collectionGroup": "conversations",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "participantIds",
-          "order": "ASCENDING",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "lastUpdated",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
       "collectionGroup": "products",
       "queryScope": "COLLECTION",
       "fields": [
@@ -27,20 +12,6 @@
         {
           "fieldPath": "name",
           "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "gallery",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        {
-          "fieldPath": "providerId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "createdAt",
-          "order": "DESCENDING"
         }
       ]
     }

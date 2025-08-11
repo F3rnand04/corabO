@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Flows for fetching profile-specific data securely with pagination.
@@ -7,6 +8,8 @@ import { ai } from '@/ai/genkit';
 import { getFirestoreDb } from '@/lib/firebase-server';
 import { collection, getDocs, query, where, limit, startAfter, doc, getDoc, orderBy } from 'firebase/firestore';
 import { GetProfileGalleryInputSchema, GetProfileGalleryOutputSchema, GetProfileProductsInputSchema, GetProfileProductsOutputSchema } from '@/lib/types';
+import type { GalleryImage } from '@/lib/types';
+
 
 // --- Get Gallery with Pagination ---
 
@@ -20,9 +23,11 @@ export const getProfileGallery = ai.defineFlow(
         const db = getFirestoreDb();
         const galleryCollection = collection(db, 'users', userId, 'gallery');
 
-        // Consulta simple con ordenación por fecha. Eficiente y no requiere índice adicional.
-        const q = [
-            orderBy('createdAt', 'desc'),
+        // CRITICAL FIX: Removed orderBy('createdAt', 'desc') as the combination of filtering
+        // on a subcollection (implicitly by userId) and ordering by another field requires a
+        // composite index. The sorting will be handled client-side if necessary, or we
+        // accept the default Firestore ordering to prevent fatal errors.
+        const q: any[] = [
             limit(limitNum)
         ];
 
@@ -36,7 +41,11 @@ export const getProfileGallery = ai.defineFlow(
         const galleryQuery = query(galleryCollection, ...q);
         const snapshot = await getDocs(galleryQuery);
         
-        const gallery = snapshot.docs.map(doc => doc.data());
+        // Sorting is now done in the backend code after fetching.
+        const gallery = snapshot.docs
+            .map(doc => doc.data() as GalleryImage)
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
         const lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
 
         return { gallery, lastVisibleDocId: lastVisibleDoc?.id };

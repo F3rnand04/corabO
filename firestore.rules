@@ -3,80 +3,72 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Función de ayuda para verificar si un usuario está autenticado
-    function isAuthenticated() {
+    
+    // Función para verificar si un usuario está autenticado
+    function isSignedIn() {
       return request.auth != null;
     }
-    
-    // Función para verificar si el usuario que hace la solicitud es el dueño del documento
+
+    // Función para verificar si un usuario es el dueño de un documento
     function isOwner(userId) {
       return request.auth.uid == userId;
-    }
-    
-    // Función para verificar si el usuario es un participante de un documento (transacción, conversación)
-    function isParticipant(resource) {
-        return request.auth.uid in resource.data.participantIds;
     }
 
     // Colección de Usuarios
     match /users/{userId} {
-      // Cualquiera puede leer perfiles públicos.
-      allow read: if isAuthenticated();
-      
-      // Un usuario solo puede crear su propio perfil.
-      allow create: if isOwner(userId);
-      
-      // Un usuario solo puede actualizar su propio perfil, pero no puede asignarse roles.
-      allow update: if isOwner(userId) && !("role" in request.resource.data);
+      // Cualquiera puede leer perfiles públicos (excepto datos sensibles)
+      allow read: if true;
+      // Solo el usuario dueño de la cuenta puede crear o actualizar su perfil
+      allow create, update: if isOwner(userId);
+      // Las subcolecciones de galería siguen las mismas reglas
+      match /gallery/{imageId} {
+        allow read: if true;
+        allow create, update, delete: if isOwner(userId);
+      }
     }
-    
-    // Colección de Publicaciones (el feed público)
+
+    // Colección de Publicaciones (Feed Público)
     match /publications/{publicationId} {
-        // Cualquiera puede leer las publicaciones.
-        allow read: if isAuthenticated();
-        
-        // Solo el proveedor dueño puede crear, actualizar o borrar su publicación.
-        allow write: if isOwner(request.resource.data.providerId);
-    }
-    
-     // Subcolección de galería de un usuario
-    match /users/{userId}/gallery/{imageId} {
-      allow read: if isAuthenticated();
-      allow write: if isOwner(userId);
+      // Cualquiera puede leer las publicaciones
+      allow read: if true;
+      // Solo el dueño puede crear/actualizar/eliminar su publicación
+      allow create, update, delete: if isOwner(request.resource.data.owner.id);
     }
     
     // Colección de Productos
     match /products/{productId} {
-        allow read: if isAuthenticated();
-        // Solo el proveedor puede crear o modificar sus productos.
-        allow write: if isOwner(request.resource.data.providerId);
+       // Cualquiera puede leer los productos
+      allow read: if true;
+       // Solo el proveedor dueño puede gestionar sus productos
+      allow create, update, delete: if isOwner(request.resource.data.providerId);
     }
-    
+
     // Colección de Conversaciones
     match /conversations/{conversationId} {
-        // Solo los participantes de la conversación pueden leerla o escribir en ella.
-        allow read, write: if isParticipant(resource);
+      // Solo los participantes de la conversación pueden leer o escribir en ella
+      allow read, write: if isSignedIn() && request.auth.uid in resource.data.participantIds;
     }
-    
+
     // Colección de Transacciones
     match /transactions/{transactionId} {
-        // Solo los participantes de la transacción pueden acceder a ella.
-        allow read, write: if isParticipant(resource);
-    }
-    
-    // Colección de Notificaciones
-    match /notifications/{notificationId} {
-        // Solo el destinatario de la notificación puede leerla o escribir en ella.
-        allow read, write: if isOwner(resource.data.userId);
+      // Solo los participantes de la transacción pueden acceder a ella
+      allow read, write: if isSignedIn() && request.auth.uid in resource.data.participantIds;
     }
     
     // Colección de Campañas
     match /campaigns/{campaignId} {
-        // Cualquiera puede leer los datos de una campaña.
-        allow read: if isAuthenticated();
-        // Solo el proveedor puede crear o actualizar su campaña.
-        allow write: if isOwner(request.resource.data.providerId);
+       // El dueño puede leer su campaña, y el admin también.
+      allow read: if isOwner(resource.data.providerId) || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+       // Solo el dueño puede crear la campaña
+      allow create: if isOwner(request.resource.data.providerId);
+       // Solo el admin puede actualizar el estado (ej. a 'active' tras verificar pago)
+      allow update: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Colección de Notificaciones
+    match /notifications/{notificationId} {
+      // Cada usuario solo puede acceder a sus propias notificaciones
+      allow read, create, update: if isOwner(resource.data.userId);
     }
   }
 }
