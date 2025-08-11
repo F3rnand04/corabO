@@ -1,4 +1,5 @@
 
+
 'use server';
 /**
  * @fileOverview Flows for fetching profile-specific data securely with pagination.
@@ -21,15 +22,12 @@ export const getProfileGallery = ai.defineFlow(
     },
     async ({ userId, limitNum = 9, startAfterDocId }) => {
         const db = getFirestoreDb();
-        // CORRECTED: Query the unified 'publications' collection
         const publicationsCollection = collection(db, 'publications');
 
-        // This query requires a composite index on (providerId, type, createdAt).
-        // This must be created in the Firebase console.
+        // Build the query dynamically
         const q: any[] = [
             where("providerId", "==", userId),
-            where("type", "in", ["image", "video"]), // Filter for gallery items
-            orderBy('createdAt', 'desc'),
+            where("type", "in", ["image", "video"]),
             limit(limitNum)
         ];
 
@@ -43,7 +41,10 @@ export const getProfileGallery = ai.defineFlow(
         const galleryQuery = query(publicationsCollection, ...q);
         const snapshot = await getDocs(galleryQuery);
         
-        const gallery = snapshot.docs.map(doc => doc.data() as GalleryImage);
+        // Sort results in the backend to avoid complex indexes
+        const gallery = snapshot.docs
+            .map(doc => doc.data() as GalleryImage)
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
         const lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
 
@@ -62,14 +63,12 @@ export const getProfileProducts = ai.defineFlow(
     },
     async ({ userId, limitNum = 10, startAfterDocId }) => {
         const db = getFirestoreDb();
-        // CORRECTED: Query the unified 'publications' collection
         const publicationsCollection = collection(db, 'publications');
 
-        // This query requires a composite index on (providerId, type, name).
+        // Build the query dynamically
         const q: any[] = [
             where("providerId", "==", userId),
-            where("type", "==", "product"), // Filter for products
-            orderBy("productDetails.name"),
+            where("type", "==", "product"),
             limit(limitNum)
         ];
 
@@ -83,19 +82,23 @@ export const getProfileProducts = ai.defineFlow(
         const productsQuery = query(publicationsCollection, ...q);
         
         const snapshot = await getDocs(productsQuery);
-        // Map the publication document to a Product type for the frontend
-        const products = snapshot.docs.map(doc => {
-            const data = doc.data() as GalleryImage;
-            return {
-                id: data.id,
-                name: data.productDetails?.name || 'Producto sin nombre',
-                description: data.description,
-                price: data.productDetails?.price || 0,
-                category: data.productDetails?.category || 'General',
-                providerId: data.providerId,
-                imageUrl: data.src,
-            } as Product;
-        });
+        
+        // Sort results in the backend and map to Product type
+        const products = snapshot.docs
+            .map(doc => {
+                const data = doc.data() as GalleryImage;
+                return {
+                    id: data.id,
+                    name: data.productDetails?.name || 'Producto sin nombre',
+                    description: data.description,
+                    price: data.productDetails?.price || 0,
+                    category: data.productDetails?.category || 'General',
+                    providerId: data.providerId,
+                    imageUrl: data.src,
+                } as Product;
+            })
+            .sort((a, b) => a.name.localeCompare(b.name));
+
         const lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
 
         return { products, lastVisibleDocId: lastVisibleDoc?.id };

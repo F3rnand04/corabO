@@ -53,6 +53,7 @@ export default function ProfilePage() {
     if (isInitial) {
         setIsLoading(true);
         setHasMoreGallery(true);
+        setGallery([]); // Reset gallery on initial load
     } else {
         setIsFetchingMoreGallery(true);
     }
@@ -75,6 +76,7 @@ export default function ProfilePage() {
      if (isInitial) {
         setIsLoading(true);
         setHasMoreProducts(true);
+        setProducts([]); // Reset products on initial load
     } else {
         setIsFetchingMoreProducts(true);
     }
@@ -510,6 +512,8 @@ export default function ProfilePage() {
                         <div 
                           className="relative group cursor-pointer"
                           onTouchStart={onTouchStart}
+                          onTouchEnd={onTouchEnd}
+                          onTouchMove={onTouchMove}
                           onDoubleClick={handleImageDoubleClick}
                         >
                           <Image
