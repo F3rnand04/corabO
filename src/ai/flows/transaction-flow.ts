@@ -58,9 +58,14 @@ export const completeWork = ai.defineFlow(
     const txSnap = await getDoc(txRef);
     if (!txSnap.exists()) throw new Error("Transaction not found.");
     
+    const transaction = txSnap.data() as Transaction;
     // SECURITY CHECK: Only the provider can mark work as complete.
-    if (txSnap.data().providerId !== userId) {
+    if (transaction.providerId !== userId) {
         throw new Error("Permission denied. User is not the provider for this transaction.");
+    }
+    // BUSINESS LOGIC: Can only be marked as complete if it's an accepted agreement.
+    if (transaction.status !== 'Acuerdo Aceptado - Pendiente de Ejecución') {
+        throw new Error("Invalid action. The service must be an accepted agreement first.");
     }
     await updateDoc(txRef, { status: 'Pendiente de Confirmación del Cliente' });
   }
@@ -81,10 +86,16 @@ export const confirmWorkReceived = ai.defineFlow(
         const txSnap = await getDoc(txRef);
         if (!txSnap.exists()) throw new Error("Transaction not found.");
 
+        const transaction = txSnap.data() as Transaction;
         // SECURITY CHECK: Only the client can confirm receipt.
-        if (txSnap.data().clientId !== userId) {
+        if (transaction.clientId !== userId) {
             throw new Error("Permission denied. User is not the client for this transaction.");
         }
+        // BUSINESS LOGIC: Can only confirm if it's pending their confirmation.
+        if (transaction.status !== 'Pendiente de Confirmación del Cliente') {
+            throw new Error("Invalid action. Work must be marked as complete by provider first.");
+        }
+
         await updateDoc(txRef, { 
             status: 'Finalizado - Pendiente de Pago',
             'details.clientRating': rating,
@@ -144,9 +155,14 @@ export const confirmPaymentReceived = ai.defineFlow(
         const txSnap = await getDoc(txRef);
         if (!txSnap.exists()) throw new Error("Transaction not found.");
         
+        const transaction = txSnap.data() as Transaction;
         // SECURITY CHECK: Only the provider can confirm payment.
-        if (txSnap.data().providerId !== userId) {
+        if (transaction.providerId !== userId) {
             throw new Error("Permission denied. User is not the provider for this transaction.");
+        }
+        // BUSINESS LOGIC: Can only confirm if a payment has been sent.
+        if (transaction.status !== 'Pago Enviado - Esperando Confirmación') {
+            throw new Error("Invalid action. Client has not registered a payment yet.");
         }
         await updateDoc(txRef, { 
             status: 'Pagado',
@@ -169,9 +185,14 @@ export const sendQuote = ai.defineFlow(
         const txSnap = await getDoc(txRef);
         if (!txSnap.exists()) throw new Error("Transaction not found.");
         
+        const transaction = txSnap.data() as Transaction;
         // SECURITY CHECK: Only the provider can send a quote.
-        if (txSnap.data().providerId !== userId) {
+        if (transaction.providerId !== userId) {
             throw new Error("Permission denied. User is not the provider for this transaction.");
+        }
+        // BUSINESS LOGIC: Can only send a quote for a pending request.
+        if (transaction.status !== 'Solicitud Pendiente') {
+            throw new Error("Invalid action. Quote can only be sent for a pending request.");
         }
         await updateDoc(txRef, {
             status: 'Cotización Recibida',
@@ -195,9 +216,14 @@ export const acceptQuote = ai.defineFlow(
         const txSnap = await getDoc(txRef);
         if (!txSnap.exists()) throw new Error("Transaction not found.");
         
+        const transaction = txSnap.data() as Transaction;
         // SECURITY CHECK: Only the client can accept a quote.
-        if (txSnap.data().clientId !== userId) {
+        if (transaction.clientId !== userId) {
             throw new Error("Permission denied. User is not the client for this transaction.");
+        }
+        // BUSINESS LOGIC: Can only accept a quote that has been received.
+        if (transaction.status !== 'Cotización Recibida') {
+            throw new Error("Invalid action. A quote must be received before it can be accepted.");
         }
         await updateDoc(txRef, { status: 'Finalizado - Pendiente de Pago' });
     }
@@ -248,9 +274,14 @@ export const acceptAppointment = ai.defineFlow(
         const txSnap = await getDoc(txRef);
         if (!txSnap.exists()) throw new Error("Transaction not found.");
 
+        const transaction = txSnap.data() as Transaction;
         // SECURITY CHECK: Only the provider can accept an appointment.
-        if (txSnap.data().providerId !== userId) {
+        if (transaction.providerId !== userId) {
             throw new Error("Permission denied. User is not the provider for this transaction.");
+        }
+        // BUSINESS LOGIC: Can only accept a requested appointment.
+        if (transaction.status !== 'Cita Solicitada') {
+            throw new Error("Invalid action. This appointment was not solicited.");
         }
         await updateDoc(txRef, { status: 'Acuerdo Aceptado - Pendiente de Ejecución' });
     }
@@ -272,3 +303,5 @@ export const startDispute = ai.defineFlow(
         await updateDoc(txRef, { status: 'En Disputa' });
     }
 );
+
+    
