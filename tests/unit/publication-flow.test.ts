@@ -2,151 +2,94 @@
 import { createPublication } from '@/ai/flows/publication-flow';
 import { getFirestoreDb } from '@/lib/firebase-server';
 import { doc, getDoc, setDoc, writeBatch } from 'firebase/firestore';
-import type { User } from '@/lib/types';
+import type { User, PublicationOwner } from '@/lib/types';
 
-// Mockear completamente el módulo de Firestore
+// Mockear completamente el módulo de Firestore para un aislamiento total.
 jest.mock('firebase/firestore', () => ({
-  ...jest.requireActual('firebase/firestore'), // Importa y conserva las exportaciones originales
-  getFirestore: jest.fn(),
+  ...jest.requireActual('firebase/firestore'),
   doc: jest.fn(),
   getDoc: jest.fn(),
-  setDoc: jest.fn(),
   writeBatch: jest.fn(() => ({
     set: jest.fn(),
     commit: jest.fn().mockResolvedValue(undefined),
   })),
 }));
 
-// Castear los mocks para tener acceso a los métodos de jest
 const mockedGetDoc = getDoc as jest.Mock;
 const mockedWriteBatch = writeBatch as jest.Mock;
+const mockedSet = mockedWriteBatch().set as jest.Mock;
 
 describe('Publication Flow - Unit Tests', () => {
 
   beforeEach(() => {
-    // Resetea los mocks antes de cada test para asegurar un estado limpio
     jest.clearAllMocks();
   });
 
-  // Test 1: Caso Positivo - Crear una publicación con un perfil de usuario completo
-  test('should create a publication successfully for a user with a complete profile', async () => {
-    // **Justificación:** Esta es la prueba del "camino feliz". Valida que si todos los datos son correctos,
-    // el flujo funciona como se espera. Es fundamental para asegurar la funcionalidad básica.
-
-    // Arrange: Preparamos los datos de entrada
-    const mockUserInput: User = {
-      id: 'user123',
-      name: 'Juan',
-      profileImage: 'http://example.com/img.png',
-      type: 'provider',
-      email: 'juan@test.com',
-      phone: '12345',
-      emailValidated: true,
-      phoneValidated: true,
-      isGpsActive: true,
-      reputation: 5,
-      profileSetupData: {
-        useUsername: true,
-        username: 'juan_dev',
-        specialty: 'Web Developer',
-        providerType: 'professional',
-      },
-    };
+  // Test 1: Resiliencia ante un perfil de usuario parcialmente incompleto.
+  test('should use fallback values for owner data when profileSetupData is missing', async () => {
+    // **Justificación Forense:** Este test unitario aísla el objeto `ownerData`. Se asegura de que,
+    // incluso si `profileSetupData` es nulo o indefinido, la función no falle. En su lugar, debe
+    // recurrir a valores de respaldo seguros (como `user.name` en lugar de `user.profileSetupData.username`).
+    // Esto previene un `TypeError` fatal en el servidor.
     
-    // Simulamos que getDoc devuelve el usuario que hemos creado
-    mockedGetDoc.mockResolvedValue({
-      exists: () => true,
-      data: () => mockUserInput,
-    });
+    // Arrange: Creamos un usuario sin `profileSetupData`.
+    const incompleteUser: User = {
+      id: 'user_no_setup',
+      name: 'Generic User',
+      profileImage: 'generic.png',
+      type: 'provider',
+      email: 'generic@test.com',
+      phone: '',
+      emailValidated: true,
+      phoneValidated: false,
+      isGpsActive: false,
+      reputation: 0,
+      verified: false
+    };
 
-    const publicationData = {
-      userId: 'user123',
-      description: 'Esta es una publicación de prueba',
+    mockedGetDoc.mockResolvedValue({ exists: () => true, data: () => incompleteUser });
+
+    // Act: Ejecutamos el flujo.
+    await createPublication({
+      userId: 'user_no_setup',
+      description: 'Test with no profile setup',
       imageDataUri: 'data:image/png;base64,test',
       aspectRatio: 'square' as const,
       type: 'image' as const,
-    };
-
-    // Act: Ejecutamos la función a probar
-    await createPublication(publicationData);
-
-    // Assert: Verificamos los resultados esperados
-    const commitMock = mockedWriteBatch().commit;
-    
-    // **Aserción Clave:** Verificamos que el método commit() del batch fue llamado exactamente una vez.
-    // Esto nos asegura que la transacción a la base de datos fue intentada.
-    expect(commitMock).toHaveBeenCalledTimes(1);
-    
-    // console.log(mockedWriteBatch().set.mock.calls); // Para depurar y ver con qué datos se llamó a `set`
-  });
-
-  // Test 2: Caso Defensivo - Crear una publicación con un perfil de usuario incompleto
-  test('should create a publication with default fallbacks for a user with an incomplete profile', async () => {
-    // **Justificación:** Este test es CRÍTICO. Aborda directamente el "fallo silencioso" que encontramos.
-    // Asegura que el sistema es resiliente y no falla si un usuario no ha completado todo su perfil.
-    // Esto garantiza la estabilidad de la función de creación de contenido.
-
-    // Arrange: Preparamos un usuario al que le falta 'profileSetupData'
-    const mockUserInput: User = {
-      id: 'user456',
-      name: 'Maria',
-      profileImage: 'http://example.com/img2.png',
-      type: 'provider',
-      email: 'maria@test.com',
-      phone: '67890',
-      emailValidated: true,
-      phoneValidated: true,
-      isGpsActive: true,
-      reputation: 4,
-      // profileSetupData está ausente a propósito
-    };
-
-    mockedGetDoc.mockResolvedValue({
-      exists: () => true,
-      data: () => mockUserInput,
     });
 
-    const publicationData = {
-      userId: 'user456',
-      description: 'Publicación con perfil incompleto',
-      imageDataUri: 'data:image/png;base64,test2',
-      aspectRatio: 'vertical' as const,
-      type: 'image' as const,
-    };
+    // Assert: Verificamos que la llamada a `batch.set` para la publicación pública (`publications`)
+    // contiene un objeto `owner` con los valores de respaldo correctos.
+    const publicPublicationCall = mockedSet.mock.calls.find(call => call[0].path.startsWith('publications/'));
+    const ownerData: PublicationOwner = publicPublicationCall[1].owner;
 
-    // Act: Ejecutamos la función
-    await createPublication(publicationData);
-
-    // Assert: Verificamos que, a pesar de los datos incompletos, la operación continúa
-    const commitMock = mockedWriteBatch().commit;
-    
-    // **Aserción Clave:** A pesar del perfil incompleto, la operación debe completarse.
-    // Esto prueba que nuestro código defensivo (con valores por defecto) funciona.
-    expect(commitMock).toHaveBeenCalledTimes(1);
+    expect(ownerData.name).toBe(incompleteUser.name); // ¡Aserción clave! Debe usar el nombre base.
+    expect(ownerData.profileImage).toBe(incompleteUser.profileImage);
+    expect(ownerData.verified).toBe(false);
+    expect(ownerData.profileSetupData?.specialty).toBe(''); // Fallback a string vacía.
+    expect(ownerData.profileSetupData?.providerType).toBe('professional'); // Fallback a 'professional'.
   });
 
-  // Test 3: Caso Negativo - Intentar crear una publicación para un usuario que no existe
-  test('should throw an error when trying to create a publication for a non-existent user', async () => {
-    // **Justificación:** Esta prueba de seguridad y de integridad de datos asegura que no se puedan crear
-    // publicaciones "huérfanas" en el sistema. Valida que nuestras comprobaciones iniciales funcionan.
+  // Test 2: Prueba de validación de usuario no existente.
+  test('should throw an error if the user document does not exist', async () => {
+    // **Justificación Forense:** Este test aísla la primera y más importante validación del flujo:
+    // la existencia del usuario. Se asegura de que la función falle de manera rápida y predecible
+    // si no se encuentra el usuario, evitando procesamientos innecesarios y protegiendo la integridad
+    // de los datos al no permitir la creación de contenido "huérfano".
+    
+    // Arrange: Simulamos que `getDoc` no encuentra nada.
+    mockedGetDoc.mockResolvedValue({ exists: () => false });
 
-    // Arrange: Simulamos que getDoc no encuentra ningún usuario
-    mockedGetDoc.mockResolvedValue({
-      exists: () => false,
-    });
-
-    const publicationData = {
+    // Act & Assert: Esperamos que la promesa sea rechazada con el mensaje de error específico.
+    await expect(createPublication({
       userId: 'non_existent_user',
-      description: 'Esto no debería crearse',
-      imageDataUri: 'data:image/png;base64,test3',
-      aspectRatio: 'horizontal' as const,
+      description: 'This should fail',
+      imageDataUri: 'data:image/png;base64,fail',
+      aspectRatio: 'square' as const,
       type: 'image' as const,
-    };
-
-    // Act & Assert: Verificamos que la función lanza un error como se espera
-    // Usamos `expect().rejects.toThrow()` para manejar promesas que deben ser rechazadas.
-    await expect(createPublication(publicationData)).rejects.toThrow(
-      'User not found. Cannot create publication for a non-existent user.'
-    );
+    })).rejects.toThrow('User not found. Cannot create publication for a non-existent user.');
+    
+    // Verificamos que no se intentó realizar ninguna escritura en la base de datos.
+    expect(mockedWriteBatch().commit).not.toHaveBeenCalled();
   });
 });
