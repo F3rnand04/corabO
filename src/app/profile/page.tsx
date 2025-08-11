@@ -7,28 +7,26 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Star, Send, Plus, Wallet, Megaphone, Settings, ImageIcon, ChevronLeft, ChevronRight, MessageCircle, Flag, Zap, Loader2, Package, LayoutGrid, Tag } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useCorabo } from '@/contexts/CoraboContext';
 import type { GalleryImage, Transaction, Product } from '@/lib/types';
 import { useRouter } from 'next/navigation';
-import { ReportDialog } from '@/components/ReportDialog';
 import { CampaignDialog } from '@/components/CampaignDialog';
 import { Badge } from '@/components/ui/badge';
 import { SubscriptionDialog } from '@/components/SubscriptionDialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getProfileGallery, getProfileProducts } from '@/ai/flows/profile-flow';
+import { getProfileProducts } from '@/ai/flows/profile-flow';
 import { ProductGridCard } from '@/components/ProductGridCard';
 import { ProductDetailsDialog } from '@/components/ProductDetailsDialog';
 import { ProfileGalleryView } from '@/components/ProfileGalleryView';
+import Link from 'next/link';
 
 
 export default function ProfilePage() {
   const { toast } = useToast();
-  const { currentUser, updateUserProfileImage, getAgendaEvents, getUserMetrics, transactions } = useCorabo();
+  const { currentUser, updateUserProfileImage, getUserMetrics, transactions } = useCorabo();
   
-  const [gallery, setGallery] = useState<GalleryImage[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'publications' | 'catalog'>('publications');
@@ -40,7 +38,6 @@ export default function ProfilePage() {
     };
     
     setIsLoading(true);
-    // This now correctly reflects the user's setup AFTER the context has loaded it.
     const isProductProvider = currentUser.type === 'provider' && currentUser.profileSetupData?.offerType === 'product';
 
     try {
@@ -48,11 +45,7 @@ export default function ProfilePage() {
             const { products: newProducts } = await getProfileProducts({ userId: currentUser.id, limitNum: 50 });
             setProducts(newProducts);
         }
-        // Always load gallery for the publications tab
-        const { gallery: newGallery } = await getProfileGallery({ userId: currentUser.id, limitNum: 50 });
-        setGallery(newGallery);
         
-        // Set default tab based on the correct offerType
         setActiveTab(isProductProvider ? 'catalog' : 'publications');
 
     } catch (error) {
@@ -203,9 +196,9 @@ export default function ProfilePage() {
                     "flex-1 p-3 rounded-none",
                     activeTab === 'publications' ? "text-primary border-b-2 border-primary" : "text-muted-foreground"
                     )}
-                    onClick={() => setActiveTab('publications')}
+                    onClick={() => router.push('/profile/publications')}
                 >
-                   Publicaciones {gallery.length}
+                   {`Publicaciones ${currentUser.gallery?.length || 0}`}
                 </Button>
                 {isProvider && (
                     <Button
@@ -216,7 +209,7 @@ export default function ProfilePage() {
                         )}
                         onClick={() => setActiveTab('catalog')}
                     >
-                        {isProductProvider ? `Catálogo ${products.length}` : `Trabajos ${0}`}
+                        {isProductProvider ? `Catálogo ${products.length}` : `Trabajos 0`}
                     </Button>
                 )}
             </div>
@@ -224,10 +217,6 @@ export default function ProfilePage() {
           </header>
 
           <main className="space-y-4 mt-4">
-            {activeTab === 'publications' && (
-               <ProfileGalleryView gallery={gallery} owner={currentUser} isLoading={isLoading}/>
-            )}
-
              {activeTab === 'catalog' && (
                  <div>
                   {isLoading ? (
@@ -251,6 +240,13 @@ export default function ProfilePage() {
                         <p className="text-muted-foreground text-sm">Haz clic en el botón (+) en el pie de página para añadir tu primer producto.</p>
                     </div>
                   )}
+              </div>
+            )}
+            {activeTab === 'publications' && (
+              <div className="w-full aspect-video bg-muted flex flex-col items-center justify-center text-center p-4 rounded-lg">
+                <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
+                <h3 className="font-bold text-lg text-foreground">Tu galería está vacía</h3>
+                <p className="text-muted-foreground text-sm">Haz clic en el botón (+) en el pie de página para añadir tu primera publicación.</p>
               </div>
             )}
           </main>
