@@ -105,7 +105,6 @@ interface CoraboState {
   verifyCampaignPayment: (transactionId: string, campaignId: string) => void;
   verifyUserId: (userId: string) => void;
   rejectUserId: (userId: string) => void;
-  setIdVerificationPending: (userId: string, documentUrl: string) => Promise<void>;
   autoVerifyIdWithAI: (input: VerificationInput) => Promise<VerificationOutput>;
   getUserMetrics: (userId: string, transactions: Transaction[]) => UserMetrics;
   fetchUser: (userId: string) => Promise<User | null>;
@@ -580,11 +579,22 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
   const verifyUserId = (userId: string) => updateUser(userId, { idVerificationStatus: 'verified', verified: true });
   const rejectUserId = (userId: string) => updateUser(userId, { idVerificationStatus: 'rejected' });
-  const setIdVerificationPending = async (userId: string, documentUrl: string) => {
-    await updateUser(userId, { idVerificationStatus: 'pending', idDocumentUrl: documentUrl });
-  };
-  const autoVerifyIdWithAI = async (input: VerificationInput) => {
-    return await autoVerifyIdWithAIFlow(input);
+  const autoVerifyIdWithAI = async (input: VerificationInput): Promise<VerificationOutput> => {
+    // Before calling the flow, let's mark the user as pending.
+    // This provides feedback to the user and prevents multiple attempts.
+    if(currentUser){
+      await updateUser(currentUser.id, { idVerificationStatus: 'pending', idDocumentUrl: input.documentImageUrl });
+    }
+    
+    // Now call the AI flow for verification.
+    const result = await autoVerifyIdWithAIFlow(input);
+    
+    // Update the user status based on the AI result.
+    if(currentUser){
+       await updateUser(currentUser.id, { idVerificationStatus: result.nameMatch && result.idMatch ? 'verified' : 'rejected' });
+    }
+
+    return result;
   };
 
   const createCampaign = (data: Omit<CreateCampaignInput, 'userId'>) => {
@@ -929,7 +939,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     verifyCampaignPayment,
     verifyUserId,
     rejectUserId,
-    setIdVerificationPending,
     autoVerifyIdWithAI,
     markConversationAsRead,
     getUserMetrics,
@@ -951,3 +960,5 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
+
+    

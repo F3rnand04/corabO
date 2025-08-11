@@ -4,7 +4,7 @@
 import { useState, useRef, ChangeEvent } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronLeft, Banknote, Smartphone, AlertTriangle, FileText, Upload, UserCheck, ShieldCheck, Loader2 } from "lucide-react";
+import { ChevronLeft, Banknote, Smartphone, AlertTriangle, UserCheck, ShieldCheck, Loader2, Upload, Sparkles, XCircle, CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCorabo } from '@/contexts/CoraboContext';
 import { useToast } from '@/hooks/use-toast';
@@ -13,6 +13,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import Image from 'next/image';
+import type { VerificationOutput } from '@/lib/types';
+
 
 function SettingsHeader() {
     const router = useRouter();
@@ -32,14 +34,16 @@ function SettingsHeader() {
 }
 
 export default function TransactionsSettingsPage() {
-    const { currentUser, activateTransactions, setIdVerificationPending } = useCorabo();
+    const { currentUser, activateTransactions, autoVerifyIdWithAI } = useCorabo();
     const { toast } = useToast();
     const router = useRouter();
 
     const [step, setStep] = useState(1);
     const [idDocumentFile, setIdDocumentFile] = useState<File | null>(null);
     const [idDocumentPreview, setIdDocumentPreview] = useState<string | null>(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isVerifying, setIsVerifying] = useState(false);
+    const [verificationResult, setVerificationResult] = useState<VerificationOutput | { error: string } | null>(null);
+
 
     const [paymentDetails, setPaymentDetails] = useState({
         account: { active: true, bankName: '', accountNumber: '' },
@@ -55,6 +59,7 @@ export default function TransactionsSettingsPage() {
         const file = e.target.files?.[0];
         if (file) {
             setIdDocumentFile(file);
+            setVerificationResult(null); // Reset previous results
             const reader = new FileReader();
             reader.onloadend = () => setIdDocumentPreview(reader.result as string);
             reader.readAsDataURL(file);
@@ -62,21 +67,43 @@ export default function TransactionsSettingsPage() {
     };
     
     const handleSubmitVerification = async () => {
-        if (!idDocumentFile) {
+        if (!idDocumentFile || !idDocumentPreview) {
             toast({ variant: 'destructive', title: 'Falta Documento', description: 'Por favor, sube una imagen de tu documento de identidad.' });
             return;
         }
-        setIsSubmitting(true);
-        // Simulating upload and getting a URL
-        const simulatedUrl = `https://i.postimg.cc/L8y2zWc2/vzla-id.png`; 
+        setIsVerifying(true);
+        setVerificationResult(null);
         try {
-            await setIdVerificationPending(currentUser.id, simulatedUrl);
-            toast({ title: 'Documento Enviado', description: 'Tu documento está siendo revisado. Te notificaremos cuando se apruebe.' });
-            setStep(2);
+             const result = await autoVerifyIdWithAI({
+                userId: currentUser.id,
+                nameInRecord: `${currentUser.name} ${currentUser.lastName}`,
+                idInRecord: currentUser.idNumber || '',
+                documentImageUrl: idDocumentPreview,
+            });
+
+            setVerificationResult(result);
+
+            if (result.nameMatch && result.idMatch) {
+                toast({
+                    title: "¡Verificación Exitosa!",
+                    description: "Tus datos coinciden. Por favor, continúa con el siguiente paso.",
+                    className: "bg-green-100 border-green-300 text-green-800",
+                });
+                setStep(2);
+            } else {
+                 toast({
+                    variant: "destructive",
+                    title: "Verificación Fallida",
+                    description: "Los datos del documento no coinciden con tu registro. Por favor, sube una imagen clara o contacta a soporte."
+                });
+            }
+
         } catch (error) {
-            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo enviar el documento.' });
+            console.error(error);
+            toast({ variant: 'destructive', title: 'Error de Verificación', description: 'No se pudo completar la verificación por IA. Inténtalo de nuevo.' });
+            setVerificationResult({ error: 'Fallo al ejecutar la verificación por IA.' });
         } finally {
-            setIsSubmitting(false);
+            setIsVerifying(false);
         }
     };
 
@@ -115,9 +142,22 @@ export default function TransactionsSettingsPage() {
                                 )}
                                 <Input id="id-upload" type="file" className="hidden" accept="image/*" onChange={handleIdFileChange} />
                             </div>
-                             <Button className="w-full" onClick={handleSubmitVerification} disabled={!idDocumentFile || isSubmitting}>
-                                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                                Enviar y Verificar Documento
+                             {verificationResult && !('error' in verificationResult) && (
+                                <div className="p-3 rounded-md border text-sm space-y-1">
+                                    <h5 className="font-semibold mb-2">Resultado de la Verificación IA:</h5>
+                                    <p className={verificationResult.nameMatch ? "text-green-600 flex items-center gap-2" : "text-destructive flex items-center gap-2"}>
+                                        {verificationResult.nameMatch ? <CheckCircle className="h-4 w-4"/> : <XCircle className="h-4 w-4"/>}
+                                        Coincidencia de Nombre {verificationResult.nameMatch ? "" : `(IA leyó: "${verificationResult.extractedName}")`}
+                                    </p>
+                                     <p className={verificationResult.idMatch ? "text-green-600 flex items-center gap-2" : "text-destructive flex items-center gap-2"}>
+                                        {verificationResult.idMatch ? <CheckCircle className="h-4 w-4"/> : <XCircle className="h-4 w-4"/>}
+                                        Coincidencia de Cédula {verificationResult.idMatch ? "" : `(IA leyó: "${verificationResult.extractedId}")`}
+                                    </p>
+                                </div>
+                            )}
+                             <Button className="w-full" onClick={handleSubmitVerification} disabled={!idDocumentFile || isVerifying}>
+                                {isVerifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4"/>}
+                                {isVerifying ? 'Verificando con IA...' : 'Verificar Documento con IA'}
                              </Button>
                         </CardContent>
                     </Card>
@@ -206,3 +246,5 @@ export default function TransactionsSettingsPage() {
         </>
     );
 }
+
+    
