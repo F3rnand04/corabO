@@ -28,6 +28,7 @@ export const getProfileGallery = ai.defineFlow(
         const q: any[] = [
             where("providerId", "==", userId),
             where("type", "in", ["image", "video"]),
+            orderBy('createdAt', 'desc'),
             limit(limitNum)
         ];
 
@@ -41,11 +42,7 @@ export const getProfileGallery = ai.defineFlow(
         const galleryQuery = query(publicationsCollection, ...q);
         const snapshot = await getDocs(galleryQuery);
         
-        // Sort results in the backend to avoid complex indexes
-        const gallery = snapshot.docs
-            .map(doc => doc.data() as GalleryImage)
-            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
+        const gallery = snapshot.docs.map(doc => doc.data() as GalleryImage);
         const lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
 
         return { gallery, lastVisibleDocId: lastVisibleDoc?.id };
@@ -69,6 +66,7 @@ export const getProfileProducts = ai.defineFlow(
         const q: any[] = [
             where("providerId", "==", userId),
             where("type", "==", "product"),
+            orderBy('productDetails.name', 'asc'),
             limit(limitNum)
         ];
 
@@ -83,9 +81,7 @@ export const getProfileProducts = ai.defineFlow(
         
         const snapshot = await getDocs(productsQuery);
         
-        // Sort results in the backend and map to Product type
-        const products = snapshot.docs
-            .map(doc => {
+        const products = snapshot.docs.map(doc => {
                 const data = doc.data() as GalleryImage;
                 return {
                     id: data.id,
@@ -96,8 +92,7 @@ export const getProfileProducts = ai.defineFlow(
                     providerId: data.providerId,
                     imageUrl: data.src,
                 } as Product;
-            })
-            .sort((a, b) => a.name.localeCompare(b.name));
+            });
 
         const lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
 

@@ -15,7 +15,7 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "providerId", "order": "ASCENDING" },
-        { "fieldPath": "type", "arrayConfig": "CONTAINS" },
+        { "fieldPath": "type", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
