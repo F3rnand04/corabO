@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, TouchEvent, useEffect, useRef, ChangeEvent, useCallback } from 'react';
@@ -99,6 +98,8 @@ export default function ProfilePage() {
         loadGallery(undefined, true);
         if(currentUser.type === 'provider' && currentUser.profileSetupData?.offerType === 'product') {
             loadProducts(undefined, true);
+        } else {
+          setIsLoading(false);
         }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -117,15 +118,8 @@ export default function ProfilePage() {
   const isProvider = currentUser.type === 'provider';
   const isProductProvider = isProvider && currentUser.profileSetupData?.offerType === 'product';
 
-  const [starCount, setStarCount] = useState(0);
-  const [isLiked, setIsLiked] = useState(false);
-  const [shareCount, setShareCount] = useState(0);
-  const [messageCount, setMessageCount] = useState(0);
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
-
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
-  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [isCampaignDialogOpen, setIsCampaignDialogOpen] = useState(false);
   const [isProductDetailsDialogOpen, setIsProductDetailsDialogOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -133,25 +127,9 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const agendaEvents = getAgendaEvents(transactions);
-  const paymentCommitmentDates = agendaEvents.filter(e => e.type === 'payment').map(e => new Date(e.date));
-  const taskDates = agendaEvents.filter(e => e.type === 'task').map(e => new Date(e.date));
 
   const { reputation, effectiveness, responseTime } = getUserMetrics(currentUser.id, transactions);
   const isNewProvider = responseTime === 'Nuevo';
-
-
-  const onDayDoubleClick = (day: Date) => {
-    const eventOnDay = agendaEvents.find(
-      e => new Date(e.date).toDateString() === day.toDateString()
-    );
-    if (eventOnDay) {
-      if (eventOnDay.type === 'payment') {
-        router.push('/transactions?view=commitments');
-      } else {
-        router.push('/transactions?view=pending');
-      }
-    }
-  };
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -175,7 +153,6 @@ export default function ProfilePage() {
   };
   
   const openDetailsDialog = (startIndex: number) => {
-    setCurrentImageIndex(startIndex);
     setIsDetailsDialogOpen(true);
   }
   
@@ -207,8 +184,6 @@ export default function ProfilePage() {
     }
     setIsCampaignDialogOpen(true);
   }
-
-  const currentImage = gallery?.length > 0 ? gallery[currentImageIndex] : null;
   
   const displayName = currentUser.profileSetupData?.useUsername 
     ? currentUser.profileSetupData.username || currentUser.name 
@@ -245,14 +220,14 @@ export default function ProfilePage() {
               <div className="flex-grow">
                 <h1 className="text-lg font-bold text-foreground">{displayName}</h1>
                 <p className="text-sm text-muted-foreground">{specialty}</p>
-                <div className="flex items-center gap-3 text-sm mt-2 text-muted-foreground">
+                 <div className="flex items-center gap-2 text-xs mt-1 text-muted-foreground">
                     <div className="flex items-center gap-1">
                         <Star className="w-4 h-4 text-yellow-400 fill-yellow-400"/>
                         <span className="font-semibold text-foreground">{reputation.toFixed(1)}</span>
                     </div>
                     <Separator orientation="vertical" className="h-4" />
                     {isNewProvider ? (
-                        <Badge variant="secondary">Nuevo</Badge>
+                        <Badge variant="secondary" className="px-1.5 py-0">Nuevo</Badge>
                     ) : (
                         <>
                             <span>{effectiveness.toFixed(0)}% Efec.</span>
@@ -262,76 +237,32 @@ export default function ProfilePage() {
                     )}
                 </div>
               </div>
-              <div className="flex flex-col items-end gap-1">
-                  {!currentUser.isSubscribed && (
-                    <Button
-                        variant="link"
-                        className="text-xs h-auto p-0 text-red-500/90 hover:text-red-500 font-semibold"
-                        onClick={() => setIsSubscriptionDialogOpen(true)}
-                    >
-                        Suscribir
-                    </Button>
-                  )}
-                  <div className="flex items-center gap-2">
-                      <Popover>
-                          <PopoverTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <Calendar className="w-5 h-5 text-muted-foreground" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0">
-                            <TooltipProvider>
-                                <CalendarComponent
-                                    mode="multiple"
-                                    selected={[...paymentCommitmentDates, ...taskDates]}
-                                    onDayDoubleClick={onDayDoubleClick}
-                                    disabled={(date) => date < new Date("1900-01-01")}
-                                    initialFocus
-                                    components={{
-                                      Day: (props: DayProps) => {
-                                        const eventOnDay = agendaEvents.find(
-                                          (e) => new Date(e.date).toDateString() === props.date.toDateString()
-                                        );
-                                        return (
-                                          <Tooltip>
-                                            <TooltipTrigger asChild>
-                                              <div className="relative w-full h-full flex items-center justify-center">
-                                                <Day {...props} />
-                                                {eventOnDay && (
-                                                  <div
-                                                    className={cn(
-                                                      "absolute bottom-1 left-1/2 -translate-x-1/2 h-1.5 w-1.5 rounded-full",
-                                                      eventOnDay.type === 'payment' ? 'bg-yellow-400' : 'bg-blue-400'
-                                                    )}
-                                                  />
-                                                )}
-                                              </div>
-                                            </TooltipTrigger>
-                                            {eventOnDay && (
-                                              <TooltipContent>
-                                                <p>{eventOnDay.description}</p>
-                                              </TooltipContent>
-                                            )}
-                                          </Tooltip>
-                                        );
-                                      },
-                                    }}
-                                />
-                            </TooltipProvider>
-                            <div className="p-2 border-t text-center text-xs text-muted-foreground">
-                                Doble clic para ver detalles.
-                            </div>
-                          </PopoverContent>
-                      </Popover>
-                      <Button variant="ghost" size="icon" onClick={() => router.push('/transactions')}><Wallet className="w-5 h-5 text-muted-foreground" /></Button>
-                      <Button variant="ghost" size="icon" onClick={() => toggleGps(currentUser.id)} onDoubleClick={() => router.push('/map')}>
-                          <MapPin className={cn("w-5 h-5 text-muted-foreground", currentUser.isGpsActive && "text-green-500")} />
-                      </Button>
-                  </div>
-              </div>
+              {!currentUser.isSubscribed && (
+                <Button
+                    variant="link"
+                    className="text-xs h-auto p-0 text-red-500/90 hover:text-red-500 font-semibold"
+                    onClick={() => setIsSubscriptionDialogOpen(true)}
+                >
+                    Suscribir
+                </Button>
+              )}
+            </div>
+            <div className="flex justify-around text-center text-sm py-4">
+                <div>
+                    <p className="font-bold text-lg text-foreground">{gallery?.length || 0}</p>
+                    <p className="text-xs text-muted-foreground">Publicaciones</p>
+                </div>
+                <div>
+                    <p className="font-bold text-lg text-foreground">{transactions.filter(t => t.providerId === currentUser.id && (t.status === 'Pagado' || t.status === 'Resuelto')).length}</p>
+                    <p className="text-xs text-muted-foreground">Trab. Realizados</p>
+                </div>
+                 <div>
+                    <p className="font-bold text-lg text-foreground">{transactions.filter(t => t.clientId === currentUser.id && (t.status === 'Pagado' || t.status === 'Resuelto')).length}</p>
+                    <p className="text-xs text-muted-foreground">Contrataciones</p>
+                </div>
             </div>
             
-            <div className="flex justify-end gap-2 py-4">
+            <div className="flex justify-end gap-2 pb-4">
               {isProvider && (
                 <Button 
                   variant="outline" 
@@ -356,8 +287,8 @@ export default function ProfilePage() {
           <main className="space-y-4">
             <Tabs defaultValue="publications" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                 <TabsTrigger value="publications">Publicaciones ({gallery?.length || 0})</TabsTrigger>
-                 <TabsTrigger value="catalog" disabled={!isProductProvider}>Catálogo ({products?.length || 0})</TabsTrigger>
+                 <TabsTrigger value="publications">Publicaciones</TabsTrigger>
+                 <TabsTrigger value="catalog" disabled={!isProductProvider}>Catálogo</TabsTrigger>
               </TabsList>
               
               <TabsContent value="publications">
@@ -438,12 +369,12 @@ export default function ProfilePage() {
           </main>
         </div>
       </div>
-      {currentImage && (
+      {gallery.length > 0 && (
         <ImageDetailsDialog
           isOpen={isDetailsDialogOpen}
           onOpenChange={setIsDetailsDialogOpen}
           gallery={gallery}
-          startIndex={currentImageIndex}
+          startIndex={0}
           owner={currentUser}
         />
       )}
@@ -464,3 +395,5 @@ export default function ProfilePage() {
     </>
   );
 }
+
+    
