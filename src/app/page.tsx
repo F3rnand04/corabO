@@ -26,8 +26,8 @@ export default function HomePage() {
         setIsFetchingMore(true);
     } else {
         setIsLoading(true);
-        setHasMore(true);
-        setPublications([]);
+        setHasMore(true); // Reset hasMore on initial load
+        setPublications([]); // Clear publications on initial load
     }
 
     try {
@@ -120,7 +120,7 @@ export default function HomePage() {
             </div>
         )}
         {isFetchingMore && (
-            <div className="flex justify-center">
+            <div className="flex justify-center py-4">
                 <Loader2 className="h-8 w-8 animate-spin text-primary"/>
             </div>
         )}

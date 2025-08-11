@@ -65,9 +65,8 @@ export const getProfileProducts = ai.defineFlow(
         const db = getFirestoreDb();
         const productsCollection = collection(db, 'products');
 
-        // Consulta que filtra por proveedor y ordena por nombre.
-        // Esto podría requerir un índice simple en `providerId` y `name`, que Firebase
-        // usualmente sugiere crear automáticamente. No es tan complejo como un `array-contains`.
+        // This query requires a composite index on (providerId, name).
+        // This has been added to firestore.indexes.json to resolve the error.
         const q = [
             where("providerId", "==", userId),
             orderBy("name"),

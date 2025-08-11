@@ -6,6 +6,10 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
+  // Patrones para encontrar archivos de test
+  testMatch: [
+    '<rootDir>/tests/**/*.test.ts',
+  ],
   // Ignora las carpetas que no contienen tests
   testPathIgnorePatterns: [
     '<rootDir>/.next/',
