@@ -3,42 +3,59 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // --- Users Collection ---
-    // Users can read/write their own data.
-    // No one can read or write other users' data.
+
+    // --- User Data Rules ---
+    // Users can only read and write to their own user document.
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
-      
-      // Allow reading a user's public gallery
-      match /gallery/{imageId} {
-        allow read: if true;
+
+      // Gallery subcollection: Only the user can write to their own gallery.
+      // Any authenticated user can read it to view the profile.
+      match /gallery/{publicationId} {
+        allow read: if request.auth != null;
         allow write: if request.auth != null && request.auth.uid == userId;
       }
     }
-    
-    // --- Public Publications Collection ---
-    // Anyone can read public publications.
-    // Users can only create publications where they are the owner.
+
+    // --- Public Content Rules ---
+    // Publications are readable by any authenticated user for the feed.
+    // Creation is allowed if the creator is the owner.
+    // Updates/deletes are restricted to the owner of the publication.
     match /publications/{publicationId} {
-      allow read: if true;
-      allow create: if request.auth != null && request.resource.data.providerId == request.auth.uid;
-      allow update, delete: if request.auth != null && resource.data.providerId == request.auth.uid;
-    }
-    
-    // --- Products Collection ---
-    // Anyone can read products.
-    // Only the provider can create/update/delete their own products.
-    match /products/{productId} {
-      allow read: if true;
+      allow read: if request.auth != null;
       allow create: if request.auth != null && request.resource.data.providerId == request.auth.uid;
       allow update, delete: if request.auth != null && resource.data.providerId == request.auth.uid;
     }
 
-    // --- Transactions & Conversations ---
-    // Only participants of the transaction/conversation can access it.
-    match /{collection}/{docId} {
-      allow read, write: if request.auth != null && resource.data.participantIds.hasAny([request.auth.uid]);
+    // Products are readable by any authenticated user.
+    // Write operations (create, update, delete) are restricted to the provider owner.
+    match /products/{productId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.resource.data.providerId == request.auth.uid;
+    }
+
+    // --- Transactional Data Rules ---
+    // Users can only read or write to conversations they are a participant in.
+    match /conversations/{conversationId} {
+      allow read, write: if request.auth != null && request.auth.uid in resource.data.participantIds;
+    }
+    
+    // Users can only read or write to transactions they are a participant in.
+    match /transactions/{transactionId} {
+      allow read, write: if request.auth != null && request.auth.uid in resource.data.participantIds;
+    }
+    
+    // Campaigns are readable by any authenticated user.
+    // Write operations are restricted to the provider owner.
+    match /campaigns/{campaignId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.resource.data.providerId == request.auth.uid;
+    }
+
+    // --- Notification Rules ---
+    // Users can only read and write their own notifications.
+    match /notifications/{notificationId} {
+      allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
   }
 }
