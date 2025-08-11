@@ -100,7 +100,6 @@ export default function ProfilePage() {
   }
 
   const { reputation, effectiveness, responseTime } = getUserMetrics(currentUser.id, transactions);
-  const completedJobs = transactions.filter(t => t.providerId === currentUser.id && (t.status === 'Pagado' || t.status === 'Resuelto')).length;
   const isNewProvider = responseTime === 'Nuevo';
   
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -247,22 +246,7 @@ export default function ProfilePage() {
               )}
             </div>
             
-            <div className="flex justify-around text-center text-sm text-muted-foreground pt-4 pb-2">
-                 <div className="cursor-pointer">
-                    <span className="font-semibold text-foreground">{gallery?.length || 0}</span> Publicaciones
-                </div>
-                {isProductProvider ? (
-                     <div className="cursor-pointer">
-                        <span className="font-semibold text-foreground">{products.length}</span> Productos
-                    </div>
-                 ) : (
-                     <div>
-                        <span className="font-semibold text-foreground">{completedJobs}</span> Trab. Realizados
-                    </div>
-                 )}
-            </div>
-
-            <Card className="mt-2">
+            <Card className="mt-4">
                 <CardContent className="p-2">
                     <div className="flex justify-end gap-2">
                         {isProvider && <Button variant="outline" className="flex-1 rounded-full text-xs h-8 px-4 font-bold" onClick={handleCampaignClick}><Megaphone className="w-4 h-4 mr-2 text-purple-500"/>Gestionar Campañas</Button>}
@@ -272,27 +256,29 @@ export default function ProfilePage() {
             </Card>
 
             <div className="flex justify-around font-semibold text-center border-b mt-4">
-                <div
+                <Button
+                    variant="ghost"
                     className={cn(
-                    "flex-1 p-3 cursor-pointer flex items-center justify-center gap-2",
+                    "flex-1 p-3 rounded-none",
                     activeTab === 'publications' ? "text-primary border-b-2 border-primary" : "text-muted-foreground"
                     )}
                     onClick={() => setActiveTab('publications')}
                 >
-                   <LayoutGrid className="w-5 h-5"/>
                    <span>Publicaciones</span>
-                </div>
+                   <span className="font-mono ml-2 text-xs p-1 bg-muted rounded-md">{gallery?.length || 0}</span>
+                </Button>
                 {isProvider && (
-                     <div
+                    <Button
+                        variant="ghost"
                         className={cn(
-                        "flex-1 p-3 cursor-pointer flex items-center justify-center gap-2",
+                        "flex-1 p-3 rounded-none",
                         activeTab === 'catalog' ? "text-primary border-b-2 border-primary" : "text-muted-foreground"
                         )}
                         onClick={() => setActiveTab('catalog')}
                     >
-                         <Package className="w-5 h-5"/>
                         <span>{isProductProvider ? 'Catálogo' : 'Trabajos'}</span>
-                    </div>
+                        <span className="font-mono ml-2 text-xs p-1 bg-muted rounded-md">{isProductProvider ? products.length : 0}</span>
+                    </Button>
                 )}
             </div>
 
