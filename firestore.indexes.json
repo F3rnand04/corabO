@@ -7,12 +7,12 @@
       "fields": [
         {
           "fieldPath": "participantIds",
-          "order": "ASC",
+          "order": "ASCENDING",
           "arrayConfig": "CONTAINS"
         },
         {
           "fieldPath": "lastUpdated",
-          "order": "DESC"
+          "order": "DESCENDING"
         }
       ]
     },
@@ -22,11 +22,25 @@
       "fields": [
         {
           "fieldPath": "providerId",
-          "order": "ASC"
+          "order": "ASCENDING"
         },
         {
           "fieldPath": "name",
-          "order": "ASC"
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "gallery",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "providerId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
         }
       ]
     }
