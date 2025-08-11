@@ -80,7 +80,7 @@ export const getProfileProducts = ai.defineFlow(
         const q: any[] = [
             where("providerId", "==", userId),
             where("type", "==", "product"),
-            orderBy('productDetails.name', 'asc'),
+            orderBy('createdAt', 'desc'),
             limit(limitNum)
         ];
 
@@ -97,6 +97,7 @@ export const getProfileProducts = ai.defineFlow(
         
         const products = snapshot.docs.map(doc => {
                 const data = doc.data() as GalleryImage;
+                // Transform the GalleryImage data into the Product type
                 return {
                     id: data.id,
                     name: data.productDetails?.name || 'Producto sin nombre',
@@ -108,7 +109,7 @@ export const getProfileProducts = ai.defineFlow(
                 } as Product;
             });
 
-        const lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
+        const lastVisibleDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
 
         return { products, lastVisibleDocId: lastVisibleDoc?.id };
     }

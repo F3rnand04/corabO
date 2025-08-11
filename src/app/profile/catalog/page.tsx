@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { Loader2, Package } from 'lucide-react';
 import { useCorabo } from '@/contexts/CoraboContext';
