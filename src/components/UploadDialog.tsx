@@ -36,8 +36,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
 
   if (!currentUser) return null;
 
-  // Temporarily default to gallery view, hiding catalog logic from UI
-  const isProductProvider = false; // currentUser.profileSetupData?.offerType === 'product';
+  const isProductProvider = currentUser.profileSetupData?.offerType === 'product';
   const [view, setView] = useState<'selection' | 'upload_gallery' | 'upload_product'>(isProductProvider ? 'selection' : 'upload_gallery');
   
   // Common state
@@ -129,7 +128,6 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
     
     setIsSubmitting(true);
     try {
-        // Construct the owner object from the currentUser
         const ownerData: PublicationOwner = {
             id: currentUser.id,
             name: currentUser.profileSetupData?.useUsername ? (currentUser.profileSetupData.username ?? currentUser.name) : currentUser.name,
@@ -331,13 +329,16 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
   );
 
   const renderContent = () => {
+    if (view === 'selection') {
+        return renderSelectionView();
+    }
     if (view === 'upload_gallery') {
         return renderGalleryUploadView();
     }
     if (view === 'upload_product') {
         return renderProductUploadView();
     }
-    // Default to gallery upload if selection isn't needed
+    // Default fallback
     return renderGalleryUploadView();
   }
 
