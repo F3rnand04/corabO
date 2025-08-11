@@ -6,7 +6,7 @@
 import { ai } from '@/ai/genkit';
 import { getFirestoreDb } from '@/lib/firebase-server';
 import { collection, getDocs, query, limit, startAfter, doc, getDoc, orderBy } from 'firebase/firestore';
-import type { GalleryImage } from '@/lib/types';
+import type { GalleryImage, PublicationOwner } from '@/lib/types';
 import { GetFeedInputSchema, GetFeedOutputSchema } from '@/lib/types';
 
 export const getFeed = ai.defineFlow(
@@ -19,8 +19,8 @@ export const getFeed = ai.defineFlow(
         const db = getFirestoreDb();
         const publicationsCollection = collection(db, "publications");
 
-        // Consulta simplificada para evitar la necesidad de un índice compuesto complejo.
-        // La ordenación por fecha es una operación estándar y eficiente.
+        // The query is now simplified to order by creation date, which is a standard
+        // and efficient operation supported by a default single-field index.
         const q = [
             orderBy('createdAt', 'desc'),
             limit(limitNum)
@@ -40,7 +40,8 @@ export const getFeed = ai.defineFlow(
             return { publications: [], lastVisibleDocId: undefined };
         }
         
-        const publications = querySnapshot.docs.map(doc => doc.data()) as GalleryImage[];
+        // The data is already sorted by the database query.
+        const publications = querySnapshot.docs.map(doc => doc.data() as GalleryImage);
         const lastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
         
         return {

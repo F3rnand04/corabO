@@ -8,7 +8,7 @@ import { ai } from '@/ai/genkit';
 import { getFirestoreDb } from '@/lib/firebase-server';
 import { collection, getDocs, query, where, limit, startAfter, doc, getDoc, orderBy } from 'firebase/firestore';
 import { GetProfileGalleryInputSchema, GetProfileGalleryOutputSchema, GetProfileProductsInputSchema, GetProfileProductsOutputSchema } from '@/lib/types';
-import type { GalleryImage } from '@/lib/types';
+import type { GalleryImage, Product } from '@/lib/types';
 
 
 // --- Get Gallery with Pagination ---
@@ -23,10 +23,10 @@ export const getProfileGallery = ai.defineFlow(
         const db = getFirestoreDb();
         const galleryCollection = collection(db, 'users', userId, 'gallery');
 
-        // CRITICAL FIX: Removed orderBy('createdAt', 'desc') as the combination of filtering
-        // on a subcollection (implicitly by userId) and ordering by another field requires a
-        // composite index. The sorting will be handled client-side if necessary, or we
-        // accept the default Firestore ordering to prevent fatal errors.
+        // CRITICAL FIX: Removed orderBy('createdAt', 'desc') from the query.
+        // The combination of filtering on a subcollection (implicitly by userId in the rules)
+        // and ordering by another field requires a composite index.
+        // The sorting will now be handled in the backend code after fetching.
         const q: any[] = [
             limit(limitNum)
         ];
@@ -41,7 +41,7 @@ export const getProfileGallery = ai.defineFlow(
         const galleryQuery = query(galleryCollection, ...q);
         const snapshot = await getDocs(galleryQuery);
         
-        // Sorting is now done in the backend code after fetching.
+        // Sorting is now done in the backend code after fetching to avoid complex queries.
         const gallery = snapshot.docs
             .map(doc => doc.data() as GalleryImage)
             .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -83,7 +83,7 @@ export const getProfileProducts = ai.defineFlow(
         const productsQuery = query(productsCollection, ...q);
         
         const snapshot = await getDocs(productsQuery);
-        const products = snapshot.docs.map(doc => doc.data());
+        const products = snapshot.docs.map(doc => doc.data() as Product);
         const lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
 
         return { products, lastVisibleDocId: lastVisibleDoc?.id };

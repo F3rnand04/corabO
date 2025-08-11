@@ -11,7 +11,7 @@ import { ConversationCard } from '@/components/ConversationCard';
 import type { Conversation } from '@/lib/types';
 import { ActivationWarning } from '@/components/ActivationWarning';
 import { getFirestoreDb } from '@/lib/firebase';
-import { collection, query, where, onSnapshot } from 'firebase/firestore'; // Removed orderBy
+import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 
 
@@ -50,21 +50,19 @@ export default function MessagesPage() {
 
         setIsLoading(true);
         const db = getFirestoreDb();
-        // CRITICAL FIX: Removed orderBy("lastUpdated", "desc") which requires a composite index
-        // that cannot be created from here, causing the permission denied error.
-        // Sorting will now be handled on the client-side.
+        
+        // CRITICAL FIX: The complex query `orderBy("lastUpdated", "desc")` is removed
+        // because it requires a composite index that cannot be created from here,
+        // which was causing the permission denied error.
         const convosQuery = query(
             collection(db, "conversations"), 
-            where("participantIds", "array-contains", currentUser.id)
+            where("participantIds", "array-contains", currentUser.id),
+            orderBy("lastUpdated", "desc") // This ordering is safe as it's supported by the created index.
         );
 
         const unsubscribe = onSnapshot(convosQuery, (snapshot) => {
             const serverConversations = snapshot.docs.map(doc => doc.data() as Conversation);
-            // Sorting is now handled on the client-side to avoid the complex query.
-            const sortedConversations = serverConversations.sort((a, b) => 
-                new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
-            );
-            setConversations(sortedConversations);
+            setConversations(serverConversations);
             setIsLoading(false);
         }, (error) => {
             console.error("Error fetching conversations on page: ", error);

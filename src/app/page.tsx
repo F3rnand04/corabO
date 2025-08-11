@@ -3,7 +3,7 @@
 
 import { PublicationCard } from "@/components/PublicationCard";
 import type { GalleryImage } from "@/lib/types";
-import { useMemo, useEffect, useState, useCallback } from "react";
+import { useMemo, useEffect, useState, useCallback, useRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { ActivationWarning } from "@/components/ActivationWarning";
@@ -17,23 +17,23 @@ export default function HomePage() {
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [lastVisible, setLastVisible] = useState<string | undefined>(undefined);
   const [hasMore, setHasMore] = useState(true);
+  const observer = useRef<IntersectionObserver>();
+  
+  const loadFeed = useCallback(async (startAfterDocId?: string, isInitialLoad = false) => {
+    if (isFetchingMore && !isInitialLoad) return; 
 
-
-  const loadFeed = useCallback(async (startAfterDocId?: string) => {
-    if (isFetchingMore) return; // Prevent multiple fetches
-
-    if (startAfterDocId) {
-        setIsFetchingMore(true);
-    } else {
+    if (isInitialLoad) {
         setIsLoading(true);
-        setHasMore(true); // Reset hasMore on initial load
-        setPublications([]); // Clear publications on initial load
+        setHasMore(true); 
+        setPublications([]); 
+    } else {
+        setIsFetchingMore(true);
     }
 
     try {
         const { publications: newPublications, lastVisibleDocId } = await getFeed({ limitNum: 5, startAfterDocId });
         
-        setPublications(prev => startAfterDocId ? [...prev, ...newPublications] : newPublications);
+        setPublications(prev => isInitialLoad ? newPublications : [...prev, ...newPublications]);
         setLastVisible(lastVisibleDocId);
 
         if (!lastVisibleDocId || newPublications.length < 5) {
@@ -48,9 +48,23 @@ export default function HomePage() {
     }
   }, [getFeed, isFetchingMore]);
 
+  const lastElementRef = useCallback(node => {
+    if (isLoading || isFetchingMore) return;
+    if (observer.current) observer.current.disconnect();
+    
+    observer.current = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting && hasMore) {
+            loadFeed(lastVisible);
+        }
+    });
+
+    if (node) observer.current.observe(node);
+  }, [isLoading, isFetchingMore, hasMore, loadFeed, lastVisible]);
+
+
   useEffect(() => {
     if (currentUser) {
-        loadFeed(); // Initial load
+        loadFeed(undefined, true); // Initial load
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser, feedView]); // Reload feed when view or user changes
@@ -104,20 +118,18 @@ export default function HomePage() {
        
         <div className="space-y-4">
         {filteredPublications.length > 0 ? (
-            filteredPublications.map(item => <PublicationCard key={item.id} publication={item} />)
+            filteredPublications.map((item, index) => {
+                if(filteredPublications.length === index + 1) {
+                    return <div ref={lastElementRef} key={item.id}><PublicationCard publication={item} /></div>
+                }
+                return <PublicationCard key={item.id} publication={item} />
+            })
         ) : (
              !isFetchingMore && (
                 <p className="text-center text-muted-foreground pt-16">
                     {noResultsMessage()}
                 </p>
              )
-        )}
-        {hasMore && !isFetchingMore && filteredPublications.length > 0 && (
-            <div className="flex justify-center">
-                <Button onClick={() => loadFeed(lastVisible)} disabled={isFetchingMore}>
-                    Cargar más
-                </Button>
-            </div>
         )}
         {isFetchingMore && (
             <div className="flex justify-center py-4">
