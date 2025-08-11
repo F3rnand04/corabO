@@ -109,9 +109,16 @@ export const payCommitment = ai.defineFlow(
         const txSnap = await getDoc(txRef);
         if (!txSnap.exists()) throw new Error("Transaction not found.");
 
+        const transaction = txSnap.data() as Transaction;
+
         // SECURITY CHECK: Only the client can pay.
-        if (txSnap.data().clientId !== userId) {
+        if (transaction.clientId !== userId) {
             throw new Error("Permission denied. User is not the client for this transaction.");
+        }
+
+        // BUSINESS LOGIC CHECK: Ensure payment is only made when the status is correct.
+        if (transaction.status !== 'Finalizado - Pendiente de Pago') {
+            throw new Error("Invalid action. Payment can only be made after confirming service reception.");
         }
         
         const updateData: any = { status: 'Pago Enviado - Esperando Confirmación' };
