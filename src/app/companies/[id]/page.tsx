@@ -58,12 +58,13 @@ export default function CompanyProfilePage() {
         setProvider(fetchedProvider);
 
         if (fetchedProvider) {
-            const galleryData = await getProfileGallery(providerId);
-            setProviderGallery(galleryData);
+            // Se usa el ID del proveedor obtenido para las llamadas a los flujos
+            const galleryData = await getProfileGallery({ userId: fetchedProvider.id });
+            setProviderGallery(galleryData.gallery);
 
             if (fetchedProvider.profileSetupData?.offerType === 'product') {
-                const productsData = await getProfileProducts(providerId);
-                setProviderProducts(productsData);
+                 const productsData = await getProfileProducts({ userId: fetchedProvider.id });
+                 setProviderProducts(productsData.products);
             }
         }
     } catch (error) {
@@ -247,7 +248,7 @@ export default function CompanyProfilePage() {
   
   const displayDistance = provider.profileSetupData?.showExactLocation ? "A menos de 1km" : "500m - 1km";
   
-  const { reputation, effectiveness, responseTime } = getUserMetrics(provider.id);
+  const { reputation, effectiveness, responseTime } = getUserMetrics(provider.id, transactions);
   const isNewProvider = responseTime === 'Nuevo';
 
   const profileData = {
@@ -622,7 +623,7 @@ export default function CompanyProfilePage() {
                {isProductProvider ? (
                   <div>
                       <div className="p-4 border-b">
-                        <h3 className="text-lg font-semibold text-center flex items-center justify-center gap-2"><Package className='w-5 h-5'/> Productos</h3>
+                        <h3 className="text-lg font-semibold text-center flex items-center justify-center gap-2"><Package className='w-5 h-5'/> Catálogo de Productos</h3>
                       </div>
                       {providerProducts.length > 0 ? (
                         <div className='p-2 grid grid-cols-2 gap-2'>
