@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useRef, ChangeEvent } from 'react';
@@ -36,8 +37,10 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
 
   if (!currentUser) return null;
 
-  const isProductProvider = currentUser.profileSetupData?.offerType === 'product';
-  const [view, setView] = useState<'selection' | 'upload_gallery' | 'upload_product'>(isProductProvider ? 'selection' : 'upload_gallery');
+  const canOfferBoth = currentUser.profileSetupData?.offerType === 'product' && currentUser.profileSetupData?.categories?.length > 0;
+  const initialView = canOfferBoth ? 'selection' : (currentUser.profileSetupData?.offerType === 'product' ? 'upload_product' : 'upload_gallery');
+
+  const [view, setView] = useState<'selection' | 'upload_gallery' | 'upload_product'>(initialView);
   
   // Common state
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -102,7 +105,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
   };
 
   const resetState = () => {
-    setView(isProductProvider ? 'selection' : 'upload_gallery');
+    setView(initialView);
     setGalleryImagePreview(null);
     setGalleryDescription('');
     setGalleryFile(null);
@@ -180,7 +183,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
         await createProduct(productData);
         toast({ title: "¡Producto Añadido!", description: `${productName} ya está en tu catálogo.` });
         handleClose();
-        router.refresh();
+        router.push('/profile/catalog');
     } catch (error) {
         console.error("Error creating product:", error);
         toast({ variant: "destructive", title: "Error al Añadir Producto", description: "No se pudo crear el producto." });

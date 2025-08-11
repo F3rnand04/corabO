@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useCorabo } from '@/contexts/CoraboContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { CampaignDialog } from '@/components/CampaignDialog';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
@@ -28,6 +28,7 @@ export function ProfileHeader() {
   const { currentUser, updateUserProfileImage, getUserMetrics, transactions, getAgendaEvents, toggleGps } = useCorabo();
   
   const router = useRouter();
+  const pathname = usePathname();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isCampaignDialogOpen, setIsCampaignDialogOpen] = useState(false);
@@ -141,53 +142,51 @@ export function ProfileHeader() {
           </div>
         </div>
         
-        <Card className="mt-4">
-            <CardContent className="p-2 flex flex-col gap-2">
-                 {!currentUser.isSubscribed && (
-                    <Button variant="link" size="sm" className="h-auto p-0 text-red-500/80 hover:text-red-500 text-xs" onClick={() => setIsSubscriptionDialogOpen(true)}>
-                        Suscribir
-                    </Button>
-                 )}
-                 <div className="flex justify-end gap-2">
-                     <Popover>
-                        <PopoverTrigger asChild>
-                             <Button variant="outline" className="flex-1 rounded-full text-xs h-8 px-4 font-bold">
-                                <CalendarIcon className="w-4 h-4 mr-2 text-blue-500"/>Agenda
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                            <Calendar
-                                mode="multiple"
-                                selected={eventDates}
-                                onDayClick={handleDayClick}
-                            />
-                            <div className="p-2 border-t text-center text-xs text-muted-foreground">
-                                Días con eventos están resaltados.
-                            </div>
-                        </PopoverContent>
-                    </Popover>
-                     <Button variant="outline" asChild className="flex-1 rounded-full text-xs h-8 px-4 font-bold">
-                        <Link href="/transactions">
-                            <Wallet className="w-4 h-4 mr-2 text-green-500"/>Registro
-                        </Link>
-                    </Button>
-                    <Button variant="outline" className="flex-1 rounded-full text-xs h-8 px-4 font-bold" onClick={() => toggleGps(currentUser.id)}>
-                        <MapPin className={cn("w-4 h-4 mr-2", currentUser.isGpsActive ? "text-green-500" : "text-muted-foreground")}/>GPS
-                    </Button>
-                 </div>
-                 <div className="flex justify-end gap-2">
-                    {isProvider && <Button variant="secondary" className="flex-1 rounded-full text-xs h-8 px-4 font-bold" onClick={handleCampaignClick}><Megaphone className="w-4 h-4 mr-2 text-purple-500"/>Gestionar Campañas</Button>}
-                    <Button variant="secondary" className="flex-1 rounded-full text-xs h-8 px-4 font-bold" onClick={handlePromotionClick}><Zap className="w-4 h-4 mr-2 text-yellow-500"/>Emprende por Hoy</Button>
-                </div>
-            </CardContent>
-        </Card>
+        <div className="mt-4 space-y-3">
+             {!currentUser.isSubscribed && (
+                <Button variant="link" size="sm" className="w-full h-auto p-0 text-red-500/80 hover:text-red-500 text-xs justify-start" onClick={() => setIsSubscriptionDialogOpen(true)}>
+                    Suscribir
+                </Button>
+             )}
+             <div className="flex justify-around gap-2">
+                 <Popover>
+                    <PopoverTrigger asChild>
+                         <Button variant="outline" className="flex-1 rounded-full text-xs h-8 px-4 font-bold">
+                            <CalendarIcon className="w-4 h-4 mr-2 text-blue-500"/>Agenda
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                        <Calendar
+                            mode="multiple"
+                            selected={eventDates}
+                            onDayClick={handleDayClick}
+                        />
+                        <div className="p-2 border-t text-center text-xs text-muted-foreground">
+                            Días con eventos están resaltados.
+                        </div>
+                    </PopoverContent>
+                </Popover>
+                 <Button variant="outline" asChild className="flex-1 rounded-full text-xs h-8 px-4 font-bold">
+                    <Link href="/transactions">
+                        <Wallet className="w-4 h-4 mr-2 text-green-500"/>Registro
+                    </Link>
+                </Button>
+                <Button variant="outline" className="flex-1 rounded-full text-xs h-8 px-4 font-bold" onClick={() => toggleGps(currentUser.id)}>
+                    <MapPin className={cn("w-4 h-4 mr-2", currentUser.isGpsActive ? "text-green-500" : "text-muted-foreground")}/>GPS
+                </Button>
+             </div>
+             <div className="flex justify-end gap-2">
+                {isProvider && <Button variant="secondary" className="flex-1 rounded-full text-xs h-8 px-4 font-bold" onClick={handleCampaignClick}><Megaphone className="w-4 h-4 mr-2 text-purple-500"/>Gestionar Campañas</Button>}
+                <Button variant="secondary" className="flex-1 rounded-full text-xs h-8 px-4 font-bold" onClick={handlePromotionClick}><Zap className="w-4 h-4 mr-2 text-yellow-500"/>Emprende por Hoy</Button>
+            </div>
+        </div>
 
-        <div className="flex justify-around font-semibold text-center border-b mt-2">
-            <Button asChild variant="ghost" className="flex-1 p-3 rounded-none text-muted-foreground data-[active=true]:text-primary data-[active=true]:border-b-2 data-[active=true]:border-primary" data-active={router.pathname === '/profile/publications'}>
+        <div className="flex justify-around font-semibold text-center border-b mt-4">
+            <Button asChild variant="ghost" className="flex-1 p-3 rounded-none text-muted-foreground data-[active=true]:text-primary data-[active=true]:border-b-2 data-[active=true]:border-primary" data-active={pathname === '/profile/publications'}>
                <Link href="/profile/publications">{`Publicaciones ${galleryCount}`}</Link>
             </Button>
-            {isProvider && (
-                <Button asChild variant="ghost" className="flex-1 p-3 rounded-none text-muted-foreground data-[active=true]:text-primary data-[active=true]:border-b-2 data-[active=true]:border-primary" data-active={router.pathname === '/profile/catalog'}>
+            {isProvider && currentUser.profileSetupData?.offerType !== 'service' && (
+                <Button asChild variant="ghost" className="flex-1 p-3 rounded-none text-muted-foreground data-[active=true]:text-primary data-[active=true]:border-b-2 data-[active=true]:border-primary" data-active={pathname === '/profile/catalog'}>
                     <Link href="/profile/catalog">{`Catálogo ${productCount}`}</Link>
                 </Button>
             )}
