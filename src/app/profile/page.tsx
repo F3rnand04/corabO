@@ -39,7 +39,10 @@ export default function ProfilePage() {
   const isProductProvider = isProvider && currentUser?.profileSetupData?.offerType === 'product';
 
   const loadProfileData = useCallback(async () => {
-    if (!currentUser?.id) return;
+    if (!currentUser?.id) {
+        setIsLoading(false);
+        return;
+    };
     
     setIsLoading(true);
     try {
@@ -63,8 +66,10 @@ export default function ProfilePage() {
   }, [currentUser?.id, isProductProvider, toast]);
 
   useEffect(() => {
-    loadProfileData();
-  }, [loadProfileData]);
+    if(currentUser){
+        loadProfileData();
+    }
+  }, [currentUser, loadProfileData]);
 
 
   const router = useRouter();
@@ -246,9 +251,20 @@ export default function ProfilePage() {
               )}
             </div>
             
-            <Card className="mt-4">
-                <CardContent className="p-2">
-                    <div className="flex justify-end gap-2">
+             <Card className="mt-4">
+                <CardContent className="p-0">
+                    <div className="flex justify-around font-semibold text-center border-b">
+                        <div className="flex-1 p-3">
+                            <p className="font-bold">{gallery.length}</p>
+                            <p className="text-xs text-muted-foreground">Publicaciones</p>
+                        </div>
+                        <Separator orientation="vertical" className="h-auto"/>
+                        <div className="flex-1 p-3">
+                            <p className="font-bold">{isProductProvider ? products.length : 0}</p>
+                            <p className="text-xs text-muted-foreground">{isProductProvider ? 'Productos' : 'Trab. Realizados'}</p>
+                        </div>
+                    </div>
+                     <div className="p-2 flex justify-end gap-2">
                         {isProvider && <Button variant="outline" className="flex-1 rounded-full text-xs h-8 px-4 font-bold" onClick={handleCampaignClick}><Megaphone className="w-4 h-4 mr-2 text-purple-500"/>Gestionar Campañas</Button>}
                         <Button variant="secondary" className="flex-1 rounded-full text-xs h-8 px-4 font-bold" onClick={handlePromotionClick}><Zap className="w-4 h-4 mr-2 text-yellow-500"/>Emprende por Hoy</Button>
                     </div>
@@ -264,8 +280,7 @@ export default function ProfilePage() {
                     )}
                     onClick={() => setActiveTab('publications')}
                 >
-                   <span>Publicaciones</span>
-                   <span className="font-mono ml-2 text-xs p-1 bg-muted rounded-md">{gallery?.length || 0}</span>
+                   <LayoutGrid className="w-5 h-5" />
                 </Button>
                 {isProvider && (
                     <Button
@@ -276,8 +291,7 @@ export default function ProfilePage() {
                         )}
                         onClick={() => setActiveTab('catalog')}
                     >
-                        <span>{isProductProvider ? 'Catálogo' : 'Trabajos'}</span>
-                        <span className="font-mono ml-2 text-xs p-1 bg-muted rounded-md">{isProductProvider ? products.length : 0}</span>
+                        {isProductProvider ? <Package className="w-5 h-5"/> : <Tag className="w-5 h-5"/>}
                     </Button>
                 )}
             </div>

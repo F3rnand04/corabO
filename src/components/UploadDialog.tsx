@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, ChangeEvent } from 'react';
@@ -35,7 +36,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
 
   if (!currentUser) return null;
 
-  const isProductProvider = false;
+  const isProductProvider = currentUser.profileSetupData?.offerType === 'product';
   const [view, setView] = useState<'selection' | 'upload_gallery' | 'upload_product'>(isProductProvider ? 'selection' : 'upload_gallery');
   
   // Common state
