@@ -7,6 +7,8 @@ import { useMemo, useEffect, useState, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { ActivationWarning } from "@/components/ActivationWarning";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 // The owner data is now embedded in the publication object
 interface PublicationWithOwner extends GalleryImage {
@@ -17,31 +19,43 @@ export default function HomePage() {
   const { searchQuery, feedView, currentUser, getFeed } = useCorabo();
   const [publications, setPublications] = useState<PublicationWithOwner[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
+  const [lastVisible, setLastVisible] = useState<string | undefined>(undefined);
+  const [hasMore, setHasMore] = useState(true);
 
-  // This effect fetches the feed once when the component mounts if the user is available.
-  const loadFeed = useCallback(async () => {
-    setIsLoading(true);
+
+  const loadFeed = useCallback(async (startAfterDocId?: string) => {
+    if (startAfterDocId) {
+        setIsFetchingMore(true);
+    } else {
+        setIsLoading(true);
+    }
+
     try {
-        const feedData = await getFeed();
-        // Ensure owner data is at least an empty object to prevent render errors
-        const sanitizedData = feedData.map(p => ({ ...p, owner: p.owner || {} })) as PublicationWithOwner[];
-        
-        // CRITICAL FIX: Sort publications on the client-side after fetching
-        const sortedData = sanitizedData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        
-        setPublications(sortedData);
+        const { publications: newPublications, lastVisibleDocId } = await getFeed({ limitNum: 5, startAfterDocId });
+        const sanitizedData = newPublications.map(p => ({ ...p, owner: p.owner || {} })) as PublicationWithOwner[];
+
+        setPublications(prev => startAfterDocId ? [...prev, ...sanitizedData] : sanitizedData);
+        setLastVisible(lastVisibleDocId);
+
+        if (!lastVisibleDocId || newPublications.length === 0) {
+            setHasMore(false);
+        }
+
     } catch (error) {
         console.error("Error fetching feed:", error);
     } finally {
         setIsLoading(false);
+        setIsFetchingMore(false);
     }
   }, [getFeed]);
 
   useEffect(() => {
     if (currentUser) {
+        setHasMore(true);
         loadFeed();
     }
-  }, [currentUser, loadFeed]);
+  }, [currentUser, feedView]); // Reload feed when view changes
 
   const filteredPublications = useMemo(() => {
     if (!publications.length) return [];
@@ -98,6 +112,14 @@ export default function HomePage() {
             <p className="text-center text-muted-foreground pt-16">
             {noResultsMessage()}
             </p>
+        )}
+        {hasMore && filteredPublications.length > 0 && (
+            <div className="flex justify-center">
+                <Button onClick={() => loadFeed(lastVisible)} disabled={isFetchingMore}>
+                    {isFetchingMore ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                    Cargar más
+                </Button>
+            </div>
         )}
         </div>
     </main>

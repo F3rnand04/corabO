@@ -1,50 +1,84 @@
 'use server';
 /**
- * @fileOverview Flows for fetching profile-specific data securely.
+ * @fileOverview Flows for fetching profile-specific data securely with pagination.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestoreDb } from '@/lib/firebase-server';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { collection, getDocs, query, where, orderBy, limit, startAfter, doc, getDoc } from 'firebase/firestore';
 import type { GalleryImage, Product } from '@/lib/types';
+import { GetProfileGalleryInputSchema, GetProfileGalleryOutputSchema, GetProfileProductsInputSchema, GetProfileProductsOutputSchema } from '@/lib/types';
 
-// Define loose schemas for GalleryImage and Product as Zod can't handle circular types easily.
-const GalleryImageSchema = z.any();
-const ProductSchema = z.any();
+// --- Get Gallery with Pagination ---
 
 export const getProfileGallery = ai.defineFlow(
     {
         name: 'getProfileGalleryFlow',
-        inputSchema: z.string(), // userId
-        outputSchema: z.array(GalleryImageSchema),
+        inputSchema: GetProfileGalleryInputSchema,
+        outputSchema: GetProfileGalleryOutputSchema,
     },
-    async (userId) => {
+    async ({ userId, limitNum = 9, startAfterDocId }) => {
         const db = getFirestoreDb();
-        // CRITICAL FIX: Removed orderBy("createdAt", "desc") which requires a composite index
-        // that cannot be created from here, causing the permission denied error.
-        // Sorting will now be handled on the client-side.
-        const galleryQuery = query(
-            collection(db, 'users', userId, 'gallery')
-        );
+        const galleryCollection = collection(db, 'users', userId, 'gallery');
+
+        let galleryQuery;
+        if (startAfterDocId) {
+            const startAfterDoc = await getDoc(doc(db, 'users', userId, 'gallery', startAfterDocId));
+            galleryQuery = query(
+                galleryCollection,
+                startAfter(startAfterDoc),
+                limit(limitNum)
+            );
+        } else {
+            galleryQuery = query(
+                galleryCollection,
+                limit(limitNum)
+            );
+        }
+
         const snapshot = await getDocs(galleryQuery);
-        return snapshot.docs.map(doc => doc.data());
+        const gallery = snapshot.docs.map(doc => doc.data()).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        const lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
+
+        return { gallery, lastVisibleDocId: lastVisibleDoc?.id };
     }
 );
+
+
+// --- Get Products with Pagination ---
 
 export const getProfileProducts = ai.defineFlow(
     {
         name: 'getProfileProductsFlow',
-        inputSchema: z.string(), // userId (providerId)
-        outputSchema: z.array(ProductSchema),
+        inputSchema: GetProfileProductsInputSchema,
+        outputSchema: GetProfileProductsOutputSchema,
     },
-    async (userId) => {
+    async ({ userId, limitNum = 10, startAfterDocId }) => {
         const db = getFirestoreDb();
-        const productsQuery = query(
-            collection(db, 'products'),
-            where("providerId", "==", userId)
-        );
+        const productsCollection = collection(db, 'products');
+
+        let productsQuery;
+        if (startAfterDocId) {
+            const startAfterDoc = await getDoc(doc(db, "products", startAfterDocId));
+            productsQuery = query(
+                productsCollection,
+                where("providerId", "==", userId),
+                startAfter(startAfterDoc),
+                limit(limitNum)
+            );
+        } else {
+            productsQuery = query(
+                productsCollection,
+                where("providerId", "==", userId),
+                limit(limitNum)
+            );
+        }
+        
         const snapshot = await getDocs(productsQuery);
-        return snapshot.docs.map(doc => doc.data());
+        const products = snapshot.docs.map(doc => doc.data()).sort((a,b) => a.name.localeCompare(b.name));
+        const lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
+
+        return { products, lastVisibleDocId: lastVisibleDoc?.id };
     }
 );

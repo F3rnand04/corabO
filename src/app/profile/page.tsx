@@ -38,18 +38,24 @@ export default function ProfilePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Pagination state for products
+  const [productsLastVisible, setProductsLastVisible] = useState<string | undefined>();
+  const [hasMoreProducts, setHasMoreProducts] = useState(true);
+  const [isFetchingMoreProducts, setIsFetchingMoreProducts] = useState(false);
+
   const loadProfileData = useCallback(async () => {
     if (!currentUser?.id) return;
     
     setIsLoading(true);
     try {
-        const galleryData = await getProfileGallery(currentUser.id);
-        const sortedGallery = galleryData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        setGallery(sortedGallery);
+        const { gallery: galleryData } = await getProfileGallery({ userId: currentUser.id });
+        setGallery(galleryData);
 
         if (currentUser.type === 'provider') {
-            const productsData = await getProfileProducts(currentUser.id);
+            const { products: productsData, lastVisibleDocId } = await getProfileProducts({ userId: currentUser.id });
             setProducts(productsData);
+            setProductsLastVisible(lastVisibleDocId);
+            if (!lastVisibleDocId) setHasMoreProducts(false);
         }
         
     } catch (error) {
@@ -58,13 +64,33 @@ export default function ProfilePage() {
     } finally {
         setIsLoading(false);
     }
-  }, [currentUser?.id, toast]);
+  }, [currentUser?.id, currentUser?.type, toast]);
+
+  const loadMoreProducts = async () => {
+    if (!currentUser?.id || !productsLastVisible || !hasMoreProducts) return;
+
+    setIsFetchingMoreProducts(true);
+    try {
+        const { products: newProducts, lastVisibleDocId } = await getProfileProducts({ 
+            userId: currentUser.id, 
+            startAfterDocId: productsLastVisible 
+        });
+        setProducts(prev => [...prev, ...newProducts]);
+        setProductsLastVisible(lastVisibleDocId);
+        if (!lastVisibleDocId) setHasMoreProducts(false);
+    } catch (error) {
+        console.error("Error loading more products:", error);
+        toast({ variant: 'destructive', title: 'Error al cargar más productos' });
+    } finally {
+        setIsFetchingMoreProducts(false);
+    }
+  };
 
   useEffect(() => {
     if(currentUser?.id){
         loadProfileData();
     }
-  }, [currentUser?.id, loadProfileData]);
+  }, [loadProfileData, currentUser?.id]);
 
   const router = useRouter();
 
@@ -425,27 +451,37 @@ export default function ProfilePage() {
               <TabsContent value="products">
                   {isProvider ? (
                     isLoading ? <Skeleton className="h-48 w-full" /> :
-                    products.length > 0 ? (
-                      <div className='p-2 grid grid-cols-2 sm:grid-cols-3 gap-2'>
-                        {products.map(product => (
-                            <ProductGridCard 
-                                key={product.id} 
-                                product={product}
-                                onDoubleClick={() => openProductDetailsDialog(product)}
-                            />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="w-full aspect-video bg-muted flex flex-col items-center justify-center text-center p-4 rounded-lg mt-2">
-                        <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
-                        <h3 className="font-bold text-lg text-foreground">
-                            Tu catálogo está vacío
-                        </h3>
-                        <p className="text-muted-foreground text-sm">
-                            Haz clic en el botón (+) en el pie de página para añadir tu primer producto.
-                        </p>
-                      </div>
-                    )
+                    <>
+                      {products.length > 0 ? (
+                        <div className='p-2 grid grid-cols-2 sm:grid-cols-3 gap-2'>
+                          {products.map(product => (
+                              <ProductGridCard 
+                                  key={product.id} 
+                                  product={product}
+                                  onDoubleClick={() => openProductDetailsDialog(product)}
+                              />
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="w-full aspect-video bg-muted flex flex-col items-center justify-center text-center p-4 rounded-lg mt-2">
+                          <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
+                          <h3 className="font-bold text-lg text-foreground">
+                              Tu catálogo está vacío
+                          </h3>
+                          <p className="text-muted-foreground text-sm">
+                              Haz clic en el botón (+) en el pie de página para añadir tu primer producto.
+                          </p>
+                        </div>
+                      )}
+                      {hasMoreProducts && (
+                        <div className="flex justify-center mt-4">
+                          <Button onClick={loadMoreProducts} disabled={isFetchingMoreProducts} variant="outline">
+                            {isFetchingMoreProducts ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                            Cargar más productos
+                          </Button>
+                        </div>
+                      )}
+                    </>
                   ) : <div className="text-center p-8 text-muted-foreground">Esta vista es solo para proveedores.</div>}
               </TabsContent>
 
@@ -461,8 +497,7 @@ export default function ProfilePage() {
                         <div 
                           className="relative group cursor-pointer"
                           onTouchStart={onTouchStart}
-                          onTouchMove={onTouchMove}
-                          onTouchEnd={onTouchEnd}
+                          onTouchMove={onTouchEnd}
                           onDoubleClick={handleImageDoubleClick}
                         >
                           <Image

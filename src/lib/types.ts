@@ -1,5 +1,7 @@
 
 
+import { z } from 'zod';
+
 export type Notification = {
   id: string;
   userId: string;
@@ -322,3 +324,61 @@ export type VerificationOutput = {
     nameMatch: boolean;
     idMatch: boolean;
 };
+
+// Schemas from feed-flow
+const PublicationSchema = z.any();
+
+export const GetFeedInputSchema = z.object({
+    limitNum: z.number().optional().default(10),
+    startAfterDocId: z.string().optional(),
+});
+
+export const GetFeedOutputSchema = z.object({
+    publications: z.array(PublicationSchema),
+    lastVisibleDocId: z.string().optional(),
+});
+
+// Schemas from profile-flow
+const GalleryImageSchema = z.any();
+const ProductSchema = z.any();
+
+export const GetProfileGalleryInputSchema = z.object({
+    userId: z.string(),
+    limitNum: z.number().optional().default(9),
+    startAfterDocId: z.string().optional(),
+});
+
+export const GetProfileGalleryOutputSchema = z.object({
+    gallery: z.array(GalleryImageSchema),
+    lastVisibleDocId: z.string().optional(),
+});
+
+export const GetProfileProductsInputSchema = z.object({
+    userId: z.string(), // providerId
+    limitNum: z.number().optional().default(10),
+    startAfterDocId: z.string().optional(),
+});
+
+export const GetProfileProductsOutputSchema = z.object({
+    products: z.array(ProductSchema),
+    lastVisibleDocId: z.string().optional(),
+});
+
+// Schemas from publication-flow
+export const CreatePublicationInputSchema = z.object({
+  userId: z.string(),
+  description: z.string(),
+  imageDataUri: z.string(),
+  aspectRatio: z.enum(['square', 'horizontal', 'vertical']),
+  type: z.enum(['image', 'video']),
+});
+export type CreatePublicationInput = z.infer<typeof CreatePublicationInputSchema>;
+
+export const CreateProductInputSchema = z.object({
+  userId: z.string(),
+  name: z.string(),
+  description: z.string(),
+  price: z.number(),
+  imageDataUri: z.string(),
+});
+export type CreateProductInput = z.infer<typeof CreateProductInputSchema>;

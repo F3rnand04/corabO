@@ -12,17 +12,9 @@ import { z } from 'zod';
 import { getFirestoreDb } from '@/lib/firebase-server';
 import { doc, getDoc, setDoc, writeBatch } from 'firebase/firestore';
 import type { GalleryImage, Product, User, PublicationOwner } from '@/lib/types';
+import { CreatePublicationInputSchema, CreateProductInputSchema } from '@/lib/types';
 
 // --- Create Publication Flow ---
-
-const CreatePublicationInputSchema = z.object({
-  userId: z.string(),
-  description: z.string(),
-  imageDataUri: z.string(),
-  aspectRatio: z.enum(['square', 'horizontal', 'vertical']),
-  type: z.enum(['image', 'video']),
-});
-export type CreatePublicationInput = z.infer<typeof CreatePublicationInputSchema>;
 
 export const createPublication = ai.defineFlow(
   {
@@ -89,16 +81,6 @@ export const createPublication = ai.defineFlow(
 
 
 // --- Create Product Flow ---
-
-const CreateProductInputSchema = z.object({
-  userId: z.string(),
-  name: z.string(),
-  description: z.string(),
-  price: z.number(),
-  imageDataUri: z.string(),
-});
-export type CreateProductInput = z.infer<typeof CreateProductInputSchema>;
-
 
 export const createProduct = ai.defineFlow(
     {

@@ -3,7 +3,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from 'react';
-import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest, PublicationOwner } from '@/lib/types';
+import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest, PublicationOwner, CreatePublicationInput, CreateProductInput } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation";
 import jsPDF from 'jspdf';
@@ -21,7 +21,9 @@ import { autoVerifyIdWithAI as autoVerifyIdWithAIFlow, type VerificationInput } 
 import { getExchangeRate } from '@/ai/flows/exchange-rate-flow';
 import { sendSmsVerificationCodeFlow, verifySmsCodeFlow } from '@/ai/flows/sms-flow';
 import { getFeed as getFeedFlow } from '@/ai/flows/feed-flow';
-import { createProduct as createProductFlow, createPublication as createPublicationFlow, type CreatePublicationInput, type CreateProductInput } from '@/ai/flows/publication-flow';
+import { createProduct as createProductFlow, createPublication as createPublicationFlow } from '@/ai/flows/publication-flow';
+import type { GetFeedInputSchema, GetFeedOutputSchema } from '@/lib/types';
+import { z } from 'zod';
 
 
 type FeedView = 'servicios' | 'empresas';
@@ -110,7 +112,7 @@ interface CoraboState {
   autoVerifyIdWithAI: (input: VerificationInput) => Promise<VerificationOutput>;
   getUserMetrics: (userId: string, transactions: Transaction[]) => UserMetrics;
   fetchUser: (userId: string) => Promise<User | null>;
-  getFeed: () => Promise<GalleryImage[]>;
+  getFeed: (params: z.infer<typeof GetFeedInputSchema>) => Promise<z.infer<typeof GetFeedOutputSchema>>;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -155,9 +157,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return null;
   }, []);
   
-  const getFeed = useCallback(async (): Promise<GalleryImage[]> => {
+  const getFeed = useCallback(async (params: z.infer<typeof GetFeedInputSchema>): Promise<z.infer<typeof GetFeedOutputSchema>> => {
       try {
-          return await getFeedFlow();
+          return await getFeedFlow(params);
       } catch (error) {
           console.error("Error fetching feed via Genkit flow:", error);
           toast({
@@ -165,7 +167,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
               title: 'Error al Cargar Contenido',
               description: 'No se pudo obtener el contenido del feed. Intenta más tarde.'
           });
-          return [];
+          return { publications: [], lastVisibleDocId: undefined };
       }
   }, [toast]);
 
