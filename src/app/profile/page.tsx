@@ -36,7 +36,7 @@ export default function ProfilePage() {
   
   const [gallery, setGallery] = useState<GalleryImage[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]); // This is now correctly initialized as empty
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadProfileData = useCallback(async () => {
@@ -44,7 +44,6 @@ export default function ProfilePage() {
     
     setIsLoading(true);
     try {
-        // Fetch data using the new specific flows
         const galleryData = await getProfileGallery(currentUser.id);
         const sortedGallery = galleryData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         setGallery(sortedGallery);
@@ -53,8 +52,7 @@ export default function ProfilePage() {
             const productsData = await getProfileProducts(currentUser.id);
             setProducts(productsData);
         }
-        // In a real app, transactions would also be fetched here if needed for this page
-        // For now, we use an empty array, which is correct for metric calculation
+        
         setTransactions([]);
     } catch (error) {
         console.error("Error loading profile data:", error);
@@ -65,7 +63,6 @@ export default function ProfilePage() {
   }, [currentUser, toast]);
 
   useEffect(() => {
-    // Only load data if currentUser is available
     if(currentUser){
         loadProfileData();
     }
@@ -275,7 +272,7 @@ export default function ProfilePage() {
     setIsCampaignDialogOpen(true);
   }
 
-  const currentImage = gallery.length > 0 ? gallery[currentImageIndex] : null;
+  const currentImage = gallery?.length > 0 ? gallery[currentImageIndex] : null;
   
   const displayName = currentUser.profileSetupData?.useUsername 
     ? currentUser.profileSetupData.username || currentUser.name 
