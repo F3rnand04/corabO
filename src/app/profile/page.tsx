@@ -421,27 +421,7 @@ export default function ProfilePage() {
               </div>
             </div>
             
-             <div className="flex justify-around text-center text-xs text-muted-foreground pt-4 pb-2">
-                <div>
-                    <p className="font-semibold text-lg text-foreground">{gallery?.length || 0}</p>
-                    <p>Publicaciones</p>
-                </div>
-                {isProvider ? (
-                    isProductProvider ? (
-                        <div>
-                            <p className="font-semibold text-lg text-foreground">{products?.length || 0}</p>
-                            <p>Catálogo</p>
-                        </div>
-                    ) : (
-                        <div>
-                            <p className="font-semibold text-lg text-foreground">{transactions.filter(t => t.providerId === currentUser.id && (t.status === 'Pagado' || t.status === 'Resuelto')).length}</p>
-                            <p>Trab. Realizados</p>
-                        </div>
-                    )
-                ) : null}
-            </div>
-
-            <div className="flex justify-end gap-2 pb-2">
+            <div className="flex justify-end gap-2 py-4">
               {isProvider && (
                 <Button 
                   variant="outline" 
@@ -466,8 +446,8 @@ export default function ProfilePage() {
           <main className="space-y-4">
             <Tabs defaultValue={isProductProvider ? 'products' : 'publications'} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                 <TabsTrigger value="products">Catálogo</TabsTrigger>
-                 <TabsTrigger value="publications">Publicaciones</TabsTrigger>
+                 <TabsTrigger value="products">Catálogo ({products?.length || 0})</TabsTrigger>
+                 <TabsTrigger value="publications">Publicaciones ({gallery?.length || 0})</TabsTrigger>
               </TabsList>
               
               <TabsContent value="products">
