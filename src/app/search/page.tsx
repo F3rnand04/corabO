@@ -12,14 +12,15 @@ export default function SearchPage() {
     const { setSearchQuery, setFeedView } = useCorabo();
 
     const handleCategorySelect = (categoryName: string) => {
-        setFeedView('servicios');
-        setSearchQuery(categoryName);
-        router.push('/');
+        // Neutralized: This no longer updates the feed.
+        // In the future, this could navigate to a dedicated category page.
+        // For now, it does nothing.
+        console.log(`Category selected (neutralized): ${categoryName}`);
     }
 
     const handleShowAll = () => {
         setSearchQuery('');
-        setFeedView('servicios'); // o 'empresas', dependiendo de la vista por defecto que prefieras
+        setFeedView('servicios');
         router.push('/');
     }
 
