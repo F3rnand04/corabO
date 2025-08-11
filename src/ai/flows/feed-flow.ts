@@ -21,7 +21,7 @@ export const getFeed = ai.defineFlow(
 
         // The query is now simplified to order by creation date, which is a standard
         // and efficient operation supported by a default single-field index.
-        const q = [
+        const q: any[] = [
             orderBy('createdAt', 'desc'),
             limit(limitNum)
         ];
