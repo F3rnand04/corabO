@@ -23,6 +23,7 @@ export default function PublicationsPage() {
     if (!currentUser) return;
     setIsLoading(true);
     try {
+      // Correctly call the Genkit flow to get the gallery posts.
       const galleryData = await getProfileGallery({ userId: currentUser.id, limitNum: 50 });
       setGallery(galleryData.gallery);
     } catch (error) {

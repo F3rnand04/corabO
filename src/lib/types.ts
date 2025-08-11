@@ -203,7 +203,7 @@ export type User = {
     text: string;
     expires: string;
   };
-  gallery?: GalleryImage[];
+  gallery?: GalleryImage[]; // This will be deprecated client-side, but kept for now.
   profileSetupData?: ProfileSetupData;
   isPaused?: boolean;
   pauseReason?: string;

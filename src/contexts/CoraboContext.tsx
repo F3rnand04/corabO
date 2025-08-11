@@ -216,11 +216,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         idNumber: '',
         birthDate: '',
         createdAt: new Date().toISOString(),
-        email: firebaseUser.email || '',
-        profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
         type: 'client',
         reputation: 0,
         effectiveness: 100,
+        profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
+        email: firebaseUser.email || '',
         phone: '',
         emailValidated: firebaseUser.emailVerified,
         phoneValidated: false,
@@ -684,21 +684,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const removeGalleryImage = async (userId: string, imageId: string) => {
-    if(!currentUser?.gallery) return;
-    
-    // Optimistic UI update
-    const updatedGallery = currentUser.gallery.filter(img => img.id !== imageId);
-    updateUser(userId, { gallery: updatedGallery });
-
-    // Backend deletion
+    // This function will now delete from the root `publications` collection
     const db = getFirestoreDb();
     const publicationRef = doc(db, 'publications', imageId);
     try {
         await deleteDoc(publicationRef);
+        toast({ title: "Publicación eliminada" });
     } catch (error) {
-        console.error("Error deleting publication from backend, reverting UI:", error);
-        // Revert UI if backend fails
-        updateUser(userId, { gallery: currentUser.gallery });
+        console.error("Error deleting publication:", error);
         toast({ variant: "destructive", title: "Error al eliminar", description: "No se pudo eliminar la publicación."});
     }
   };

@@ -28,6 +28,7 @@ export default function CatalogPage() {
     if (!currentUser) return;
     setIsLoading(true);
     try {
+      // Correctly call the Genkit flow to get products.
       const productData = await getProfileProducts({ userId: currentUser.id, limitNum: 50 });
       setProducts(productData.products);
     } catch (error) {
