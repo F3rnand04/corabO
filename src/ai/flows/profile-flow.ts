@@ -23,30 +23,50 @@ export const getProfileGallery = ai.defineFlow(
         const db = getFirestoreDb();
         const publicationsCollection = collection(db, 'publications');
 
-        // Build the query dynamically
-        const q: any[] = [
+        // Build the query dynamically.
+        // NOTE: A query with `where("type", "in", ...)` and `orderBy` on a different field requires a composite index.
+        // To avoid this, we can perform two separate, simpler queries and merge the results.
+        // This is a more robust approach that doesn't depend on manually creating indexes in the Firebase console.
+
+        const imagesQuery = query(
+            publicationsCollection,
             where("providerId", "==", userId),
-            where("type", "in", ["image", "video"]),
+            where("type", "==", "image"),
             orderBy('createdAt', 'desc'),
             limit(limitNum)
-        ];
+        );
 
+        const videosQuery = query(
+            publicationsCollection,
+            where("providerId", "==", userId),
+            where("type", "==", "video"),
+            orderBy('createdAt', 'desc'),
+            limit(limitNum)
+        );
+        
+        // We don't support pagination with this merged approach yet.
+        // This implementation will always fetch the first page.
+        // A full pagination solution would require more complex cursor management.
         if (startAfterDocId) {
-            const startAfterDoc = await getDoc(doc(db, "publications", startAfterDocId));
-            if(startAfterDoc.exists()){
-                q.push(startAfter(startAfterDoc));
-            }
+             console.warn("Pagination (startAfter) is not fully supported for combined image/video gallery fetches yet.");
         }
-        
-        const galleryQuery = query(publicationsCollection, ...q);
-        
-        const snapshot = await getDocs(galleryQuery);
-        
-        const gallery = snapshot.docs.map(doc => doc.data() as GalleryImage);
 
-        const lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
+        const [imageSnapshot, videoSnapshot] = await Promise.all([
+            getDocs(imagesQuery),
+            getDocs(videosQuery),
+        ]);
+        
+        const galleryImages = imageSnapshot.docs.map(doc => doc.data() as GalleryImage);
+        const galleryVideos = videoSnapshot.docs.map(doc => doc.data() as GalleryImage);
+        
+        // Merge and sort results by date
+        const combinedGallery = [...galleryImages, ...galleryVideos]
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+            .slice(0, limitNum); // Apply limit after merging
 
-        return { gallery, lastVisibleDocId: lastVisibleDoc?.id };
+        // For this simplified version, we don't return a `lastVisibleDocId` as it's complex to determine
+        // from a merged result set. The UI will currently not support infinite scroll for the gallery.
+        return { gallery: combinedGallery, lastVisibleDocId: undefined };
     }
 );
 
