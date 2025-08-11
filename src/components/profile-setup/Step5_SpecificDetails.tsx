@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ProfileSetupData } from '@/lib/types';
 import { useState } from 'react';
+import { useCorabo } from '@/contexts/CoraboContext';
 
 interface Step5_SpecificDetailsProps {
   onBack: () => void;
@@ -30,9 +32,10 @@ const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sába
 export default function Step5_SpecificDetails({ onBack, onNext, formData, setFormData }: Step5_SpecificDetailsProps) {
   const router = useRouter();
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
+  const { currentUser } = useCorabo();
   
   const MAX_RADIUS_FREE = 10;
-  const isOverFreeRadius = (formData.serviceRadius || 0) > MAX_RADIUS_FREE && !formData.isSubscribed;
+  const isOverFreeRadius = (formData.serviceRadius || 0) > MAX_RADIUS_FREE && !(currentUser?.isSubscribed);
 
   const handleFormDataChange = (field: keyof ProfileSetupData, value: any) => {
     setFormData({ ...formData, [field]: value });

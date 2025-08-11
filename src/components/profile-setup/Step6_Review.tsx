@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -82,7 +83,7 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
   }
   
   const serviceRadius = formData.serviceRadius || 10;
-  const isOverFreeRadius = serviceRadius > MAX_RADIUS_FREE && !currentUser?.isSubscribed;
+  const isOverFreeRadius = serviceRadius > MAX_RADIUS_FREE && !(currentUser?.isSubscribed);
 
   const renderItem = (label: string, value: React.ReactNode, step: number, children?: React.ReactNode) => (
     <div className="flex justify-between items-start py-4">

@@ -1,5 +1,4 @@
 
-
 'use server';
 /**
  * @fileOverview Flows for fetching profile-specific data securely with pagination.
@@ -20,41 +19,34 @@ export const getProfileGallery = ai.defineFlow(
         inputSchema: GetProfileGalleryInputSchema,
         outputSchema: GetProfileGalleryOutputSchema,
     },
-    async ({ userId, limitNum = 20, startAfterDocId }) => {
+    async ({ userId, limitNum = 9, startAfterDocId }) => {
         const db = getFirestoreDb();
         const publicationsCollection = collection(db, 'publications');
 
-        // Simple, robust query to get all publications for the user.
-        // We will sort and handle pagination logic after fetching to avoid complex index issues.
-        const q = query(
-            publicationsCollection,
+        // Build the query dynamically
+        const q: any[] = [
             where("providerId", "==", userId),
-            where("type", "in", ["image", "video"])
-        );
-        
-        const snapshot = await getDocs(q);
-        
-        // Sort on the server to ensure chronological order.
-        const gallery = snapshot.docs
-            .map(doc => doc.data() as GalleryImage)
-            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-        // Basic pagination logic handled here
-        let paginatedGallery = gallery;
-        let lastVisibleDocId: string | undefined = undefined;
+            where("type", "in", ["image", "video"]),
+            orderBy('createdAt', 'desc'),
+            limit(limitNum)
+        ];
 
         if (startAfterDocId) {
-            const startIndex = gallery.findIndex(p => p.id === startAfterDocId) + 1;
-            paginatedGallery = gallery.slice(startIndex, startIndex + limitNum);
-        } else {
-            paginatedGallery = gallery.slice(0, limitNum);
+            const startAfterDoc = await getDoc(doc(db, "publications", startAfterDocId));
+            if(startAfterDoc.exists()){
+                q.push(startAfter(startAfterDoc));
+            }
         }
+        
+        const galleryQuery = query(publicationsCollection, ...q);
+        
+        const snapshot = await getDocs(galleryQuery);
+        
+        const gallery = snapshot.docs.map(doc => doc.data() as GalleryImage);
 
-        if (paginatedGallery.length > 0 && gallery.indexOf(paginatedGallery[paginatedGallery.length - 1]) + 1 < gallery.length) {
-            lastVisibleDocId = paginatedGallery[paginatedGallery.length - 1].id;
-        }
+        const lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
 
-        return { gallery: paginatedGallery, lastVisibleDocId };
+        return { gallery, lastVisibleDocId: lastVisibleDoc?.id };
     }
 );
 
@@ -80,7 +72,6 @@ export const getProfileProducts = ai.defineFlow(
         ];
 
         if (startAfterDocId) {
-            // CRITICAL FIX: The cursor document must also be from the 'publications' collection.
             const startAfterDoc = await getDoc(doc(db, "publications", startAfterDocId));
             if(startAfterDoc.exists()){
                 q.push(startAfter(startAfterDoc));

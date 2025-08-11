@@ -2,17 +2,12 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // TEMPORARY PUBLIC ACCESS FOR TESTING
-    // This allows anyone to read and write to any collection.
-    // This is NOT secure for production.
+
+    // REGLA DE DESARROLLO: Permite acceso público total para facilitar las pruebas.
+    // Esto elimina cualquier error de "permisos insuficientes" durante la refactorización.
+    // ¡IMPORTANTE! Se debe asegurar antes de pasar a producción.
     match /{document=**} {
       allow read, write: if true;
-    }
-
-    // Allow authorized users to call backend flows
-    // This rule is open for development purposes.
-    match /flows/{flowName} {
-      allow call: if true;
     }
   }
 }

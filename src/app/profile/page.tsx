@@ -25,20 +25,28 @@ import { Badge } from '@/components/ui/badge';
 import { SubscriptionDialog } from '@/components/SubscriptionDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getProfileGallery } from '@/ai/flows/profile-flow';
+import { getProfileGallery, getProfileProducts } from '@/ai/flows/profile-flow';
+import { ProductGridCard } from '@/components/ProductGridCard';
+import { ProductDetailsDialog } from '@/components/ProductDetailsDialog';
 
 
 export default function ProfilePage() {
   const { toast } = useToast();
-  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, getAgendaEvents, getUserMetrics, transactions, createPublication } = useCorabo();
+  const { currentUser, updateUserProfileImage, toggleGps, getAgendaEvents, getUserMetrics, transactions } = useCorabo();
   
   const [gallery, setGallery] = useState<GalleryImage[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Pagination state for gallery
   const [galleryLastVisible, setGalleryLastVisible] = useState<string | undefined>();
   const [hasMoreGallery, setHasMoreGallery] = useState(true);
   const [isFetchingMoreGallery, setIsFetchingMoreGallery] = useState(false);
+  
+  // Pagination state for products
+  const [productsLastVisible, setProductsLastVisible] = useState<string | undefined>();
+  const [hasMoreProducts, setHasMoreProducts] = useState(true);
+  const [isFetchingMoreProducts, setIsFetchingMoreProducts] = useState(false);
   
   const loadGallery = useCallback(async (startAfterDocId?: string, isInitial = false) => {
     if (!currentUser?.id || (isFetchingMoreGallery && !isInitial)) return;
@@ -63,9 +71,35 @@ export default function ProfilePage() {
     }
   }, [currentUser?.id, isFetchingMoreGallery]);
 
+  const loadProducts = useCallback(async (startAfterDocId?: string, isInitial = false) => {
+    if (!currentUser?.id || (isFetchingMoreProducts && !isInitial)) return;
+    if (isInitial) {
+        setIsLoading(true);
+        setHasMoreProducts(true);
+        setProducts([]);
+    } else {
+        setIsFetchingMoreProducts(true);
+    }
+
+    try {
+        const { products: newProducts, lastVisibleDocId } = await getProfileProducts({ userId: currentUser.id, limitNum: 10, startAfterDocId });
+        setProducts(prev => isInitial ? newProducts : [...prev, ...newProducts]);
+        setProductsLastVisible(lastVisibleDocId);
+        if (!lastVisibleDocId || newProducts.length < 10) setHasMoreProducts(false);
+    } catch (error) {
+        console.error("Error fetching products:", error);
+    } finally {
+        if(isInitial) setIsLoading(false);
+        setIsFetchingMoreProducts(false);
+    }
+  }, [currentUser?.id, isFetchingMoreProducts]);
+
   useEffect(() => {
     if (currentUser?.id) {
         loadGallery(undefined, true);
+        if(currentUser.type === 'provider' && currentUser.profileSetupData?.offerType === 'product') {
+            loadProducts(undefined, true);
+        }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser?.id]);
@@ -81,6 +115,7 @@ export default function ProfilePage() {
   }
 
   const isProvider = currentUser.type === 'provider';
+  const isProductProvider = isProvider && currentUser.profileSetupData?.offerType === 'product';
 
   const [starCount, setStarCount] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
@@ -89,14 +124,12 @@ export default function ProfilePage() {
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
-  const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [isCampaignDialogOpen, setIsCampaignDialogOpen] = useState(false);
-  const [_, setForceRerender] = useState(0);
-
+  const [isProductDetailsDialogOpen, setIsProductDetailsDialogOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const agendaEvents = getAgendaEvents(transactions);
@@ -120,13 +153,6 @@ export default function ProfilePage() {
     }
   };
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setForceRerender(Math.random());
-    }, 1000 * 60);
-    return () => clearInterval(interval);
-  }, []);
-
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -144,102 +170,19 @@ export default function ProfilePage() {
     }
   };
   
-  const handleDeleteImage = (imageId: string) => {
-    removeGalleryImage(currentUser.id, imageId);
-    toast({ title: "Publicación Eliminada", description: "La imagen ha sido eliminada de tu galería." });
-    setIsDetailsDialogOpen(false);
-    if (currentImageIndex >= (gallery?.length ?? 1) - 1) {
-      setCurrentImageIndex(0);
-    }
-  };
-
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
   };
-
-  const minSwipeDistance = 50;
-
-  const onTouchStart = (e: TouchEvent<HTMLDivElement>) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
-  };
-
-  const onTouchMove = (e: TouchEvent<HTMLDivElement>) => {
-    setTouchEnd(e.targetTouches[0].clientX);
-  };
-
-  const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-
-    if (isLeftSwipe) {
-      handleNext();
-    }
-    if (isRightSwipe) {
-      handlePrev();
-    }
-    setTouchStart(null);
-    setTouchEnd(null);
-  };
-
-  const handlePrev = () => {
-    setCurrentImageIndex((prevIndex) =>
-      prevIndex === 0 ? (gallery?.length ?? 1) - 1 : prevIndex - 1
-    );
-  };
-
-  const handleNext = () => {
-    setCurrentImageIndex((prevIndex) =>
-      prevIndex === (gallery?.length ?? 1) - 1 ? 0 : prevIndex + 1
-    );
-  };
   
-  const handleImageDoubleClick = () => {
-    handleStarClick();
-  };
-
-  const openDetailsDialog = (image: GalleryImage) => {
-    setSelectedImage(image);
+  const openDetailsDialog = (startIndex: number) => {
+    setCurrentImageIndex(startIndex);
     setIsDetailsDialogOpen(true);
   }
-
-  const handleStarClick = () => {
-    if (isLiked) {
-      setStarCount(prev => prev - 1);
-    } else {
-      setStarCount(prev => prev + 1);
-    }
-    setIsLiked(prev => !prev);
+  
+  const openProductDetailsDialog = (product: Product) => {
+    setSelectedProduct(product);
+    setIsProductDetailsDialogOpen(true);
   };
-
-  const handleShareClick = async () => {
-    const currentItem = (gallery && gallery.length > 0 ? gallery[currentImageIndex] : null);
-    if (!currentItem) return;
-
-    const shareData = {
-      title: `Mira esto de ${currentUser.name}`,
-      text: 'description' in currentItem ? currentItem.description : '',
-      url: window.location.href,
-    };
-
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-        setShareCount(prev => prev + 1);
-      } else {
-        throw new Error("Share API not supported");
-      }
-    } catch (error) {
-       navigator.clipboard.writeText(shareData.url);
-       toast({
-         title: "Enlace Copiado",
-         description: "El enlace al perfil ha sido copiado a tu portapapeles.",
-       });
-    }
-  }
-
 
   const handlePromotionClick = () => {
     if (!currentUser.isTransactionsActive) {
@@ -412,107 +355,103 @@ export default function ProfilePage() {
           
           <main className="space-y-4">
             <Tabs defaultValue="publications" className="w-full">
-              <TabsList className="grid w-full grid-cols-1">
+              <TabsList className="grid w-full grid-cols-2">
                  <TabsTrigger value="publications">Publicaciones ({gallery?.length || 0})</TabsTrigger>
+                 <TabsTrigger value="catalog" disabled={!isProductProvider}>Catálogo ({products?.length || 0})</TabsTrigger>
               </TabsList>
               
               <TabsContent value="publications">
-                <Card className="rounded-2xl overflow-hidden shadow-lg mt-2">
-                  <CardContent className="p-0">
-                    {isLoading ? (
-                        <div className="w-full aspect-video flex items-center justify-center bg-muted">
-                           <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                        </div>
-                    ) : gallery.length > 0 && currentImage ? (
-                      <>
+                  {isLoading ? (
+                    <Skeleton className="w-full aspect-square rounded-lg" />
+                  ) : gallery.length > 0 ? (
+                    <div className="p-2 grid grid-cols-3 gap-1">
+                      {gallery.map((item, index) => (
                         <div 
-                          className="relative group cursor-pointer"
-                          onTouchStart={onTouchStart}
-                          onTouchEnd={onTouchEnd}
-                          onTouchMove={onTouchMove}
-                          onDoubleClick={handleImageDoubleClick}
+                          key={item.id} 
+                          className="relative aspect-square cursor-pointer group"
+                          onClick={() => openDetailsDialog(index)}
                         >
                           <Image
-                            src={currentImage.src}
-                            alt={currentImage.alt}
-                            width={600}
-                            height={400}
-                            className="rounded-t-2xl object-cover w-full aspect-[4/3] transition-opacity duration-300"
-                            data-ai-hint="professional workspace"
-                            key={currentImage.src} 
+                            src={item.src}
+                            alt={item.alt}
+                            fill
+                            className="object-cover rounded-md"
+                            data-ai-hint="product image"
                           />
-                           <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="absolute top-2 left-2 z-10 text-white bg-black/20 hover:bg-black/40 rounded-full h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => setIsReportDialogOpen(true)}
-                          >
-                            <Flag className="w-4 h-4" />
-                        </Button>
                         </div>
-                        <div className="p-2 grid grid-cols-3 gap-1">
-                          {gallery.map((thumb, index) => (
-                            <div 
-                              key={index} 
-                              className="relative aspect-square cursor-pointer group"
-                              onClick={() => setCurrentImageIndex(index)}
-                              onDoubleClick={() => openDetailsDialog(thumb)}
-                            >
-                              <Image
-                                src={thumb.src}
-                                alt={thumb.alt}
-                                fill
-                                className={cn(
-                                  "rounded-lg object-cover transition-all duration-200",
-                                  currentImageIndex === index 
-                                    ? "ring-2 ring-primary ring-offset-2" 
-                                    : "ring-0 group-hover:opacity-80"
-                                )}
-                                data-ai-hint="product image"
-                              />
-                            </div>
-                          ))}
-                        </div>
-                        {hasMoreGallery && (
-                            <div className="p-2">
-                                <Button onClick={() => loadGallery(galleryLastVisible)} disabled={isFetchingMoreGallery} variant="outline" className="w-full">
-                                    {isFetchingMoreGallery ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                                    Cargar más publicaciones
-                                </Button>
-                            </div>
-                        )}
-                      </>
-                    ) : (
-                      <div className="w-full aspect-[4/3] bg-muted flex flex-col items-center justify-center text-center p-4">
-                        <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
-                        <h3 className="font-bold text-lg text-foreground">
-                          Tu galería está vacía
-                        </h3>
-                        <p className="text-muted-foreground text-sm">
-                          Haz clic en el botón (+) en el pie de página para añadir tu primera publicación.
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="w-full aspect-video bg-muted flex flex-col items-center justify-center text-center p-4 rounded-lg">
+                      <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
+                      <h3 className="font-bold text-lg text-foreground">
+                        Tu galería está vacía
+                      </h3>
+                      <p className="text-muted-foreground text-sm">
+                        Haz clic en el botón (+) en el pie de página para añadir tu primera publicación.
+                      </p>
+                    </div>
+                  )}
+                  {hasMoreGallery && (
+                    <div className="p-2">
+                      <Button onClick={() => loadGallery(galleryLastVisible)} disabled={isFetchingMoreGallery} variant="outline" className="w-full">
+                        {isFetchingMoreGallery ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                        Cargar más
+                      </Button>
+                    </div>
+                  )}
+              </TabsContent>
+              <TabsContent value="catalog">
+                 {isLoading ? (
+                    <Skeleton className="w-full aspect-square rounded-lg" />
+                 ) : isProductProvider && products.length > 0 ? (
+                    <div className="p-2 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {products.map(product => (
+                            <ProductGridCard 
+                              key={product.id} 
+                              product={product}
+                              onDoubleClick={() => openProductDetailsDialog(product)}
+                             />
+                        ))}
+                    </div>
+                 ) : (
+                    <div className="w-full aspect-video bg-muted flex flex-col items-center justify-center text-center p-4 rounded-lg">
+                      <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
+                      <h3 className="font-bold text-lg text-foreground">
+                        Tu catálogo está vacío
+                      </h3>
+                      <p className="text-muted-foreground text-sm">
+                        Haz clic en el botón (+) en el pie de página para añadir tu primer producto.
+                      </p>
+                    </div>
+                 )}
+                  {isProductProvider && hasMoreProducts && (
+                    <div className="p-2">
+                      <Button onClick={() => loadProducts(productsLastVisible)} disabled={isFetchingMoreProducts} variant="outline" className="w-full">
+                        {isFetchingMoreProducts ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                        Cargar más productos
+                      </Button>
+                    </div>
+                  )}
               </TabsContent>
             </Tabs>
           </main>
         </div>
       </div>
-       <ReportDialog 
-            isOpen={isReportDialogOpen} 
-            onOpenChange={setIsReportDialogOpen} 
-            providerId={currentUser.id} 
-            publicationId={currentImage?.id || 'profile-img'} 
-        />
-      {selectedImage && (
+      {currentImage && (
         <ImageDetailsDialog
           isOpen={isDetailsDialogOpen}
           onOpenChange={setIsDetailsDialogOpen}
-          gallery={[selectedImage]}
-          startIndex={0}
+          gallery={gallery}
+          startIndex={currentImageIndex}
           owner={currentUser}
+        />
+      )}
+      {selectedProduct && (
+        <ProductDetailsDialog
+          isOpen={isProductDetailsDialogOpen}
+          onOpenChange={setIsProductDetailsDialogOpen}
+          product={selectedProduct}
         />
       )}
       {isProvider && (

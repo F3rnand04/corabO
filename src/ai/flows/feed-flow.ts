@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A flow for fetching the main feed content securely with pagination.
@@ -17,18 +18,14 @@ export const getFeed = ai.defineFlow(
     },
     async ({ limitNum = 5, startAfterDocId }) => {
         const db = getFirestoreDb();
-        // CORRECTED: Query the unified 'publications' collection instead of 'products'.
         const publicationsCollection = collection(db, "publications");
 
-        // The orderBy clause is required for pagination cursors (startAfter) to work correctly.
-        // We order by creation date to get a chronological feed.
         const q: any[] = [
             orderBy('createdAt', 'desc'),
             limit(limitNum)
         ];
 
         if (startAfterDocId) {
-            // CORRECTED: The cursor document must also be from the 'publications' collection.
             const startAfterDocSnap = await getDoc(doc(db, "publications", startAfterDocId));
             if (startAfterDocSnap.exists()) {
                 q.push(startAfter(startAfterDocSnap));

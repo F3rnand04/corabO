@@ -183,6 +183,7 @@ export type User = {
   lastName?: string;
   idNumber?: string;
   birthDate?: string;
+  createdAt?: string;
   type: 'client' | 'provider';
   reputation: number;
   effectiveness?: number;
@@ -210,7 +211,6 @@ export type User = {
   role?: 'admin';
   idDocumentUrl?: string;
   idVerificationStatus?: 'pending' | 'verified' | 'rejected';
-  createdAt?: string;
   phoneVerificationCode?: string | null;
   phoneVerificationCodeExpires?: string | null;
   credicoraDetails?: CredicoraLevel;
