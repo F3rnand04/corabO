@@ -16,7 +16,7 @@ runConfig:
   # The minimum number of instances to keep running at all times.
   # This is a good setting to increase to handle higher constant
   # traffic.
-  minInstances: 0
+  minInstances: 1
   # The maximum number of server instances that can be created
   # to handle traffic.
   maxInstances: 2
