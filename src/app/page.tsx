@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
 export default function HomePage() {
-  const { searchQuery, feedView, currentUser, getFeed } = useCorabo();
+  const { currentUser, getFeed } = useCorabo();
   const [publications, setPublications] = useState<GalleryImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
@@ -67,40 +67,7 @@ export default function HomePage() {
         loadFeed(undefined, true); // Initial load
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser, feedView]); // Reload feed when view or user changes
-
-  const filteredPublications = useMemo(() => {
-    if (!publications.length) return [];
-    
-    let viewFiltered = publications.filter(item => {
-        const providerType = item.owner?.profileSetupData?.providerType || 'professional';
-        if (feedView === 'empresas') return providerType === 'company';
-        return providerType !== 'company';
-    });
-    
-    if (!searchQuery) {
-        return viewFiltered;
-    }
-    
-    const lowerCaseQuery = searchQuery.toLowerCase().trim();
-
-    return viewFiltered.filter(item => {
-        const ownerNameMatch = item.owner?.name?.toLowerCase().includes(lowerCaseQuery);
-        const specialtyMatch = item.owner?.profileSetupData?.specialty?.toLowerCase().includes(lowerCaseQuery);
-        const publicationMatch = item.description.toLowerCase().includes(lowerCaseQuery);
-
-        return ownerNameMatch || specialtyMatch || publicationMatch;
-    });
-
-  }, [publications, searchQuery, feedView]);
-
-  const noResultsMessage = () => {
-    const baseMessage = feedView === 'empresas' ? "No se encontraron empresas" : "No se encontraron publicaciones";
-    if (searchQuery) {
-        return `${baseMessage} para "${searchQuery}".`;
-    }
-    return `${baseMessage} en el feed.`;
-  }
+  }, [currentUser]); 
 
   if (isLoading || !currentUser) {
     return (
@@ -117,9 +84,9 @@ export default function HomePage() {
       )}
        
         <div className="space-y-4">
-        {filteredPublications.length > 0 ? (
-            filteredPublications.map((item, index) => {
-                if(filteredPublications.length === index + 1) {
+        {publications.length > 0 ? (
+            publications.map((item, index) => {
+                if(publications.length === index + 1) {
                     return <div ref={lastElementRef} key={item.id}><PublicationCard publication={item} /></div>
                 }
                 return <PublicationCard key={item.id} publication={item} />
@@ -127,7 +94,7 @@ export default function HomePage() {
         ) : (
              !isFetchingMore && (
                 <p className="text-center text-muted-foreground pt-16">
-                    {noResultsMessage()}
+                    No se encontraron publicaciones en el feed.
                 </p>
              )
         )}
