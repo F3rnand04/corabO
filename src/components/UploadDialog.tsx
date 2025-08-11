@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useRef, ChangeEvent } from 'react';
@@ -35,7 +36,8 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
 
   if (!currentUser) return null;
 
-  const isProductProvider = currentUser.profileSetupData?.offerType === 'product';
+  // Temporarily default to gallery view, hiding catalog logic from UI
+  const isProductProvider = false; // currentUser.profileSetupData?.offerType === 'product';
   const [view, setView] = useState<'selection' | 'upload_gallery' | 'upload_product'>(isProductProvider ? 'selection' : 'upload_gallery');
   
   // Common state
@@ -319,7 +321,8 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
     if (view === 'upload_product') {
         return renderProductUploadView();
     }
-    return renderSelectionView();
+    // Default to gallery upload if selection isn't needed
+    return renderGalleryUploadView();
   }
 
   return (

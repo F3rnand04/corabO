@@ -23,11 +23,9 @@ import { Day, type DayProps } from 'react-day-picker';
 import { CampaignDialog } from '@/components/CampaignDialog';
 import { Badge } from '@/components/ui/badge';
 import { SubscriptionDialog } from '@/components/SubscriptionDialog';
-import { ProductGridCard } from '@/components/ProductGridCard';
-import { ProductDetailsDialog } from '@/components/ProductDetailsDialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getProfileGallery, getProfileProducts } from '@/ai/flows/profile-flow';
+import { getProfileGallery } from '@/ai/flows/profile-flow';
 
 
 export default function ProfilePage() {
@@ -35,18 +33,12 @@ export default function ProfilePage() {
   const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, getAgendaEvents, getUserMetrics, transactions, createPublication } = useCorabo();
   
   const [gallery, setGallery] = useState<GalleryImage[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Pagination state for gallery
   const [galleryLastVisible, setGalleryLastVisible] = useState<string | undefined>();
   const [hasMoreGallery, setHasMoreGallery] = useState(true);
   const [isFetchingMoreGallery, setIsFetchingMoreGallery] = useState(false);
-
-  // Pagination state for products
-  const [productsLastVisible, setProductsLastVisible] = useState<string | undefined>();
-  const [hasMoreProducts, setHasMoreProducts] = useState(true);
-  const [isFetchingMoreProducts, setIsFetchingMoreProducts] = useState(false);
   
   const loadGallery = useCallback(async (startAfterDocId?: string, isInitial = false) => {
     if (!currentUser?.id || (isFetchingMoreGallery && !isInitial)) return;
@@ -71,38 +63,9 @@ export default function ProfilePage() {
     }
   }, [currentUser?.id, isFetchingMoreGallery]);
 
-  const loadProducts = useCallback(async (startAfterDocId?: string, isInitial = false) => {
-    if (!currentUser?.id || (isFetchingMoreProducts && !isInitial)) return;
-     if (isInitial) {
-        setIsLoading(true);
-        setHasMoreProducts(true);
-        setProducts([]);
-    } else {
-        setIsFetchingMoreProducts(true);
-    }
-
-    try {
-        const { products: newProducts, lastVisibleDocId } = await getProfileProducts({ userId: currentUser.id, limitNum: 10, startAfterDocId });
-        setProducts(prev => isInitial ? newProducts : [...prev, ...newProducts]);
-        setProductsLastVisible(lastVisibleDocId);
-        if (!lastVisibleDocId || newProducts.length < 10) setHasMoreProducts(false);
-    } catch (error) {
-        console.error("Error fetching products:", error);
-    } finally {
-        if(isInitial) setIsLoading(false);
-        setIsFetchingMoreProducts(false);
-    }
-  }, [currentUser?.id, isFetchingMoreProducts]);
-
   useEffect(() => {
     if (currentUser?.id) {
-        setIsLoading(true);
-        const galleryPromise = loadGallery(undefined, true);
-        const productsPromise = currentUser.type === 'provider' ? loadProducts(undefined, true) : Promise.resolve();
-        
-        Promise.all([galleryPromise, productsPromise]).finally(() => {
-            setIsLoading(false);
-        });
+        loadGallery(undefined, true);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser?.id]);
@@ -118,7 +81,6 @@ export default function ProfilePage() {
   }
 
   const isProvider = currentUser.type === 'provider';
-  const isProductProvider = isProvider && currentUser.profileSetupData?.offerType === 'product';
 
   const [starCount, setStarCount] = useState(0);
   const [isLiked, setIsLiked] = useState(false);
@@ -130,9 +92,7 @@ export default function ProfilePage() {
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [selectedImage, setSelectedImage] = useState<GalleryImage | null>(null);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
-  const [isProductDetailsDialogOpen, setIsProductDetailsDialogOpen] = useState(false);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [isCampaignDialogOpen, setIsCampaignDialogOpen] = useState(false);
   const [_, setForceRerender] = useState(0);
@@ -244,12 +204,6 @@ export default function ProfilePage() {
     setSelectedImage(image);
     setIsDetailsDialogOpen(true);
   }
-  
-  const openProductDetailsDialog = (product: Product) => {
-    setSelectedProduct(product);
-    setIsProductDetailsDialogOpen(true);
-  };
-
 
   const handleStarClick = () => {
     if (isLiked) {
@@ -261,7 +215,7 @@ export default function ProfilePage() {
   };
 
   const handleShareClick = async () => {
-    const currentItem = isProductProvider ? products[0] : (gallery && gallery.length > 0 ? gallery[currentImageIndex] : null);
+    const currentItem = (gallery && gallery.length > 0 ? gallery[currentImageIndex] : null);
     if (!currentItem) return;
 
     const shareData = {
@@ -457,49 +411,11 @@ export default function ProfilePage() {
           </header>
           
           <main className="space-y-4">
-            <Tabs defaultValue={isProductProvider ? 'products' : 'publications'} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                 <TabsTrigger value="products">Catálogo ({products?.length || 0})</TabsTrigger>
+            <Tabs defaultValue="publications" className="w-full">
+              <TabsList className="grid w-full grid-cols-1">
                  <TabsTrigger value="publications">Publicaciones ({gallery?.length || 0})</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="products">
-                  {isProvider ? (
-                    isLoading ? <Skeleton className="h-48 w-full" /> :
-                    <>
-                      {products.length > 0 ? (
-                        <div className='p-2 grid grid-cols-2 sm:grid-cols-3 gap-2'>
-                          {products.map(product => (
-                              <ProductGridCard 
-                                  key={product.id} 
-                                  product={product}
-                                  onDoubleClick={() => openProductDetailsDialog(product)}
-                              />
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="w-full aspect-video bg-muted flex flex-col items-center justify-center text-center p-4 rounded-lg mt-2">
-                          <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
-                          <h3 className="font-bold text-lg text-foreground">
-                              Tu catálogo está vacío
-                          </h3>
-                          <p className="text-muted-foreground text-sm">
-                              Haz clic en el botón (+) en el pie de página para añadir tu primer producto.
-                          </p>
-                        </div>
-                      )}
-                      {hasMoreProducts && (
-                        <div className="flex justify-center mt-4">
-                          <Button onClick={() => loadProducts(productsLastVisible)} disabled={isFetchingMoreProducts} variant="outline">
-                            {isFetchingMoreProducts ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                            Cargar más productos
-                          </Button>
-                        </div>
-                      )}
-                    </>
-                  ) : <div className="text-center p-8 text-muted-foreground">Esta vista es solo para proveedores.</div>}
-              </TabsContent>
-
               <TabsContent value="publications">
                 <Card className="rounded-2xl overflow-hidden shadow-lg mt-2">
                   <CardContent className="p-0">
@@ -597,13 +513,6 @@ export default function ProfilePage() {
           gallery={[selectedImage]}
           startIndex={0}
           owner={currentUser}
-        />
-      )}
-      {selectedProduct && (
-        <ProductDetailsDialog
-            isOpen={isProductDetailsDialogOpen}
-            onOpenChange={setIsProductDetailsDialogOpen}
-            product={selectedProduct}
         />
       )}
       {isProvider && (
