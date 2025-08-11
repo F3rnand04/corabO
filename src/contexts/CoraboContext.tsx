@@ -97,7 +97,7 @@ interface CoraboState {
   removeCommentFromImage: (ownerId: string, imageId: string, commentIndex: number) => void;
   getCartItemQuantity: (productId: string) => number;
   activatePromotion: (details: { imageId: string, promotionText: string, cost: number }) => void;
-  createCampaign: (data: CreateCampaignInput) => Promise<void>;
+  createCampaign: (data: Omit<CreateCampaignInput, 'userId'>) => Promise<void>;
   createPublication: (data: CreatePublicationInput) => Promise<void>;
   createProduct: (data: CreateProductInput) => Promise<void>;
   setDeliveryAddress: (address: string) => void;
@@ -567,19 +567,19 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return await autoVerifyIdWithAIFlow(input);
   };
 
-  const createCampaign = (data: CreateCampaignInput) => {
+  const createCampaign = (data: Omit<CreateCampaignInput, 'userId'>) => {
     if (!currentUser) return Promise.reject("User not authenticated");
     return createCampaignFlow({ ...data, userId: currentUser.id });
   };
 
   const createPublication = (data: CreatePublicationInput) => {
     if (!currentUser) return Promise.reject("User not authenticated");
-    return createPublicationFlow({ ...data, userId: currentUser.id });
+      return createPublicationFlow(data);
   };
   
   const createProduct = (data: CreateProductInput) => {
     if (!currentUser) return Promise.reject("User not authenticated");
-      return createProductFlow({ ...data, userId: currentUser.id });
+      return createProductFlow(data);
   };
 
   const checkout = (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {};

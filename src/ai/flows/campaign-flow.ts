@@ -108,7 +108,10 @@ const createCampaignFlow = ai.defineFlow(
       endDate: endDate.toISOString(),
       status: 'pending_payment',
       stats: {impressions: 0, reach: 0, clicks: 0, messages: 0},
-      ...input,
+      budgetLevel: input.budgetLevel,
+      dailyBudget: input.dailyBudget,
+      segmentation: input.segmentation,
+      appliedSubscriptionDiscount: input.appliedSubscriptionDiscount,
       // Business Rule: Credicora financing is only applicable if the final budget is >= $20
       financedWithCredicora: input.financedWithCredicora && input.budget >= 20,
     };
