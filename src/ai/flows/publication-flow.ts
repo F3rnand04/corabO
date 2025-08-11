@@ -35,25 +35,6 @@ export const createPublication = ai.defineFlow(
 
     const publicationId = `pub-${Date.now()}`;
 
-    // 1. Create the private gallery item
-    const galleryItem: GalleryImage = {
-      id: publicationId,
-      providerId: userId,
-      type: type,
-      src: imageDataUri, // In a real scenario, this would be a GCS URL after upload
-      alt: description.slice(0, 50),
-      description,
-      createdAt: new Date().toISOString(),
-      comments: [],
-      aspectRatio,
-      likes: 0,
-    };
-    const userGalleryRef = doc(db, 'users', userId, 'gallery', publicationId);
-    batch.set(userGalleryRef, galleryItem);
-
-    // 2. Create the denormalized public publication for the feed
-    // CRITICAL FIX: Robustly build ownerData with fallbacks for each property
-    // to prevent errors if profileSetupData or its sub-properties are missing.
     const ownerData: PublicationOwner = {
         id: user.id,
         name: user.profileSetupData?.useUsername ? (user.profileSetupData.username ?? user.name) : user.name,
@@ -68,10 +49,21 @@ export const createPublication = ai.defineFlow(
         },
     };
 
+    // Create the denormalized public publication for the feed
     const publicPublication: GalleryImage = {
-      ...galleryItem,
+      id: publicationId,
+      providerId: userId,
+      type: type, // 'image' or 'video'
+      src: imageDataUri, 
+      alt: description.slice(0, 50),
+      description,
+      createdAt: new Date().toISOString(),
+      comments: [],
+      aspectRatio,
+      likes: 0,
       owner: ownerData,
     };
+    
     const publicationRef = doc(db, 'publications', publicationId);
     batch.set(publicationRef, publicPublication);
     
@@ -97,17 +89,33 @@ export const createProduct = ai.defineFlow(
         const user = userSnap.data() as User;
         
         const productId = `prod-${Date.now()}`;
-        const newProduct: Product = {
+        
+        // This now creates a document in the 'publications' collection with type 'product'
+        const newProductPublication: GalleryImage = {
             id: productId,
-            name,
-            description,
-            price,
-            category: user.profileSetupData?.primaryCategory ?? 'General',
             providerId: userId,
-            imageUrl: imageDataUri, // Again, this would be a GCS URL in production
+            type: 'product',
+            src: imageDataUri,
+            alt: name,
+            description: description,
+            createdAt: new Date().toISOString(),
+            // Product-specific details are now part of the GalleryImage type
+            productDetails: {
+              name: name,
+              price: price,
+              category: user.profileSetupData?.primaryCategory ?? 'General',
+            },
+            owner: {
+              id: user.id,
+              name: user.profileSetupData?.useUsername ? (user.profileSetupData.username ?? user.name) : user.name,
+              profileImage: user.profileImage ?? '',
+              verified: user.verified ?? false,
+              isGpsActive: user.isGpsActive ?? false,
+              reputation: user.reputation ?? 0,
+            }
         };
         
-        const productRef = doc(db, 'products', productId);
-        await setDoc(productRef, newProduct);
+        const productRef = doc(db, 'publications', productId);
+        await setDoc(productRef, newProductPublication);
     }
 );

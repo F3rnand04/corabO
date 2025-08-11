@@ -686,17 +686,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const removeGalleryImage = async (userId: string, imageId: string) => {
     if(!currentUser) return;
     const db = getFirestoreDb();
-    const batch = writeBatch(db);
     
-    const userGalleryRef = doc(db, 'users', userId, 'gallery', imageId);
-    batch.delete(userGalleryRef);
-
-    // Also delete the public publication
+    // In our new unified model, we just need to delete from 'publications'
     const publicationRef = doc(db, 'publications', imageId);
-    batch.delete(publicationRef);
-
-    await batch.commit();
-
+    await deleteDoc(publicationRef);
   };
   
   const validateEmail = async (userId: string, emailToValidate: string): Promise<boolean> => {
@@ -960,5 +953,3 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
-
-    

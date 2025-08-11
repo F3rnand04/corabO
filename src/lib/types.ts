@@ -60,10 +60,16 @@ export type PublicationOwner = {
   }
 };
 
+export type ProductDetails = {
+    name: string;
+    price: number;
+    category: string;
+};
+
 export type GalleryImage = {
   id: string;
   providerId: string;
-  type: 'image' | 'video';
+  type: 'image' | 'video' | 'product';
   src: string;
   alt: string;
   description: string;
@@ -78,6 +84,7 @@ export type GalleryImage = {
   aspectRatio?: 'square' | 'horizontal' | 'vertical';
   likes?: number;
   owner?: PublicationOwner; // Denormalized owner data
+  productDetails?: ProductDetails; // Product-specific data
 };
 
 export type CredicoraLevel = {
@@ -370,7 +377,7 @@ export const CreatePublicationInputSchema = z.object({
   description: z.string(),
   imageDataUri: z.string(),
   aspectRatio: z.enum(['square', 'horizontal', 'vertical']),
-  type: z.enum(['image', 'video']),
+  type: z.enum(['image', 'video', 'product']),
 });
 export type CreatePublicationInput = z.infer<typeof CreatePublicationInputSchema>;
 
