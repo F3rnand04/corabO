@@ -31,7 +31,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  if (!currentUser) return null; // Should not happen if the button is visible, but a good safeguard.
+  if (!currentUser) return null;
 
   const isProductProvider = currentUser.profileSetupData?.offerType === 'product';
   const [view, setView] = useState<'selection' | 'upload_gallery' | 'upload_product'>(isProductProvider ? 'selection' : 'upload_gallery');
@@ -324,3 +324,5 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
     </Dialog>
   );
 }
+
+    
