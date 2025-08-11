@@ -8,10 +8,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { ActivationWarning } from "@/components/ActivationWarning";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 export default function HomePage() {
-  const { currentUser, getFeed } = useCorabo();
+  const { currentUser, getFeed, searchQuery, setSearchQuery } = useCorabo();
   const [publications, setPublications] = useState<GalleryImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
@@ -69,6 +70,16 @@ export default function HomePage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]); 
 
+  const filteredPublications = useMemo(() => {
+    if (!searchQuery) return publications;
+    return publications.filter(p => 
+        p.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.owner?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.owner?.profileSetupData?.specialty?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [publications, searchQuery]);
+
+
   if (isLoading || !currentUser) {
     return (
       <main className="container py-4 space-y-4">
@@ -82,10 +93,21 @@ export default function HomePage() {
        {currentUser && !currentUser.isTransactionsActive && (
           <ActivationWarning userType={currentUser.type} />
       )}
+
+        <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input 
+                placeholder="Buscar por servicio, producto o proveedor..." 
+                className="pl-10 rounded-full bg-background"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+            />
+        </div>
        
         <div className="space-y-4">
-        {publications.length > 0 ? (
-            publications.map((item, index) => {
+        {filteredPublications.length > 0 ? (
+            filteredPublications.map((item, index) => {
+                // The ref for infinite scroll is attached to the last item of the *unfiltered* list
                 if(publications.length === index + 1) {
                     return <div ref={lastElementRef} key={item.id}><PublicationCard publication={item} /></div>
                 }
@@ -94,7 +116,7 @@ export default function HomePage() {
         ) : (
              !isFetchingMore && (
                 <p className="text-center text-muted-foreground pt-16">
-                    No se encontraron publicaciones en el feed.
+                    No se encontraron publicaciones.
                 </p>
              )
         )}
@@ -107,3 +129,4 @@ export default function HomePage() {
     </main>
   );
 }
+

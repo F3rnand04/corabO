@@ -33,7 +33,7 @@ import type { Transaction, User as UserType } from '@/lib/types';
 
 
 export function Header() {
-  const { currentUser, toggleGps, logout, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, users, transactions } = useCorabo();
+  const { currentUser, toggleGps, logout, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, users, transactions, setSearchQuery } = useCorabo();
   const router = useRouter();
 
   const [isCheckoutAlertOpen, setIsCheckoutAlertOpen] = useState(false);
@@ -61,10 +61,9 @@ export function Header() {
       <div className="container px-4 sm:px-6">
         {/* Top Row */}
         <div className="flex h-16 items-center justify-between gap-4">
-          <Link href="/contacts" passHref>
-             <Image src="https://i.postimg.cc/Wz1MTvWK/lg.png" alt="Corabo Logo" width={40} height={40} className="h-10 w-auto cursor-pointer" />
+          <Link href="/" passHref>
+             <Image src="https://i.postimg.cc/8zWvkhxS/Sin-t-tulo-3.png" alt="Corabo Logo" width={120} height={40} className="h-10 w-auto cursor-pointer" />
           </Link>
-           <h2 className="font-bold text-xl hidden sm:block">corabO</h2>
 
           <div className="flex-grow"></div>
 

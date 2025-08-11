@@ -26,8 +26,6 @@ import type { GetFeedInputSchema, GetFeedOutputSchema, GetProfileGalleryInputSch
 import { z } from 'zod';
 
 
-type FeedView = 'servicios' | 'empresas';
-
 interface DailyQuote {
     requestSignature: string;
     count: number;
@@ -48,7 +46,6 @@ interface CoraboState {
   cart: CartItem[];
   searchQuery: string;
   contacts: User[];
-  feedView: FeedView;
   isGpsActive: boolean;
   searchHistory: string[];
   isLoadingAuth: boolean;
@@ -84,7 +81,6 @@ interface CoraboState {
   validateEmail: (userId: string, emailToValidate: string) => Promise<boolean>;
   sendPhoneVerification: (userId: string, phone: string) => Promise<void>;
   verifyPhoneCode: (userId: string, code: string) => Promise<boolean>;
-  setFeedView: (view: FeedView) => void;
   updateFullProfile: (userId: string, data: ProfileSetupData, profileType: 'client' | 'provider') => Promise<void>;
   completeInitialSetup: (userId: string, data: { lastName: string; idNumber: string; birthDate: string }) => Promise<void>;
   subscribeUser: (userId: string, planName: string, amount: number) => void;
@@ -135,7 +131,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [searchQuery, _setSearchQuery] = useState('');
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [contacts, setContacts] = useState<User[]>([]);
-  const [feedView, setFeedView] = useState<FeedView>('servicios');
   const [isGpsActive, setIsGpsActive] = useState(true);
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [exchangeRate, setExchangeRate] = useState(36.54);
@@ -793,7 +788,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     cart,
     searchQuery,
     contacts,
-    feedView,
     isGpsActive,
     searchHistory,
     isLoadingAuth,
@@ -829,7 +823,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     validateEmail,
     sendPhoneVerification,
     verifyPhoneCode,
-    setFeedView,
     updateFullProfile,
     completeInitialSetup,
     subscribeUser,
