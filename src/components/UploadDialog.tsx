@@ -324,5 +324,3 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
     </Dialog>
   );
 }
-
-    
