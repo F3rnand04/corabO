@@ -303,7 +303,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         unsubscribeAuth();
         cleanup();
     };
-  }, [handleUserCreation, auth]);
+  }, [auth, handleUserCreation]);
 
 
   const signInWithGoogle = async () => {
@@ -874,3 +874,5 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
+
+    
