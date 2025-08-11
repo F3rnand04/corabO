@@ -32,11 +32,10 @@ import { getProfileGallery, getProfileProducts } from '@/ai/flows/profile-flow';
 
 export default function ProfilePage() {
   const { toast } = useToast();
-  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, getAgendaEvents, getUserMetrics } = useCorabo();
+  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, getAgendaEvents, getUserMetrics, transactions } = useCorabo();
   
   const [gallery, setGallery] = useState<GalleryImage[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadProfileData = useCallback(async () => {
@@ -53,7 +52,6 @@ export default function ProfilePage() {
             setProducts(productsData);
         }
         
-        setTransactions([]);
     } catch (error) {
         console.error("Error loading profile data:", error);
         toast({ variant: 'destructive', title: 'Error al cargar el perfil' });
