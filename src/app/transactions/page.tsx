@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from "react";
@@ -6,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { Home, Settings, Wallet, ListChecks, History, CalendarClock, ChevronLeft, Loader2, Star, TrendingUp, Calendar as CalendarIcon, Link2 } from "lucide-react";
+import { Home, Settings, Wallet, ListChecks, History, CalendarClock, ChevronLeft, Loader2, Star, TrendingUp, Calendar as CalendarIcon, Link2, ShoppingCart, Plus, Minus, X, Truck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import TransactionsLineChart from "@/components/charts/TransactionsLineChart";
 import { TransactionDetailsDialog } from "@/components/TransactionDetailsDialog";
@@ -23,6 +24,11 @@ import { SubscriptionDialog } from "@/components/SubscriptionDialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 
 
 function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary: () => void, currentView: string }) {
@@ -58,7 +64,7 @@ const ActionButton = ({ icon: Icon, label, count, onClick }: { icon: React.Eleme
 
 
 export default function TransactionsPage() {
-    const { currentUser, getUserMetrics, getAgendaEvents } = useCorabo();
+    const { currentUser, getUserMetrics, getAgendaEvents, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout: performCheckout, users } = useCorabo();
     const { toast } = useToast();
     
     const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -67,6 +73,11 @@ export default function TransactionsPage() {
     const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
     const [view, setView] = useState<'summary' | 'pending' | 'history' | 'commitments'>('summary');
     
+    // State for cart popover & dialog
+    const [isCheckoutAlertOpen, setIsCheckoutAlertOpen] = useState(false);
+    const [includeDelivery, setIncludeDelivery] = useState(false);
+    const [useCredicora, setUseCredicora] = useState(false);
+
     useEffect(() => {
         if (!currentUser) {
             setIsLoading(false);
@@ -111,6 +122,7 @@ export default function TransactionsPage() {
     
     const agendaEvents = getAgendaEvents(transactions);
     const paymentDates = agendaEvents.filter(e => e.type === 'payment').map(e => e.date);
+    const totalCartItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
     const handleDayClick = (day: Date) => {
         const eventOnDay = agendaEvents.find(e => format(e.date, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd'));
@@ -151,6 +163,18 @@ export default function TransactionsPage() {
     const completedTransactionsCount = transactions.filter(tx => tx.clientId === currentUser.id && (tx.status === 'Pagado' || tx.status === 'Resuelto')).length;
     const transactionsNeeded = credicoraLevelDetails.transactionsForNextLevel;
     const progressToNextLevel = (completedTransactionsCount / transactionsNeeded) * 100;
+    
+    const cartProvider = users.find(u => u.id === cart[0]?.product.providerId);
+    const cartTransaction = cart.length > 0 ? transactions.find(tx => tx.clientId === currentUser.id && tx.providerId === cart[0].product.providerId && tx.status === 'Carrito Activo') : undefined;
+    
+    const handleCheckout = () => {
+        if (cartTransaction) {
+            performCheckout(cartTransaction.id, includeDelivery, useCredicora);
+            setIsCheckoutAlertOpen(false);
+            setUseCredicora(false);
+        }
+    };
+
 
     const renderContent = () => {
         if (isLoading) {
@@ -259,12 +283,68 @@ export default function TransactionsPage() {
                                 </div>
                             </CardContent>
                         </Card>
-                        <Card>
+                         <Card>
                            <CardContent className="p-2">
-                                <div className="grid grid-cols-3 gap-2">
+                                <div className="grid grid-cols-4 gap-2">
                                     <ActionButton icon={ListChecks} label="Pendientes" count={pendingTx.length} onClick={() => setView('pending')} />
                                     <ActionButton icon={History} label="Historial" count={0} onClick={() => setView('history')} />
                                     <ActionButton icon={CalendarClock} label="Compromisos" count={commitmentTx.length} onClick={() => setView('commitments')} />
+                                    {/* Cart Button */}
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                             <Button variant="outline" className="flex flex-col h-24 w-full items-center justify-center gap-1 relative">
+                                                {totalCartItems > 0 && <span className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">{totalCartItems}</span>}
+                                                <ShoppingCart className="w-8 h-8 text-primary" />
+                                                <span className="text-xs text-center">Carrito</span>
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-80">
+                                            <div className="grid gap-4">
+                                            <div className="space-y-2">
+                                                <h4 className="font-medium leading-none">Carrito de Compras</h4>
+                                                <p className="text-sm text-muted-foreground">
+                                                Resumen de tu pedido.
+                                                </p>
+                                            </div>
+                                                {cart.length > 0 ? (
+                                                <>
+                                                <div className="grid gap-2 max-h-64 overflow-y-auto">
+                                                {cart.map(item => (
+                                                    <div key={item.product.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-2">
+                                                        <Link href={`/companies/${item.product.providerId}`} className="cursor-pointer hover:underline">
+                                                            <p className="font-medium text-sm truncate">{item.product.name}</p>
+                                                            <p className="text-xs text-muted-foreground">${item.product.price.toFixed(2)}</p>
+                                                        </Link>
+                                                        <div className="flex items-center gap-1 border rounded-md">
+                                                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateCartQuantity(item.product.id, item.quantity - 1)}>
+                                                            <Minus className="h-3 w-3" />
+                                                        </Button>
+                                                        <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
+                                                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateCartQuantity(item.product.id, item.quantity + 1)}>
+                                                            <Plus className="h-3 w-3" />
+                                                        </Button>
+                                                        </div>
+                                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => updateCartQuantity(item.product.id, 0)}>
+                                                        <X className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                ))}
+                                                </div>
+                                                <Separator />
+                                                <div className="flex justify-between font-bold text-sm">
+                                                    <span>Total:</span>
+                                                    <span>${getCartTotal().toFixed(2)}</span>
+                                                </div>
+                                                <AlertDialogTrigger asChild>
+                                                  <Button className="w-full" onClick={() => setIsCheckoutAlertOpen(true)}>Ver Pre-factura</Button>
+                                                </AlertDialogTrigger>
+                                                </>
+                                                ) : (
+                                                <p className="text-sm text-center text-muted-foreground py-4">Tu carrito está vacío.</p>
+                                                )}
+                                            </div>
+                                        </PopoverContent>
+                                    </Popover>
                                 </div>
                             </CardContent>
                         </Card>
@@ -311,6 +391,94 @@ export default function TransactionsPage() {
                 transaction={selectedTransaction}
             />
             <SubscriptionDialog isOpen={isSubscriptionDialogOpen} onOpenChange={setIsSubscriptionDialogOpen} />
+             <AlertDialog open={isCheckoutAlertOpen} onOpenChange={setIsCheckoutAlertOpen}>
+                 <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Confirmar Compra</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Revisa tu pedido. Puedes incluir el costo de envío y pagar con Credicora si está disponible.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="py-4 space-y-4">
+                        {(() => {
+                            if (!cartProvider) return <p>Cargando datos del proveedor...</p>;
+                            
+                            const isOnlyDelivery = cartProvider.profileSetupData?.isOnlyDelivery || false;
+                            const providerAcceptsCredicora = cartProvider.profileSetupData?.acceptsCredicora || false;
+
+                            const subtotal = getCartTotal();
+                            const deliveryCost = getDeliveryCost();
+                            const totalWithDelivery = subtotal + ((includeDelivery || isOnlyDelivery) ? deliveryCost : 0);
+                            
+                            const userCredicoraLevel = currentUser.credicoraLevel || 1;
+                            const credicoraDetails = credicoraLevels[userCredicoraLevel.toString()];
+                            const creditLimit = currentUser.credicoraLimit || 0;
+                            
+                            const financingPercentage = 1 - credicoraDetails.initialPaymentPercentage;
+                            const potentialFinancing = subtotal * financingPercentage;
+                            const financedAmount = useCredicora ? Math.min(potentialFinancing, creditLimit) : 0;
+                            const productInitialPayment = subtotal - financedAmount;
+                            const totalToPayToday = productInitialPayment + ((includeDelivery || isOnlyDelivery) ? deliveryCost : 0);
+                            const installmentAmount = financedAmount > 0 ? financedAmount / credicoraDetails.installments : 0;
+
+                            return (
+                                <>
+                                    <div className="flex justify-between text-sm">
+                                        <span>Subtotal:</span>
+                                        <span className="font-semibold">${subtotal.toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <Label htmlFor="delivery-switch" className="flex items-center gap-2">
+                                            <Truck className="h-4 w-4" />
+                                            Incluir Delivery
+                                        </Label>
+                                        <Switch
+                                            id="delivery-switch"
+                                            checked={includeDelivery || isOnlyDelivery}
+                                            onCheckedChange={setIncludeDelivery}
+                                            disabled={isOnlyDelivery}
+                                        />
+                                    </div>
+                                    {isOnlyDelivery && <p className="text-xs text-muted-foreground -mt-2">Este proveedor solo trabaja con delivery.</p>}
+                                    <div className="flex justify-between text-sm">
+                                        <span>Costo de envío (aprox):</span>
+                                        <span className="font-semibold">${(includeDelivery || isOnlyDelivery) ? deliveryCost.toFixed(2) : '0.00'}</span>
+                                    </div>
+
+                                    {providerAcceptsCredicora && (
+                                        <div className="flex items-center justify-between pt-2 border-t mt-2">
+                                            <Label htmlFor="credicora-switch" className="flex items-center gap-2 text-blue-600 font-semibold">
+                                                <Star className="w-4 h-4 fill-current"/>
+                                                Pagar con Credicora
+                                            </Label>
+                                            <Switch
+                                                id="credicora-switch"
+                                                checked={useCredicora}
+                                                onCheckedChange={setUseCredicora}
+                                            />
+                                        </div>
+                                    )}
+                                    
+                                    <Separator />
+                                    <div className="flex justify-between text-lg font-bold">
+                                        <span>Total a Pagar Hoy:</span>
+                                        <span>${useCredicora ? totalToPayToday.toFixed(2) : totalWithDelivery.toFixed(2)}</span>
+                                    </div>
+                                    {useCredicora && financedAmount > 0 && (
+                                        <p className="text-xs text-muted-foreground -mt-2 text-right">
+                                            y {credicoraDetails.installments} cuotas de ${installmentAmount.toFixed(2)}
+                                        </p>
+                                    )}
+                                </>
+                            );
+                        })()}
+                    </div>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleCheckout} disabled={!cartTransaction}>Pagar Ahora</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+             </AlertDialog>
         </div>
     );
 }
