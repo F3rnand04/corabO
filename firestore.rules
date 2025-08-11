@@ -2,43 +2,61 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Allow authorized users to call backend flows
-    match /flows/{flowName} {
-      allow call: if true;
-    }
-  
-    // Publications can be read by anyone, but only created/updated/deleted by the owner
-    match /publications/{publicationId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth.uid == request.resource.data.providerId;
-      allow update, delete: if request.auth.uid == resource.data.providerId;
+
+    // Regla General: Por defecto, nadie tiene acceso.
+    match /{document=**} {
+      allow read, write: if false;
     }
 
-    // Users can only read/write their own document
+    // --- REGLAS PARA COLECCIONES ESPECÍFICAS ---
+
+    // Colección de Usuarios:
+    // Cada usuario puede leer y escribir su propio documento, pero no el de otros.
+    // Esto es crucial para la seguridad y privacidad.
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Transactions can only be read/written by participants
-    match /transactions/{transactionId} {
-      allow read, write: if request.auth != null && request.auth.uid in resource.data.participantIds;
-    }
-
-    // Conversations can only be read/written by participants
-    match /conversations/{conversationId} {
-      allow read, write: if request.auth != null && request.auth.uid in resource.data.participantIds;
+      allow read, update, delete: if request.auth.uid == userId;
+      allow create: if request.auth.uid == userId;
     }
     
-     // Campaigns can be read by anyone, but only managed by the owner
-    match /campaigns/{campaignId} {
-      allow read: if request.auth != null;
-      allow create, update, delete: if request.auth.uid == request.resource.data.providerId || request.auth.uid == resource.data.providerId;
-    }
-    
-     // Notifications are private to each user
+    // Colección de Notificaciones:
+    // Los usuarios solo pueden acceder a sus propias notificaciones.
     match /notifications/{notificationId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+       allow read, update, create, delete: if request.auth.uid == resource.data.userId;
+    }
+
+    // Colección de Campañas:
+    // Solo el propietario puede gestionar sus campañas.
+    match /campaigns/{campaignId} {
+        allow read, update, create, delete: if request.auth.uid == resource.data.providerId;
+    }
+
+    // Colección de Transacciones:
+    // Solo los participantes en la transacción pueden acceder a ella.
+    match /transactions/{transactionId} {
+      allow read, create, update, delete: if request.auth.uid in resource.data.participantIds;
+    }
+
+    // Colección de Conversaciones:
+    // Solo los participantes en la conversación pueden acceder a ella.
+    match /conversations/{conversationId} {
+      allow read, create, update, delete: if request.auth.uid in resource.data.participantIds;
+    }
+
+    // --- REGLAS A NIVEL DE GRUPO DE COLECCIONES ---
+    // Estas reglas son vitales para las consultas que abarcan toda la base de datos.
+    
+    // Publicaciones (La Clave de la Solución):
+    // Permite a cualquier usuario autenticado realizar consultas (list) en la colección.
+    // Esto soluciona el error "Missing or insufficient permissions" en los feeds y perfiles.
+    match /{path=**}/publications/{publicationId} {
+      // Permite a CUALQUIER usuario autenticado LEER una publicación individual.
+      allow read: if request.auth != null;
+
+      // Permite a un usuario CREAR una publicación si el ID del proveedor es su propio ID.
+      allow create: if request.auth.uid == request.resource.data.providerId;
+
+      // Permite a un usuario ACTUALIZAR o ELIMINAR una publicación SOLO SI es el propietario.
+      allow update, delete: if request.auth.uid == resource.data.providerId;
     }
   }
 }
