@@ -67,7 +67,7 @@ export const getProfileProducts = ai.defineFlow(
 
         // This query requires a composite index on (providerId, name).
         // This has been added to firestore.indexes.json to resolve the error.
-        const q = [
+        const q: any[] = [
             where("providerId", "==", userId),
             orderBy("name"),
             limit(limitNum)
