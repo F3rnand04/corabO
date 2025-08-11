@@ -69,12 +69,12 @@ export function Footer() {
                 </Button>
             </Link>
 
-            <Link href={isProfilePage ? "/profile-setup" : "/contacts"} passHref>
-                <Button variant="ghost" className={cn("flex-col h-auto p-1 text-muted-foreground hover:text-primary", pathname.startsWith('/contacts') && "text-primary")}>
+            <Link href={isProfilePage ? "/profile-setup" : "/profile"} passHref>
+                <Button variant="ghost" className={cn("flex-col h-auto p-1 text-muted-foreground hover:text-primary", (pathname === '/profile' || pathname === '/profile-setup') && "text-primary")}>
                     {isProfilePage ? (
                         <Settings className="w-6 h-6" />
                     ) : (
-                        <Avatar className={cn("w-7 h-7")}>
+                        <Avatar className={cn("w-7 h-7", pathname === '/profile' && "border-2 border-primary")}>
                             <AvatarImage src={currentUser.profileImage} alt={currentUser.name} />
                             <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
                         </Avatar>
