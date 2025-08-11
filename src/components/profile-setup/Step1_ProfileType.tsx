@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { User, Briefcase, Building } from 'lucide-react';
+import { User, Briefcase } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import type { ProfileSetupData } from '@/lib/types';
 
@@ -14,61 +14,51 @@ interface Step1_ProfileTypeProps {
 }
 
 const profileTypes = [
-  { id: 'client', name: 'Cliente', description: 'Busca servicios y productos.', icon: User, providerType: undefined },
-  { id: 'provider_service', name: 'Servicio', description: 'Ofrece tus habilidades como profesional.', icon: Briefcase, providerType: 'professional' as const },
-  { id: 'provider_company', name: 'Empresa', description: 'Registra tu negocio y ofrece servicios/productos.', icon: Building, providerType: 'company' as const },
+  { id: 'client', name: 'Cliente', description: 'Busca y contrata servicios o productos.', icon: User },
+  { id: 'provider', name: 'Proveedor', description: 'Ofrece productos o servicios a la comunidad.', icon: Briefcase },
 ];
 
 export default function Step1_ProfileType({ onSelect, currentType }: Step1_ProfileTypeProps) {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
-  const [nextSelection, setNextSelection] = useState<{ type: 'client' | 'provider', providerType?: ProfileSetupData['providerType'] } | null>(null);
+  const [nextSelection, setNextSelection] = useState<'client' | 'provider' | null>(null);
 
-  const handleSelection = (typeId: string) => {
-    const selected = profileTypes.find(t => t.id === typeId)!;
-    const newTypeForBackend = typeId.startsWith('provider') ? 'provider' : 'client';
-    
-    if (currentType && newTypeForBackend !== currentType) {
-        setNextSelection({ type: newTypeForBackend, providerType: selected.providerType });
+  const handleSelection = (typeId: 'client' | 'provider') => {
+    if (currentType && typeId !== currentType) {
+        setNextSelection(typeId);
         setIsAlertOpen(true);
     } else {
-        onSelect(newTypeForBackend, selected.providerType);
+        onSelect(typeId, 'professional'); // Default providerType
     }
   };
 
   const handleConfirmChange = () => {
     if (nextSelection) {
-      onSelect(nextSelection.type, nextSelection.providerType);
+      onSelect(nextSelection, 'professional');
     }
     setIsAlertOpen(false);
   }
-
-  const getMappedCurrentType = () => {
-      // This is a simplification. A real app would need a more robust way to map this.
-      // For now, let's assume 'provider' maps to 'Servicio' for display.
-      return currentType === 'client' ? 'client' : 'provider_service';
-  }
   
-  const isChangingToProvider = currentType === 'client' && nextSelection?.type === 'provider';
+  const isChangingToProvider = currentType === 'client' && nextSelection === 'provider';
 
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold">Paso 1: Elige tu tipo de perfil</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <h2 className="text-xl font-semibold">Paso 1: ¿Cómo usarás Corabo?</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {profileTypes.map((type) => (
           <Card
             key={type.id}
-            onClick={() => handleSelection(type.id)}
+            onClick={() => handleSelection(type.id as 'client' | 'provider')}
             className={cn(
-              'cursor-pointer transition-all',
-              (getMappedCurrentType() === type.id) 
+              'cursor-pointer transition-all text-center',
+              (currentType === type.id) 
               ? 'border-primary ring-2 ring-primary' 
               : 'hover:border-primary/50'
             )}
           >
             <CardHeader>
-              <div className="flex items-center gap-4">
-                <type.icon className="w-8 h-8 text-primary" />
+              <div className="flex flex-col items-center gap-2">
+                <type.icon className="w-10 h-10 text-primary" />
                 <CardTitle>{type.name}</CardTitle>
               </div>
             </CardHeader>
