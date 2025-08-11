@@ -4,10 +4,8 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
 import { getFirestoreDb } from '@/lib/firebase-server';
-import { collection, getDocs, query, where, orderBy, limit, startAfter, doc, getDoc } from 'firebase/firestore';
-import type { GalleryImage, Product } from '@/lib/types';
+import { collection, getDocs, query, where, limit, startAfter, doc, getDoc } from 'firebase/firestore';
 import { GetProfileGalleryInputSchema, GetProfileGalleryOutputSchema, GetProfileProductsInputSchema, GetProfileProductsOutputSchema } from '@/lib/types';
 
 // --- Get Gallery with Pagination ---

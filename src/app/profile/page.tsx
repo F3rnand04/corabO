@@ -32,59 +32,66 @@ import { getProfileGallery, getProfileProducts } from '@/ai/flows/profile-flow';
 
 export default function ProfilePage() {
   const { toast } = useToast();
-  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, getAgendaEvents, getUserMetrics, transactions } = useCorabo();
+  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, getAgendaEvents, getUserMetrics, transactions, getProfileGallery: getGalleryFlow, getProfileProducts: getProductsFlow } = useCorabo();
   
   const [gallery, setGallery] = useState<GalleryImage[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Pagination state for gallery
+  const [galleryLastVisible, setGalleryLastVisible] = useState<string | undefined>();
+  const [hasMoreGallery, setHasMoreGallery] = useState(true);
+  const [isFetchingMoreGallery, setIsFetchingMoreGallery] = useState(false);
+
   // Pagination state for products
   const [productsLastVisible, setProductsLastVisible] = useState<string | undefined>();
   const [hasMoreProducts, setHasMoreProducts] = useState(true);
   const [isFetchingMoreProducts, setIsFetchingMoreProducts] = useState(false);
+  
+  const loadGallery = useCallback(async (startAfterDocId?: string) => {
+    if (!currentUser?.id || isFetchingMoreGallery) return;
+    setIsFetchingMoreGallery(true);
+    try {
+        const { gallery: newGallery, lastVisibleDocId } = await getGalleryFlow({ userId: currentUser.id, startAfterDocId });
+        setGallery(prev => startAfterDocId ? [...prev, ...newGallery] : newGallery);
+        setGalleryLastVisible(lastVisibleDocId);
+        if (!lastVisibleDocId || newGallery.length < 9) setHasMoreGallery(false);
+    } catch (error) {
+        console.error("Error fetching gallery:", error);
+    } finally {
+        setIsFetchingMoreGallery(false);
+    }
+  }, [currentUser?.id, getGalleryFlow, isFetchingMoreGallery]);
+
+  const loadProducts = useCallback(async (startAfterDocId?: string) => {
+    if (!currentUser?.id || isFetchingMoreProducts) return;
+    setIsFetchingMoreProducts(true);
+    try {
+        const { products: newProducts, lastVisibleDocId } = await getProductsFlow({ userId: currentUser.id, startAfterDocId });
+        setProducts(prev => startAfterDocId ? [...prev, ...newProducts] : newProducts);
+        setProductsLastVisible(lastVisibleDocId);
+        if (!lastVisibleDocId || newProducts.length < 10) setHasMoreProducts(false);
+    } catch (error) {
+        console.error("Error fetching products:", error);
+    } finally {
+        setIsFetchingMoreProducts(false);
+    }
+  }, [currentUser?.id, getProductsFlow, isFetchingMoreProducts]);
 
   const loadProfileData = useCallback(async () => {
     if (!currentUser?.id) return;
     
     setIsLoading(true);
-    try {
-        const { gallery: galleryData } = await getProfileGallery({ userId: currentUser.id });
-        setGallery(galleryData);
+    setHasMoreGallery(true);
+    setHasMoreProducts(true);
 
-        if (currentUser.type === 'provider') {
-            const { products: productsData, lastVisibleDocId } = await getProfileProducts({ userId: currentUser.id });
-            setProducts(productsData);
-            setProductsLastVisible(lastVisibleDocId);
-            if (!lastVisibleDocId) setHasMoreProducts(false);
-        }
-        
-    } catch (error) {
-        console.error("Error loading profile data:", error);
-        toast({ variant: 'destructive', title: 'Error al cargar el perfil' });
-    } finally {
-        setIsLoading(false);
-    }
-  }, [currentUser?.id, currentUser?.type, toast]);
-
-  const loadMoreProducts = async () => {
-    if (!currentUser?.id || !productsLastVisible || !hasMoreProducts) return;
-
-    setIsFetchingMoreProducts(true);
-    try {
-        const { products: newProducts, lastVisibleDocId } = await getProfileProducts({ 
-            userId: currentUser.id, 
-            startAfterDocId: productsLastVisible 
-        });
-        setProducts(prev => [...prev, ...newProducts]);
-        setProductsLastVisible(lastVisibleDocId);
-        if (!lastVisibleDocId) setHasMoreProducts(false);
-    } catch (error) {
-        console.error("Error loading more products:", error);
-        toast({ variant: 'destructive', title: 'Error al cargar más productos' });
-    } finally {
-        setIsFetchingMoreProducts(false);
-    }
-  };
+    const galleryPromise = loadGallery();
+    const productsPromise = currentUser.type === 'provider' ? loadProducts() : Promise.resolve();
+    
+    await Promise.all([galleryPromise, productsPromise]);
+    
+    setIsLoading(false);
+  }, [currentUser?.id, currentUser?.type, loadGallery, loadProducts]);
 
   useEffect(() => {
     if(currentUser?.id){
@@ -444,8 +451,8 @@ export default function ProfilePage() {
           <main className="space-y-4">
             <Tabs defaultValue={isProductProvider ? 'products' : 'publications'} className="w-full">
               <TabsList className="grid w-full grid-cols-2">
-                 <TabsTrigger value="products">Catálogo ({isProvider ? products.length : 0})</TabsTrigger>
-                 <TabsTrigger value="publications">Publicaciones ({gallery.length})</TabsTrigger>
+                 <TabsTrigger value="products">Catálogo</TabsTrigger>
+                 <TabsTrigger value="publications">Publicaciones</TabsTrigger>
               </TabsList>
               
               <TabsContent value="products">
@@ -475,7 +482,7 @@ export default function ProfilePage() {
                       )}
                       {hasMoreProducts && (
                         <div className="flex justify-center mt-4">
-                          <Button onClick={loadMoreProducts} disabled={isFetchingMoreProducts} variant="outline">
+                          <Button onClick={() => loadProducts(productsLastVisible)} disabled={isFetchingMoreProducts} variant="outline">
                             {isFetchingMoreProducts ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
                             Cargar más productos
                           </Button>
@@ -497,7 +504,6 @@ export default function ProfilePage() {
                         <div 
                           className="relative group cursor-pointer"
                           onTouchStart={onTouchStart}
-                          onTouchMove={onTouchEnd}
                           onDoubleClick={handleImageDoubleClick}
                         >
                           <Image
@@ -541,6 +547,14 @@ export default function ProfilePage() {
                             </div>
                           ))}
                         </div>
+                        {hasMoreGallery && (
+                            <div className="p-2">
+                                <Button onClick={() => loadGallery(galleryLastVisible)} disabled={isFetchingMoreGallery} variant="outline" className="w-full">
+                                    {isFetchingMoreGallery ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                                    Cargar más publicaciones
+                                </Button>
+                            </div>
+                        )}
                       </>
                     ) : (
                       <div className="w-full aspect-[4/3] bg-muted flex flex-col items-center justify-center text-center p-4">

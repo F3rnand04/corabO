@@ -2,7 +2,7 @@
 "use client";
 
 import { PublicationCard } from "@/components/PublicationCard";
-import type { GalleryImage, PublicationOwner } from "@/lib/types";
+import type { GalleryImage } from "@/lib/types";
 import { useMemo, useEffect, useState, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCorabo } from "@/contexts/CoraboContext";
@@ -10,14 +10,9 @@ import { ActivationWarning } from "@/components/ActivationWarning";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
-// The owner data is now embedded in the publication object
-interface PublicationWithOwner extends GalleryImage {
-    owner: PublicationOwner
-}
-
 export default function HomePage() {
   const { searchQuery, feedView, currentUser, getFeed } = useCorabo();
-  const [publications, setPublications] = useState<PublicationWithOwner[]>([]);
+  const [publications, setPublications] = useState<GalleryImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [lastVisible, setLastVisible] = useState<string | undefined>(undefined);
@@ -25,20 +20,23 @@ export default function HomePage() {
 
 
   const loadFeed = useCallback(async (startAfterDocId?: string) => {
+    if (isFetchingMore) return; // Prevent multiple fetches
+
     if (startAfterDocId) {
         setIsFetchingMore(true);
     } else {
         setIsLoading(true);
+        setHasMore(true);
+        setPublications([]);
     }
 
     try {
         const { publications: newPublications, lastVisibleDocId } = await getFeed({ limitNum: 5, startAfterDocId });
-        const sanitizedData = newPublications.map(p => ({ ...p, owner: p.owner || {} })) as PublicationWithOwner[];
-
-        setPublications(prev => startAfterDocId ? [...prev, ...sanitizedData] : sanitizedData);
+        
+        setPublications(prev => startAfterDocId ? [...prev, ...newPublications] : newPublications);
         setLastVisible(lastVisibleDocId);
 
-        if (!lastVisibleDocId || newPublications.length === 0) {
+        if (!lastVisibleDocId || newPublications.length < 5) {
             setHasMore(false);
         }
 
@@ -48,20 +46,19 @@ export default function HomePage() {
         setIsLoading(false);
         setIsFetchingMore(false);
     }
-  }, [getFeed]);
+  }, [getFeed, isFetchingMore]);
 
   useEffect(() => {
     if (currentUser) {
-        setHasMore(true);
-        loadFeed();
+        loadFeed(); // Initial load
     }
-  }, [currentUser, feedView, loadFeed]); // Reload feed when view or user changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser, feedView]); // Reload feed when view or user changes
 
   const filteredPublications = useMemo(() => {
     if (!publications.length) return [];
     
     let viewFiltered = publications.filter(item => {
-        // Fallback for items that might not have owner or profileSetupData
         const providerType = item.owner?.profileSetupData?.providerType || 'professional';
         if (feedView === 'empresas') return providerType === 'company';
         return providerType !== 'company';
@@ -109,16 +106,22 @@ export default function HomePage() {
         {filteredPublications.length > 0 ? (
             filteredPublications.map(item => <PublicationCard key={item.id} publication={item} />)
         ) : (
-            <p className="text-center text-muted-foreground pt-16">
-            {noResultsMessage()}
-            </p>
+             !isFetchingMore && (
+                <p className="text-center text-muted-foreground pt-16">
+                    {noResultsMessage()}
+                </p>
+             )
         )}
-        {hasMore && filteredPublications.length > 0 && (
+        {hasMore && !isFetchingMore && filteredPublications.length > 0 && (
             <div className="flex justify-center">
                 <Button onClick={() => loadFeed(lastVisible)} disabled={isFetchingMore}>
-                    {isFetchingMore ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
                     Cargar más
                 </Button>
+            </div>
+        )}
+        {isFetchingMore && (
+            <div className="flex justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary"/>
             </div>
         )}
         </div>

@@ -22,7 +22,8 @@ import { getExchangeRate } from '@/ai/flows/exchange-rate-flow';
 import { sendSmsVerificationCodeFlow, verifySmsCodeFlow } from '@/ai/flows/sms-flow';
 import { getFeed as getFeedFlow } from '@/ai/flows/feed-flow';
 import { createProduct as createProductFlow, createPublication as createPublicationFlow } from '@/ai/flows/publication-flow';
-import type { GetFeedInputSchema, GetFeedOutputSchema } from '@/lib/types';
+import { getProfileGallery as getProfileGalleryFlow, getProfileProducts as getProfileProductsFlow } from '@/ai/flows/profile-flow';
+import type { GetFeedInputSchema, GetFeedOutputSchema, GetProfileGalleryInputSchema, GetProfileGalleryOutputSchema, GetProfileProductsInputSchema, GetProfileProductsOutputSchema } from '@/lib/types';
 import { z } from 'zod';
 
 
@@ -113,6 +114,8 @@ interface CoraboState {
   getUserMetrics: (userId: string, transactions: Transaction[]) => UserMetrics;
   fetchUser: (userId: string) => Promise<User | null>;
   getFeed: (params: z.infer<typeof GetFeedInputSchema>) => Promise<z.infer<typeof GetFeedOutputSchema>>;
+  getProfileGallery: (params: z.infer<typeof GetProfileGalleryInputSchema>) => Promise<z.infer<typeof GetProfileGalleryOutputSchema>>;
+  getProfileProducts: (params: z.infer<typeof GetProfileProductsInputSchema>) => Promise<z.infer<typeof GetProfileProductsOutputSchema>>;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -170,6 +173,27 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
           return { publications: [], lastVisibleDocId: undefined };
       }
   }, [toast]);
+
+  const getProfileGallery = useCallback(async (params: z.infer<typeof GetProfileGalleryInputSchema>): Promise<z.infer<typeof GetProfileGalleryOutputSchema>> => {
+      try {
+          return await getProfileGalleryFlow(params);
+      } catch (error) {
+          console.error("Error fetching gallery via Genkit flow:", error);
+          toast({ variant: 'destructive', title: 'Error al Cargar Galería' });
+          return { gallery: [], lastVisibleDocId: undefined };
+      }
+  }, [toast]);
+
+  const getProfileProducts = useCallback(async (params: z.infer<typeof GetProfileProductsInputSchema>): Promise<z.infer<typeof GetProfileProductsOutputSchema>> => {
+      try {
+          return await getProfileProductsFlow(params);
+      } catch (error) {
+          console.error("Error fetching products via Genkit flow:", error);
+          toast({ variant: 'destructive', title: 'Error al Cargar Productos' });
+          return { products: [], lastVisibleDocId: undefined };
+      }
+  }, [toast]);
+
 
   const handleUserCreation = useCallback(async (firebaseUser: FirebaseUser): Promise<User> => {
     const db = getFirestoreDb();
@@ -835,6 +859,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     fetchUser,
     setDeliveryAddress,
     getFeed,
+    getProfileGallery,
+    getProfileProducts,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;

@@ -4,9 +4,8 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
 import { getFirestoreDb } from '@/lib/firebase-server';
-import { collection, getDocs, query, orderBy, limit, startAfter, doc } from 'firebase/firestore';
+import { collection, getDocs, query, limit, startAfter, doc, getDoc } from 'firebase/firestore';
 import type { GalleryImage } from '@/lib/types';
 import { GetFeedInputSchema, GetFeedOutputSchema } from '@/lib/types';
 
@@ -16,16 +15,19 @@ export const getFeed = ai.defineFlow(
         inputSchema: GetFeedInputSchema,
         outputSchema: GetFeedOutputSchema,
     },
-    async ({ limitNum = 10, startAfterDocId }) => {
+    async ({ limitNum = 5, startAfterDocId }) => {
         const db = getFirestoreDb();
         const publicationsCollection = collection(db, "publications");
 
         let publicationsQuery;
         if (startAfterDocId) {
-            const startAfterDoc = await getDoc(doc(db, "publications", startAfterDocId));
+            const startAfterDocSnap = await getDoc(doc(db, "publications", startAfterDocId));
+            if (!startAfterDocSnap.exists()) {
+                return { publications: [], lastVisibleDocId: undefined };
+            }
             publicationsQuery = query(
                 publicationsCollection,
-                startAfter(startAfterDoc),
+                startAfter(startAfterDocSnap),
                 limit(limitNum)
             );
         } else {
