@@ -21,7 +21,6 @@
       "fields": [
         {
           "fieldPath": "participantIds",
-          "order": "ASCENDING",
           "arrayConfig": "CONTAINS"
         },
         {
