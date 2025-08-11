@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useRef, ChangeEvent, useCallback } from 'react';
@@ -47,12 +46,14 @@ export default function ProfilePage() {
         if (isProductProvider) {
             const { products: newProducts } = await getProfileProducts({ userId: currentUser.id, limitNum: 50 });
             setProducts(newProducts);
-            setActiveTab('catalog'); // Default to catalog if product provider
-        } else {
-            const { gallery: newGallery } = await getProfileGallery({ userId: currentUser.id, limitNum: 50 });
-            setGallery(newGallery);
-            setActiveTab('publications'); // Default to publications if service provider
         }
+        // Always load gallery for publications tab
+        const { gallery: newGallery } = await getProfileGallery({ userId: currentUser.id, limitNum: 50 });
+        setGallery(newGallery);
+        
+        // Set default tab
+        setActiveTab(isProductProvider ? 'catalog' : 'publications');
+
     } catch (error) {
         console.error("Error fetching profile data:", error);
         toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cargar tu perfil.' });
@@ -247,11 +248,11 @@ export default function ProfilePage() {
             </div>
             
             <div className="flex justify-around text-center text-sm text-muted-foreground pt-4 pb-2">
-                 <div className="cursor-pointer" onClick={() => setActiveTab('publications')}>
+                 <div className="cursor-pointer">
                     <span className="font-semibold text-foreground">{gallery?.length || 0}</span> Publicaciones
                 </div>
                 {isProductProvider ? (
-                     <div className="cursor-pointer" onClick={() => setActiveTab('catalog')}>
+                     <div className="cursor-pointer">
                         <span className="font-semibold text-foreground">{products.length}</span> Productos
                     </div>
                  ) : (
@@ -270,11 +271,35 @@ export default function ProfilePage() {
                 </CardContent>
             </Card>
 
+            <div className="flex justify-around font-semibold text-center border-b mt-4">
+                <div
+                    className={cn(
+                    "flex-1 p-3 cursor-pointer flex items-center justify-center gap-2",
+                    activeTab === 'publications' ? "text-primary border-b-2 border-primary" : "text-muted-foreground"
+                    )}
+                    onClick={() => setActiveTab('publications')}
+                >
+                   <LayoutGrid className="w-5 h-5"/>
+                   <span>Publicaciones</span>
+                </div>
+                {isProvider && (
+                     <div
+                        className={cn(
+                        "flex-1 p-3 cursor-pointer flex items-center justify-center gap-2",
+                        activeTab === 'catalog' ? "text-primary border-b-2 border-primary" : "text-muted-foreground"
+                        )}
+                        onClick={() => setActiveTab('catalog')}
+                    >
+                         <Package className="w-5 h-5"/>
+                        <span>{isProductProvider ? 'Catálogo' : 'Trabajos'}</span>
+                    </div>
+                )}
+            </div>
+
           </header>
 
           <main className="space-y-4 mt-4">
             {activeTab === 'publications' && (
-                // Vista de Galería de Servicios
                 <>
                   <Card className="rounded-2xl overflow-hidden shadow-lg relative">
                     <CardContent className="p-0">
