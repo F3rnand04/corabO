@@ -102,7 +102,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
         <>
         <div className={cn("flex flex-col rounded-2xl overflow-hidden shadow-lg border bg-card", className)}>
             {/* Card Header */}
-            <div className="flex items-center p-3 gap-3">
+            <div className="flex items-start p-3 gap-3">
                 <Link href={profileLink} className="flex-shrink-0">
                     <Avatar>
                         <AvatarImage src={owner.profileImage} alt={owner.name} />
@@ -115,6 +115,22 @@ export function PublicationCard({ publication, className }: PublicationCardProps
                         {owner.verified && <CheckCircle className="w-4 h-4 text-blue-500" />}
                     </Link>
                     <p className="text-xs text-muted-foreground">{specialty}</p>
+                     <div className="flex items-center gap-2 text-xs mt-1 text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                            <Star className="w-3 h-3 text-yellow-400 fill-yellow-400"/>
+                            <span className="font-semibold text-foreground">{reputation.toFixed(1)}</span>
+                        </div>
+                        <Separator orientation="vertical" className="h-3" />
+                        {isNewProvider ? (
+                            <Badge variant="secondary" className="text-xs px-1.5 py-0">Nuevo</Badge>
+                        ) : (
+                            <>
+                                <span>{effectiveness.toFixed(0)}% Efec.</span>
+                                <Separator orientation="vertical" className="h-3" />
+                                <span className="font-semibold text-green-600">{responseTime}</span>
+                            </>
+                        )}
+                    </div>
                 </div>
                 <Button variant="ghost" size="sm" onClick={() => sendMessage(owner.id, `¡Hola! Me interesa tu publicación.`, true)}>
                     Contactar
@@ -139,6 +155,14 @@ export function PublicationCard({ publication, className }: PublicationCardProps
                     objectFit="cover"
                     data-ai-hint="service person working" 
                 />
+                 <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="absolute top-2 left-2 z-10 text-white bg-black/20 hover:bg-black/40 rounded-full h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => setIsReportDialogOpen(true)}
+                  >
+                    <Flag className="w-4 h-4" />
+                </Button>
             </div>
             
              {/* Card Actions */}
@@ -188,4 +212,3 @@ export function PublicationCard({ publication, className }: PublicationCardProps
         </>
     );
 }
-
