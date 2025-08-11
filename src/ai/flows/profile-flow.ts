@@ -71,6 +71,7 @@ export const getProfileProducts = ai.defineFlow(
         ];
 
         if (startAfterDocId) {
+            // CRITICAL FIX: The cursor document must also be from the 'publications' collection.
             const startAfterDoc = await getDoc(doc(db, "publications", startAfterDocId));
             if(startAfterDoc.exists()){
                 q.push(startAfter(startAfterDoc));
