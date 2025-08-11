@@ -117,8 +117,9 @@ export default function TransactionsSettingsPage() {
     }
 
     if (!currentUser.isTransactionsActive) {
-        router.replace('/transactions/activate');
-        return null;
+      // This will redirect to the activation flow if the user is not yet active.
+      router.replace('/transactions/activate');
+      return null;
     }
     
     const handleToggle = (method: 'account' | 'mobile' | 'crypto', active: boolean) => {
@@ -225,17 +226,22 @@ export default function TransactionsSettingsPage() {
                             />
                         </PaymentMethodCard>
 
-                         <PaymentMethodCard
-                            icon={KeyRound}
-                            title="Binance (Pay ID)"
-                            isActive={paymentDetails.crypto.active}
-                            onToggle={(checked) => handleToggle('crypto', checked)}
-                        >
-                            <div className="space-y-1">
-                                <Label>Correo / Pay ID</Label>
-                                <Input value={paymentDetails.crypto.binanceEmail} onChange={(e) => handleValueChange('crypto', 'binanceEmail', e.target.value)} />
+                         <div className="border p-4 rounded-lg space-y-3">
+                            <div className="flex items-center justify-between">
+                                <h4 className="font-semibold flex items-center gap-2"><KeyRound className="w-5 h-5"/>Binance (Pay ID)</h4>
+                                <Switch checked={paymentDetails.crypto.active} onCheckedChange={(checked) => handleToggle('crypto', checked)} />
                             </div>
-                        </PaymentMethodCard>
+                            <div className="space-y-4 pt-4 border-t">
+                                <div className="space-y-1">
+                                    <Label>Correo / Pay ID</Label>
+                                    <Input 
+                                      value={paymentDetails.crypto.binanceEmail} 
+                                      onChange={(e) => handleValueChange('crypto', 'binanceEmail', e.target.value)} 
+                                      disabled={!paymentDetails.crypto.active}
+                                    />
+                                </div>
+                            </div>
+                        </div>
 
                         <Button className="w-full" onClick={handleSaveChanges}>
                             <ShieldCheck className="mr-2 h-4 w-4"/> Guardar Cambios
