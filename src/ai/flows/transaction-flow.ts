@@ -108,6 +108,10 @@ export const confirmWorkReceived = ai.defineFlow(
 /**
  * Client registers their payment for a service.
  * The transaction status changes to 'Pago Enviado - Esperando Confirmación'.
+ * This flow now handles two scenarios for flexibility:
+ * 1. Paying a commitment that is 'Finalizado - Pendiente de Pago'.
+ * 2. Paying a commitment that is still 'Acuerdo Aceptado - Pendiente de Ejecución',
+ *    which implicitly confirms service reception.
  */
 export const payCommitment = ai.defineFlow(
     {
@@ -127,11 +131,19 @@ export const payCommitment = ai.defineFlow(
             throw new Error("Permission denied. User is not the client for this transaction.");
         }
 
-        // BUSINESS LOGIC CHECK: Ensure payment is only made when the status is correct.
-        if (transaction.status !== 'Finalizado - Pendiente de Pago') {
-            throw new Error("Invalid action. Payment can only be made after confirming service reception.");
+        // BUSINESS LOGIC CHECK: Allow payment from two states.
+        const isPendingPayment = transaction.status === 'Finalizado - Pendiente de Pago';
+        const isAcceptedAgreement = transaction.status === 'Acuerdo Aceptado - Pendiente de Ejecución';
+
+        if (!isPendingPayment && !isAcceptedAgreement) {
+            throw new Error("Invalid action. Payment can only be made for a pending or accepted agreement.");
         }
         
+        // If client pays from an accepted agreement, a rating is required to confirm reception.
+        if (isAcceptedAgreement && !rating) {
+            throw new Error("A rating is required to confirm service reception and pay.");
+        }
+
         const updateData: any = { status: 'Pago Enviado - Esperando Confirmación' };
         if (rating) updateData['details.clientRating'] = rating;
         if (comment) updateData['details.clientComment'] = comment;
@@ -303,5 +315,7 @@ export const startDispute = ai.defineFlow(
         await updateDoc(txRef, { status: 'En Disputa' });
     }
 );
+
+    
 
     
