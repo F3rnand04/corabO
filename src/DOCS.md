@@ -15,87 +15,65 @@ La aplicación ha evolucionado de un prototipo cliente-céntrico a una aplicaci�
     -   **Firestore Database:** Actúa como la base de datos principal, almacenando en tiempo real la información de usuarios, transacciones y conversaciones.
 -   **Gestión de Estado del Cliente (`CoraboContext.tsx`):** El `CoraboContext` ahora actúa como un gestor de estado del lado del cliente y un puente de comunicación. Se suscribe a los datos de Firestore en tiempo real y llama a los flujos de Genkit del backend para ejecutar acciones, manteniendo la UI reactiva y sincronizada.
 
-## 2. Lógica del Feed Principal: Algoritmo de "Oportunidad y Confianza"
+## 2. Lógica de Perfil Dinámico: El "Interruptor" de Tipo de Oferta
 
-Para asegurar un feed dinámico, relevante y justo, Corabo no utiliza un simple orden cronológico. En su lugar, implementa un algoritmo de ranking que calcula una **Puntuación de Relevancia** para cada publicación. Este sistema equilibra la visibilidad de los proveedores nuevos con la reputación de los establecidos.
+Para ofrecer una experiencia de usuario clara y coherente, Corabo implementa un sistema de **perfiles dinámicos** que se adaptan al tipo de negocio del proveedor. La clave de esta lógica es el campo `offerType` ('service' o 'product') dentro del `profileSetupData` del usuario.
 
-### 2.1. Carriles de Ranking
+-   **Prioridad del Producto:** Si un proveedor elige ofrecer tanto servicios como productos, la plataforma da **prioridad a la vista de "producto"**. Su perfil se transformará en un catálogo de ventas.
+-   **Lógica de Renderizado Condicional:** Las páginas de perfil (`/companies/[id]` y `/profile`) leen el valor de `offerType` al cargar:
+    -   **Si `offerType` es `'product'`:** La página renderiza la **Vista de Catálogo**, mostrando una cuadrícula de productos, métricas de ventas y el carrito de compras como acción principal.
+    -   **Si `offerType` es `'service'`:** La página renderiza la **Vista de Galería**, mostrando publicaciones visuales, métricas de reputación y el contacto directo/agendamiento como acciones principales.
 
-El sistema utiliza dos "carriles" o lógicas de puntuación diferentes:
+Este sistema asegura que la interfaz siempre se alinee con el objetivo comercial principal del proveedor, eliminando ambigüedades y mejorando la usabilidad.
 
--   **Carril de Oportunidad (Para Proveedores Nuevos):** Diseñado para dar visibilidad a usuarios con menos de 5 transacciones y menos de 30 días en la plataforma. La puntuación se basa en:
-    1.  **Relevancia para el Usuario:** Coincidencia entre la categoría de la publicación y los intereses del cliente.
-    2.  **Frescura del Contenido:** Las publicaciones más recientes reciben un impulso.
-    3.  **Calidad del Perfil:** Se bonifica a los proveedores que han completado su perfil al 100%.
+## 3. Lógica del Feed Principal: Algoritmo de "Oportunidad y Confianza"
 
--   **Carril de Confianza (Para Proveedores Establecidos):** Para usuarios con trayectoria, el ranking es una meritocracia basada en:
-    1.  **Puntuación de Calidad:** Una combinación de **reputación (estrellas)**, **índice de efectividad (tiempo de respuesta)** y si el perfil está **verificado/suscrito**.
-    2.  **Puntuación de Relevancia Personal:** Interacciones previas del cliente (si es un contacto, si ha dado likes) y la coincidencia con sus intereses.
-    3.  **Frescura del Contenido:** Sigue siendo un factor, pero con menor peso.
+El feed principal utiliza un algoritmo de ranking que calcula una **Puntuación de Relevancia** para cada publicación, equilibrando la visibilidad de proveedores nuevos y establecidos.
 
-### 2.2. Mezcla del Feed
+### 3.1. Carriles de Ranking
 
-El feed final que ve el usuario se construye principalmente con el "Carril de Confianza", pero el algoritmo **inyecta estratégicamente** publicaciones del "Carril de Oportunidad" en posiciones de alta visibilidad. Esto garantiza que los nuevos talentos relevantes siempre tengan la oportunidad de ser descubiertos, manteniendo un ecosistema competitivo y saludable.
+-   **Carril de Oportunidad (Proveedores Nuevos):** Da visibilidad a usuarios con menos de 5 transacciones. La puntuación se basa en la relevancia de la categoría, la frescura del contenido y la completitud del perfil.
+-   **Carril de Confianza (Proveedores Establecidos):** Se basa en la puntuación de calidad (reputación, efectividad, verificación), interacciones previas del cliente y frescura del contenido.
 
-## 3. Flujo de Autenticación y Datos
+### 3.2. Mezcla del Feed
 
-1.  **Inicio de Sesión:** El usuario es dirigido a `/login`, donde utiliza Firebase Authentication para iniciar sesión con su cuenta de Google.
-2.  **Sincronización de Datos:** Una vez autenticado, `CoraboContext` se suscribe a las colecciones de Firestore relevantes para el usuario (sus transacciones, conversaciones, etc.).
-3.  **Interacción:** Cuando el usuario realiza una acción (ej. enviar una propuesta), el componente de la interfaz llama a una función en el `CoraboContext`.
-4.  **Ejecución en Backend:** El `CoraboContext` a su vez llama al flujo de Genkit correspondiente (ej. `acceptProposalFlow`).
-5.  **Lógica Segura:** El flujo de Genkit se ejecuta en el servidor, realiza las validaciones necesarias y actualiza la base de datos de Firestore.
-6.  **Actualización en Tiempo Real:** El cambio en Firestore es detectado por el `CoraboContext` en el cliente, y la interfaz se actualiza automáticamente.
+El feed final se construye principalmente con el "Carril de Confianza", pero el algoritmo **inyecta estratégicamente** publicaciones del "Carril de Oportunidad" para garantizar que los nuevos talentos relevantes siempre tengan la oportunidad de ser descubiertos.
 
-## 4. Lógica de Negocio y Flujos de Genkit (`src/ai/flows/*`)
+## 4. Flujos de Genkit y Lógica de Backend (`src/ai/flows/*`)
 
-Los flujos de Genkit son el nuevo cerebro de la lógica de negocio. Actualmente tenemos:
-
--   **`campaign-flow.ts`**: Gestiona la creación de campañas publicitarias, incluyendo el cálculo de costos, la aplicación de descuentos y la creación de la transacción de pago correspondiente en Firestore.
--   **`message-flow.ts`**: Maneja el envío de mensajes y, crucialmente, el ciclo de vida de las propuestas de acuerdo. Se encarga de validar la propuesta y crear la transacción correspondiente de forma segura cuando un cliente la acepta.
-
-## 5. Estructura de Datos (`src/lib/types.ts`)
-
-La estructura de datos ahora sigue un modelo unificado donde todo el contenido visible (imágenes, videos, productos) reside en una única colección `publications`. Esto asegura consistencia y simplifica las consultas.
+Los flujos de Genkit son el cerebro de la lógica de negocio, incluyendo:
+-   **`campaign-flow.ts`**: Creación de campañas publicitarias.
+-   **`message-flow.ts`**: Envío de mensajes y gestión de propuestas de acuerdo.
+-   **`publication-flow.ts`**: Creación unificada y segura de publicaciones (imágenes y productos).
 
 ---
 
-## 6. Análisis Forense del Éxito (Estado Actual)
+## 5. Análisis Forense del Éxito (Estado Actual y Punto de Referencia)
 
-Esta sección documenta por qué la aplicación es actualmente estable y la funcionalidad de publicación de contenido opera sin errores. Este es el punto de referencia para futuras depuraciones.
+Esta sección documenta por qué la aplicación es actualmente estable y la funcionalidad de publicación opera sin errores, sirviendo como un "estado dorado" para futuras depuraciones.
 
-### 6.1. Pilar 1: Modelo de Datos Unificado ("Modelo Instagram")
+### 5.1. Pilar 1: Modelo de Datos Unificado ("Modelo Instagram")
 
-El cambio más crítico fue abandonar la separación de datos en `gallery` (dentro del usuario) y `products` (en otra colección). Adoptamos un modelo similar al de Instagram:
+El cambio más crítico fue adoptar un modelo de datos unificado.
+-   **Colección Única `publications`:** Todo el contenido (imágenes, videos, productos) vive en una sola colección.
+-   **Campo `type`:** Un campo `type` (`'image'`, `'video'`, `'product'`) diferencia cada documento.
+-   **Objeto `productDetails`:** Los documentos de tipo `'product'` contienen un objeto con datos específicos (precio, nombre, etc.).
 
--   **Colección Única `publications`:** Ahora, todo el contenido (imágenes, videos, productos) vive en una sola colección principal.
--   **Campo `type`:** Un campo `type` dentro de cada documento nos dice si es `'image'`, `'video'` o `'product'`.
--   **Objeto `productDetails`:** Los documentos de tipo `'product'` contienen un objeto adicional con los datos específicos del producto (precio, nombre, etc.).
+**Resultado:** Esta arquitectura eliminó la necesidad de gestionar y consultar múltiples colecciones, simplificando drásticamente la lógica de lectura y escritura.
 
-**Resultado:** Esta arquitectura eliminó la necesidad de gestionar y consultar múltiples fuentes de datos, simplificando toda la lógica de lectura y escritura.
+### 5.2. Pilar 2: Consultas a Firestore a Prueba de Errores
 
-### 6.2. Pilar 2: Consultas a Firestore a Prueba de Errores
+El error recurrente `Missing or insufficient permissions` era en realidad un síntoma de una consulta demasiado compleja para Firestore (`The query requires an index`).
+-   **Estrategia Nueva:**
+    1.  **Consulta Ultra-Simple al Backend:** Solo pedimos a Firestore los documentos que pertenecen a un `providerId` (`where('providerId', '==', ...)`).
+    2.  **Filtrado y Ordenamiento en el Servidor:** Una vez que el flujo de Genkit tiene los datos, usa código de JavaScript normal para filtrar por tipo y ordenar por fecha.
 
-El error recurrente `Missing or insufficient permissions` era en realidad un error de `The query requires an index`. Ocurría porque nuestras consultas eran demasiado complejas para Firestore sin un índice compuesto creado manualmente.
+**Resultado:** La consulta a la base de datos es tan simple que **nunca necesitará un índice compuesto**, eliminando la raíz del error de forma permanente.
 
--   **Consulta Antigua (Fallaba):** `query(..., where('providerId', ...), where('type', ...), orderBy(...))`
--   **Consulta Nueva (Funciona):** `query(..., where('providerId', '==', ...))`
+### 5.3. Pilar 3: Reglas de Seguridad Abiertas (Solo para Desarrollo)
 
-La nueva estrategia es:
-1.  **Hacer una consulta ultra-simple al backend:** Solo pedimos a Firestore los documentos que pertenecen a un `providerId`.
-2.  **Filtrar y Ordenar en el Servidor:** Una vez que el flujo de Genkit tiene los datos, usa código de JavaScript normal para filtrar por tipo (imágenes vs. productos) y ordenarlos por fecha.
-
-**Resultado:** La consulta a la base de datos es tan simple que **nunca necesitará un índice compuesto**, eliminando la raíz del error.
-
-### 6.3. Pilar 3: Reglas de Seguridad Abiertas para Desarrollo
-
-Para acelerar la fase de desarrollo y asegurarnos de que los únicos errores que veamos sean de lógica de la aplicación, las reglas de `firestore.rules` se han configurado de forma abierta.
-
+Para acelerar la fase de desarrollo, las reglas de `firestore.rules` se han configurado de forma abierta.
 -   **Regla Actual:** `allow read, write: if true;`
--   **Propósito:** Esto elimina completamente los permisos como una posible causa de error durante el desarrollo. Cualquier fallo que ocurra ahora es 100% un problema en el código TypeScript (React o Genkit), lo que hace que la depuración sea mucho más rápida y directa.
+-   **Propósito:** Esto elimina los permisos como una posible causa de error durante el desarrollo. Cualquier fallo que ocurra ahora es 100% un problema en el código TypeScript (React o Genkit), lo que hace la depuración mucho más rápida y directa.
 
 **Conclusión:** La combinación de un modelo de datos limpio, consultas simples y reglas de seguridad permisivas (para desarrollo) ha creado un entorno estable. Cualquier funcionalidad futura debe construirse sobre estos tres pilares para mantener la estabilidad.
-
----
-## 7. Conclusión
-
-La arquitectura actual es sólida, segura y escalable, preparada para pruebas multi-equipo y futuras expansiones. La separación clara entre el frontend (React/Next.js), el backend (Genkit) y la base de datos (Firestore) permite un desarrollo modular y eficiente. Los próximos pasos deben centrarse en migrar el resto de la lógica de negocio del `CoraboContext` a nuevos flujos de Genkit.

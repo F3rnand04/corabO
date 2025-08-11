@@ -24,7 +24,34 @@ graph TD
 
 ---
 
-## 2. Flujo del Cliente (Comprador) con Backend
+## 2. Flujo de Configuración de Perfil y Decisión de Vista
+
+Describe cómo un usuario configura su perfil y cómo esto determina la interfaz que se le presenta a él y a otros.
+
+```mermaid
+graph TD
+    A[Nuevo Usuario Completa Registro] --> B[Accede a Configuración de Perfil /profile-setup];
+    B --> C{Paso 1: Elige Tipo};
+    C -- "Cliente" --> E[Continúa configuración de cliente (simplificada)];
+    C -- "Proveedor" --> D{Paso 5: ¿Qué ofreces?};
+    D -- "Servicios" --> F[Guarda offerType = 'service'];
+    D -- "Productos" --> G[Guarda offerType = 'product'];
+    E --> H[Finaliza y va al Perfil];
+    F --> H;
+    G --> H;
+
+    subgraph "Renderizado de Perfil (/companies/[id])"
+        direction LR
+        H --> I{Leer offerType del Proveedor};
+        I -- "'product'" --> J[Mostrar Vista de Catálogo de Productos];
+        I -- "'service'" --> K[Mostrar Vista de Galería de Servicios];
+    end
+```
+
+
+---
+
+## 3. Flujo del Cliente (Comprador) con Backend
 
 Describe el viaje de un cliente en la nueva arquitectura.
 
@@ -56,7 +83,7 @@ graph TD
 
 ---
 
-## 3. Flujo de Pago: Suscrito vs. No Suscrito
+## 4. Flujo de Pago: Suscrito vs. No Suscrito
 
 *Este flujo no cambia en su lógica de negocio, pero ahora las actualizaciones de estado de la transacción son manejadas por el backend.*
 
@@ -81,7 +108,7 @@ graph TD
 
 ---
 
-## 4. Flujo de Campaña Publicitaria (con Backend)
+## 5. Flujo de Campaña Publicitaria (con Backend)
 
 Detalla el nuevo flujo de creación de campañas, ahora gestionado por Genkit.
 

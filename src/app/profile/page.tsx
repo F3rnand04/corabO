@@ -1,11 +1,12 @@
 
+
 'use client';
 
 import { useState, useEffect, useRef, ChangeEvent, useCallback } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Send, Plus, Wallet, Megaphone, Settings, ImageIcon, ChevronLeft, ChevronRight, MessageCircle, Flag, Zap, Loader2 } from 'lucide-react';
+import { Star, Send, Plus, Wallet, Megaphone, Settings, ImageIcon, ChevronLeft, ChevronRight, MessageCircle, Flag, Zap, Loader2, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -19,7 +20,9 @@ import { CampaignDialog } from '@/components/CampaignDialog';
 import { Badge } from '@/components/ui/badge';
 import { SubscriptionDialog } from '@/components/SubscriptionDialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getProfileGallery } from '@/ai/flows/profile-flow';
+import { getProfileGallery, getProfileProducts } from '@/ai/flows/profile-flow';
+import { ProductGridCard } from '@/components/ProductGridCard';
+import { ProductDetailsDialog } from '@/components/ProductDetailsDialog';
 
 
 export default function ProfilePage() {
@@ -27,31 +30,36 @@ export default function ProfilePage() {
   const { currentUser, updateUserProfileImage, getAgendaEvents, getUserMetrics, transactions } = useCorabo();
   
   const [gallery, setGallery] = useState<GalleryImage[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  const loadGalleryData = useCallback(async () => {
+  const isProvider = currentUser?.type === 'provider';
+  const isProductProvider = isProvider && currentUser?.profileSetupData?.offerType === 'product';
+
+  const loadProfileData = useCallback(async () => {
     if (!currentUser?.id) return;
     
     setIsLoading(true);
     try {
-        // Para el perfil, cargamos una cantidad mayor inicial, sin paginación por ahora para simplificar.
-        const { gallery: newGallery } = await getProfileGallery({ userId: currentUser.id, limitNum: 50 });
-        setGallery(newGallery);
-        if (newGallery.length > 0) {
-            setCurrentImageIndex(0);
+        if (isProductProvider) {
+            const { products: newProducts } = await getProfileProducts({ userId: currentUser.id, limitNum: 50 });
+            setProducts(newProducts);
+        } else {
+            const { gallery: newGallery } = await getProfileGallery({ userId: currentUser.id, limitNum: 50 });
+            setGallery(newGallery);
         }
     } catch (error) {
-        console.error("Error fetching gallery:", error);
-        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cargar tu galería.' });
+        console.error("Error fetching profile data:", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cargar tu perfil.' });
     } finally {
         setIsLoading(false);
     }
-  }, [currentUser?.id, toast]);
+  }, [currentUser?.id, isProductProvider, toast]);
 
   useEffect(() => {
-    loadGalleryData();
-  }, [loadGalleryData]);
+    loadProfileData();
+  }, [loadProfileData]);
 
 
   const router = useRouter();
@@ -59,6 +67,8 @@ export default function ProfilePage() {
 
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isProductDetailsDialogOpen, setIsProductDetailsDialogOpen] = useState(false);
   const [isCampaignDialogOpen, setIsCampaignDialogOpen] = useState(false);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   
@@ -70,9 +80,9 @@ export default function ProfilePage() {
   useEffect(() => {
     if(gallery.length > 0) {
         const currentImage = gallery[currentImageIndex];
-        setStarCount(currentImage.likes || Math.floor(Math.random() * 5000));
+        setStarCount(currentImage.likes || 0);
         setMessageCount(currentImage.comments?.length || 0);
-        setShareCount(Math.floor(Math.random() * 1000));
+        setShareCount(0); // Reset share count on image change
     }
   }, [currentImageIndex, gallery]);
 
@@ -86,7 +96,6 @@ export default function ProfilePage() {
 
   const { reputation, effectiveness, responseTime } = getUserMetrics(currentUser.id, transactions);
   const isNewProvider = responseTime === 'Nuevo';
-  const isProvider = currentUser.type === 'provider';
   
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -118,6 +127,11 @@ export default function ProfilePage() {
   const openDetailsDialog = (index: number) => {
     setDetailsDialogStartIndex(index);
     setIsDetailsDialogOpen(true);
+  };
+  
+  const openProductDetailsDialog = (product: Product) => {
+    setSelectedProduct(product);
+    setIsProductDetailsDialogOpen(true);
   };
   
   const [detailsDialogStartIndex, setDetailsDialogStartIndex] = useState(0);
@@ -229,8 +243,11 @@ export default function ProfilePage() {
             
             <div className="flex justify-around text-center text-sm py-4">
                 <div><p className="font-bold text-lg text-foreground">{gallery?.length || 0}</p><p className="text-xs text-muted-foreground">Publicaciones</p></div>
-                <div><p className="font-bold text-lg text-foreground">{transactions.filter(t => t.providerId === currentUser.id && (t.status === 'Pagado' || t.status === 'Resuelto')).length}</p><p className="text-xs text-muted-foreground">Trab. Realizados</p></div>
-                <div><p className="font-bold text-lg text-foreground">{transactions.filter(t => t.clientId === currentUser.id && (t.status === 'Pagado' || t.status === 'Resuelto')).length}</p><p className="text-xs text-muted-foreground">Contrataciones</p></div>
+                 {isProductProvider ? (
+                     <div><p className="font-bold text-lg text-foreground">{products.length}</p><p className="text-xs text-muted-foreground">Productos</p></div>
+                 ) : (
+                     <div><p className="font-bold text-lg text-foreground">{transactions.filter(t => t.providerId === currentUser.id && (t.status === 'Pagado' || t.status === 'Resuelto')).length}</p><p className="text-xs text-muted-foreground">Trab. Realizados</p></div>
+                 )}
             </div>
             
             <div className="flex justify-end gap-2 pb-4">
@@ -240,50 +257,87 @@ export default function ProfilePage() {
           </header>
 
           <main className="space-y-4">
-            {/* Featured Image */}
-            <Card className="rounded-2xl overflow-hidden shadow-lg relative">
-              <CardContent className="p-0">
-                {isLoading ? (
-                    <Skeleton className="w-full aspect-video" />
-                ) : currentImage ? (
-                  <div className="relative group" onDoubleClick={() => openDetailsDialog(currentImageIndex)}>
-                    <Image src={currentImage.src} alt={currentImage.alt} width={600} height={400} className="rounded-t-2xl object-cover w-full aspect-[4/3] cursor-pointer" data-ai-hint="professional workspace" key={currentImage.src}/>
-                    <Button variant="ghost" size="icon" className="absolute top-2 left-2 z-10 text-white bg-black/20 rounded-full h-8 w-8" onClick={() => setIsReportDialogOpen(true)}><Flag className="w-4 h-4" /></Button>
-                    <Button onClick={handlePrev} variant="ghost" size="icon" className="absolute top-1/2 left-2 -translate-y-1/2 bg-black/20 text-white rounded-full h-8 w-8 z-10"><ChevronLeft className="h-5 w-5" /></Button>
-                    <Button onClick={handleNext} variant="ghost" size="icon" className="absolute top-1/2 right-2 -translate-y-1/2 bg-black/20 text-white rounded-full h-8 w-8 z-10"><ChevronRight className="h-5 w-5" /></Button>
-                    <div className="absolute bottom-2 right-2 flex flex-col items-end gap-2 text-white">
-                        <div className="flex flex-col items-center"><Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={handleStarClick}><Star className={cn("w-5 h-5", isLiked && "fill-yellow-400 text-yellow-400")} /></Button><span className="text-xs font-bold mt-1">{(starCount / 1000).toFixed(1)}k</span></div>
-                        <div className="flex flex-col items-center"><Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={() => openDetailsDialog(currentImageIndex)}><MessageCircle className="w-5 h-5" /></Button><span className="text-xs font-bold mt-1">{messageCount}</span></div>
-                        <div className="flex flex-col items-center"><Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={handleShareClick}><Send className="w-5 h-5" /></Button><span className="text-xs font-bold mt-1">{shareCount}</span></div>
+            {isProductProvider ? (
+                // Vista de Catálogo de Productos
+                <div>
+                  <h3 className="text-lg font-semibold text-center flex items-center justify-center gap-2 mb-4"><Package className='w-5 h-5'/> Mi Catálogo</h3>
+                  {isLoading ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="aspect-square rounded-lg" />)}
+                      </div>
+                  ) : products.length > 0 ? (
+                    <div className='p-2 grid grid-cols-2 gap-2'>
+                      {products.map(product => (
+                        <ProductGridCard 
+                          key={product.id} 
+                          product={product}
+                          onDoubleClick={() => openProductDetailsDialog(product)}
+                         />
+                      ))}
                     </div>
-                  </div>
-                ) : (
-                  <div className="w-full aspect-video bg-muted flex flex-col items-center justify-center text-center p-4">
-                    <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
-                    <h3 className="font-bold text-lg text-foreground">Tu galería está vacía</h3>
-                    <p className="text-muted-foreground text-sm">Haz clic en el botón (+) en el pie de página para añadir tu primera publicación.</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Thumbnail Grid */}
-            <div className="p-2 grid grid-cols-3 gap-1">
-                {isLoading ? (
-                    Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="aspect-square rounded-md" />)
-                ) : (
-                    gallery.map((thumb, index) => (
-                        <div key={thumb.id} className="relative aspect-square cursor-pointer group" onClick={() => setCurrentImageIndex(index)} onDoubleClick={() => openDetailsDialog(index)}>
-                            <Image src={thumb.src} alt={thumb.alt} fill className={cn("object-cover rounded-md transition-all duration-200", currentImageIndex === index ? "ring-2 ring-primary ring-offset-2" : "ring-0 group-hover:opacity-80")} data-ai-hint="product image" />
+                  ) : (
+                    <div className="w-full aspect-video bg-muted flex flex-col items-center justify-center text-center p-4 rounded-lg">
+                        <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
+                        <h3 className="font-bold text-lg text-foreground">Tu catálogo está vacío</h3>
+                        <p className="text-muted-foreground text-sm">Haz clic en el botón (+) en el pie de página para añadir tu primer producto.</p>
+                    </div>
+                  )}
+              </div>
+            ) : (
+                 // Vista de Galería de Servicios
+                <>
+                  <Card className="rounded-2xl overflow-hidden shadow-lg relative">
+                    <CardContent className="p-0">
+                      {isLoading ? (
+                          <Skeleton className="w-full aspect-video" />
+                      ) : currentImage ? (
+                        <div className="relative group" onDoubleClick={() => openDetailsDialog(currentImageIndex)}>
+                          <Image src={currentImage.src} alt={currentImage.alt} width={600} height={400} className="rounded-t-2xl object-cover w-full aspect-[4/3] cursor-pointer" data-ai-hint="professional workspace" key={currentImage.src}/>
+                          <Button variant="ghost" size="icon" className="absolute top-2 left-2 z-10 text-white bg-black/20 rounded-full h-8 w-8" onClick={() => setIsReportDialogOpen(true)}><Flag className="w-4 h-4" /></Button>
+                          <Button onClick={handlePrev} variant="ghost" size="icon" className="absolute top-1/2 left-2 -translate-y-1/2 bg-black/20 text-white rounded-full h-8 w-8 z-10"><ChevronLeft className="h-5 w-5" /></Button>
+                          <Button onClick={handleNext} variant="ghost" size="icon" className="absolute top-1/2 right-2 -translate-y-1/2 bg-black/20 text-white rounded-full h-8 w-8 z-10"><ChevronRight className="h-5 w-5" /></Button>
+                          <div className="absolute bottom-2 right-2 flex flex-col items-end gap-2 text-white">
+                              <div className="flex flex-col items-center"><Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={handleStarClick}><Star className={cn("w-5 h-5", isLiked && "fill-yellow-400 text-yellow-400")} /></Button><span className="text-xs font-bold mt-1">{(starCount / 1000).toFixed(1)}k</span></div>
+                              <div className="flex flex-col items-center"><Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={() => openDetailsDialog(currentImageIndex)}><MessageCircle className="w-5 h-5" /></Button><span className="text-xs font-bold mt-1">{messageCount}</span></div>
+                              <div className="flex flex-col items-center"><Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={handleShareClick}><Send className="w-5 h-5" /></Button><span className="text-xs font-bold mt-1">{shareCount}</span></div>
+                          </div>
                         </div>
-                    ))
-                )}
-            </div>
+                      ) : (
+                        <div className="w-full aspect-video bg-muted flex flex-col items-center justify-center text-center p-4">
+                          <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
+                          <h3 className="font-bold text-lg text-foreground">Tu galería está vacía</h3>
+                          <p className="text-muted-foreground text-sm">Haz clic en el botón (+) en el pie de página para añadir tu primera publicación.</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Thumbnail Grid */}
+                  <div className="p-2 grid grid-cols-3 gap-1">
+                      {isLoading ? (
+                          Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="aspect-square rounded-md" />)
+                      ) : (
+                          gallery.map((thumb, index) => (
+                              <div key={thumb.id} className="relative aspect-square cursor-pointer group" onClick={() => setCurrentImageIndex(index)} onDoubleClick={() => openDetailsDialog(index)}>
+                                  <Image src={thumb.src} alt={thumb.alt} fill className={cn("object-cover rounded-md transition-all duration-200", currentImageIndex === index ? "ring-2 ring-primary ring-offset-2" : "ring-0 group-hover:opacity-80")} data-ai-hint="product image" />
+                              </div>
+                          ))
+                      )}
+                  </div>
+              </>
+            )}
           </main>
         </div>
       </div>
       <ReportDialog isOpen={isReportDialogOpen} onOpenChange={setIsReportDialogOpen} providerId={currentUser.id} publicationId={currentImage?.id || 'profile-report'} />
       {gallery.length > 0 && <ImageDetailsDialog isOpen={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen} gallery={gallery} startIndex={detailsDialogStartIndex} owner={currentUser} />}
+       {selectedProduct && (
+        <ProductDetailsDialog
+            isOpen={isProductDetailsDialogOpen}
+            onOpenChange={setIsProductDetailsDialogOpen}
+            product={selectedProduct}
+        />
+      )}
       {isProvider && <CampaignDialog isOpen={isCampaignDialogOpen} onOpenChange={setIsCampaignDialogOpen} />}
       <SubscriptionDialog isOpen={isSubscriptionDialogOpen} onOpenChange={setIsSubscriptionDialogOpen} />
     </>

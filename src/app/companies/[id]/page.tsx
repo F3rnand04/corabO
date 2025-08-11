@@ -58,13 +58,12 @@ export default function CompanyProfilePage() {
         setProvider(fetchedProvider);
 
         if (fetchedProvider) {
-            // Se usa el ID del proveedor obtenido para las llamadas a los flujos
-            const galleryData = await getProfileGallery({ userId: fetchedProvider.id });
-            setProviderGallery(galleryData.gallery);
-
             if (fetchedProvider.profileSetupData?.offerType === 'product') {
                  const productsData = await getProfileProducts({ userId: fetchedProvider.id });
                  setProviderProducts(productsData.products);
+            } else {
+                 const galleryData = await getProfileGallery({ userId: fetchedProvider.id });
+                 setProviderGallery(galleryData.gallery);
             }
         }
     } catch (error) {
@@ -109,7 +108,7 @@ export default function CompanyProfilePage() {
 
   const [starCount, setStarCount] = useState(Math.floor(Math.random() * 5000));
   const [isLiked, setIsLiked] = useState(false);
-  const [shareCount, setShareCount] = useState(Math.floor(Math.random() * 1000));
+  const [shareCount, setShareCount] = useState(0);
   const [messageCount, setMessageCount] = useState(0);
   const [activeTab, setActiveTab] = useState('comentarios');
   const [gpsReady, setGpsReady] = useState(false);
