@@ -13,6 +13,7 @@ import { SubscriptionDialog } from '@/components/SubscriptionDialog';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { ContactSupportCard } from '@/components/ContactSupportCard';
 
 function ContactsHeader({ onSubscribeClick }: { onSubscribeClick: () => void }) {
   const router = useRouter();
@@ -107,8 +108,10 @@ export default function ContactsPage() {
             </div>
         </div>
 
+        <ContactSupportCard />
+
         {/* Contacts List */}
-        <h2 className="text-xl font-bold mb-4 px-2">Contactos</h2>
+        <h2 className="text-xl font-bold mb-4 px-2 mt-8">Mis Contactos Guardados</h2>
         
         <div className="space-y-3">
           {contacts.length > 0 ? (
