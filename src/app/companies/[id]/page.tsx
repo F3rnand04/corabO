@@ -58,6 +58,7 @@ export default function CompanyProfilePage() {
         setProvider(fetchedProvider);
 
         if (fetchedProvider) {
+            // Conditional data loading based on provider type
             if (fetchedProvider.profileSetupData?.offerType === 'product') {
                  const productsData = await getProfileProducts({ userId: fetchedProvider.id });
                  setProviderProducts(productsData.products);
