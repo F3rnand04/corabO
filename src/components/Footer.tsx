@@ -23,7 +23,8 @@ export function Footer() {
   }
 
   const isProvider = currentUser.type === 'provider';
-  const isProfilePage = pathname === '/profile';
+  // CORRECTED: This now correctly identifies any page under /profile as a profile page.
+  const isProfilePage = pathname.startsWith('/profile');
 
   const handleCentralButtonClick = () => {
     if (isProfilePage) {
@@ -70,7 +71,7 @@ export function Footer() {
             </Link>
 
             <Link href={isProfilePage ? "/profile-setup" : "/profile"} passHref>
-                <Button variant="ghost" className={cn("flex-col h-auto p-1 text-muted-foreground hover:text-primary", (pathname === '/profile' || pathname === '/profile-setup') && "text-primary")}>
+                <Button variant="ghost" className={cn("flex-col h-auto p-1 text-muted-foreground hover:text-primary", pathname.startsWith('/profile') && "text-primary")}>
                     {isProfilePage ? (
                         <Settings className="w-6 h-6" />
                     ) : (
