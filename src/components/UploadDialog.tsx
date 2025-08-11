@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useRef, ChangeEvent } from 'react';
@@ -32,7 +31,9 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const isProductProvider = currentUser?.profileSetupData?.offerType === 'product';
+  if (!currentUser) return null; // Should not happen if the button is visible, but a good safeguard.
+
+  const isProductProvider = currentUser.profileSetupData?.offerType === 'product';
   const [view, setView] = useState<'selection' | 'upload_gallery' | 'upload_product'>(isProductProvider ? 'selection' : 'upload_gallery');
   
   // Common state
@@ -118,7 +119,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
   
   const handlePublishGallery = async () => {
     if (!galleryFile || !galleryImagePreview || !galleryDescription.trim() || !currentUser) {
-      toast({ variant: "destructive", title: "Faltan datos" });
+      toast({ variant: "destructive", title: "Faltan datos", description: "Debes subir un archivo y añadir una descripción." });
       return;
     }
     
@@ -314,8 +315,6 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
     }
     return renderSelectionView();
   }
-
-  if (!currentUser) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
