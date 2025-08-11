@@ -63,17 +63,17 @@ export const createPublication = ai.defineFlow(
     // CRITICAL FIX: Robustly build ownerData with fallbacks for each property
     // to prevent errors if profileSetupData or its sub-properties are missing.
     const ownerData: PublicationOwner = {
-      id: user.id,
-      name: user.profileSetupData?.useUsername ? (user.profileSetupData.username || user.name) : user.name,
-      profileImage: user.profileImage || '',
-      verified: user.verified || false,
-      isGpsActive: user.isGpsActive || false,
-      reputation: user.reputation || 0,
-      profileSetupData: {
-        specialty: user.profileSetupData?.specialty || '',
-        providerType: user.profileSetupData?.providerType || 'professional',
-        username: user.profileSetupData?.username || user.name.replace(/\s+/g, '').toLowerCase(),
-      },
+        id: user.id,
+        name: user.profileSetupData?.useUsername ? (user.profileSetupData.username ?? user.name) : user.name,
+        profileImage: user.profileImage ?? '',
+        verified: user.verified ?? false,
+        isGpsActive: user.isGpsActive ?? false,
+        reputation: user.reputation ?? 0,
+        profileSetupData: {
+            specialty: user.profileSetupData?.specialty ?? '',
+            providerType: user.profileSetupData?.providerType ?? 'professional',
+            username: user.profileSetupData?.username ?? user.name.replace(/\s+/g, '').toLowerCase(),
+        },
     };
 
     const publicPublication: GalleryImage = {
@@ -120,7 +120,7 @@ export const createProduct = ai.defineFlow(
             name,
             description,
             price,
-            category: user.profileSetupData?.primaryCategory || 'General',
+            category: user.profileSetupData?.primaryCategory ?? 'General',
             providerId: userId,
             imageUrl: imageDataUri, // Again, this would be a GCS URL in production
         };
