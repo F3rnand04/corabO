@@ -157,7 +157,7 @@ export const sendWelcomeToProviderNotification = ai.defineFlow({
         userId: userId,
         type: 'welcome',
         title: '¡Felicidades por convertirte en proveedor!',
-        message: 'Para empezar con el pie derecho, suscríbete y obtén la insignia de verificado.',
+        message: 'Para empezar con el pie de derecho, suscríbete y obtén la insignia de verificado.',
         link: '/contacts', // Links to the subscription page
     });
 });
