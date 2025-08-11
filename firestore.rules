@@ -2,50 +2,11 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Regla de seguridad flexible para la fase de prototipado.
-    // Permite a cualquier usuario autenticado leer y escribir en cualquier documento.
-    // Esto previene errores de "permisos insuficientes" durante el desarrollo.
+  
+    // Regla flexible para fase de prototipado:
+    // Permite leer y escribir en CUALQUIER colección si el usuario está autenticado.
     match /{document=**} {
       allow read, write: if request.auth != null;
     }
-
-    // --- REGLAS MÁS SEGURAS PARA PRODUCCIÓN (REFERENCIA FUTURA) ---
-    /* 
-    match /users/{userId} {
-      // Un usuario puede leer y escribir su propio perfil.
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-      // Un usuario puede leer la galería de otro.
-      allow list, get: if request.auth != null;
-      
-      match /gallery/{imageId} {
-      	// El dueño del perfil puede crear/borrar imágenes de su galería.
-      	allow write: if request.auth != null && request.auth.uid == userId;
-        // Cualquiera puede leer las imágenes de la galería.
-        allow read: if request.auth != null;
-      }
-    }
-
-    match /products/{productId} {
-    	// Cualquiera puede leer la lista de productos.
-    	allow read: if request.auth != null;
-      // Solo un proveedor puede crear/actualizar productos, y debe ser el dueño.
-      allow write: if request.auth != null && request.resource.data.providerId == request.auth.uid;
-    }
-    
-    match /publications/{publicationId} {
-    	// Cualquiera puede leer las publicaciones del feed.
-    	allow read: if request.auth != null;
-      // Solo el dueño puede escribir en su publicación.
-      allow write: if request.auth != null && request.resource.data.owner.id == request.auth.uid;
-    }
-
-    match /conversations/{conversationId} {
-      // Un usuario solo puede leer/escribir una conversación si es participante.
-      allow read, write: if request.auth != null && request.auth.uid in resource.data.participantIds;
-    }
-
-    // Agrega aquí más reglas para otras colecciones (transacciones, campañas, etc.)
-    */
   }
 }

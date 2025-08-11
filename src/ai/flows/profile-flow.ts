@@ -28,7 +28,6 @@ export const getProfileGallery = ai.defineFlow(
         const q: any[] = [
             where("providerId", "==", userId),
             where("type", "in", ["image", "video"]),
-            orderBy('createdAt', 'desc'),
             limit(limitNum)
         ];
 
@@ -42,7 +41,11 @@ export const getProfileGallery = ai.defineFlow(
         const galleryQuery = query(publicationsCollection, ...q);
         const snapshot = await getDocs(galleryQuery);
         
-        const gallery = snapshot.docs.map(doc => doc.data() as GalleryImage);
+        const gallery = snapshot.docs
+            .map(doc => doc.data() as GalleryImage)
+            // Sort on the server to avoid complex index requirements on Firestore
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
         const lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
 
         return { gallery, lastVisibleDocId: lastVisibleDoc?.id };
