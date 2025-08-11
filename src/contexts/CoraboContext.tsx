@@ -246,27 +246,23 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    // Clean up all listeners
     const cleanup = () => {
         listeners.current.forEach(unsubscribe => unsubscribe());
         listeners.current.clear();
     };
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
-        cleanup(); // Clean up previous listeners when auth state changes
+        cleanup(); 
         
         if (firebaseUser) {
             const userData = await handleUserCreation(firebaseUser);
-
             const db = getFirestoreDb();
             
-            // Listener for the current user's document
             const userListener = onSnapshot(doc(db, 'users', userData.id), (doc) => {
                 if (doc.exists()) {
                     const updatedUserData = doc.data() as User;
                     setCurrentUser(updatedUserData);
                     userCache.current.set(updatedUserData.id, updatedUserData);
-
                     if (updatedUserData.profileSetupData?.location) {
                         setDeliveryAddress(updatedUserData.profileSetupData.location);
                     }
@@ -277,21 +273,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             });
             listeners.current.set('currentUser', userListener);
 
-            // Listener for all users
-            const usersListener = onSnapshot(collection(db, 'users'), (snapshot) => {
-                const allUsers = snapshot.docs.map(doc => doc.data() as User);
-                setUsers(allUsers);
-            });
-            listeners.current.set('allUsers', usersListener);
-
-            // Listener for transactions involving the current user
             const transactionsListener = onSnapshot(query(collection(db, 'transactions'), where('participantIds', 'array-contains', userData.id)), (snapshot) => {
                 const userTransactions = snapshot.docs.map(doc => doc.data() as Transaction);
                 setTransactions(userTransactions);
             });
             listeners.current.set('transactions', transactionsListener);
 
-            // Listener for conversations involving the current user
             const conversationsListener = onSnapshot(query(collection(db, 'conversations'), where('participantIds', 'array-contains', userData.id)), (snapshot) => {
                 const userConversations = snapshot.docs.map(doc => doc.data() as Conversation);
                 setConversations(userConversations);
@@ -440,7 +427,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const db = getFirestoreDb();
     const userDocRef = doc(db, 'users', userId);
     await updateDoc(userDocRef, updates);
-    // State will be updated by the onSnapshot listener, no need to call setCurrentUser here.
   };
 
   const completeInitialSetup = async (userId: string, data: { lastName: string; idNumber: string; birthDate: string }) => {

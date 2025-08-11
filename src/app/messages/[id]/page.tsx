@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -225,7 +226,6 @@ export default function ChatPage() {
 
     const otherId = conversation.participantIds.find(pId => pId !== currentUser.id);
     if (otherId) {
-        // Fetch user data if not already fetched
         if (otherId !== otherParticipant?.id) {
             fetchUser(otherId).then(participantData => {
                 setOtherParticipant(participantData);

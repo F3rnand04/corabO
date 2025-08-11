@@ -9,6 +9,7 @@ import { Badge } from "./ui/badge";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert, ClipboardCheck, Banknote, Truck } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface TransactionListProps {
   title: string;
@@ -32,7 +33,17 @@ const statusInfo: { [key: string]: { icon: React.ElementType, color: string, lab
     'En Reparto': { icon: Truck, color: 'text-blue-500', label: 'En Reparto' },
   };
 
-const TransactionItem = ({ transaction, onClick, otherParty }: { transaction: Transaction, onClick: (transaction: Transaction) => void, otherParty?: User | null }) => {
+const TransactionItem = ({ transaction, onClick }: { transaction: Transaction, onClick: (transaction: Transaction) => void }) => {
+    const { currentUser, fetchUser } = useCorabo();
+    const [otherParty, setOtherParty] = useState<User | null>(null);
+
+    useEffect(() => {
+        if (!currentUser) return;
+        const otherPartyId = transaction.providerId === currentUser.id ? transaction.clientId : transaction.providerId;
+        if (otherPartyId) {
+            fetchUser(otherPartyId).then(setOtherParty);
+        }
+    }, [transaction, currentUser, fetchUser]);
     
     const Icon = statusInfo[transaction.status]?.icon || AlertTriangle;
     const iconColor = statusInfo[transaction.status]?.color || 'text-gray-500';
@@ -69,7 +80,7 @@ const TransactionItem = ({ transaction, onClick, otherParty }: { transaction: Tr
         >
             <Avatar className="h-10 w-10">
                 <AvatarImage src={otherParty?.profileImage} alt={otherParty?.name} />
-                <AvatarFallback>{otherParty?.name.charAt(0)}</AvatarFallback>
+                <AvatarFallback>{otherParty?.name.charAt(0) || 'S'}</AvatarFallback>
             </Avatar>
             <div className="flex-grow">
                 <div className="flex items-center gap-2">
@@ -95,9 +106,8 @@ const TransactionItem = ({ transaction, onClick, otherParty }: { transaction: Tr
 };
 
 export function TransactionList({ title, transactions, onTransactionClick }: TransactionListProps) {
-  const { users, currentUser } = useCorabo();
   
-  if(!currentUser) return null;
+  if(!transactions) return null;
 
   return (
     <Card>
@@ -107,11 +117,9 @@ export function TransactionList({ title, transactions, onTransactionClick }: Tra
       <CardContent>
         {transactions.length > 0 ? (
           <div className="space-y-2">
-            {transactions.map(tx => {
-               const otherPartyId = tx.providerId === currentUser.id ? tx.clientId : tx.providerId;
-               const otherParty = users.find(u => u.id === otherPartyId);
-               return <TransactionItem key={tx.id} transaction={tx} onClick={onTransactionClick} otherParty={otherParty} />;
-            })}
+            {transactions.map(tx => (
+               <TransactionItem key={tx.id} transaction={tx} onClick={onTransactionClick} />
+            ))}
           </div>
         ) : (
           <p className="text-sm text-muted-foreground text-center py-8">No hay transacciones en esta vista.</p>

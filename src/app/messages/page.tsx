@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import { ChevronLeft, Search, SquarePen, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ConversationCard } from '@/components/ConversationCard';
-import type { Conversation } from '@/lib/types';
 import { ActivationWarning } from '@/components/ActivationWarning';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -39,11 +39,7 @@ export default function MessagesPage() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // We now rely on the global context listener.
-        // This effect just manages the loading state based on context data.
         if (currentUser) {
-            setIsLoading(conversations.length === 0);
-        } else {
             setIsLoading(false);
         }
     }, [currentUser, conversations]);
@@ -57,12 +53,9 @@ export default function MessagesPage() {
     const filteredConversations = sortedConversations.filter(convo => {
         if (!currentUser) return false;
         
-        // In a fully robust app, we would fetch user data here if not available.
-        // For now, we assume the other participant's data will be fetched inside ConversationCard.
         const lowerCaseQuery = searchQuery.toLowerCase().trim();
         if (!lowerCaseQuery) return true;
         
-        // This search is basic. A more advanced implementation would require fetching participant names.
         const lastMessageText = convo.messages[convo.messages.length - 1]?.text || '';
         const messageMatch = lastMessageText.toLowerCase().includes(lowerCaseQuery);
         
