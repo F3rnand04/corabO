@@ -1,0 +1,139 @@
+
+"use client";
+
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from '@/components/ui/button';
+import { Star, Send, ChevronLeft, ChevronRight, MessageCircle, Flag, ImageIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
+import { useToast } from '@/hooks/use-toast';
+import { useCorabo } from '@/contexts/CoraboContext';
+import type { GalleryImage, User } from '@/lib/types';
+import { ReportDialog } from '@/components/ReportDialog';
+import { Skeleton } from './ui/skeleton';
+
+interface ProfileGalleryViewProps {
+    gallery: GalleryImage[];
+    owner: User | null;
+    isLoading: boolean;
+}
+
+export function ProfileGalleryView({ gallery, owner, isLoading }: ProfileGalleryViewProps) {
+  const { toast } = useToast();
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
+  
+  const [starCount, setStarCount] = useState(0);
+  const [isLiked, setIsLiked] = useState(false);
+  const [shareCount, setShareCount] = useState(0);
+  const [messageCount, setMessageCount] = useState(0);
+
+  useEffect(() => {
+    if(gallery.length > 0 && currentImageIndex < gallery.length) {
+        const currentImage = gallery[currentImageIndex];
+        setStarCount(currentImage.likes || 0);
+        setMessageCount(currentImage.comments?.length || 0);
+        setShareCount(0); // Reset share count on image change
+    }
+  }, [currentImageIndex, gallery]);
+
+  if (!owner) return null;
+
+  const handlePrev = () => {
+    setCurrentImageIndex((prev) => (prev === 0 ? gallery.length - 1 : prev - 1));
+  };
+  const handleNext = () => {
+    setCurrentImageIndex((prev) => (prev === gallery.length - 1 ? 0 : prev + 1));
+  };
+
+  const openDetailsDialog = (index: number) => {
+    setDetailsDialogStartIndex(index);
+    setIsDetailsDialogOpen(true);
+  };
+  
+  const [detailsDialogStartIndex, setDetailsDialogStartIndex] = useState(0);
+  
+  const handleStarClick = () => {
+    setIsLiked(prev => !prev);
+    setStarCount(prev => isLiked ? prev - 1 : prev + 1);
+  };
+
+  const handleShareClick = async () => {
+    const currentImage = gallery.length > 0 ? gallery[currentImageIndex] : null;
+    if (!currentImage) return;
+
+    const shareData = {
+      title: `Mira esta publicación de ${owner.name}`,
+      text: `${currentImage.alt}: ${currentImage.description}`,
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        setShareCount(prev => prev + 1);
+      } else {
+        throw new Error("Share API not supported");
+      }
+    } catch (error) {
+       navigator.clipboard.writeText(shareData.url);
+       toast({
+         title: "Enlace Copiado",
+         description: "El enlace al perfil ha sido copiado a tu portapapeles.",
+       });
+    }
+  };
+
+  const currentImage = gallery && gallery.length > 0 && currentImageIndex < gallery.length ? gallery[currentImageIndex] : null;
+
+  return (
+    <>
+      <div className="space-y-4">
+        <Card className="rounded-2xl overflow-hidden shadow-lg relative">
+            <CardContent className="p-0">
+                {isLoading ? (
+                    <Skeleton className="w-full aspect-video" />
+                ) : currentImage ? (
+                <div className="relative group" onDoubleClick={() => openDetailsDialog(currentImageIndex)}>
+                    <Image src={currentImage.src} alt={currentImage.alt} width={600} height={400} className="rounded-t-2xl object-cover w-full aspect-[4/3] cursor-pointer" data-ai-hint="professional workspace" key={currentImage.src}/>
+                    <Button variant="ghost" size="icon" className="absolute top-2 left-2 z-10 text-white bg-black/20 rounded-full h-8 w-8" onClick={() => setIsReportDialogOpen(true)}><Flag className="w-4 h-4" /></Button>
+                    <Button onClick={handlePrev} variant="ghost" size="icon" className="absolute top-1/2 left-2 -translate-y-1/2 bg-black/20 text-white rounded-full h-8 w-8 z-10"><ChevronLeft className="h-5 w-5" /></Button>
+                    <Button onClick={handleNext} variant="ghost" size="icon" className="absolute top-1/2 right-2 -translate-y-1/2 bg-black/20 text-white rounded-full h-8 w-8 z-10"><ChevronRight className="h-5 w-5" /></Button>
+                    <div className="absolute bottom-2 right-2 flex flex-col items-end gap-2 text-white">
+                        <div className="flex flex-col items-center"><Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={handleStarClick}><Star className={cn("w-5 h-5", isLiked && "fill-yellow-400 text-yellow-400")} /></Button><span className="text-xs font-bold mt-1">{(starCount / 1000).toFixed(1)}k</span></div>
+                        <div className="flex flex-col items-center"><Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={() => openDetailsDialog(currentImageIndex)}><MessageCircle className="w-5 h-5" /></Button><span className="text-xs font-bold mt-1">{messageCount}</span></div>
+                        <div className="flex flex-col items-center"><Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={handleShareClick}><Send className="w-5 h-5" /></Button><span className="text-xs font-bold mt-1">{shareCount}</span></div>
+                    </div>
+                </div>
+                ) : (
+                <div className="w-full aspect-video bg-muted flex flex-col items-center justify-center text-center p-4">
+                    <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
+                    <h3 className="font-bold text-lg text-foreground">Tu galería está vacía</h3>
+                    <p className="text-muted-foreground text-sm">Haz clic en el botón (+) en el pie de página para añadir tu primera publicación.</p>
+                </div>
+                )}
+            </CardContent>
+        </Card>
+
+        {/* Thumbnail Grid */}
+        <div className="p-2 grid grid-cols-3 gap-1">
+            {isLoading ? (
+                Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="aspect-square rounded-md" />)
+            ) : (
+                gallery.map((thumb, index) => (
+                    <div key={thumb.id} className="relative aspect-square cursor-pointer group" onClick={() => setCurrentImageIndex(index)} onDoubleClick={() => openDetailsDialog(index)}>
+                        <Image src={thumb.src} alt={thumb.alt} fill className={cn("object-cover rounded-md transition-all duration-200", currentImageIndex === index ? "ring-2 ring-primary ring-offset-2" : "ring-0 group-hover:opacity-80")} data-ai-hint="product image" />
+                    </div>
+                ))
+            )}
+        </div>
+      </div>
+      <ReportDialog isOpen={isReportDialogOpen} onOpenChange={setIsReportDialogOpen} providerId={owner.id} publicationId={currentImage?.id || 'profile-report'} />
+      {gallery.length > 0 && <ImageDetailsDialog isOpen={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen} gallery={gallery} startIndex={detailsDialogStartIndex} owner={owner} />}
+    </>
+  );
+}
