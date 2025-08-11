@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { Home, Settings, Wallet, ListChecks, History, CalendarClock, ChevronLeft, Loader2, Star, TrendingUp, Calendar as CalendarIcon } from "lucide-react";
+import { Home, Settings, Wallet, ListChecks, History, CalendarClock, ChevronLeft, Loader2, Star, TrendingUp, Calendar as CalendarIcon, Link2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import TransactionsLineChart from "@/components/charts/TransactionsLineChart";
 import { TransactionDetailsDialog } from "@/components/TransactionDetailsDialog";
@@ -146,14 +146,19 @@ export default function TransactionsPage() {
     const commitmentTx = transactions.filter(t => t.status === 'Acuerdo Aceptado - Pendiente de Ejecución' || t.status === 'Finalizado - Pendiente de Pago');
     
     const credicoraLevelDetails = credicoraLevels[(currentUser.credicoraLevel || 1).toString()];
+    const nextCredicoraLevelDetails = credicoraLevels[((currentUser.credicoraLevel || 1) + 1).toString()];
+
+    const completedTransactionsCount = transactions.filter(tx => tx.clientId === currentUser.id && (tx.status === 'Pagado' || tx.status === 'Resuelto')).length;
+    const transactionsNeeded = credicoraLevelDetails.transactionsForNextLevel;
+    const progressToNextLevel = (completedTransactionsCount / transactionsNeeded) * 100;
 
     const renderContent = () => {
         if (isLoading) {
             return (
                 <div className="space-y-4">
                     <Skeleton className="h-64 w-full" />
-                    <Skeleton className="h-32 w-full" />
                     <Skeleton className="h-48 w-full" />
+                    <Skeleton className="h-32 w-full" />
                 </div>
             );
         }
@@ -179,9 +184,48 @@ export default function TransactionsPage() {
                         </Card>
                          
                         <Card>
+                             <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                     <Star className="w-6 h-6 text-blue-500 fill-blue-500"/>
+                                     Mi Credicora
+                                </CardTitle>
+                                 <CardDescription>Tu motor de crecimiento en Corabo.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                               <div className="space-y-1">
+                                    <div className="flex justify-between items-baseline text-sm font-medium">
+                                        <span className="text-muted-foreground">Nivel {credicoraLevelDetails.level}</span>
+                                        <span className="font-bold text-lg text-foreground">{credicoraLevelDetails.name}</span>
+                                    </div>
+                               </div>
+                                <div className="space-y-1">
+                                    <div className="flex justify-between text-xs font-medium">
+                                        <span>Límite de Crédito</span>
+                                        <span>${(currentUser.credicoraLimit || 0).toFixed(2)} / ${credicoraLevelDetails.creditLimit.toFixed(2)}</span>
+                                    </div>
+                                    <Progress value={((currentUser.credicoraLimit || 0) / credicoraLevelDetails.creditLimit) * 100} className="[&>div]:bg-blue-500" />
+                                </div>
+                                {nextCredicoraLevelDetails && (
+                                     <div className="space-y-1">
+                                        <div className="flex justify-between text-xs font-medium">
+                                            <span>Próximo Nivel: {nextCredicoraLevelDetails.name}</span>
+                                            <span>{completedTransactionsCount} / {transactionsNeeded} transacciones</span>
+                                        </div>
+                                        <Progress value={progressToNextLevel} />
+                                    </div>
+                                )}
+                                <div className="text-right">
+                                    <Button variant="link" size="sm" asChild className="text-xs p-0 h-auto">
+                                        <Link href="/credicora">Saber más</Link>
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
                             <CardHeader>
                                 <CardTitle className="text-lg flex justify-between items-center">
-                                    <span>Progreso y Credicora</span>
+                                    <span>Mi Progreso</span>
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <Button variant="outline" size="sm">
@@ -192,7 +236,7 @@ export default function TransactionsPage() {
                                         <PopoverContent className="w-auto p-0">
                                             <Calendar
                                                 mode="multiple"
-                                                selected={paymentDates}
+                                                selected={paymentDates.map(d => new Date(d))}
                                                 onDayClick={handleDayClick}
                                             />
                                             <div className="p-2 border-t text-center text-xs text-muted-foreground">
@@ -211,14 +255,6 @@ export default function TransactionsPage() {
                                     <div className="space-y-1">
                                         <div className="flex justify-between text-xs font-medium"><span>Efectividad</span><span>{effectiveness.toFixed(0)}%</span></div>
                                         <Progress value={effectiveness} />
-                                    </div>
-                                    <div className="space-y-1 pt-2 border-t">
-                                        <div className="flex justify-between items-baseline text-xs font-medium">
-                                            <Link href="/credicora" className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"><Star className="w-3 h-3 fill-current"/> Nivel Credicora</Link>
-                                            <span className="font-bold">{credicoraLevelDetails.level}: {credicoraLevelDetails.name}</span>
-                                        </div>
-                                        <div className="flex justify-between text-xs font-medium"><span>Límite de Crédito</span><span>${currentUser.credicoraLimit?.toFixed(2) || '0.00'}</span></div>
-                                        <Progress value={((currentUser.credicoraLimit || 0) / credicoraLevelDetails.creditLimit) * 100} className="[&>div]:bg-blue-500" />
                                     </div>
                                 </div>
                             </CardContent>
