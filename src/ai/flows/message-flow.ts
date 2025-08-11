@@ -91,8 +91,9 @@ export const acceptProposal = ai.defineFlow(
     outputSchema: z.void(),
   },
   async ({ conversationId, messageId, acceptorId }) => {
-    const batch = writeBatch(getFirestoreDb());
-    const convoRef = doc(getFirestoreDb(), 'conversations', conversationId);
+    const db = getFirestoreDb();
+    const batch = writeBatch(db);
+    const convoRef = doc(db, 'conversations', conversationId);
     
     const convoSnap = await getDoc(convoRef);
     if (!convoSnap.exists()) throw new Error("Conversation not found");
@@ -109,6 +110,19 @@ export const acceptProposal = ai.defineFlow(
 
     if (message.type !== 'proposal' || !message.proposal) throw new Error("Message is not a proposal");
 
+    // --- Business Logic Enhancement ---
+    // Fetch the client's data to check their subscription status.
+    const clientRef = doc(db, 'users', acceptorId);
+    const clientSnap = await getDoc(clientRef);
+    if (!clientSnap.exists()) throw new Error("Client user data not found.");
+    const clientData = clientSnap.data() as User;
+
+    // Determine the initial transaction status based on the client's subscription.
+    const isClientSubscribed = clientData.isSubscribed ?? false;
+    const initialStatus = isClientSubscribed
+      ? 'Acuerdo Aceptado - Pendiente de Ejecución'
+      : 'Finalizado - Pendiente de Pago'; // Requires upfront payment
+
     // 1. Mark the proposal as accepted in the conversation
     const messageIndex = conversation.messages.findIndex(m => m.id === messageId);
     const updatedMessages = [...conversation.messages];
@@ -122,7 +136,7 @@ export const acceptProposal = ai.defineFlow(
     const newTransaction: Transaction = {
       id: `txn-prop-${Date.now()}`,
       type: 'Servicio',
-      status: 'Acuerdo Aceptado - Pendiente de Ejecución',
+      status: initialStatus, // Use the dynamically determined status
       date: new Date().toISOString(),
       amount: message.proposal.amount,
       clientId: clientId,
@@ -135,7 +149,7 @@ export const acceptProposal = ai.defineFlow(
       },
     };
 
-    const txRef = doc(getFirestoreDb(), 'transactions', newTransaction.id);
+    const txRef = doc(db, 'transactions', newTransaction.id);
     batch.set(txRef, newTransaction);
     
     await batch.commit();
