@@ -10,51 +10,24 @@ import { cn } from '@/lib/utils';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useCorabo } from '@/contexts/CoraboContext';
-import type { User, Product } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { CampaignDialog } from '@/components/CampaignDialog';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { getProfileProducts, getProfileGallery } from '@/ai/flows/profile-flow';
 
 
 export function ProfileHeader() {
   const { toast } = useToast();
   const { currentUser, updateUserProfileImage, getUserMetrics, transactions } = useCorabo();
   
-  const [productCount, setProductCount] = useState(0);
-  const [galleryCount, setGalleryCount] = useState(0);
-  
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isCampaignDialogOpen, setIsCampaignDialogOpen] = useState(false);
 
-  const isProvider = currentUser?.type === 'provider';
-  
-  const loadCounts = useCallback(async () => {
-    if (!currentUser?.id) return;
-    
-    try {
-        const galleryData = await getProfileGallery({ userId: currentUser.id, limitNum: 1 });
-        setGalleryCount(galleryData.gallery.length); 
-
-        if (currentUser.profileSetupData?.offerType === 'product') {
-            const productData = await getProfileProducts({ userId: currentUser.id, limitNum: 1 });
-            setProductCount(productData.products.length);
-        }
-    } catch (error) {
-        console.error("Error fetching counts:", error);
-    }
-  }, [currentUser]);
-
-  useEffect(() => {
-    if(currentUser){
-        loadCounts();
-    }
-  }, [currentUser, loadCounts]);
-  
   if (!currentUser) return null;
+
+  const isProvider = currentUser.type === 'provider';
   
   const { reputation, effectiveness, responseTime } = getUserMetrics(currentUser.id, transactions);
   const isNewProvider = responseTime === 'Nuevo';
@@ -107,6 +80,11 @@ export function ProfileHeader() {
     ? currentUser.profileSetupData.username || currentUser.name 
     : currentUser.name;
   const specialty = currentUser.profileSetupData?.specialty || 'Sin especialidad';
+
+  const galleryCount = currentUser.gallery?.length || 0;
+  // Placeholder for product count. In a real scenario, this would also come from context or a dedicated query.
+  const productCount = currentUser.profileSetupData?.offerType === 'product' ? (currentUser.gallery?.filter(p => p.type === 'product').length || 0) : 0;
+
 
   return (
     <>
