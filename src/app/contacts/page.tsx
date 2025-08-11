@@ -79,9 +79,9 @@ export default function ContactsPage() {
                     <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="w-full">
-                    <p className="font-bold">ID corabO</p>
+                    <p className="font-bold text-foreground">Tu ID CorabO</p>
                     <div className="flex items-center gap-2">
-                       <p className="font-mono text-sm">{currentUser.coraboId || ''}</p>
+                       <p className="font-mono text-lg">{currentUser.coraboId || ''}</p>
                        <Button variant="ghost" size="icon" className="w-6 h-6" onClick={() => copyToClipboard(currentUser.coraboId || '')}>
                             <Copy className="w-4 h-4 text-muted-foreground" />
                        </Button>
