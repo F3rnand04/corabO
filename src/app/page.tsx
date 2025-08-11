@@ -55,7 +55,7 @@ export default function HomePage() {
         setHasMore(true);
         loadFeed();
     }
-  }, [currentUser, feedView]); // Reload feed when view changes
+  }, [currentUser, feedView, loadFeed]); // Reload feed when view or user changes
 
   const filteredPublications = useMemo(() => {
     if (!publications.length) return [];
