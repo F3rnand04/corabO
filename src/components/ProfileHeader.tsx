@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useRef, ChangeEvent, useCallback } from 'react';
@@ -62,30 +61,6 @@ export function ProfileHeader() {
     fileInputRef.current?.click();
   };
   
-  const handlePromotionClick = () => {
-    if (!currentUser.isTransactionsActive) {
-      toast({
-        variant: "destructive",
-        title: "Registro de Transacciones Inactivo",
-        description: "Debes activar tu registro de transacciones para poder usar las promociones."
-      });
-      return;
-    }
-    router.push('/emprende');
-  };
-
-  const handleCampaignClick = () => {
-     if (!currentUser.isTransactionsActive) {
-      toast({
-        variant: "destructive",
-        title: "Registro de Transacciones Inactivo",
-        description: "Debes activar tu registro para poder gestionar campañas."
-      });
-      return;
-    }
-    setIsCampaignDialogOpen(true);
-  }
-  
   const displayName = currentUser.profileSetupData?.useUsername 
     ? currentUser.profileSetupData.username || currentUser.name 
     : currentUser.name;
@@ -110,77 +85,70 @@ export function ProfileHeader() {
     <>
       <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm pt-4 px-2">
          <div className="flex items-center space-x-4">
-          <div className="relative shrink-0">
-            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
-            <Avatar className="w-16 h-16 cursor-pointer" onClick={handleAvatarClick}>
-              <AvatarImage src={currentUser.profileImage} alt={currentUser.name} />
-              <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <Button size="icon" className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full" onClick={handleAvatarClick}>
-              <Plus className="w-4 h-4" />
-            </Button>
-          </div>
-          <div className="flex-grow">
-            <h1 className="text-lg font-bold text-foreground">{displayName}</h1>
-            <p className="text-sm text-muted-foreground">{specialty}</p>
-             <div className="flex items-center gap-2 text-xs mt-1 text-muted-foreground">
-                <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 text-yellow-400 fill-yellow-400"/>
-                    <span className="font-semibold text-foreground">{reputation.toFixed(1)}</span>
-                </div>
-                <div className="w-px h-3 bg-border mx-1"></div>
-                {isNewProvider ? (
-                    <Badge variant="secondary" className="px-1.5 py-0">Nuevo</Badge>
-                ) : (
-                   <>
-                     <span>{effectiveness.toFixed(0)}% Efec.</span>
-                     <div className="w-px h-3 bg-border mx-1"></div>
-                     <span className="font-semibold text-green-600">{responseTime}</span>
-                   </>
-                )}
+            <div className="relative shrink-0">
+                <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+                <Avatar className="w-16 h-16 cursor-pointer" onClick={handleAvatarClick}>
+                    <AvatarImage src={currentUser.profileImage} alt={currentUser.name} />
+                    <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <Button size="icon" className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full" onClick={handleAvatarClick}>
+                    <Plus className="w-4 h-4" />
+                </Button>
             </div>
-          </div>
+            <div className="flex-grow">
+                <h1 className="text-lg font-bold text-foreground">{displayName}</h1>
+                <p className="text-sm text-muted-foreground">{specialty}</p>
+                <div className="flex items-center gap-2 text-xs mt-1 text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                        <Star className="w-4 h-4 text-yellow-400 fill-yellow-400"/>
+                        <span className="font-semibold text-foreground">{reputation.toFixed(1)}</span>
+                    </div>
+                    {isNewProvider ? (
+                        <Badge variant="secondary" className="px-1.5 py-0">Nuevo</Badge>
+                    ) : (
+                    <>
+                        <div className="w-px h-3 bg-border mx-1"></div>
+                        <span>{effectiveness.toFixed(0)}% Efec.</span>
+                    </>
+                    )}
+                </div>
+            </div>
+            <div className="flex flex-col items-end gap-2 shrink-0">
+                {!currentUser.isSubscribed && (
+                     <Button variant="link" size="sm" className="p-0 h-auto text-red-500 hover:text-red-600 font-semibold text-xs" onClick={() => setIsSubscriptionDialogOpen(true)}>
+                        Suscribir
+                    </Button>
+                )}
+                 <div className="flex items-center gap-3">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground">
+                                <CalendarIcon className="w-5 h-5"/>
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                            <Calendar
+                                mode="multiple"
+                                selected={eventDates}
+                                onDayClick={handleDayClick}
+                            />
+                            <div className="p-2 border-t text-center text-xs text-muted-foreground">
+                                Días con eventos están resaltados.
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                    <Button asChild variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground">
+                        <Link href="/transactions">
+                            <Wallet className="w-5 h-5"/>
+                        </Link>
+                    </Button>
+                    <Button variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground" onClick={() => toggleGps(currentUser.id)}>
+                        <MapPin className={cn("w-5 h-5", currentUser.isGpsActive ? "text-green-500" : "text-muted-foreground")}/>
+                    </Button>
+                 </div>
+            </div>
         </div>
         
-        <div className="mt-4 space-y-3">
-             {!currentUser.isSubscribed && (
-                <Button variant="link" size="sm" className="w-full h-auto p-0 text-red-500/80 hover:text-red-500 text-xs justify-start" onClick={() => setIsSubscriptionDialogOpen(true)}>
-                    Suscribir
-                </Button>
-             )}
-             <div className="flex justify-around gap-2">
-                 <Popover>
-                    <PopoverTrigger asChild>
-                         <Button variant="outline" className="flex-1 rounded-full text-xs h-8 px-4 font-bold">
-                            <CalendarIcon className="w-4 h-4 mr-2 text-blue-500"/>Agenda
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                        <Calendar
-                            mode="multiple"
-                            selected={eventDates}
-                            onDayClick={handleDayClick}
-                        />
-                        <div className="p-2 border-t text-center text-xs text-muted-foreground">
-                            Días con eventos están resaltados.
-                        </div>
-                    </PopoverContent>
-                </Popover>
-                 <Button variant="outline" asChild className="flex-1 rounded-full text-xs h-8 px-4 font-bold">
-                    <Link href="/transactions">
-                        <Wallet className="w-4 h-4 mr-2 text-green-500"/>Registro
-                    </Link>
-                </Button>
-                <Button variant="outline" className="flex-1 rounded-full text-xs h-8 px-4 font-bold" onClick={() => toggleGps(currentUser.id)}>
-                    <MapPin className={cn("w-4 h-4 mr-2", currentUser.isGpsActive ? "text-green-500" : "text-muted-foreground")}/>GPS
-                </Button>
-             </div>
-             <div className="flex justify-end gap-2">
-                {isProvider && <Button variant="secondary" className="flex-1 rounded-full text-xs h-8 px-4 font-bold" onClick={handleCampaignClick}><Megaphone className="w-4 h-4 mr-2 text-purple-500"/>Gestionar Campañas</Button>}
-                <Button variant="secondary" className="flex-1 rounded-full text-xs h-8 px-4 font-bold" onClick={handlePromotionClick}><Zap className="w-4 h-4 mr-2 text-yellow-500"/>Emprende por Hoy</Button>
-            </div>
-        </div>
-
         <div className="flex justify-around font-semibold text-center border-b mt-4">
             <Button asChild variant="ghost" className="flex-1 p-3 rounded-none text-muted-foreground data-[active=true]:text-primary data-[active=true]:border-b-2 data-[active=true]:border-primary" data-active={pathname === '/profile/publications'}>
                <Link href="/profile/publications">{`Publicaciones ${galleryCount}`}</Link>
