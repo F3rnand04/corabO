@@ -4,9 +4,9 @@
 
 import { useState, useEffect, useRef, ChangeEvent, useCallback } from 'react';
 import Image from 'next/image';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Send, Plus, Wallet, Megaphone, Settings, ImageIcon, ChevronLeft, ChevronRight, MessageCircle, Flag, Zap, Loader2, Package } from 'lucide-react';
+import { Star, Send, Plus, Wallet, Megaphone, Settings, ImageIcon, ChevronLeft, ChevronRight, MessageCircle, Flag, Zap, Loader2, Package, LayoutGrid, Tag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -33,6 +33,8 @@ export default function ProfilePage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [activeTab, setActiveTab] = useState<'publications' | 'catalog'>('publications');
+
 
   const isProvider = currentUser?.type === 'provider';
   const isProductProvider = isProvider && currentUser?.profileSetupData?.offerType === 'product';
@@ -45,9 +47,11 @@ export default function ProfilePage() {
         if (isProductProvider) {
             const { products: newProducts } = await getProfileProducts({ userId: currentUser.id, limitNum: 50 });
             setProducts(newProducts);
+            setActiveTab('catalog'); // Default to catalog if product provider
         } else {
             const { gallery: newGallery } = await getProfileGallery({ userId: currentUser.id, limitNum: 50 });
             setGallery(newGallery);
+            setActiveTab('publications'); // Default to publications if service provider
         }
     } catch (error) {
         console.error("Error fetching profile data:", error);
@@ -241,50 +245,30 @@ export default function ProfilePage() {
               )}
             </div>
             
-            <div className="flex justify-around text-center text-sm py-4">
-                <div><p className="font-bold text-lg text-foreground">{gallery?.length || 0}</p><p className="text-xs text-muted-foreground">Publicaciones</p></div>
-                 {isProductProvider ? (
-                     <div><p className="font-bold text-lg text-foreground">{products.length}</p><p className="text-xs text-muted-foreground">Productos</p></div>
-                 ) : (
-                     <div><p className="font-bold text-lg text-foreground">{transactions.filter(t => t.providerId === currentUser.id && (t.status === 'Pagado' || t.status === 'Resuelto')).length}</p><p className="text-xs text-muted-foreground">Trab. Realizados</p></div>
-                 )}
-            </div>
-            
-            <div className="flex justify-end gap-2 pb-4">
-              {isProvider && <Button variant="outline" className="rounded-full text-xs h-8 px-4 font-bold" onClick={handleCampaignClick}><Megaphone className="w-4 h-4 mr-2 text-purple-500"/>Gestionar Campañas</Button>}
-              <Button variant="secondary" className="rounded-full text-xs h-8 px-4 font-bold" onClick={handlePromotionClick}><Zap className="w-4 h-4 mr-2 text-yellow-500"/>Emprende por Hoy</Button>
-            </div>
+            <Card className="mt-4">
+                <CardContent className="p-2 space-y-2">
+                    <div className="flex justify-end gap-2">
+                        {isProvider && <Button variant="outline" className="flex-1 rounded-full text-xs h-8 px-4 font-bold" onClick={handleCampaignClick}><Megaphone className="w-4 h-4 mr-2 text-purple-500"/>Gestionar Campañas</Button>}
+                        <Button variant="secondary" className="flex-1 rounded-full text-xs h-8 px-4 font-bold" onClick={handlePromotionClick}><Zap className="w-4 h-4 mr-2 text-yellow-500"/>Emprende por Hoy</Button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 pt-2">
+                        <Button variant={activeTab === 'publications' ? "default" : "ghost"} className="flex-col h-14" onClick={() => setActiveTab('publications')}>
+                             <span className="font-bold text-lg">{gallery?.length || 0}</span>
+                             <span className="text-xs">Publicaciones</span>
+                        </Button>
+                        <Button variant={activeTab === 'catalog' ? "default" : "ghost"} className="flex-col h-14" onClick={() => setActiveTab('catalog')}>
+                             <span className="font-bold text-lg">{products.length}</span>
+                             <span className="text-xs">Productos</span>
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
+
           </header>
 
-          <main className="space-y-4">
-            {isProductProvider ? (
-                // Vista de Catálogo de Productos
-                <div>
-                  <h3 className="text-lg font-semibold text-center flex items-center justify-center gap-2 mb-4"><Package className='w-5 h-5'/> Mi Catálogo</h3>
-                  {isLoading ? (
-                      <div className="grid grid-cols-2 gap-2">
-                        {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="aspect-square rounded-lg" />)}
-                      </div>
-                  ) : products.length > 0 ? (
-                    <div className='p-2 grid grid-cols-2 gap-2'>
-                      {products.map(product => (
-                        <ProductGridCard 
-                          key={product.id} 
-                          product={product}
-                          onDoubleClick={() => openProductDetailsDialog(product)}
-                         />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="w-full aspect-video bg-muted flex flex-col items-center justify-center text-center p-4 rounded-lg">
-                        <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
-                        <h3 className="font-bold text-lg text-foreground">Tu catálogo está vacío</h3>
-                        <p className="text-muted-foreground text-sm">Haz clic en el botón (+) en el pie de página para añadir tu primer producto.</p>
-                    </div>
-                  )}
-              </div>
-            ) : (
-                 // Vista de Galería de Servicios
+          <main className="space-y-4 mt-4">
+            {activeTab === 'publications' && (
+                // Vista de Galería de Servicios
                 <>
                   <Card className="rounded-2xl overflow-hidden shadow-lg relative">
                     <CardContent className="p-0">
@@ -325,6 +309,32 @@ export default function ProfilePage() {
                       )}
                   </div>
               </>
+            )}
+
+             {activeTab === 'catalog' && (
+                 <div>
+                  {isLoading ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="aspect-square rounded-lg" />)}
+                      </div>
+                  ) : products.length > 0 ? (
+                    <div className='p-2 grid grid-cols-2 gap-2'>
+                      {products.map(product => (
+                        <ProductGridCard 
+                          key={product.id} 
+                          product={product}
+                          onDoubleClick={() => openProductDetailsDialog(product)}
+                         />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="w-full aspect-video bg-muted flex flex-col items-center justify-center text-center p-4 rounded-lg">
+                        <Package className="w-16 h-16 text-muted-foreground mb-4" />
+                        <h3 className="font-bold text-lg text-foreground">Tu catálogo está vacío</h3>
+                        <p className="text-muted-foreground text-sm">Haz clic en el botón (+) en el pie de página para añadir tu primer producto.</p>
+                    </div>
+                  )}
+              </div>
             )}
           </main>
         </div>
