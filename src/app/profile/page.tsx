@@ -32,7 +32,7 @@ import { getProfileGallery, getProfileProducts } from '@/ai/flows/profile-flow';
 
 export default function ProfilePage() {
   const { toast } = useToast();
-  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, getAgendaEvents, getUserMetrics, transactions, getProfileGallery: getGalleryFlow, getProfileProducts: getProductsFlow } = useCorabo();
+  const { currentUser, updateUserProfileImage, removeGalleryImage, toggleGps, getAgendaEvents, getUserMetrics, transactions, getProfileGallery: getGalleryContext, getProfileProducts: getProductsContext } = useCorabo();
   
   const [gallery, setGallery] = useState<GalleryImage[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -52,7 +52,7 @@ export default function ProfilePage() {
     if (!currentUser?.id || isFetchingMoreGallery) return;
     setIsFetchingMoreGallery(true);
     try {
-        const { gallery: newGallery, lastVisibleDocId } = await getGalleryFlow({ userId: currentUser.id, startAfterDocId });
+        const { gallery: newGallery, lastVisibleDocId } = await getGalleryContext({ userId: currentUser.id, startAfterDocId });
         setGallery(prev => startAfterDocId ? [...prev, ...newGallery] : newGallery);
         setGalleryLastVisible(lastVisibleDocId);
         if (!lastVisibleDocId || newGallery.length < 9) setHasMoreGallery(false);
@@ -61,13 +61,13 @@ export default function ProfilePage() {
     } finally {
         setIsFetchingMoreGallery(false);
     }
-  }, [currentUser?.id, getGalleryFlow, isFetchingMoreGallery]);
+  }, [currentUser?.id, getGalleryContext, isFetchingMoreGallery]);
 
   const loadProducts = useCallback(async (startAfterDocId?: string) => {
     if (!currentUser?.id || isFetchingMoreProducts) return;
     setIsFetchingMoreProducts(true);
     try {
-        const { products: newProducts, lastVisibleDocId } = await getProductsFlow({ userId: currentUser.id, startAfterDocId });
+        const { products: newProducts, lastVisibleDocId } = await getProductsContext({ userId: currentUser.id, startAfterDocId });
         setProducts(prev => startAfterDocId ? [...prev, ...newProducts] : newProducts);
         setProductsLastVisible(lastVisibleDocId);
         if (!lastVisibleDocId || newProducts.length < 10) setHasMoreProducts(false);
@@ -76,28 +76,23 @@ export default function ProfilePage() {
     } finally {
         setIsFetchingMoreProducts(false);
     }
-  }, [currentUser?.id, getProductsFlow, isFetchingMoreProducts]);
-
-  const loadProfileData = useCallback(async () => {
-    if (!currentUser?.id) return;
-    
-    setIsLoading(true);
-    setHasMoreGallery(true);
-    setHasMoreProducts(true);
-
-    const galleryPromise = loadGallery();
-    const productsPromise = currentUser.type === 'provider' ? loadProducts() : Promise.resolve();
-    
-    await Promise.all([galleryPromise, productsPromise]);
-    
-    setIsLoading(false);
-  }, [currentUser?.id, currentUser?.type, loadGallery, loadProducts]);
+  }, [currentUser?.id, getProductsContext, isFetchingMoreProducts]);
 
   useEffect(() => {
-    if(currentUser?.id){
-        loadProfileData();
+    if (currentUser?.id) {
+      setIsLoading(true);
+      setHasMoreGallery(true);
+      setHasMoreProducts(true);
+
+      const galleryPromise = loadGallery();
+      const productsPromise = currentUser.type === 'provider' ? loadProducts() : Promise.resolve();
+      
+      Promise.all([galleryPromise, productsPromise]).finally(() => {
+        setIsLoading(false);
+      });
     }
-  }, [loadProfileData, currentUser?.id]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.id, currentUser?.type]);
 
   const router = useRouter();
 

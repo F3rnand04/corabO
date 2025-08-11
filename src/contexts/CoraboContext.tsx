@@ -184,14 +184,15 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, [toast]);
 
   const getProfileProducts = useCallback(async (params: z.infer<typeof GetProfileProductsInputSchema>): Promise<z.infer<typeof GetProfileProductsOutputSchema>> => {
-      try {
-          return await getProfileProductsFlow(params);
-      } catch (error) {
-          console.error("Error fetching products via Genkit flow:", error);
-          toast({ variant: 'destructive', title: 'Error al Cargar Productos' });
-          return { products: [], lastVisibleDocId: undefined };
-      }
-  }, [toast]);
+    try {
+        return await getProfileProductsFlow(params);
+    } catch (error) {
+        console.error("Error fetching products via Genkit flow:", error);
+        toast({ variant: 'destructive', title: 'Error al Cargar Productos' });
+        return { products: [], lastVisibleDocId: undefined };
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
 
   const handleUserCreation = useCallback(async (firebaseUser: FirebaseUser): Promise<User> => {
