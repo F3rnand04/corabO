@@ -5,7 +5,7 @@
 
 import { ai } from '@/ai/genkit';
 import { getFirestoreDb } from '@/lib/firebase-server';
-import { collection, getDocs, query, limit, startAfter, doc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, query, limit, startAfter, doc, getDoc, orderBy } from 'firebase/firestore';
 import type { GalleryImage } from '@/lib/types';
 import { GetFeedInputSchema, GetFeedOutputSchema } from '@/lib/types';
 
@@ -19,30 +19,28 @@ export const getFeed = ai.defineFlow(
         const db = getFirestoreDb();
         const publicationsCollection = collection(db, "publications");
 
-        let publicationsQuery;
+        // Consulta simplificada para evitar la necesidad de un índice compuesto complejo.
+        // La ordenación por fecha es una operación estándar y eficiente.
+        const q = [
+            orderBy('createdAt', 'desc'),
+            limit(limitNum)
+        ];
+
         if (startAfterDocId) {
             const startAfterDocSnap = await getDoc(doc(db, "publications", startAfterDocId));
-            if (!startAfterDocSnap.exists()) {
-                return { publications: [], lastVisibleDocId: undefined };
+            if (startAfterDocSnap.exists()) {
+                q.push(startAfter(startAfterDocSnap));
             }
-            publicationsQuery = query(
-                publicationsCollection,
-                startAfter(startAfterDocSnap),
-                limit(limitNum)
-            );
-        } else {
-            publicationsQuery = query(
-                publicationsCollection,
-                limit(limitNum)
-            );
         }
+        
+        const publicationsQuery = query(publicationsCollection, ...q);
 
         const querySnapshot = await getDocs(publicationsQuery);
         if (querySnapshot.empty) {
             return { publications: [], lastVisibleDocId: undefined };
         }
         
-        const publications = querySnapshot.docs.map(doc => doc.data()).sort((a,b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) as GalleryImage[]
+        const publications = querySnapshot.docs.map(doc => doc.data()) as GalleryImage[];
         const lastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
         
         return {

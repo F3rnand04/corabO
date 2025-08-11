@@ -11,7 +11,7 @@ import { ConversationCard } from '@/components/ConversationCard';
 import type { Conversation } from '@/lib/types';
 import { ActivationWarning } from '@/components/ActivationWarning';
 import { getFirestoreDb } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore'; // Removed orderBy
 import { Skeleton } from '@/components/ui/skeleton';
 
 
