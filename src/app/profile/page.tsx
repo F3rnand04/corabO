@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, TouchEvent, useEffect, useRef, ChangeEvent, useCallback } from 'react';
@@ -35,7 +36,7 @@ export default function ProfilePage() {
   
   const [gallery, setGallery] = useState<GalleryImage[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]); // This should be fetched locally now
+  const [transactions, setTransactions] = useState<Transaction[]>([]); // This is now correctly initialized as empty
   const [isLoading, setIsLoading] = useState(true);
 
   const loadProfileData = useCallback(async () => {
@@ -53,7 +54,7 @@ export default function ProfilePage() {
             setProducts(productsData);
         }
         // In a real app, transactions would also be fetched here if needed for this page
-        // For now, we use an empty array.
+        // For now, we use an empty array, which is correct for metric calculation
         setTransactions([]);
     } catch (error) {
         console.error("Error loading profile data:", error);

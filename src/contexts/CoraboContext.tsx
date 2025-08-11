@@ -68,7 +68,7 @@ interface CoraboState {
   completeWork: (transactionId: string) => void;
   confirmWorkReceived: (transactionId: string, rating: number, comment?: string) => void;
   startDispute: (transactionId: string) => void;
-  checkout: (transaction: Transaction, withDelivery: boolean, useCredicora: boolean) => void;
+  checkout: (transactionId: string, withDelivery: boolean, useCredicora: boolean) => void;
   addContact: (user: User) => boolean;
   removeContact: (userId: string) => void;
   isContact: (userId: string) => boolean;
@@ -106,7 +106,7 @@ interface CoraboState {
   rejectUserId: (userId: string) => void;
   setIdVerificationPending: (userId: string, documentUrl: string) => Promise<void>;
   autoVerifyIdWithAI: (input: VerificationInput) => Promise<VerificationOutput>;
-  getUserMetrics: (userId: string) => UserMetrics;
+  getUserMetrics: (userId: string, transactions: Transaction[]) => UserMetrics;
   fetchUser: (userId: string) => Promise<User | null>;
   getFeed: () => Promise<GalleryImage[]>;
 }
@@ -222,8 +222,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
         cleanup(); // Clean up previous listeners when auth state changes
-        setCurrentUser(null);
-        userCache.current.clear();
         
         if (firebaseUser) {
             const userData = await handleUserCreation(firebaseUser);
@@ -239,12 +237,17 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
                     if (updatedUserData.profileSetupData?.location) {
                         setDeliveryAddress(updatedUserData.profileSetupData.location);
                     }
+                } else {
+                    setCurrentUser(null);
                 }
+                 setIsLoadingAuth(false);
             });
              listeners.current.set('currentUser', userListener);
+        } else {
+            setCurrentUser(null);
+            userCache.current.clear();
+            setIsLoadingAuth(false);
         }
-        
-        setIsLoadingAuth(false);
     });
 
     return () => {
@@ -274,8 +277,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const logout = async () => {
     try {
         await signOut(auth);
-        setCurrentUser(null);
-        router.push('/login');
     } catch (error) {
         console.error("Error signing out: ", error);
     }
@@ -551,7 +552,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       return createProductFlow(data);
   };
 
-  const checkout = (transaction: Transaction, withDelivery: boolean, useCredicora: boolean) => {};
+  const checkout = (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {};
   const requestService = (service: Service) => {};
   const requestQuoteFromGroup = (serviceName: string, items: string[], groupOrProvider: string): boolean => { return true; };
   
@@ -697,9 +698,36 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const removeCommentFromImage = (ownerId: string, imageId: string, commentIndex: number) => {};
   const activatePromotion = (details: { imageId: string, promotionText: string, cost: number }) => {};
   
-  const getUserMetrics = (userId: string): UserMetrics => {
-    // This is a simplified calculation. A real app would query transactions.
-    return { reputation: 4.5, effectiveness: 95, responseTime: "05-15 min" };
+  const getUserMetrics = (userId: string, transactions: Transaction[]): UserMetrics => {
+    const completedTransactions = transactions.filter(
+      (tx) => tx.providerId === userId && (tx.status === 'Pagado' || tx.status === 'Resuelto')
+    );
+    if (completedTransactions.length === 0) {
+      return { reputation: 0, effectiveness: 0, responseTime: 'Nuevo' };
+    }
+
+    const totalRating = completedTransactions.reduce(
+      (acc, tx) => acc + (tx.details.clientRating || 0),
+      0
+    );
+    const reputation = totalRating / completedTransactions.filter(tx => tx.details.clientRating).length || 0;
+
+    const effectiveness =
+      (completedTransactions.length / transactions.filter((tx) => tx.providerId === userId).length) * 100;
+    
+    const lastTransaction = completedTransactions[completedTransactions.length - 1];
+    if (!lastTransaction) return { reputation, effectiveness, responseTime: 'Nuevo' };
+    
+    const requestDate = new Date(lastTransaction.date);
+    const completionDate = new Date(lastTransaction.details.paymentConfirmationDate || new Date());
+    
+    const diffMinutes = differenceInMinutes(completionDate, requestDate);
+    let responseTime = '30+ min';
+    if(diffMinutes < 5) responseTime = '00-05 min';
+    else if(diffMinutes < 15) responseTime = '05-15 min';
+    else if(diffMinutes < 30) responseTime = '15-30 min';
+
+    return { reputation, effectiveness, responseTime };
   };
 
   const value: CoraboState = {
