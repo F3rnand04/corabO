@@ -20,35 +20,41 @@ export const getProfileGallery = ai.defineFlow(
         inputSchema: GetProfileGalleryInputSchema,
         outputSchema: GetProfileGalleryOutputSchema,
     },
-    async ({ userId, limitNum = 9, startAfterDocId }) => {
+    async ({ userId, limitNum = 20, startAfterDocId }) => {
         const db = getFirestoreDb();
         const publicationsCollection = collection(db, 'publications');
 
-        // Build the query dynamically
-        const q: any[] = [
+        // Simple, robust query to get all publications for the user.
+        // We will sort and handle pagination logic after fetching to avoid complex index issues.
+        const q = query(
+            publicationsCollection,
             where("providerId", "==", userId),
-            where("type", "in", ["image", "video"]),
-            limit(limitNum)
-        ];
-
-        if (startAfterDocId) {
-            const startAfterDoc = await getDoc(doc(db, 'publications', startAfterDocId));
-            if (startAfterDoc.exists()) {
-              q.push(startAfter(startAfterDoc));
-            }
-        } 
+            where("type", "in", ["image", "video"])
+        );
         
-        const galleryQuery = query(publicationsCollection, ...q);
-        const snapshot = await getDocs(galleryQuery);
+        const snapshot = await getDocs(q);
         
+        // Sort on the server to ensure chronological order.
         const gallery = snapshot.docs
             .map(doc => doc.data() as GalleryImage)
-            // Sort on the server to avoid complex index requirements on Firestore
             .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-        const lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
+        // Basic pagination logic handled here
+        let paginatedGallery = gallery;
+        let lastVisibleDocId: string | undefined = undefined;
 
-        return { gallery, lastVisibleDocId: lastVisibleDoc?.id };
+        if (startAfterDocId) {
+            const startIndex = gallery.findIndex(p => p.id === startAfterDocId) + 1;
+            paginatedGallery = gallery.slice(startIndex, startIndex + limitNum);
+        } else {
+            paginatedGallery = gallery.slice(0, limitNum);
+        }
+
+        if (paginatedGallery.length > 0 && gallery.indexOf(paginatedGallery[paginatedGallery.length - 1]) + 1 < gallery.length) {
+            lastVisibleDocId = paginatedGallery[paginatedGallery.length - 1].id;
+        }
+
+        return { gallery: paginatedGallery, lastVisibleDocId };
     }
 );
 
