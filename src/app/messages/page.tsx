@@ -21,7 +21,7 @@ function MessagesHeader() {
     <header className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
       <div className="container px-4 sm:px-6">
         <div className="flex h-16 items-center justify-between">
-          <Button variant="ghost" size="icon" onClick={() => router.push('/')}>
+          <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <ChevronLeft className="h-6 w-6" />
           </Button>
           <h1 className="text-xl font-semibold">Mensajes</h1>
@@ -56,12 +56,15 @@ export default function MessagesPage() {
         // which was causing the permission denied error.
         const convosQuery = query(
             collection(db, "conversations"), 
-            where("participantIds", "array-contains", currentUser.id),
-            orderBy("lastUpdated", "desc") // This ordering is safe as it's supported by the created index.
+            where("participantIds", "array-contains", currentUser.id)
         );
 
         const unsubscribe = onSnapshot(convosQuery, (snapshot) => {
             const serverConversations = snapshot.docs.map(doc => doc.data() as Conversation);
+            
+            // The sorting is now handled on the client-side after fetching.
+            serverConversations.sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime());
+            
             setConversations(serverConversations);
             setIsLoading(false);
         }, (error) => {
