@@ -28,8 +28,21 @@ export default function ProfilePage() {
   const { currentUser, updateUserProfileImage, getUserMetrics, transactions } = useCorabo();
   
   const [products, setProducts] = useState<Product[]>([]);
+  const [gallery, setGallery] = useState<GalleryImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'publications' | 'catalog'>('publications');
+  
+  const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isProductDetailsDialogOpen, setIsProductDetailsDialogOpen] = useState(false);
+  const [isCampaignDialogOpen, setIsCampaignDialogOpen] = useState(false);
+
+  const isProvider = currentUser?.type === 'provider';
+  const isProductProvider = isProvider && currentUser?.profileSetupData?.offerType === 'product';
+  
+  const [activeTab, setActiveTab] = useState<'publications' | 'catalog'>(isProductProvider ? 'catalog' : 'publications');
 
   const loadProfileData = useCallback(async () => {
     if (!currentUser?.id) {
@@ -38,15 +51,21 @@ export default function ProfilePage() {
     };
     
     setIsLoading(true);
-    const isProductProvider = currentUser.type === 'provider' && currentUser.profileSetupData?.offerType === 'product';
-
+    
     try {
-        if (isProductProvider) {
+        const isProdProvider = currentUser.profileSetupData?.offerType === 'product';
+        
+        // Siempre cargar la galería porque la pestaña siempre está visible
+        const { getProfileGallery } = await import('@/ai/flows/profile-flow');
+        const galleryData = await getProfileGallery({ userId: currentUser.id, limitNum: 50 });
+        setGallery(galleryData.gallery);
+
+        if (isProdProvider) {
             const { products: newProducts } = await getProfileProducts({ userId: currentUser.id, limitNum: 50 });
             setProducts(newProducts);
         }
         
-        setActiveTab(isProductProvider ? 'catalog' : 'publications');
+        setActiveTab(isProdProvider ? 'catalog' : 'publications');
 
     } catch (error) {
         console.error("Error fetching profile data:", error);
@@ -56,20 +75,12 @@ export default function ProfilePage() {
     }
   }, [currentUser, toast]);
 
+
   useEffect(() => {
     if(currentUser){
         loadProfileData();
     }
   }, [currentUser, loadProfileData]);
-
-
-  const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [isProductDetailsDialogOpen, setIsProductDetailsDialogOpen] = useState(false);
-  const [isCampaignDialogOpen, setIsCampaignDialogOpen] = useState(false);
   
   if (!currentUser) {
     return (
@@ -79,8 +90,6 @@ export default function ProfilePage() {
     );
   }
   
-  const isProvider = currentUser.type === 'provider';
-  const isProductProvider = isProvider && currentUser.profileSetupData?.offerType === 'product';
   const { reputation, effectiveness, responseTime } = getUserMetrics(currentUser.id, transactions);
   const isNewProvider = responseTime === 'Nuevo';
   
@@ -198,7 +207,7 @@ export default function ProfilePage() {
                     )}
                     onClick={() => router.push('/profile/publications')}
                 >
-                   {`Publicaciones ${currentUser.gallery?.length || 0}`}
+                   {`Publicaciones ${gallery.length}`}
                 </Button>
                 {isProvider && (
                     <Button
@@ -242,12 +251,12 @@ export default function ProfilePage() {
                   )}
               </div>
             )}
-            {activeTab === 'publications' && (
-              <div className="w-full aspect-video bg-muted flex flex-col items-center justify-center text-center p-4 rounded-lg">
-                <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
-                <h3 className="font-bold text-lg text-foreground">Tu galería está vacía</h3>
-                <p className="text-muted-foreground text-sm">Haz clic en el botón (+) en el pie de página para añadir tu primera publicación.</p>
-              </div>
+             {activeTab === 'publications' && gallery.length === 0 && (
+                <div className="w-full aspect-video bg-muted flex flex-col items-center justify-center text-center p-4 rounded-lg">
+                    <ImageIcon className="w-16 h-16 text-muted-foreground mb-4" />
+                    <h3 className="font-bold text-lg text-foreground">Tu galería está vacía</h3>
+                    <p className="text-muted-foreground text-sm">Haz clic en el botón (+) en el pie de página para añadir tu primera publicación.</p>
+                </div>
             )}
           </main>
         </div>

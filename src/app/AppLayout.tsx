@@ -128,6 +128,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       const shouldShowMainHeader = ![
         '/profile',
+        '/profile/publications',
         '/quotes',
         '/quotes/payment',
         '/quotes/pro',
@@ -140,7 +141,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         '/emprende',
       ].includes(pathname) && !/^\/messages\/.+/.test(pathname) && !/^\/companies\/.+/.test(pathname);
       
-      const shouldShowFooter = !/^\/messages\/.+/.test(pathname);
+      const shouldShowFooter = !/^\/messages\/.+/.test(pathname) && pathname !== '/profile/publications';
       
       return (
         <div className="flex flex-col min-h-screen">
