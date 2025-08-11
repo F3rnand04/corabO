@@ -39,7 +39,7 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const loadProfileData = useCallback(async () => {
-    if (!currentUser) return;
+    if (!currentUser?.id) return;
     
     setIsLoading(true);
     try {
@@ -58,7 +58,7 @@ export default function ProfilePage() {
     } finally {
         setIsLoading(false);
     }
-  }, [currentUser, toast]);
+  }, [currentUser?.id, toast]);
 
   useEffect(() => {
     if(currentUser?.id){
