@@ -3,43 +3,62 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Users can read public profiles, but only write to their own.
+  
+    // --- REGLAS GENERALES ---
+    // Cualquiera puede leer la información pública de los usuarios y las publicaciones
     match /users/{userId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth.uid == userId;
+      allow read; 
+      // Solo el usuario autenticado y dueño del perfil puede escribir en su propio documento.
+      allow write: if request.auth != null && request.auth.uid == userId;
+      
+      // Cualquiera puede leer la galería de un usuario
+      match /gallery/{imageId} {
+        allow read;
+        // Solo el dueño del perfil puede escribir en su galería
+        allow write: if request.auth != null && request.auth.uid == userId;
+      }
     }
     
-    // Users can only read & write their own conversations.
-    match /conversations/{conversationId} {
-      allow read, write: if request.auth.uid in resource.data.participantIds;
+    // Cualquiera puede leer las publicaciones públicas del feed.
+    match /publications/{publicationId} {
+      allow read;
+      // Solo el backend (o un usuario autenticado que coincida con el providerId) puede crear o modificar publicaciones.
+      // Esta es una regla simplificada; en producción sería más estricta (solo backend).
+      allow write: if request.auth != null && request.resource.data.providerId == request.auth.uid;
     }
     
-    // Users can only read & write their own transactions.
-    match /transactions/{transactionId} {
-      allow read, write: if request.auth.uid in resource.data.participantIds;
-      allow create: if request.auth.uid == request.resource.data.clientId;
-    }
-
-    // Users can create campaigns, admins can manage them.
-    match /campaigns/{campaignId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth.uid == request.resource.data.providerId;
-      allow update: if resource.data.providerId == request.auth.uid || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-    
-    // Notifications are private to each user.
-    match /notifications/{notificationId} {
-      allow read, write: if request.auth.uid == resource.data.userId;
-      allow create: if request.auth.uid != null;
-    }
-
-    // Users can only create and manage their own products.
+    // Cualquiera puede leer productos.
     match /products/{productId} {
- allow read: if request.auth != null;
- allow create: if request.auth != null && request.resource.data.providerId == request.auth.uid;
- allow update, delete: if request.auth != null && resource.data.providerId == request.auth.uid;
+        allow read;
+        // Solo el proveedor dueño del producto puede escribir
+        allow write: if request.auth != null && request.resource.data.providerId == request.auth.uid;
     }
 
+    // --- REGLAS DE TRANSACCIONES Y MENAJES (Más restrictivas) ---
+    
+    // Solo los participantes de una transacción pueden leer o escribir en ella.
+    match /transactions/{transactionId} {
+      allow read, write: if request.auth != null && request.auth.uid in resource.data.participantIds;
+    }
+    
+    // Solo los participantes de una conversación pueden leer o escribir en ella.
+    match /conversations/{conversationId} {
+       allow read, write: if request.auth != null && request.auth.uid in resource.data.participantIds;
+    }
+    
+    // Los administradores tienen acceso a colecciones especiales
+    match /campaigns/{campaignId} {
+      // Cualquiera puede leer campañas activas (simplificado).
+      allow read: if resource.data.status == 'active';
+      // Solo el backend (simulado con usuario autenticado) puede escribir
+      allow write: if request.auth != null; 
+    }
+    
+    match /notifications/{notificationId} {
+      // El usuario solo puede leer sus propias notificaciones
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      // Solo el backend (simulado con usuario autenticado) puede escribir
+      allow write: if request.auth != null;
+    }
   }
 }
