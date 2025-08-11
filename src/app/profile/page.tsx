@@ -33,9 +33,6 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'publications' | 'catalog'>('publications');
 
-  const isProvider = currentUser?.type === 'provider';
-  const isProductProvider = isProvider && currentUser?.profileSetupData?.offerType === 'product';
-
   const loadProfileData = useCallback(async () => {
     if (!currentUser?.id) {
         setIsLoading(false);
@@ -43,16 +40,19 @@ export default function ProfilePage() {
     };
     
     setIsLoading(true);
+    // This now correctly reflects the user's setup AFTER the context has loaded it.
+    const isProductProvider = currentUser.type === 'provider' && currentUser.profileSetupData?.offerType === 'product';
+
     try {
         if (isProductProvider) {
             const { products: newProducts } = await getProfileProducts({ userId: currentUser.id, limitNum: 50 });
             setProducts(newProducts);
         }
-        // Always load gallery for publications tab
+        // Always load gallery for the publications tab
         const { gallery: newGallery } = await getProfileGallery({ userId: currentUser.id, limitNum: 50 });
         setGallery(newGallery);
         
-        // Set default tab
+        // Set default tab based on the correct offerType
         setActiveTab(isProductProvider ? 'catalog' : 'publications');
 
     } catch (error) {
@@ -61,7 +61,7 @@ export default function ProfilePage() {
     } finally {
         setIsLoading(false);
     }
-  }, [currentUser?.id, isProductProvider, toast]);
+  }, [currentUser, toast]);
 
   useEffect(() => {
     if(currentUser){
@@ -85,7 +85,9 @@ export default function ProfilePage() {
       </div>
     );
   }
-
+  
+  const isProvider = currentUser.type === 'provider';
+  const isProductProvider = isProvider && currentUser.profileSetupData?.offerType === 'product';
   const { reputation, effectiveness, responseTime } = getUserMetrics(currentUser.id, transactions);
   const isNewProvider = responseTime === 'Nuevo';
   
