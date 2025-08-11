@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { Home, Settings, Wallet, ListChecks, History, CalendarClock, ChevronLeft, Loader2, Star, TrendingUp } from "lucide-react";
+import { Home, Settings, Wallet, ListChecks, History, CalendarClock, ChevronLeft, Loader2, Star, TrendingUp, Calendar as CalendarIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import TransactionsLineChart from "@/components/charts/TransactionsLineChart";
 import { TransactionDetailsDialog } from "@/components/TransactionDetailsDialog";
@@ -20,6 +20,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { credicoraLevels } from "@/lib/types";
 import Link from "next/link";
 import { SubscriptionDialog } from "@/components/SubscriptionDialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
 
 
 function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary: () => void, currentView: string }) {
@@ -55,7 +58,7 @@ const ActionButton = ({ icon: Icon, label, count, onClick }: { icon: React.Eleme
 
 
 export default function TransactionsPage() {
-    const { currentUser, getUserMetrics } = useCorabo();
+    const { currentUser, getUserMetrics, getAgendaEvents } = useCorabo();
     const { toast } = useToast();
     
     const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -105,6 +108,18 @@ export default function TransactionsPage() {
             </div>
         );
     }
+    
+    const agendaEvents = getAgendaEvents(transactions);
+    const paymentDates = agendaEvents.filter(e => e.type === 'payment').map(e => e.date);
+
+    const handleDayClick = (day: Date) => {
+        const eventOnDay = agendaEvents.find(e => format(e.date, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd'));
+        if(eventOnDay) {
+            const tx = transactions.find(t => t.id === eventOnDay.transactionId);
+            if(tx) setSelectedTransaction(tx);
+        }
+    }
+
 
     const isModuleActive = currentUser.isTransactionsActive ?? false;
     
@@ -162,27 +177,30 @@ export default function TransactionsPage() {
                                 <TransactionsLineChart transactions={transactions} />
                             </CardContent>
                         </Card>
-                         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-900/50 border-blue-200 dark:border-blue-800">
-                             <CardHeader>
-                                 <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
-                                     <Star className="fill-current"/>
-                                     Mi Credicora
-                                 </CardTitle>
-                             </CardHeader>
-                             <CardContent className="space-y-3">
-                                <div className="flex justify-between items-baseline">
-                                    <p className="text-lg font-bold">Nivel {credicoraLevelDetails.level}: {credicoraLevelDetails.name}</p>
-                                    <Link href="/credicora" className="text-xs text-blue-600 dark:text-blue-400 hover:underline">Saber más &rarr;</Link>
-                                </div>
-                                <div className="space-y-1">
-                                    <div className="flex justify-between text-xs font-medium"><span>Límite de Crédito</span><span>${currentUser.credicoraLimit?.toFixed(2) || '0.00'}</span></div>
-                                    <Progress value={((currentUser.credicoraLimit || 0) / credicoraLevelDetails.creditLimit) * 100} className="[&>div]:bg-blue-500" />
-                                </div>
-                             </CardContent>
-                        </Card>
+                         
                         <Card>
                             <CardHeader>
-                                <CardTitle className="text-lg">Progreso</CardTitle>
+                                <CardTitle className="text-lg flex justify-between items-center">
+                                    <span>Progreso y Credicora</span>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" size="sm">
+                                                <CalendarIcon className="mr-2 h-4 w-4 text-blue-600"/>
+                                                Ver Pagos
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0">
+                                            <Calendar
+                                                mode="multiple"
+                                                selected={paymentDates}
+                                                onDayClick={handleDayClick}
+                                            />
+                                            <div className="p-2 border-t text-center text-xs text-muted-foreground">
+                                                Haz clic en una fecha para ver el detalle del pago.
+                                            </div>
+                                        </PopoverContent>
+                                    </Popover>
+                                </CardTitle>
                             </CardHeader>
                             <CardContent>
                                <div className="space-y-3">
@@ -193,6 +211,14 @@ export default function TransactionsPage() {
                                     <div className="space-y-1">
                                         <div className="flex justify-between text-xs font-medium"><span>Efectividad</span><span>{effectiveness.toFixed(0)}%</span></div>
                                         <Progress value={effectiveness} />
+                                    </div>
+                                    <div className="space-y-1 pt-2 border-t">
+                                        <div className="flex justify-between items-baseline text-xs font-medium">
+                                            <Link href="/credicora" className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"><Star className="w-3 h-3 fill-current"/> Nivel Credicora</Link>
+                                            <span className="font-bold">{credicoraLevelDetails.level}: {credicoraLevelDetails.name}</span>
+                                        </div>
+                                        <div className="flex justify-between text-xs font-medium"><span>Límite de Crédito</span><span>${currentUser.credicoraLimit?.toFixed(2) || '0.00'}</span></div>
+                                        <Progress value={((currentUser.credicoraLimit || 0) / credicoraLevelDetails.creditLimit) * 100} className="[&>div]:bg-blue-500" />
                                     </div>
                                 </div>
                             </CardContent>

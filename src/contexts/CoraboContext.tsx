@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation";
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { add, subDays, startOfDay, differenceInDays, differenceInHours, differenceInMinutes } from 'date-fns';
+import { add, subDays, startOfDay, differenceInDays, differenceInHours, differenceInMinutes, addDays as addDaysFns } from 'date-fns';
 import { credicoraLevels } from '@/lib/types';
 import { getAuth, signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, GoogleAuthProvider, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getFirebaseApp, getFirestoreDb } from '@/lib/firebase';
@@ -172,7 +172,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const getProfileGallery = useCallback(async (params: z.infer<typeof GetProfileGalleryInputSchema>): Promise<z.infer<typeof GetProfileGalleryOutputSchema>> => {
       try {
-          const result = await getProfileGalleryFlow(params);
+          const result = await getProfileGalleryFlow({userId: params.userId, limitNum: params.limitNum, startAfterDocId: params.startAfterDocId});
           if(currentUser?.id === params.userId){
               setCurrentUser(prevUser => prevUser ? ({...prevUser, gallery: result.gallery}) : null);
           }
@@ -602,7 +602,70 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     await createProductFlow(data);
   };
 
-  const checkout = (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {};
+  const checkout = (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {
+      if(!currentUser) return;
+      const db = getFirestoreDb();
+      const batch = writeBatch(db);
+
+      const originalTxRef = doc(db, 'transactions', transactionId);
+      
+      const totalAmount = getCartTotal() + (withDelivery ? getDeliveryCost() : 0);
+      
+      const updates: Partial<Transaction> = {
+          status: 'Finalizado - Pendiente de Pago',
+          amount: totalAmount,
+          details: {
+              ...transactions.find(t => t.id === transactionId)?.details,
+              items: cart,
+              delivery: withDelivery,
+              deliveryCost: withDelivery ? getDeliveryCost() : 0,
+              paymentMethod: useCredicora ? 'credicora' : 'direct',
+          }
+      };
+
+      if (useCredicora && currentUser.credicoraDetails) {
+          const crediDetails = currentUser.credicoraDetails;
+          const financedAmount = Math.min(
+              getCartTotal() * (1 - crediDetails.initialPaymentPercentage), 
+              currentUser.credicoraLimit || 0
+          );
+          const initialPayment = getCartTotal() - financedAmount;
+
+          updates.amount = initialPayment + (withDelivery ? getDeliveryCost() : 0);
+          updates.details!.initialPayment = initialPayment;
+          updates.details!.financedAmount = financedAmount;
+
+          const installmentAmount = financedAmount / crediDetails.installments;
+          for (let i = 1; i <= crediDetails.installments; i++) {
+              const installmentTxId = `txn-credicora-${transactionId.slice(-6)}-${i}`;
+              const dueDate = addDaysFns(new Date(), i * 15);
+              const installmentTx: Transaction = {
+                  id: installmentTxId,
+                  type: 'Sistema',
+                  status: 'Finalizado - Pendiente de Pago',
+                  date: dueDate.toISOString(),
+                  amount: installmentAmount,
+                  clientId: currentUser.id,
+                  providerId: 'corabo-admin',
+                  participantIds: [currentUser.id, 'corabo-admin'],
+                  details: {
+                      system: `Cuota ${i}/${crediDetails.installments} de Compra ${transactionId.slice(-6)}`,
+                  },
+              };
+              batch.set(doc(db, 'transactions', installmentTxId), installmentTx);
+          }
+          const newCredicoraLimit = (currentUser.credicoraLimit || 0) - financedAmount;
+          batch.update(doc(db, 'users', currentUser.id), { credicoraLimit: newCredicoraLimit });
+      }
+
+      batch.update(originalTxRef, updates as any);
+      batch.commit().then(() => {
+          setCart([]);
+          toast({ title: "Pedido realizado", description: "Tu pedido ha sido enviado al proveedor." });
+          router.push('/transactions');
+      });
+  };
+
   const requestService = (service: Service) => {};
   const requestQuoteFromGroup = (serviceName: string, items: string[], groupOrProvider: string): boolean => { return true; };
   
@@ -743,7 +806,32 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const deactivateTransactions = (userId: string) => {};
   const downloadTransactionsPDF = (transactions: Transaction[]) => {};
-  const getAgendaEvents = (transactions: Transaction[]): { date: Date; type: 'payment' | 'task'; description: string, transactionId: string }[] => { return []; };
+  
+  const getAgendaEvents = (transactions: Transaction[]): { date: Date; type: 'payment' | 'task'; description: string, transactionId: string }[] => {
+    const events: { date: Date; type: 'payment' | 'task'; description: string, transactionId: string }[] = [];
+    if (!currentUser || !transactions) return events;
+
+    transactions.forEach(tx => {
+        if (tx.status === 'Finalizado - Pendiente de Pago' || tx.status.startsWith('Cuota')) {
+            events.push({
+                date: new Date(tx.date),
+                type: 'payment',
+                description: `Pagar ${tx.details.serviceName || tx.details.system || 'Compra'}`,
+                transactionId: tx.id,
+            });
+        }
+        if(tx.status === 'Acuerdo Aceptado - Pendiente de Ejecución') {
+             events.push({
+                date: new Date(tx.date),
+                type: 'task',
+                description: `Ejecutar: ${tx.details.serviceName}`,
+                transactionId: tx.id,
+            });
+        }
+    });
+
+    return events;
+  };
   const addCommentToImage = (ownerId: string, imageId: string, commentText: string) => {};
   const removeCommentFromImage = (ownerId: string, imageId: string, commentIndex: number) => {};
   const activatePromotion = (details: { imageId: string, promotionText: string, cost: number }) => {};
@@ -867,5 +955,3 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
-
-    
