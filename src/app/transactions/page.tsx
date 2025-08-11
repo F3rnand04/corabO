@@ -3,12 +3,12 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { Home, Settings, Wallet, ListChecks, History, CalendarClock, ChevronLeft, Loader2 } from "lucide-react";
+import { Home, Settings, Wallet, ListChecks, History, CalendarClock, ChevronLeft, Loader2, Star, TrendingUp } from "lucide-react";
 import { useRouter } from "next/navigation";
-import TransactionsPieChart from "@/components/charts/TransactionsPieChart";
+import TransactionsLineChart from "@/components/charts/TransactionsLineChart";
 import { TransactionDetailsDialog } from "@/components/TransactionDetailsDialog";
 import type { Transaction } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
@@ -17,6 +17,8 @@ import { ActivationWarning } from "@/components/ActivationWarning";
 import { getFirestoreDb } from "@/lib/firebase";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
+import { credicoraLevels } from "@/lib/types";
+import Link from "next/link";
 
 
 function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary: () => void, currentView: string }) {
@@ -125,6 +127,8 @@ export default function TransactionsPage() {
 
     const historyTx = transactions.filter(t => t.status === 'Pagado' || t.status === 'Resuelto');
     const commitmentTx = transactions.filter(t => t.status === 'Acuerdo Aceptado - Pendiente de Ejecución' || t.status === 'Finalizado - Pendiente de Pago');
+    
+    const credicoraLevelDetails = credicoraLevels[(currentUser.credicoraLevel || 1).toString()];
 
     const renderContent = () => {
         if (isLoading) {
@@ -148,12 +152,31 @@ export default function TransactionsPage() {
                 return (
                     <div className="space-y-6">
                         <Card>
-                            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                            <CardHeader>
                                 <CardTitle>Resumen de Movimientos</CardTitle>
+                                <CardDescription>Últimos 6 meses</CardDescription>
                             </CardHeader>
-                            <CardContent className="h-[250px] flex items-center justify-center">
-                                <TransactionsPieChart transactions={transactions} />
+                            <CardContent>
+                                <TransactionsLineChart transactions={transactions} />
                             </CardContent>
+                        </Card>
+                         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-900/50 border-blue-200 dark:border-blue-800">
+                             <CardHeader>
+                                 <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
+                                     <Star className="fill-current"/>
+                                     Mi Credicora
+                                 </CardTitle>
+                             </CardHeader>
+                             <CardContent className="space-y-3">
+                                <div className="flex justify-between items-baseline">
+                                    <p className="text-lg font-bold">Nivel {credicoraLevelDetails.level}: {credicoraLevelDetails.name}</p>
+                                    <Link href="/credicora" className="text-xs text-blue-600 dark:text-blue-400 hover:underline">Saber más &rarr;</Link>
+                                </div>
+                                <div className="space-y-1">
+                                    <div className="flex justify-between text-xs font-medium"><span>Límite de Crédito</span><span>${currentUser.credicoraLimit?.toFixed(2) || '0.00'}</span></div>
+                                    <Progress value={((currentUser.credicoraLimit || 0) / credicoraLevelDetails.creditLimit) * 100} className="[&>div]:bg-blue-500" />
+                                </div>
+                             </CardContent>
                         </Card>
                         <Card>
                             <CardHeader>
