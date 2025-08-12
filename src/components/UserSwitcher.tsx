@@ -14,35 +14,36 @@ import { User as UserIcon, Building } from "lucide-react";
 import Image from "next/image";
 
 export function UserSwitcher() {
-  const { currentUser, users, isLoadingAuth } = useCorabo();
+  const { currentUser, users, isLoadingAuth, handleUserAuth } = useCorabo();
 
-  if (isLoadingAuth || !currentUser) {
+  if (isLoadingAuth || !users.length) {
     return (
-        <div className="w-auto h-10 flex items-center gap-2">
-            <Image src="https://i.postimg.cc/Wz1MTvWK/lg.png" alt="Corabo Logo" width={32} height={32} className="h-8 w-auto"/>
-            <div className="hidden sm:block">
-                <div className="h-4 w-20 bg-muted rounded-md animate-pulse"/>
-                <div className="h-3 w-12 bg-muted rounded-md mt-1 animate-pulse"/>
-            </div>
+        <div className="w-full h-10 flex items-center justify-center">
+            <div className="h-4 w-28 bg-muted rounded-md animate-pulse"/>
         </div>
     );
   }
 
+  const handleSwitchUser = (userId: string) => {
+    const userToLogin = users.find(u => u.id === userId);
+    if(userToLogin) {
+      // This is a mock login for development, it directly sets the user.
+      // The `handleUserAuth` from the context will set the state.
+      // We are passing a mock FirebaseUser object.
+      handleUserAuth({
+          uid: userToLogin.id,
+          displayName: userToLogin.name,
+          email: userToLogin.email,
+          photoURL: userToLogin.profileImage,
+          emailVerified: userToLogin.emailValidated,
+      } as any);
+    }
+  }
+
   return (
-    <Select value={currentUser.id} disabled>
-      <SelectTrigger className="w-auto min-w-0 sm:min-w-[180px] h-10 gap-2 border-none focus:ring-0">
-        <Avatar className="h-8 w-8">
-            <AvatarImage src={currentUser.profileImage} alt={currentUser.name} />
-            <AvatarFallback>
-                <UserIcon className="h-4 w-4" />
-            </AvatarFallback>
-        </Avatar>
-        <SelectValue asChild>
-          <div className="hidden sm:block">
-            <p className="font-semibold text-sm truncate">{currentUser.name}</p>
-            <p className="text-xs text-muted-foreground capitalize">{currentUser.type}</p>
-          </div>
-        </SelectValue>
+    <Select onValueChange={handleSwitchUser}>
+      <SelectTrigger className="w-full">
+        <SelectValue placeholder="Elegir usuario para simular..." />
       </SelectTrigger>
       <SelectContent>
         {users.map((user) => (

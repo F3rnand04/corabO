@@ -1,5 +1,6 @@
 
 
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from 'react';
@@ -24,8 +25,6 @@ import { createProduct as createProductFlow, createPublication as createPublicat
 import type { GetFeedInputSchema, GetFeedOutputSchema, GetProfileGalleryInputSchema, GetProfileGalleryOutputSchema, GetProfileProductsInputSchema, GetProfileProductsOutputSchema } from '@/lib/types';
 import { z } from 'zod';
 import { haversineDistance } from '@/lib/utils';
-import { getOrCreateUser as getOrCreateUserFlow } from '@/ai/flows/auth-flow';
-
 
 interface DailyQuote {
     requestSignature: string;
@@ -130,6 +129,7 @@ interface CoraboState {
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
 
+// Moved this function outside the provider to keep its reference stable
 const getOrCreateUser = async (firebaseUser: FirebaseUser): Promise<User> => {
     const db = getFirestoreDb();
     const userDocRef = doc(db, 'users', firebaseUser.uid);

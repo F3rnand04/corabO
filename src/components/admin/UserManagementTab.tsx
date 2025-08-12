@@ -17,7 +17,7 @@ export function UserManagementTab() {
   const filteredUsers = users.filter(u => 
       u.role !== 'admin' &&
       (u.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-       u.email.toLowerCase().includes(searchTerm.toLowerCase()))
+       (u.email && u.email.toLowerCase().includes(searchTerm.toLowerCase())))
   );
 
   return (
