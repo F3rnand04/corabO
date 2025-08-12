@@ -252,7 +252,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         });
         listeners.current.set('transactions', transactionsListener);
         
-        const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userData.id));
+        const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userData.id), orderBy('lastUpdated', 'desc'));
         const conversationsListener = onSnapshot(conversationsQuery, (snapshot) => {
             const fetchedConversations = snapshot.docs.map(doc => doc.data() as Conversation);
             setConversations(fetchedConversations);
@@ -280,6 +280,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const db = getFirestoreDb();
     
+    // FORENSIC FIX: The UserSwitcher needs the list of all users to function before anyone logs in.
+    // This listener now runs unconditionally.
     const allUsersListener = onSnapshot(collection(db, 'users'), (snapshot) => {
         const allUsers = snapshot.docs.map(doc => {
             const userData = doc.data() as User;
@@ -289,9 +291,15 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         setUsers(allUsers);
     });
 
+    // FORENSIC FIX: This listener was one of the sources of the permission-denied error
+    // because it requires a composite index to order by 'createdAt'.
+    // The index has been added in `firestore.indexes.json`.
     const publicationsListener = onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
         const fetchedPublications = snapshot.docs.map(doc => doc.data() as GalleryImage);
         setAllPublications(fetchedPublications);
+    }, (error) => {
+      // Log Firestore errors for better debugging
+      console.error("Firestore 'publications' listener error:", error);
     });
 
     return () => {
@@ -1089,5 +1097,7 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
+
+    
 
     
