@@ -279,8 +279,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             });
             listeners.current.set('transactions', transactionsListener);
             
-            // CORRECTED QUERY: Removed orderBy to avoid composite index requirement.
-            const conversationsQuery = query(collection(db, 'conversations'), where('participantIds', 'array-contains', userData.id));
+            const conversationsQuery = query(collection(db, 'conversations'), where('participantIds', 'array-contains', userData.id), orderBy('lastUpdated', 'desc'));
             const conversationsListener = onSnapshot(conversationsQuery, (snapshot) => {
                 const userConversations = snapshot.docs.map(doc => doc.data() as Conversation);
                 setConversations(userConversations);
@@ -1014,3 +1013,5 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
+
+    

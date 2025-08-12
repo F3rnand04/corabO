@@ -493,3 +493,5 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
     </Dialog>
   );
 }
+
+    

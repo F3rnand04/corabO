@@ -655,7 +655,7 @@ export default function CompanyProfilePage() {
                   </div>
                 ) : (
                   <>
-                    {currentImage && (
+                    {currentImage ? (
                       <div 
                         className="relative group"
                         onTouchStart={onTouchStart}
@@ -718,6 +718,10 @@ export default function CompanyProfilePage() {
                         </div>
 
                       </div>
+                    ) : (
+                        <div className='p-8 text-center bg-muted'>
+                            <p className='text-muted-foreground'>Este proveedor no tiene publicaciones.</p>
+                        </div>
                     )}
                     
                     <div className="flex justify-around font-semibold text-center border-b">
@@ -830,5 +834,7 @@ export default function CompanyProfilePage() {
     </>
   );
 }
+
+    
 
     
