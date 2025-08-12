@@ -1,15 +1,12 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // ATENCIÓN: Estas reglas son permisivas y solo para desarrollo.
-    // Permiten que cualquier usuario, autenticado o no, lea y escriba
-    // en cualquier parte de la base de datos.
-    // Es CRUCIAL implementar reglas de seguridad más estrictas
-    // antes de pasar a producción.
+    
+    // Regla permisiva para desarrollo: Permite leer/escribir si el usuario está autenticado.
+    // ADVERTENCIA: estas reglas deben ser más específicas para producción.
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if request.auth != null;
     }
   }
 }
