@@ -3,7 +3,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from 'react';
-import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest, PublicationOwner, CreatePublicationInput, CreateProductInput } from '@/lib/types';
+import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest, PublicationOwner, CreatePublicationInput, CreateProductInput, QrSession } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation";
 import jsPDF from 'jspdf';
@@ -58,6 +58,7 @@ interface CoraboState {
   isLoadingAuth: boolean;
   deliveryAddress: string;
   exchangeRate: number;
+  qrSession: QrSession | null;
   signInWithGoogle: () => void;
   setSearchQuery: (query: string) => void;
   setCategoryFilter: (category: string | null) => void;
@@ -118,6 +119,11 @@ interface CoraboState {
   fetchUser: (userId: string) => Promise<User | null>;
   acceptDelivery: (transactionId: string) => void;
   getDistanceToProvider: (provider: User) => string | null;
+  startQrSession: (providerId: string) => Promise<string | null>;
+  setQrSessionAmount: (sessionId: string, amount: number) => Promise<void>;
+  approveQrSession: (sessionId: string) => Promise<void>;
+  finalizeQrSession: (sessionId: string, voucherUrl: string) => Promise<void>;
+  cancelQrSession: (sessionId: string) => Promise<void>;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -143,6 +149,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [exchangeRate, setExchangeRate] = useState(36.54);
   const [currentUserLocation, setCurrentUserLocation] = useState<GeolocationCoords | null>(null);
+  const [qrSession, setQrSession] = useState<QrSession | null>(null);
   
   const app = getFirebaseApp();
   const auth = getAuth(app);
@@ -223,6 +230,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
         cleanup(); 
+        setQrSession(null);
         
         if (firebaseUser) {
             const userData = await handleUserCreation(firebaseUser);
@@ -250,6 +258,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
                 setAllPublications(fetchedPublications);
             });
             listeners.current.set('publications', publicationsListener);
+
+            const qrSessionsQuery = query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', userData.id));
+            const qrSessionsListener = onSnapshot(qrSessionsQuery, (snapshot) => {
+                const sessions = snapshot.docs.map(d => d.data() as QrSession);
+                const activeSession = sessions.find(s => s.status !== 'completed' && s.status !== 'cancelled');
+                setQrSession(activeSession || null);
+            });
+            listeners.current.set('qrSessions', qrSessionsListener);
 
         } else {
             setCurrentUser(null);
@@ -418,7 +434,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const isContact = (userId: string) => {
-    return contacts.some(c => c.id === userId);
+    return contacts.some(c => c.id !== userId);
   };
   
   const updateUser = async (userId: string, updates: Partial<User>) => {
@@ -893,6 +909,67 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return { reputation, effectiveness, responseTime };
   };
 
+  const startQrSession = async (providerId: string) => {
+    if (!currentUser) return null;
+    const db = getFirestoreDb();
+    const sessionId = `qrsess-${Date.now()}`;
+    const sessionRef = doc(db, 'qr_sessions', sessionId);
+    const newSession: QrSession = {
+        id: sessionId,
+        providerId: providerId,
+        clientId: currentUser.id,
+        status: 'pendingAmount',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+    };
+    await setDoc(sessionRef, newSession);
+    return sessionId;
+  };
+
+  const setQrSessionAmount = async (sessionId: string, amount: number) => {
+    if (!currentUser || !qrSession) return;
+    const db = getFirestoreDb();
+    const sessionRef = doc(db, 'qr_sessions', sessionId);
+    const client = await fetchUser(qrSession.clientId);
+    if (!client) return;
+
+    const crediDetails = credicoraLevels[(client.credicoraLevel || 1).toString()];
+    const financedAmount = Math.min(
+        amount * (1 - crediDetails.initialPaymentPercentage), 
+        client.credicoraLimit || 0
+    );
+    const initialPayment = amount - financedAmount;
+
+    await updateDoc(sessionRef, { 
+        amount, 
+        initialPayment,
+        financedAmount,
+        installments: crediDetails.installments,
+        status: 'pendingClientApproval',
+        updatedAt: new Date().toISOString(),
+    });
+  };
+
+  const approveQrSession = async (sessionId: string) => {
+    const db = getFirestoreDb();
+    const sessionRef = doc(db, 'qr_sessions', sessionId);
+    await updateDoc(sessionRef, { status: 'pendingVoucherUpload', updatedAt: new Date().toISOString() });
+  };
+  
+  const cancelQrSession = async (sessionId: string) => {
+      const db = getFirestoreDb();
+      const sessionRef = doc(db, 'qr_sessions', sessionId);
+      await updateDoc(sessionRef, { status: 'cancelled', updatedAt: new Date().toISOString() });
+  }
+
+  const finalizeQrSession = async (sessionId: string, voucherUrl: string) => {
+      const db = getFirestoreDb();
+      const sessionRef = doc(db, 'qr_sessions', sessionId);
+      await updateDoc(sessionRef, { voucherUrl });
+      await TransactionFlows.processDirectPayment({ sessionId });
+      toast({ title: '¡Pago Completado!', description: 'La transacción ha sido registrada exitosamente.' });
+  };
+
   const value: CoraboState = {
     currentUser,
     users,
@@ -908,6 +985,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     isLoadingAuth,
     deliveryAddress,
     exchangeRate,
+    qrSession,
     signInWithGoogle,
     setSearchQuery,
     setCategoryFilter,
@@ -968,6 +1046,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     setDeliveryAddress,
     acceptDelivery,
     getDistanceToProvider,
+    startQrSession,
+    setQrSessionAmount,
+    approveQrSession,
+    finalizeQrSession,
+    cancelQrSession,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;

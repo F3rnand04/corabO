@@ -1,4 +1,5 @@
 
+
 'use server';
 /**
  * @fileOverview Transaction management flows.
@@ -8,7 +9,9 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestoreDb } from '@/lib/firebase-server'; // Use server-side firebase
 import { doc, getDoc, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
-import type { Transaction, User, AppointmentRequest } from '@/lib/types';
+import type { Transaction, User, AppointmentRequest, QrSession } from '@/lib/types';
+import { credicoraLevels } from '@/lib/types';
+import { addDays } from 'date-fns';
 
 // --- Schemas ---
 
@@ -40,8 +43,97 @@ const AppointmentRequestSchema = z.object({
     amount: z.number(),
 });
 
+const ProcessDirectPaymentSchema = z.object({
+  sessionId: z.string(),
+});
+
 
 // --- Flows ---
+
+/**
+ * Creates the initial transaction and subsequent Credicora installment transactions
+ * after a direct QR payment is finalized by the provider.
+ */
+export const processDirectPayment = ai.defineFlow(
+    {
+        name: 'processDirectPaymentFlow',
+        inputSchema: ProcessDirectPaymentSchema,
+        outputSchema: z.void(),
+    },
+    async ({ sessionId }) => {
+        const db = getFirestoreDb();
+        const batch = writeBatch(db);
+
+        const sessionRef = doc(db, 'qr_sessions', sessionId);
+        const sessionSnap = await getDoc(sessionRef);
+
+        if (!sessionSnap.exists()) {
+            throw new Error("QR Session not found");
+        }
+        const session = sessionSnap.data() as QrSession;
+
+        if (!session.amount || !session.initialPayment) {
+            throw new Error("Invalid session data: amount is missing.");
+        }
+
+        // 1. Create the main transaction for the initial payment
+        const initialTxId = `txndp-${sessionId}`;
+        const initialTransaction: Transaction = {
+            id: initialTxId,
+            type: 'Compra Directa',
+            status: 'Pagado',
+            date: new Date().toISOString(),
+            amount: session.initialPayment,
+            clientId: session.clientId,
+            providerId: session.providerId,
+            participantIds: [session.clientId, session.providerId],
+            details: {
+                paymentMethod: 'direct',
+                paymentVoucherUrl: session.voucherUrl,
+                system: `Pago inicial de compra por $${session.amount.toFixed(2)}`
+            }
+        };
+        batch.set(doc(db, 'transactions', initialTxId), initialTransaction);
+        
+        // 2. Create installment transactions if financed
+        if (session.financedAmount && session.installments && session.financedAmount > 0) {
+            const installmentAmount = session.financedAmount / session.installments;
+            for (let i = 1; i <= session.installments; i++) {
+                const installmentTxId = `txn-credicora-${sessionId.slice(-4)}-${i}`;
+                const dueDate = addDays(new Date(), i * 15);
+                const installmentTx: Transaction = {
+                    id: installmentTxId,
+                    type: 'Sistema',
+                    status: 'Finalizado - Pendiente de Pago',
+                    date: dueDate.toISOString(),
+                    amount: installmentAmount,
+                    clientId: session.clientId,
+                    providerId: 'corabo-admin',
+                    participantIds: [session.clientId, 'corabo-admin'],
+                    details: {
+                        system: `Cuota ${i}/${session.installments} de Compra Directa`,
+                    },
+                };
+                batch.set(doc(db, 'transactions', installmentTxId), installmentTx);
+            }
+
+            // 3. Update client's Credicora limit
+            const clientRef = doc(db, 'users', session.clientId);
+            const clientSnap = await getDoc(clientRef);
+            if (clientSnap.exists()) {
+                const client = clientSnap.data() as User;
+                const newCredicoraLimit = (client.credicoraLimit || 0) - session.financedAmount;
+                batch.update(clientRef, { credicoraLimit: newCredicoraLimit });
+            }
+        }
+        
+        // 4. Mark session as completed
+        batch.update(sessionRef, { status: 'completed' });
+        
+        await batch.commit();
+    }
+);
+
 
 /**
  * Marks a service transaction as completed by the provider.

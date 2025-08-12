@@ -2,6 +2,20 @@
 
 import { z } from 'zod';
 
+export type QrSession = {
+  id: string;
+  providerId: string;
+  clientId: string;
+  status: 'pendingAmount' | 'pendingClientApproval' | 'pendingVoucherUpload' | 'completed' | 'cancelled';
+  amount?: number;
+  initialPayment?: number;
+  financedAmount?: number;
+  installments?: number;
+  voucherUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type Notification = {
   id: string;
   userId: string;
@@ -288,7 +302,7 @@ export type Conversation = {
 
 export type Transaction = {
   id: string;
-  type: 'Compra' | 'Servicio' | 'Sistema';
+  type: 'Compra' | 'Servicio' | 'Sistema' | 'Compra Directa';
   status: TransactionStatus;
   date: string; // ISO 8601 string
   amount: number;

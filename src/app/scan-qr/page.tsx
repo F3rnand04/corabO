@@ -2,23 +2,35 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Zap, CameraOff } from 'lucide-react';
+import { ChevronLeft, Zap, CameraOff, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useCorabo } from '@/contexts/CoraboContext';
 
 // --- Placeholder for QR Scanner Library ---
-// In a real app, you would use a library like 'react-qr-reader'
 const QrScannerPlaceholder = ({ onScan }: { onScan: (data: string) => void }) => {
+  // Simulate a scan after 2 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onScan('{"providerId":"user_provider_1"}'); // Simulate scanning a provider's QR
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [onScan]);
+
   return (
-    <div 
-      className="w-full aspect-square bg-black rounded-lg flex flex-col items-center justify-center text-white"
-      onClick={() => onScan('{"providerId":"provider_123","session":"xyz"}')}
-    >
-      <div className="w-64 h-64 border-4 border-dashed border-green-500 rounded-lg animate-pulse" />
-      <p className="mt-4 text-sm text-center">Simulador de Escáner QR<br/>(Haz clic para simular un escaneo)</p>
+    <div className="w-full aspect-square bg-black rounded-lg flex flex-col items-center justify-center text-white relative overflow-hidden">
+      <div className="w-64 h-64 border-4 border-dashed border-green-500 rounded-lg" />
+      <div className="absolute top-0 left-0 w-full h-1 bg-green-500 animate-[scan_2s_ease-in-out_infinite]" />
+      <p className="mt-4 text-sm text-center">Simulando escaneo...</p>
+      <style jsx>{`
+        @keyframes scan {
+          0% { top: 0; }
+          100% { top: 100%; }
+        }
+      `}</style>
     </div>
   );
 };
@@ -27,28 +39,50 @@ const QrScannerPlaceholder = ({ onScan }: { onScan: (data: string) => void }) =>
 export default function ScanQrPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [hasCameraPermission, setHasCameraPermission] = useState(true);
-  const [scannedData, setScannedData] = useState<string | null>(null);
+  const { startQrSession, currentUser } = useCorabo();
   
-  // Simulate asking for camera permission
-  useEffect(() => {
-    // This is a placeholder. A real implementation would use navigator.mediaDevices.getUserMedia
-    setTimeout(() => {
-        // To test the error case, you can set this to false
-        setHasCameraPermission(true); 
-    }, 500);
-  }, []);
+  const [hasCameraPermission, setHasCameraPermission] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const searchParams = useSearchParams();
 
-  const handleScan = (data: string | null) => {
-    if (data) {
-      setScannedData(data);
+  const isRedirected = searchParams.get('redirected');
+
+  useEffect(() => {
+    if (currentUser?.type === 'provider' && !isRedirected) {
       toast({
-        title: "¡QR Escaneado!",
-        description: `Se ha iniciado una sesión de pago. Datos: ${data}`,
+        variant: 'destructive',
+        title: 'Acción no permitida',
+        description: 'Los proveedores no pueden escanear códigos para pagar, pero puedes usar esta vista para probar.',
       });
-      // Here you would redirect to the payment approval screen
-      // For now, we just go back.
-      setTimeout(() => router.back(), 2000);
+    }
+  }, [currentUser, toast, isRedirected]);
+
+  const handleScan = async (data: string | null) => {
+    if (data && !isProcessing) {
+      setIsProcessing(true);
+      try {
+        const qrData = JSON.parse(data);
+        if (qrData.providerId) {
+          toast({
+            title: "¡QR Escaneado!",
+            description: `Conectando con el proveedor...`,
+          });
+          const sessionId = await startQrSession(qrData.providerId);
+          if (sessionId) {
+            router.push(`/payment/approval?sessionId=${sessionId}`);
+          } else {
+             throw new Error("No se pudo iniciar la sesión");
+          }
+        }
+      } catch (error) {
+        console.error(error);
+        toast({
+          variant: 'destructive',
+          title: 'Error de Sesión',
+          description: 'No se pudo iniciar la sesión de pago. Inténtalo de nuevo.',
+        });
+        setIsProcessing(false);
+      }
     }
   };
 
@@ -72,7 +106,12 @@ export default function ScanQrPage() {
       </header>
 
       <main className="h-full w-full flex items-center justify-center p-8">
-        {hasCameraPermission ? (
+        {isProcessing ? (
+            <div className="flex flex-col items-center gap-4 text-center">
+              <Loader2 className="w-16 h-16 animate-spin text-primary" />
+              <h2 className="text-xl font-bold">Iniciando Sesión Segura...</h2>
+            </div>
+        ) : hasCameraPermission ? (
           <div className="w-full max-w-sm">
             <QrScannerPlaceholder onScan={handleScan} />
           </div>
