@@ -21,12 +21,12 @@ export default function CatalogPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isProductDetailsDialogOpen, setIsProductDetailsDialogOpen] = useState(false);
   
-  // Directly filter products from the user's gallery array, which is the single source of truth.
   const products = useMemo(() => {
     if (!currentUser?.gallery) return [];
     
     return currentUser.gallery
         .filter(item => item.type === 'product' && item.productDetails)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         .map(item => ({
             id: item.id,
             name: item.productDetails!.name,
@@ -39,7 +39,6 @@ export default function CatalogPage() {
   }, [currentUser?.gallery]);
 
   useEffect(() => {
-    // The loading state is now just dependent on the currentUser object being available.
     if (currentUser) {
         setIsLoading(false);
     }

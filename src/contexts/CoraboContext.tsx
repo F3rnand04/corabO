@@ -227,7 +227,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
                 if (doc.exists()) {
                     const freshUserData = doc.data() as User;
                     setCurrentUser(freshUserData);
-                    // Ensure userPublications is always in sync with the user's gallery
                     setUserPublications(freshUserData.gallery || []);
                 } else {
                     setCurrentUser(null);
@@ -237,20 +236,24 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             });
             listeners.current.set('currentUser', userListener);
 
-            // Listener for all users (for populating owner data in cards)
             const allUsersListener = onSnapshot(collection(db, 'users'), (snapshot) => {
                 const allUsers = snapshot.docs.map(doc => doc.data() as User);
                 setUsers(allUsers);
             });
             listeners.current.set('allUsers', allUsersListener);
-
-            // Listener for all publications
-             getFeedFlow({}).then(data => {
-                setAllPublications(data.publications);
-            }).catch(error => {
-                console.error("Error fetching all publications:", error);
-                toast({ variant: "destructive", title: "Error al Cargar Contenido", description: "No se pudo cargar el feed principal." });
-            });
+            
+            const allPublicationsListener = onSnapshot(
+              query(collection(db, "publications"), orderBy("createdAt", "desc")),
+              (snapshot) => {
+                  const publications = snapshot.docs.map(doc => doc.data() as GalleryImage);
+                  setAllPublications(publications);
+              },
+              (error) => {
+                  console.error("Error fetching all publications:", error);
+                  toast({ variant: "destructive", title: "Error al Cargar Contenido", description: "No se pudo cargar el feed principal." });
+              }
+            );
+            listeners.current.set('allPublications', allPublicationsListener);
 
 
             const transactionsListener = onSnapshot(
@@ -607,9 +610,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return createCampaignFlow({ ...data, userId: currentUser.id });
   };
 
-  const createPublication = async (data: CreatePublicationInput) => {
+  const createPublication = async (publicationData: CreatePublicationInput) => {
     if (!currentUser) throw new Error("User not authenticated");
-    await createPublicationFlow(data);
+    await createPublicationFlow(publicationData);
   };
   
   const createProduct = async (data: CreateProductInput) => {
