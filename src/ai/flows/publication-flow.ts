@@ -26,8 +26,6 @@ export const createPublication = ai.defineFlow(
   async ({ userId, description, imageDataUri, aspectRatio, type }) => {
     const db = getFirestoreDb();
     
-    // FORENSIC FIX: The user object was not being fetched, causing owner data to be stale.
-    // Now we fetch the user to ensure owner data is always current.
     const userSnap = await getDoc(doc(db, 'users', userId));
     if (!userSnap.exists()) {
       throw new Error('User not found. Cannot create publication for a non-existent user.');
@@ -36,7 +34,6 @@ export const createPublication = ai.defineFlow(
     
     const publicationId = `pub-${Date.now()}`;
 
-    // Create the denormalized public publication for the feed
     const publicPublication: GalleryImage = {
       id: publicationId,
       providerId: userId,
