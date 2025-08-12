@@ -19,7 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useCorabo } from '@/contexts/CoraboContext';
 import { useToast } from '@/hooks/use-toast';
-import { UploadCloud, X, Image as ImageIcon, Video, PackagePlus, Loader2, QrCode } from 'lucide-react';
+import { UploadCloud, X, Image as ImageIcon, Video, PackagePlus, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import type { CreatePublicationInput, CreateProductInput, PublicationOwner } from '@/lib/types';
 
@@ -47,10 +47,10 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
           // If they can offer products, show selection. Otherwise go straight to gallery upload.
           return canOfferBoth ? 'selection' : 'upload_gallery';
       }
-      return 'selection'; // Default for other types, though button logic might prevent this.
+      return 'upload_gallery'; // Default for clients (emprende)
   }
   
-  const [view, setView] = useState<'selection' | 'upload_gallery' | 'upload_product' | 'generate_qr'>(getInitialView());
+  const [view, setView] = useState<'selection' | 'upload_gallery' | 'upload_product'>(getInitialView());
   
   // Reset view when dialog opens/user changes
   useEffect(() => {
@@ -209,34 +209,13 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
         setIsSubmitting(false);
     }
   }
-  
+
   const renderSelectionView = () => (
     <>
       <DialogHeader>
-        <DialogTitle>¿Qué quieres hacer?</DialogTitle>
+        <DialogTitle>¿Qué quieres añadir?</DialogTitle>
         <DialogDescription>
-          Elige si quieres añadir contenido a tu perfil o realizar un cobro en tienda.
-        </DialogDescription>
-      </DialogHeader>
-      <div className="grid grid-cols-1 gap-4 py-4">
-        <Button variant="outline" className="h-20 flex-col gap-2" onClick={() => setView(canOfferProducts ? 'product_or_gallery_selection' : 'upload_gallery')}>
-          <ImageIcon className="w-6 h-6" />
-          Añadir Contenido
-        </Button>
-        <Button variant="outline" className="h-20 flex-col gap-2" onClick={() => setView('generate_qr')}>
-          <QrCode className="w-6 h-6" />
-          Cobrar con QR en Tienda
-        </Button>
-      </div>
-    </>
-  );
-
-  const renderProductOrGallerySelection = () => (
-    <>
-      <DialogHeader>
-        <DialogTitle>Añadir Contenido</DialogTitle>
-        <DialogDescription>
-          ¿Quieres subir una publicación a tu galería o añadir un producto a tu catálogo?
+          Elige si quieres subir una publicación a tu galería o añadir un producto a tu catálogo.
         </DialogDescription>
       </DialogHeader>
       <div className="grid grid-cols-2 gap-4 py-4">
@@ -249,32 +228,8 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
           Añadir Producto
         </Button>
       </div>
-       <DialogFooter>
-         <Button variant="ghost" onClick={() => setView('selection')}>Volver</Button>
-      </DialogFooter>
-    </>
-  )
-  
-  const renderGenerateQrView = () => (
-    <>
-        <DialogHeader>
-          <DialogTitle>Cobrar en Tienda</DialogTitle>
-          <DialogDescription>
-            Muestra este QR a tu cliente para que lo escanee e inicie el pago.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="flex flex-col items-center justify-center py-8">
-            <div className="p-4 bg-white rounded-lg border">
-                <QrCode className="w-48 h-48 text-black" />
-            </div>
-            <p className="mt-4 text-sm text-muted-foreground">Esperando escaneo...</p>
-        </div>
-         <DialogFooter>
-            <Button variant="outline" onClick={() => setView('selection')}>Volver</Button>
-        </DialogFooter>
     </>
   );
-
 
   const renderGalleryUploadView = () => (
      <>
@@ -398,10 +353,6 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
     switch (view) {
         case 'selection':
             return renderSelectionView();
-        case 'product_or_gallery_selection':
-             return renderProductOrGallerySelection();
-        case 'generate_qr':
-             return renderGenerateQrView();
         case 'upload_gallery':
             return renderGalleryUploadView();
         case 'upload_product':
