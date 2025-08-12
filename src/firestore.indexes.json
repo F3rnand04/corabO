@@ -3,7 +3,7 @@
   "indexes": [
     {
       "collectionGroup": "publications",
-      "queryScope": "COLLECTION",
+      "queryScope": "COLLECTION_GROUP",
       "fields": [
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
@@ -27,7 +27,3 @@
   ],
   "fieldOverrides": []
 }
-
-
-
-    
