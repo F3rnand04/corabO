@@ -37,10 +37,6 @@ export default function Step4_GeneralDetails({ onBack, onNext, formData, setForm
     if (currentUser) {
         setFormData({
             ...formData,
-            name: currentUser.name,
-            lastName: currentUser.lastName || '',
-            idNumber: currentUser.idNumber || '',
-            birthDate: currentUser.birthDate || '',
             email: currentUser.email,
             phone: currentUser.phone
         });
