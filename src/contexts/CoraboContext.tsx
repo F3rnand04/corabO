@@ -24,6 +24,7 @@ import { createProduct as createProductFlow, createPublication as createPublicat
 import type { GetFeedInputSchema, GetFeedOutputSchema, GetProfileGalleryInputSchema, GetProfileGalleryOutputSchema, GetProfileProductsInputSchema, GetProfileProductsOutputSchema } from '@/lib/types';
 import { z } from 'zod';
 import { haversineDistance } from '@/lib/utils';
+import { getOrCreateUser } from '@/ai/flows/auth-flow';
 
 
 interface DailyQuote {
@@ -129,55 +130,6 @@ interface CoraboState {
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
 
-// Moved outside the component to prevent re-creation on every render
-const handleUserCreation = async (firebaseUser: FirebaseUser): Promise<User> => {
-    const db = getFirestoreDb();
-    const userDocRef = doc(db, 'users', firebaseUser.uid);
-    const userDocSnap = await getDoc(userDocRef);
-    
-    if (userDocSnap.exists()) {
-      const existingUser = userDocSnap.data() as User;
-      return existingUser;
-    } else {
-      const nameParts = (firebaseUser.displayName || 'Usuario Nuevo').split(' ');
-      const firstName = nameParts[0];
-      const lastName = nameParts.slice(1).join(' ');
-
-      const coraboId = (firstName.substring(0, 3)).toUpperCase() + Math.random().toString(36).substring(2, 8).toUpperCase();
-      
-      const newUser: User = {
-        id: firebaseUser.uid,
-        coraboId: coraboId,
-        name: firstName,
-        lastName: lastName,
-        idNumber: '',
-        birthDate: '',
-        createdAt: new Date().toISOString(),
-        type: 'client',
-        reputation: 0,
-        effectiveness: 100,
-        profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${'firebaseUser.uid'}`,
-        email: firebaseUser.email || '',
-        phone: '',
-        emailValidated: firebaseUser.emailVerified,
-        phoneValidated: false,
-        isGpsActive: true,
-        isInitialSetupComplete: false,
-        credicoraLevel: 1,
-        credicoraLimit: 150,
-        profileSetupData: {
-            location: "10.4806,-66.9036" // Default to Caracas
-        },
-        isSubscribed: false,
-        isTransactionsActive: false,
-        idVerificationStatus: 'rejected',
-      };
-      
-      await setDoc(userDocRef, newUser);
-      return newUser;
-    }
-  };
-
 
 export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
@@ -229,7 +181,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     setQrSession(null);
 
     if (firebaseUser) {
-        const userData = await handleUserCreation(firebaseUser);
+        // Use the backend flow to get/create the user document
+        const userData = await getOrCreateUser(firebaseUser);
         userCache.current.set(userData.id, userData);
 
         const db = getFirestoreDb();
