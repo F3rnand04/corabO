@@ -17,13 +17,12 @@ interface ProductGridCardProps {
 }
 
 export function ProductGridCard({ product, onDoubleClick }: ProductGridCardProps) {
-    const { currentUser, addToCart, updateCartQuantity, cart, transactions } = useCorabo();
+    const { currentUser, addToCart, updateCartQuantity, cart } = useCorabo();
     const { toast } = useToast();
     const [likeCount, setLikeCount] = useState(0);
     const [isLiked, setIsLiked] = useState(false);
 
-    const activeCartTx = transactions.find(tx => tx.status === 'Carrito Activo' && tx.providerId === product.providerId);
-    const cartItem = activeCartTx?.details.items?.find(item => item.product.id === product.id);
+    const cartItem = cart.find(item => item.product.id === product.id);
     const quantityInCart = cartItem?.quantity || 0;
     
     if(!currentUser) return null;

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -88,7 +89,7 @@ export function Header() {
   }
   
   const totalCartItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const cartTransaction = cart.length > 0 ? transactions.find(tx => tx.clientId === currentUser?.id && tx.providerId === cart[0].product.providerId && tx.status === 'Carrito Activo') : undefined;
+  const cartTransaction = cart.length > 0 ? transactions.find(tx => tx.status === 'Carrito Activo') : undefined;
 
   const handleCheckout = () => {
     if (cartTransaction) {
@@ -338,7 +339,7 @@ export function Header() {
                     </div>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleCheckout}>Pagar Ahora</AlertDialogAction>
+                        <AlertDialogAction onClick={handleCheckout} disabled={!cartTransaction}>Pagar Ahora</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

@@ -232,7 +232,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         phoneValidated: false,
         isGpsActive: true,
         isInitialSetupComplete: false,
-        gallery: [],
         credicoraLevel: 1,
         credicoraLimit: 150,
         profileSetupData: {},
@@ -278,6 +277,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             const transactionsListener = onSnapshot(query(collection(db, 'transactions'), where('participantIds', 'array-contains', userData.id)), (snapshot) => {
                 const userTransactions = snapshot.docs.map(doc => doc.data() as Transaction);
                 setTransactions(userTransactions);
+                const activeCartTx = userTransactions.find(tx => tx.status === 'Carrito Activo' && tx.clientId === userData.id);
+                setCart(activeCartTx?.details.items || []);
             });
             listeners.current.set('transactions', transactionsListener);
             
@@ -350,98 +351,71 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     setSearchHistory([]);
   }
 
-  const addToCart = (product: Product, quantity: number) => {
+  const addToCart = async (product: Product, quantity: number) => {
     if (!currentUser) return;
     if (!currentUser.isTransactionsActive) {
-      toast({
-        variant: "destructive",
-        title: "Acción Requerida",
-        description: "Debes activar tu registro de transacciones para poder comprar."
-      });
+      toast({ variant: "destructive", title: "Acción Requerida", description: "Debes activar tu registro de transacciones para poder comprar." });
       return;
     }
-    
-    fetchUser(product.providerId).then(provider => {
-        if (!provider?.isTransactionsActive) {
-          toast({
-            variant: "destructive",
-            title: "Proveedor no disponible",
-            description: "Este proveedor no tiene las transacciones activas en este momento."
-          });
-          return;
-        }
-
-        if (cart.length > 0 && cart[0].product.providerId !== product.providerId) {
-          toast({
-            variant: "destructive",
-            title: "Carrito Multi-tienda",
-            description: "No puedes añadir productos de diferentes tiendas. Finaliza esta compra primero."
-          });
-          return;
-        }
-        
-        // --- CORE LOGIC FIX ---
-        // If it's the first item, create the "Carrito Activo" transaction immediately.
-        if (cart.length === 0) {
-            const db = getFirestoreDb();
-            const newTx: Transaction = {
-                id: `cart-${currentUser.id}-${Date.now()}`,
-                type: 'Compra',
-                status: 'Carrito Activo',
-                date: new Date().toISOString(),
-                amount: 0, // Amount will be updated on checkout
-                clientId: currentUser.id,
-                providerId: product.providerId,
-                participantIds: [currentUser.id, product.providerId],
-                details: {
-                    items: [{ product, quantity }],
-                }
-            };
-            setDoc(doc(db, 'transactions', newTx.id), newTx);
-        }
-
-        setCart((prevCart) => {
-          const existingItem = prevCart.find((item) => item.product.id === product.id);
-          const newCart = existingItem
-            ? prevCart.map((item) => item.product.id === product.id ? { ...item, quantity: item.quantity + quantity } : item)
-            : [...prevCart, { product, quantity }];
-
-          const activeCartTx = transactions.find(tx => tx.status === 'Carrito Activo' && tx.clientId === currentUser.id && tx.providerId === product.providerId);
-          if (activeCartTx) {
-              const db = getFirestoreDb();
-              updateDoc(doc(db, 'transactions', activeCartTx.id), { 'details.items': newCart });
-          }
-
-          return newCart;
-        });
-    });
+  
+    const provider = await fetchUser(product.providerId);
+    if (!provider?.isTransactionsActive) {
+      toast({ variant: "destructive", title: "Proveedor no disponible", description: "Este proveedor no tiene las transacciones activas en este momento." });
+      return;
+    }
+  
+    const db = getFirestoreDb();
+    const activeCartTx = transactions.find(tx => tx.status === 'Carrito Activo' && tx.clientId === currentUser.id);
+  
+    if (activeCartTx && activeCartTx.providerId !== product.providerId) {
+      toast({ variant: "destructive", title: "Carrito Multi-tienda", description: "No puedes añadir productos de diferentes tiendas. Finaliza esta compra primero." });
+      return;
+    }
+  
+    if (activeCartTx) {
+      const existingItemIndex = activeCartTx.details.items?.findIndex(item => item.product.id === product.id) ?? -1;
+      const newItems = [...(activeCartTx.details.items || [])];
+      
+      if (existingItemIndex > -1) {
+        newItems[existingItemIndex].quantity += quantity;
+      } else {
+        newItems.push({ product, quantity });
+      }
+      await updateDoc(doc(db, 'transactions', activeCartTx.id), { 'details.items': newItems });
+    } else {
+      const newTx: Transaction = {
+        id: `cart-${currentUser.id}-${Date.now()}`,
+        type: 'Compra',
+        status: 'Carrito Activo',
+        date: new Date().toISOString(),
+        amount: 0,
+        clientId: currentUser.id,
+        providerId: product.providerId,
+        participantIds: [currentUser.id, product.providerId],
+        details: { items: [{ product, quantity }] }
+      };
+      await setDoc(doc(db, 'transactions', newTx.id), newTx);
+    }
+    toast({ title: "Producto añadido", description: `${product.name} fue añadido a tu carrito.` });
   };
   
-  const updateCartQuantity = (productId: string, quantity: number) => {
+  const updateCartQuantity = async (productId: string, quantity: number) => {
     if (!currentUser || !currentUser.isTransactionsActive) return;
-    
-    setCart((prevCart) => {
-      let updatedCart;
-      if (quantity <= 0) {
-        updatedCart = prevCart.filter((item) => item.product.id !== productId);
-      } else {
-        updatedCart = prevCart.map((item) =>
-          item.product.id === productId ? { ...item, quantity } : item
-        );
-      }
-      
-      const activeCartTx = transactions.find(tx => tx.status === 'Carrito Activo' && tx.clientId === currentUser.id);
-      if(activeCartTx) {
-          const db = getFirestoreDb();
-          if (updatedCart.length === 0) {
-              deleteDoc(doc(db, 'transactions', activeCartTx.id));
-          } else {
-              updateDoc(doc(db, 'transactions', activeCartTx.id), { 'details.items': updatedCart });
-          }
-      }
-
-      return updatedCart;
-    });
+  
+    const db = getFirestoreDb();
+    const activeCartTx = transactions.find(tx => tx.status === 'Carrito Activo' && tx.clientId === currentUser.id);
+  
+    if (!activeCartTx) return;
+  
+    const updatedItems = (activeCartTx.details.items || [])
+      .map(item => item.product.id === productId ? { ...item, quantity } : item)
+      .filter(item => item.quantity > 0);
+  
+    if (updatedItems.length === 0) {
+      await deleteDoc(doc(db, 'transactions', activeCartTx.id));
+    } else {
+      await updateDoc(doc(db, 'transactions', activeCartTx.id), { 'details.items': updatedItems });
+    }
   };
 
   const removeFromCart = (productId: string) => {
