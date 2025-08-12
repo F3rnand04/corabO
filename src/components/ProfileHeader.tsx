@@ -25,7 +25,7 @@ import { SubscriptionDialog } from './SubscriptionDialog';
 
 export function ProfileHeader() {
   const { toast } = useToast();
-  const { currentUser, updateUserProfileImage, getUserMetrics, transactions, getAgendaEvents, toggleGps, userPublications } = useCorabo();
+  const { currentUser, updateUserProfileImage, getUserMetrics, transactions, getAgendaEvents, toggleGps } = useCorabo();
   
   const router = useRouter();
   const pathname = usePathname();
