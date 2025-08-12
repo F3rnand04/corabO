@@ -597,15 +597,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const createPublication = async (data: CreatePublicationInput) => {
     if (!currentUser) throw new Error("User not authenticated");
-    const newPublication = { ...data, owner: undefined }; // Remove owner before sending to flow
-    await createPublicationFlow(newPublication);
-    // Optimistic update is no longer needed here as the feed re-fetches
+    await createPublicationFlow(data);
   };
   
   const createProduct = async (data: CreateProductInput) => {
     if (!currentUser) throw new Error("User not authenticated");
     await createProductFlow(data);
-    // Optimistic update is no longer needed here as the feed re-fetches
   };
 
   const checkout = (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {
