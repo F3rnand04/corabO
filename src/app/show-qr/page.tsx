@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -6,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, Info, Copy, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCorabo } from '@/contexts/CoraboContext';
-import { QRCodeSVG } from 'qrcode.react';
+import { QRCode } from 'qrcode.react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function ShowQrPage() {
@@ -48,7 +47,7 @@ export default function ShowQrPage() {
             </div>
             
             <div className="bg-white p-6 rounded-2xl shadow-xl inline-block">
-                 <QRCodeSVG 
+                 <QRCode 
                     value={qrValue} 
                     size={256} // ~256x256 pixels
                     bgColor={"#ffffff"}
