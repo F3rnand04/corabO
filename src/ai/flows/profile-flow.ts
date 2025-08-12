@@ -69,7 +69,6 @@ export const getProfileProducts = ai.defineFlow(
         
         const queryConstraints: any[] = [
             where("providerId", "==", userId),
-            where("type", "==", "product"), // We can filter by type here as it's efficient with the main providerId filter
             orderBy('createdAt', 'desc'),
             limit(limitNum)
         ];
@@ -84,8 +83,11 @@ export const getProfileProducts = ai.defineFlow(
         const q = query(publicationsCollection, ...queryConstraints);
         const snapshot = await getDocs(q);
 
-        const userProductsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as GalleryImage));
+        const allUserContent = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as GalleryImage));
         
+        // Filter for products in the backend code
+        const userProductsData = allUserContent.filter(item => item.type === 'product');
+
         const finalProducts: Product[] = userProductsData.map(data => ({
             id: data.id,
             name: data.productDetails?.name || 'Producto sin nombre',
@@ -96,7 +98,7 @@ export const getProfileProducts = ai.defineFlow(
             imageUrl: data.src,
         }));
         
-        const lastVisibleDocInPage = snapshot.docs[snapshot.docs.length - 1];
+        const lastVisibleDocInPage = snapshot.docs.find(doc => userProductsData.some(p => p.id === doc.id));
 
         return { 
             products: finalProducts, 

@@ -244,18 +244,13 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             });
             listeners.current.set('allUsers', allUsersListener);
 
-            const allPublicationsListener = onSnapshot(
-                query(collection(db, 'publications'), orderBy('createdAt', 'desc')),
-                (snapshot) => {
-                    const publications = snapshot.docs.map(doc => doc.data() as GalleryImage);
-                    setAllPublications(publications);
-                },
-                (error) => {
-                    console.error("Error fetching all publications:", error);
-                    toast({ variant: "destructive", title: "Error al Cargar Contenido", description: "No se pudo cargar el feed principal." });
-                }
-            );
-            listeners.current.set('allPublications', allPublicationsListener);
+            // Listener for all publications
+             getFeedFlow({}).then(data => {
+                setAllPublications(data.publications);
+            }).catch(error => {
+                console.error("Error fetching all publications:", error);
+                toast({ variant: "destructive", title: "Error al Cargar Contenido", description: "No se pudo cargar el feed principal." });
+            });
 
 
             const transactionsListener = onSnapshot(
