@@ -10,7 +10,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { add, subDays, startOfDay, differenceInDays, differenceInHours, differenceInMinutes, addDays as addDaysFns } from 'date-fns';
 import { credicoraLevels } from '@/lib/types';
-import { getAuth, signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, GoogleAuthProvider, setPersistence, browserLocalPersistence, signInWithRedirect } from 'firebase/auth';
+import { getAuth, signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, GoogleAuthProvider, setPersistence, browserLocalPersistence, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 import { getFirebaseApp, getFirestoreDb } from '@/lib/firebase';
 import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, arrayUnion, getDocs, deleteDoc, collectionGroup, Unsubscribe, orderBy } from 'firebase/firestore';
 import { createCampaign as createCampaignFlow, type CreateCampaignInput } from '@/ai/flows/campaign-flow';
@@ -242,7 +242,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             } else {
                 setCurrentUser(null);
             }
-            setIsLoadingAuth(false);
         });
         listeners.current.set('currentUser', userListener);
 
@@ -292,8 +291,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         setConversations([]);
         setAllPublications([]);
         userCache.current.clear();
-        setIsLoadingAuth(false);
     }
+    // We set loading to false only after all listeners are potentially set up or cleared.
+    setIsLoadingAuth(false);
   }, []);
 
   useEffect(() => {
