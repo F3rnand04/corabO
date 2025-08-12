@@ -26,8 +26,9 @@ export default function LoginPage() {
                 src="https://i.postimg.cc/Wz1MTvWK/lg.png"
                 alt="Corabo logo"
                 fill
-                style={{objectFit: 'contain'}}
                 priority
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                style={{objectFit: 'contain'}}
             />
         </div>
         <h2 className="text-2xl font-bold mb-2">Bienvenido a Corabo</h2>

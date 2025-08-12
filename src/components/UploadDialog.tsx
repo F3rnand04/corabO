@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useRef, ChangeEvent, useEffect } from 'react';
@@ -239,7 +238,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
                 {isVideofile ? (
                     <video src={galleryImagePreview} className="w-full h-full object-contain" controls />
                 ) : (
-                    <Image src={galleryImagePreview} alt="Vista previa" fill style={{objectFit: 'contain'}} />
+                    <Image src={galleryImagePreview} alt="Vista previa" fill style={{objectFit: 'contain'}} sizes="(max-width: 768px) 100vw, 50vw" />
                 )}
                 <Button 
                   variant="destructive" 

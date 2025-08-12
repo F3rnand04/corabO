@@ -92,8 +92,9 @@ export default function MapPage() {
             src="https://i.postimg.cc/B6N1W2d5/map-placeholder.png"
             alt="Mapa de marcador de posición"
             fill
-            style={{objectFit: 'cover'}}
+            sizes="100vw"
             priority
+            style={{objectFit: 'cover'}}
         />
          {pinPlaced && (
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">

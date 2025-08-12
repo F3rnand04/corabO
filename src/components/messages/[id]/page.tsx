@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -112,11 +111,11 @@ function LocationBubble({ lat, lon }: { lat: number, lon: number }) {
       <div className="w-full max-w-sm rounded-lg border bg-background shadow-md p-0.5 space-y-1 overflow-hidden">
         <div className="relative aspect-video w-full">
            <Image
-              src={`https://placehold.co/400x200.png?text=Mapa`}
+              src={`https://i.postimg.cc/B6N1W2d5/map-placeholder.png`}
               alt="Mapa de ubicación"
               fill
-              style={{objectFit: 'cover'}}
               sizes="(max-width: 640px) 100vw, 384px"
+              style={{objectFit: 'cover'}}
               data-ai-hint="map location"
               className="group-hover:scale-105 transition-transform duration-300"
             />
