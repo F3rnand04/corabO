@@ -57,6 +57,7 @@ export type PublicationOwner = {
     specialty?: string;
     providerType?: 'professional' | 'company';
     username?: string;
+    primaryCategory?: string;
   }
 };
 
@@ -352,7 +353,7 @@ export const GetFeedInputSchema = z.object({
 
 export const GetFeedOutputSchema = z.object({
     publications: z.array(PublicationSchema),
-    lastVisibleDocId: z.string().optional(),
+    lastVisibleDocId: z.string().nullable(),
 });
 
 // Schemas from profile-flow

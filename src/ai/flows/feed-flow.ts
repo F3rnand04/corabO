@@ -20,13 +20,6 @@ export const getFeed = ai.defineFlow(
         const db = getFirestoreDb();
         const publicationsCollection = collection(db, "publications");
 
-        // --- FORENSIC FIX ---
-        // The previous complex query with multiple 'where' clauses was causing index-related errors.
-        // The most robust solution is to perform the simplest possible query:
-        // just order by creation date and paginate. All other filtering (by category, etc.)
-        // will be handled efficiently on the client-side. This eliminates the need for
-        // complex composite indexes and makes the data fetching much more reliable.
-
         const queryConstraints: any[] = [
             orderBy('createdAt', 'desc'),
             limit(limitNum)
@@ -35,7 +28,7 @@ export const getFeed = ai.defineFlow(
         if (startAfterDocId) {
             const startAfterDocSnap = await getDoc(doc(db, "publications", startAfterDocId));
             if (startAfterDocSnap.exists()) {
-                queryConstraints.push(start(startAfterDocSnap));
+                queryConstraints.push(startAfter(startAfterDocSnap));
             }
         }
         
@@ -43,7 +36,7 @@ export const getFeed = ai.defineFlow(
 
         const querySnapshot = await getDocs(publicationsQuery);
         if (querySnapshot.empty) {
-            return { publications: [], lastVisibleDocId: undefined };
+            return { publications: [], lastVisibleDocId: null };
         }
         
         const publications = querySnapshot.docs.map(doc => doc.data() as GalleryImage);
@@ -52,7 +45,7 @@ export const getFeed = ai.defineFlow(
         
         return {
             publications,
-            lastVisibleDocId: lastVisibleDoc?.id,
+            lastVisibleDocId: lastVisibleDoc?.id || null,
         };
     }
 );

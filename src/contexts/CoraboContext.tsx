@@ -42,7 +42,8 @@ interface UserMetrics {
 interface CoraboState {
   currentUser: User | null;
   users: User[];
-  allPublications: GalleryImage[];
+  // DEPRECATED: allPublications is now handled locally in the HomePage component
+  // allPublications: GalleryImage[];
   transactions: Transaction[];
   conversations: Conversation[];
   cart: CartItem[];
@@ -123,7 +124,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
-  const [allPublications, setAllPublications] = useState<GalleryImage[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
 
@@ -236,21 +236,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
                 setUsers(allUsers);
             });
             listeners.current.set('allUsers', allUsersListener);
-            
-            const allPublicationsListener = onSnapshot(
-              query(collection(db, "publications"), orderBy("createdAt", "desc")),
-              (snapshot) => {
-                  const publications = snapshot.docs.map(doc => doc.data() as GalleryImage);
-                  setAllPublications(publications);
-              },
-              (error) => {
-                  console.error("Error fetching all publications:", error);
-                  toast({ variant: "destructive", title: "Error al Cargar Contenido", description: "No se pudo cargar el feed principal." });
-              }
-            );
-            listeners.current.set('allPublications', allPublicationsListener);
 
-            // CORRECTED QUERY FOR TRANSACTIONS
             const transactionsListener = onSnapshot(
                 query(collection(db, "transactions"), where("participantIds", "array-contains", userData.id), orderBy("date", "desc")), 
                 (snapshot) => {
@@ -266,7 +252,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             );
             listeners.current.set('transactions', transactionsListener);
             
-            // CORRECTED QUERY FOR CONVERSATIONS
             const conversationsListener = onSnapshot(
                 query(collection(db, 'conversations'), where('participantIds', 'array-contains', userData.id), orderBy('lastUpdated', 'desc')),
                 (snapshot) => {
@@ -285,7 +270,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             setUsers([]);
             setTransactions([]);
             setConversations([]);
-            setAllPublications([]);
             userCache.current.clear();
             setIsLoadingAuth(false);
         }
@@ -882,7 +866,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const value: CoraboState = {
     currentUser,
     users,
-    allPublications,
     transactions,
     conversations,
     cart,
@@ -966,8 +949,3 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
-
-    
-
-    
-
