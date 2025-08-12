@@ -53,6 +53,7 @@ interface CoraboState {
   isLoadingAuth: boolean;
   deliveryAddress: string;
   exchangeRate: number;
+  userPublications: GalleryImage[]; // New state for publications
   signInWithGoogle: () => void;
   setSearchQuery: (query: string) => void;
   setCategoryFilter: (category: string | null) => void;
@@ -127,6 +128,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [userPublications, setUserPublications] = useState<GalleryImage[]>([]);
 
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   
@@ -286,11 +288,20 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             });
             listeners.current.set('conversations', conversationsListener);
 
+            // New Listener for user's publications
+            const publicationsQuery = query(collection(db, 'publications'), where('providerId', '==', userData.id));
+            const publicationsListener = onSnapshot(publicationsQuery, (snapshot) => {
+                const publications = snapshot.docs.map(doc => doc.data() as GalleryImage);
+                setUserPublications(publications);
+            });
+            listeners.current.set('publications', publicationsListener);
+
         } else {
             setCurrentUser(null);
             setUsers([]);
             setTransactions([]);
             setConversations([]);
+            setUserPublications([]);
             userCache.current.clear();
             setIsLoadingAuth(false);
         }
@@ -938,6 +949,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     isLoadingAuth,
     deliveryAddress,
     exchangeRate,
+    userPublications,
     signInWithGoogle,
     setSearchQuery,
     setCategoryFilter,

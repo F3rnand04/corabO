@@ -25,7 +25,7 @@ import { SubscriptionDialog } from './SubscriptionDialog';
 
 export function ProfileHeader() {
   const { toast } = useToast();
-  const { currentUser, updateUserProfileImage, getUserMetrics, transactions, getAgendaEvents, toggleGps } = useCorabo();
+  const { currentUser, updateUserProfileImage, getUserMetrics, transactions, getAgendaEvents, toggleGps, userPublications } = useCorabo();
   
   const router = useRouter();
   const pathname = usePathname();
@@ -67,8 +67,8 @@ export function ProfileHeader() {
     : currentUser.name;
   const specialty = currentUser.profileSetupData?.specialty || 'Sin especialidad';
 
-  const galleryCount = currentUser.gallery?.filter(p => p.type !== 'product').length || 0;
-  const productCount = currentUser.gallery?.filter(p => p.type === 'product').length || 0;
+  const galleryCount = userPublications.filter(p => p.type !== 'product').length || 0;
+  const productCount = userPublications.filter(p => p.type === 'product').length || 0;
 
   const agendaEvents = getAgendaEvents(transactions);
   const eventDates = agendaEvents.map(e => e.date);
