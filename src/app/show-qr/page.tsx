@@ -27,8 +27,10 @@ export default function ShowQrPage() {
   const manualCode = currentUser.coraboId || 'N/A';
   
   const handleCopyCode = () => {
-    navigator.clipboard.writeText(manualCode);
-    toast({ title: 'Copiado', description: 'Tu código manual ha sido copiado.' });
+    if (manualCode !== 'N/A') {
+      navigator.clipboard.writeText(manualCode);
+      toast({ title: 'Copiado', description: 'Tu código manual ha sido copiado.' });
+    }
   };
 
   return (
@@ -62,7 +64,7 @@ export default function ShowQrPage() {
               <p className="text-sm text-muted-foreground">Si el escaneo falla, el cliente puede usar tu:</p>
               <div className="flex items-center justify-center gap-2 mt-2">
                 <p className="text-2xl font-bold font-mono tracking-widest">{manualCode}</p>
-                <Button variant="ghost" size="icon" onClick={handleCopyCode}><Copy className="w-5 h-5"/></Button>
+                <Button variant="ghost" size="icon" onClick={handleCopyCode} disabled={manualCode === 'N/A'}><Copy className="w-5 h-5"/></Button>
               </div>
             </div>
             
@@ -78,4 +80,3 @@ export default function ShowQrPage() {
     </div>
   );
 }
-
