@@ -237,7 +237,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             });
             listeners.current.set('allUsers', allUsersListener);
             
-            const publicationsListener = onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
+            const publicationsListener = onSnapshot(query(collectionGroup(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
                 const fetchedPublications = snapshot.docs.map(doc => doc.data() as GalleryImage);
                 setAllPublications(fetchedPublications);
             });
