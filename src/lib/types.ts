@@ -203,7 +203,8 @@ export type User = {
     text: string;
     expires: string;
   };
-  gallery?: GalleryImage[]; // This will be deprecated client-side, but kept for now.
+  // DEPRECATED: Gallery is now derived from the global publications collection
+  // gallery?: GalleryImage[];
   profileSetupData?: ProfileSetupData;
   isPaused?: boolean;
   pauseReason?: string;
@@ -386,8 +387,7 @@ export const CreatePublicationInputSchema = z.object({
   description: z.string(),
   imageDataUri: z.string(),
   aspectRatio: z.enum(['square', 'horizontal', 'vertical']),
-  type: z.enum(['image', 'video', 'product']),
-  owner: z.any(), // Sending the denormalized owner data from client
+  type: z.enum(['image', 'video']),
 });
 export type CreatePublicationInput = z.infer<typeof CreatePublicationInputSchema>;
 

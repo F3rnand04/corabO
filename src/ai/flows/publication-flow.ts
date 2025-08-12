@@ -11,8 +11,8 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestoreDb } from '@/lib/firebase-server';
-import { doc, getDoc, setDoc, writeBatch } from 'firebase/firestore';
-import type { GalleryImage, Product, User, PublicationOwner } from '@/lib/types';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import type { GalleryImage, PublicationOwner, User } from '@/lib/types';
 import { CreatePublicationInputSchema, CreateProductInputSchema } from '@/lib/types';
 
 // --- Create Publication Flow ---

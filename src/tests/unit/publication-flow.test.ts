@@ -1,4 +1,5 @@
 
+
 import { createPublication, createProduct } from '@/ai/flows/publication-flow';
 import { getFirestoreDb } from '@/lib/firebase-server';
 import { doc, getDoc, setDoc, writeBatch } from 'firebase/firestore';
@@ -33,19 +34,24 @@ describe('Publication and Product Flow - Unit Tests', () => {
     // incluso si `profileSetupData` es nulo o indefinido, la función no falle. En su lugar, debe
     // recurrir a valores de respaldo seguros.
     
-     const ownerDataInput: PublicationOwner = {
+     const userDataInput: User = {
         id: 'user_no_setup',
         name: 'Generic User',
         profileImage: 'generic.png',
         verified: false,
         isGpsActive: false,
         reputation: 0,
+        type: 'provider',
+        email: 'generic@test.com',
+        phone: '',
+        emailValidated: true,
+        phoneValidated: false,
         // `profileSetupData` se omite deliberadamente.
         profileSetupData: {},
     };
     
     // Arrange: Simulamos que `getDoc` devuelve un usuario válido
-    mockedGetDoc.mockResolvedValue({ exists: () => true, data: () => ownerDataInput });
+    mockedGetDoc.mockResolvedValue({ exists: () => true, data: () => userDataInput });
 
 
     // Act: Ejecutamos el flujo.
@@ -55,15 +61,14 @@ describe('Publication and Product Flow - Unit Tests', () => {
       imageDataUri: 'data:image/png;base64,test',
       aspectRatio: 'square' as const,
       type: 'image' as const,
-      owner: ownerDataInput,
     });
 
-    // Assert: Verificamos que la llamada a `batch.set` para la publicación pública
+    // Assert: Verificamos que la llamada a `setDoc` para la publicación pública
     const publicPublicationCall = mockedSetDoc.mock.calls.find(call => call[0].path.startsWith('publications/'));
     const ownerDataResult: PublicationOwner = publicPublicationCall[1].owner;
 
-    expect(ownerDataResult.name).toBe(ownerDataInput.name);
-    expect(ownerDataResult.profileImage).toBe(ownerDataInput.profileImage);
+    expect(ownerDataResult.name).toBe(userDataInput.name);
+    expect(ownerDataResult.profileImage).toBe(userDataInput.profileImage);
     expect(ownerDataResult.verified).toBe(false);
   });
 
@@ -100,7 +105,7 @@ describe('Publication and Product Flow - Unit Tests', () => {
         name: 'Jane Doe',
         profileImage: 'http://example.com/janedoe.jpg',
         type: 'provider', email: 'j@d.com', phone: '', emailValidated: true, phoneValidated: false, isGpsActive: true, reputation: 4, verified: true,
-        profileSetupData: { username: 'jane_doe_shop', specialty: 'Product Seller', providerType: 'company' }
+        profileSetupData: { username: 'jane_doe_shop', useUsername: true, specialty: 'Product Seller', providerType: 'company', primaryCategory: 'Test' }
     };
     mockedGetDoc.mockResolvedValue({ exists: () => true, data: () => specificUser });
 

@@ -42,7 +42,6 @@ interface UserMetrics {
 interface CoraboState {
   currentUser: User | null;
   users: User[];
-  userPublications: GalleryImage[];
   allPublications: GalleryImage[];
   transactions: Transaction[];
   conversations: Conversation[];
@@ -124,7 +123,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
-  const [userPublications, setUserPublications] = useState<GalleryImage[]>([]);
   const [allPublications, setAllPublications] = useState<GalleryImage[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -201,7 +199,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         isSubscribed: false,
         isTransactionsActive: false,
         idVerificationStatus: 'rejected',
-        gallery: [],
       };
       
       await setDoc(userDocRef, newUser);
@@ -227,10 +224,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
                 if (doc.exists()) {
                     const freshUserData = doc.data() as User;
                     setCurrentUser(freshUserData);
-                    setUserPublications(freshUserData.gallery || []);
                 } else {
                     setCurrentUser(null);
-                    setUserPublications([]);
                 }
                  setIsLoadingAuth(false);
             });
@@ -290,7 +285,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             setTransactions([]);
             setConversations([]);
             setAllPublications([]);
-            setUserPublications([]);
             userCache.current.clear();
             setIsLoadingAuth(false);
         }
@@ -610,9 +604,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return createCampaignFlow({ ...data, userId: currentUser.id });
   };
 
-  const createPublication = async (publicationData: CreatePublicationInput) => {
+  const createPublication = async (data: CreatePublicationInput) => {
     if (!currentUser) throw new Error("User not authenticated");
-    await createPublicationFlow(publicationData);
+    await createPublicationFlow(data);
   };
   
   const createProduct = async (data: CreateProductInput) => {
@@ -705,8 +699,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const removeGalleryImage = async (userId: string, imageId: string) => {
     if (!currentUser) return;
-    const updatedGallery = (currentUser.gallery || []).filter(img => img.id !== imageId);
-    await updateUser(userId, { gallery: updatedGallery });
+    // This now correctly deletes from the backend collection directly.
+    const db = getFirestoreDb();
+    await deleteDoc(doc(db, 'publications', imageId));
     toast({ title: "Publicación eliminada" });
   };
   
@@ -887,7 +882,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const value: CoraboState = {
     currentUser,
     users,
-    userPublications,
     allPublications,
     transactions,
     conversations,

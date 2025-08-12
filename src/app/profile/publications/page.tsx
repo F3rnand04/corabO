@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { useCorabo } from '@/contexts/CoraboContext';
@@ -12,13 +12,19 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function PublicationsPage() {
   const router = useRouter();
-  const { currentUser } = useCorabo();
+  const { currentUser, allPublications } = useCorabo();
   const { toast } = useToast();
 
   const [isLoading, setIsLoading] = useState(true);
 
   // Directly use the gallery from the currentUser object
-  const gallery = currentUser?.gallery || [];
+  const gallery = useMemo(() => {
+    if (!currentUser) return [];
+    return allPublications
+      .filter(p => p.providerId === currentUser.id && p.type !== 'product')
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [currentUser, allPublications]);
+
 
   useEffect(() => {
     // We are no longer fetching, just checking if the currentUser is loaded.
@@ -38,7 +44,7 @@ export default function PublicationsPage() {
   return (
     <>
         <ProfileGalleryView
-            gallery={gallery.filter(g => g.type !== 'product')}
+            gallery={gallery}
             owner={currentUser}
             isLoading={isLoading}
         />
