@@ -36,7 +36,7 @@ import { Input } from '@/components/ui/input';
 
 export default function CompanyProfilePage() {
   const params = useParams();
-  const { addContact, isContact, transactions, createAppointmentRequest, currentUser, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, sendMessage, toggleGps, deliveryAddress, setDeliveryAddress, getUserMetrics, fetchUser, allPublications } = useCorabo();
+  const { addContact, isContact, transactions, createAppointmentRequest, currentUser, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, sendMessage, toggleGps, deliveryAddress, setDeliveryAddress, getUserMetrics, fetchUser, allPublications, getDistanceToProvider } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -255,7 +255,7 @@ export default function CompanyProfilePage() {
         : provider.name;
     const specialty = provider.profileSetupData?.specialty || "Especialidad de la Empresa";
   
-  const displayDistance = provider.profileSetupData?.showExactLocation ? "A menos de 1km" : "500m - 1km";
+  const distance = getDistanceToProvider(provider);
   
   const { reputation, effectiveness, responseTime } = getUserMetrics(provider.id, transactions);
   const isNewProvider = responseTime === 'Nuevo';
@@ -268,7 +268,7 @@ export default function CompanyProfilePage() {
     responseTime: responseTime,
     publications: gallery.length,
     completedJobs: transactions.filter(t => t.providerId === provider.id && (t.status === 'Pagado' || t.status === 'Resuelto')).length,
-    distance: displayDistance,
+    distance: distance,
     profileImage: provider.profileImage,
     mainImage: gallery.length > 0 ? gallery[currentImageIndex].src : "https://placehold.co/600x400.png",
     gallery: gallery
@@ -593,7 +593,7 @@ export default function CompanyProfilePage() {
                   )}
                   
                    <div className="flex flex-col items-center cursor-pointer" onClick={() => provider.profileSetupData?.hasPhysicalLocation && router.push('/map')}>
-                      <MapPin className={cn("w-5 h-5", gpsReady && provider.isGpsActive ? "text-green-500" : "text-muted-foreground")} />
+                      <MapPin className={cn("w-5 h-5", provider.isGpsActive ? "text-green-500" : "text-muted-foreground")} />
                       <span className="text-xs text-muted-foreground">{profileData.distance}</span>
                    </div>
               </div>

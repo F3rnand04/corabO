@@ -37,6 +37,11 @@ interface UserMetrics {
     responseTime: string; // e.g., "00-05 min", "Nuevo"
 }
 
+interface GeolocationCoords {
+    latitude: number;
+    longitude: number;
+}
+
 
 interface CoraboState {
   currentUser: User | null;
@@ -112,6 +117,7 @@ interface CoraboState {
   getUserMetrics: (userId: string, transactions: Transaction[]) => UserMetrics;
   fetchUser: (userId: string) => Promise<User | null>;
   acceptDelivery: (transactionId: string) => void;
+  getDistanceToProvider: (provider: User) => string | null;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -136,6 +142,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [isGpsActive, setIsGpsActive] = useState(true);
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [exchangeRate, setExchangeRate] = useState(36.54);
+  const [currentUserLocation, setCurrentUserLocation] = useState<GeolocationCoords | null>(null);
   
   const app = getFirebaseApp();
   const auth = getAuth(app);
@@ -194,7 +201,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         isInitialSetupComplete: false,
         credicoraLevel: 1,
         credicoraLimit: 150,
-        profileSetupData: {},
+        profileSetupData: {
+            location: "10.4806,-66.9036" // Default to Caracas
+        },
         isSubscribed: false,
         isTransactionsActive: false,
         idVerificationStatus: 'rejected',
@@ -242,37 +251,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             });
             listeners.current.set('publications', publicationsListener);
 
-            // const transactionsQuery = query(
-            //     collectionGroup(db, "transactions"), 
-            //     where("participantIds", "array-contains", userData.id),
-            //     orderBy("date", "desc")
-            // );
-
-            // const transactionsListener = onSnapshot(transactionsQuery, (snapshot) => {
-            //     const userTransactions = snapshot.docs.map(doc => doc.data() as Transaction);
-            //     setTransactions(userTransactions);
-            //     const activeCartTx = userTransactions.find(tx => tx.status === 'Carrito Activo' && tx.clientId === userData.id);
-            //     setCart(activeCartTx?.details.items || []);
-            // }, (error) => {
-            //     console.error("Error fetching transactions: ", error);
-            //     toast({ variant: 'destructive', title: 'Error de BD', description: 'No se pudieron cargar las transacciones. Esto puede ser un problema de índices.' });
-            // });
-            // listeners.current.set('transactions', transactionsListener);
-            
-            // const conversationsQuery = query(
-            //     collectionGroup(db, 'conversations'), 
-            //     where('participantIds', 'array-contains', userData.id),
-            //     orderBy('lastUpdated', 'desc')
-            // );
-            // const conversationsListener = onSnapshot(conversationsQuery, (snapshot) => {
-            //     const userConversations = snapshot.docs.map(doc => doc.data() as Conversation);
-            //     setConversations(userConversations);
-            // }, (error) => {
-            //     console.error("Error fetching conversations:", error);
-            //     toast({ variant: 'destructive', title: 'Error de BD', description: 'No se pudieron cargar las conversaciones. Esto puede ser un problema de índices.' });
-            // });
-            // listeners.current.set('conversations', conversationsListener);
-
         } else {
             setCurrentUser(null);
             setUsers([]);
@@ -289,6 +267,25 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         cleanup();
     };
   }, [auth, handleUserCreation, toast]);
+
+  useEffect(() => {
+    if (currentUser?.isGpsActive) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setCurrentUserLocation({
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.error("Error getting geolocation: ", error);
+          toast({ variant: "destructive", title: "Error de Ubicación", description: "No se pudo obtener tu ubicación."});
+        }
+      );
+    } else {
+      setCurrentUserLocation(null);
+    }
+  }, [currentUser?.isGpsActive, toast]);
 
 
   const signInWithGoogle = async () => {
@@ -446,6 +443,30 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       title: `GPS ${newGpsState ? 'Habilitado' : 'Deshabilitado'}`,
       description: newGpsState ? 'Tu ubicación ahora es visible para otros.' : 'Ya no estás compartiendo tu ubicación.',
     });
+  };
+
+  const getDistanceToProvider = (provider: User): string | null => {
+    if (!currentUserLocation || !provider.profileSetupData?.location) return null;
+    
+    const [lat2, lon2] = provider.profileSetupData.location.split(',').map(Number);
+    if(isNaN(lat2) || isNaN(lon2)) return null;
+
+    const distance = haversineDistance(
+      currentUserLocation.latitude,
+      currentUserLocation.longitude,
+      lat2,
+      lon2
+    );
+
+    if (provider.profileSetupData?.showExactLocation) {
+      if(distance < 1) return `${(distance * 1000).toFixed(0)} m`;
+      return `${distance.toFixed(1)} km`;
+    } else {
+        // Simulate an approximated distance
+        const approxDistance = Math.max(0.5, distance - (Math.random() * (distance * 0.2)));
+        if (approxDistance < 1) return `~${((approxDistance * 1000) / 100).toFixed(0)}00 m`;
+        return `~${approxDistance.toFixed(0)} km`;
+    }
   };
 
   const sendMessage = (recipientId: string, text: string, createOnly: boolean = false): string => {
@@ -946,6 +967,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     fetchUser,
     setDeliveryAddress,
     acceptDelivery,
+    getDistanceToProvider,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;

@@ -25,7 +25,7 @@ interface PublicationCardProps {
 }
 
 export function PublicationCard({ publication, className }: PublicationCardProps) {
-    const { addContact, isContact, sendMessage, currentUser, getUserMetrics, transactions, addToCart } = useCorabo();
+    const { addContact, isContact, sendMessage, currentUser, getUserMetrics, transactions, addToCart, getDistanceToProvider } = useCorabo();
     const router = useRouter();
     const { toast } = useToast();
     
@@ -54,6 +54,8 @@ export function PublicationCard({ publication, className }: PublicationCardProps
     const profileLink = `/companies/${owner.id}`;
     const { reputation, effectiveness, responseTime } = getUserMetrics(owner.id, transactions);
     const isNewProvider = responseTime === 'Nuevo';
+    const distance = getDistanceToProvider(owner as User);
+
 
     useEffect(() => {
         if (!currentUser || !owner) return;
@@ -178,7 +180,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
                     </Button>
                     <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                         <MapPin className={cn("h-3 w-3", owner.isGpsActive && "text-green-500")} />
-                        <span>~1.5 km</span>
+                        <span>{distance || `~1.5 km`}</span>
                     </div>
                 </div>
             </div>
