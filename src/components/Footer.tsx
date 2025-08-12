@@ -23,33 +23,17 @@ export function Footer() {
   }
 
   const isProvider = currentUser.type === 'provider';
-  const isClient = currentUser.type === 'client';
   const isProfilePage = pathname.startsWith('/profile');
 
   const handleCentralButtonClick = () => {
-    if (isClient) {
-      router.push('/scan-qr');
-    } else if (isProvider) {
-       if(isProfilePage){
-         setIsUploadOpen(true);
-       } else {
-         router.push('/show-qr');
-       }
+    if (isProvider && isProfilePage) {
+       setIsUploadOpen(true);
     } else {
-      // Default action for repartidor or other types
-      router.push('/search');
+       router.push('/show-qr');
     }
   };
   
-  // Define the icon based on context
-  let CentralButtonIcon;
-  if (isClient) {
-    CentralButtonIcon = QrCode;
-  } else if (isProvider && isProfilePage) {
-    CentralButtonIcon = Upload;
-  } else {
-    CentralButtonIcon = QrCode; // Provider not on profile OR Repartidor
-  }
+  const CentralButtonIcon = isProvider && isProfilePage ? Upload : QrCode;
 
 
   return (
