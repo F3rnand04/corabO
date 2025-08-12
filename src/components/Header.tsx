@@ -151,6 +151,10 @@ export function Header() {
                     <FileText className="mr-2 h-4 w-4" />
                     <span>Cotizar</span>
                   </DropdownMenuItem>
+                   <DropdownMenuItem onClick={() => router.push('/contacts')}>
+                    <Contact className="mr-2 h-4 w-4" />
+                    <span>Contactos</span>
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <ThemeSwitcher />
                    <DropdownMenuItem onClick={() => router.push('/policies')}>

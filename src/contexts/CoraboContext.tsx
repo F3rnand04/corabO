@@ -22,9 +22,9 @@ import { getExchangeRate } from '@/ai/flows/exchange-rate-flow';
 import { sendSmsVerificationCodeFlow, verifySmsCodeFlow } from '@/ai/flows/sms-flow';
 import { getFeed as getFeedFlow } from '@/ai/flows/feed-flow';
 import { createProduct as createProductFlow, createPublication as createPublicationFlow } from '@/ai/flows/publication-flow';
-import { getProfileGallery as getProfileGalleryFlow, getProfileProducts as getProfileProductsFlow } from '@/ai/flows/profile-flow';
 import type { GetFeedInputSchema, GetFeedOutputSchema, GetProfileGalleryInputSchema, GetProfileGalleryOutputSchema, GetProfileProductsInputSchema, GetProfileProductsOutputSchema } from '@/lib/types';
 import { z } from 'zod';
+import { haversineDistance } from '@/lib/utils';
 
 
 interface DailyQuote {
@@ -671,7 +671,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
           batch.update(doc(db, 'users', currentUser.id), { credicoraLimit: newCredicoraLimit });
       }
 
-      batch.update(originalTxRef, updates as any);
       batch.commit().then(() => {
           setCart([]);
           toast({ title: "Pedido realizado", description: "Tu pedido ha sido enviado al proveedor." });
@@ -970,4 +969,3 @@ export type { Transaction };
     
 
     
-

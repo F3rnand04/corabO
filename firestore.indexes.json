@@ -1,5 +1,4 @@
 
-
 {
   "indexes": [
     {
@@ -12,7 +11,7 @@
     },
     {
       "collectionGroup": "conversations",
-      "queryScope": "COLLECTION",
+      "queryScope": "COLLECTION_GROUP",
       "fields": [
         { "fieldPath": "participantIds", "arrayConfig": "CONTAINS" },
         { "fieldPath": "lastUpdated", "order": "DESCENDING" }
@@ -20,7 +19,7 @@
     },
     {
       "collectionGroup": "transactions",
-      "queryScope": "COLLECTION",
+      "queryScope": "COLLECTION_GROUP",
       "fields": [
         { "fieldPath": "participantIds", "arrayConfig": "CONTAINS" },
         { "fieldPath": "date", "order": "DESCENDING" }
@@ -29,8 +28,3 @@
   ],
   "fieldOverrides": []
 }
-
-    
-
-    
-
