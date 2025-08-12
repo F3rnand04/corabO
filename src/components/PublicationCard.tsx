@@ -44,6 +44,9 @@ export function PublicationCard({ publication, className }: PublicationCardProps
     
     const isProduct = publication.type === 'product';
     const productDetails = publication.productDetails;
+    const activeCartTx = transactions.find(tx => tx.status === 'Carrito Activo' && tx.providerId === publication.providerId);
+    const cartItem = activeCartTx?.details.items?.find(item => item.product.id === publication.id);
+    const quantityInCart = cartItem?.quantity || 0;
 
     // Simulate distance check for enabling cart functionality
     const isWithinDeliveryRange = true; // Assuming true for prototype purposes

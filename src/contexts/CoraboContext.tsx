@@ -339,60 +339,99 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const addToCart = (product: Product, quantity: number) => {
     if (!currentUser) return;
     if (!currentUser.isTransactionsActive) {
-        toast({
-            variant: "destructive",
-            title: "Acción Requerida",
-            description: "Debes activar tu registro de transacciones para poder comprar."
-        });
-        return;
+      toast({
+        variant: "destructive",
+        title: "Acción Requerida",
+        description: "Debes activar tu registro de transacciones para poder comprar."
+      });
+      return;
     }
     
-    const provider = users.find(u => u.id === product.providerId);
-    const isProviderTransactionReady = provider?.isTransactionsActive; 
-
-    if (!isProviderTransactionReady) {
-        toast({
+    fetchUser(product.providerId).then(provider => {
+        if (!provider?.isTransactionsActive) {
+          toast({
             variant: "destructive",
             title: "Proveedor no disponible",
             description: "Este proveedor no tiene las transacciones activas en este momento."
-        });
-        return;
-    }
+          });
+          return;
+        }
 
-    if (cart.length > 0 && cart[0].product.providerId !== product.providerId) {
-        toast({
+        if (cart.length > 0 && cart[0].product.providerId !== product.providerId) {
+          toast({
             variant: "destructive",
             title: "Carrito Multi-tienda",
-            description: "No puedes añadir productos de diferentes tiendas en un mismo carrito. Finaliza esta compra primero."
+            description: "No puedes añadir productos de diferentes tiendas. Finaliza esta compra primero."
+          });
+          return;
+        }
+        
+        // --- CORE LOGIC FIX ---
+        // If it's the first item, create the "Carrito Activo" transaction immediately.
+        if (cart.length === 0) {
+            const db = getFirestoreDb();
+            const newTx: Transaction = {
+                id: `cart-${currentUser.id}-${Date.now()}`,
+                type: 'Compra',
+                status: 'Carrito Activo',
+                date: new Date().toISOString(),
+                amount: 0, // Amount will be updated on checkout
+                clientId: currentUser.id,
+                providerId: product.providerId,
+                participantIds: [currentUser.id, product.providerId],
+                details: {
+                    items: [{ product, quantity }],
+                }
+            };
+            setDoc(doc(db, 'transactions', newTx.id), newTx);
+        }
+
+        setCart((prevCart) => {
+          const existingItem = prevCart.find((item) => item.product.id === product.id);
+          const newCart = existingItem
+            ? prevCart.map((item) => item.product.id === product.id ? { ...item, quantity: item.quantity + quantity } : item)
+            : [...prevCart, { product, quantity }];
+
+          const activeCartTx = transactions.find(tx => tx.status === 'Carrito Activo' && tx.clientId === currentUser.id && tx.providerId === product.providerId);
+          if (activeCartTx) {
+              const db = getFirestoreDb();
+              updateDoc(doc(db, 'transactions', activeCartTx.id), { 'details.items': newCart });
+          }
+
+          return newCart;
         });
-        return;
-    }
-    
-    setCart((prevCart) => {
-      const existingItem = prevCart.find((item) => item.product.id === product.id);
-      if (existingItem) {
-        return prevCart.map((item) =>
-          item.product.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
-        );
-      }
-      return [...prevCart, { product, quantity }];
     });
   };
   
   const updateCartQuantity = (productId: string, quantity: number) => {
     if (!currentUser || !currentUser.isTransactionsActive) return;
+    
     setCart((prevCart) => {
+      let updatedCart;
       if (quantity <= 0) {
-        return prevCart.filter((item) => item.product.id !== productId);
+        updatedCart = prevCart.filter((item) => item.product.id !== productId);
+      } else {
+        updatedCart = prevCart.map((item) =>
+          item.product.id === productId ? { ...item, quantity } : item
+        );
       }
-      return prevCart.map((item) =>
-        item.product.id === productId ? { ...item, quantity } : item
-      );
+      
+      const activeCartTx = transactions.find(tx => tx.status === 'Carrito Activo' && tx.clientId === currentUser.id);
+      if(activeCartTx) {
+          const db = getFirestoreDb();
+          if (updatedCart.length === 0) {
+              deleteDoc(doc(db, 'transactions', activeCartTx.id));
+          } else {
+              updateDoc(doc(db, 'transactions', activeCartTx.id), { 'details.items': updatedCart });
+          }
+      }
+
+      return updatedCart;
     });
   };
 
   const removeFromCart = (productId: string) => {
-    setCart((prevCart) => prevCart.filter((item) => item.product.id !== productId));
+    updateCartQuantity(productId, 0);
   };
   
   const getCartItemQuantity = (productId: string) => {
@@ -629,6 +668,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
               items: cart,
               delivery: withDelivery,
               deliveryCost: withDelivery ? getDeliveryCost() : 0,
+              deliveryLocation: withDelivery && deliveryAddress ? { lat: 0, lon: 0, address: deliveryAddress } : undefined, // Placeholder lat/lon
               paymentMethod: useCredicora ? 'credicora' : 'direct',
           }
       };
