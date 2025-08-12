@@ -282,7 +282,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         unsubscribeAuth();
         cleanup();
     };
-  }, [auth, handleUserCreation, toast]);
+  }, [auth, handleUserCreation]);
 
   useEffect(() => {
     if (currentUser?.isGpsActive) {
@@ -921,6 +921,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         status: 'pendingAmount',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        participantIds: [currentUser.id, providerId],
     };
     await setDoc(sessionRef, newSession);
     return sessionId;
