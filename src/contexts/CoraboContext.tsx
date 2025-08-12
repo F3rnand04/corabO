@@ -82,7 +82,7 @@ interface CoraboState {
   validateEmail: (userId: string, emailToValidate: string) => Promise<boolean>;
   sendPhoneVerification: (userId: string, phone: string) => Promise<void>;
   verifyPhoneCode: (userId: string, code: string) => Promise<boolean>;
-  updateFullProfile: (userId: string, data: ProfileSetupData, profileType: 'client' | 'provider') => Promise<void>;
+  updateFullProfile: (userId: string, data: ProfileSetupData, profileType: 'client' | 'provider' | 'repartidor') => Promise<void>;
   completeInitialSetup: (userId: string, data: { lastName: string; idNumber: string; birthDate: string }) => Promise<void>;
   subscribeUser: (userId: string, planName: string, amount: number) => void;
   activateTransactions: (userId: string, paymentDetails: any) => void;
@@ -112,6 +112,7 @@ interface CoraboState {
   getFeed: (params: z.infer<typeof GetFeedInputSchema>) => Promise<z.infer<typeof GetFeedOutputSchema>>;
   getProfileGallery: (params: z.infer<typeof GetProfileGalleryInputSchema>) => Promise<z.infer<typeof GetProfileGalleryOutputSchema>>;
   getProfileProducts: (params: z.infer<typeof GetProfileProductsInputSchema>) => Promise<z.infer<typeof GetProfileProductsOutputSchema>>;
+  acceptDelivery: (transactionId: string) => void;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -661,7 +662,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       const totalAmount = getCartTotal() + (withDelivery ? getDeliveryCost() : 0);
       
       const updates: Partial<Transaction> = {
-          status: 'Finalizado - Pendiente de Pago',
+          status: withDelivery ? 'Buscando Repartidor' : 'Finalizado - Pendiente de Pago',
           amount: totalAmount,
           details: {
               ...transactions.find(t => t.id === transactionId)?.details,
@@ -714,6 +715,17 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
           toast({ title: "Pedido realizado", description: "Tu pedido ha sido enviado al proveedor." });
           router.push('/transactions');
       });
+  };
+
+  const acceptDelivery = (transactionId: string) => {
+    if (!currentUser || currentUser.type !== 'repartidor') return;
+    const db = getFirestoreDb();
+    const txRef = doc(db, 'transactions', transactionId);
+    updateDoc(txRef, {
+        status: 'En Reparto',
+        'details.deliveryProviderId': currentUser.id,
+    });
+    toast({ title: "¡Pedido Aceptado!", description: "El proveedor ha sido notificado. ¡A entregar!" });
   };
 
   const requestService = (service: Service) => {};
@@ -791,11 +803,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateFullProfile = async (userId: string, data: ProfileSetupData, profileType: 'client' | 'provider') => {
+  const updateFullProfile = async (userId: string, data: ProfileSetupData, profileType: 'client' | 'provider' | 'repartidor') => {
     if (!currentUser) return;
     
     const wasClient = currentUser.type === 'client';
-    const isNowProvider = profileType === 'provider';
+    const isNowProviderOrRepartidor = profileType === 'provider' || profileType === 'repartidor';
     
     const updates: Partial<User> = {
         profileSetupData: data,
@@ -804,8 +816,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     
     await updateUser(userId, updates);
     
-    // Centrally trigger welcome notification from the context after the state has been successfully updated
-    if (wasClient && isNowProvider) {
+    if (wasClient && isNowProviderOrRepartidor) {
       NotificationFlows.sendWelcomeToProviderNotification({ userId });
     }
   };
@@ -984,6 +995,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     getFeed,
     getProfileGallery,
     getProfileProducts,
+    acceptDelivery,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;

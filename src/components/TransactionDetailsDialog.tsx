@@ -200,6 +200,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
     'Finalizado - Pendiente de Pago': { icon: ClipboardCheck, color: 'bg-orange-500' },
     'Pendiente de Confirmación del Cliente': { icon: ClipboardCheck, color: 'bg-yellow-500' },
     'Pago Enviado - Esperando Confirmación': { icon: Banknote, color: 'bg-blue-500' },
+    'Buscando Repartidor': { icon: Truck, color: 'bg-yellow-500' },
     'En Reparto': { icon: Truck, color: 'bg-blue-500' },
     'Resuelto': { icon: CheckCircle, color: 'bg-green-500' },
   };
@@ -422,9 +423,9 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
                  <Button variant="outline" onClick={() => startDispute(transaction.id)} disabled={transaction.status === 'En Disputa'}>
                     <ShieldAlert className="mr-2 h-4 w-4" /> Iniciar Disputa
                  </Button>
-                 {isProvider && transaction.type === "Compra" && transaction.details.deliveryLocation && (
-                    <Button variant="outline" onClick={handleSendToDelivery}>
-                        <Send className="mr-2 h-4 w-4"/> Enviar a Repartidor
+                 {isProvider && transaction.type === "Compra" && transaction.details.deliveryLocation && transaction.status === 'Buscando Repartidor' && (
+                    <Button variant="outline" onClick={handleSendToDelivery} disabled>
+                        <Send className="mr-2 h-4 w-4"/> Notificar a Repartidor
                     </Button>
                  )}
             </div>
