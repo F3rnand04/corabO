@@ -33,7 +33,8 @@ export default function HomePage() {
       results = results.filter(p => 
           p.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           p.owner?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.owner?.profileSetupData?.specialty?.toLowerCase().includes(searchQuery.toLowerCase())
+          p.owner?.profileSetupData?.specialty?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (p.type === 'product' && p.productDetails?.name.toLowerCase().includes(searchQuery.toLowerCase()))
       );
     }
 

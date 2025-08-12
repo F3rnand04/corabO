@@ -237,29 +237,20 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             });
             listeners.current.set('currentUser', userListener);
 
-            // Listener for all users to build the main feed
+            // Listener for all users (for populating owner data in cards)
             const allUsersListener = onSnapshot(collection(db, 'users'), (snapshot) => {
                 const allUsers = snapshot.docs.map(doc => doc.data() as User);
                 setUsers(allUsers);
-                
-                // Regenerate allPublications whenever users data changes
-                const publications = allUsers.flatMap(u => 
-                    (u.gallery || []).map(p => ({
-                        ...p,
-                        owner: { // Denormalize owner data for the card
-                            id: u.id,
-                            name: u.name,
-                            profileImage: u.profileImage,
-                            verified: u.verified,
-                            isGpsActive: u.isGpsActive,
-                            reputation: u.reputation,
-                            profileSetupData: u.profileSetupData,
-                        }
-                    }))
-                ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-                setAllPublications(publications);
             });
             listeners.current.set('allUsers', allUsersListener);
+
+            // Fetch main feed using the dedicated flow
+            getFeedFlow({}).then(data => {
+                setAllPublications(data.publications);
+            }).catch(error => {
+                console.error("Error fetching main feed:", error);
+                toast({ variant: "destructive", title: "Error al Cargar Contenido", description: "No se pudo cargar el feed principal." });
+            });
 
 
             const transactionsListener = onSnapshot(query(collection(db, 'transactions'), where('participantIds', 'array-contains', userData.id)), (snapshot) => {
@@ -294,7 +285,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         unsubscribeAuth();
         cleanup();
     };
-  }, [auth, handleUserCreation]);
+  }, [auth, handleUserCreation, toast]);
 
 
   const signInWithGoogle = async () => {
@@ -608,51 +599,13 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     if (!currentUser) throw new Error("User not authenticated");
     const newPublication = { ...data, owner: undefined }; // Remove owner before sending to flow
     await createPublicationFlow(newPublication);
-    // Optimistic update
-    if (currentUser) {
-        const fullNewPublication = {
-            id: `pub-${Date.now()}`,
-            providerId: data.userId,
-            createdAt: new Date().toISOString(),
-            ...newPublication,
-            owner: data.owner
-        };
-        const updatedGallery = [...(currentUser.gallery || []), fullNewPublication];
-        await updateUser(currentUser.id, { gallery: updatedGallery });
-    }
+    // Optimistic update is no longer needed here as the feed re-fetches
   };
   
   const createProduct = async (data: CreateProductInput) => {
     if (!currentUser) throw new Error("User not authenticated");
-    const newProductId = await createProductFlow(data);
-    // Optimistic update
-    if (currentUser) {
-        const ownerData: PublicationOwner = {
-            id: currentUser.id,
-            name: currentUser.profileSetupData?.useUsername ? (currentUser.profileSetupData.username ?? currentUser.name) : currentUser.name,
-            profileImage: currentUser.profileImage ?? '',
-            verified: currentUser.verified ?? false,
-            isGpsActive: currentUser.isGpsActive ?? false,
-            reputation: currentUser.reputation ?? 0,
-        };
-        const newProductPublication: GalleryImage = {
-            id: newProductId,
-            providerId: data.userId,
-            type: 'product',
-            src: data.imageDataUri,
-            alt: data.name,
-            description: data.description,
-            createdAt: new Date().toISOString(),
-            productDetails: {
-              name: data.name,
-              price: data.price,
-              category: currentUser.profileSetupData?.primaryCategory ?? 'General',
-            },
-            owner: ownerData,
-        };
-        const updatedGallery = [...(currentUser.gallery || []), newProductPublication];
-        await updateUser(currentUser.id, { gallery: updatedGallery });
-    }
+    await createProductFlow(data);
+    // Optimistic update is no longer needed here as the feed re-fetches
   };
 
   const checkout = (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {

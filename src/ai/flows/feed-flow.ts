@@ -16,7 +16,7 @@ export const getFeed = ai.defineFlow(
         inputSchema: GetFeedInputSchema,
         outputSchema: GetFeedOutputSchema,
     },
-    async ({ limitNum = 5, startAfterDocId }) => {
+    async ({ limitNum = 10, startAfterDocId }) => {
         const db = getFirestoreDb();
         const publicationsCollection = collection(db, "publications");
 
@@ -35,7 +35,7 @@ export const getFeed = ai.defineFlow(
         if (startAfterDocId) {
             const startAfterDocSnap = await getDoc(doc(db, "publications", startAfterDocId));
             if (startAfterDocSnap.exists()) {
-                queryConstraints.push(startAfter(startAfterDocSnap));
+                queryConstraints.push(start(startAfterDocSnap));
             }
         }
         
