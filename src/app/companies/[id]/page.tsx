@@ -6,11 +6,11 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, MessageCircle, CheckCircle, Flag, Package, Hand, ShoppingCart, Plus, Minus, X, Truck, AlertTriangle, Loader2 } from 'lucide-react';
+import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, MessageCircle, CheckCircle, Flag, Package, Hand, ShoppingCart, Plus, Minus, X, Truck, AlertTriangle, Loader2, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { useState, TouchEvent, useEffect, useCallback } from 'react';
+import { useState, TouchEvent, useEffect, useCallback, useMemo } from 'react';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
 import type { User, GalleryImage, Product, Transaction, AppointmentRequest } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -32,6 +32,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { credicoraLevels } from '@/lib/types';
 import { ActivationWarning } from '@/components/ActivationWarning';
 import { getProfileGallery, getProfileProducts } from '@/ai/flows/profile-flow';
+import { Input } from '@/components/ui/input';
 
 export default function CompanyProfilePage() {
   const params = useParams();
@@ -43,6 +44,7 @@ export default function CompanyProfilePage() {
   const [providerGallery, setProviderGallery] = useState<GalleryImage[]>([]);
   const [providerProducts, setProviderProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [catalogSearchQuery, setCatalogSearchQuery] = useState('');
 
   const loadProviderData = useCallback(async () => {
     const providerId = params.id as string;
@@ -77,6 +79,11 @@ export default function CompanyProfilePage() {
   useEffect(() => {
     loadProviderData();
   }, [loadProviderData]);
+
+  const filteredProducts = useMemo(() => {
+    if (!catalogSearchQuery) return providerProducts;
+    return providerProducts.filter(p => p.name.toLowerCase().includes(catalogSearchQuery.toLowerCase()));
+  }, [providerProducts, catalogSearchQuery]);
   
   const isDeliveryOnly = provider?.profileSetupData?.isOnlyDelivery || false;
   const providerAcceptsCredicora = provider?.profileSetupData?.acceptsCredicora || false;
@@ -622,11 +629,19 @@ export default function CompanyProfilePage() {
                {isProductProvider ? (
                   <div>
                       <div className="p-4 border-b">
-                        <h3 className="text-lg font-semibold text-center flex items-center justify-center gap-2"><Package className='w-5 h-5'/> Catálogo de Productos</h3>
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                          <Input 
+                            placeholder="Buscar en este catálogo..." 
+                            className="pl-10"
+                            value={catalogSearchQuery}
+                            onChange={(e) => setCatalogSearchQuery(e.target.value)}
+                          />
+                        </div>
                       </div>
-                      {providerProducts.length > 0 ? (
+                      {filteredProducts.length > 0 ? (
                         <div className='p-2 grid grid-cols-2 gap-2'>
-                          {providerProducts.map(product => (
+                          {filteredProducts.map(product => (
                             <ProductGridCard 
                               key={product.id} 
                               product={product}
@@ -635,7 +650,7 @@ export default function CompanyProfilePage() {
                           ))}
                         </div>
                       ) : (
-                        <p className='text-center text-muted-foreground py-8'>Este proveedor aún no ha publicado productos.</p>
+                        <p className='text-center text-muted-foreground py-8'>No se encontraron productos.</p>
                       )}
                   </div>
                 ) : (
