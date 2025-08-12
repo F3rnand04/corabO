@@ -14,7 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function CatalogPage() {
   const router = useRouter();
-  const { currentUser } = useCorabo();
+  const { currentUser, allPublications } = useCorabo();
   const { toast } = useToast();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -22,10 +22,13 @@ export default function CatalogPage() {
   const [isProductDetailsDialogOpen, setIsProductDetailsDialogOpen] = useState(false);
   
   const products = useMemo(() => {
-    if (!currentUser?.gallery) return [];
+    if (!currentUser) return [];
     
-    return currentUser.gallery
-        .filter(item => item.type === 'product' && item.productDetails)
+    // FORENSIC FIX: The component was reading from currentUser.gallery, which was out of sync.
+    // It should read from `allPublications` (the single source of truth from the context)
+    // and filter by the current user's ID.
+    return allPublications
+        .filter(item => item.providerId === currentUser.id && item.type === 'product' && item.productDetails)
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         .map(item => ({
             id: item.id,
@@ -36,13 +39,14 @@ export default function CatalogPage() {
             providerId: item.providerId,
             imageUrl: item.src,
         }));
-  }, [currentUser?.gallery]);
+  }, [currentUser, allPublications]);
 
   useEffect(() => {
     if (currentUser) {
-        setIsLoading(false);
+        // We set loading to false once the context has loaded the user and publications.
+        setIsLoading(allPublications.length === 0);
     }
-  }, [currentUser]);
+  }, [currentUser, allPublications]);
   
   const openProductDetailsDialog = (product: Product) => {
     setSelectedProduct(product);
@@ -90,3 +94,4 @@ export default function CatalogPage() {
     </>
   );
 }
+
