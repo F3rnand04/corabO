@@ -1,4 +1,5 @@
 
+
 import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
@@ -16,6 +17,8 @@ const getTestEnv = async () => {
     projectId: PROJECT_ID,
     firestore: {
       rules: fs.readFileSync(path.resolve(__dirname, '../../firestore.rules'), 'utf8'),
+      host: '127.0.0.1',
+      port: 8080,
     },
   });
 };

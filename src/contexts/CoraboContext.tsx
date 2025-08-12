@@ -238,12 +238,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             if (doc.exists()) setCurrentUser(doc.data() as User);
         });
         listeners.current.set('currentUser', userListener);
-
-        const allUsersListener = onSnapshot(collection(db, 'users'), (snapshot) => {
-            const allUsers = snapshot.docs.map(doc => doc.data() as User);
-            setUsers(allUsers);
-        });
-        listeners.current.set('allUsers', allUsersListener);
         
         const publicationsListener = onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
             setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage));
@@ -268,12 +262,23 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
     } else {
         setCurrentUser(null);
-        setUsers([]);
         setAllPublications([]);
         setTransactions([]);
         setConversations([]);
     }
     setIsLoadingAuth(false);
+  }, []);
+
+
+  useEffect(() => {
+    const db = getFirestoreDb();
+    // This listener is for the UserSwitcher, it should run even without a logged-in user.
+    // The security rules have been updated to allow this specific read.
+    const allUsersListener = onSnapshot(collection(db, 'users'), (snapshot) => {
+        const allUsers = snapshot.docs.map(doc => doc.data() as User);
+        setUsers(allUsers);
+    });
+    return () => allUsersListener();
   }, []);
 
 
@@ -1068,3 +1073,4 @@ export type { Transaction };
     
 
     
+
