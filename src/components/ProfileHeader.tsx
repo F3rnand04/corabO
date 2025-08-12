@@ -67,8 +67,8 @@ export function ProfileHeader() {
     : currentUser.name;
   const specialty = currentUser.profileSetupData?.specialty || 'Sin especialidad';
 
-  const galleryCount = (userPublications?.filter(p => p.type !== 'product').length) ?? 0;
-  const productCount = (userPublications?.filter(p => p.type === 'product').length) ?? 0;
+  const galleryCount = currentUser.gallery?.filter(p => p.type !== 'product').length ?? 0;
+  const productCount = currentUser.gallery?.filter(p => p.type === 'product').length ?? 0;
 
   const agendaEvents = getAgendaEvents(transactions);
   const eventDates = agendaEvents.map(e => e.date);
