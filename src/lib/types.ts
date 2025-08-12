@@ -184,7 +184,7 @@ export type User = {
   idNumber?: string;
   birthDate?: string;
   createdAt?: string;
-  type: 'client' | 'provider';
+  type: 'client' | 'provider' | 'repartidor';
   reputation: number;
   effectiveness?: number;
   profileImage: string;
@@ -254,6 +254,7 @@ export type TransactionStatus =
   | 'Recarga'
   | 'Pendiente de Confirmación del Cliente'
   | 'Pago Enviado - Esperando Confirmación'
+  | 'Buscando Repartidor'
   | 'En Reparto';
 
 export type AgreementProposal = {
