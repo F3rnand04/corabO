@@ -23,22 +23,22 @@ export function Footer() {
   }
 
   const isProvider = currentUser.type === 'provider';
-  const isClient = currentUser.type === 'client';
   const isProfilePage = pathname.startsWith('/profile');
 
   const handleCentralButtonClick = () => {
-    if (isClient) {
-        // Future logic: open QR scanner
-        console.log("Open QR Scanner for client");
-        // router.push('/scan-qr'); // Example route
-    } else if (isProvider && isProfilePage) {
+    if (isProfilePage && isProvider) {
         setIsUploadOpen(true);
     } else {
-      router.push('/search');
+      // Logic for QR button click
+      // If client, open scanner. If provider, show QR.
+      // Placeholder for now:
+      const userAction = currentUser.type === 'client' ? "Abrir Escáner QR" : "Mostrar mi QR de Cobro";
+      console.log(`Acción de QR: ${userAction}`);
+      // router.push('/qr-payment'); // Example route
     }
   };
 
-  const CentralButtonIcon = isClient ? QrCode : (isProfilePage ? Upload : Search);
+  const CentralButtonIcon = isProfilePage && isProvider ? Upload : QrCode;
 
 
   return (
