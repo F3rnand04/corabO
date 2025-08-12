@@ -36,51 +36,50 @@ import { Input } from '@/components/ui/input';
 
 export default function CompanyProfilePage() {
   const params = useParams();
-  const { addContact, isContact, transactions, createAppointmentRequest, currentUser, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, sendMessage, toggleGps, deliveryAddress, setDeliveryAddress, getUserMetrics, fetchUser } = useCorabo();
+  const { addContact, isContact, transactions, createAppointmentRequest, currentUser, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, sendMessage, toggleGps, deliveryAddress, setDeliveryAddress, getUserMetrics, fetchUser, allPublications } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
 
   const [provider, setProvider] = useState<User | null>(null);
   const [providerGallery, setProviderGallery] = useState<GalleryImage[]>([]);
-  const [providerProducts, setProviderProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [catalogSearchQuery, setCatalogSearchQuery] = useState('');
 
   const providerId = params.id as string;
 
-  const loadProviderData = useCallback(async () => {
+  useEffect(() => {
     if (!providerId) {
         setIsLoading(false);
         return;
     };
     
     setIsLoading(true);
-    try {
-        const fetchedProvider = await fetchUser(providerId);
+    fetchUser(providerId).then(fetchedProvider => {
         setProvider(fetchedProvider);
-
-        if (fetchedProvider) {
-            // Conditional data loading based on provider type
-            if (fetchedProvider.profileSetupData?.offerType === 'product') {
-                 const productsData = await getProfileProducts({ userId: fetchedProvider.id });
-                 setProviderProducts(productsData.products);
-            } else {
-                 const galleryData = await getProfileGallery({ userId: fetchedProvider.id });
-                 setProviderGallery(galleryData.gallery);
-            }
-        }
-    } catch (error) {
+        // We no longer need to fetch products/gallery here as they come from context
+        setIsLoading(false);
+    }).catch(error => {
         console.error("Error loading provider data:", error);
         toast({ variant: "destructive", title: "Error", description: "No se pudo cargar el perfil del proveedor." });
-    } finally {
         setIsLoading(false);
-    }
+    });
   }, [providerId, fetchUser, toast]);
 
-  useEffect(() => {
-    loadProviderData();
-  }, [loadProviderData]);
-
+  const providerProducts = useMemo(() => {
+      if (!provider) return [];
+      return allPublications
+          .filter(p => p.providerId === provider.id && p.type === 'product' && p.productDetails)
+          .map(p => ({
+            id: p.id,
+            name: p.productDetails!.name,
+            description: p.description,
+            price: p.productDetails!.price,
+            category: p.productDetails!.category,
+            providerId: p.providerId,
+            imageUrl: p.src,
+          }));
+  }, [provider, allPublications]);
+  
   const filteredProducts = useMemo(() => {
     if (!catalogSearchQuery) return providerProducts;
     return providerProducts.filter(p => p.name.toLowerCase().includes(catalogSearchQuery.toLowerCase()));
@@ -835,3 +834,5 @@ export default function CompanyProfilePage() {
     </>
   );
 }
+
+    
