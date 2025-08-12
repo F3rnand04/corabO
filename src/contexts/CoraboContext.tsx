@@ -20,7 +20,6 @@ import * as NotificationFlows from '@/ai/flows/notification-flow';
 import { autoVerifyIdWithAI as autoVerifyIdWithAIFlow, type VerificationInput } from '@/ai/flows/verification-flow';
 import { getExchangeRate } from '@/ai/flows/exchange-rate-flow';
 import { sendSmsVerificationCodeFlow, verifySmsCodeFlow } from '@/ai/flows/sms-flow';
-import { getFeed as getFeedFlow } from '@/ai/flows/feed-flow';
 import { createProduct as createProductFlow, createPublication as createPublicationFlow } from '@/ai/flows/publication-flow';
 import type { GetFeedInputSchema, GetFeedOutputSchema, GetProfileGalleryInputSchema, GetProfileGalleryOutputSchema, GetProfileProductsInputSchema, GetProfileProductsOutputSchema } from '@/lib/types';
 import { z } from 'zod';
@@ -237,7 +236,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             });
             listeners.current.set('allUsers', allUsersListener);
             
-            const publicationsListener = onSnapshot(query(collectionGroup(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
+            const publicationsListener = onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
                 const fetchedPublications = snapshot.docs.map(doc => doc.data() as GalleryImage);
                 setAllPublications(fetchedPublications);
             });
@@ -959,3 +958,4 @@ export const useCorabo = () => {
 export type { Transaction };
 
     
+
