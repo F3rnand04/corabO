@@ -835,7 +835,3 @@ export default function CompanyProfilePage() {
     </>
   );
 }
-
-    
-
-    
