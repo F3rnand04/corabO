@@ -56,7 +56,7 @@ export const createPublication = ai.defineFlow(
           isGpsActive: user.isGpsActive ?? false,
           reputation: user.reputation ?? 0,
           profileSetupData: {
-              specialty: user.profileSetupData?.specialty ?? 'Especialidad',
+              specialty: user.profileSetupData?.specialty ?? 'Especialidad no definida',
               providerType: user.profileSetupData?.providerType ?? 'professional',
               username: user.profileSetupData?.username ?? user.name.replace(/\s+/g, '').toLowerCase(),
           },
@@ -107,6 +107,11 @@ export const createProduct = ai.defineFlow(
               verified: user.verified ?? false,
               isGpsActive: user.isGpsActive ?? false,
               reputation: user.reputation ?? 0,
+              profileSetupData: {
+                  specialty: user.profileSetupData?.specialty ?? 'Especialidad no definida',
+                  providerType: user.profileSetupData?.providerType ?? 'professional',
+                  username: user.profileSetupData?.username ?? user.name.replace(/\s+/g, '').toLowerCase(),
+              },
             }
         };
         
