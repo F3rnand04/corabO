@@ -5,7 +5,7 @@
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import type { GalleryImage, PublicationOwner, User } from "@/lib/types";
-import { Star, Bookmark, Send, MessageCircle, Flag, CheckCircle, MapPin } from "lucide-react";
+import { Star, Bookmark, Send, MessageCircle, Flag, CheckCircle, MapPin, Plus, Heart } from "lucide-react";
 import Link from "next/link";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { useState, useEffect } from "react";
@@ -25,7 +25,7 @@ interface PublicationCardProps {
 }
 
 export function PublicationCard({ publication, className }: PublicationCardProps) {
-    const { addContact, isContact, sendMessage, currentUser, getUserMetrics, transactions } = useCorabo();
+    const { addContact, isContact, sendMessage, currentUser, getUserMetrics, transactions, addToCart } = useCorabo();
     const router = useRouter();
     const { toast } = useToast();
     
@@ -42,6 +42,12 @@ export function PublicationCard({ publication, className }: PublicationCardProps
         return null; 
     }
     
+    const isProduct = publication.type === 'product';
+    const productDetails = publication.productDetails;
+
+    // Simulate distance check for enabling cart functionality
+    const isWithinDeliveryRange = true; // Assuming true for prototype purposes
+
     const profileLink = `/companies/${owner.id}`;
     const { reputation, effectiveness, responseTime } = getUserMetrics(owner.id, transactions);
     const isNewProvider = responseTime === 'Nuevo';
@@ -95,6 +101,36 @@ export function PublicationCard({ publication, className }: PublicationCardProps
            });
         }
     }
+    
+    const handleAddToCart = () => {
+        if (!isProduct || !productDetails) return;
+        if (!currentUser?.isTransactionsActive) {
+            toast({
+                variant: "destructive",
+                title: "Acción Requerida",
+                description: "Debes activar tu registro de transacciones para poder comprar."
+            });
+            return;
+        }
+        if (!isWithinDeliveryRange) {
+             toast({
+                variant: "destructive",
+                title: "Fuera de Rango",
+                description: "Este producto está fuera de tu rango de delivery."
+            });
+            return;
+        }
+        addToCart({
+            id: publication.id,
+            name: productDetails.name,
+            description: publication.description,
+            price: productDetails.price,
+            category: productDetails.category,
+            providerId: publication.providerId,
+            imageUrl: publication.src,
+        }, 1);
+        toast({ title: "Producto añadido", description: `${productDetails.name} fue añadido a tu carrito.`});
+    };
 
     const displayName = owner.profileSetupData?.username || owner.name || 'Usuario Corabo';
     const specialty = owner.profileSetupData?.specialty || "Especialidad no definida";
@@ -170,12 +206,22 @@ export function PublicationCard({ publication, className }: PublicationCardProps
                   >
                     <Flag className="w-4 h-4" />
                 </Button>
+                {isProduct && (
+                     <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent flex justify-between items-center text-white">
+                        <div>
+                            <p className="font-bold text-lg drop-shadow-md">${productDetails?.price.toFixed(2)}</p>
+                        </div>
+                        <Button onClick={handleAddToCart} disabled={!isWithinDeliveryRange} size="sm" className="bg-white/90 text-black hover:bg-white">
+                            <Plus className="h-4 w-4 mr-1"/> Añadir al Carrito
+                        </Button>
+                    </div>
+                )}
             </div>
             
              {/* Card Actions */}
              <div className="flex items-center p-2">
                  <Button variant="ghost" className="flex-1" onClick={handleLike}>
-                    <Star className={cn("w-5 h-5", isLiked && "text-yellow-400 fill-yellow-400")} />
+                    <Heart className={cn("w-5 h-5", isLiked && "text-red-500 fill-red-500")} />
                     <span className="ml-2 text-xs">{likeCount}</span>
                 </Button>
                  <Button variant="ghost" className="flex-1" onClick={() => setIsDetailsDialogOpen(true)}>
