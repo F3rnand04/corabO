@@ -26,6 +26,7 @@ export const getProfileGallery = ai.defineFlow(
         
         const queryConstraints: any[] = [
             where("providerId", "==", userId),
+            where("type", "in", ["image", "video"]),
             orderBy('createdAt', 'desc'),
             limit(limitNum)
         ];
@@ -40,10 +41,7 @@ export const getProfileGallery = ai.defineFlow(
         const q = query(publicationsCollection, ...queryConstraints);
         const snapshot = await getDocs(q);
 
-        const allUserContent = snapshot.docs.map(doc => doc.data() as GalleryImage);
-
-        // The query now handles ordering, but we still filter by type in code.
-        const galleryItems = allUserContent.filter(item => item.type === 'image' || item.type === 'video');
+        const galleryItems = snapshot.docs.map(doc => doc.data() as GalleryImage);
 
         const lastVisibleDocInPage = snapshot.docs[snapshot.docs.length - 1];
 
@@ -69,6 +67,7 @@ export const getProfileProducts = ai.defineFlow(
         
         const queryConstraints: any[] = [
             where("providerId", "==", userId),
+            where("type", "==", "product"),
             orderBy('createdAt', 'desc'),
             limit(limitNum)
         ];
@@ -83,11 +82,8 @@ export const getProfileProducts = ai.defineFlow(
         const q = query(publicationsCollection, ...queryConstraints);
         const snapshot = await getDocs(q);
 
-        const allUserContent = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as GalleryImage));
+        const userProductsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as GalleryImage));
         
-        // Filter for products in the backend code
-        const userProductsData = allUserContent.filter(item => item.type === 'product');
-
         const finalProducts: Product[] = userProductsData.map(data => ({
             id: data.id,
             name: data.productDetails?.name || 'Producto sin nombre',
@@ -98,7 +94,7 @@ export const getProfileProducts = ai.defineFlow(
             imageUrl: data.src,
         }));
         
-        const lastVisibleDocInPage = snapshot.docs.find(doc => userProductsData.some(p => p.id === doc.id));
+        const lastVisibleDocInPage = snapshot.docs[snapshot.docs.length - 1];
 
         return { 
             products: finalProducts, 
