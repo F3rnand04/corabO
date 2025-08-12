@@ -6,7 +6,7 @@ import { useState, useEffect, useRef, ChangeEvent, useCallback } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Megaphone, Zap, Plus, Package, Wallet, MapPin, Calendar as CalendarIcon } from 'lucide-react';
+import { Star, Megaphone, Zap, Plus, Package, Wallet, MapPin, Calendar as CalendarIcon, QrCode } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
@@ -93,7 +93,7 @@ export function ProfileHeader() {
                     <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <Button size="icon" className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full" onClick={handleAvatarClick}>
-                    <Plus className="w-4 h-4" />
+                    <QrCode className="w-4 h-4" />
                 </Button>
             </div>
             <div className="flex-grow">
