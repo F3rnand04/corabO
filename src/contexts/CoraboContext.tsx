@@ -242,11 +242,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             });
             listeners.current.set('publications', publicationsListener);
 
-            // FIX: Use collectionGroup and the composite index correctly with orderBy
             const transactionsQuery = query(
                 collectionGroup(db, "transactions"), 
                 where("participantIds", "array-contains", userData.id),
-                orderBy("date", "desc") // This clause is now correctly added
+                orderBy("date", "desc")
             );
 
             const transactionsListener = onSnapshot(transactionsQuery, (snapshot) => {
@@ -260,11 +259,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             });
             listeners.current.set('transactions', transactionsListener);
             
-            // FIX: Use collectionGroup and the composite index correctly with orderBy
             const conversationsQuery = query(
                 collectionGroup(db, 'conversations'), 
                 where('participantIds', 'array-contains', userData.id),
-                orderBy('lastUpdated', 'desc') // This clause is now correctly added
+                orderBy('lastUpdated', 'desc')
             );
             const conversationsListener = onSnapshot(conversationsQuery, (snapshot) => {
                 const userConversations = snapshot.docs.map(doc => doc.data() as Conversation);
