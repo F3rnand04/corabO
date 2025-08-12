@@ -4,7 +4,7 @@
 
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import type { GalleryImage, PublicationOwner, User } from "@/lib/types";
+import type { GalleryImage, PublicationOwner, User, Product } from "@/lib/types";
 import { Star, Bookmark, Send, MessageCircle, Flag, CheckCircle, MapPin, Plus, Heart } from "lucide-react";
 import Link from "next/link";
 import { useCorabo } from "@/contexts/CoraboContext";
@@ -25,7 +25,7 @@ interface PublicationCardProps {
 }
 
 export function PublicationCard({ publication, className }: PublicationCardProps) {
-    const { addContact, isContact, sendMessage, currentUser, getUserMetrics, transactions, addToCart, getDistanceToProvider } = useCorabo();
+    const { addContact, isContact, sendMessage, currentUser, getUserMetrics, transactions, addToCart, getDistanceToProvider, updateCartQuantity } = useCorabo();
     const router = useRouter();
     const { toast } = useToast();
     
@@ -134,7 +134,6 @@ export function PublicationCard({ publication, className }: PublicationCardProps
             providerId: publication.providerId,
             imageUrl: publication.src,
         }, 1);
-        toast({ title: "Producto añadido", description: `${productDetails.name} fue añadido a tu carrito.`});
     };
 
     const displayName = owner.profileSetupData?.username || owner.name || 'Usuario Corabo';

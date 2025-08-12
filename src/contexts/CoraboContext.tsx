@@ -140,7 +140,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const activeCartTx = transactions.find(tx => tx.status === 'Carrito Activo');
+  const cart: CartItem[] = activeCartTx?.details.items || [];
+  
   const [searchQuery, _setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
@@ -258,6 +260,23 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
                 setAllPublications(fetchedPublications);
             });
             listeners.current.set('publications', publicationsListener);
+            
+            // Listen to transactions
+            const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userData.id));
+            const transactionsListener = onSnapshot(transactionsQuery, (snapshot) => {
+                const fetchedTransactions = snapshot.docs.map(doc => doc.data() as Transaction);
+                setTransactions(fetchedTransactions);
+            });
+            listeners.current.set('transactions', transactionsListener);
+            
+            // Listen to conversations
+            const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userData.id));
+            const conversationsListener = onSnapshot(conversationsQuery, (snapshot) => {
+                const fetchedConversations = snapshot.docs.map(doc => doc.data() as Conversation);
+                setConversations(fetchedConversations);
+            });
+            listeners.current.set('conversations', conversationsListener);
+
 
             const qrSessionsQuery = query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', userData.id));
             const qrSessionsListener = onSnapshot(qrSessionsQuery, (snapshot) => {
@@ -301,7 +320,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     } else {
       setCurrentUserLocation(null);
     }
-  }, [currentUser?.isGpsActive, toast]);
+  }, [currentUser?.isGpsActive]);
 
 
   const signInWithGoogle = async () => {
@@ -703,7 +722,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       }
 
       batch.commit().then(() => {
-          setCart([]);
           toast({ title: "Pedido realizado", description: "Tu pedido ha sido enviado al proveedor." });
           router.push('/transactions');
       });

@@ -64,10 +64,9 @@ const ActionButton = ({ icon: Icon, label, count, onClick }: { icon: React.Eleme
 
 
 export default function TransactionsPage() {
-    const { currentUser, getUserMetrics, getAgendaEvents, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout: performCheckout, users } = useCorabo();
+    const { currentUser, getUserMetrics, getAgendaEvents, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout: performCheckout, users, transactions } = useCorabo();
     const { toast } = useToast();
     
-    const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
     const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
@@ -84,32 +83,8 @@ export default function TransactionsPage() {
             return;
         }
 
-        setIsLoading(true);
-        const db = getFirestoreDb();
-        const txQuery = query(
-            collection(db, "transactions"),
-            where("participantIds", "array-contains", currentUser.id)
-        );
-
-        const unsubscribe = onSnapshot(txQuery, (snapshot) => {
-            const serverTransactions = snapshot.docs.map(doc => {
-                 const data = doc.data();
-                 return {
-                    ...data,
-                    id: doc.id,
-                    date: new Date(data.date).toISOString(),
-                 } as Transaction;
-            });
-            setTransactions(serverTransactions);
-            setIsLoading(false);
-        }, (error) => {
-            console.error("Error fetching transactions: ", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'No se pudieron cargar las transacciones.' });
-            setIsLoading(false);
-        });
-
-        return () => unsubscribe();
-    }, [currentUser, toast]);
+        setIsLoading(transactions.length === 0);
+    }, [currentUser, transactions]);
 
 
     if (!currentUser) {
