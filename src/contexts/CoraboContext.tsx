@@ -42,6 +42,7 @@ interface UserMetrics {
 interface CoraboState {
   currentUser: User | null;
   users: User[];
+  allPublications: GalleryImage[];
   transactions: Transaction[];
   conversations: Conversation[];
   cart: CartItem[];
@@ -53,7 +54,6 @@ interface CoraboState {
   isLoadingAuth: boolean;
   deliveryAddress: string;
   exchangeRate: number;
-  userPublications: GalleryImage[];
   signInWithGoogle: () => void;
   setSearchQuery: (query: string) => void;
   setCategoryFilter: (category: string | null) => void;
@@ -81,7 +81,6 @@ interface CoraboState {
   toggleGps: (userId: string) => void;
   updateUser: (userId: string, updates: Partial<User>) => Promise<void>;
   updateUserProfileImage: (userId: string, imageUrl: string) => Promise<void>;
-  updateUserProfileAndGallery: (userId: string, newImage: GalleryImage) => Promise<void>;
   removeGalleryImage: (userId: string, imageId: string) => Promise<void>;
   validateEmail: (userId: string, emailToValidate: string) => Promise<boolean>;
   sendPhoneVerification: (userId: string, phone: string) => Promise<void>;
@@ -113,9 +112,6 @@ interface CoraboState {
   autoVerifyIdWithAI: (input: VerificationInput) => Promise<VerificationOutput>;
   getUserMetrics: (userId: string, transactions: Transaction[]) => UserMetrics;
   fetchUser: (userId: string) => Promise<User | null>;
-  getFeed: (params: z.infer<typeof GetFeedInputSchema>) => Promise<z.infer<typeof GetFeedOutputSchema>>;
-  getProfileGallery: (params: z.infer<typeof GetProfileGalleryInputSchema>) => Promise<z.infer<typeof GetProfileGalleryOutputSchema>>;
-  getProfileProducts: (params: z.infer<typeof GetProfileProductsInputSchema>) => Promise<z.infer<typeof GetProfileProductsOutputSchema>>;
   acceptDelivery: (transactionId: string) => void;
 }
 
@@ -127,9 +123,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
+  const [allPublications, setAllPublications] = useState<GalleryImage[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [userPublications, setUserPublications] = useState<GalleryImage[]>([]);
 
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   
@@ -163,42 +159,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return null;
   }, []);
   
-  const getFeed = useCallback(async (params: z.infer<typeof GetFeedInputSchema>): Promise<z.infer<typeof GetFeedOutputSchema>> => {
-      try {
-          return await getFeedFlow(params);
-      } catch (error) {
-          console.error("Error fetching feed via Genkit flow:", error);
-          toast({
-              variant: 'destructive',
-              title: 'Error al Cargar Contenido',
-              description: 'No se pudo obtener el contenido del feed. Intenta más tarde.'
-          });
-          return { publications: [], lastVisibleDocId: undefined };
-      }
-  }, [toast]);
-
-  const getProfileGallery = useCallback(async (params: z.infer<typeof GetProfileGalleryInputSchema>): Promise<z.infer<typeof GetProfileGalleryOutputSchema>> => {
-      try {
-          const result = await getProfileGalleryFlow({userId: params.userId, limitNum: params.limitNum, startAfterDocId: params.startAfterDocId});
-          return result;
-      } catch (error) {
-          console.error("Error fetching gallery via Genkit flow:", error);
-          toast({ variant: 'destructive', title: 'Error al Cargar Galería' });
-          return { gallery: [], lastVisibleDocId: undefined };
-      }
-  }, [toast]);
-
-  const getProfileProducts = useCallback(async (params: z.infer<typeof GetProfileProductsInputSchema>): Promise<z.infer<typeof GetProfileProductsOutputSchema>> => {
-    try {
-        return await getProfileProductsFlow(params);
-    } catch (error) {
-        console.error("Error fetching products via Genkit flow:", error);
-        toast({ variant: 'destructive', title: 'Error al Cargar Productos' });
-        return { products: [], lastVisibleDocId: undefined };
-    }
-  }, [toast]);
-
-
   const handleUserCreation = useCallback(async (firebaseUser: FirebaseUser): Promise<User> => {
     const db = getFirestoreDb();
     const userDocRef = doc(db, 'users', firebaseUser.uid);
@@ -239,7 +199,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         isSubscribed: false,
         isTransactionsActive: false,
         idVerificationStatus: 'rejected',
-        gallery: [], // Initialize gallery
+        gallery: [],
       };
       
       await setDoc(userDocRef, newUser);
@@ -263,20 +223,38 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             
             const userListener = onSnapshot(doc(db, 'users', userData.id), (doc) => {
                 if (doc.exists()) {
-                    const updatedUserData = doc.data() as User;
-                    setCurrentUser(updatedUserData);
-                    // Update the local state for publications directly from the user document
-                    setUserPublications(updatedUserData.gallery || []);
-                    userCache.current.set(updatedUserData.id, updatedUserData);
-                    if (updatedUserData.profileSetupData?.location) {
-                        setDeliveryAddress(updatedUserData.profileSetupData.location);
-                    }
+                    setCurrentUser(doc.data() as User);
                 } else {
                     setCurrentUser(null);
                 }
                  setIsLoadingAuth(false);
             });
             listeners.current.set('currentUser', userListener);
+
+            // Listener for all users to build the main feed
+            const allUsersListener = onSnapshot(collection(db, 'users'), (snapshot) => {
+                const allUsers = snapshot.docs.map(doc => doc.data() as User);
+                setUsers(allUsers);
+                
+                // Regenerate allPublications whenever users data changes
+                const publications = allUsers.flatMap(u => 
+                    (u.gallery || []).map(p => ({
+                        ...p,
+                        owner: { // Denormalize owner data for the card
+                            id: u.id,
+                            name: u.name,
+                            profileImage: u.profileImage,
+                            verified: u.verified,
+                            isGpsActive: u.isGpsActive,
+                            reputation: u.reputation,
+                            profileSetupData: u.profileSetupData,
+                        }
+                    }))
+                ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                setAllPublications(publications);
+            });
+            listeners.current.set('allUsers', allUsersListener);
+
 
             const transactionsListener = onSnapshot(query(collection(db, 'transactions'), where('participantIds', 'array-contains', userData.id)), (snapshot) => {
                 const userTransactions = snapshot.docs.map(doc => doc.data() as Transaction);
@@ -286,11 +264,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             });
             listeners.current.set('transactions', transactionsListener);
             
-            // SIMPLIFIED QUERY: Remove orderBy to prevent index errors
             const conversationsQuery = query(collection(db, 'conversations'), where('participantIds', 'array-contains', userData.id));
             const conversationsListener = onSnapshot(conversationsQuery, (snapshot) => {
                 const userConversations = snapshot.docs.map(doc => doc.data() as Conversation);
-                // Sort on the client side
                 userConversations.sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime());
                 setConversations(userConversations);
             });
@@ -301,7 +277,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             setUsers([]);
             setTransactions([]);
             setConversations([]);
-            setUserPublications([]);
+            setAllPublications([]);
             userCache.current.clear();
             setIsLoadingAuth(false);
         }
@@ -624,40 +600,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const createPublication = async (data: CreatePublicationInput) => {
     if (!currentUser) throw new Error("User not authenticated");
     await createPublicationFlow(data);
-    const newPublication: GalleryImage = {
-        id: `pub-${Date.now()}`,
-        providerId: data.userId,
-        type: data.type,
-        src: data.imageDataUri,
-        alt: data.description.slice(0, 50),
-        description: data.description,
-        createdAt: new Date().toISOString(),
-        aspectRatio: data.aspectRatio,
-        owner: data.owner,
-        comments: [],
-        likes: 0,
-    };
-    await updateUser(data.userId, { gallery: arrayUnion(newPublication) });
   };
   
   const createProduct = async (data: CreateProductInput) => {
     if (!currentUser) throw new Error("User not authenticated");
-    const newPublicationId = await createProductFlow(data);
-    const newProductPublication: GalleryImage = {
-        id: `prod-${Date.now()}`,
-        providerId: data.userId,
-        type: 'product',
-        src: data.imageDataUri,
-        alt: data.name,
-        description: data.description,
-        createdAt: new Date().toISOString(),
-        productDetails: {
-            name: data.name,
-            price: data.price,
-            category: currentUser.profileSetupData?.primaryCategory || 'General',
-        }
-    };
-    await updateUser(data.userId, { gallery: arrayUnion(newProductPublication) });
+    await createProductFlow(data);
   };
 
   const checkout = (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {
@@ -743,12 +690,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
      await updateUser(userId, { profileImage: imageUrl });
   };
   
-  const updateUserProfileAndGallery = async (userId: string, newImage: GalleryImage) => {
-     if (!currentUser) return;
-      const updatedGallery = [...(currentUser.gallery || []), newImage];
-      await updateUser(userId, { gallery: updatedGallery });
-  };
-
   const removeGalleryImage = async (userId: string, imageId: string) => {
     if (!currentUser) return;
     const updatedGallery = (currentUser.gallery || []).filter(img => img.id !== imageId);
@@ -933,6 +874,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const value: CoraboState = {
     currentUser,
     users,
+    allPublications,
     transactions,
     conversations,
     cart,
@@ -944,7 +886,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     isLoadingAuth,
     deliveryAddress,
     exchangeRate,
-    userPublications,
     signInWithGoogle,
     setSearchQuery,
     setCategoryFilter,
@@ -972,7 +913,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     toggleGps,
     updateUser,
     updateUserProfileImage,
-    updateUserProfileAndGallery,
     removeGalleryImage,
     validateEmail,
     sendPhoneVerification,
@@ -1004,9 +944,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     getUserMetrics,
     fetchUser,
     setDeliveryAddress,
-    getFeed,
-    getProfileGallery,
-    getProfileProducts,
     acceptDelivery,
   };
 
