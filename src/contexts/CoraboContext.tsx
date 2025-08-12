@@ -242,36 +242,36 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             });
             listeners.current.set('publications', publicationsListener);
 
-            const transactionsQuery = query(
-                collectionGroup(db, "transactions"), 
-                where("participantIds", "array-contains", userData.id),
-                orderBy("date", "desc")
-            );
+            // const transactionsQuery = query(
+            //     collectionGroup(db, "transactions"), 
+            //     where("participantIds", "array-contains", userData.id),
+            //     orderBy("date", "desc")
+            // );
 
-            const transactionsListener = onSnapshot(transactionsQuery, (snapshot) => {
-                const userTransactions = snapshot.docs.map(doc => doc.data() as Transaction);
-                setTransactions(userTransactions);
-                const activeCartTx = userTransactions.find(tx => tx.status === 'Carrito Activo' && tx.clientId === userData.id);
-                setCart(activeCartTx?.details.items || []);
-            }, (error) => {
-                console.error("Error fetching transactions: ", error);
-                toast({ variant: 'destructive', title: 'Error de BD', description: 'No se pudieron cargar las transacciones. Esto puede ser un problema de índices.' });
-            });
-            listeners.current.set('transactions', transactionsListener);
+            // const transactionsListener = onSnapshot(transactionsQuery, (snapshot) => {
+            //     const userTransactions = snapshot.docs.map(doc => doc.data() as Transaction);
+            //     setTransactions(userTransactions);
+            //     const activeCartTx = userTransactions.find(tx => tx.status === 'Carrito Activo' && tx.clientId === userData.id);
+            //     setCart(activeCartTx?.details.items || []);
+            // }, (error) => {
+            //     console.error("Error fetching transactions: ", error);
+            //     toast({ variant: 'destructive', title: 'Error de BD', description: 'No se pudieron cargar las transacciones. Esto puede ser un problema de índices.' });
+            // });
+            // listeners.current.set('transactions', transactionsListener);
             
-            const conversationsQuery = query(
-                collectionGroup(db, 'conversations'), 
-                where('participantIds', 'array-contains', userData.id),
-                orderBy('lastUpdated', 'desc')
-            );
-            const conversationsListener = onSnapshot(conversationsQuery, (snapshot) => {
-                const userConversations = snapshot.docs.map(doc => doc.data() as Conversation);
-                setConversations(userConversations);
-            }, (error) => {
-                console.error("Error fetching conversations:", error);
-                toast({ variant: 'destructive', title: 'Error de BD', description: 'No se pudieron cargar las conversaciones. Esto puede ser un problema de índices.' });
-            });
-            listeners.current.set('conversations', conversationsListener);
+            // const conversationsQuery = query(
+            //     collectionGroup(db, 'conversations'), 
+            //     where('participantIds', 'array-contains', userData.id),
+            //     orderBy('lastUpdated', 'desc')
+            // );
+            // const conversationsListener = onSnapshot(conversationsQuery, (snapshot) => {
+            //     const userConversations = snapshot.docs.map(doc => doc.data() as Conversation);
+            //     setConversations(userConversations);
+            // }, (error) => {
+            //     console.error("Error fetching conversations:", error);
+            //     toast({ variant: 'destructive', title: 'Error de BD', description: 'No se pudieron cargar las conversaciones. Esto puede ser un problema de índices.' });
+            // });
+            // listeners.current.set('conversations', conversationsListener);
 
         } else {
             setCurrentUser(null);
