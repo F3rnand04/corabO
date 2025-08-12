@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -104,37 +103,11 @@ export function Header() {
   return (
     <header className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b">
       <div className="container px-4 sm:px-6">
-        {/* Top Row */}
+        {/* Top Row: Logo, Actions, Menu */}
         <div className="flex h-16 items-center justify-between gap-4">
-          <Link href="/contacts" passHref>
+          <Link href="/" passHref>
              <Image src="https://i.postimg.cc/8zWvkhxS/Sin-t-tulo-3.png" alt="Corabo Logo" width={120} height={40} className="h-10 w-auto cursor-pointer" />
           </Link>
-          
-           <div className="relative flex-grow max-w-md mx-auto">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input 
-                  placeholder="Buscar por servicio, producto..." 
-                  className="pl-10 pr-24 rounded-full bg-background"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-              />
-               <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 rounded-full text-xs px-2">
-                        {selectedCategoryName.split(' ')[0]}
-                        <ChevronDown className="h-4 w-4 ml-1"/>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Filtrar por Grupo</DropdownMenuLabel>
-                    <DropdownMenuRadioGroup value={categoryFilter || 'all'} onValueChange={(value) => setCategoryFilter(value === 'all' ? null : value)}>
-                        {serviceGroups.map(group => (
-                             <DropdownMenuRadioItem key={group.id} value={group.id}>{group.name}</DropdownMenuRadioItem>
-                        ))}
-                    </DropdownMenuRadioGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-          </div>
 
           <div className="flex items-center gap-1">
              <Button variant="ghost" size="icon" onClick={() => toggleGps(currentUser.id)} onDoubleClick={() => router.push('/map')}>
@@ -145,12 +118,91 @@ export function Header() {
                    )}
                 </div>
             </Button>
+
+            <Button variant="ghost" size="icon" onClick={() => router.push('/quotes')}>
+              <FileText className="h-5 w-5 text-muted-foreground" />
+            </Button>
+
+            <Button variant="ghost" size="icon" onClick={() => router.push('/transactions')}>
+              <Wallet className="h-5 w-5 text-muted-foreground" />
+            </Button>
             
+             <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                        <Menu className="h-6 w-6 text-muted-foreground"/>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => router.push('/profile')}>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Mi Perfil</span>
+                  </DropdownMenuItem>
+                   <DropdownMenuItem onClick={() => router.push('/transactions')}>
+                    <Wallet className="mr-2 h-4 w-4" />
+                    <span>Registro de Transacciones</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/search-history')}>
+                    <HistoryIcon className="mr-2 h-4 w-4" />
+                    <span>Historial de Búsqueda</span>
+                  </DropdownMenuItem>
+                   <DropdownMenuItem onClick={() => router.push('/quotes')}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    <span>Cotizar</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <ThemeSwitcher />
+                   <DropdownMenuItem onClick={() => router.push('/policies')}>
+                    <Shield className="mr-2 h-4 w-4" />
+                    <span>Políticas y Legal</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/contacts')}>
+                    <HelpCircle className="mr-2 h-4 w-4" />
+                    <span>Ayuda y Soporte</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={logout} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Cerrar Sesión</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+        
+        {/* Bottom Row: Search Bar */}
+        <div className="flex items-center gap-2 pb-3">
+             <div className="relative flex-grow">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input 
+                    placeholder="Buscar por servicio, producto..." 
+                    className="pl-10 pr-28 rounded-full bg-muted border-none focus-visible:ring-primary/50"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 rounded-full text-xs px-2">
+                          {selectedCategoryName.split(' ')[0]}
+                          <ChevronDown className="h-4 w-4 ml-1"/>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Filtrar por Grupo</DropdownMenuLabel>
+                      <DropdownMenuRadioGroup value={categoryFilter || 'all'} onValueChange={(value) => setCategoryFilter(value === 'all' ? null : value)}>
+                          {serviceGroups.map(group => (
+                               <DropdownMenuRadioItem key={group.id} value={group.id}>{group.name}</DropdownMenuRadioItem>
+                          ))}
+                      </DropdownMenuRadioGroup>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+            </div>
+            {/* Cart Popover */}
             <AlertDialog open={isCheckoutAlertOpen} onOpenChange={setIsCheckoutAlertOpen}>
                 <Popover>
                     <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon" className="relative">
-                        <ShoppingCart className="w-5 w-5 text-muted-foreground" />
+                        <Button variant="secondary" size="icon" className="relative rounded-full">
+                        <ShoppingCart className="w-5 h-5 text-muted-foreground" />
                         {totalCartItems > 0 && (
                             <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs rounded-full">{totalCartItems}</Badge>
                         )}
@@ -213,8 +265,9 @@ export function Header() {
                     <div className="py-4 space-y-4">
                         {(() => {
                             const provider = users.find(u => u.id === cart[0]?.product.providerId);
-                            const isOnlyDelivery = provider?.profileSetupData?.isOnlyDelivery || false;
-                            const providerAcceptsCredicora = provider?.profileSetupData?.acceptsCredicora || false;
+                            if (!provider) return <p>Cargando...</p>;
+                            const isOnlyDelivery = provider.profileSetupData?.isOnlyDelivery || false;
+                            const providerAcceptsCredicora = provider.profileSetupData?.acceptsCredicora || false;
 
                             const subtotal = getCartTotal();
                             const deliveryCost = getDeliveryCost();
@@ -289,48 +342,6 @@ export function Header() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-            
-             <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                        <Menu className="h-6 w-6 text-muted-foreground"/>
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => router.push('/profile')}>
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Mi Perfil</span>
-                  </DropdownMenuItem>
-                   <DropdownMenuItem onClick={() => router.push('/transactions')}>
-                    <Wallet className="mr-2 h-4 w-4" />
-                    <span>Registro de Transacciones</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/search-history')}>
-                    <HistoryIcon className="mr-2 h-4 w-4" />
-                    <span>Historial de Búsqueda</span>
-                  </DropdownMenuItem>
-                   <DropdownMenuItem onClick={() => router.push('/quotes')}>
-                    <FileText className="mr-2 h-4 w-4" />
-                    <span>Cotizar</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <ThemeSwitcher />
-                   <DropdownMenuItem onClick={() => router.push('/policies')}>
-                    <Shield className="mr-2 h-4 w-4" />
-                    <span>Políticas y Legal</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/contacts')}>
-                    <HelpCircle className="mr-2 h-4 w-4" />
-                    <span>Ayuda y Soporte</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={logout} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Cerrar Sesión</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
         </div>
       </div>
     </header>
