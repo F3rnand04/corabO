@@ -128,6 +128,56 @@ interface CoraboState {
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
 
+// Moved outside the component to prevent re-creation on every render
+const handleUserCreation = async (firebaseUser: FirebaseUser): Promise<User> => {
+    const db = getFirestoreDb();
+    const userDocRef = doc(db, 'users', firebaseUser.uid);
+    const userDocSnap = await getDoc(userDocRef);
+    
+    if (userDocSnap.exists()) {
+      const existingUser = userDocSnap.data() as User;
+      return existingUser;
+    } else {
+      const nameParts = (firebaseUser.displayName || 'Usuario Nuevo').split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(' ');
+
+      const coraboId = (firstName.substring(0, 3)).toUpperCase() + Math.random().toString(36).substring(2, 8).toUpperCase();
+      
+      const newUser: User = {
+        id: firebaseUser.uid,
+        coraboId: coraboId,
+        name: firstName,
+        lastName: lastName,
+        idNumber: '',
+        birthDate: '',
+        createdAt: new Date().toISOString(),
+        type: 'client',
+        reputation: 0,
+        effectiveness: 100,
+        profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${'firebaseUser.uid'}`,
+        email: firebaseUser.email || '',
+        phone: '',
+        emailValidated: firebaseUser.emailVerified,
+        phoneValidated: false,
+        isGpsActive: true,
+        isInitialSetupComplete: false,
+        credicoraLevel: 1,
+        credicoraLimit: 150,
+        profileSetupData: {
+            location: "10.4806,-66.9036" // Default to Caracas
+        },
+        isSubscribed: false,
+        isTransactionsActive: false,
+        idVerificationStatus: 'rejected',
+      };
+      
+      await setDoc(userDocRef, newUser);
+      return newUser;
+    }
+  };
+
+
 export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
   const router = useRouter();
@@ -174,56 +224,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return null;
   }, []);
   
-  const handleUserCreation = useCallback(async (firebaseUser: FirebaseUser): Promise<User> => {
-    const db = getFirestoreDb();
-    const userDocRef = doc(db, 'users', firebaseUser.uid);
-    const userDocSnap = await getDoc(userDocRef);
-    
-    if (userDocSnap.exists()) {
-      const existingUser = userDocSnap.data() as User;
-      userCache.current.set(existingUser.id, existingUser);
-      return existingUser;
-    } else {
-      const nameParts = (firebaseUser.displayName || 'Usuario Nuevo').split(' ');
-      const firstName = nameParts[0];
-      const lastName = nameParts.slice(1).join(' ');
-
-      const coraboId = (firstName.substring(0, 3)).toUpperCase() + Math.random().toString(36).substring(2, 8).toUpperCase();
-      
-      const newUser: User = {
-        id: firebaseUser.uid,
-        coraboId: coraboId,
-        name: firstName,
-        lastName: lastName,
-        idNumber: '',
-        birthDate: '',
-        createdAt: new Date().toISOString(),
-        type: 'client',
-        reputation: 0,
-        effectiveness: 100,
-        profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${'firebaseUser.uid'}`,
-        email: firebaseUser.email || '',
-        phone: '',
-        emailValidated: firebaseUser.emailVerified,
-        phoneValidated: false,
-        isGpsActive: true,
-        isInitialSetupComplete: false,
-        credicoraLevel: 1,
-        credicoraLimit: 150,
-        profileSetupData: {
-            location: "10.4806,-66.9036" // Default to Caracas
-        },
-        isSubscribed: false,
-        isTransactionsActive: false,
-        idVerificationStatus: 'rejected',
-      };
-      
-      await setDoc(userDocRef, newUser);
-      userCache.current.set(newUser.id, newUser);
-      return newUser;
-    }
-  }, []);
-
   useEffect(() => {
     const cleanup = () => {
         listeners.current.forEach(unsubscribe => unsubscribe());
@@ -236,11 +236,15 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         
         if (firebaseUser) {
             const userData = await handleUserCreation(firebaseUser);
+            
+            userCache.current.set(userData.id, userData);
+
             const db = getFirestoreDb();
             
             const userListener = onSnapshot(doc(db, 'users', userData.id), (doc) => {
                 if (doc.exists()) {
                     const freshUserData = doc.data() as User;
+                    userCache.current.set(freshUserData.id, freshUserData);
                     setCurrentUser(freshUserData);
                 } else {
                     setCurrentUser(null);
@@ -250,7 +254,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             listeners.current.set('currentUser', userListener);
 
             const allUsersListener = onSnapshot(collection(db, 'users'), (snapshot) => {
-                const allUsers = snapshot.docs.map(doc => doc.data() as User);
+                const allUsers = snapshot.docs.map(doc => {
+                    const userData = doc.data() as User;
+                    userCache.current.set(userData.id, userData);
+                    return userData;
+                });
                 setUsers(allUsers);
             });
             listeners.current.set('allUsers', allUsersListener);
@@ -301,7 +309,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         unsubscribeAuth();
         cleanup();
     };
-  }, [auth, handleUserCreation]);
+  }, [auth, fetchUser]);
 
   useEffect(() => {
     if (currentUser?.isGpsActive) {
