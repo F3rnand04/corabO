@@ -129,6 +129,15 @@ graph TD
 
     I_BE --> J[Usuario es redirigido a la pantalla de pago de la transacción];
     J --> K[Usuario paga la transacción];
-    K --> L[Sistema actualiza el estado de la campaña a 'active'];
-    L --> M[<B>Campaña Publicitaria Activa</B>];
+    
+    subgraph "Lógica de Notificación del Backend"
+        direction LR
+        K --> L_VERIFY[Admin verifica el pago en el panel];
+        L_VERIFY --> M_UPDATE[Sistema actualiza campaña a 'active'];
+        M_UPDATE --> N_NOTIFY[Sistema llama al flujo `sendNewCampaignNotifications`];
+        N_NOTIFY --> O_END[Usuarios relevantes reciben la notificación];
+    end
+    
+    O_END --> P_FINAL[<B>Campaña Publicitaria Activa y Notificada</B>];
+
 ```

@@ -73,7 +73,7 @@ El error recurrente `Missing or insufficient permissions` era en realidad un sí
 ### 5.3. Pilar 3: Reglas de Seguridad Abiertas (Solo para Desarrollo)
 
 Para acelerar la fase de desarrollo, las reglas de `firestore.rules` se han configurado de forma abierta.
--   **Regla Actual:** `allow read, write: if true;`
+-   **Regla Actual:** `allow read, write: if request.auth != null;`
 -   **Propósito:** Esto elimina los permisos como una posible causa de error durante el desarrollo. Cualquier fallo que ocurra ahora es 100% un problema en el código TypeScript (React o Genkit), lo que hace la depuración mucho más rápida y directa.
 
 **Conclusión:** La combinación de un modelo de datos limpio, consultas simples y reglas de seguridad permisivas (para desarrollo) ha creado un entorno estable. Cualquier funcionalidad futura debe construirse sobre estos tres pilares para mantener la estabilidad.

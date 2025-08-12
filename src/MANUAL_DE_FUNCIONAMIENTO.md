@@ -25,7 +25,7 @@ La barra de navegación inferior es el centro de control. Su comportamiento es c
 
 -   **Botón Central (Dinámico):**
     -   **En la mayoría de las páginas:** Es un icono de **Búsqueda** (`/search`).
-    -   **En tu propio perfil (`/profile`):** Se convierte en un icono de **Subir (+)** para añadir contenido (publicaciones o productos, según tu tipo de oferta).
+    -   **En tu propio perfil (`/profile`):** Se convierte en un icono de **Subir (+)**. Al hacer clic, si ofreces tanto productos como servicios, se abrirá un diálogo para que elijas qué añadir; de lo contrario, te llevará directamente al formulario de carga correspondiente.
 -   **Botón Derecho (Dinámico):**
     -   **En la mayoría de las páginas:** Es tu **avatar de perfil** (`/profile`).
     -   **En tu propio perfil (`/profile`):** Se transforma en un **engranaje de Ajustes** (`/profile-setup`).
@@ -51,7 +51,7 @@ Esta es la vista que tienen los clientes de un proveedor. Su diseño **cambia ra
     -   **Reportar (`Flag`):** Disponible en cada publicación para mantener la seguridad.
 
 ### 3.3. Perfil Propio del Usuario (`/profile/page.tsx`)
-Esta página también se adapta a tu tipo de perfil (`offerType`). Si eres un proveedor de productos, verás tus productos en la cuadrícula principal en lugar de tu galería. Las estadísticas también se ajustan para mostrar "Productos" en lugar de "Trabajos Realizados".
+Esta página también se adapta a tu tipo de perfil (`offerType`). Las pestañas "Publicaciones" y "Catálogo" ahora son enlaces de navegación que te llevan a `profile/publications` y `profile/catalog` respectivamente. Las estadísticas y el contenido se ajustan para mostrar "Productos" o "Trabajos Realizados" según corresponda.
 
 ### 3.4. Chat y Propuestas de Acuerdo (`/messages/[id]/page.tsx`)
 El chat es la herramienta de negociación. Los proveedores pueden enviar "Propuestas de Acuerdo" que los clientes pueden aceptar para formalizar una transacción de forma segura a través de los flujos de Genkit en el backend.
