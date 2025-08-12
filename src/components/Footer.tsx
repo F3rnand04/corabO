@@ -23,22 +23,33 @@ export function Footer() {
   }
 
   const isProvider = currentUser.type === 'provider';
+  const isClient = currentUser.type === 'client';
   const isProfilePage = pathname.startsWith('/profile');
 
   const handleCentralButtonClick = () => {
-    if (isProfilePage && isProvider) {
-        setIsUploadOpen(true);
+    if (isClient) {
+      router.push('/scan-qr');
+    } else if (isProvider) {
+       if(isProfilePage){
+         setIsUploadOpen(true);
+       } else {
+         router.push('/show-qr');
+       }
     } else {
-      // Logic for QR button click
-      // If client, open scanner. If provider, show QR.
-      // Placeholder for now:
-      const userAction = currentUser.type === 'client' ? "Abrir Escáner QR" : "Mostrar mi QR de Cobro";
-      console.log(`Acción de QR: ${userAction}`);
-      // router.push('/qr-payment'); // Example route
+      // Default action for repartidor or other types
+      router.push('/search');
     }
   };
-
-  const CentralButtonIcon = isProfilePage && isProvider ? Upload : QrCode;
+  
+  // Define the icon based on context
+  let CentralButtonIcon;
+  if (isClient) {
+    CentralButtonIcon = QrCode;
+  } else if (isProvider && isProfilePage) {
+    CentralButtonIcon = Upload;
+  } else {
+    CentralButtonIcon = QrCode; // Provider not on profile OR Repartidor
+  }
 
 
   return (
