@@ -23,58 +23,59 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const auth = getAuth();
 
-    // Check for redirect result first
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result) {
-          // This means the user is coming back from a successful redirect login
-          // handleUserAuth will be called by the onAuthStateChanged listener anyway
-          // so we don't need to do anything special here.
-          // You could add specific logic if a new user signs up vs. logs in.
-        }
-      })
-      .catch((error) => {
-        console.error("Error getting redirect result:", error);
-        toast({ variant: 'destructive', title: 'Error de autenticación', description: 'No se pudo completar el inicio de sesión.' });
-      });
-
+    // This handles both the initial page load and the return from a redirect.
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-        handleUserAuth(firebaseUser);
+        if (firebaseUser) {
+            // User is signed in, let the context handle it.
+            handleUserAuth(firebaseUser);
+        } else {
+            // No user is signed in. Check if they are returning from a redirect.
+            getRedirectResult(auth)
+                .then((result) => {
+                    if (!result) {
+                        // This means there's no active session and they are not coming from a redirect.
+                        // So, they must be directed to login unless they are already there.
+                        if (pathname !== '/login') {
+                            router.replace('/login');
+                        }
+                    }
+                    // If 'result' is not null, the onAuthStateChanged will trigger again with the new user,
+                    // so we don't need to do anything else here.
+                })
+                .catch((error) => {
+                    console.error("Error getting redirect result:", error);
+                    toast({ variant: 'destructive', title: 'Error de autenticación', description: 'No se pudo completar el inicio de sesión.' });
+                })
+                .finally(() => {
+                    // This ensures that even if there's an error, we mark loading as false
+                    // to prevent an infinite loading state.
+                    if(!auth.currentUser) handleUserAuth(null);
+                });
+        }
     });
-    
-    // Cleanup subscription on unmount
+
     return () => unsubscribe();
-  }, [handleUserAuth, toast]);
+  }, [handleUserAuth, pathname, router, toast]);
 
 
-  // This effect handles all redirection logic safely after the initial render.
+  // This effect handles redirection for a logged-in user to the correct page
   useEffect(() => {
-    if (isLoadingAuth) {
-      return; // Do nothing while auth state is loading
-    }
+    if (isLoadingAuth) return; // Wait until auth state is determined
 
-    // If there is no user, and we are not on the login page, redirect to login
-    if (!currentUser && pathname !== '/login') {
-      router.replace('/login');
-    }
-    
-    // If there is a user, but they haven't completed the initial setup, redirect them
-    if (currentUser && !currentUser.isInitialSetupComplete && pathname !== '/initial-setup') {
-      router.replace('/initial-setup');
-    }
-
-    // If user is fully set up but on a setup/login page, redirect to home
-    if (currentUser && currentUser.isInitialSetupComplete && (pathname === '/login' || pathname === '/initial-setup')) {
-      router.replace('/');
+    if (currentUser) {
+        if (!currentUser.isInitialSetupComplete && pathname !== '/initial-setup') {
+            router.replace('/initial-setup');
+        } else if (currentUser.isInitialSetupComplete && (pathname === '/login' || pathname === '/initial-setup')) {
+            router.replace('/');
+        }
     }
   }, [currentUser, isLoadingAuth, pathname, router]);
 
   // Request notification permission
   useEffect(() => {
     if (typeof window !== 'undefined' && 'Notification' in window && currentUser) {
-      // Check if permission was already granted or denied
       if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
-        setTimeout(() => { // Delay the request slightly
+        setTimeout(() => {
              toast({
               title: '¿Activar notificaciones?',
               description: 'Mantente al día con mensajes, ofertas y recordatorios importantes.',
@@ -83,7 +84,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                    Notification.requestPermission().then(permission => {
                     if (permission === 'granted') {
                       console.log('Notification permission granted.');
-                      // You could save this preference to the user's profile
                     }
                   });
                 }}>
@@ -123,7 +123,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   
   // 3. If authenticated and setup is complete, render the main app layout
   if(currentUser && currentUser.isInitialSetupComplete) {
-      // Admin Route Guard
       if (pathname.startsWith('/admin') && currentUser?.role !== 'admin') {
           router.replace('/');
           return (
@@ -184,6 +183,5 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       );
   }
 
-  // Fallback for any other case (should not be reached)
   return null;
 }
