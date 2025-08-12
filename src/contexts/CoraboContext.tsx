@@ -124,6 +124,7 @@ interface CoraboState {
   approveQrSession: (sessionId: string) => Promise<void>;
   finalizeQrSession: (sessionId: string, voucherUrl: string) => Promise<void>;
   cancelQrSession: (sessionId: string) => Promise<void>;
+  handleUserAuth: (firebaseUser: FirebaseUser | null) => Promise<void>;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -203,9 +204,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [currentUserLocation, setCurrentUserLocation] = useState<GeolocationCoords | null>(null);
   const [qrSession, setQrSession] = useState<QrSession | null>(null);
   
-  const app = getFirebaseApp();
-  const auth = getAuth(app);
-  
   const userCache = useRef<Map<string, User>>(new Map());
   const listeners = useRef<Map<string, Unsubscribe>>(new Map());
 
@@ -223,93 +221,80 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
     return null;
   }, []);
-  
-  useEffect(() => {
-    const cleanup = () => {
-        listeners.current.forEach(unsubscribe => unsubscribe());
-        listeners.current.clear();
-    };
 
-    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
-        cleanup(); 
-        setQrSession(null);
-        
-        if (firebaseUser) {
-            const userData = await handleUserCreation(firebaseUser);
-            
-            userCache.current.set(userData.id, userData);
+   const handleUserAuth = useCallback(async (firebaseUser: FirebaseUser | null) => {
+    // Cleanup previous listeners
+    listeners.current.forEach(unsubscribe => unsubscribe());
+    listeners.current.clear();
+    setQrSession(null);
 
-            const db = getFirestoreDb();
-            
-            const userListener = onSnapshot(doc(db, 'users', userData.id), (doc) => {
-                if (doc.exists()) {
-                    const freshUserData = doc.data() as User;
-                    userCache.current.set(freshUserData.id, freshUserData);
-                    setCurrentUser(freshUserData);
-                } else {
-                    setCurrentUser(null);
-                }
-                 setIsLoadingAuth(false);
-            });
-            listeners.current.set('currentUser', userListener);
+    if (firebaseUser) {
+        const userData = await handleUserCreation(firebaseUser);
+        userCache.current.set(userData.id, userData);
 
-            const allUsersListener = onSnapshot(collection(db, 'users'), (snapshot) => {
-                const allUsers = snapshot.docs.map(doc => {
-                    const userData = doc.data() as User;
-                    userCache.current.set(userData.id, userData);
-                    return userData;
-                });
-                setUsers(allUsers);
-            });
-            listeners.current.set('allUsers', allUsersListener);
-            
-            const publicationsListener = onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
-                const fetchedPublications = snapshot.docs.map(doc => doc.data() as GalleryImage);
-                setAllPublications(fetchedPublications);
-            });
-            listeners.current.set('publications', publicationsListener);
-            
-            // Listen to transactions
-            const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userData.id));
-            const transactionsListener = onSnapshot(transactionsQuery, (snapshot) => {
-                const fetchedTransactions = snapshot.docs.map(doc => doc.data() as Transaction);
-                setTransactions(fetchedTransactions);
-            });
-            listeners.current.set('transactions', transactionsListener);
-            
-            // Listen to conversations
-            const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userData.id));
-            const conversationsListener = onSnapshot(conversationsQuery, (snapshot) => {
-                const fetchedConversations = snapshot.docs.map(doc => doc.data() as Conversation);
-                setConversations(fetchedConversations);
-            });
-            listeners.current.set('conversations', conversationsListener);
+        const db = getFirestoreDb();
 
-
-            const qrSessionsQuery = query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', userData.id));
-            const qrSessionsListener = onSnapshot(qrSessionsQuery, (snapshot) => {
-                const sessions = snapshot.docs.map(d => d.data() as QrSession);
-                const activeSession = sessions.find(s => s.status !== 'completed' && s.status !== 'cancelled');
-                setQrSession(activeSession || null);
-            });
-            listeners.current.set('qrSessions', qrSessionsListener);
-
-        } else {
-            setCurrentUser(null);
-            setUsers([]);
-            setTransactions([]);
-            setConversations([]);
-            setAllPublications([]);
-            userCache.current.clear();
+        const userListener = onSnapshot(doc(db, 'users', userData.id), (doc) => {
+            if (doc.exists()) {
+                const freshUserData = doc.data() as User;
+                userCache.current.set(freshUserData.id, freshUserData);
+                setCurrentUser(freshUserData);
+            } else {
+                setCurrentUser(null);
+            }
             setIsLoadingAuth(false);
-        }
-    });
+        });
+        listeners.current.set('currentUser', userListener);
 
-    return () => {
-        unsubscribeAuth();
-        cleanup();
-    };
-  }, [auth, fetchUser]);
+        // All other listeners that depend on the user's ID
+        const allUsersListener = onSnapshot(collection(db, 'users'), (snapshot) => {
+            const allUsers = snapshot.docs.map(doc => {
+                const userData = doc.data() as User;
+                userCache.current.set(userData.id, userData);
+                return userData;
+            });
+            setUsers(allUsers);
+        });
+        listeners.current.set('allUsers', allUsersListener);
+        
+        const publicationsListener = onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
+            const fetchedPublications = snapshot.docs.map(doc => doc.data() as GalleryImage);
+            setAllPublications(fetchedPublications);
+        });
+        listeners.current.set('publications', publicationsListener);
+        
+        const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userData.id));
+        const transactionsListener = onSnapshot(transactionsQuery, (snapshot) => {
+            const fetchedTransactions = snapshot.docs.map(doc => doc.data() as Transaction);
+            setTransactions(fetchedTransactions);
+        });
+        listeners.current.set('transactions', transactionsListener);
+        
+        const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userData.id));
+        const conversationsListener = onSnapshot(conversationsQuery, (snapshot) => {
+            const fetchedConversations = snapshot.docs.map(doc => doc.data() as Conversation);
+            setConversations(fetchedConversations);
+        });
+        listeners.current.set('conversations', conversationsListener);
+
+        const qrSessionsQuery = query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', userData.id));
+        const qrSessionsListener = onSnapshot(qrSessionsQuery, (snapshot) => {
+            const sessions = snapshot.docs.map(d => d.data() as QrSession);
+            const activeSession = sessions.find(s => s.status !== 'completed' && s.status !== 'cancelled');
+            setQrSession(activeSession || null);
+        });
+        listeners.current.set('qrSessions', qrSessionsListener);
+
+    } else {
+        setCurrentUser(null);
+        setUsers([]);
+        setTransactions([]);
+        setConversations([]);
+        setAllPublications([]);
+        userCache.current.clear();
+        setIsLoadingAuth(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (currentUser?.isGpsActive) {
@@ -331,10 +316,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
 
   const signInWithGoogle = async () => {
+    const auth = getAuth(getFirebaseApp());
     const provider = new GoogleAuthProvider();
     try {
       await setPersistence(auth, browserLocalPersistence);
-      setIsLoadingAuth(true);
       await signInWithRedirect(auth, provider);
     } catch (error) {
       console.error("Error signing in with Google: ", error);
@@ -343,13 +328,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         title: 'Error de Autenticación',
         description: 'No se pudo iniciar sesión con Google. Por favor, inténtalo de nuevo.'
       });
-      setIsLoadingAuth(false);
     }
   };
 
   const logout = async () => {
     try {
-        await signOut(auth);
+        await signOut(getAuth(getFirebaseApp()));
     } catch (error) {
         console.error("Error signing out: ", error);
     }
@@ -1085,6 +1069,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     approveQrSession,
     finalizeQrSession,
     cancelQrSession,
+    handleUserAuth,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;

@@ -11,14 +11,26 @@ import Link from 'next/link';
 import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { currentUser, isLoadingAuth } = useCorabo();
+  const { currentUser, isLoadingAuth, handleUserAuth, logout } = useCorabo();
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
   
+  useEffect(() => {
+    const auth = getAuth();
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+        handleUserAuth(firebaseUser);
+    });
+    
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, [handleUserAuth]);
+
+
   // This effect handles all redirection logic safely after the initial render.
   useEffect(() => {
     if (isLoadingAuth) {
