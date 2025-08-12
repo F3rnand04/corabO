@@ -227,6 +227,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
                 if (doc.exists()) {
                     const freshUserData = doc.data() as User;
                     setCurrentUser(freshUserData);
+                    // Ensure userPublications is always in sync with the user's gallery
                     setUserPublications(freshUserData.gallery || []);
                 } else {
                     setCurrentUser(null);
