@@ -244,29 +244,46 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             });
             listeners.current.set('allUsers', allUsersListener);
 
-            // Fetch main feed using the dedicated flow
-            getFeedFlow({}).then(data => {
-                setAllPublications(data.publications);
-            }).catch(error => {
-                console.error("Error fetching main feed:", error);
-                toast({ variant: "destructive", title: "Error al Cargar Contenido", description: "No se pudo cargar el feed principal." });
-            });
+            const allPublicationsListener = onSnapshot(
+                query(collection(db, 'publications'), orderBy('createdAt', 'desc')),
+                (snapshot) => {
+                    const publications = snapshot.docs.map(doc => doc.data() as GalleryImage);
+                    setAllPublications(publications);
+                },
+                (error) => {
+                    console.error("Error fetching all publications:", error);
+                    toast({ variant: "destructive", title: "Error al Cargar Contenido", description: "No se pudo cargar el feed principal." });
+                }
+            );
+            listeners.current.set('allPublications', allPublicationsListener);
 
 
-            const transactionsListener = onSnapshot(query(collection(db, 'transactions'), where('participantIds', 'array-contains', userData.id)), (snapshot) => {
-                const userTransactions = snapshot.docs.map(doc => doc.data() as Transaction);
-                setTransactions(userTransactions);
-                const activeCartTx = userTransactions.find(tx => tx.status === 'Carrito Activo' && tx.clientId === userData.id);
-                setCart(activeCartTx?.details.items || []);
-            });
+            const transactionsListener = onSnapshot(
+                query(collection(db, "transactions"), where("participantIds", "array-contains", userData.id), orderBy("date", "desc")), 
+                (snapshot) => {
+                    const userTransactions = snapshot.docs.map(doc => doc.data() as Transaction);
+                    setTransactions(userTransactions);
+                    const activeCartTx = userTransactions.find(tx => tx.status === 'Carrito Activo' && tx.clientId === userData.id);
+                    setCart(activeCartTx?.details.items || []);
+                }, 
+                (error) => {
+                    console.error("Error fetching transactions: ", error);
+                    toast({ variant: 'destructive', title: 'Error', description: 'No se pudieron cargar las transacciones.' });
+                }
+            );
             listeners.current.set('transactions', transactionsListener);
             
-            const conversationsQuery = query(collection(db, 'conversations'), where('participantIds', 'array-contains', userData.id));
-            const conversationsListener = onSnapshot(conversationsQuery, (snapshot) => {
-                const userConversations = snapshot.docs.map(doc => doc.data() as Conversation);
-                userConversations.sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime());
-                setConversations(userConversations);
-            });
+            const conversationsListener = onSnapshot(
+                query(collection(db, 'conversations'), where('participantIds', 'array-contains', userData.id), orderBy('lastUpdated', 'desc')),
+                (snapshot) => {
+                    const userConversations = snapshot.docs.map(doc => doc.data() as Conversation);
+                    setConversations(userConversations);
+                },
+                (error) => {
+                    console.error("Error fetching conversations:", error);
+                    toast({ variant: 'destructive', title: 'Error', description: 'No se pudieron cargar las conversaciones.' });
+                }
+            );
             listeners.current.set('conversations', conversationsListener);
 
         } else {
