@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ProductGridCard } from '@/components/ProductGridCard';
 import { ProductDetailsDialog } from '@/components/ProductDetailsDialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getProfileProducts } from '@/ai/flows/profile-flow';
 
 
 export default function CatalogPage() {
@@ -19,27 +20,31 @@ export default function CatalogPage() {
   const { toast } = useToast();
 
   const [isLoading, setIsLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isProductDetailsDialogOpen, setIsProductDetailsDialogOpen] = useState(false);
 
-  // Get products directly from the user's gallery array in the context
-  const products: Product[] = (currentUser?.gallery || [])
-    .filter(item => item.type === 'product' && item.productDetails)
-    .map(item => ({
-        id: item.id,
-        name: item.productDetails!.name,
-        description: item.description,
-        price: item.productDetails!.price,
-        category: item.productDetails!.category,
-        providerId: item.providerId,
-        imageUrl: item.src,
-    }));
+  const loadProducts = useCallback(async () => {
+    if (!currentUser) return;
+    setIsLoading(true);
+    try {
+        const result = await getProfileProducts({ userId: currentUser.id });
+        setProducts(result.products);
+    } catch (error) {
+        console.error("Error fetching products:", error);
+        toast({
+            variant: "destructive",
+            title: "Error al Cargar Productos",
+            description: "No se pudieron obtener los productos de tu catálogo.",
+        });
+    } finally {
+        setIsLoading(false);
+    }
+  }, [currentUser, toast]);
   
   useEffect(() => {
-    if (currentUser) {
-      setIsLoading(false);
-    }
-  }, [currentUser]);
+    loadProducts();
+  }, [loadProducts]);
   
   const openProductDetailsDialog = (product: Product) => {
     setSelectedProduct(product);

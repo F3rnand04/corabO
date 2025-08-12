@@ -42,6 +42,7 @@ interface UserMetrics {
 interface CoraboState {
   currentUser: User | null;
   users: User[];
+  userPublications: GalleryImage[];
   allPublications: GalleryImage[];
   transactions: Transaction[];
   conversations: Conversation[];
@@ -123,6 +124,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
+  const [userPublications, setUserPublications] = useState<GalleryImage[]>([]);
   const [allPublications, setAllPublications] = useState<GalleryImage[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -223,9 +225,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             
             const userListener = onSnapshot(doc(db, 'users', userData.id), (doc) => {
                 if (doc.exists()) {
-                    setCurrentUser(doc.data() as User);
+                    const freshUserData = doc.data() as User;
+                    setCurrentUser(freshUserData);
+                    setUserPublications(freshUserData.gallery || []);
                 } else {
                     setCurrentUser(null);
+                    setUserPublications([]);
                 }
                  setIsLoadingAuth(false);
             });
@@ -278,6 +283,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             setTransactions([]);
             setConversations([]);
             setAllPublications([]);
+            setUserPublications([]);
             userCache.current.clear();
             setIsLoadingAuth(false);
         }
@@ -599,12 +605,53 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const createPublication = async (data: CreatePublicationInput) => {
     if (!currentUser) throw new Error("User not authenticated");
-    await createPublicationFlow(data);
+    const newPublication = { ...data, owner: undefined }; // Remove owner before sending to flow
+    await createPublicationFlow(newPublication);
+    // Optimistic update
+    if (currentUser) {
+        const fullNewPublication = {
+            id: `pub-${Date.now()}`,
+            providerId: data.userId,
+            createdAt: new Date().toISOString(),
+            ...newPublication,
+            owner: data.owner
+        };
+        const updatedGallery = [...(currentUser.gallery || []), fullNewPublication];
+        await updateUser(currentUser.id, { gallery: updatedGallery });
+    }
   };
   
   const createProduct = async (data: CreateProductInput) => {
     if (!currentUser) throw new Error("User not authenticated");
-    await createProductFlow(data);
+    const newProductId = await createProductFlow(data);
+    // Optimistic update
+    if (currentUser) {
+        const ownerData: PublicationOwner = {
+            id: currentUser.id,
+            name: currentUser.profileSetupData?.useUsername ? (currentUser.profileSetupData.username ?? currentUser.name) : currentUser.name,
+            profileImage: currentUser.profileImage ?? '',
+            verified: currentUser.verified ?? false,
+            isGpsActive: currentUser.isGpsActive ?? false,
+            reputation: currentUser.reputation ?? 0,
+        };
+        const newProductPublication: GalleryImage = {
+            id: newProductId,
+            providerId: data.userId,
+            type: 'product',
+            src: data.imageDataUri,
+            alt: data.name,
+            description: data.description,
+            createdAt: new Date().toISOString(),
+            productDetails: {
+              name: data.name,
+              price: data.price,
+              category: currentUser.profileSetupData?.primaryCategory ?? 'General',
+            },
+            owner: ownerData,
+        };
+        const updatedGallery = [...(currentUser.gallery || []), newProductPublication];
+        await updateUser(currentUser.id, { gallery: updatedGallery });
+    }
   };
 
   const checkout = (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {
@@ -874,6 +921,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const value: CoraboState = {
     currentUser,
     users,
+    userPublications,
     allPublications,
     transactions,
     conversations,
