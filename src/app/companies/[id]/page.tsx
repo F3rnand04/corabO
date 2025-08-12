@@ -46,8 +46,9 @@ export default function CompanyProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [catalogSearchQuery, setCatalogSearchQuery] = useState('');
 
+  const providerId = params.id as string;
+
   const loadProviderData = useCallback(async () => {
-    const providerId = params.id as string;
     if (!providerId) {
         setIsLoading(false);
         return;
@@ -74,7 +75,7 @@ export default function CompanyProfilePage() {
     } finally {
         setIsLoading(false);
     }
-  }, [params.id, fetchUser, toast]);
+  }, [providerId, fetchUser, toast]);
 
   useEffect(() => {
     loadProviderData();
