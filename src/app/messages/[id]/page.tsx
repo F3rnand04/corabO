@@ -21,6 +21,8 @@ import { Separator } from '@/components/ui/separator';
 import { ProposalDialog } from '@/components/ProposalDialog';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
+import Image from 'next/image';
 
 
 function ChatHeader({ 
@@ -103,6 +105,31 @@ function ChatHeader({
   );
 }
 
+function LocationBubble({ lat, lon }: { lat: number, lon: number }) {
+  const mapUrl = `https://www.google.com/maps?q=${lat},${lon}`;
+  return (
+    <a href={mapUrl} target="_blank" rel="noopener noreferrer" className="flex justify-center w-full my-2 group">
+      <div className="w-full max-w-sm rounded-lg border bg-background shadow-md p-0.5 space-y-1 overflow-hidden">
+        <div className="relative aspect-video w-full">
+           <Image
+              src={`https://placehold.co/400x200.png?text=Mapa`}
+              alt="Mapa de ubicación"
+              layout="fill"
+              objectFit="cover"
+              data-ai-hint="map location"
+              className="group-hover:scale-105 transition-transform duration-300"
+            />
+        </div>
+        <div className="p-2 text-center">
+            <p className="text-sm font-semibold">Ubicación Compartida</p>
+            <p className="text-xs text-blue-600 group-hover:underline">Ver en Google Maps</p>
+        </div>
+      </div>
+    </a>
+  );
+}
+
+
 function ProposalBubble({ msg, onAccept, canAccept }: { msg: Message, onAccept: (messageId: string) => void, canAccept: boolean }) {
     if (!msg.proposal) return null;
     const { currentUser } = useCorabo();
@@ -171,6 +198,10 @@ function MessageBubble({ msg, isCurrentUser, onAccept, canAcceptProposal }: { ms
         return <ProposalBubble msg={msg} onAccept={onAccept} canAccept={canAcceptProposal} />;
     }
 
+    if (msg.type === 'location' && msg.location) {
+        return <LocationBubble lat={msg.location.lat} lon={msg.location.lon} />;
+    }
+
     return (
         <div
             className={cn(
@@ -205,6 +236,7 @@ export default function ChatPage() {
   const params = useParams();
   const router = useRouter();
   const { currentUser, conversations, sendMessage, acceptProposal, markConversationAsRead, fetchUser } = useCorabo();
+  const { toast } = useToast();
   
   const [otherParticipant, setOtherParticipant] = useState<User | null>(null);
   const [newMessage, setNewMessage] = useState('');
@@ -268,7 +300,7 @@ export default function ChatPage() {
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (newMessage.trim()) {
-      sendMessage(otherParticipant.id, newMessage);
+      sendMessage({ recipientId: otherParticipant.id, text: newMessage });
       setNewMessage('');
     }
   };
@@ -276,8 +308,28 @@ export default function ChatPage() {
   const handleDateSelect = (date: Date) => {
     const formattedDate = format(date, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: es });
     const messageText = `¡Hola! Me gustaría solicitar una cita para el ${formattedDate}. ¿Estás disponible?`;
-    sendMessage(otherParticipant.id, messageText);
+    sendMessage({ recipientId: otherParticipant.id, text: messageText });
   }
+  
+  const handleSendLocation = () => {
+    if (!navigator.geolocation) {
+        toast({ variant: 'destructive', title: 'Geolocalización no soportada' });
+        return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            const { latitude, longitude } = position.coords;
+            sendMessage({
+                recipientId: otherParticipant.id,
+                location: { lat: latitude, lon: longitude },
+            });
+        },
+        (error) => {
+            toast({ variant: 'destructive', title: 'No se pudo obtener la ubicación', description: error.message });
+        }
+    );
+  };
 
   return (
     <>
@@ -312,8 +364,8 @@ export default function ChatPage() {
       
       <footer className="p-2 border-t bg-transparent">
         <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-           <Button variant="ghost" size="icon" className="bg-background rounded-full shadow-md">
-                <Paperclip className="h-5 w-5 text-muted-foreground" />
+           <Button type="button" variant="ghost" size="icon" className="bg-background rounded-full shadow-md" onClick={handleSendLocation}>
+                <MapPin className="h-5 w-5 text-muted-foreground" />
             </Button>
             {isProvider && (
               <Button type="button" variant="ghost" size="icon" className="bg-background rounded-full shadow-md" onClick={() => setIsProposalDialogOpen(true)}>

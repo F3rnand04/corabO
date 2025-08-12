@@ -19,6 +19,10 @@ const SendMessageInputSchema = z.object({
   senderId: z.string(),
   recipientId: z.string(),
   text: z.string().optional(),
+  location: z.object({
+      lat: z.number(),
+      lon: z.number(),
+  }).optional(),
   proposal: z.object({
     title: z.string(),
     description: z.string(),
@@ -50,13 +54,20 @@ export const sendMessage = ai.defineFlow(
     const convoRef = doc(getFirestoreDb(), 'conversations', input.conversationId);
     const convoSnap = await getDoc(convoRef);
 
+    const getMessageType = () => {
+        if (input.proposal) return 'proposal';
+        if (input.location) return 'location';
+        return 'text';
+    }
+
     const newMessage: Message = {
       id: `msg-${Date.now()}`,
       senderId: input.senderId,
       timestamp: new Date().toISOString(),
-      type: input.proposal ? 'proposal' : 'text',
+      type: getMessageType(),
       text: input.text,
       proposal: input.proposal,
+      location: input.location,
       isProposalAccepted: false,
       isRead: false, // New messages are always unread
     };

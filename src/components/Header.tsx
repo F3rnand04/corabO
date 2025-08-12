@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MapPin, FileText, Menu, Search, LogOut, User, Wallet, History as HistoryIcon, Shield, HelpCircle, Contact, ShoppingCart, Plus, Minus, X, Truck, Star } from "lucide-react";
@@ -26,11 +26,13 @@ import { Separator } from "./ui/separator";
 import { Label } from "./ui/label";
 import { Switch } from "./ui/switch";
 import { credicoraLevels } from "@/lib/types";
-import { useEffect } from 'react';
 import { getFirestoreDb } from '@/lib/firebase';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import type { Transaction, User as UserType } from '@/lib/types';
+import { haversineDistance } from "@/lib/utils";
 
+// Punto de referencia fijo en Caracas
+const FIXED_REFERENCE_POINT = { lat: 10.4806, lon: -66.9036 };
 
 export function Header() {
   const { currentUser, toggleGps, logout, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, users, transactions, setSearchQuery } = useCorabo();
@@ -39,6 +41,30 @@ export function Header() {
   const [isCheckoutAlertOpen, setIsCheckoutAlertOpen] = useState(false);
   const [includeDelivery, setIncludeDelivery] = useState(false);
   const [useCredicora, setUseCredicora] = useState(false);
+  const [distance, setDistance] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (currentUser?.isGpsActive && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                const dist = haversineDistance(
+                    latitude,
+                    longitude,
+                    FIXED_REFERENCE_POINT.lat,
+                    FIXED_REFERENCE_POINT.lon
+                );
+                setDistance(dist);
+            },
+            (error) => {
+                console.error("Error getting location: ", error);
+                setDistance(null);
+            }
+        );
+    } else {
+        setDistance(null);
+    }
+  }, [currentUser?.isGpsActive]);
 
 
   if (!currentUser) {
@@ -69,7 +95,12 @@ export function Header() {
 
           <div className="flex items-center gap-1">
              <Button variant="ghost" size="icon" onClick={() => toggleGps(currentUser.id)} onDoubleClick={() => router.push('/map')}>
-                <MapPin className={cn("h-5 w-5", currentUser.isGpsActive ? "text-green-500" : "text-muted-foreground")} />
+                <div className="flex items-center">
+                   <MapPin className={cn("h-5 w-5", currentUser.isGpsActive ? "text-green-500" : "text-muted-foreground")} />
+                   {distance !== null && (
+                     <span className="text-xs text-green-600 font-semibold ml-1">({distance.toFixed(1)}km)</span>
+                   )}
+                </div>
             </Button>
             <Button variant="ghost" size="icon" onClick={() => router.push('/quotes')}>
                 <FileText className="h-5 w-5 text-muted-foreground"/>

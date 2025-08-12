@@ -264,51 +264,15 @@ export type AgreementProposal = {
     acceptsCredicora: boolean;
 };
 
-export type Transaction = {
-  id: string;
-  type: 'Compra' | 'Servicio' | 'Sistema' | 'Delivery';
-  status: TransactionStatus;
-  date: string;
-  amount: number;
-  clientId: string;
-  providerId?: string;
-  participantIds?: string[];
-  details: {
-    items?: CartItem[];
-    serviceName?: string;
-    quote?: {
-      breakdown: string;
-      total: number;
-    };
-    proposal?: AgreementProposal;
-    quoteItems?: string[];
-    delivery?: boolean;
-    deliveryCost?: number;
-    deliveryProviderId?: string;
-    system?: string;
-    paymentMethod?: 'direct' | 'credicora';
-    initialPayment?: number;
-    totalAmount?: number;
-    financedAmount?: number;
-    clientRating?: number;
-    clientComment?: string;
-    paymentFromThirdParty?: boolean;
-    originAddress?: string;
-    destinationAddress?: string;
-    paymentVoucherUrl?: string;
-    paymentReportedDate?: string; 
-    paymentConfirmationDate?: string;
-  };
-};
-
 export type Message = {
     id: string;
     senderId: string;
     text?: string;
     timestamp: string;
     isRead: boolean;
-    type?: 'text' | 'proposal';
+    type?: 'text' | 'proposal' | 'location';
     proposal?: AgreementProposal;
+    location?: { lat: number, lon: number };
     isProposalAccepted?: boolean;
 };
 
