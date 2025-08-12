@@ -5,7 +5,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Home, PlaySquare, Search, MessageSquare, Upload, Settings } from 'lucide-react';
+import { Home, PlaySquare, Search, MessageSquare, Upload, Settings, QrCode } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -27,14 +27,18 @@ export function Footer() {
   const isProfilePage = pathname.startsWith('/profile');
 
   const handleCentralButtonClick = () => {
-    if (isProfilePage) {
+    if (isClient) {
+        // Future logic: open QR scanner
+        console.log("Open QR Scanner for client");
+        // router.push('/scan-qr'); // Example route
+    } else if (isProvider && isProfilePage) {
         setIsUploadOpen(true);
     } else {
       router.push('/search');
     }
   };
 
-  const CentralButtonIcon = isProfilePage ? Upload : Search;
+  const CentralButtonIcon = isClient ? QrCode : (isProfilePage ? Upload : Search);
 
 
   return (
