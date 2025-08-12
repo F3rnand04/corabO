@@ -67,10 +67,6 @@ export function ProfileHeader() {
     : currentUser.name;
   const specialty = currentUser.profileSetupData?.specialty || 'Sin especialidad';
 
-  // --- FORENSIC FIX ---
-  // The counters were reading from `currentUser.gallery`, which was out of sync.
-  // They should read from `allPublications` and filter by the current user's ID,
-  // just like the catalog and publications pages now do. This ensures consistency.
   const galleryCount = allPublications.filter(p => p.providerId === currentUser.id && p.type !== 'product').length;
   const productCount = allPublications.filter(p => p.providerId === currentUser.id && p.type === 'product').length;
 
@@ -190,3 +186,5 @@ export function ProfileHeader() {
     </>
   );
 }
+
+    

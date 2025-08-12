@@ -42,8 +42,7 @@ interface UserMetrics {
 interface CoraboState {
   currentUser: User | null;
   users: User[];
-  // DEPRECATED: allPublications is now handled locally in the HomePage component
-  // allPublications: GalleryImage[];
+  allPublications: GalleryImage[];
   transactions: Transaction[];
   conversations: Conversation[];
   cart: CartItem[];
@@ -126,6 +125,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [allPublications, setAllPublications] = useState<GalleryImage[]>([]);
 
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   
@@ -236,6 +236,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
                 setUsers(allUsers);
             });
             listeners.current.set('allUsers', allUsersListener);
+            
+            const publicationsListener = onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
+                const fetchedPublications = snapshot.docs.map(doc => doc.data() as GalleryImage);
+                setAllPublications(fetchedPublications);
+            });
+            listeners.current.set('publications', publicationsListener);
 
             const transactionsListener = onSnapshot(
                 query(collection(db, "transactions"), where("participantIds", "array-contains", userData.id), orderBy("date", "desc")), 
@@ -270,6 +276,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             setUsers([]);
             setTransactions([]);
             setConversations([]);
+            setAllPublications([]);
             userCache.current.clear();
             setIsLoadingAuth(false);
         }
@@ -866,6 +873,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const value: CoraboState = {
     currentUser,
     users,
+    allPublications,
     transactions,
     conversations,
     cart,
@@ -949,3 +957,5 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
+
+    
