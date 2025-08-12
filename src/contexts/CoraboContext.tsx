@@ -10,7 +10,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { add, subDays, startOfDay, differenceInDays, differenceInHours, differenceInMinutes, addDays as addDaysFns } from 'date-fns';
 import { credicoraLevels } from '@/lib/types';
-import { getAuth, signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, GoogleAuthProvider, setPersistence, browserLocalPersistence } from 'firebase/auth';
+import { getAuth, signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, GoogleAuthProvider, setPersistence, browserLocalPersistence, signInWithRedirect } from 'firebase/auth';
 import { getFirebaseApp, getFirestoreDb } from '@/lib/firebase';
 import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, arrayUnion, getDocs, deleteDoc, collectionGroup, Unsubscribe, orderBy } from 'firebase/firestore';
 import { createCampaign as createCampaignFlow, type CreateCampaignInput } from '@/ai/flows/campaign-flow';
@@ -201,7 +201,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         type: 'client',
         reputation: 0,
         effectiveness: 100,
-        profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
+        profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${'firebaseUser.uid'}`,
         email: firebaseUser.email || '',
         phone: '',
         emailValidated: firebaseUser.emailVerified,
@@ -320,7 +320,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     } else {
       setCurrentUserLocation(null);
     }
-  }, [currentUser?.isGpsActive]);
+  }, [currentUser?.isGpsActive, toast]);
 
 
   const signInWithGoogle = async () => {
@@ -328,7 +328,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     try {
       await setPersistence(auth, browserLocalPersistence);
       setIsLoadingAuth(true);
-      await signInWithPopup(auth, provider);
+      await signInWithRedirect(auth, provider);
     } catch (error) {
       console.error("Error signing in with Google: ", error);
       toast({
