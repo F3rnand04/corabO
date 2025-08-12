@@ -243,7 +243,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             listeners.current.set('publications', publicationsListener);
 
             const transactionsQuery = query(
-                collection(db, "transactions"), 
+                collectionGroup(db, "transactions"), 
                 where("participantIds", "array-contains", userData.id),
                 orderBy("date", "desc")
             );
@@ -260,7 +260,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             listeners.current.set('transactions', transactionsListener);
             
             const conversationsQuery = query(
-                collection(db, 'conversations'), 
+                collectionGroup(db, 'conversations'), 
                 where('participantIds', 'array-contains', userData.id),
                 orderBy('lastUpdated', 'desc')
             );
