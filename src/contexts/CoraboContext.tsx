@@ -224,90 +224,57 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     // Cleanup previous listeners to prevent memory leaks on user switch
     listeners.current.forEach(unsubscribe => unsubscribe());
     listeners.current.clear();
-    setQrSession(null); // Clear any active QR session on auth change
+    setQrSession(null); 
 
     if (firebaseUser) {
         const userData = await getOrCreateUser(firebaseUser);
         userCache.current.set(userData.id, userData);
+        setCurrentUser(userData);
 
         const db = getFirestoreDb();
-
+        
+        // Setup all listeners now that we are authenticated
         const userListener = onSnapshot(doc(db, 'users', userData.id), (doc) => {
-            if (doc.exists()) {
-                const freshUserData = doc.data() as User;
-                userCache.current.set(freshUserData.id, freshUserData);
-                setCurrentUser(freshUserData);
-            } else {
-                setCurrentUser(null);
-            }
-             setIsLoadingAuth(false);
+            if (doc.exists()) setCurrentUser(doc.data() as User);
         });
         listeners.current.set('currentUser', userListener);
+
+        const allUsersListener = onSnapshot(collection(db, 'users'), (snapshot) => {
+            const allUsers = snapshot.docs.map(doc => doc.data() as User);
+            setUsers(allUsers);
+        });
+        listeners.current.set('allUsers', allUsersListener);
         
-        // These listeners depend on the user's ID
-        const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userData.id));
-        const transactionsListener = onSnapshot(transactionsQuery, (snapshot) => {
-            const fetchedTransactions = snapshot.docs.map(doc => doc.data() as Transaction);
-            setTransactions(fetchedTransactions);
+        const publicationsListener = onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
+            setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage));
+        });
+        listeners.current.set('publications', publicationsListener);
+        
+        const transactionsListener = onSnapshot(query(collection(db, "transactions"), where("participantIds", "array-contains", userData.id)), (snapshot) => {
+            setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
         });
         listeners.current.set('transactions', transactionsListener);
         
-        const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userData.id), orderBy('lastUpdated', 'desc'));
-        const conversationsListener = onSnapshot(conversationsQuery, (snapshot) => {
-            const fetchedConversations = snapshot.docs.map(doc => doc.data() as Conversation);
-            setConversations(fetchedConversations);
+        const conversationsListener = onSnapshot(query(collection(db, "conversations"), where("participantIds", "array-contains", userData.id), orderBy('lastUpdated', 'desc')), (snapshot) => {
+            setConversations(snapshot.docs.map(doc => doc.data() as Conversation));
         });
         listeners.current.set('conversations', conversationsListener);
 
-        const qrSessionsQuery = query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', userData.id));
-        const qrSessionsListener = onSnapshot(qrSessionsQuery, (snapshot) => {
+        const qrSessionsListener = onSnapshot(query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', userData.id)), (snapshot) => {
             const sessions = snapshot.docs.map(d => d.data() as QrSession);
-            const activeSession = sessions.find(s => s.status !== 'completed' && s.status !== 'cancelled');
-            setQrSession(activeSession || null);
+            setQrSession(sessions.find(s => s.status !== 'completed' && s.status !== 'cancelled') || null);
         });
         listeners.current.set('qrSessions', qrSessionsListener);
 
     } else {
         setCurrentUser(null);
-        // Do not clear user-agnostic data like `users` and `allPublications`
+        setUsers([]);
+        setAllPublications([]);
         setTransactions([]);
         setConversations([]);
-        setIsLoadingAuth(false);
     }
+    setIsLoadingAuth(false);
   }, []);
-
-  // Effect for fetching user-agnostic data
-  useEffect(() => {
-    const db = getFirestoreDb();
-    
-    // FORENSIC FIX: The UserSwitcher needs the list of all users to function before anyone logs in.
-    // This listener now runs unconditionally.
-    const allUsersListener = onSnapshot(collection(db, 'users'), (snapshot) => {
-        const allUsers = snapshot.docs.map(doc => {
-            const userData = doc.data() as User;
-            userCache.current.set(userData.id, userData);
-            return userData;
-        });
-        setUsers(allUsers);
-    });
-
-    // FORENSIC FIX: This listener was one of the sources of the permission-denied error
-    // because it requires a composite index to order by 'createdAt'.
-    // The index has been added in `firestore.indexes.json`.
-    const publicationsListener = onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
-        const fetchedPublications = snapshot.docs.map(doc => doc.data() as GalleryImage);
-        setAllPublications(fetchedPublications);
-    }, (error) => {
-      // Log Firestore errors for better debugging
-      console.error("Firestore 'publications' listener error:", error);
-    });
-
-    return () => {
-        allUsersListener();
-        publicationsListener();
-    };
-  }, []);
-
 
 
   useEffect(() => {
