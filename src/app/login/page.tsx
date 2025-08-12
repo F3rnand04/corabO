@@ -45,7 +45,6 @@ export default function LoginPage() {
             <Separator className="flex-1"/>
         </div>
         <UserSwitcher />
-        <p className="text-xs text-muted-foreground mt-2">Usa el menú para simular un inicio de sesión en este entorno de desarrollo.</p>
       </div>
     </div>
   );
