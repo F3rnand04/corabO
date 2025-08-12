@@ -481,26 +481,36 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getDistanceToProvider = (provider: User): string | null => {
-    if (!currentUserLocation || !provider.profileSetupData?.location) return null;
+    // Use the user's location from the context if available, otherwise fallback to profile location
+    const userLocationString = currentUser?.profileSetupData?.location;
+    let userLatLon: GeolocationCoords | null = currentUserLocation;
     
-    const [lat2, lon2] = provider.profileSetupData.location.split(',').map(Number);
-    if(isNaN(lat2) || isNaN(lon2)) return null;
+    if (!userLatLon && userLocationString) {
+        const [lat, lon] = userLocationString.split(',').map(Number);
+        if (!isNaN(lat) && !isNaN(lon)) {
+            userLatLon = { latitude: lat, longitude: lon };
+        }
+    }
+    
+    if (!userLatLon || !provider.profileSetupData?.location) return null;
+    
+    const [providerLat, providerLon] = provider.profileSetupData.location.split(',').map(Number);
+    if(isNaN(providerLat) || isNaN(providerLon)) return null;
 
     const distance = haversineDistance(
-      currentUserLocation.latitude,
-      currentUserLocation.longitude,
-      lat2,
-      lon2
+      userLatLon.latitude,
+      userLatLon.longitude,
+      providerLat,
+      providerLon
     );
 
     if (provider.profileSetupData?.showExactLocation) {
       if(distance < 1) return `${(distance * 1000).toFixed(0)} m`;
       return `${distance.toFixed(1)} km`;
     } else {
-        // Simulate an approximated distance
-        const approxDistance = Math.max(0.5, distance - (Math.random() * (distance * 0.2)));
-        if (approxDistance < 1) return `~${((approxDistance * 1000) / 100).toFixed(0)}00 m`;
-        return `~${approxDistance.toFixed(0)} km`;
+        // If location is hidden, show ~1km if it's less, otherwise show the rounded up distance.
+        if (distance < 1) return `~1 km`;
+        return `~${Math.ceil(distance)} km`;
     }
   };
 

@@ -48,8 +48,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
     const cartItem = activeCartTx?.details.items?.find(item => item.product.id === publication.id);
     const quantityInCart = cartItem?.quantity || 0;
 
-    // Simulate distance check for enabling cart functionality
-    const isWithinDeliveryRange = true; // Assuming true for prototype purposes
+    const isWithinDeliveryRange = true; 
 
     const profileLink = `/companies/${owner.id}`;
     const { reputation, effectiveness, responseTime } = getUserMetrics(owner.id, transactions);
@@ -179,7 +178,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
                     </Button>
                     <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                         <MapPin className={cn("h-3 w-3", owner.isGpsActive && "text-green-500")} />
-                        <span>{distance || `~1.5 km`}</span>
+                        <span>{distance}</span>
                     </div>
                 </div>
             </div>

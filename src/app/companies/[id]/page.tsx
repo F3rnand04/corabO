@@ -247,6 +247,19 @@ export default function CompanyProfilePage() {
         }
     };
 
+  const handleMapPinClick = () => {
+    if (provider.profileSetupData?.hasPhysicalLocation && provider.profileSetupData?.showExactLocation && provider.profileSetupData?.location) {
+        const [lat, lon] = provider.profileSetupData.location.split(',');
+        const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+        window.open(mapsUrl, '_blank');
+    } else {
+        toast({
+            title: "Ubicación Privada",
+            description: "Este proveedor ha decidido no mostrar su ubicación exacta.",
+        });
+    }
+  };
+
 
   const gallery: GalleryImage[] = providerGallery || [];
   
@@ -592,7 +605,7 @@ export default function CompanyProfilePage() {
                     </AlertDialog>
                   )}
                   
-                   <div className="flex flex-col items-center cursor-pointer" onClick={() => provider.profileSetupData?.hasPhysicalLocation && router.push('/map')}>
+                   <div className="flex flex-col items-center cursor-pointer" onClick={handleMapPinClick}>
                       <MapPin className={cn("w-5 h-5", provider.isGpsActive ? "text-green-500" : "text-muted-foreground")} />
                       <span className="text-xs text-muted-foreground">{profileData.distance}</span>
                    </div>
