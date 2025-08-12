@@ -5,6 +5,8 @@
       "collectionGroup": "publications",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
+        { "fieldPath": "providerId", "order": "ASCENDING" },
+        { "fieldPath": "type", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
