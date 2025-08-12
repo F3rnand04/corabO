@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { CheckCircle } from 'lucide-react';
 import { sendNewCampaignNotifications } from '@/ai/flows/notification-flow';
-import { useToast } from '../hooks/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 export function PaymentVerificationTab() {
   const { transactions, users, verifyCampaignPayment } = useCorabo();

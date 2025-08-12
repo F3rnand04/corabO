@@ -3,14 +3,14 @@
 
 import { useState, useEffect } from 'react';
 import { Stepper } from '@/components/profile-setup/Stepper';
-import Step1_ProfileType from '@/components/profile-setup/Step1_ProfileType';
+import Step1_ProfileType from './Step1_ProfileType';
 import Step2_Username from '@/components/profile-setup/Step2_Username';
 import Step3_Category from '@/components/profile-setup/Step3_Category';
 import Step4_GeneralDetails from '@/components/profile-setup/Step4_GeneralDetails';
 import Step5_SpecificDetails from '@/components/profile-setup/Step5_SpecificDetails';
 import Step6_Review from '@/components/profile-setup/Step6_Review';
 import { useCorabo } from '@/contexts/CoraboContext';
-import type { ProfileSetupData } from '@/lib/types';
+import type { ProfileSetupData, User as UserType } from '@/lib/types';
 
 
 const steps = [
@@ -36,14 +36,14 @@ const initialSchedule = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'].r
 export default function ProfileSetupPage() {
   const { currentUser } = useCorabo();
   const [currentStep, setCurrentStep] = useState(1);
-  const [profileType, setProfileType] = useState(currentUser.type);
+  const [profileType, setProfileType] = useState<UserType['type']>('client');
   const [formData, setFormData] = useState<ProfileSetupData>({
-      username: currentUser.name || '',
+      username: '',
       useUsername: true,
       categories: [],
       primaryCategory: null,
-      email: currentUser.email || '',
-      phone: currentUser.phone || '',
+      email: '',
+      phone: '',
       specialty: '',
       providerType: 'professional',
       offerType: 'service',
@@ -54,7 +54,6 @@ export default function ProfileSetupPage() {
       isOnlyDelivery: false,
       website: '',
       schedule: initialSchedule,
-      ...currentUser.profileSetupData,
   });
   
   useEffect(() => {
@@ -64,6 +63,7 @@ export default function ProfileSetupPage() {
         setFormData(prevData => ({
             ...prevData,
             ...currentUser.profileSetupData, // Apply existing saved data
+            username: currentUser.profileSetupData?.username || currentUser.name || '',
             email: currentUser.email,       // Always sync latest email/phone
             phone: currentUser.phone,
         }));
@@ -98,13 +98,14 @@ export default function ProfileSetupPage() {
     }
   };
 
-  const handleProfileTypeSelect = (type: 'client' | 'provider', providerType?: ProfileSetupData['providerType']) => {
+  const handleProfileTypeSelect = (type: UserType['type'], providerType?: ProfileSetupData['providerType']) => {
     setProfileType(type);
     setFormData(prev => ({...prev, providerType: providerType || 'professional'}));
     handleNext();
   }
 
   const renderStep = () => {
+    if (!currentUser) return <div>Cargando...</div>;
     switch (currentStep) {
       case 1:
         return <Step1_ProfileType onSelect={handleProfileTypeSelect} currentType={profileType} />;
