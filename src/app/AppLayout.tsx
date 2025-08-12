@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
 
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -22,13 +22,29 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   
   useEffect(() => {
     const auth = getAuth();
+
+    // Check for redirect result first
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result) {
+          // This means the user is coming back from a successful redirect login
+          // handleUserAuth will be called by the onAuthStateChanged listener anyway
+          // so we don't need to do anything special here.
+          // You could add specific logic if a new user signs up vs. logs in.
+        }
+      })
+      .catch((error) => {
+        console.error("Error getting redirect result:", error);
+        toast({ variant: 'destructive', title: 'Error de autenticación', description: 'No se pudo completar el inicio de sesión.' });
+      });
+
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
         handleUserAuth(firebaseUser);
     });
     
     // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, [handleUserAuth]);
+  }, [handleUserAuth, toast]);
 
 
   // This effect handles all redirection logic safely after the initial render.
