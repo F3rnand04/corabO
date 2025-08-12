@@ -283,6 +283,50 @@ export type Conversation = {
     lastUpdated: string;
 };
 
+export type Transaction = {
+  id: string;
+  type: 'Compra' | 'Servicio' | 'Sistema';
+  status: TransactionStatus;
+  date: string; // ISO 8601 string
+  amount: number;
+  clientId: string;
+  providerId: string;
+  participantIds: string[];
+  details: {
+    // For services
+    serviceName?: string;
+    quote?: {
+      breakdown: string;
+      total: number;
+    };
+    proposal?: AgreementProposal;
+
+    // For products
+    items?: CartItem[];
+    delivery?: boolean;
+    deliveryCost?: number;
+    deliveryProviderId?: string;
+    deliveryLocation?: { lat: number; lon: number; address: string };
+
+    // For payments
+    paymentMethod?: 'direct' | 'credicora';
+    initialPayment?: number;
+    financedAmount?: number;
+    paymentConfirmationDate?: string;
+    paymentVoucherUrl?: string;
+    paymentFromThirdParty?: boolean;
+
+    // For system
+    system?: string;
+
+    // For feedback
+    clientRating?: number;
+    clientComment?: string;
+    providerRating?: number;
+    providerComment?: string;
+  };
+};
+
 export type AppointmentRequest = {
     providerId: string;
     date: Date;

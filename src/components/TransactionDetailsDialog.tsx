@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "./ui/badge";
 import type { Transaction, User } from "@/lib/types";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert, Truck, Banknote, ClipboardCheck, CalendarCheck, Contact, Star, Calendar as CalendarIcon, Upload, Smartphone } from "lucide-react";
+import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert, Truck, Banknote, ClipboardCheck, CalendarCheck, Contact, Star, Calendar as CalendarIcon, Upload, Smartphone, MapPin } from "lucide-react";
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
@@ -27,6 +27,7 @@ import { Calendar } from './ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import Image from 'next/image';
 
 
 interface TransactionDetailsDialogProps {
@@ -166,6 +167,25 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
     toast({ title: 'Pago confirmado', description: 'La transacción ha sido completada.' });
     handleClose();
   };
+
+  const handleSendToDelivery = () => {
+    const location = transaction?.details?.deliveryLocation;
+    if (!location) return;
+
+    const deliveryMessage = `Nuevo pedido para entregar a: ${location.address}. Detalles: ${transaction.details.items?.map(i => `${i.quantity}x ${i.product.name}`).join(', ')}. Ver en mapa: https://www.google.com/maps?q=${location.lat},${location.lon}`;
+    
+    // For simplicity, we open the chat with the first contact. 
+    // A real implementation would show a contact picker.
+    if(currentUser.contacts && currentUser.contacts.length > 0){
+      const deliveryContactId = currentUser.contacts[0].id;
+      const conversationId = sendMessage(deliveryContactId, deliveryMessage, false);
+      router.push(`/messages/${conversationId}`);
+      handleClose();
+    } else {
+        toast({ variant: 'destructive', title: 'Sin Repartidores', description: 'No tienes repartidores en tus contactos para enviar el pedido.'});
+    }
+  };
+
 
   const statusInfo = {
     'Solicitud Pendiente': { icon: MessageSquare, color: 'bg-yellow-500' },
@@ -361,6 +381,15 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
                     <p className="font-semibold flex items-center gap-2"><Truck className="h-4 w-4" /> Detalles de Envío</p>
                     <p className="text-muted-foreground text-xs mt-1">Costo: ${transaction.details.deliveryCost?.toFixed(2) || '0.00'}</p>
                     <p className="text-muted-foreground text-xs">Repartidor: {deliveryProvider?.name || 'Buscando...'}</p>
+                    {transaction.details.deliveryLocation && (
+                         <div className="mt-2 pt-2 border-t">
+                            <p className="text-xs font-semibold flex items-center gap-1"><MapPin className="h-3 w-3"/> Ubicación de Entrega:</p>
+                            <p className="text-xs">{transaction.details.deliveryLocation.address}</p>
+                             <a href={`https://www.google.com/maps?q=${transaction.details.deliveryLocation.lat},${transaction.details.deliveryLocation.lon}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline">
+                               Ver en mapa
+                             </a>
+                         </div>
+                    )}
                 </div>
               )}
             </div>
@@ -388,11 +417,18 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
             </div>
           )}
         </div>
-        <DialogFooter className="sm:justify-between gap-2">
-            <Button variant="outline" onClick={() => startDispute(transaction.id)} disabled={transaction.status === 'En Disputa'}>
-              <ShieldAlert className="mr-2 h-4 w-4" /> Iniciar Disputa
-            </Button>
+        <DialogFooter className="flex-wrap sm:justify-between gap-2">
             <div className="flex gap-2">
+                 <Button variant="outline" onClick={() => startDispute(transaction.id)} disabled={transaction.status === 'En Disputa'}>
+                    <ShieldAlert className="mr-2 h-4 w-4" /> Iniciar Disputa
+                 </Button>
+                 {isProvider && transaction.type === "Compra" && transaction.details.deliveryLocation && (
+                    <Button variant="outline" onClick={handleSendToDelivery}>
+                        <Send className="mr-2 h-4 w-4"/> Enviar a Repartidor
+                    </Button>
+                 )}
+            </div>
+            <div className="flex gap-2 justify-end">
                 {isProvider && transaction.status === 'Solicitud Pendiente' && <Button onClick={handleSendQuote}>Enviar Cotización</Button>}
                 
                 {isProvider && transaction.status === 'Pago Enviado - Esperando Confirmación' && 
