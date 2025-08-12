@@ -1,6 +1,5 @@
 
 
-
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from 'react';
@@ -222,13 +221,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
    const handleUserAuth = useCallback(async (firebaseUser: FirebaseUser | null) => {
-    // Cleanup previous listeners
+    // Cleanup previous listeners to prevent memory leaks on user switch
     listeners.current.forEach(unsubscribe => unsubscribe());
     listeners.current.clear();
-    setQrSession(null);
+    setQrSession(null); // Clear any active QR session on auth change
 
     if (firebaseUser) {
-        // Use the backend flow to get/create the user document
         const userData = await getOrCreateUser(firebaseUser);
         userCache.current.set(userData.id, userData);
 
@@ -242,26 +240,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             } else {
                 setCurrentUser(null);
             }
+             setIsLoadingAuth(false);
         });
         listeners.current.set('currentUser', userListener);
-
-        // All other listeners that depend on the user's ID
-        const allUsersListener = onSnapshot(collection(db, 'users'), (snapshot) => {
-            const allUsers = snapshot.docs.map(doc => {
-                const userData = doc.data() as User;
-                userCache.current.set(userData.id, userData);
-                return userData;
-            });
-            setUsers(allUsers);
-        });
-        listeners.current.set('allUsers', allUsersListener);
         
-        const publicationsListener = onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
-            const fetchedPublications = snapshot.docs.map(doc => doc.data() as GalleryImage);
-            setAllPublications(fetchedPublications);
-        });
-        listeners.current.set('publications', publicationsListener);
-        
+        // These listeners depend on the user's ID
         const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userData.id));
         const transactionsListener = onSnapshot(transactionsQuery, (snapshot) => {
             const fetchedTransactions = snapshot.docs.map(doc => doc.data() as Transaction);
@@ -286,15 +269,38 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
     } else {
         setCurrentUser(null);
-        setUsers([]);
+        // Do not clear user-agnostic data like `users` and `allPublications`
         setTransactions([]);
         setConversations([]);
-        setAllPublications([]);
-        userCache.current.clear();
+        setIsLoadingAuth(false);
     }
-    // We set loading to false only after all listeners are potentially set up or cleared.
-    setIsLoadingAuth(false);
   }, []);
+
+  // Effect for fetching user-agnostic data
+  useEffect(() => {
+    const db = getFirestoreDb();
+    
+    const allUsersListener = onSnapshot(collection(db, 'users'), (snapshot) => {
+        const allUsers = snapshot.docs.map(doc => {
+            const userData = doc.data() as User;
+            userCache.current.set(userData.id, userData);
+            return userData;
+        });
+        setUsers(allUsers);
+    });
+
+    const publicationsListener = onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
+        const fetchedPublications = snapshot.docs.map(doc => doc.data() as GalleryImage);
+        setAllPublications(fetchedPublications);
+    });
+
+    return () => {
+        allUsersListener();
+        publicationsListener();
+    };
+  }, []);
+
+
 
   useEffect(() => {
     if (currentUser?.isGpsActive) {
