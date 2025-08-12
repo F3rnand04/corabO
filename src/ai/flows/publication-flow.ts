@@ -23,7 +23,7 @@ export const createPublication = ai.defineFlow(
     inputSchema: CreatePublicationInputSchema,
     outputSchema: z.void(),
   },
-  async ({ userId, description, imageDataUri, aspectRatio, type, owner }) => {
+  async ({ userId, description, imageDataUri, aspectRatio, type }) => {
     const db = getFirestoreDb();
     
     // FORENSIC FIX: The user object was not being fetched, causing owner data to be stale.
