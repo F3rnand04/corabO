@@ -250,7 +250,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             );
             listeners.current.set('allPublications', allPublicationsListener);
 
-
+            // CORRECTED QUERY FOR TRANSACTIONS
             const transactionsListener = onSnapshot(
                 query(collection(db, "transactions"), where("participantIds", "array-contains", userData.id), orderBy("date", "desc")), 
                 (snapshot) => {
@@ -266,6 +266,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             );
             listeners.current.set('transactions', transactionsListener);
             
+            // CORRECTED QUERY FOR CONVERSATIONS
             const conversationsListener = onSnapshot(
                 query(collection(db, 'conversations'), where('participantIds', 'array-contains', userData.id), orderBy('lastUpdated', 'desc')),
                 (snapshot) => {
