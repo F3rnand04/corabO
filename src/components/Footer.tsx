@@ -5,7 +5,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Home, PlaySquare, Search, MessageSquare, Upload, Settings } from 'lucide-react';
+import { Home, PlaySquare, Search, MessageSquare, Upload, Settings, QrCode } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -23,22 +23,31 @@ export function Footer() {
   }
 
   const isProvider = currentUser.type === 'provider';
-  // CORRECTED: This now correctly identifies any page under /profile as a profile page.
+  const isClient = currentUser.type === 'client';
   const isProfilePage = pathname.startsWith('/profile');
 
   const handleCentralButtonClick = () => {
-    if (isProfilePage) {
-        if (isProvider) {
-          setIsUploadOpen(true);
-        } else {
-          router.push('/emprende');
-        }
-    } else {
-      router.push('/search');
+    // Client action: Scan QR
+    if (isClient) {
+      // Future implementation: open QR scanner
+      console.log("Open QR Scanner");
+      return;
+    }
+
+    // Provider action: Show QR or Upload
+    if (isProvider) {
+        setIsUploadOpen(true); // The dialog will handle the choice
     }
   };
 
-  const CentralButtonIcon = isProfilePage ? Upload : Search;
+  const getCentralIcon = () => {
+      if(isClient) return QrCode;
+      if(isProvider && isProfilePage) return QrCode;
+      return Search;
+  }
+
+  const CentralButtonIcon = getCentralIcon();
+
 
   return (
     <>
