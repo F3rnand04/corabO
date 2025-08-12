@@ -25,7 +25,7 @@ import { SubscriptionDialog } from './SubscriptionDialog';
 
 export function ProfileHeader() {
   const { toast } = useToast();
-  const { currentUser, updateUserProfileImage, getUserMetrics, transactions, getAgendaEvents, toggleGps } = useCorabo();
+  const { currentUser, updateUserProfileImage, getUserMetrics, transactions, getAgendaEvents, toggleGps, allPublications } = useCorabo();
   
   const router = useRouter();
   const pathname = usePathname();
@@ -67,8 +67,12 @@ export function ProfileHeader() {
     : currentUser.name;
   const specialty = currentUser.profileSetupData?.specialty || 'Sin especialidad';
 
-  const galleryCount = currentUser.gallery?.filter(p => p.type !== 'product').length ?? 0;
-  const productCount = currentUser.gallery?.filter(p => p.type === 'product').length ?? 0;
+  // --- FORENSIC FIX ---
+  // The counters were reading from `currentUser.gallery`, which was out of sync.
+  // They should read from `allPublications` and filter by the current user's ID,
+  // just like the catalog and publications pages now do. This ensures consistency.
+  const galleryCount = allPublications.filter(p => p.providerId === currentUser.id && p.type !== 'product').length;
+  const productCount = allPublications.filter(p => p.providerId === currentUser.id && p.type === 'product').length;
 
   const agendaEvents = getAgendaEvents(transactions);
   const eventDates = agendaEvents.map(e => e.date);
