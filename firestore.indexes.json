@@ -6,16 +6,6 @@
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "providerId", "order": "ASCENDING" },
-        { "fieldPath": "type", "order": "ASCENDING" },
-        { "fieldPath": "productDetails.name", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "publications",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "providerId", "order": "ASCENDING" },
-        { "fieldPath": "type", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     },
