@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -58,8 +59,8 @@ export default function InitialSetupPage() {
             <Image
                 src="https://i.postimg.cc/Wz1MTvWK/lg.png"
                 alt="Corabo logo"
-                layout="fill"
-                objectFit="contain"
+                fill
+                style={{objectFit: 'contain'}}
             />
         </div>
         <CardTitle className="text-2xl">¡Casi listo, {currentUser.name}!</CardTitle>
@@ -72,7 +73,8 @@ export default function InitialSetupPage() {
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>¡Atención!</AlertTitle>
             <AlertDescription>
-                Esta información es privada y se usará para verificar tu identidad. <strong>No podrás modificarla después.</strong> Por favor, asegúrate de que sea correcta.\n            </AlertDescription>
+                Esta información es privada y se usará para verificar tu identidad. <strong>No podrás modificarla después.</strong> Por favor, asegúrate de que sea correcta.
+            </AlertDescription>
         </Alert>
 
         <div className="space-y-2">

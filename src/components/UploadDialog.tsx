@@ -239,7 +239,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
                 {isVideofile ? (
                     <video src={galleryImagePreview} className="w-full h-full object-contain" controls />
                 ) : (
-                    <Image src={galleryImagePreview} alt="Vista previa" layout="fill" objectFit="contain" />
+                    <Image src={galleryImagePreview} alt="Vista previa" fill style={{objectFit: 'contain'}} />
                 )}
                 <Button 
                   variant="destructive" 
@@ -300,7 +300,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
                  <Input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
                  {productImagePreview ? (
                     <div className="relative group w-full aspect-square rounded-md overflow-hidden">
-                        <Image src={productImagePreview} alt="Vista previa" layout="fill" objectFit="cover" />
+                        <Image src={productImagePreview} alt="Vista previa" fill style={{objectFit: 'cover'}} sizes="300px" />
                         <Button variant="destructive" size="icon" className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100" onClick={() => setProductImagePreview(null)}>
                             <X className="h-4 w-4" />
                         </Button>

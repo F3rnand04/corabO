@@ -124,11 +124,11 @@ export default function ShowQrPage() {
             <h2 className="text-xl font-semibold">Pago Aprobado por el Cliente</h2>
             <p className="text-muted-foreground text-sm">El cliente ha realizado el pago de <span className="font-bold">${qrSession.initialPayment?.toFixed(2)}</span>. Por favor, carga la factura o comprobante para finalizar.</p>
             <div 
-                className="w-full aspect-video border-2 border-dashed border-muted-foreground rounded-md flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/50 cursor-pointer transition-colors"
+                className="w-full aspect-video border-2 border-dashed border-muted-foreground rounded-md flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/50 cursor-pointer transition-colors relative"
                 onClick={() => fileInputRef.current?.click()}
               >
               {voucherPreview ? (
-                  <Image src={voucherPreview} alt="Vista previa" layout="fill" objectFit="contain" />
+                  <Image src={voucherPreview} alt="Vista previa" fill style={{objectFit: 'contain'}} sizes="400px"/>
               ) : (
                 <>
                   <UploadCloud className="w-10 h-10 mb-2" />

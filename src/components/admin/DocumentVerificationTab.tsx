@@ -109,7 +109,7 @@ export function DocumentVerificationTab() {
                         <div>
                             <h4 className="font-semibold mb-2">Documento Cargado</h4>
                             <div className="relative aspect-[1.58] w-full rounded-md overflow-hidden border">
-                                <Image src={selectedUser.idDocumentUrl!} alt={`Documento de ${selectedUser.name}`} layout="fill" objectFit="contain" />
+                                <Image src={selectedUser.idDocumentUrl!} alt={`Documento de ${selectedUser.name}`} fill style={{objectFit: 'contain'}} sizes="400px"/>
                             </div>
                         </div>
                         <div>

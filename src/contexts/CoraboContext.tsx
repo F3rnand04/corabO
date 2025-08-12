@@ -314,13 +314,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         },
         (error) => {
           console.error("Error getting geolocation: ", error);
-          toast({ variant: "destructive", title: "Error de Ubicación", description: "No se pudo obtener tu ubicación."});
         }
       );
     } else {
       setCurrentUserLocation(null);
     }
-  }, [currentUser?.isGpsActive, toast]);
+  }, [currentUser?.isGpsActive]);
 
 
   const signInWithGoogle = async () => {
@@ -481,12 +480,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const getDistanceToProvider = (provider: User): string | null => {
-    // Use the user's location from the context if available, otherwise fallback to profile location
-    const userLocationString = currentUser?.profileSetupData?.location;
     let userLatLon: GeolocationCoords | null = currentUserLocation;
     
-    if (!userLatLon && userLocationString) {
-        const [lat, lon] = userLocationString.split(',').map(Number);
+    // Fallback to profile location if live location is not available
+    if (!userLatLon && currentUser?.profileSetupData?.location) {
+        const [lat, lon] = currentUser.profileSetupData.location.split(',').map(Number);
         if (!isNaN(lat) && !isNaN(lon)) {
             userLatLon = { latitude: lat, longitude: lon };
         }
@@ -508,7 +506,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       if(distance < 1) return `${(distance * 1000).toFixed(0)} m`;
       return `${distance.toFixed(1)} km`;
     } else {
-        // If location is hidden, show ~1km if it's less, otherwise show the rounded up distance.
         if (distance < 1) return `~1 km`;
         return `~${Math.ceil(distance)} km`;
     }
