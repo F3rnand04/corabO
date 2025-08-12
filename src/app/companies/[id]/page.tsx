@@ -31,7 +31,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { credicoraLevels } from '@/lib/types';
 import { ActivationWarning } from '@/components/ActivationWarning';
-import { getProfileGallery, getProfileProducts } from '@/ai/flows/profile-flow';
 import { Input } from '@/components/ui/input';
 
 export default function CompanyProfilePage() {
@@ -41,7 +40,6 @@ export default function CompanyProfilePage() {
   const router = useRouter();
 
   const [provider, setProvider] = useState<User | null>(null);
-  const [providerGallery, setProviderGallery] = useState<GalleryImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [catalogSearchQuery, setCatalogSearchQuery] = useState('');
 
@@ -56,7 +54,6 @@ export default function CompanyProfilePage() {
     setIsLoading(true);
     fetchUser(providerId).then(fetchedProvider => {
         setProvider(fetchedProvider);
-        // We no longer need to fetch products/gallery here as they come from context
         setIsLoading(false);
     }).catch(error => {
         console.error("Error loading provider data:", error);
@@ -78,6 +75,11 @@ export default function CompanyProfilePage() {
             providerId: p.providerId,
             imageUrl: p.src,
           }));
+  }, [provider, allPublications]);
+
+  const providerGallery = useMemo(() => {
+    if (!provider) return [];
+    return allPublications.filter(p => p.providerId === provider.id && p.type !== 'product');
   }, [provider, allPublications]);
   
   const filteredProducts = useMemo(() => {
@@ -597,10 +599,12 @@ export default function CompanyProfilePage() {
             </div>
             
             <div className="flex justify-around text-center text-xs text-muted-foreground pt-4 pb-4">
-              <div>
-                <p className="font-semibold text-foreground">{profileData.publications}</p>
-                <p>Publicaciones</p>
-              </div>
+              {!isProductProvider && (
+                <div>
+                  <p className="font-semibold text-foreground">{profileData.publications}</p>
+                  <p>Publicaciones</p>
+                </div>
+              )}
               {isProductProvider ? (
                  <div>
                     <p className="font-semibold text-foreground">{providerProducts.length}</p>
@@ -834,5 +838,3 @@ export default function CompanyProfilePage() {
     </>
   );
 }
-
-    
