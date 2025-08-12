@@ -53,7 +53,7 @@ interface CoraboState {
   isLoadingAuth: boolean;
   deliveryAddress: string;
   exchangeRate: number;
-  userPublications: GalleryImage[]; // New state for publications
+  userPublications: GalleryImage[];
   signInWithGoogle: () => void;
   setSearchQuery: (query: string) => void;
   setCategoryFilter: (category: string | null) => void;
@@ -81,6 +81,7 @@ interface CoraboState {
   toggleGps: (userId: string) => void;
   updateUser: (userId: string, updates: Partial<User>) => Promise<void>;
   updateUserProfileImage: (userId: string, imageUrl: string) => Promise<void>;
+  updateUserProfileAndGallery: (userId: string, newImage: GalleryImage) => Promise<void>;
   removeGalleryImage: (userId: string, imageId: string) => Promise<void>;
   validateEmail: (userId: string, emailToValidate: string) => Promise<boolean>;
   sendPhoneVerification: (userId: string, phone: string) => Promise<void>;
@@ -238,6 +239,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         isSubscribed: false,
         isTransactionsActive: false,
         idVerificationStatus: 'rejected',
+        gallery: [], // Initialize gallery
       };
       
       await setDoc(userDocRef, newUser);
@@ -263,6 +265,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
                 if (doc.exists()) {
                     const updatedUserData = doc.data() as User;
                     setCurrentUser(updatedUserData);
+                    // Update the local state for publications directly from the user document
+                    setUserPublications(updatedUserData.gallery || []);
                     userCache.current.set(updatedUserData.id, updatedUserData);
                     if (updatedUserData.profileSetupData?.location) {
                         setDeliveryAddress(updatedUserData.profileSetupData.location);
@@ -282,20 +286,15 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             });
             listeners.current.set('transactions', transactionsListener);
             
-            const conversationsQuery = query(collection(db, 'conversations'), where('participantIds', 'array-contains', userData.id), orderBy('lastUpdated', 'desc'));
+            // SIMPLIFIED QUERY: Remove orderBy to prevent index errors
+            const conversationsQuery = query(collection(db, 'conversations'), where('participantIds', 'array-contains', userData.id));
             const conversationsListener = onSnapshot(conversationsQuery, (snapshot) => {
                 const userConversations = snapshot.docs.map(doc => doc.data() as Conversation);
+                // Sort on the client side
+                userConversations.sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime());
                 setConversations(userConversations);
             });
             listeners.current.set('conversations', conversationsListener);
-
-            // New Listener for user's publications
-            const publicationsQuery = query(collection(db, 'publications'), where('providerId', '==', userData.id));
-            const publicationsListener = onSnapshot(publicationsQuery, (snapshot) => {
-                const publications = snapshot.docs.map(doc => doc.data() as GalleryImage);
-                setUserPublications(publications);
-            });
-            listeners.current.set('publications', publicationsListener);
 
         } else {
             setCurrentUser(null);
@@ -607,20 +606,13 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const verifyUserId = (userId: string) => updateUser(userId, { idVerificationStatus: 'verified', verified: true });
   const rejectUserId = (userId: string) => updateUser(userId, { idVerificationStatus: 'rejected' });
   const autoVerifyIdWithAI = async (input: VerificationInput): Promise<VerificationOutput> => {
-    // Before calling the flow, let's mark the user as pending.
-    // This provides feedback to the user and prevents multiple attempts.
     if(currentUser){
       await updateUser(currentUser.id, { idVerificationStatus: 'pending', idDocumentUrl: input.documentImageUrl });
     }
-    
-    // Now call the AI flow for verification.
     const result = await autoVerifyIdWithAIFlow(input);
-    
-    // Update the user status based on the AI result.
     if(currentUser){
        await updateUser(currentUser.id, { idVerificationStatus: result.nameMatch && result.idMatch ? 'verified' : 'rejected' });
     }
-
     return result;
   };
 
@@ -632,11 +624,40 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const createPublication = async (data: CreatePublicationInput) => {
     if (!currentUser) throw new Error("User not authenticated");
     await createPublicationFlow(data);
+    const newPublication: GalleryImage = {
+        id: `pub-${Date.now()}`,
+        providerId: data.userId,
+        type: data.type,
+        src: data.imageDataUri,
+        alt: data.description.slice(0, 50),
+        description: data.description,
+        createdAt: new Date().toISOString(),
+        aspectRatio: data.aspectRatio,
+        owner: data.owner,
+        comments: [],
+        likes: 0,
+    };
+    await updateUser(data.userId, { gallery: arrayUnion(newPublication) });
   };
   
   const createProduct = async (data: CreateProductInput) => {
     if (!currentUser) throw new Error("User not authenticated");
-    await createProductFlow(data);
+    const newPublicationId = await createProductFlow(data);
+    const newProductPublication: GalleryImage = {
+        id: `prod-${Date.now()}`,
+        providerId: data.userId,
+        type: 'product',
+        src: data.imageDataUri,
+        alt: data.name,
+        description: data.description,
+        createdAt: new Date().toISOString(),
+        productDetails: {
+            name: data.name,
+            price: data.price,
+            category: currentUser.profileSetupData?.primaryCategory || 'General',
+        }
+    };
+    await updateUser(data.userId, { gallery: arrayUnion(newProductPublication) });
   };
 
   const checkout = (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {
@@ -656,7 +677,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
               items: cart,
               delivery: withDelivery,
               deliveryCost: withDelivery ? getDeliveryCost() : 0,
-              deliveryLocation: withDelivery && deliveryAddress ? { lat: 0, lon: 0, address: deliveryAddress } : undefined, // Placeholder lat/lon
+              deliveryLocation: withDelivery && deliveryAddress ? { lat: 0, lon: 0, address: deliveryAddress } : undefined,
               paymentMethod: useCredicora ? 'credicora' : 'direct',
           }
       };
@@ -721,18 +742,18 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const updateUserProfileImage = async (userId: string, imageUrl: string) => {
      await updateUser(userId, { profileImage: imageUrl });
   };
+  
+  const updateUserProfileAndGallery = async (userId: string, newImage: GalleryImage) => {
+     if (!currentUser) return;
+      const updatedGallery = [...(currentUser.gallery || []), newImage];
+      await updateUser(userId, { gallery: updatedGallery });
+  };
 
   const removeGalleryImage = async (userId: string, imageId: string) => {
-    // This function will now delete from the root `publications` collection
-    const db = getFirestoreDb();
-    const publicationRef = doc(db, 'publications', imageId);
-    try {
-        await deleteDoc(publicationRef);
-        toast({ title: "Publicación eliminada" });
-    } catch (error) {
-        console.error("Error deleting publication:", error);
-        toast({ variant: "destructive", title: "Error al eliminar", description: "No se pudo eliminar la publicación."});
-    }
+    if (!currentUser) return;
+    const updatedGallery = (currentUser.gallery || []).filter(img => img.id !== imageId);
+    await updateUser(userId, { gallery: updatedGallery });
+    toast({ title: "Publicación eliminada" });
   };
   
   const validateEmail = async (userId: string, emailToValidate: string): Promise<boolean> => {
@@ -951,6 +972,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     toggleGps,
     updateUser,
     updateUserProfileImage,
+    updateUserProfileAndGallery,
     removeGalleryImage,
     validateEmail,
     sendPhoneVerification,

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
@@ -8,39 +9,23 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import { ProfileGalleryView } from '@/components/ProfileGalleryView';
 import type { GalleryImage } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { getProfileGallery } from '@/ai/flows/profile-flow';
-
 
 export default function PublicationsPage() {
   const router = useRouter();
   const { currentUser } = useCorabo();
   const { toast } = useToast();
 
-  const [gallery, setGallery] = useState<GalleryImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const loadGallery = useCallback(async () => {
-    if (!currentUser) return;
-    setIsLoading(true);
-    try {
-      // Correctly call the Genkit flow to get the gallery posts.
-      const galleryData = await getProfileGallery({ userId: currentUser.id, limitNum: 50 });
-      setGallery(galleryData.gallery);
-    } catch (error) {
-      console.error("Error loading gallery:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "No se pudo cargar tu galería de publicaciones.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentUser, toast]);
+  // Directly use the gallery from the currentUser object
+  const gallery = currentUser?.gallery || [];
 
   useEffect(() => {
-    loadGallery();
-  }, [loadGallery]);
+    // We are no longer fetching, just checking if the currentUser is loaded.
+    if (currentUser) {
+      setIsLoading(false);
+    }
+  }, [currentUser]);
 
   if (!currentUser) {
     return (
@@ -52,17 +37,11 @@ export default function PublicationsPage() {
 
   return (
     <>
-        {isLoading ? (
-            <div className="flex items-center justify-center pt-20">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            </div>
-        ) : (
-            <ProfileGalleryView
-            gallery={gallery}
+        <ProfileGalleryView
+            gallery={gallery.filter(g => g.type !== 'product')}
             owner={currentUser}
             isLoading={isLoading}
-            />
-        )}
+        />
     </>
   );
 }

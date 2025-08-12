@@ -1,13 +1,13 @@
 
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, Package } from 'lucide-react';
 import { useCorabo } from '@/contexts/CoraboContext';
-import type { Product } from '@/lib/types';
+import type { Product, GalleryImage } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { getProfileProducts } from '@/ai/flows/profile-flow';
 import { ProductGridCard } from '@/components/ProductGridCard';
 import { ProductDetailsDialog } from '@/components/ProductDetailsDialog';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -18,34 +18,28 @@ export default function CatalogPage() {
   const { currentUser } = useCorabo();
   const { toast } = useToast();
 
-  const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isProductDetailsDialogOpen, setIsProductDetailsDialogOpen] = useState(false);
 
-  const loadProducts = useCallback(async () => {
-    if (!currentUser) return;
-    setIsLoading(true);
-    try {
-      const productData = await getProfileProducts({ userId: currentUser.id, limitNum: 50 });
-      setProducts(productData.products);
-    } catch (error) {
-      console.error("Error loading products:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "No se pudo cargar tu catálogo de productos.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentUser, toast]);
-
+  // Get products directly from the user's gallery array in the context
+  const products: Product[] = (currentUser?.gallery || [])
+    .filter(item => item.type === 'product' && item.productDetails)
+    .map(item => ({
+        id: item.id,
+        name: item.productDetails!.name,
+        description: item.description,
+        price: item.productDetails!.price,
+        category: item.productDetails!.category,
+        providerId: item.providerId,
+        imageUrl: item.src,
+    }));
+  
   useEffect(() => {
     if (currentUser) {
-        loadProducts();
+      setIsLoading(false);
     }
-  }, [currentUser, loadProducts]);
+  }, [currentUser]);
   
   const openProductDetailsDialog = (product: Product) => {
     setSelectedProduct(product);
