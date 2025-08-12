@@ -5,7 +5,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MapPin, FileText, Menu, Search, LogOut, User, Wallet, History as HistoryIcon, Shield, HelpCircle, Contact, ShoppingCart, Plus, Minus, X, Truck, Star } from "lucide-react";
+import { MapPin, FileText, Menu, Search, LogOut, User, Wallet, History as HistoryIcon, Shield, HelpCircle, Contact, ShoppingCart, Plus, Minus, X, Truck, Star, ChevronDown } from "lucide-react";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -14,7 +14,10 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator
+  DropdownMenuSeparator,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuLabel
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -34,8 +37,22 @@ import { haversineDistance } from "@/lib/utils";
 // Punto de referencia fijo en Caracas
 const FIXED_REFERENCE_POINT = { lat: 10.4806, lon: -66.9036 };
 
+const serviceGroups = [
+    { name: 'Todos los Grupos', id: 'all' },
+    { name: 'Hogar y Reparaciones', id: 'Hogar y Reparaciones' },
+    { name: 'Tecnología y Soporte', id: 'Tecnología y Soporte' },
+    { name: 'Automotriz y Repuestos', id: 'Automotriz y Repuestos' },
+    { name: 'Alimentos y Restaurantes', id: 'Alimentos y Restaurantes' },
+    { name: 'Salud y Bienestar', id: 'Salud y Bienestar' },
+    { name: 'Educación', id: 'Educación' },
+    { name: 'Eventos', id: 'Eventos' },
+    { name: 'Belleza', id: 'Belleza' },
+    { name: 'Fletes y Delivery', id: 'Fletes y Delivery' },
+];
+
+
 export function Header() {
-  const { currentUser, toggleGps, logout, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, users, transactions, setSearchQuery } = useCorabo();
+  const { currentUser, toggleGps, logout, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, users, transactions, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter } = useCorabo();
   const router = useRouter();
 
   const [isCheckoutAlertOpen, setIsCheckoutAlertOpen] = useState(false);
@@ -82,6 +99,8 @@ export function Header() {
     }
   };
 
+  const selectedCategoryName = serviceGroups.find(g => g.id === categoryFilter)?.name || "Todos";
+
   return (
     <header className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b">
       <div className="container px-4 sm:px-6">
@@ -90,8 +109,32 @@ export function Header() {
           <Link href="/contacts" passHref>
              <Image src="https://i.postimg.cc/8zWvkhxS/Sin-t-tulo-3.png" alt="Corabo Logo" width={120} height={40} className="h-10 w-auto cursor-pointer" />
           </Link>
-
-          <div className="flex-grow"></div>
+          
+           <div className="relative flex-grow max-w-md mx-auto">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input 
+                  placeholder="Buscar por servicio, producto..." 
+                  className="pl-10 pr-24 rounded-full bg-background"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+              />
+               <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 rounded-full text-xs px-2">
+                        {selectedCategoryName.split(' ')[0]}
+                        <ChevronDown className="h-4 w-4 ml-1"/>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Filtrar por Grupo</DropdownMenuLabel>
+                    <DropdownMenuRadioGroup value={categoryFilter || 'all'} onValueChange={(value) => setCategoryFilter(value === 'all' ? null : value)}>
+                        {serviceGroups.map(group => (
+                             <DropdownMenuRadioItem key={group.id} value={group.id}>{group.name}</DropdownMenuRadioItem>
+                        ))}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+          </div>
 
           <div className="flex items-center gap-1">
              <Button variant="ghost" size="icon" onClick={() => toggleGps(currentUser.id)} onDoubleClick={() => router.push('/map')}>
@@ -101,12 +144,6 @@ export function Header() {
                      <span className="text-xs text-green-600 font-semibold ml-1">({distance.toFixed(1)}km)</span>
                    )}
                 </div>
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => router.push('/quotes')}>
-                <FileText className="h-5 w-5 text-muted-foreground"/>
-            </Button>
-            <Button variant="ghost" size="icon" onClick={() => router.push('/transactions')}>
-                <Wallet className="h-5 w-5 text-muted-foreground"/>
             </Button>
             
             <AlertDialog open={isCheckoutAlertOpen} onOpenChange={setIsCheckoutAlertOpen}>
@@ -271,6 +308,10 @@ export function Header() {
                   <DropdownMenuItem onClick={() => router.push('/search-history')}>
                     <HistoryIcon className="mr-2 h-4 w-4" />
                     <span>Historial de Búsqueda</span>
+                  </DropdownMenuItem>
+                   <DropdownMenuItem onClick={() => router.push('/quotes')}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    <span>Cotizar</span>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <ThemeSwitcher />

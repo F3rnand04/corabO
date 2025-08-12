@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -71,15 +72,15 @@ function QuotesHeader() {
 }
 
 const serviceGroups = [
-    { name: 'Hogar y Reparaciones' },
-    { name: 'Tecnología y Soporte' },
-    { name: 'Automotriz y Repuestos' },
-    { name: 'Alimentos y Restaurantes' },
-    { name: 'Fletes y Delivery' },
-    { name: 'Salud y Bienestar' },
-    { name: 'Educación y Capacitación' },
-    { name: 'Eventos y Entretenimiento' },
-    { name: 'Belleza y Cuidado Personal' },
+    { name: 'Hogar y Reparaciones', id: 'Hogar y Reparaciones' },
+    { name: 'Tecnología y Soporte', id: 'Tecnología y Soporte' },
+    { name: 'Automotriz y Repuestos', id: 'Automotriz y Repuestos' },
+    { name: 'Alimentos y Restaurantes', id: 'Alimentos y Restaurantes' },
+    { name: 'Salud y Bienestar', id: 'Salud y Bienestar' },
+    { name: 'Educación', id: 'Educación' },
+    { name: 'Eventos', id: 'Eventos' },
+    { name: 'Belleza', id: 'Belleza' },
+    { name: 'Fletes y Delivery', id: 'Fletes y Delivery' },
 ];
 
 const quoteSchema = z.object({
@@ -179,7 +180,7 @@ export default function QuotesPage() {
                           </FormControl>
                           <SelectContent>
                             {serviceGroups.map((group) => (
-                              <SelectItem key={group.name} value={group.name}>{group.name}</SelectItem>
+                              <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>

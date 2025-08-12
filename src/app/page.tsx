@@ -12,7 +12,7 @@ import { Loader2, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 export default function HomePage() {
-  const { currentUser, getFeed, searchQuery, setSearchQuery } = useCorabo();
+  const { currentUser, getFeed, searchQuery, setSearchQuery, categoryFilter } = useCorabo();
   const [publications, setPublications] = useState<GalleryImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
@@ -71,13 +71,33 @@ export default function HomePage() {
   }, [currentUser]); 
 
   const filteredPublications = useMemo(() => {
-    if (!searchQuery) return publications;
-    return publications.filter(p => 
-        p.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.owner?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.owner?.profileSetupData?.specialty?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [publications, searchQuery]);
+    let results = publications;
+
+    // 1. Filter by category
+    if (categoryFilter) {
+      results = results.filter(p => {
+        // Check both product category and provider's primary category
+        if (p.type === 'product' && p.productDetails?.category) {
+          return p.productDetails.category === categoryFilter;
+        }
+        if (p.owner?.profileSetupData?.primaryCategory) {
+          return p.owner.profileSetupData.primaryCategory === categoryFilter;
+        }
+        return false;
+      });
+    }
+
+    // 2. Filter by search query
+    if (searchQuery) {
+      results = results.filter(p => 
+          p.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.owner?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.owner?.profileSetupData?.specialty?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    return results;
+  }, [publications, searchQuery, categoryFilter]);
 
 
   if (isLoading || !currentUser) {
@@ -93,16 +113,6 @@ export default function HomePage() {
        {currentUser && !currentUser.isTransactionsActive && (
           <ActivationWarning userType={currentUser.type} />
       )}
-
-        <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input 
-                placeholder="Buscar por servicio, producto o proveedor..." 
-                className="pl-10 rounded-full bg-background"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-            />
-        </div>
        
         <div className="space-y-4">
         {filteredPublications.length > 0 ? (

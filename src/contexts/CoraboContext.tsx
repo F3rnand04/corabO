@@ -46,6 +46,7 @@ interface CoraboState {
   conversations: Conversation[];
   cart: CartItem[];
   searchQuery: string;
+  categoryFilter: string | null;
   contacts: User[];
   isGpsActive: boolean;
   searchHistory: string[];
@@ -54,6 +55,7 @@ interface CoraboState {
   exchangeRate: number;
   signInWithGoogle: () => void;
   setSearchQuery: (query: string) => void;
+  setCategoryFilter: (category: string | null) => void;
   clearSearchHistory: () => void;
   logout: () => void;
   addToCart: (product: Product, quantity: number) => void;
@@ -130,6 +132,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const [cart, setCart] = useState<CartItem[]>([]);
   const [searchQuery, _setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [contacts, setContacts] = useState<User[]>([]);
   const [isGpsActive, setIsGpsActive] = useState(true);
@@ -929,6 +932,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     conversations,
     cart,
     searchQuery,
+    categoryFilter,
     contacts,
     isGpsActive,
     searchHistory,
@@ -937,6 +941,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     exchangeRate,
     signInWithGoogle,
     setSearchQuery,
+    setCategoryFilter,
     clearSearchHistory,
     logout,
     addToCart,

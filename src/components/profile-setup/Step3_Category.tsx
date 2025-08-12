@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -92,13 +93,14 @@ export default function Step3_Category({ onBack, onNext, formData, setFormData }
           <div className="flex flex-wrap gap-2">
             {selectedCategories.map((catId) => {
               const category = allCategories.find(c => c.id === catId);
+              if (!category) return null;
               return (
                 <Button 
                     key={catId}
                     variant={primaryCategory === catId ? 'default' : 'outline'}
                     onClick={() => handlePrimaryCategorySelect(catId)}
                 >
-                    {category?.name}
+                    {category.name}
                 </Button>
               );
             })}

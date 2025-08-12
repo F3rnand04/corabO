@@ -29,15 +29,15 @@ interface Step6_ReviewProps {
 }
 
 const allCategories = [
-  { id: 'Hogar y Reparaciones', name: 'Hogar y Reparaciones' },
-  { id: 'Tecnología y Soporte', name: 'Tecnología y Soporte' },
-  { id: 'Automotriz y Repuestos', name: 'Automotriz y Repuestos' },
-  { id: 'Alimentos y Restaurantes', name: 'Alimentos y Restaurantes' },
-  { id: 'Salud y Bienestar', name: 'Salud y Bienestar' },
-  { id: 'Educación', name: 'Educación' },
-  { id: 'Eventos', name: 'Eventos' },
-  { id: 'Belleza', name: 'Belleza' },
-  { id: 'Fletes y Delivery', name: 'Fletes y Delivery' },
+    { name: 'Hogar y Reparaciones', id: 'Hogar y Reparaciones' },
+    { name: 'Tecnología y Soporte', id: 'Tecnología y Soporte' },
+    { name: 'Automotriz y Repuestos', id: 'Automotriz y Repuestos' },
+    { name: 'Alimentos y Restaurantes', id: 'Alimentos y Restaurantes' },
+    { name: 'Salud y Bienestar', id: 'Salud y Bienestar' },
+    { name: 'Educación', id: 'Educación' },
+    { name: 'Eventos', id: 'Eventos' },
+    { name: 'Belleza', id: 'Belleza' },
+    { name: 'Fletes y Delivery', id: 'Fletes y Delivery' },
 ];
 
 const MAX_RADIUS_FREE = 10;
