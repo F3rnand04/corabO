@@ -276,6 +276,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         setTransactions([]);
         setConversations([]);
     }
+    // This is the critical fix: update loading state AFTER auth is resolved.
     setIsLoadingAuth(false);
   }, []);
 
@@ -1070,6 +1071,7 @@ export type { Transaction };
     
 
     
+
 
 
 
