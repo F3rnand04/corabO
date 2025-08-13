@@ -9,13 +9,13 @@ module.exports = {
   // Patrones para encontrar archivos de test
   testMatch: [
     '<rootDir>/tests/**/*.test.ts',
+    '<rootDir>/tests/integration/**/*.test.ts',
+    '<rootDir>/tests/security/**/*.test.ts',
   ],
   // Ignora las carpetas que no contienen tests
   testPathIgnorePatterns: [
     '<rootDir>/.next/',
     '<rootDir>/node_modules/',
-    '<rootDir>/tests/integration/',
-    '<rootDir>/tests/security/',
   ],
   // Configuración para transformar archivos de TypeScript
   transform: {
