@@ -249,8 +249,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         });
         listeners.current.set('transactions', transactionsListener);
         
-        const conversationsListener = onSnapshot(query(collection(db, "conversations"), where("participantIds", "array-contains", userData.id), orderBy('lastUpdated', 'desc')), (snapshot) => {
-            setConversations(snapshot.docs.map(doc => doc.data() as Conversation));
+        const conversationsListener = onSnapshot(query(collection(db, "conversations"), where("participantIds", "array-contains", userData.id)), (snapshot) => {
+            const convos = snapshot.docs.map(doc => doc.data() as Conversation);
+            // Sort client-side
+            convos.sort((a,b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime());
+            setConversations(convos);
         });
         listeners.current.set('conversations', conversationsListener);
 
@@ -1073,4 +1076,5 @@ export type { Transaction };
     
 
     
+
 

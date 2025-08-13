@@ -2,14 +2,6 @@
 {
   "indexes": [
     {
-      "collectionGroup": "conversations",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "participantIds", "arrayConfig": "CONTAINS" },
-        { "fieldPath": "lastUpdated", "order": "DESCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "transactions",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
