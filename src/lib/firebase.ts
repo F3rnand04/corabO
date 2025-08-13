@@ -1,10 +1,10 @@
-
 // IMPORTANT: This file MUST have the "use client" directive.
 // It's intended for client-side components and hooks.
 "use client";
 
 import { initializeApp, getApp, getApps, type FirebaseApp } from "firebase/app";
-import { getFirestore, type Firestore } from "firebase/firestore";
+import { getFirestore, connectFirestoreEmulator, type Firestore } from "firebase/firestore";
+import { getAuth, connectAuthEmulator } from "firebase/auth";
 
 // Your web app's Firebase configuration - KEEP THIS AS IS FROM THE CONSOLE
 const firebaseConfig = {
@@ -17,7 +17,6 @@ const firebaseConfig = {
   "messagingSenderId": "220291714642"
 };
 
-
 function getFirebaseAppInstance(): FirebaseApp {
     if (getApps().length === 0) {
         return initializeApp(firebaseConfig);
@@ -27,7 +26,16 @@ function getFirebaseAppInstance(): FirebaseApp {
 }
 
 const app = getFirebaseAppInstance();
-let db: Firestore | null = null;
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+// Connect to emulators if running in a local development environment
+if (typeof window !== 'undefined' && window.location.hostname === "localhost") {
+  console.log("Connecting to Firebase Emulators...");
+  connectFirestoreEmulator(db, "localhost", 8081);
+  connectAuthEmulator(auth, "http://localhost:9099");
+}
+
 
 export function getFirebaseApp(): FirebaseApp {
     return app;
@@ -35,8 +43,5 @@ export function getFirebaseApp(): FirebaseApp {
 
 // This function provides a client-side instance of Firestore.
 export function getFirestoreDb(): Firestore {
-    if (!db) {
-        db = getFirestore(app);
-    }
     return db;
 }
