@@ -3,7 +3,7 @@
   "name": "corabo.app",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "firebase emulators:exec \"next dev\"",
     "genkit:dev": "genkit start",
     "genkit:watch": "genkit start --watch",
     "build": "next build",
