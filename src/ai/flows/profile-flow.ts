@@ -22,7 +22,7 @@ export const getProfileGallery = ai.defineFlow(
     },
     async ({ userId, limitNum = 9, startAfterDocId }) => {
         const db = getFirestoreDb();
-        const publicationsCollection = collection(db, 'publications');
+        const galleryCollection = collection(db, 'publications');
         
         const queryConstraints: any[] = [
             where("providerId", "==", userId),
@@ -38,7 +38,7 @@ export const getProfileGallery = ai.defineFlow(
             }
         }
         
-        const q = query(publicationsCollection, ...queryConstraints);
+        const q = query(galleryCollection, ...queryConstraints);
         const snapshot = await getDocs(q);
 
         const galleryItems = snapshot.docs.map(doc => doc.data() as GalleryImage);
@@ -63,7 +63,7 @@ export const getProfileProducts = ai.defineFlow(
     },
     async ({ userId, limitNum = 10, startAfterDocId }) => {
         const db = getFirestoreDb();
-        const publicationsCollection = collection(db, 'publications');
+        const productsCollection = collection(db, 'products');
         
         const queryConstraints: any[] = [
             where("providerId", "==", userId),
@@ -79,7 +79,7 @@ export const getProfileProducts = ai.defineFlow(
             }
         }
 
-        const q = query(publicationsCollection, ...queryConstraints);
+        const q = query(productsCollection, ...queryConstraints);
         const snapshot = await getDocs(q);
 
         const userProductsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as GalleryImage));

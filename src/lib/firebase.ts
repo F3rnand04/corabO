@@ -32,11 +32,10 @@ const auth = getAuth(app);
 
 // Connect to emulators if running in a local development environment
 if (typeof window !== 'undefined' && window.location.hostname === "localhost") {
-  console.log("Connecting to Firebase Emulators...");
-  // NOTE: The port for Firestore Emulator in firebase.json is 8082, not 8081.
-  connectFirestoreEmulator(db, "localhost", 8082); 
-  // NOTE: The port for Auth Emulator in firebase.json is 9100, not 9099.
-  connectAuthEmulator(auth, "http://localhost:9100");
+  console.log("Connecting client to Firebase Emulators...");
+  // NOTE: The ports must match firebase.json
+  connectFirestoreEmulator(db, "localhost", 8083); 
+  connectAuthEmulator(auth, "http://localhost:9101");
 }
 
 

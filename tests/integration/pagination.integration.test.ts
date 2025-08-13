@@ -48,7 +48,7 @@ describe('Pagination Flow - Integration Test', () => {
         alt: `Product ${i.toString().padStart(2, '0')}`,
         description: `Test product ${i}`,
         // Firestore uses Timestamps, not ISO strings for ordering
-        createdAt: Timestamp.from(new Date(2024, 0, i)).toDate().toISOString(),
+        createdAt: new Date(2024, 0, i).toISOString(),
         productDetails: {
             name: `Product ${i.toString().padStart(2, '0')}`,
             price: 10 + i,
