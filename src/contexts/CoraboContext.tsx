@@ -234,6 +234,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         const db = getFirestoreDb();
         
         // Setup all listeners now that we are authenticated
+        const allUsersListener = onSnapshot(collection(db, 'users'), (snapshot) => {
+            const allUsers = snapshot.docs.map(doc => doc.data() as User);
+            setUsers(allUsers);
+        });
+        listeners.current.set('allUsers', allUsersListener);
+        
         const userListener = onSnapshot(doc(db, 'users', userData.id), (doc) => {
             if (doc.exists()) setCurrentUser(doc.data() as User);
         });
@@ -265,25 +271,13 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
     } else {
         setCurrentUser(null);
+        setUsers([]);
         setAllPublications([]);
         setTransactions([]);
         setConversations([]);
     }
     setIsLoadingAuth(false);
   }, []);
-
-
-  useEffect(() => {
-    const db = getFirestoreDb();
-    // This listener is for the UserSwitcher, it should run even without a logged-in user.
-    // The security rules have been updated to allow this specific read.
-    const allUsersListener = onSnapshot(collection(db, 'users'), (snapshot) => {
-        const allUsers = snapshot.docs.map(doc => doc.data() as User);
-        setUsers(allUsers);
-    });
-    return () => allUsersListener();
-  }, []);
-
 
   useEffect(() => {
     if (currentUser?.isGpsActive) {
@@ -1076,6 +1070,7 @@ export type { Transaction };
     
 
     
+
 
 
 
