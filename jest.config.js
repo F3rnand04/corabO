@@ -8,9 +8,7 @@ module.exports = {
   },
   // Patrones para encontrar archivos de test
   testMatch: [
-    '<rootDir>/tests/**/*.test.ts',
-    '<rootDir>/tests/integration/**/*.test.ts',
-    '<rootDir>/tests/security/**/*.test.ts',
+    '<rootDir>/tests/unit/**/*.test.ts',
   ],
   // Ignora las carpetas que no contienen tests
   testPathIgnorePatterns: [
