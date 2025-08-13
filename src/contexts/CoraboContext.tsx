@@ -276,9 +276,49 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         setTransactions([]);
         setConversations([]);
     }
-    // This is the critical fix: update loading state AFTER auth is resolved.
-    setIsLoadingAuth(false);
   }, []);
+
+  useEffect(() => {
+    const auth = getAuth(getFirebaseApp());
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setIsLoadingAuth(true); // Start loading state before processing auth
+      if (firebaseUser) {
+        // Check for redirect result first
+        try {
+            const result = await getRedirectResult(auth);
+            if (result) {
+                // User signed in with redirect, handle the result
+                console.log("Redirect result:", result);
+                // You might want to do something with the result here if needed,
+                // but onAuthStateChanged will likely handle setting the user.
+            } else {
+                // If there is no redirect result, it might be a direct sign-in or the initial load
+                console.log("No redirect result found, processing user directly.");
+            }
+        } catch (error) {
+            console.error("Error getting redirect result:", error);
+             toast({
+                variant: 'destructive',
+                title: 'Error de Autenticación',
+                description: 'Hubo un error al procesar el inicio de sesión. Por favor, inténtalo de nuevo.'
+             });
+        }
+
+        // Now handle the user regardless of redirect or direct sign-in
+        handleUserAuth(firebaseUser);
+
+      } else {
+        // User is signed out
+        handleUserAuth(null);
+      }
+       // This is the critical fix: update loading state AFTER auth is resolved inside the callback.
+       setIsLoadingAuth(false);
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, [handleUserAuth, toast]); // Added toast to dependency array as it's used inside
+
 
   useEffect(() => {
     if (currentUser?.isGpsActive) {
@@ -1071,6 +1111,7 @@ export type { Transaction };
     
 
     
+
 
 
 
