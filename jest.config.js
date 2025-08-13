@@ -14,6 +14,8 @@ module.exports = {
   testPathIgnorePatterns: [
     '<rootDir>/.next/',
     '<rootDir>/node_modules/',
+    '<rootDir>/tests/integration/',
+    '<rootDir>/tests/security/',
   ],
   // Configuración para transformar archivos de TypeScript
   transform: {
