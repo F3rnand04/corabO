@@ -1,3 +1,4 @@
+
 // IMPORTANT: This file MUST have the "use client" directive.
 // It's intended for client-side components and hooks.
 "use client";
@@ -32,8 +33,10 @@ const auth = getAuth(app);
 // Connect to emulators if running in a local development environment
 if (typeof window !== 'undefined' && window.location.hostname === "localhost") {
   console.log("Connecting to Firebase Emulators...");
-  connectFirestoreEmulator(db, "localhost", 8081);
-  connectAuthEmulator(auth, "http://localhost:9099");
+  // NOTE: The port for Firestore Emulator in firebase.json is 8082, not 8081.
+  connectFirestoreEmulator(db, "localhost", 8082); 
+  // NOTE: The port for Auth Emulator in firebase.json is 9100, not 9099.
+  connectAuthEmulator(auth, "http://localhost:9100");
 }
 
 
