@@ -11,14 +11,14 @@ import { Separator } from '@/components/ui/separator';
 import { UserSwitcher } from '@/components/UserSwitcher';
 
 export default function LoginPage() {
-  const { signInWithGoogle, currentUser } = useCorabo();
+  const { signInWithGoogle, currentUser, isLoadingAuth } = useCorabo();
   const router = useRouter();
 
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && !isLoadingAuth) {
       router.push('/');
     }
-  }, [currentUser, router]);
+  }, [currentUser, router, isLoadingAuth]);
 
 
   return (
