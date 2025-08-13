@@ -15,6 +15,6 @@ import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
 
 export const ai = genkit({
-  plugins: [], // This is now safe as we removed the plugin initialization
+  plugins: [googleAI()], // This is now safe as we removed the plugin initialization
   model: 'google-ai/gemini-1.5-flash',
 });
