@@ -10,7 +10,8 @@ import { ai } from '@/ai/genkit';
 import { googleAI } from '@genkit-ai/googleai';
 import { z } from 'zod';
 
-ai.use(googleAI());
+// Do not initialize plugins here in a shared context file.
+// ai.use(googleAI());
 
 const VerificationInputSchema = z.object({
   userId: z.string(),
