@@ -29,18 +29,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             // User is signed in, let the context handle it.
             handleUserAuth(firebaseUser);
         } else {
-            // No user is signed in. Check if they are returning from a redirect.
+            // No user is signed in.
+            if (pathname === '/login') {
+                // If we are already on the login page and there's no user,
+                // we can stop the loading process immediately.
+                handleUserAuth(null);
+                return;
+            }
+
             getRedirectResult(auth)
                 .then((result) => {
                     if (!result) {
                         // This means there's no active session and they are not coming from a redirect.
-                        // So, they must be directed to login unless they are already there.
-                        if (pathname !== '/login') {
-                            router.replace('/login');
-                        }
+                        // So, they must be directed to login.
+                        router.replace('/login');
                     }
-                    // If 'result' is not null, the onAuthStateChanged will trigger again with the new user,
-                    // so we don't need to do anything else here.
+                    // If 'result' is not null, onAuthStateChanged will trigger again with the new user,
+                    // and handleUserAuth will be called there.
                 })
                 .catch((error) => {
                     console.error("Error getting redirect result:", error);
