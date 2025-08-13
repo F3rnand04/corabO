@@ -5,5 +5,19 @@
   },
   "storage": {
     "rules": "storage.rules"
+  },
+  "emulators": {
+    "firestore": {
+      "host": "localhost",
+      "port": 8081
+    },
+    "auth": {
+      "host": "localhost",
+      "port": 9099
+    },
+    "storage": {
+      "host": "localhost",
+      "port": 9199
+    }
   }
 }
