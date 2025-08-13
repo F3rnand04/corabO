@@ -22,45 +22,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   
   useEffect(() => {
     const auth = getAuth();
-
-    // This handles both the initial page load and the return from a redirect.
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-        if (firebaseUser) {
-            // User is signed in, let the context handle it.
-            handleUserAuth(firebaseUser);
-        } else {
-            // No user is signed in.
-            if (pathname === '/login') {
-                // If we are already on the login page and there's no user,
-                // we can stop the loading process immediately.
-                handleUserAuth(null);
-                return;
-            }
-
-            getRedirectResult(auth)
-                .then((result) => {
-                    if (!result) {
-                        // This means there's no active session and they are not coming from a redirect.
-                        // So, they must be directed to login.
-                        router.replace('/login');
-                    }
-                    // If 'result' is not null, onAuthStateChanged will trigger again with the new user,
-                    // and handleUserAuth will be called there.
-                })
-                .catch((error) => {
-                    console.error("Error getting redirect result:", error);
-                    toast({ variant: 'destructive', title: 'Error de autenticación', description: 'No se pudo completar el inicio de sesión.' });
-                })
-                .finally(() => {
-                    // This ensures that even if there's an error, we mark loading as false
-                    // to prevent an infinite loading state.
-                    if(!auth.currentUser) handleUserAuth(null);
-                });
-        }
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      await handleUserAuth(firebaseUser);
     });
-
     return () => unsubscribe();
-  }, [handleUserAuth, pathname, router, toast]);
+  }, [handleUserAuth]);
 
 
   // This effect handles redirection for a logged-in user to the correct page
@@ -73,6 +39,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         } else if (currentUser.isInitialSetupComplete && (pathname === '/login' || pathname === '/initial-setup')) {
             router.replace('/');
         }
+    } else if (!isLoadingAuth && pathname !== '/login') {
+        router.replace('/login');
     }
   }, [currentUser, isLoadingAuth, pathname, router]);
 
