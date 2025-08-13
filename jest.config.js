@@ -9,6 +9,8 @@ module.exports = {
   // Patrones para encontrar archivos de test
   testMatch: [
     '<rootDir>/tests/unit/**/*.test.ts',
+    '<rootDir>/tests/integration/**/*.test.ts',
+    '<rootDir>/tests/load-tests/**/*.test.js',
   ],
   // Ignora las carpetas que no contienen tests
   testPathIgnorePatterns: [
@@ -21,4 +23,6 @@ module.exports = {
   },
   // Archivo de setup global para los tests
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
+  // Asegura que Jest busque módulos en la carpeta node_modules raíz
+  moduleDirectories: ['node_modules', '<rootDir>/node_modules'],
 };

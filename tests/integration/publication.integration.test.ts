@@ -127,7 +127,7 @@ describe('Publication Flow - Data Resilience Integration Tests', () => {
         type: 'provider',
         email: 'john@doe.com', phone: '', emailValidated: true, phoneValidated: false, isGpsActive: true, reputation: 5,
         verified: true,
-        profileSetupData: { username: 'john_doe', specialty: 'Denormalization Expert', providerType: 'professional' }
+ profileSetupData: { username: 'john_doe', specialty: 'Denormalization Expert', providerType: 'professional', useUsername: true }
     };
     await setDoc(doc(db, 'users/user_denormalized'), specificUser);
 
