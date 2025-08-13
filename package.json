@@ -58,7 +58,6 @@
     "patch-package": "^8.0.0",
     "qrcode.react": "^3.1.0",
     "react": "^18.3.1",
-    "react-day-picker": "^8.10.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.54.2",
     "recharts": "^2.15.1",
@@ -71,10 +70,10 @@
     "@types/google.maps": "^3.55.11",
     "@types/jest": "^29.5.12",
     "@types/jspdf": "^2.0.0",
-    "@types/node": "^20",
+    "@types/node": "^20.14.12",
     "@types/qrcode.react": "^1.0.5",
-    "@types/react": "^18.3.1",
-    "@types/react-dom": "^18.3.1",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
     "@types/supertest": "^6.0.2",
     "@types/twilio": "^3.19.3",
     "genkit-cli": "~1.0.0",
@@ -84,6 +83,6 @@
     "supertest": "^7.0.0",
     "tailwindcss": "^3.4.1",
     "ts-jest": "^29.2.3",
-    "typescript": "^5"
+    "typescript": "^5.5.4"
   }
 }
