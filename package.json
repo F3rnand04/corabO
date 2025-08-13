@@ -65,6 +65,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.0",
     "@types/google.maps": "^3.55.11",
     "@types/jest": "^29.5.12",
     "@types/jspdf": "^2.0.0",
