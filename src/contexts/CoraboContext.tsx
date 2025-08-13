@@ -24,6 +24,7 @@ import { createProduct as createProductFlow, createPublication as createPublicat
 import type { GetFeedInputSchema, GetFeedOutputSchema, GetProfileGalleryInputSchema, GetProfileGalleryOutputSchema, GetProfileProductsInputSchema, GetProfileProductsOutputSchema } from '@/lib/types';
 import { z } from 'zod';
 import { haversineDistance } from '@/lib/utils';
+import { getOrCreateUser as getOrCreateUserFlow, type FirebaseUserInput } from '@/ai/flows/auth-flow';
 
 interface DailyQuote {
     requestSignature: string;
@@ -128,55 +129,6 @@ interface CoraboState {
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
 
-// Moved this function outside the provider to keep its reference stable
-const getOrCreateUser = async (firebaseUser: FirebaseUser): Promise<User> => {
-    const db = getFirestoreDb();
-    const userDocRef = doc(db, 'users', firebaseUser.uid);
-    const userDocSnap = await getDoc(userDocRef);
-
-    if (userDocSnap.exists()) {
-      return userDocSnap.data() as User;
-    } else {
-      const nameParts = (firebaseUser.displayName || 'Usuario Nuevo').split(' ');
-      const firstName = nameParts[0];
-      const lastName = nameParts.slice(1).join(' ');
-
-      const coraboId = (firstName.substring(0, 3)).toUpperCase() + Math.random().toString(36).substring(2, 8).toUpperCase();
-      
-      const newUser: User = {
-        id: firebaseUser.uid,
-        coraboId: coraboId,
-        name: firstName,
-        lastName: lastName,
-        idNumber: '',
-        birthDate: '',
-        createdAt: new Date().toISOString(),
-        type: 'client',
-        reputation: 0,
-        effectiveness: 100,
-        profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
-        email: firebaseUser.email || '',
-        phone: '',
-        emailValidated: firebaseUser.emailVerified,
-        phoneValidated: false,
-        isGpsActive: true,
-        isInitialSetupComplete: false,
-        credicoraLevel: 1,
-        credicoraLimit: 150,
-        profileSetupData: {
-            location: "10.4806,-66.9036"
-        },
-        isSubscribed: false,
-        isTransactionsActive: false,
-        idVerificationStatus: 'rejected',
-      };
-      
-      await setDoc(userDocRef, newUser);
-      return newUser;
-    }
-}
-
-
 export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
   const router = useRouter();
@@ -227,7 +179,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     setQrSession(null); 
 
     if (firebaseUser) {
-        const userData = await getOrCreateUser(firebaseUser);
+        const firebaseUserInput: FirebaseUserInput = {
+            uid: firebaseUser.uid,
+            displayName: firebaseUser.displayName,
+            email: firebaseUser.email,
+            photoURL: firebaseUser.photoURL,
+            emailVerified: firebaseUser.emailVerified
+        };
+        const userData = await getOrCreateUserFlow(firebaseUserInput);
         userCache.current.set(userData.id, userData);
         setCurrentUser(userData);
 
@@ -276,48 +235,16 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         setTransactions([]);
         setConversations([]);
     }
-  }, []);
+    // Crucially, mark loading as false AFTER all async operations are done.
+    setIsLoadingAuth(false);
+  }, []); // Dependencies can be added if this function relies on external state
 
   useEffect(() => {
     const auth = getAuth(getFirebaseApp());
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setIsLoadingAuth(true); // Start loading state before processing auth
-      if (firebaseUser) {
-        // Check for redirect result first
-        try {
-            const result = await getRedirectResult(auth);
-            if (result) {
-                // User signed in with redirect, handle the result
-                console.log("Redirect result:", result);
-                // You might want to do something with the result here if needed,
-                // but onAuthStateChanged will likely handle setting the user.
-            } else {
-                // If there is no redirect result, it might be a direct sign-in or the initial load
-                console.log("No redirect result found, processing user directly.");
-            }
-        } catch (error) {
-            console.error("Error getting redirect result:", error);
-             toast({
-                variant: 'destructive',
-                title: 'Error de Autenticación',
-                description: 'Hubo un error al procesar el inicio de sesión. Por favor, inténtalo de nuevo.'
-             });
-        }
-
-        // Now handle the user regardless of redirect or direct sign-in
-        await handleUserAuth(firebaseUser);
-
-      } else {
-        // User is signed out
-        await handleUserAuth(null);
-      }
-       // This is the critical fix: update loading state AFTER auth is resolved inside the callback.
-       setIsLoadingAuth(false);
-    });
-
+    const unsubscribe = onAuthStateChanged(auth, handleUserAuth);
     // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, [handleUserAuth, toast]);
+  }, [handleUserAuth]);
 
 
   useEffect(() => {
@@ -1116,6 +1043,7 @@ export type { Transaction };
     
 
     
+
 
 
 
