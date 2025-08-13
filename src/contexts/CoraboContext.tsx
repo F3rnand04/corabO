@@ -13,18 +13,18 @@ import { credicoraLevels } from '@/lib/types';
 import { getAuth, signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, GoogleAuthProvider, setPersistence, browserLocalPersistence, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 import { getFirebaseApp, getFirestoreDb } from '@/lib/firebase';
 import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, arrayUnion, getDocs, deleteDoc, collectionGroup, Unsubscribe, orderBy } from 'firebase/firestore';
-import { createCampaign as createCampaignFlow, type CreateCampaignInput } from '@/ai/flows/campaign-flow';
-import { acceptProposal as acceptProposalFlow, sendMessage as sendMessageFlow } from '@/ai/flows/message-flow';
+import { createCampaign, type CreateCampaignInput } from '@/ai/flows/campaign-flow';
+import { acceptProposal, sendMessage } from '@/ai/flows/message-flow';
 import * as TransactionFlows from '@/ai/flows/transaction-flow';
 import * as NotificationFlows from '@/ai/flows/notification-flow';
 import { autoVerifyIdWithAI, type VerificationInput } from '@/ai/flows/verification-flow';
 import { getExchangeRate } from '@/ai/flows/exchange-rate-flow';
 import { sendSmsVerificationCodeFlow, verifySmsCodeFlow } from '@/ai/flows/sms-flow';
-import { createProduct as createProductFlow, createPublication as createPublicationFlow } from '@/ai/flows/publication-flow';
+import { createProduct, createPublication } from '@/ai/flows/publication-flow';
 import type { GetFeedInputSchema, GetFeedOutputSchema, GetProfileGalleryInputSchema, GetProfileGalleryOutputSchema, GetProfileProductsInputSchema, GetProfileProductsOutputSchema } from '@/lib/types';
 import { z } from 'zod';
 import { haversineDistance } from '@/lib/utils';
-import { getOrCreateUser as getOrCreateUserFlow, type FirebaseUserInput } from '@/ai/flows/auth-flow';
+import { getOrCreateUser, type FirebaseUserInput } from '@/ai/flows/auth-flow';
 
 interface DailyQuote {
     requestSignature: string;
@@ -186,7 +186,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             photoURL: firebaseUser.photoURL,
             emailVerified: firebaseUser.emailVerified
         };
-        const userData = await getOrCreateUserFlow(firebaseUserInput);
+        const userData = await getOrCreateUser(firebaseUserInput);
         userCache.current.set(userData.id, userData);
         setCurrentUser(userData);
 
@@ -455,37 +455,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const sendMessage = (recipientId: string, text: string, createOnly: boolean = false): string => {
-    if (!currentUser) return '';
-    const db = getFirestoreDb();
-    const convoId = [currentUser.id, recipientId].sort().join('_');
-    
-    if (createOnly) {
-      const convoRef = doc(db, 'conversations', convoId);
-      getDoc(convoRef).then(snap => {
-        if (!snap.exists()) {
-          setDoc(convoRef, {
-            id: convoId,
-            participantIds: [currentUser.id, recipientId].sort(),
-            messages: [],
-            lastUpdated: new Date().toISOString(),
-          });
-        }
-      });
-    } else {
-        sendMessageFlow({
-            conversationId: convoId,
-            senderId: currentUser.id,
-            text: text,
-            recipientId: recipientId
-        }).catch(err => {
-            console.error(err);
-            toast({ variant: 'destructive', title: "Error al enviar mensaje" });
-        });
-    }
-    return convoId;
-  };
-
   const sendProposalMessage = async (conversationId: string, proposal: AgreementProposal) => {
     if (!currentUser) return;
     try {
@@ -495,7 +464,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         const recipient = conversationDoc.data()?.participantIds.find((p: string) => p !== currentUser.id);
         if (!recipient) throw new Error("Recipient not found");
         
-        await sendMessageFlow({
+        await sendMessage({
             conversationId: conversationId,
             senderId: currentUser.id,
             proposal: proposal,
@@ -508,17 +477,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const acceptProposal = async (conversationId: string, messageId: string) => {
-    if (!currentUser) return;
-    try {
-      await acceptProposalFlow({ conversationId, messageId, acceptorId: currentUser.id });
-      toast({ title: '¡Acuerdo Aceptado!', description: 'Se ha creado un nuevo compromiso de pago.' });
-    } catch (error) {
-      console.error("Error aceptando propuesta:", error);
-      toast({ variant: 'destructive', title: 'Error al aceptar la propuesta' });
-    }
-  };
-  
   const markConversationAsRead = async (conversationId: string) => {
     if (!currentUser) return;
     const db = getFirestoreDb();
@@ -538,42 +496,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const sendQuote = (transactionId: string, quote: { breakdown: string; total: number }) => {
-    if (!currentUser) return;
-    TransactionFlows.sendQuote({ transactionId, userId: currentUser.id, breakdown: quote.breakdown, total: quote.total });
-  };
-  const acceptQuote = (transactionId: string) => {
-    if (!currentUser) return;
-    TransactionFlows.acceptQuote({ transactionId, userId: currentUser.id });
-  };
-  const acceptAppointment = (transactionId: string) => {
-      if (!currentUser) return;
-      TransactionFlows.acceptAppointment({ transactionId, userId: currentUser.id });
-  };
-  const payCommitment = (transactionId: string, rating?: number, comment?: string) => {
-    if (!currentUser) return;
-    TransactionFlows.payCommitment({ transactionId, userId: currentUser.id, rating, comment });
-  };
-  const confirmPaymentReceived = (transactionId: string, fromThirdParty: boolean) => {
-    if (!currentUser) return;
-    TransactionFlows.confirmPaymentReceived({ transactionId, userId: currentUser.id, fromThirdParty });
-  };
-  const completeWork = (transactionId: string) => {
-    if (!currentUser) return;
-    TransactionFlows.completeWork({ transactionId, userId: currentUser.id });
-  };
-  const confirmWorkReceived = (transactionId: string, rating: number, comment?: string) => {
-    if (!currentUser) return;
-    TransactionFlows.confirmWorkReceived({ transactionId, userId: currentUser.id, rating, comment });
-  };
-  const startDispute = (transactionId: string) => {
-    TransactionFlows.startDispute(transactionId);
-  };
-  const createAppointmentRequest = (request: Omit<AppointmentRequest, 'clientId'>) => {
-    if (!currentUser) return;
-    TransactionFlows.createAppointmentRequest({ ...request, clientId: currentUser.id });
-  };
-
   const toggleUserPause = (userId: string, currentIsPaused: boolean) => {
     updateUser(userId, { isPaused: !currentIsPaused });
   };
@@ -590,36 +512,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const verifyUserId = (userId: string) => updateUser(userId, { idVerificationStatus: 'verified', verified: true });
   const rejectUserId = (userId: string) => updateUser(userId, { idVerificationStatus: 'rejected' });
   
-  const autoVerifyIdWithAI = async (user: User) => {
-    const result = await autoVerifyIdWithAI({
-        userId: user.id,
-        nameInRecord: `${user.name} ${user.lastName || ''}`,
-        idInRecord: user.idNumber || '',
-        documentImageUrl: user.idDocumentUrl || '',
-    });
-    if (result.nameMatch && result.idMatch) {
-      verifyUserId(user.id);
-    } else {
-      rejectUserId(user.id);
-    }
-    return result;
-  };
-
-  const createCampaign = (data: Omit<CreateCampaignInput, 'userId'>) => {
-    if (!currentUser) return Promise.reject("User not authenticated");
-    return createCampaignFlow({ ...data, userId: currentUser.id });
-  };
-
-  const createPublication = async (data: CreatePublicationInput) => {
-    if (!currentUser) throw new Error("User not authenticated");
-    await createPublicationFlow(data);
-  };
-  
-  const createProduct = async (data: CreateProductInput) => {
-    if (!currentUser) throw new Error("User not authenticated");
-    await createProductFlow(data);
-  };
-
   const checkout = (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {
       if(!currentUser) return;
       const db = getFirestoreDb();
@@ -718,7 +610,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     });
     return true;
   };
-  
+
   const sendPhoneVerification = async (userId: string, phone: string) => {
     try {
         await sendSmsVerificationCodeFlow({ userId, phoneNumber: phone });
@@ -974,14 +866,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     checkout,
     requestService,
     requestQuoteFromGroup,
-    sendQuote,
-    acceptQuote,
-    acceptAppointment,
-    completeWork,
-    confirmWorkReceived,
-    payCommitment,
-    confirmPaymentReceived,
-    startDispute,
+    sendQuote: TransactionFlows.sendQuote,
+    acceptQuote: TransactionFlows.acceptQuote,
+    acceptAppointment: TransactionFlows.acceptAppointment,
+    payCommitment: TransactionFlows.payCommitment,
+    confirmPaymentReceived: TransactionFlows.confirmPaymentReceived,
+    completeWork: TransactionFlows.completeWork,
+    confirmWorkReceived: TransactionFlows.confirmWorkReceived,
+    startDispute: TransactionFlows.startDispute,
     addContact,
     isContact,
     removeContact,
@@ -1001,7 +893,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     sendMessage,
     sendProposalMessage,
     acceptProposal,
-    createAppointmentRequest,
+    createAppointmentRequest: TransactionFlows.createAppointmentRequest,
     getAgendaEvents,
     addCommentToImage,
     removeCommentFromImage,
@@ -1040,18 +932,3 @@ export const useCorabo = () => {
   return context;
 };
 export type { Transaction };
-
-    
-
-    
-
-
-
-
-
-
-
-
-
-
-
