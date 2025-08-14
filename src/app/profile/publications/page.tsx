@@ -1,37 +1,45 @@
 
-
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { ProfileGalleryView } from '@/components/ProfileGalleryView';
 import type { GalleryImage } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { getProfileGallery } from '@/ai/flows/profile-flow';
 
 export default function PublicationsPage() {
   const router = useRouter();
-  const { currentUser, allPublications } = useCorabo();
+  const { currentUser } = useCorabo();
   const { toast } = useToast();
 
+  const [gallery, setGallery] = useState<GalleryImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Directly use the gallery from the currentUser object
-  const gallery = useMemo(() => {
-    if (!currentUser) return [];
-    return allPublications
-      .filter(p => p.providerId === currentUser.id && p.type !== 'product')
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [currentUser, allPublications]);
-
-
   useEffect(() => {
-    // We are no longer fetching, just checking if the currentUser is loaded.
-    if (currentUser) {
-      setIsLoading(false);
-    }
-  }, [currentUser]);
+    const fetchGallery = async () => {
+      if (!currentUser) return;
+      setIsLoading(true);
+      try {
+        const result = await getProfileGallery({ userId: currentUser.id });
+        setGallery(result.gallery || []);
+      } catch (error) {
+        console.error("Error fetching profile gallery:", error);
+        toast({
+          variant: "destructive",
+          title: "Error al cargar la galería",
+          description: "No se pudieron obtener las publicaciones. Inténtalo de nuevo.",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchGallery();
+  }, [currentUser, toast]);
+
 
   if (!currentUser) {
     return (

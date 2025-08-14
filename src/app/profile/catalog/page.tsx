@@ -1,52 +1,47 @@
 
-
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, Package } from 'lucide-react';
 import { useCorabo } from '@/contexts/CoraboContext';
-import type { Product, GalleryImage } from '@/lib/types';
+import type { Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { ProductGridCard } from '@/components/ProductGridCard';
 import { ProductDetailsDialog } from '@/components/ProductDetailsDialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getProfileProducts } from '@/ai/flows/profile-flow';
 
 export default function CatalogPage() {
   const router = useRouter();
-  const { currentUser, allPublications } = useCorabo();
+  const { currentUser } = useCorabo();
   const { toast } = useToast();
 
+  const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isProductDetailsDialogOpen, setIsProductDetailsDialogOpen] = useState(false);
   
-  const products = useMemo(() => {
-    if (!currentUser) return [];
-    
-    // FORENSIC FIX: The component was reading from currentUser.gallery, which was out of sync.
-    // It should read from `allPublications` (the single source of truth from the context)
-    // and filter by the current user's ID.
-    return allPublications
-        .filter(item => item.providerId === currentUser.id && item.type === 'product' && item.productDetails)
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .map(item => ({
-            id: item.id,
-            name: item.productDetails!.name,
-            description: item.description,
-            price: item.productDetails!.price,
-            category: item.productDetails!.category,
-            providerId: item.providerId,
-            imageUrl: item.src,
-        }));
-  }, [currentUser, allPublications]);
-
   useEffect(() => {
-    if (currentUser) {
-        // We set loading to false once the context has loaded the user and publications.
-        setIsLoading(allPublications.length === 0);
-    }
-  }, [currentUser, allPublications]);
+    const fetchProducts = async () => {
+      if (!currentUser) return;
+      setIsLoading(true);
+      try {
+        const result = await getProfileProducts({ userId: currentUser.id });
+        setProducts(result.products || []);
+      } catch (error) {
+        console.error("Error fetching profile products:", error);
+        toast({
+          variant: 'destructive',
+          title: 'Error al cargar el catálogo',
+          description: 'No se pudieron obtener los productos. Inténtalo de nuevo.',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchProducts();
+  }, [currentUser, toast]);
   
   const openProductDetailsDialog = (product: Product) => {
     setSelectedProduct(product);
@@ -94,4 +89,3 @@ export default function CatalogPage() {
     </>
   );
 }
-
