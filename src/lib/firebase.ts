@@ -4,7 +4,7 @@
 
 import { initializeApp, getApp, getApps, type FirebaseApp } from "firebase/app";
 import { getFirestore, connectFirestoreEmulator, type Firestore } from "firebase/firestore";
-import { getAuth, connectAuthEmulator } from "firebase/auth";
+import { initializeAuth, connectAuthEmulator, browserLocalPersistence, type Auth } from "firebase/auth";
 
 // Your web app's Firebase configuration - KEEP THIS AS IS FROM THE CONSOLE
 const firebaseConfig = {
@@ -19,7 +19,7 @@ const firebaseConfig = {
 
 let app: FirebaseApp;
 let db: Firestore;
-let auth;
+let auth: Auth;
 
 // This flag ensures we only connect to the emulators once.
 let emulatorsConnected = false;
@@ -33,17 +33,29 @@ function getFirebaseAppInstance(): FirebaseApp {
 }
 
 app = getFirebaseAppInstance();
-db = getFirestore(app);
-auth = getAuth(app);
 
 // Connect to emulators only in the local development environment.
 if (process.env.NODE_ENV === 'development' && !emulatorsConnected) {
-  // NOTE: The SDK will automatically detect the emulators if the correct
-  // environment variables are set by the framework (like Firebase CLI).
-  // We no longer need to call connect*Emulator functions here as it causes
-  // network issues in certain proxied development environments.
-  console.log("Development environment detected. Firebase SDK will attempt to connect to emulators automatically.");
+  auth = initializeAuth(app, {
+    persistence: browserLocalPersistence,
+    // This is the key fix: Point the auth SDK to the emulator host before any operations.
+    emulator: {
+      url: "http://127.0.0.1:9101",
+    },
+  });
+  
+  db = getFirestore(app);
+  connectFirestoreEmulator(db, '127.0.0.1', 8083);
+
   emulatorsConnected = true;
+  console.log("Successfully connected to Firestore and Auth emulators.");
+
+} else {
+  // Production or already connected
+  auth = initializeAuth(app, {
+    persistence: browserLocalPersistence
+  });
+  db = getFirestore(app);
 }
 
 
@@ -54,4 +66,9 @@ export function getFirebaseApp(): FirebaseApp {
 // This function provides a client-side instance of Firestore.
 export function getFirestoreDb(): Firestore {
     return db;
+}
+
+// This function provides a client-side instance of Auth.
+export function getAuthInstance(): Auth {
+    return auth;
 }

@@ -10,7 +10,7 @@ import 'jspdf-autotable';
 import { add, subDays, startOfDay, differenceInDays, differenceInHours, differenceInMinutes, addDays as addDaysFns } from 'date-fns';
 import { credicoraLevels } from '@/lib/types';
 import { getAuth, signInWithRedirect, signOut, User as FirebaseUser, GoogleAuthProvider, setPersistence, browserLocalPersistence, getRedirectResult } from 'firebase/auth';
-import { getFirebaseApp, getFirestoreDb } from '@/lib/firebase';
+import { getFirebaseApp, getFirestoreDb, getAuthInstance } from '@/lib/firebase';
 import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, arrayUnion, getDocs, deleteDoc, collectionGroup, Unsubscribe, orderBy } from 'firebase/firestore';
 import { createCampaign, type CreateCampaignInput } from '@/ai/flows/campaign-flow';
 import { acceptProposal, sendMessage } from '@/ai/flows/message-flow';
@@ -253,12 +253,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
 
   const signInWithGoogle = async () => {
-    const auth = getAuth(getFirebaseApp());
+    const auth = getAuthInstance();
     const provider = new GoogleAuthProvider();
     try {
-      await setPersistence(auth, browserLocalPersistence);
       await signInWithRedirect(auth, provider);
-      // The redirect result is handled in AppLayout's useEffect
     } catch (error: any) {
       console.error("Error signing in with Google: ", error);
       if (error.code !== 'auth/popup-closed-by-user') {
@@ -273,7 +271,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     try {
-        await signOut(getAuth(getFirebaseApp()));
+        await signOut(getAuthInstance());
     } catch (error) {
         console.error("Error signing out: ", error);
     }

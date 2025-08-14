@@ -11,7 +11,8 @@ import Link from 'next/link';
 import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { getAuth, onAuthStateChanged, getRedirectResult, User as FirebaseUser } from 'firebase/auth';
+import { onAuthStateChanged, User as FirebaseUser, getRedirectResult } from 'firebase/auth';
+import { getAuthInstance } from '@/lib/firebase';
 
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -21,7 +22,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
   
   useEffect(() => {
-    const auth = getAuth();
+    const auth = getAuthInstance();
 
     // This effect runs once on initial mount to set up the auth listener.
     // It handles both existing sessions and results from a redirect login.

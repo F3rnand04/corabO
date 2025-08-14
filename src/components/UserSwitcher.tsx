@@ -13,6 +13,7 @@ import { useCorabo } from "@/contexts/CoraboContext";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { User as UserIcon, Building } from "lucide-react";
 import Image from "next/image";
+import { User as FirebaseUser } from "firebase/auth";
 
 export function UserSwitcher() {
   const { currentUser, users, isLoadingAuth, handleUserAuth } = useCorabo();
@@ -29,7 +30,6 @@ export function UserSwitcher() {
     const userToLogin = users.find(u => u.id === userId);
     if(userToLogin) {
       // This is a mock login for development, it directly sets the user.
-      // The `handleUserAuth` from the context will set the state.
       // We are passing a mock FirebaseUser object.
       handleUserAuth({
           uid: userToLogin.id,
@@ -37,7 +37,7 @@ export function UserSwitcher() {
           email: userToLogin.email,
           photoURL: userToLogin.profileImage,
           emailVerified: userToLogin.emailValidated,
-      } as any);
+      } as FirebaseUser);
     }
   }
 
