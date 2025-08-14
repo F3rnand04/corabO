@@ -109,7 +109,7 @@ interface CoraboState {
   addCommentToImage: (ownerId: string, imageId: string, commentText: string) => void;
   removeCommentFromImage: (ownerId: string, imageId: string, commentIndex: number) => void;
   getCartItemQuantity: (productId: string) => number;
-  activatePromotion: (details: { imageId: string, promotionText: string, cost: number }) => void;
+  activatePromotion: (details: { imageId: string, promotionText: string, cost: number }) => Promise<void>;
   createCampaign: (data: Omit<CreateCampaignInput, 'userId'>) => Promise<void>;
   createPublication: (data: CreatePublicationInput) => Promise<void>;
   createProduct: (data: CreateProductInput) => Promise<void>;
@@ -133,6 +133,7 @@ interface CoraboState {
   registerSystemPayment: (concept: string, amount: number, isSubscription: boolean) => Promise<void>;
   cancelSystemTransaction: (transactionId: string) => Promise<void>;
   payCommitment: (transactionId: string, isSubscriptionPayment?: boolean) => Promise<void>;
+  updateUserProfileAndGallery: (userId: string, image: GalleryImage) => Promise<void>;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -394,10 +395,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const completeInitialSetup = async (userId: string, data: { name: string; lastName: string; idNumber: string; birthDate: string; country: string }) => {
     if (ENABLE_COUNTRY_UPDATE_LOGIC) {
-        await completeInitialSetupFlow(data);
+        await completeInitialSetupFlow({userId, ...data});
     } else {
         console.warn("La lógica de actualización por cambio de país está deshabilitada en el entorno de pruebas.");
-        // In test mode, we just update the user without the flow's duplicate check
+        const q = query(collection(getFirestoreDb(), 'users'), where("idNumber", "==", data.idNumber), where("country", "==", data.country));
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+            throw new Error("ID_IN_USE");
+        }
         await updateUser(userId, { ...data, isInitialSetupComplete: true });
     }
   };
@@ -426,6 +431,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     
     const [providerLat, providerLon] = provider.profileSetupData.location.split(',').map(Number);
     if(isNaN(providerLat) || isNaN(providerLon)) return null;
+
+    if (currentUser?.country !== provider.country) {
+        return null;
+    }
 
     const distance = haversineDistance(
       userLatLon.latitude,
@@ -494,15 +503,15 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const convoSnap = await getDoc(convoRef);
 
     if (convoSnap.exists()) {
-      const conversation = convoSnap.data() as Conversation;
-      const unreadMessages = conversation.messages.some(m => !m.isRead && m.senderId !== currentUser.id);
+        const conversation = convoSnap.data() as Conversation;
+        const unreadMessages = conversation.messages.some(m => !m.isRead && m.senderId !== currentUser.id);
 
-      if (unreadMessages) {
-        const updatedMessages = conversation.messages.map(msg => 
-          msg.senderId !== currentUser.id ? { ...msg, isRead: true } : msg
-        );
-        await updateDoc(convoRef, { messages: updatedMessages });
-      }
+        if (unreadMessages) {
+            const updatedMessages = conversation.messages.map(msg => 
+                msg.senderId !== currentUser.id ? { ...msg, isRead: true } : msg
+            );
+            await updateDoc(convoRef, { messages: updatedMessages });
+        }
     }
   };
 
@@ -760,9 +769,58 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
     return events;
   };
+  
+  const updateUserProfileAndGallery = async (userId: string, image: GalleryImage) => {
+    const db = getFirestoreDb();
+    const batch = writeBatch(db);
+    
+    // 1. Create the new (temporary) publication
+    const publicationRef = doc(db, 'publications', image.id);
+    batch.set(publicationRef, image);
+    
+    // 2. Clear out old promotions on the user object (if any)
+    const userRef = doc(db, 'users', userId);
+    batch.update(userRef, { promotion: null });
+    
+    await batch.commit();
+  };
+
   const addCommentToImage = (ownerId: string, imageId: string, commentText: string) => {};
   const removeCommentFromImage = (ownerId: string, imageId: string, commentIndex: number) => {};
-  const activatePromotion = (details: { imageId: string, promotionText: string, cost: number }) => {};
+  
+  const activatePromotion = async (details: { imageId: string, promotionText: string, cost: number }) => {
+    if (!currentUser) return;
+    const db = getFirestoreDb();
+    const batch = writeBatch(db);
+    
+    // 1. Update the user object with the new promotion
+    const userRef = doc(db, 'users', currentUser.id);
+    const promotion = {
+      text: details.promotionText,
+      expires: addDaysFns(new Date(), 1).toISOString(),
+    };
+    batch.update(userRef, { promotion });
+
+    // 2. Create the system transaction for payment
+    const txId = `txn-promo-${Date.now()}`;
+    const newTransaction: Transaction = {
+      id: txId,
+      type: 'Sistema',
+      status: 'Pago Enviado - Esperando Confirmación',
+      date: new Date().toISOString(),
+      amount: details.cost,
+      clientId: currentUser.id,
+      providerId: 'corabo-admin',
+      participantIds: [currentUser.id, 'corabo-admin'],
+      details: {
+        system: `Activación de "Emprende por Hoy": ${details.promotionText}`,
+      },
+    };
+    const txRef = doc(db, 'transactions', txId);
+    batch.set(txRef, newTransaction);
+    
+    await batch.commit();
+  };
   
   const getUserMetrics = (userId: string, transactions: Transaction[]): UserMetrics => {
     const completedTransactions = transactions.filter(
@@ -1033,6 +1091,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     handleUserAuth,
     registerSystemPayment,
     cancelSystemTransaction,
+    updateUserProfileAndGallery,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;

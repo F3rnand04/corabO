@@ -33,12 +33,13 @@ export default function EmprendePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const getPromotionCost = () => {
+    if(!currentUser) return 0;
     return currentUser.type === 'provider' ? 8 : 5;
   }
   const promotionCost = getPromotionCost();
 
   useEffect(() => {
-    if (!currentUser.isTransactionsActive) {
+    if (currentUser && !currentUser.isTransactionsActive) {
       toast({
         variant: "destructive",
         title: "Registro de Transacciones Inactivo",
@@ -48,16 +49,16 @@ export default function EmprendePage() {
     }
   }, [currentUser, router, toast]);
 
-  const activePromotion = currentUser.gallery?.find(g => g.promotion && new Date(g.promotion.expires) > new Date());
+  const activePromotion = currentUser?.promotion;
   
-  if (activePromotion) {
+  if (activePromotion && new Date(activePromotion.expires) > new Date()) {
     return (
       <div className="container mx-auto max-w-2xl py-8 text-center">
          <Alert variant="default" className="bg-green-50 text-green-800 border-green-200">
             <Clock className="h-4 w-4 !text-green-800" />
             <AlertTitle>¡Ya tienes una promoción activa!</AlertTitle>
             <AlertDescription>
-              La oferta <Badge variant="secondary" className="mx-1">{activePromotion.promotion?.text}</Badge> expirará pronto. Solo se puede tener una promoción activa a la vez.
+              La oferta <Badge variant="secondary" className="mx-1">{activePromotion.text}</Badge> expirará pronto. Solo se puede tener una promoción activa a la vez.
             </AlertDescription>
           </Alert>
           <Button onClick={() => router.push('/profile')} className="mt-6">Volver al Perfil</Button>
@@ -83,12 +84,12 @@ export default function EmprendePage() {
     setStep(2);
   };
   
-  const handleConfirmAndActivate = () => {
+  const handleConfirmAndActivate = async () => {
     if (!reference || !voucherFile) {
         toast({ variant: "destructive", title: "Faltan datos de pago", description: "Sube el comprobante y añade la referencia." });
         return;
     }
-    if (!tempImageFile || !tempDescription.trim()) {
+    if (!tempImageFile || !tempDescription.trim() || !currentUser) {
         toast({ variant: "destructive", title: "Falta información de la oferta", description: "Hubo un error, por favor vuelve al paso anterior." });
         return;
     }
@@ -103,13 +104,20 @@ export default function EmprendePage() {
       comments: [],
       isTemporary: true,
     };
-    updateUserProfileAndGallery(currentUser.id, newTempImage);
-    activatePromotion({ imageId: newTempImage.id, promotionText, cost: promotionCost });
+    
+    try {
+        await updateUserProfileAndGallery(currentUser.id, newTempImage);
+        await activatePromotion({ imageId: newTempImage.id, promotionText, cost: promotionCost });
 
-    setTimeout(() => {
         toast({ title: "¡Promoción Activada!", description: "Tu oferta destacará por 24 horas." });
         router.push('/profile');
-    }, 1500);
+
+    } catch (error) {
+        console.error("Error activating promotion:", error);
+        toast({ variant: "destructive", title: "Error al activar", description: "No se pudo activar la promoción." });
+    } finally {
+        setIsSubmitting(false);
+    }
   };
 
   return (
@@ -155,7 +163,7 @@ export default function EmprendePage() {
 
                     {tempImagePreview && (
                          <div className="relative aspect-video w-full rounded-md overflow-hidden bg-muted">
-                            <Image src={tempImagePreview} alt="Vista previa" layout="fill" objectFit="cover" data-ai-hint="promotional image"/>
+                            <Image src={tempImagePreview} alt="Vista previa" fill style={{objectFit: 'cover'}} data-ai-hint="promotional image"/>
                             {promotionText && (
                             <Badge variant="destructive" className="absolute top-2 left-2 shadow-lg">
                                 {promotionText}
