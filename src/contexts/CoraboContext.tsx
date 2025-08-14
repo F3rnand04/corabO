@@ -9,7 +9,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { add, subDays, startOfDay, differenceInDays, differenceInHours, differenceInMinutes, addDays as addDaysFns } from 'date-fns';
 import { credicoraLevels } from '@/lib/types';
-import { getAuth, signInWithPopup, signOut, User as FirebaseUser, GoogleAuthProvider, setPersistence, browserLocalPersistence, signInWithRedirect } from 'firebase/auth';
+import { getAuth, signInWithPopup, signOut, User as FirebaseUser, GoogleAuthProvider, setPersistence, browserLocalPersistence, getRedirectResult } from 'firebase/auth';
 import { getFirebaseApp, getFirestoreDb } from '@/lib/firebase';
 import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, arrayUnion, getDocs, deleteDoc, collectionGroup, Unsubscribe, orderBy } from 'firebase/firestore';
 import { createCampaign, type CreateCampaignInput } from '@/ai/flows/campaign-flow';
@@ -257,14 +257,17 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const provider = new GoogleAuthProvider();
     try {
       await setPersistence(auth, browserLocalPersistence);
-      await signInWithRedirect(auth, provider);
-    } catch (error) {
+      const result = await signInWithPopup(auth, provider);
+      // The onAuthStateChanged listener in AppLayout will handle the user state update.
+    } catch (error: any) {
       console.error("Error signing in with Google: ", error);
-      toast({
-        variant: 'destructive',
-        title: 'Error de Autenticación',
-        description: 'No se pudo iniciar sesión con Google. Por favor, inténtalo de nuevo.'
-      });
+      if (error.code !== 'auth/popup-closed-by-user') {
+        toast({
+          variant: 'destructive',
+          title: 'Error de Autenticación',
+          description: 'No se pudo iniciar sesión con Google. Por favor, inténtalo de nuevo.'
+        });
+      }
     }
   };
 

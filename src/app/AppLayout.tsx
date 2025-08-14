@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { getAuth, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, getRedirectResult, User as FirebaseUser } from 'firebase/auth';
 
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -24,29 +24,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const auth = getAuth();
     
     // This effect runs only once on initial mount to set up auth listeners.
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
       // We pass the user state to the context to handle data fetching and state updates.
       // This avoids having auth logic inside the context causing re-renders.
       await handleUserAuth(firebaseUser);
     });
-
-    // Handle the redirect result from Google Sign-In
-    getRedirectResult(auth)
-      .then(async (result) => {
-        if (result && result.user && !currentUser) {
-           await handleUserAuth(result.user);
-        }
-      })
-      .catch((error) => {
-        console.error("Error getting redirect result:", error);
-        if (error.code === 'auth/account-exists-with-different-credential') {
-            toast({
-                variant: 'destructive',
-                title: 'Error de Autenticación',
-                description: 'Ya existe una cuenta con el mismo correo electrónico pero con un método de inicio de sesión diferente.'
-            });
-        }
-      });
       
     // Cleanup subscription on unmount
     return () => unsubscribe();
