@@ -1,3 +1,4 @@
+
 // IMPORTANT: This file MUST have the "use client" directive.
 // It's intended for client-side components and hooks.
 "use client";
@@ -37,7 +38,8 @@ db = getFirestore(app);
 auth = getAuth(app);
 
 // Connect to emulators only in the local development environment.
-if (typeof window !== 'undefined' && window.location.hostname === 'localhost' && !emulatorsConnected) {
+if (process.env.NODE_ENV === 'development' && !emulatorsConnected) {
+  // Point to the emulators running on localhost.
   connectAuthEmulator(auth, 'http://localhost:9101', { disableWarnings: true });
   connectFirestoreEmulator(db, 'localhost', 8083);
   emulatorsConnected = true;
