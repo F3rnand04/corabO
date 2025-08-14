@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MapPin, FileText, Menu, Search, LogOut, User, Wallet, History as HistoryIcon, Shield, HelpCircle, Contact, ShoppingCart } from "lucide-react";
+import { MapPin, FileText, Menu, Search, LogOut, User, Wallet, History as HistoryIcon, Shield, HelpCircle, Contact, ShoppingCart, ChevronDown } from "lucide-react";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
