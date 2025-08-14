@@ -238,7 +238,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
     // Crucially, mark loading as false AFTER all async operations are done.
     setIsLoadingAuth(false);
-  }, [fetchUser]);
+  }, []);
 
   useEffect(() => {
     const auth = getAuth(getFirebaseApp());
