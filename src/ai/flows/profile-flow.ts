@@ -1,4 +1,5 @@
 
+
 'use server';
 /**
  * @fileOverview Flows for fetching profile-specific data securely with pagination.
@@ -30,10 +31,18 @@ export const completeInitialSetupFlow = ai.defineFlow(
   },
   async ({ userId, name, lastName, idNumber, birthDate, country }) => {
     const db = getFirestoreDb();
-    const userRef = doc(db, 'users', userId);
     
-    // SECURITY: In a real app, you'd verify the userId against the auth context.
-    // This flow runs on the server, so it has the necessary permissions.
+    // Check for duplicate ID in the same country
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where("idNumber", "==", idNumber), where("country", "==", country));
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+      // Found a user with the same ID number in the same country.
+      throw new Error("ID_IN_USE");
+    }
+
+    const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, {
       name,
       lastName,
@@ -62,6 +71,7 @@ const PublicUserOutputSchema = z.object({
   isGpsActive: z.boolean().optional(),
   isTransactionsActive: z.boolean().optional(),
   profileSetupData: z.any().optional(), // Using any for simplicity, can be stricter
+  country: z.string().optional(),
 });
 
 export const getPublicProfileFlow = ai.defineFlow(
@@ -93,6 +103,7 @@ export const getPublicProfileFlow = ai.defineFlow(
       isGpsActive: fullUser.isGpsActive,
       isTransactionsActive: fullUser.isTransactionsActive,
       profileSetupData: fullUser.profileSetupData,
+      country: fullUser.country,
     };
   }
 );

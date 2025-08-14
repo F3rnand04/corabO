@@ -55,6 +55,9 @@ export function PublicationCard({ publication, className }: PublicationCardProps
     const isNewProvider = responseTime === 'Nuevo';
     const distance = getDistanceToProvider(owner as User);
 
+    // International trade logic
+    const showLocationInfo = currentUser?.country === (owner as User)?.country;
+
 
     useEffect(() => {
         if (!currentUser || !owner) return;
@@ -142,7 +145,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
         <>
         <div className={cn("flex flex-col bg-card border-b", className)}>
             {/* Card Header */}
-            <div className="flex items-start p-3 gap-3 container">
+            <div className="flex items-start p-3 container">
                 <Link href={profileLink} className="flex-shrink-0">
                     <Avatar>
                         <AvatarImage src={owner.profileImage} alt={owner.name} />
@@ -176,10 +179,12 @@ export function PublicationCard({ publication, className }: PublicationCardProps
                     <Button variant="ghost" size="sm" onClick={() => sendMessage({recipientId: owner.id, text: `¡Hola! Me interesa tu publicación.`})}>
                         Contactar
                     </Button>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                        <MapPin className={cn("h-3 w-3", owner.isGpsActive && "text-green-500")} />
-                        <span>{distance}</span>
-                    </div>
+                    {showLocationInfo && (
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                            <MapPin className={cn("h-3 w-3", owner.isGpsActive && "text-green-500")} />
+                            <span>{distance}</span>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -198,7 +203,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
                         publication.aspectRatio === 'vertical' ? 'aspect-[4/5]' :
                         'aspect-square'
                     )}
-                    objectFit="cover"
+                    style={{objectFit: 'cover'}}
                     data-ai-hint="service person working" 
                 />
                  <Button 

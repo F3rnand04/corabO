@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +15,7 @@ import Image from 'next/image';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useRouter } from 'next/navigation';
 
 const countries = [
   { code: 'VE', name: 'Venezuela', idLabel: 'Cédula de Identidad' },
@@ -25,8 +26,9 @@ const countries = [
 ];
 
 export default function InitialSetupPage() {
-  const { currentUser, completeInitialSetup } = useCorabo();
+  const { currentUser, completeInitialSetup, sendMessage } = useCorabo();
   const { toast } = useToast();
+  const router = useRouter();
 
   const [name, setName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -35,22 +37,42 @@ export default function InitialSetupPage() {
   const [country, setCountry] = useState('');
   const [hasAcceptedPolicies, setHasAcceptedPolicies] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [idInUseError, setIdInUseError] = useState(false);
+
+  useEffect(() => {
+    if (currentUser) {
+      setName(currentUser.name || '');
+      setLastName(currentUser.lastName || '');
+      setCountry(currentUser.country || '');
+    }
+  }, [currentUser]);
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
+    setIdInUseError(false);
     try {
         await completeInitialSetup(currentUser!.id, { name, lastName, idNumber, birthDate, country });
         // The context change will trigger the AppLayout to redirect automatically.
-    } catch (error) {
-        console.error("Failed to complete setup:", error);
-        toast({
-            variant: 'destructive',
-            title: 'Error',
-            description: 'No se pudo guardar tu información. Inténtalo de nuevo.'
-        });
+    } catch (error: any) {
+        if (error.message === 'ID_IN_USE') {
+            setIdInUseError(true);
+        } else {
+            console.error("Failed to complete setup:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'No se pudo guardar tu información. Inténtalo de nuevo.'
+            });
+        }
     } finally {
         setIsSubmitting(false);
     }
+  };
+
+  const handleContactSupport = () => {
+    const supportMessage = "Hola, mi número de documento de identidad ya está en uso y necesito ayuda para verificar mi cuenta.";
+    const conversationId = sendMessage({ recipientId: 'corabo-admin', text: supportMessage });
+    router.push(`/messages/${conversationId}`);
   };
 
   if (!currentUser) {
@@ -81,7 +103,17 @@ export default function InitialSetupPage() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <Alert variant="destructive">
+        {idInUseError && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Datos de Identificación en Uso</AlertTitle>
+            <AlertDescription>
+                El número de documento ingresado ya está registrado en nuestro sistema para el país seleccionado. Si crees que esto es un error, por favor
+                <Button variant="link" className="p-1 h-auto text-current underline" onClick={handleContactSupport}>contacta a soporte</Button>.
+            </AlertDescription>
+          </Alert>
+        )}
+        <Alert>
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>¡Atención!</AlertTitle>
             <AlertDescription>
