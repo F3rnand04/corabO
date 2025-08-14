@@ -598,7 +598,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const removeGalleryImage = async (userId: string, imageId: string) => {
     if (!currentUser) return;
     const db = getFirestoreDb();
-    await deleteDoc(db, 'publications', imageId);
+    await deleteDoc(doc(db, 'publications', imageId));
     toast({ title: "Publicación eliminada" });
   };
   
@@ -934,5 +934,3 @@ export const useCorabo = () => {
   return { ...context, router };
 };
 export type { Transaction };
-
-    
