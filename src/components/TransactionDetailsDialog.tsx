@@ -28,7 +28,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
-import { Alert, AlertTitle } from './ui/alert';
+import { Alert, AlertTitle, AlertDescription as AlertDialogAlertDescription } from './ui/alert';
 
 
 interface TransactionDetailsDialogProps {
@@ -259,9 +259,9 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
                          <Alert variant="destructive" className="mt-2">
                             <AlertTriangle className="h-4 w-4" />
                             <AlertTitle>Transacción Internacional</AlertTitle>
-                            <AlertDescription>
+                            <AlertDialogAlertDescription>
                                 Por seguridad, para transacciones entre países, solo se habilita Binance Pay.
-                            </AlertDescription>
+                            </AlertDialogAlertDescription>
                         </Alert>
                     )}
                  </div>
@@ -376,9 +376,9 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
               <Alert variant="destructive">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertTitle>¡Aviso de Comercio Internacional!</AlertTitle>
-                  <AlertDescription>
+                  <AlertDialogAlertDescription>
                       Esta es una transacción entre usuarios de diferentes países. Se recomienda usar métodos de pago internacionales como Binance Pay y acordar claramente los términos de envío e impuestos.
-                  </AlertDescription>
+                  </AlertDialogAlertDescription>
               </Alert>
           )}
           <div className="grid grid-cols-2 gap-2">
