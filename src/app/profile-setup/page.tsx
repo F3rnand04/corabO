@@ -101,14 +101,13 @@ export default function ProfileSetupPage() {
   const handleProfileTypeSelect = (type: UserType['type'], providerType?: ProfileSetupData['providerType']) => {
     setProfileType(type);
     setFormData(prev => ({...prev, providerType: providerType || 'professional'}));
-    handleNext();
   }
 
   const renderStep = () => {
     if (!currentUser) return <div>Cargando...</div>;
     switch (currentStep) {
       case 1:
-        return <Step1_ProfileType onSelect={handleProfileTypeSelect} currentType={profileType} />;
+        return <Step1_ProfileType onSelect={handleProfileTypeSelect} currentType={profileType} onNext={handleNext} />;
       case 2:
         return <Step2_Username onBack={handleBack} onNext={handleNext} formData={formData} setFormData={setFormData} />;
       case 3:
@@ -120,7 +119,7 @@ export default function ProfileSetupPage() {
       case 6:
         return <Step6_Review onBack={handleBack} formData={formData} setFormData={setFormData} profileType={profileType} goToStep={goToStep} />;
       default:
-        return <Step1_ProfileType onSelect={handleProfileTypeSelect} currentType={profileType} />;
+        return <Step1_ProfileType onSelect={handleProfileTypeSelect} currentType={profileType} onNext={handleNext} />;
     }
   };
 

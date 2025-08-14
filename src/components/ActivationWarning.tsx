@@ -32,7 +32,7 @@ export function ActivationWarning({ userType }: ActivationWarningProps) {
         <AlertDescription className="flex justify-between items-center">
             <span>{description}</span>
             <Button variant="link" size="sm" asChild className="p-0 h-auto text-current font-bold">
-              <Link href="/transactions/settings">Activar ahora &rarr;</Link>
+              <Link href="/initial-setup">Activar ahora &rarr;</Link>
             </Button>
         </AlertDescription>
     </Alert>

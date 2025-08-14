@@ -12,6 +12,7 @@ import type { ProfileSetupData, User as UserType } from '@/lib/types';
 interface Step1_ProfileTypeProps {
   onSelect: (type: UserType['type'], providerType?: ProfileSetupData['providerType']) => void;
   currentType: UserType['type'];
+  onNext: () => void;
 }
 
 const profileTypes = [
@@ -20,7 +21,7 @@ const profileTypes = [
   { id: 'repartidor', name: 'Repartidor', description: 'Realiza entregas locales (delivery) para otros proveedores.', icon: Truck },
 ];
 
-export default function Step1_ProfileType({ onSelect, currentType }: Step1_ProfileTypeProps) {
+export default function Step1_ProfileType({ onSelect, currentType, onNext }: Step1_ProfileTypeProps) {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [nextSelection, setNextSelection] = useState<UserType['type'] | null>(null);
 
@@ -30,6 +31,7 @@ export default function Step1_ProfileType({ onSelect, currentType }: Step1_Profi
         setIsAlertOpen(true);
     } else {
         onSelect(typeId, 'professional'); // Default providerType
+        onNext();
     }
   };
 
@@ -38,6 +40,7 @@ export default function Step1_ProfileType({ onSelect, currentType }: Step1_Profi
       onSelect(nextSelection, 'professional');
     }
     setIsAlertOpen(false);
+    onNext();
   }
   
   const isChangingToProviderOrRepartidor = (currentType === 'client' && (nextSelection === 'provider' || nextSelection === 'repartidor'));
