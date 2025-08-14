@@ -91,7 +91,7 @@ interface CoraboState {
   sendPhoneVerification: (userId: string, phone: string) => Promise<void>;
   verifyPhoneCode: (userId: string, code: string) => Promise<boolean>;
   updateFullProfile: (userId: string, data: ProfileSetupData, profileType: 'client' | 'provider' | 'repartidor') => Promise<void>;
-  completeInitialSetup: (userId: string, data: { lastName: string; idNumber: string; birthDate: string }) => Promise<void>;
+  completeInitialSetup: (userId: string, data: { name: string; lastName: string; idNumber: string; birthDate: string }) => Promise<void>;
   subscribeUser: (userId: string, planName: string, amount: number) => void;
   activateTransactions: (userId: string, paymentDetails: any) => void;
   deactivateTransactions: (userId: string) => void;
@@ -386,8 +386,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     await updateDoc(userDocRef, updates);
   };
 
-  const completeInitialSetup = async (userId: string, data: { lastName: string; idNumber: string; birthDate: string }) => {
-    await completeInitialSetupFlow({ userId, ...data });
+  const completeInitialSetup = async (userId: string, data: { name: string; lastName: string; idNumber: string; birthDate: string }) => {
+    await updateUser(userId, { ...data, isInitialSetupComplete: true });
   };
   
   const toggleGps = (userId: string) => {
@@ -698,7 +698,30 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const deactivateTransactions = (userId: string) => {};
-  const downloadTransactionsPDF = (transactions: Transaction[]) => {};
+  
+  const downloadTransactionsPDF = (transactionsToDownload: Transaction[]) => {
+    const doc = new jsPDF();
+    const tableColumn = ["Fecha", "ID", "Tipo", "Descripción", "Monto"];
+    const tableRows: any[][] = [];
+
+    const logo = 'https://i.postimg.cc/Wz1MTvWK/lg.png'; // Corabo Logo URL
+    doc.addImage(logo, 'PNG', 14, 10, 40, 15);
+    doc.text("Registro de Transacciones", 14, 35);
+
+    transactionsToDownload.forEach(tx => {
+      const txData = [
+        new Date(tx.date).toLocaleDateString(),
+        tx.id.slice(-6),
+        tx.type,
+        tx.details.serviceName || tx.details.system || tx.details.items?.map(i => i.product.name).join(', ') || 'N/A',
+        `$${tx.amount.toFixed(2)}`
+      ];
+      tableRows.push(txData);
+    });
+
+    (doc as any).autoTable(tableColumn, tableRows, { startY: 40 });
+    doc.save('corabo_transactions.pdf');
+  };
   
   const getAgendaEvents = (transactions: Transaction[]): { date: Date; type: 'payment' | 'task'; description: string, transactionId: string }[] => {
     const events: { date: Date; type: 'payment' | 'task'; description: string, transactionId: string }[] = [];

@@ -19,6 +19,7 @@ export default function InitialSetupPage() {
   const { currentUser, completeInitialSetup } = useCorabo();
   const { toast } = useToast();
 
+  const [name, setName] = useState(currentUser?.name || '');
   const [lastName, setLastName] = useState(currentUser?.lastName || '');
   const [idNumber, setIdNumber] = useState('');
   const [birthDate, setBirthDate] = useState('');
@@ -28,7 +29,7 @@ export default function InitialSetupPage() {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-        await completeInitialSetup(currentUser!.id, { lastName, idNumber, birthDate });
+        await completeInitialSetup(currentUser!.id, { name, lastName, idNumber, birthDate });
         // The context change will trigger the AppLayout to redirect automatically.
     } catch (error) {
         console.error("Failed to complete setup:", error);
@@ -50,7 +51,7 @@ export default function InitialSetupPage() {
     );
   }
 
-  const canSubmit = lastName && idNumber && birthDate && hasAcceptedPolicies;
+  const canSubmit = name && lastName && idNumber && birthDate && hasAcceptedPolicies;
 
   return (
     <Card className="w-full max-w-md shadow-2xl">
@@ -63,9 +64,9 @@ export default function InitialSetupPage() {
                 style={{objectFit: 'contain'}}
             />
         </div>
-        <CardTitle className="text-2xl">¡Casi listo, {currentUser.name}!</CardTitle>
+        <CardTitle className="text-2xl">¡Bienvenido a Corabo!</CardTitle>
         <CardDescription>
-          Necesitamos algunos datos adicionales para completar tu perfil.
+          Necesitamos algunos datos para completar tu perfil.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -77,6 +78,10 @@ export default function InitialSetupPage() {
             </AlertDescription>
         </Alert>
 
+        <div className="space-y-2">
+          <Label htmlFor="name">Nombre</Label>
+          <Input id="name" placeholder="Tu nombre" value={name} onChange={(e) => setName(e.target.value)} />
+        </div>
         <div className="space-y-2">
           <Label htmlFor="lastName">Apellido</Label>
           <Input id="lastName" placeholder="Tu apellido" value={lastName} onChange={(e) => setLastName(e.target.value)} />

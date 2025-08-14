@@ -39,16 +39,16 @@ export const getOrCreateUser = ai.defineFlow(
     if (userDocSnap.exists()) {
       return userDocSnap.data() as User;
     } else {
-      const name = firebaseUser.displayName || 'Usuario Nuevo';
-      const firstName = name.split(' ')[0];
+      const name = ''; // Let user input their name on setup
+      const firstName = "USER";
 
       const coraboId = (firstName.substring(0, 3)).toUpperCase() + Math.random().toString(36).substring(2, 8).toUpperCase();
       
       const newUser: User = {
         id: firebaseUser.uid,
         coraboId: coraboId,
-        name: name, // Store the full display name
-        lastName: '', // Initialize lastName as empty
+        name: name,
+        lastName: '',
         idNumber: '',
         birthDate: '',
         createdAt: new Date().toISOString(),
