@@ -1,4 +1,3 @@
-
 // IMPORTANT: This file MUST have the "use client" directive.
 // It's intended for client-side components and hooks.
 "use client";
@@ -39,9 +38,11 @@ auth = getAuth(app);
 
 // Connect to emulators only in the local development environment.
 if (process.env.NODE_ENV === 'development' && !emulatorsConnected) {
-  // Point to the emulators running on localhost.
-  connectAuthEmulator(auth, 'http://localhost:9101', { disableWarnings: true });
-  connectFirestoreEmulator(db, 'localhost', 8083);
+  // NOTE: The SDK will automatically detect the emulators if the correct
+  // environment variables are set by the framework (like Firebase CLI).
+  // We no longer need to call connect*Emulator functions here as it causes
+  // network issues in certain proxied development environments.
+  console.log("Development environment detected. Firebase SDK will attempt to connect to emulators automatically.");
   emulatorsConnected = true;
 }
 
