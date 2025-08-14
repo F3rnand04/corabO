@@ -96,21 +96,26 @@ export default function TransactionsSettingsPage() {
     const { toast } = useToast();
     const router = useRouter();
 
-    const [paymentDetails, setPaymentDetails] = useState({
-        account: {
-            active: currentUser?.profileSetupData?.paymentDetails?.account?.active ?? true,
-            bankName: currentUser?.profileSetupData?.paymentDetails?.account?.bankName ?? '',
-            accountNumber: currentUser?.profileSetupData?.paymentDetails?.account?.accountNumber ?? ''
-        },
-        mobile: {
-            active: currentUser?.profileSetupData?.paymentDetails?.mobile?.active ?? true,
-            bankName: currentUser?.profileSetupData?.paymentDetails?.mobile?.bankName ?? '',
-            mobilePaymentPhone: currentUser?.profileSetupData?.paymentDetails?.mobile?.mobilePaymentPhone ?? currentUser?.phone ?? ''
-        },
-        crypto: {
-            active: currentUser?.profileSetupData?.paymentDetails?.crypto?.active ?? false,
-            binanceEmail: currentUser?.profileSetupData?.paymentDetails?.crypto?.binanceEmail ?? currentUser?.email ?? ''
-        }
+    // **FIX:** Safely initialize paymentDetails state to prevent runtime errors.
+    const [paymentDetails, setPaymentDetails] = useState(() => {
+        const pd = currentUser?.profileSetupData?.paymentDetails;
+        return {
+            account: {
+                active: pd?.account?.active ?? true,
+                bankName: pd?.account?.bankName ?? '',
+                accountNumber: pd?.account?.accountNumber ?? ''
+            },
+            mobile: {
+                active: pd?.mobile?.active ?? true,
+                bankName: pd?.mobile?.bankName ?? '',
+                mobilePaymentPhone: pd?.mobile?.mobilePaymentPhone ?? currentUser?.phone ?? ''
+            },
+            crypto: {
+                active: pd?.crypto?.active ?? false,
+                binanceEmail: pd?.crypto?.binanceEmail ?? currentUser?.email ?? '',
+                validated: pd?.crypto?.validated ?? false,
+            }
+        };
     });
 
     if (!currentUser) {
