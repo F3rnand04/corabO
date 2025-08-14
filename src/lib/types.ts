@@ -220,8 +220,6 @@ export type User = {
     text: string;
     expires: string;
   };
-  // DEPRECATED: Gallery is now derived from the global publications collection
-  // gallery?: GalleryImage[];
   profileSetupData?: ProfileSetupData;
   isPaused?: boolean;
   pauseReason?: string;

@@ -95,9 +95,9 @@ export default function TransactionsSettingsPage() {
     const { toast } = useToast();
     const router = useRouter();
 
-    // **FIX**: Safely initialize paymentDetails state to prevent runtime errors.
     const [paymentDetails, setPaymentDetails] = useState(() => {
         const pd = currentUser?.profileSetupData?.paymentDetails;
+        // **FIX**: Initialize with a default structure if 'pd' is undefined
         return {
             account: {
                 active: pd?.account?.active ?? true,
@@ -133,7 +133,6 @@ export default function TransactionsSettingsPage() {
     };
     
     const handleSaveChanges = () => {
-        // **FIX**: Check if module is already active or not
         const wasActive = currentUser.isTransactionsActive;
         activateTransactions(currentUser.id, paymentDetails);
 

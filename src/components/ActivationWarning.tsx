@@ -19,13 +19,15 @@ export function ActivationWarning({ userType }: ActivationWarningProps) {
   const handleActivationClick = () => {
     if (!currentUser) return;
     
-    // **FIX**: Implement smart redirection logic
-    if (currentUser.isInitialSetupComplete) {
-      // If identity is set up, go to payment/transaction settings
-      router.push('/transactions/settings');
-    } else {
-      // Otherwise, go to the initial identity setup
+    if (!currentUser.isInitialSetupComplete) {
+      // Step 1: Complete identity setup
       router.push('/initial-setup');
+    } else if (currentUser.idVerificationStatus !== 'verified') {
+      // Step 2: Verify identity document
+      router.push('/profile-setup/verify-id');
+    } else {
+      // Step 3: Configure payment methods
+      router.push('/transactions/settings');
     }
   };
 
