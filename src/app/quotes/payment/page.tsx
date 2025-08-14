@@ -86,6 +86,7 @@ function PaymentPageContent() {
                  await payCommitment(commitment.id);
             }
             
+            toast({ title: 'Pago Registrado', description: 'Tu pago será verificado por un administrador.' });
             router.push('/transactions');
 
         } catch (error) {

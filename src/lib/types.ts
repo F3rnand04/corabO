@@ -1,5 +1,4 @@
 
-
 import { z } from 'zod';
 
 export type QrSession = {
@@ -241,14 +240,6 @@ export type Product = {
   category: string;
   providerId: string;
   imageUrl: string;
-};
-
-export type Service = {
-  id: string;
-  name: string;
-  description: string;
-  category: string;
-  providerId: string;
 };
 
 export type CartItem = {
