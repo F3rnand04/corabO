@@ -92,6 +92,8 @@ export const createProduct = ai.defineFlow(
             alt: name,
             description: description,
             createdAt: new Date().toISOString(),
+            likes: 0,
+            comments: [],
             productDetails: {
               name: name,
               price: price,
