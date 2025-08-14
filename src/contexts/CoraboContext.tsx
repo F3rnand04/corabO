@@ -14,7 +14,7 @@ import { getAuth, signInWithPopup, signOut, User as FirebaseUser, GoogleAuthProv
 import { getFirebaseApp, getFirestoreDb, getAuthInstance } from '@/lib/firebase';
 import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, arrayUnion, getDocs, deleteDoc, collectionGroup, Unsubscribe, orderBy } from 'firebase/firestore';
 import { createCampaign as createCampaignFlow, type CreateCampaignInput } from '@/ai/flows/campaign-flow';
-import { acceptProposal, sendMessage as sendMessageFlow } from '@/ai/flows/message-flow';
+import { sendMessage as sendMessageFlow, acceptProposal } from '@/ai/flows/message-flow';
 import * as TransactionFlows from '@/ai/flows/transaction-flow';
 import * as NotificationFlows from '@/ai/flows/notification-flow';
 import { autoVerifyIdWithAI, type VerificationInput } from '@/ai/flows/verification-flow';
@@ -704,7 +704,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const tableColumn = ["Fecha", "ID", "Tipo", "Descripción", "Monto"];
     const tableRows: any[][] = [];
 
-    const logo = 'https://i.postimg.cc/Wz1MTvWK/lg.png'; // Corabo Logo URL
+    const logo = 'https://i.postimg.cc/8zWvkhxS/Sin-t-tulo-3.png'; // Corabo Logo URL
     doc.addImage(logo, 'PNG', 14, 10, 40, 15);
     doc.text("Registro de Transacciones", 14, 35);
 

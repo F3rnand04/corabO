@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -151,7 +152,7 @@ export default function TransactionsSettingsPage() {
 
     const handleContactSupportForEmailChange = () => {
         const supportMessage = "Hola, necesito ayuda para cambiar el correo electrónico asociado a mi Binance Pay ID.";
-        const conversationId = sendMessage('corabo-admin', supportMessage);
+        const conversationId = sendMessage({recipientId: 'corabo-admin', text: supportMessage});
         router.push(`/messages/${conversationId}`);
     };
 
@@ -206,7 +207,7 @@ export default function TransactionsSettingsPage() {
                             onToggle={(checked) => handleToggle('mobile', checked)}
                         >
                             <div className="space-y-1">
-                                <Label>Cédula</Label>
+                                <Label>ID/Documento</Label>
                                 <Input value={currentUser.idNumber} disabled />
                             </div>
                             <div className="space-y-2">

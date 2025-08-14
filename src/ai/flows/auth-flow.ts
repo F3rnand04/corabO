@@ -47,8 +47,8 @@ export const getOrCreateUser = ai.defineFlow(
       const newUser: User = {
         id: firebaseUser.uid,
         coraboId: coraboId,
-        name: name,
-        lastName: '',
+        name: name, // Intentionally left blank for user input
+        lastName: '', // Intentionally left blank for user input
         idNumber: '',
         birthDate: '',
         createdAt: new Date().toISOString(),

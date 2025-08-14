@@ -48,7 +48,7 @@ export default function Step4_GeneralDetails({ onBack, onNext, formData, setForm
 
   const handleContactSupport = () => {
     const supportMessage = "Hola, necesito ayuda para corregir mis datos de registro de identidad. Cometí un error al ingresarlos.";
-    const conversationId = sendMessage('corabo-admin', supportMessage);
+    const conversationId = sendMessage({recipientId: 'corabo-admin', text: supportMessage});
     router.push(`/messages/${conversationId}`);
   };
 
@@ -67,7 +67,7 @@ export default function Step4_GeneralDetails({ onBack, onNext, formData, setForm
                     <Input id="lastName" value={currentUser?.lastName || ''} readOnly disabled />
                 </div>
                  <div className="space-y-1.5">
-                    <Label htmlFor="idNumber">Cédula de Identidad</Label>
+                    <Label htmlFor="idNumber">Documento de Identidad</Label>
                     <Input id="idNumber" value={currentUser?.idNumber || ''} readOnly disabled />
                 </div>
                  <div className="space-y-1.5">

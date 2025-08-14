@@ -19,8 +19,8 @@ export default function InitialSetupPage() {
   const { currentUser, completeInitialSetup } = useCorabo();
   const { toast } = useToast();
 
-  const [name, setName] = useState(currentUser?.name || '');
-  const [lastName, setLastName] = useState(currentUser?.lastName || '');
+  const [name, setName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [idNumber, setIdNumber] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [hasAcceptedPolicies, setHasAcceptedPolicies] = useState(false);
@@ -79,16 +79,16 @@ export default function InitialSetupPage() {
         </Alert>
 
         <div className="space-y-2">
-          <Label htmlFor="name">Nombre</Label>
-          <Input id="name" placeholder="Tu nombre" value={name} onChange={(e) => setName(e.target.value)} />
+          <Label htmlFor="name">Nombre(s)</Label>
+          <Input id="name" placeholder="Tus nombres" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="lastName">Apellido</Label>
-          <Input id="lastName" placeholder="Tu apellido" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+          <Label htmlFor="lastName">Apellido(s)</Label>
+          <Input id="lastName" placeholder="Tus apellidos" value={lastName} onChange={(e) => setLastName(e.target.value)} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="idNumber">Cédula de Identidad</Label>
-          <Input id="idNumber" placeholder="V-12.345.678" value={idNumber} onChange={(e) => setIdNumber(e.target.value)} />
+          <Label htmlFor="idNumber">Documento de Identidad</Label>
+          <Input id="idNumber" placeholder="Tu número de identificación" value={idNumber} onChange={(e) => setIdNumber(e.target.value)} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="birthDate">Fecha de Nacimiento</Label>
@@ -114,7 +114,7 @@ export default function InitialSetupPage() {
                 <AlertDialogHeader>
                 <AlertDialogTitle>¿Estás seguro que los datos son correctos?</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Recuerda que tu nombre, apellido, cédula y fecha de nacimiento no podrán ser modificados una vez guardados.
+                    Recuerda que tu nombre, apellido y documento de identidad no podrán ser modificados una vez guardados.
                 </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -115,9 +116,9 @@ export function DocumentVerificationTab() {
                         <div>
                            <h4 className="font-semibold mb-2">Datos de Registro</h4>
                            <div className="space-y-2 text-sm p-4 bg-muted rounded-md">
-                               <p><strong>Nombre:</strong> {selectedUser.name}</p>
+                               <p><strong>Nombre:</strong> {selectedUser.name} {selectedUser.lastName}</p>
                                <p><strong>Email:</strong> {selectedUser.email}</p>
-                               <p><strong>Cédula (simulada):</strong> V-20.123.456</p>
+                               <p><strong>ID (simulado):</strong> {selectedUser.idNumber}</p>
                            </div>
                            <Button className="w-full mt-4" onClick={() => handleAutoVerify(selectedUser)} disabled={isVerifying}>
                                 {isVerifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4"/>}
@@ -131,8 +132,8 @@ export function DocumentVerificationTab() {
                                     <h5 className="font-semibold mb-2">Resultado de la IA:</h5>
                                     {verificationResult.nameMatch === true && <p className="text-green-600 flex items-center gap-2"><CheckCircle className="h-4 w-4"/> Nombre Coincide</p>}
                                     {verificationResult.nameMatch === false && <p className="text-destructive flex items-center gap-2"><XCircle className="h-4 w-4"/> Nombre NO Coincide (IA leyó: "{verificationResult.extractedName}")</p>}
-                                    {verificationResult.idMatch === true && <p className="text-green-600 flex items-center gap-2"><CheckCircle className="h-4 w-4"/> Cédula Coincide</p>}
-                                    {verificationResult.idMatch === false && <p className="text-destructive flex items-center gap-2"><XCircle className="h-4 w-4"/> Cédula NO Coincide (IA leyó: "{verificationResult.extractedId}")</p>}
+                                    {verificationResult.idMatch === true && <p className="text-green-600 flex items-center gap-2"><CheckCircle className="h-4 w-4"/> ID Coincide</p>}
+                                    {verificationResult.idMatch === false && <p className="text-destructive flex items-center gap-2"><XCircle className="h-4 w-4"/> ID NO Coincide (IA leyó: "{verificationResult.extractedId}")</p>}
                                 </div>
                             )}
                         </div>

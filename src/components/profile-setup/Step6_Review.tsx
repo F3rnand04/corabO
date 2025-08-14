@@ -136,7 +136,7 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
               {renderItem("Datos Personales y de Contacto", (
                 <div className="space-y-2 pt-1 text-sm text-muted-foreground">
                     <p>Nombre: {currentUser.name} {currentUser.lastName}</p>
-                    <p>Cédula: {currentUser.idNumber}</p>
+                    <p>Doc. Identidad: {currentUser.idNumber}</p>
                     <p>Fecha de Nacimiento: {currentUser.birthDate}</p>
                     <p className="flex items-center gap-2">
                         {currentUser.emailValidated ? <CheckCircle className="w-4 h-4 text-green-600"/> : <XCircle className="w-4 h-4 text-destructive"/>}
