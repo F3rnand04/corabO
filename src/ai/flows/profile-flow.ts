@@ -146,7 +146,7 @@ export const getProfileProducts = ai.defineFlow(
     },
     async ({ userId, limitNum = 10, startAfterDocId }) => {
         const db = getFirestoreDb();
-        const productsCollection = collection(db, 'products');
+        const productsCollection = collection(db, 'publications');
         
         const queryConstraints: any[] = [
             where("providerId", "==", userId),
