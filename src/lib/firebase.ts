@@ -1,11 +1,10 @@
-
 // IMPORTANT: This file MUST have the "use client" directive.
 // It's intended for client-side components and hooks.
 "use client";
 
 import { initializeApp, getApp, getApps, type FirebaseApp } from "firebase/app";
-import { getFirestore, type Firestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import { getFirestore, connectFirestoreEmulator, type Firestore } from "firebase/firestore";
+import { getAuth, connectAuthEmulator } from "firebase/auth";
 
 // Your web app's Firebase configuration - KEEP THIS AS IS FROM THE CONSOLE
 const firebaseConfig = {
@@ -37,10 +36,12 @@ app = getFirebaseAppInstance();
 db = getFirestore(app);
 auth = getAuth(app);
 
-// NOTE: We are now relying on the Firebase SDK's automatic detection of emulators
-// based on environment variables (like FIREBASE_AUTH_EMULATOR_HOST), which are
-// set by the Firebase Studio environment. Explicit connection calls are removed
-// to prevent network errors in the hosted development environment.
+// Connect to emulators only in the local development environment.
+if (typeof window !== 'undefined' && window.location.hostname === 'localhost' && !emulatorsConnected) {
+  connectFirestoreEmulator(db, 'localhost', 8083);
+  connectAuthEmulator(auth, 'http://localhost:9101', { disableWarnings: true });
+  emulatorsConnected = true;
+}
 
 
 export function getFirebaseApp(): FirebaseApp {
