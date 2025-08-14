@@ -1,7 +1,7 @@
-
 'use client';
 
 import { useState } from 'react';
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { User, Briefcase, Truck } from 'lucide-react';
@@ -31,7 +31,6 @@ export default function Step1_ProfileType({ onSelect, currentType, onNext }: Ste
         setIsAlertOpen(true);
     } else {
         onSelect(typeId, 'professional'); // Default providerType
-        onNext();
     }
   };
 
@@ -40,7 +39,6 @@ export default function Step1_ProfileType({ onSelect, currentType, onNext }: Ste
       onSelect(nextSelection, 'professional');
     }
     setIsAlertOpen(false);
-    onNext();
   }
   
   const isChangingToProviderOrRepartidor = (currentType === 'client' && (nextSelection === 'provider' || nextSelection === 'repartidor'));
@@ -73,6 +71,11 @@ export default function Step1_ProfileType({ onSelect, currentType, onNext }: Ste
           </Card>
         ))}
       </div>
+      
+      <div className="flex justify-end pt-4">
+        <Button onClick={onNext}>Siguiente</Button>
+      </div>
+
 
        <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <AlertDialogContent>
