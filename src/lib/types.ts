@@ -14,6 +14,7 @@ export type QrSession = {
   voucherUrl?: string;
   createdAt: string;
   updatedAt: string;
+  participantIds: string[];
 };
 
 export type Notification = {
@@ -335,6 +336,8 @@ export type Transaction = {
 
     // For system
     system?: string;
+    isSubscription?: boolean;
+    isRenewable?: boolean;
 
     // For feedback
     clientRating?: number;

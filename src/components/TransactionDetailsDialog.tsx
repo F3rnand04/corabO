@@ -212,7 +212,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   const CurrentIcon = statusInfo[transaction.status]?.icon || AlertTriangle;
   const iconColor = statusInfo[transaction.status]?.color || 'bg-gray-500';
 
-  const showPayButton = isClient && ['Finalizado - Pendiente de Pago', 'Cotización Recibida', 'Cita Solicitada'].includes(transaction.status);
+  const showPayButton = isClient && ['Finalizado - Pendiente de Pago', 'Cotización Recibida', 'Cita Solicitada'].includes(transaction.status) && !isRenewableTx;
 
 
   if (showPaymentScreen) {
@@ -291,7 +291,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
                                  onChange={(e) => setPaymentVoucher(e.target.files ? e.target.files[0] : null)}
                                  />
                              <span className={cn("text-sm text-muted-foreground truncate", paymentVoucher && "text-foreground font-medium")}>
-                                 {paymentVoucher ? paymentVoucher.name : 'Ningún archivo...'}
+                                 {paymentVoucher ? paymentVoucher.name : 'Ningún archivo seleccionado...'}
                              </span>
                          </div>
                      </div>
