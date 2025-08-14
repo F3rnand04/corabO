@@ -1,3 +1,4 @@
+
 // IMPORTANT: This file should NOT have the "use client" directive.
 // It's intended for server-side code, like Genkit flows.
 
@@ -37,14 +38,11 @@ export function getFirestoreDb(): Firestore {
         db = getFirestore(app);
     }
     // Connect to emulators if running in a local/dev environment and not already connected
-    if (!emulatorsConnected) {
-        const isEmulator = process.env.FIRESTORE_EMULATOR_HOST || process.env.NODE_ENV === 'development';
-        if (isEmulator) {
-            console.log(`(Server) Connecting to Firestore Emulator...`);
-            // NOTE: The port must match firebase.json for the firestore emulator
-            connectFirestoreEmulator(db, "localhost", 8083);
-            emulatorsConnected = true;
-        }
+    if (!emulatorsConnected && process.env.NODE_ENV === 'development') {
+        console.log(`(Server) Connecting to Firestore Emulator...`);
+        // NOTE: The port must match firebase.json for the firestore emulator
+        connectFirestoreEmulator(db, "localhost", 8083);
+        emulatorsConnected = true;
     }
     return db;
 }

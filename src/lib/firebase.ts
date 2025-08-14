@@ -38,7 +38,7 @@ db = getFirestore(app);
 auth = getAuth(app);
 
 // Connect to emulators if running in a local development environment
-if (typeof window !== 'undefined' && window.location.hostname === "localhost" && !emulatorsConnected) {
+if (!emulatorsConnected && process.env.NODE_ENV === 'development') {
   console.log("Connecting client to Firebase Emulators...");
   // NOTE: The ports must match firebase.json
   connectFirestoreEmulator(db, "localhost", 8083); 
@@ -55,3 +55,4 @@ export function getFirebaseApp(): FirebaseApp {
 export function getFirestoreDb(): Firestore {
     return db;
 }
+
