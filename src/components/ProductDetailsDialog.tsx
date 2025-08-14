@@ -10,14 +10,17 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from './ui/scroll-area';
-import { MessageSquare, ThumbsUp, ThumbsDown, Star, Send, Plus, Minus, X } from 'lucide-react';
+import { MessageSquare, ThumbsUp, ThumbsDown, Heart, Send, Plus, Minus, X, Trash2 } from 'lucide-react';
 import { Input } from './ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Separator } from './ui/separator';
-import type { Product, GalleryImageComment } from '@/lib/types';
+import type { Product, GalleryImageComment, User } from '@/lib/types';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
+
 
 interface ProductDetailsDialogProps {
   isOpen: boolean;
@@ -26,7 +29,7 @@ interface ProductDetailsDialogProps {
 }
 
 export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductDetailsDialogProps) {
-  const { currentUser, addToCart, cart, updateCartQuantity } = useCorabo();
+  const { currentUser, addToCart, cart, updateCartQuantity, removeGalleryImage } = useCorabo();
   const { toast } = useToast();
   const [newComment, setNewComment] = useState("");
   // Comments are now managed locally for this dialog
@@ -42,6 +45,7 @@ export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductD
 
   if (!currentUser || !product) return null;
 
+  const isOwner = currentUser.id === product.providerId;
 
   const itemInCart = cart.find(item => item.product.id === product.id);
   const quantityInCart = itemInCart ? itemInCart.quantity : 0;
@@ -106,6 +110,10 @@ export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductD
     setComments(newComments);
   };
 
+  const handleDeleteProduct = () => {
+    removeGalleryImage(product.providerId, product.id);
+    onOpenChange(false);
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -121,7 +129,7 @@ export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductD
              <div className="absolute bottom-2 right-2 flex items-end gap-2 text-white">
                 <div className="flex flex-col items-center">
                     <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10">
-                        <Star className="w-5 h-5"/>
+                        <Heart className="w-5 h-5"/>
                     </Button>
                     <span className="text-xs font-bold mt-1 drop-shadow-md">0</span>
                 </div>
@@ -165,7 +173,30 @@ export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductD
                            </Button>
                         </div>
                     )}
-                    <Button variant="secondary" onClick={() => onOpenChange(false)} className="ml-auto">Cerrar</Button>
+                    {isOwner ? (
+                       <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                           <Button variant="destructive" className="ml-auto">
+                                <Trash2 className="mr-2 h-4 w-4"/>
+                                Eliminar Producto
+                           </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>¿Eliminar este producto?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Esta acción es permanente y no se puede deshacer. El producto se eliminará de tu catálogo y de cualquier carrito en el que se encuentre.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDeleteProduct}>Sí, eliminar</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    ) : (
+                       <Button variant="secondary" onClick={() => onOpenChange(false)} className="ml-auto">Cerrar</Button>
+                    )}
                 </div>
 
                 <Separator />

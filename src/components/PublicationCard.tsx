@@ -173,7 +173,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
                     </div>
                 </div>
                 <div className="flex flex-col items-end">
-                    <Button variant="ghost" size="sm" onClick={() => sendMessage(owner.id, `¡Hola! Me interesa tu publicación.`, true)}>
+                    <Button variant="ghost" size="sm" onClick={() => sendMessage({recipientId: owner.id, text: `¡Hola! Me interesa tu publicación.`})}>
                         Contactar
                     </Button>
                     <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">

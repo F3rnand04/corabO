@@ -75,7 +75,7 @@ interface CoraboState {
   sendQuote: (transactionId: string, quote: { breakdown: string; total: number }) => void;
   acceptQuote: (transactionId: string) => void;
   acceptAppointment: (transactionId: string) => void;
-  payCommitment: (transactionId: string, isSubscription?: boolean, campaignData?: any) => Promise<void>;
+  payCommitment: (transactionId: string, rating?: number, comment?: string) => Promise<void>;
   confirmPaymentReceived: (transactionId: string, fromThirdParty: boolean) => void;
   completeWork: (transactionId: string) => void;
   confirmWorkReceived: (transactionId: string, rating: number, comment?: string) => void;
@@ -836,38 +836,20 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return null;
   }, []);
   
-    const payCommitment = async (transactionId: string, isSubscription: boolean = false, campaignData?: any) => {
-        const db = getFirestoreDb();
-        
-        if (transactionId.startsWith('direct-')) {
-            const updates: Partial<User> = {};
-            if(isSubscription){
-                updates.isSubscribed = true;
-            }
-            if(campaignData){
-                await createCampaign(campaignData);
-            }
-            if(Object.keys(updates).length > 0 && currentUser){
-                await updateUser(currentUser.id, updates);
-            }
-            // This is a direct payment, not an existing commitment.
-            // We can assume we need to create a new transaction record for it.
-            const directTx: Transaction = {
-                id: `txn-${Date.now()}`,
-                type: 'Sistema',
-                status: 'Pago Enviado - Esperando Confirmación',
-                date: new Date().toISOString(),
-                amount: 0, // This should be passed in
-                clientId: currentUser!.id,
-                providerId: 'corabo-admin',
-                participantIds: [currentUser!.id, 'corabo-admin'],
-                details: { system: 'Pago de servicio de plataforma' }
-            };
-            // This part needs more context on what to do with direct payments
-        } else {
-             const txRef = doc(db, 'transactions', transactionId);
-             await updateDoc(txRef, { status: 'Pago Enviado - Esperando Confirmación' });
-        }
+    const payCommitment = async (transactionId: string, rating?: number, comment?: string) => {
+      const db = getFirestoreDb();
+      const txRef = doc(db, 'transactions', transactionId);
+      
+      const txSnap = await getDoc(txRef);
+      if(!txSnap.exists()) return;
+
+      const updates: any = { status: 'Pago Enviado - Esperando Confirmación' };
+      if(rating) updates['details.clientRating'] = rating;
+      if(comment) updates['details.clientComment'] = comment;
+
+      await updateDoc(txRef, updates);
+
+      toast({ title: 'Pago registrado', description: 'El proveedor verificará el pago.' });
     };
 
   const value: CoraboState = {

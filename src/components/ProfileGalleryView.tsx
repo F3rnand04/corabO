@@ -1,11 +1,12 @@
 
+
 "use client";
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Send, ChevronLeft, ChevronRight, MessageCircle, Flag, ImageIcon } from 'lucide-react';
+import { Heart, Send, ChevronLeft, ChevronRight, MessageCircle, Flag, ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
 import { useToast } from '@/hooks/use-toast';
@@ -104,7 +105,7 @@ export function ProfileGalleryView({ gallery, owner, isLoading }: ProfileGallery
                     <Button onClick={handlePrev} variant="ghost" size="icon" className="absolute top-1/2 left-2 -translate-y-1/2 bg-black/20 text-white rounded-full h-8 w-8 z-10"><ChevronLeft className="h-5 w-5" /></Button>
                     <Button onClick={handleNext} variant="ghost" size="icon" className="absolute top-1/2 right-2 -translate-y-1/2 bg-black/20 text-white rounded-full h-8 w-8 z-10"><ChevronRight className="h-5 w-5" /></Button>
                     <div className="absolute bottom-2 right-2 flex flex-col items-end gap-2 text-white">
-                        <div className="flex flex-col items-center"><Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={handleStarClick}><Star className={cn("w-5 h-5", isLiked && "fill-yellow-400 text-yellow-400")} /></Button><span className="text-xs font-bold mt-1">{(starCount / 1000).toFixed(1)}k</span></div>
+                        <div className="flex flex-col items-center"><Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={handleStarClick}><Heart className={cn("w-5 h-5", isLiked && "fill-red-500 text-red-500")} /></Button><span className="text-xs font-bold mt-1">{(starCount / 1000).toFixed(1)}k</span></div>
                         <div className="flex flex-col items-center"><Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={() => openDetailsDialog(currentImageIndex)}><MessageCircle className="w-5 h-5" /></Button><span className="text-xs font-bold mt-1">{messageCount}</span></div>
                         <div className="flex flex-col items-center"><Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-10 w-10" onClick={handleShareClick}><Send className="w-5 h-5" /></Button><span className="text-xs font-bold mt-1">{shareCount}</span></div>
                     </div>
