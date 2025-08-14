@@ -3,7 +3,7 @@
 // It's intended for server-side code, like Genkit flows.
 
 import { initializeApp, getApp, getApps, type FirebaseApp } from "firebase/app";
-import { getFirestore, connectFirestoreEmulator, type Firestore } from "firebase/firestore";
+import { getFirestore, type Firestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration - KEEP THIS AS IS FROM THE CONSOLE
 const firebaseConfig = {
@@ -19,8 +19,6 @@ const firebaseConfig = {
 let app: FirebaseApp;
 let db: Firestore;
 
-// This flag ensures we only connect to the emulators once.
-let emulatorsConnected = false;
 
 function getFirebaseAppInstance(): FirebaseApp {
     if (!getApps().length) {
@@ -32,17 +30,11 @@ function getFirebaseAppInstance(): FirebaseApp {
 }
 
 // This function provides a server-side instance of Firestore.
+// It will automatically connect to emulators if the correct environment variables are set.
 export function getFirestoreDb(): Firestore {
     if (!db) {
         app = getFirebaseAppInstance();
         db = getFirestore(app);
-    }
-    // Connect to emulators if running in a local/dev environment and not already connected
-    if (!emulatorsConnected && process.env.NODE_ENV === 'development') {
-        console.log(`(Server) Connecting to Firestore Emulator...`);
-        // NOTE: The port must match firebase.json for the firestore emulator
-        connectFirestoreEmulator(db, "localhost", 8083);
-        emulatorsConnected = true;
     }
     return db;
 }
