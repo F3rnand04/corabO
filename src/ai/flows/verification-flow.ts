@@ -8,7 +8,6 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { generate } from 'genkit';
 
 
 const VerificationInputSchema = z.object({
@@ -87,8 +86,8 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
   },
   async (input) => {
     
-    const response = await generate({
-        model: ai.model('google-ai/gemini-pro-vision'), // Correctly reference the model by string
+    const response = await ai.generate({
+        model: 'google-ai/gemini-pro-vision',
         output: {
             schema: z.object({
                 extractedName: z.string().describe("The full name of the person on the ID, including all given names and surnames."),
