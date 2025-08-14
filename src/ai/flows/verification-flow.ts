@@ -9,7 +9,6 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { generate } from 'genkit';
-import { geminiProVision } from '@genkit-ai/googleai';
 
 
 const VerificationInputSchema = z.object({
@@ -89,7 +88,7 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
   async (input) => {
     
     const response = await generate({
-        model: geminiProVision, // Specify the correct multimodal model
+        model: ai.model('google-ai/gemini-pro-vision'), // Correctly reference the model by string
         output: {
             schema: z.object({
                 extractedName: z.string().describe("The full name of the person on the ID, including all given names and surnames."),
