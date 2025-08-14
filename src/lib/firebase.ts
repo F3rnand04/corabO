@@ -1,4 +1,3 @@
-
 // IMPORTANT: This file MUST have the "use client" directive.
 // It's intended for client-side components and hooks.
 "use client";
@@ -43,6 +42,7 @@ if (typeof window !== 'undefined' && !emulatorsConnected && process.env.NODE_ENV
   // NOTE: The ports must match firebase.json
   const host = window.location.hostname;
   connectFirestoreEmulator(db, host, 8083); 
+  // CORRECTED: Let Firebase handle the URL construction by just passing the host and port.
   connectAuthEmulator(auth, `http://${host}:9101`, { disableWarnings: true });
   emulatorsConnected = true;
 }
