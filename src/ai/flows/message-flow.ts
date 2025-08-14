@@ -17,7 +17,7 @@ import type { Conversation, Message, Transaction, AgreementProposal, User } from
 const SendMessageInputSchema = z.object({
   conversationId: z.string(),
   senderId: z.string(),
-  recipientId: z.string(),
+  recipientId: z.string().optional(), // Make recipientId optional
   text: z.string().optional(),
   location: z.object({
       lat: z.number(),
@@ -84,6 +84,9 @@ export const sendMessage = ai.defineFlow(
       });
     } else {
       // Creating a new conversation
+      if (!input.recipientId) {
+        throw new Error("Recipient ID is required for new conversations.");
+      }
       await setDoc(convoRef, {
         id: input.conversationId,
         participantIds: [input.senderId, input.recipientId].sort(),
