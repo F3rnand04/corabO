@@ -38,8 +38,8 @@ export const getOrCreateUser = ai.defineFlow(
 
     if (userDocSnap.exists()) {
       const user = userDocSnap.data() as User;
-      // Ensure the first user always has the admin role for demo purposes
-      if (user.id === 'user_client_1' && user.role !== 'admin') {
+      // Ensure the specified user always has the admin role.
+      if (user.email === 'fernandopbt@gmail.com' && user.role !== 'admin') {
         user.role = 'admin';
         await setDoc(userDocRef, user, { merge: true });
       }
@@ -79,8 +79,8 @@ export const getOrCreateUser = ai.defineFlow(
         idVerificationStatus: 'rejected',
       };
       
-      // Assign admin role to the first user
-      if (newUser.id === 'user_client_1') {
+      // Assign admin role to the specified user upon creation.
+      if (newUser.email === 'fernandopbt@gmail.com') {
           newUser.role = 'admin';
       }
 
