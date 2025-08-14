@@ -34,28 +34,21 @@ function getFirebaseAppInstance(): FirebaseApp {
 
 app = getFirebaseAppInstance();
 
+// Use initializeAuth to configure persistence and emulator settings
+auth = initializeAuth(app, {
+  persistence: browserLocalPersistence
+});
+
+db = getFirestore(app);
+
 // Connect to emulators only in the local development environment.
 if (process.env.NODE_ENV === 'development' && !emulatorsConnected) {
-  auth = initializeAuth(app, {
-    persistence: browserLocalPersistence,
-    // This is the key fix: Point the auth SDK to the emulator host before any operations.
-    emulator: {
-      url: "http://127.0.0.1:9101",
-    },
-  });
-  
-  db = getFirestore(app);
+  // Point the SDKs to the emulators
+  connectAuthEmulator(auth, "http://127.0.0.1:9101", { disableWarnings: true });
   connectFirestoreEmulator(db, '127.0.0.1', 8083);
 
   emulatorsConnected = true;
-  console.log("Successfully connected to Firestore and Auth emulators.");
-
-} else {
-  // Production or already connected
-  auth = initializeAuth(app, {
-    persistence: browserLocalPersistence
-  });
-  db = getFirestore(app);
+  console.log("Successfully connected to Firebase emulators.");
 }
 
 
