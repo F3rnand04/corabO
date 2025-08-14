@@ -10,10 +10,19 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { Loader2, AlertTriangle, Globe } from 'lucide-react';
 import Image from 'next/image';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+const countries = [
+  { code: 'VE', name: 'Venezuela', idLabel: 'Cédula de Identidad' },
+  { code: 'CO', name: 'Colombia', idLabel: 'Cédula de Ciudadanía' },
+  { code: 'CL', name: 'Chile', idLabel: 'RUT / DNI' },
+  { code: 'ES', name: 'España', idLabel: 'DNI / NIE' },
+  { code: 'MX', name: 'México', idLabel: 'CURP' },
+];
 
 export default function InitialSetupPage() {
   const { currentUser, completeInitialSetup } = useCorabo();
@@ -23,13 +32,14 @@ export default function InitialSetupPage() {
   const [lastName, setLastName] = useState('');
   const [idNumber, setIdNumber] = useState('');
   const [birthDate, setBirthDate] = useState('');
+  const [country, setCountry] = useState('');
   const [hasAcceptedPolicies, setHasAcceptedPolicies] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-        await completeInitialSetup(currentUser!.id, { name, lastName, idNumber, birthDate });
+        await completeInitialSetup(currentUser!.id, { name, lastName, idNumber, birthDate, country });
         // The context change will trigger the AppLayout to redirect automatically.
     } catch (error) {
         console.error("Failed to complete setup:", error);
@@ -51,7 +61,8 @@ export default function InitialSetupPage() {
     );
   }
 
-  const canSubmit = name && lastName && idNumber && birthDate && hasAcceptedPolicies;
+  const selectedCountryLabel = countries.find(c => c.code === country)?.idLabel || 'Documento de Identidad';
+  const canSubmit = name && lastName && idNumber && birthDate && country && hasAcceptedPolicies;
 
   return (
     <Card className="w-full max-w-md shadow-2xl">
@@ -66,7 +77,7 @@ export default function InitialSetupPage() {
         </div>
         <CardTitle className="text-2xl">¡Bienvenido a Corabo!</CardTitle>
         <CardDescription>
-          Necesitamos algunos datos para completar tu perfil.
+          Completa tus datos para activar todas las funciones de la plataforma.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -79,6 +90,17 @@ export default function InitialSetupPage() {
         </Alert>
 
         <div className="space-y-2">
+            <Label htmlFor="country" className="flex items-center gap-2"><Globe className="w-4 h-4"/>País</Label>
+            <Select onValueChange={setCountry} value={country}>
+                <SelectTrigger id="country">
+                    <SelectValue placeholder="Selecciona tu país" />
+                </SelectTrigger>
+                <SelectContent>
+                    {countries.map(c => <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>)}
+                </SelectContent>
+            </Select>
+        </div>
+        <div className="space-y-2">
           <Label htmlFor="name">Nombre(s)</Label>
           <Input id="name" placeholder="Tus nombres" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
@@ -87,7 +109,7 @@ export default function InitialSetupPage() {
           <Input id="lastName" placeholder="Tus apellidos" value={lastName} onChange={(e) => setLastName(e.target.value)} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="idNumber">Documento de Identidad</Label>
+          <Label htmlFor="idNumber">{selectedCountryLabel}</Label>
           <Input id="idNumber" placeholder="Tu número de identificación" value={idNumber} onChange={(e) => setIdNumber(e.target.value)} />
         </div>
         <div className="space-y-2">

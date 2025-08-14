@@ -1,5 +1,4 @@
 
-
 'use server';
 /**
  * @fileOverview Flows for fetching profile-specific data securely with pagination.
@@ -16,9 +15,11 @@ import { z } from 'zod';
 // --- Complete Initial Setup ---
 const CompleteInitialSetupInputSchema = z.object({
   userId: z.string(),
+  name: z.string(),
   lastName: z.string(),
   idNumber: z.string(),
   birthDate: z.string(),
+  country: z.string(),
 });
 
 export const completeInitialSetupFlow = ai.defineFlow(
@@ -27,16 +28,18 @@ export const completeInitialSetupFlow = ai.defineFlow(
     inputSchema: CompleteInitialSetupInputSchema,
     outputSchema: z.void(),
   },
-  async ({ userId, lastName, idNumber, birthDate }) => {
+  async ({ userId, name, lastName, idNumber, birthDate, country }) => {
     const db = getFirestoreDb();
     const userRef = doc(db, 'users', userId);
     
     // SECURITY: In a real app, you'd verify the userId against the auth context.
     // This flow runs on the server, so it has the necessary permissions.
     await updateDoc(userRef, {
+      name,
       lastName,
       idNumber,
       birthDate,
+      country,
       isInitialSetupComplete: true,
     });
   }

@@ -7,7 +7,7 @@ import { AlertCircle } from "lucide-react";
 import Link from "next/link";
 
 interface ActivationWarningProps {
-  userType: 'client' | 'provider';
+  userType: 'client' | 'provider' | 'repartidor';
 }
 
 export function ActivationWarning({ userType }: ActivationWarningProps) {
@@ -20,6 +20,10 @@ export function ActivationWarning({ userType }: ActivationWarningProps) {
     provider: {
       title: "¡Activa tu registro!",
       description: "Empieza a recibir pagos y a gestionar tus ingresos de forma segura.",
+    },
+    repartidor: {
+        title: "¡Activa tu registro!",
+        description: "Completa tu perfil para poder aceptar entregas.",
     }
   }
 

@@ -160,6 +160,7 @@ export type ProfileSetupData = {
   categories?: string[];
   primaryCategory?: string | null;
   specialty?: string;
+  country?: string;
   providerType?: 'professional' | 'company';
   offerType?: 'product' | 'service';
   hasPhysicalLocation?: boolean;
@@ -198,6 +199,7 @@ export type User = {
   lastName?: string;
   idNumber?: string;
   birthDate?: string;
+  country?: string;
   createdAt?: string;
   type: 'client' | 'provider' | 'repartidor';
   reputation: number;

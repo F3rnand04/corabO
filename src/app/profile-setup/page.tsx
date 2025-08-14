@@ -11,6 +11,7 @@ import Step5_SpecificDetails from '@/components/profile-setup/Step5_SpecificDeta
 import Step6_Review from '@/components/profile-setup/Step6_Review';
 import { useCorabo } from '@/contexts/CoraboContext';
 import type { ProfileSetupData, User as UserType } from '@/lib/types';
+import { Loader2 } from 'lucide-react';
 
 
 const steps = [
@@ -36,37 +37,22 @@ const initialSchedule = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'].r
 export default function ProfileSetupPage() {
   const { currentUser } = useCorabo();
   const [currentStep, setCurrentStep] = useState(1);
-  const [profileType, setProfileType] = useState<UserType['type']>('client');
-  const [formData, setFormData] = useState<ProfileSetupData>({
-      username: '',
-      useUsername: true,
-      categories: [],
-      primaryCategory: null,
-      email: '',
-      phone: '',
-      specialty: '',
-      providerType: 'professional',
-      offerType: 'service',
-      hasPhysicalLocation: true,
-      location: '',
-      showExactLocation: true,
-      serviceRadius: 10,
-      isOnlyDelivery: false,
-      website: '',
-      schedule: initialSchedule,
-  });
+  const [profileType, setProfileType] = useState<UserType['type'] | null>(null);
+  const [formData, setFormData] = useState<ProfileSetupData>({});
+  const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
     // This effect ensures formData is always in sync with the latest currentUser data.
     if (currentUser) {
         setProfileType(currentUser.type);
-        setFormData(prevData => ({
-            ...prevData,
-            ...currentUser.profileSetupData, // Apply existing saved data
+        setFormData({
+            ...currentUser.profileSetupData,
+            schedule: currentUser.profileSetupData?.schedule || initialSchedule,
             username: currentUser.profileSetupData?.username || currentUser.name || '',
-            email: currentUser.email,       // Always sync latest email/phone
+            email: currentUser.email,
             phone: currentUser.phone,
-        }));
+        });
+        setIsLoading(false);
     }
   }, [currentUser]);
 
@@ -75,6 +61,7 @@ export default function ProfileSetupPage() {
   };
 
   const handleNext = () => {
+    if (!profileType) return;
     // For 'client', skip step 3 and 5
     if (profileType === 'client' && currentStep === 2) {
       setCurrentStep(4);
@@ -87,6 +74,7 @@ export default function ProfileSetupPage() {
   };
 
   const handleBack = () => {
+    if (!profileType) return;
     // For 'client', skip step 3 and 5
     if (profileType === 'client' && currentStep === 4) {
       setCurrentStep(2);
@@ -104,7 +92,9 @@ export default function ProfileSetupPage() {
   }
 
   const renderStep = () => {
-    if (!currentUser) return <div>Cargando...</div>;
+    if (isLoading || !profileType) {
+        return <div className="h-64 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" /></div>;
+    }
     switch (currentStep) {
       case 1:
         return <Step1_ProfileType onSelect={handleProfileTypeSelect} currentType={profileType} onNext={handleNext} />;

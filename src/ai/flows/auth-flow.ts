@@ -51,6 +51,7 @@ export const getOrCreateUser = ai.defineFlow(
         lastName: '', // Intentionally left blank for user input
         idNumber: '',
         birthDate: '',
+        country: '',
         createdAt: new Date().toISOString(),
         type: 'client',
         reputation: 0,
