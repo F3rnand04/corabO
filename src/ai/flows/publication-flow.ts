@@ -48,7 +48,7 @@ export const createPublication = ai.defineFlow(
       owner: {
           id: user.id,
           name: user.profileSetupData?.useUsername ? (user.profileSetupData.username ?? user.name) : user.name,
-          profileImage: user.profileImage ?? '',
+          profileImage: user.profileImage ?? 'https://placehold.co/150x150.png',
           verified: user.verified ?? false,
           isGpsActive: user.isGpsActive ?? false,
           reputation: user.reputation ?? 0,
@@ -100,7 +100,7 @@ export const createProduct = ai.defineFlow(
             owner: {
               id: user.id,
               name: user.profileSetupData?.useUsername ? (user.profileSetupData.username ?? user.name) : user.name,
-              profileImage: user.profileImage ?? '',
+              profileImage: user.profileImage ?? 'https://placehold.co/150x150.png',
               verified: user.verified ?? false,
               isGpsActive: user.isGpsActive ?? false,
               reputation: user.reputation ?? 0,
