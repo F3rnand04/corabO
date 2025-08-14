@@ -111,6 +111,7 @@ interface CoraboState {
   getCartItemQuantity: (productId: string) => number;
   activatePromotion: (details: { imageId: string, promotionText: string, cost: number }) => void;
   createCampaign: (data: Omit<CreateCampaignInput, 'userId'>) => Promise<void>;
+  createPublication: (data: CreatePublicationInput) => Promise<void>;
   createProduct: (data: CreateProductInput) => Promise<void>;
   setDeliveryAddress: (address: string) => void;
   markConversationAsRead: (conversationId: string) => void;
@@ -286,7 +287,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const clearSearchHistory = () => {
     setSearchHistory([]);
-  }
+  };
 
   const addToCart = async (product: Product, quantity: number) => {
     if (!currentUser) return;
@@ -382,7 +383,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const isContact = (userId: string) => {
-    return contacts.some(c => c.id !== userId);
+    return contacts.some(c => c.id === userId);
   };
   
   const updateUser = async (userId: string, updates: Partial<User>) => {
@@ -392,10 +393,13 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const completeInitialSetup = async (userId: string, data: { name: string; lastName: string; idNumber: string; birthDate: string; country: string }) => {
-    if (!ENABLE_COUNTRY_UPDATE_LOGIC) {
+    if (ENABLE_COUNTRY_UPDATE_LOGIC) {
+        await completeInitialSetupFlow(data);
+    } else {
         console.warn("La lógica de actualización por cambio de país está deshabilitada en el entorno de pruebas.");
+        // In test mode, we just update the user without the flow's duplicate check
+        await updateUser(userId, { ...data, isInitialSetupComplete: true });
     }
-    await updateUser(userId, { ...data, isInitialSetupComplete: true });
   };
   
   const toggleGps = (userId: string) => {
@@ -1000,7 +1004,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     downloadTransactionsPDF,
     sendMessage,
     sendProposalMessage,
-    acceptProposal,
+    acceptProposal: acceptProposal,
     createAppointmentRequest: TransactionFlows.createAppointmentRequest,
     getAgendaEvents,
     addCommentToImage,
@@ -1008,6 +1012,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     getCartItemQuantity,
     activatePromotion,
     createCampaign,
+    createPublication,
     createProduct,
     toggleUserPause,
     verifyCampaignPayment,

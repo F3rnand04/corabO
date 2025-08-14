@@ -87,7 +87,7 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
   async (input) => {
     
     const response = await ai.generate({
-        model: 'google-ai/gemini-pro-vision',
+        model: 'gemini-pro-vision',
         output: {
             schema: z.object({
                 extractedName: z.string().describe("The full name of the person on the ID, including all given names and surnames."),

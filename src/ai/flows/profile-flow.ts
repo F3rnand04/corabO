@@ -63,6 +63,7 @@ const GetPublicProfileInputSchema = z.object({
 const PublicUserOutputSchema = z.object({
   id: z.string(),
   name: z.string(),
+  lastName: z.string().optional(),
   type: z.string(),
   profileImage: z.string(),
   reputation: z.number(),
@@ -95,6 +96,7 @@ export const getPublicProfileFlow = ai.defineFlow(
     return {
       id: fullUser.id,
       name: fullUser.name,
+      lastName: fullUser.lastName,
       type: fullUser.type,
       profileImage: fullUser.profileImage,
       reputation: fullUser.reputation,
