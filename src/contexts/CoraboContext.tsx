@@ -231,7 +231,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         setConversations([]);
     }
     setIsLoadingAuth(false);
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     if (currentUser?.isGpsActive) {

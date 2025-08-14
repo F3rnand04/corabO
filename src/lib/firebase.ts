@@ -55,4 +55,3 @@ export function getFirebaseApp(): FirebaseApp {
 export function getFirestoreDb(): Firestore {
     return db;
 }
-
