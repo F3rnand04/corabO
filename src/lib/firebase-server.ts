@@ -30,12 +30,10 @@ function getFirebaseAppInstance(): FirebaseApp {
     return app;
 }
 
-// Initialize the app instance
-app = getFirebaseAppInstance();
-
 // This function provides a server-side instance of Firestore.
 export function getFirestoreDb(): Firestore {
     if (!db) {
+        app = getFirebaseAppInstance();
         db = getFirestore(app);
     }
     // Connect to emulators if running in a local/dev environment and not already connected
@@ -49,8 +47,4 @@ export function getFirestoreDb(): Firestore {
         }
     }
     return db;
-}
-
-export function getFirebaseApp(): FirebaseApp {
-    return app;
 }

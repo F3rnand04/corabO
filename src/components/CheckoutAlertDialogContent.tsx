@@ -10,9 +10,11 @@ import { Switch } from "./ui/switch";
 import { Label } from "./ui/label";
 import { Star, Truck } from "lucide-react";
 import { credicoraLevels } from "@/lib/types";
+import { useRouter } from "next/navigation";
 
 export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (open: boolean) => void }) {
-    const { currentUser, cart, getCartTotal, getDeliveryCost, checkout: performCheckout, transactions, users, deliveryAddress, setDeliveryAddress, router } = useCorabo();
+    const { currentUser, cart, getCartTotal, getDeliveryCost, checkout: performCheckout, transactions, users, deliveryAddress, setDeliveryAddress } = useCorabo();
+    const router = useRouter();
     
     const [includeDelivery, setIncludeDelivery] = useState(false);
     const [useCredicora, setUseCredicora] = useState(false);

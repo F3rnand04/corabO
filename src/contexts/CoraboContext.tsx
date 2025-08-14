@@ -173,7 +173,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return null;
   }, []);
 
-   const handleUserAuth = useCallback(async (firebaseUser: FirebaseUser | null) => {
+  const handleUserAuth = useCallback(async (firebaseUser: FirebaseUser | null) => {
     // Cleanup previous listeners to prevent memory leaks on user switch
     listeners.current.forEach(unsubscribe => unsubscribe());
     listeners.current.clear();
@@ -239,14 +239,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     // Crucially, mark loading as false AFTER all async operations are done.
     setIsLoadingAuth(false);
   }, []);
-
-  useEffect(() => {
-    const auth = getAuth(getFirebaseApp());
-    const unsubscribe = onAuthStateChanged(auth, handleUserAuth);
-    // Cleanup subscription on unmount
-    return () => unsubscribe();
-  }, [handleUserAuth]);
-
 
   useEffect(() => {
     if (currentUser?.isGpsActive) {
@@ -927,7 +919,8 @@ export const useCorabo = () => {
   if (context === undefined) {
     throw new Error('useCorabo must be used within a CoraboProvider');
   }
-  return context;
+  const router = useRouter();
+  return { ...context, router };
 };
 export type { Transaction };
 
