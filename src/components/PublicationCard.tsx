@@ -152,7 +152,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
                         <AvatarFallback>{owner.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                 </Link>
-                <div className="flex-grow">
+                <div className="flex-grow ml-3">
                     <Link href={profileLink} className="font-semibold text-sm hover:underline flex items-center gap-1.5">
                         {displayName}
                         {owner.verified && <CheckCircle className="w-4 h-4 text-blue-500" />}
