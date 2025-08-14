@@ -91,7 +91,7 @@ export default function InitialSetupPage() {
 
         <div className="space-y-2">
             <Label htmlFor="country" className="flex items-center gap-2"><Globe className="w-4 h-4"/>País</Label>
-            <Select onValueChange={setCountry} value={country}>
+            <Select onValueChange={(value) => setCountry(value)} value={country}>
                 <SelectTrigger id="country">
                     <SelectValue placeholder="Selecciona tu país" />
                 </SelectTrigger>

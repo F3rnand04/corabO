@@ -27,6 +27,11 @@ import { z } from 'zod';
 import { haversineDistance } from '@/lib/utils';
 import { getOrCreateUser, type FirebaseUserInput } from '@/ai/flows/auth-flow';
 
+// --- FEATURE FLAG ---
+// Set to `true` in production to enable country-specific data updates.
+const ENABLE_COUNTRY_UPDATE_LOGIC = false;
+
+
 interface DailyQuote {
     requestSignature: string;
     count: number;
@@ -91,7 +96,7 @@ interface CoraboState {
   sendPhoneVerification: (userId: string, phone: string) => Promise<void>;
   verifyPhoneCode: (userId: string, code: string) => Promise<boolean>;
   updateFullProfile: (userId: string, data: ProfileSetupData, profileType: 'client' | 'provider' | 'repartidor') => Promise<void>;
-  completeInitialSetup: (userId: string, data: { name: string; lastName: string; idNumber: string; birthDate: string }) => Promise<void>;
+  completeInitialSetup: (userId: string, data: { name: string; lastName: string; idNumber: string; birthDate: string; country: string; }) => Promise<void>;
   subscribeUser: (userId: string, planName: string, amount: number) => void;
   activateTransactions: (userId: string, paymentDetails: any) => void;
   deactivateTransactions: (userId: string) => void;
@@ -386,7 +391,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     await updateDoc(userDocRef, updates);
   };
 
-  const completeInitialSetup = async (userId: string, data: { name: string; lastName: string; idNumber: string; birthDate: string }) => {
+  const completeInitialSetup = async (userId: string, data: { name: string; lastName: string; idNumber: string; birthDate: string; country: string }) => {
+    if (!ENABLE_COUNTRY_UPDATE_LOGIC) {
+        console.warn("La lógica de actualización por cambio de país está deshabilitada en el entorno de pruebas.");
+    }
     await updateUser(userId, { ...data, isInitialSetupComplete: true });
   };
   

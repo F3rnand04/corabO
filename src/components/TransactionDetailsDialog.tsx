@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "./ui/badge";
 import type { Transaction, User } from "@/lib/types";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert, Truck, Banknote, ClipboardCheck, CalendarCheck, Contact, Star, Calendar as CalendarIcon, Upload, Smartphone, MapPin, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert, Truck, Banknote, ClipboardCheck, CalendarCheck, Contact, Star, Calendar as CalendarIcon, Upload, Smartphone, MapPin, XCircle, KeyRound } from "lucide-react";
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
@@ -28,6 +28,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
+import { Alert, AlertTitle } from './ui/alert';
 
 
 interface TransactionDetailsDialogProps {
@@ -108,6 +109,8 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   const isClient = currentUser?.type === 'client';
   const isSystemTx = transaction.type === 'Sistema';
   const isRenewableTx = isSystemTx && transaction.details.isRenewable;
+  const isCrossBorder = currentUser.country !== otherParty?.country;
+
 
   const handleClose = () => {
     setShowRatingScreen(false);
@@ -228,7 +231,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
                  <div className="text-sm bg-muted p-4 rounded-lg border space-y-2">
                     <p className="font-bold mb-2">Datos de Pago del Proveedor</p>
                     
-                    {otherParty?.profileSetupData?.paymentDetails?.account?.active && (
+                    {otherParty?.profileSetupData?.paymentDetails?.account?.active && !isCrossBorder && (
                       <div className="p-2 border-b">
                         <p className="font-semibold flex items-center gap-2"><Banknote className="w-4 h-4" /> Cuenta Bancaria</p>
                         <div className="flex justify-between mt-1"><span>Banco:</span><span className="font-mono">{otherParty?.profileSetupData?.paymentDetails.account.bankName}</span></div>
@@ -236,7 +239,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
                       </div>
                     )}
                     
-                    {otherParty?.profileSetupData?.paymentDetails?.mobile?.active && (
+                    {otherParty?.profileSetupData?.paymentDetails?.mobile?.active && !isCrossBorder && (
                        <div className="p-2 border-b">
                         <p className="font-semibold flex items-center gap-2"><Smartphone className="w-4 h-4" /> Pago Móvil</p>
                         <div className="flex justify-between mt-1"><span>Banco:</span><span className="font-mono">{otherParty?.profileSetupData?.paymentDetails.mobile.bankName}</span></div>
@@ -247,9 +250,19 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
 
                     {otherParty?.profileSetupData?.paymentDetails?.crypto?.active && (
                        <div className="p-2">
-                         <p className="font-semibold flex items-center gap-2"><svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16.714 6.556H14.15l2.031 2.031-2.03 2.032h2.563l2.032-2.031-2.03-2.032Zm-4.582 4.583H9.57l2.032 2.03-2.031 2.031h2.562l2.032-2.03-2.032-2.032Zm-4.582 0H5.087l2.032 2.03-2.032 2.031H7.55l2.032-2.03-2.032-2.032Zm9.164-2.551h2.563l-2.032 2.031 2.032 2.03h-2.563l-2.031-2.031 2.031-2.03Zm-4.582-4.582H9.57l2.032 2.03-2.031 2.032h2.562l2.032-2.03-2.032-2.031Zm4.582 9.164h2.563l-2.032 2.031 2.032 2.03h-2.563l-2.031-2.031 2.031-2.03ZM9.62 2.01l-7.61 7.61 2.032 2.031 7.61-7.61L9.62 2.01Zm0 17.98l-7.61-7.61 2.032-2.032 7.61 7.61-2.032 2.032Z" fill="#F0B90B"></path></svg> Binance Pay</p>
+                         <p className="font-semibold flex items-center gap-2"><KeyRound className="h-4 w-4" /> Binance Pay</p>
                         <div className="flex justify-between items-center mt-1"><span>Correo (Pay ID):</span><span className="font-mono">{otherParty.profileSetupData.paymentDetails.crypto.binanceEmail}</span></div>
                       </div>
+                    )}
+
+                    {isCrossBorder && (
+                         <Alert variant="destructive" className="mt-2">
+                            <AlertTriangle className="h-4 w-4" />
+                            <AlertTitle>Transacción Internacional</AlertTitle>
+                            <AlertDescription>
+                                Por seguridad, para transacciones entre países, solo se habilita Binance Pay.
+                            </AlertDescription>
+                        </Alert>
                     )}
                  </div>
                  <div className="py-4 space-y-4">
@@ -359,6 +372,15 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
           <DialogDescription>ID: {transaction.id}</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4 text-sm">
+          {isCrossBorder && (
+              <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>¡Aviso de Comercio Internacional!</AlertTitle>
+                  <AlertDescription>
+                      Esta es una transacción entre usuarios de diferentes países. Se recomienda usar métodos de pago internacionales como Binance Pay y acordar claramente los términos de envío e impuestos.
+                  </AlertDescription>
+              </Alert>
+          )}
           <div className="grid grid-cols-2 gap-2">
             <div><span className="font-semibold">Estado:</span> <Badge variant="secondary">{transaction.status}</Badge></div>
             <div><span className="font-semibold">Fecha:</span> {new Date(transaction.date).toLocaleDateString()}</div>
