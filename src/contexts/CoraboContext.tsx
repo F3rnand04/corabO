@@ -13,7 +13,7 @@ import { credicoraLevels } from '@/lib/types';
 import { getAuth, signInWithPopup, signOut, User as FirebaseUser, GoogleAuthProvider } from 'firebase/auth';
 import { getFirebaseApp, getFirestoreDb, getAuthInstance } from '@/lib/firebase';
 import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, arrayUnion, getDocs, deleteDoc, collectionGroup, Unsubscribe, orderBy } from 'firebase/firestore';
-import { createCampaign, type CreateCampaignInput } from '@/ai/flows/campaign-flow';
+import { createCampaign as createCampaignFlow, type CreateCampaignInput } from '@/ai/flows/campaign-flow';
 import { acceptProposal, sendMessage } from '@/ai/flows/message-flow';
 import * as TransactionFlows from '@/ai/flows/transaction-flow';
 import * as NotificationFlows from '@/ai/flows/notification-flow';
@@ -75,7 +75,7 @@ interface CoraboState {
   sendQuote: (transactionId: string, quote: { breakdown: string; total: number }) => void;
   acceptQuote: (transactionId: string) => void;
   acceptAppointment: (transactionId: string) => void;
-  payCommitment: (transactionId: string, rating?: number, comment?: string) => Promise<void>;
+  payCommitment: (transactionId: string, isSubscription?: boolean, campaignData?: any) => Promise<void>;
   confirmPaymentReceived: (transactionId: string, fromThirdParty: boolean) => void;
   completeWork: (transactionId: string) => void;
   confirmWorkReceived: (transactionId: string, rating: number, comment?: string) => void;
@@ -676,9 +676,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const createCampaign = async (data: Omit<CreateCampaignInput, 'userId'>) => {
     if (!currentUser) return;
-    const encodedConcept = encodeURIComponent(`Pago de campaña publicitaria`);
-    const campaignData = { ...data };
-    router.push(`/quotes/payment?amount=${campaignData.budget}&concept=${encodedConcept}&campaignData=${encodeURIComponent(JSON.stringify(campaignData))}`);
+    await createCampaignFlow({ ...data, userId: currentUser.id });
   };
   
   const activateTransactions = async (userId: string, paymentDetails: any) => {
@@ -836,20 +834,24 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return null;
   }, []);
   
-    const payCommitment = async (transactionId: string, rating?: number, comment?: string) => {
-      const db = getFirestoreDb();
-      const txRef = doc(db, 'transactions', transactionId);
-      
-      const txSnap = await getDoc(txRef);
-      if(!txSnap.exists()) return;
+    const payCommitment = async (transactionId: string, isSubscription: boolean = false, campaignData?: any) => {
+        if (!currentUser) return;
+        const db = getFirestoreDb();
+        const batch = writeBatch(db);
+        const txRef = doc(db, 'transactions', transactionId);
 
-      const updates: any = { status: 'Pago Enviado - Esperando Confirmación' };
-      if(rating) updates['details.clientRating'] = rating;
-      if(comment) updates['details.clientComment'] = comment;
+        batch.update(txRef, { status: 'Pago Enviado - Esperando Confirmación' });
 
-      await updateDoc(txRef, updates);
+        if(isSubscription){
+            const userRef = doc(db, 'users', currentUser.id);
+            batch.update(userRef, { isSubscribed: true });
+        } else if (campaignData) {
+            await createCampaignFlow({ ...campaignData, userId: currentUser.id });
+        }
 
-      toast({ title: 'Pago registrado', description: 'El proveedor verificará el pago.' });
+        await batch.commit();
+
+        toast({ title: 'Pago registrado', description: 'Tu pago será verificado por un administrador.' });
     };
 
   const value: CoraboState = {

@@ -13,6 +13,8 @@ import { Label } from '@/components/ui/label';
 import { ChevronLeft, Banknote, Upload, Smartphone, Loader2 } from 'lucide-react';
 import type { Transaction } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { getFirestoreDb } from '@/lib/firebase';
+import { setDoc, doc } from 'firebase/firestore';
 
 
 function PaymentHeader() {
@@ -79,12 +81,13 @@ function PaymentPageContent() {
 
         setIsSubmitting(true);
         try {
-             // For direct payments, we now create a system transaction
+             // For direct payments (subscriptions, campaigns), we create a system transaction
             if (!commitment && currentUser) {
+                 const newTxId = `systx-${Date.now()}`;
                  const newTx: Transaction = {
-                    id: `systx-${Date.now()}`,
+                    id: newTxId,
                     type: 'Sistema',
-                    status: 'Pago Enviado - Esperando Confirmación',
+                    status: 'Pago Enviado - Esperando Confirmación', // This will be the initial state
                     date: new Date().toISOString(),
                     amount: directPaymentAmount || 0,
                     clientId: currentUser.id,
@@ -92,14 +95,13 @@ function PaymentPageContent() {
                     participantIds: [currentUser.id, 'corabo-admin'],
                     details: {
                         system: paymentConcept || 'Pago de servicio de plataforma',
-                        paymentVoucherUrl: 'placeholder' // Will be uploaded
+                        paymentVoucherUrl: 'placeholder' // Will be uploaded later
                     }
                 };
                  await setDoc(doc(getFirestoreDb(), 'transactions', newTx.id), newTx);
-                 // Now handle what this payment does (subscribes user, etc.)
                  await payCommitment(newTx.id, isSubscription, campaignData);
             } else if (commitment) {
-                // Regular commitment payment
+                // Regular commitment payment, handled by payCommitment which will update the status
                  await payCommitment(commitment.id);
             }
             
@@ -129,7 +131,7 @@ function PaymentPageContent() {
     }
     
     const displayAmount = commitment?.amount ?? directPaymentAmount;
-    const displayConcept = commitment?.details.system ?? paymentConcept;
+    const displayConcept = commitment?.details.serviceName ?? commitment?.details.system ?? paymentConcept;
 
     return (
         <>

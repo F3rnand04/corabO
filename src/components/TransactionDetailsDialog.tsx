@@ -126,21 +126,8 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
     }
   };
 
-  const handlePayCommitment = () => {
-    const commitmentId = transaction.id;
-    // For system payments, we redirect to the dedicated payment page
-    if (transaction.type === 'Sistema') {
-      router.push(`/quotes/payment?commitmentId=${commitmentId}`);
-      handleClose();
-      return;
-    }
-    
-    if (!paymentReference || !paymentVoucher) {
-        toast({ variant: 'destructive', title: 'Faltan datos', description: 'Sube el comprobante y añade la referencia.' });
-        return;
-    }
-    payCommitment(transaction.id, rating, comment);
-    toast({ title: 'Pago registrado', description: 'El proveedor verificará el pago.' });
+  const handlePayCommitmentRedirect = () => {
+    router.push(`/quotes/payment?commitmentId=${transaction.id}`);
     handleClose();
   }
 
@@ -217,7 +204,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   const CurrentIcon = statusInfo[transaction.status]?.icon || AlertTriangle;
   const iconColor = statusInfo[transaction.status]?.color || 'bg-gray-500';
 
-  const showPayButton = isClient && ['Finalizado - Pendiente de Pago', 'Acuerdo Aceptado - Pendiente de Ejecución', 'Cotización Recibida', 'Cita Solicitada'].includes(transaction.status);
+  const showPayButton = isClient && (['Finalizado - Pendiente de Pago', 'Acuerdo Aceptado - Pendiente de Ejecución', 'Cotización Recibida', 'Cita Solicitada'].includes(transaction.status) || transaction.type === 'Sistema');
 
   if (showPaymentScreen) {
     return (
@@ -302,7 +289,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
                  </div>
                  <DialogFooter>
                     <Button variant="outline" onClick={() => setShowPaymentScreen(false)}>Atrás</Button>
-                    <Button onClick={handlePayCommitment} disabled={!paymentReference || !paymentVoucher}>Confirmar y Enviar Pago</Button>
+                    <Button onClick={() => payCommitment(transaction.id)} disabled={!paymentReference || !paymentVoucher}>Confirmar y Enviar Pago</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -483,13 +470,15 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
                 {isClient && transaction.status === 'Pendiente de Confirmación del Cliente' && <Button onClick={() => setShowRatingScreen(true)}>Confirmar Recepción y Calificar</Button>}
                 
                 {showPayButton && (
-                  <Button onClick={handlePayCommitment}>
+                  <Button onClick={handlePayCommitmentRedirect}>
                       <Banknote className="mr-2 h-4 w-4" />
                       Pagar Ahora
                   </Button>
                 )}
                 
-                <Button variant="secondary" onClick={handleClose}>Cerrar</Button>
+                <DialogClose asChild>
+                    <Button variant="secondary">Cerrar</Button>
+                </DialogClose>
             </div>
         </DialogFooter>
       </DialogContent>
