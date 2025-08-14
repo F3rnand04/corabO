@@ -33,18 +33,21 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { credicoraLevels } from '@/lib/types';
 import { ActivationWarning } from '@/components/ActivationWarning';
 import { Input } from '@/components/ui/input';
+import { getProfileGallery, getProfileProducts } from '@/ai/flows/profile-flow';
 
 export default function CompanyProfilePage() {
   const params = useParams();
-  const { addContact, isContact, transactions, createAppointmentRequest, currentUser, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, sendMessage, toggleGps, deliveryAddress, setDeliveryAddress, getUserMetrics, fetchUser, allPublications, getDistanceToProvider } = useCorabo();
+  const { addContact, isContact, transactions, createAppointmentRequest, currentUser, cart, updateCartQuantity, getCartTotal, getDeliveryCost, checkout, sendMessage, toggleGps, deliveryAddress, setDeliveryAddress, getUserMetrics, fetchUser, getDistanceToProvider } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
 
+  const providerId = params.id as string;
+
   const [provider, setProvider] = useState<User | null>(null);
+  const [providerProducts, setProviderProducts] = useState<Product[]>([]);
+  const [providerGallery, setProviderGallery] = useState<GalleryImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [catalogSearchQuery, setCatalogSearchQuery] = useState('');
-
-  const providerId = params.id as string;
 
   useEffect(() => {
     if (!providerId) {
@@ -52,37 +55,33 @@ export default function CompanyProfilePage() {
         return;
     };
     
-    setIsLoading(true);
-    fetchUser(providerId).then(fetchedProvider => {
-        setProvider(fetchedProvider);
-        setIsLoading(false);
-    }).catch(error => {
-        console.error("Error loading provider data:", error);
-        toast({ variant: "destructive", title: "Error", description: "No se pudo cargar el perfil del proveedor." });
-        setIsLoading(false);
-    });
+    const loadProfileData = async () => {
+        setIsLoading(true);
+        try {
+            const fetchedProvider = await fetchUser(providerId);
+            setProvider(fetchedProvider);
+
+            if (fetchedProvider) {
+              if (fetchedProvider.profileSetupData?.offerType === 'product') {
+                  const productsResult = await getProfileProducts({ userId: providerId });
+                  setProviderProducts(productsResult.products || []);
+              } else {
+                  const galleryResult = await getProfileGallery({ userId: providerId });
+                  setProviderGallery(galleryResult.gallery || []);
+              }
+            }
+        } catch (error) {
+            console.error("Error loading provider data:", error);
+            toast({ variant: "destructive", title: "Error", description: "No se pudo cargar el perfil del proveedor." });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    loadProfileData();
+
   }, [providerId, fetchUser, toast]);
 
-  const providerProducts = useMemo(() => {
-      if (!provider) return [];
-      return allPublications
-          .filter(p => p.providerId === provider.id && p.type === 'product' && p.productDetails)
-          .map(p => ({
-            id: p.id,
-            name: p.productDetails!.name,
-            description: p.description,
-            price: p.productDetails!.price,
-            category: p.productDetails!.category,
-            providerId: p.providerId,
-            imageUrl: p.src,
-          }));
-  }, [provider, allPublications]);
-
-  const providerGallery = useMemo(() => {
-    if (!provider) return [];
-    return allPublications.filter(p => p.providerId === provider.id && p.type !== 'product');
-  }, [provider, allPublications]);
-  
   const filteredProducts = useMemo(() => {
     if (!catalogSearchQuery) return providerProducts;
     return providerProducts.filter(p => p.name.toLowerCase().includes(catalogSearchQuery.toLowerCase()));
