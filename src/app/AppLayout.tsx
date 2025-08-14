@@ -23,10 +23,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const auth = getAuth();
     
+    // This effect runs only once on initial mount to set up auth listeners.
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      // We pass the user state to the context to handle data fetching and state updates.
+      // This avoids having auth logic inside the context causing re-renders.
+      await handleUserAuth(firebaseUser);
+    });
+
+    // Handle the redirect result from Google Sign-In
     getRedirectResult(auth)
       .then(async (result) => {
-        if (result && result.user) {
-          await handleUserAuth(result.user);
+        if (result && result.user && !currentUser) {
+           await handleUserAuth(result.user);
         }
       })
       .catch((error) => {
@@ -37,28 +45,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 title: 'Error de Autenticación',
                 description: 'Ya existe una cuenta con el mismo correo electrónico pero con un método de inicio de sesión diferente.'
             });
-        } else {
-            toast({
-                variant: 'destructive',
-                title: 'Error de Autenticación',
-                description: 'No se pudo completar el inicio de sesión. Inténtalo de nuevo.'
-            });
         }
       });
       
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (!currentUser && firebaseUser) {
-        await handleUserAuth(firebaseUser);
-      } else if (currentUser && !firebaseUser) {
-        await handleUserAuth(null);
-      }
-    });
-
+    // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, [currentUser, handleUserAuth, toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array ensures this runs only once.
 
 
   useEffect(() => {
+    // This effect handles redirection based on the auth state.
     if (isLoadingAuth) return;
 
     if (currentUser) {
@@ -73,6 +70,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [currentUser, isLoadingAuth, pathname, router]);
 
   useEffect(() => {
+    // This effect handles notification permission prompts.
     if (typeof window !== 'undefined' && 'Notification' in window && currentUser) {
       if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
         setTimeout(() => {
@@ -107,9 +105,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
   
-  const isSpecialPage = pathname === '/login' || pathname === '/initial-setup';
-
-  if (!currentUser || (currentUser && !currentUser.isInitialSetupComplete && !isSpecialPage)) {
+  const isLoginPage = pathname === '/login';
+  
+  if (!currentUser && !isLoginPage) {
      return (
         <div className="flex items-center justify-center min-h-screen">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -117,7 +115,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
      );
   }
   
-  if (isSpecialPage) {
+  if (isLoginPage || (currentUser && !currentUser.isInitialSetupComplete)) {
     return <main>{children}</main>;
   }
   

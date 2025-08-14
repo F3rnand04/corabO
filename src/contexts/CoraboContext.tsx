@@ -9,7 +9,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { add, subDays, startOfDay, differenceInDays, differenceInHours, differenceInMinutes, addDays as addDaysFns } from 'date-fns';
 import { credicoraLevels } from '@/lib/types';
-import { getAuth, signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, GoogleAuthProvider, setPersistence, browserLocalPersistence, signInWithRedirect, getRedirectResult } from 'firebase/auth';
+import { getAuth, signInWithPopup, signOut, User as FirebaseUser, GoogleAuthProvider, setPersistence, browserLocalPersistence, signInWithRedirect } from 'firebase/auth';
 import { getFirebaseApp, getFirestoreDb } from '@/lib/firebase';
 import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, arrayUnion, getDocs, deleteDoc, collectionGroup, Unsubscribe, orderBy } from 'firebase/firestore';
 import { createCampaign, type CreateCampaignInput } from '@/ai/flows/campaign-flow';
@@ -170,7 +170,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return null;
   }, []);
 
-  const handleUserAuth = useCallback(async (firebaseUser: FirebaseUser | null) => {
+  const handleUserAuth = async (firebaseUser: FirebaseUser | null) => {
     listeners.current.forEach(unsubscribe => unsubscribe());
     listeners.current.clear();
     setQrSession(null); 
@@ -231,7 +231,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         setConversations([]);
     }
     setIsLoadingAuth(false);
-  }, [toast]);
+  };
 
   useEffect(() => {
     if (currentUser?.isGpsActive) {
@@ -901,7 +901,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     getCartItemQuantity,
     activatePromotion,
     createCampaign,
-    createPublication,
     createProduct,
     toggleUserPause,
     verifyCampaignPayment,
