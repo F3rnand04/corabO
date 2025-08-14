@@ -21,9 +21,6 @@ let app: FirebaseApp;
 let db: Firestore;
 let auth: Auth;
 
-// This flag ensures we only connect to the emulators once.
-let emulatorsConnected = false;
-
 function getFirebaseAppInstance(): FirebaseApp {
     if (getApps().length === 0) {
         return initializeApp(firebaseConfig);
@@ -34,23 +31,18 @@ function getFirebaseAppInstance(): FirebaseApp {
 
 app = getFirebaseAppInstance();
 
-// Use initializeAuth to configure persistence and emulator settings
+// Use initializeAuth to configure persistence.
+// The SDK will automatically detect emulator settings from environment variables.
 auth = initializeAuth(app, {
   persistence: browserLocalPersistence
 });
 
 db = getFirestore(app);
 
-// Connect to emulators only in the local development environment.
-if (process.env.NODE_ENV === 'development' && !emulatorsConnected) {
-  // Point the SDKs to the emulators
-  connectAuthEmulator(auth, "http://127.0.0.1:9101", { disableWarnings: true });
-  connectFirestoreEmulator(db, '127.0.0.1', 8083);
-
-  emulatorsConnected = true;
-  console.log("Successfully connected to Firebase emulators.");
-}
-
+// NOTE: We no longer need to manually connect to emulators here.
+// Firebase's SDK automatically detects the FIREBASE_AUTH_EMULATOR_HOST 
+// and FIREBASE_FIRESTORE_EMULATOR_HOST environment variables set by Firebase Studio.
+// Manually calling connect*Emulator was causing initialization conflicts.
 
 export function getFirebaseApp(): FirebaseApp {
     return app;
