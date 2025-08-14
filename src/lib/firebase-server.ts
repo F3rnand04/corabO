@@ -1,10 +1,9 @@
-
 // IMPORTANT: This file should NOT have the "use client" directive.
 // It's intended for server-side code, like Genkit flows.
 
 import { initializeApp, getApp, getApps, type FirebaseApp } from "firebase/app";
 import { getFirestore, type Firestore } from "firebase/firestore";
-import { firebaseConfig } from './firebase'; // Import from the client-side config
+import { firebaseConfig } from './firebase-config'; // Import from the SHARED config
 
 // Your web app's Firebase configuration is now inherited.
 
