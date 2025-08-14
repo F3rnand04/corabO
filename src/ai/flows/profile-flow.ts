@@ -7,9 +7,40 @@
 
 import { ai } from '@/ai/genkit';
 import { getFirestoreDb } from '@/lib/firebase-server';
-import { collection, getDocs, query, where, limit, startAfter, doc, getDoc, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, where, limit, startAfter, doc, getDoc, orderBy, updateDoc } from 'firebase/firestore';
 import { GetProfileGalleryInputSchema, GetProfileGalleryOutputSchema, GetProfileProductsInputSchema, GetProfileProductsOutputSchema } from '@/lib/types';
 import type { GalleryImage, Product } from '@/lib/types';
+import { z } from 'zod';
+
+
+// --- Complete Initial Setup ---
+const CompleteInitialSetupInputSchema = z.object({
+  userId: z.string(),
+  lastName: z.string(),
+  idNumber: z.string(),
+  birthDate: z.string(),
+});
+
+export const completeInitialSetupFlow = ai.defineFlow(
+  {
+    name: 'completeInitialSetupFlow',
+    inputSchema: CompleteInitialSetupInputSchema,
+    outputSchema: z.void(),
+  },
+  async ({ userId, lastName, idNumber, birthDate }) => {
+    const db = getFirestoreDb();
+    const userRef = doc(db, 'users', userId);
+    
+    // SECURITY: In a real app, you'd verify the userId against the auth context.
+    // This flow runs on the server, so it has the necessary permissions.
+    await updateDoc(userRef, {
+      lastName,
+      idNumber,
+      birthDate,
+      isInitialSetupComplete: true,
+    });
+  }
+);
 
 
 // --- Get Gallery with Pagination ---

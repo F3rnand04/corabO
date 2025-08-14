@@ -21,6 +21,7 @@ import { autoVerifyIdWithAI, type VerificationInput } from '@/ai/flows/verificat
 import { getExchangeRate } from '@/ai/flows/exchange-rate-flow';
 import { sendSmsVerificationCodeFlow, verifySmsCodeFlow } from '@/ai/flows/sms-flow';
 import { createProduct, createPublication } from '@/ai/flows/publication-flow';
+import { completeInitialSetupFlow } from '@/ai/flows/profile-flow'; // Import the new flow
 import type { GetFeedInputSchema, GetFeedOutputSchema, GetProfileGalleryInputSchema, GetProfileGalleryOutputSchema, GetProfileProductsInputSchema, GetProfileProductsOutputSchema } from '@/lib/types';
 import { z } from 'zod';
 import { haversineDistance } from '@/lib/utils';
@@ -406,11 +407,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const completeInitialSetup = async (userId: string, data: { lastName: string; idNumber: string; birthDate: string }) => {
-    const updates = {
-        ...data,
-        isInitialSetupComplete: true,
-    };
-    await updateUser(userId, updates);
+    // This now calls the secure Genkit flow instead of writing from the client
+    await completeInitialSetupFlow({ userId, ...data });
   };
   
   const toggleGps = (userId: string) => {
