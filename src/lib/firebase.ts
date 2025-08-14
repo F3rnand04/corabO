@@ -18,6 +18,13 @@ const firebaseConfig = {
   "messagingSenderId": "220291714642"
 };
 
+let app: FirebaseApp;
+let db: Firestore;
+let auth;
+
+// This flag ensures we only connect to the emulators once.
+let emulatorsConnected = false;
+
 function getFirebaseAppInstance(): FirebaseApp {
     if (getApps().length === 0) {
         return initializeApp(firebaseConfig);
@@ -26,16 +33,17 @@ function getFirebaseAppInstance(): FirebaseApp {
     }
 }
 
-const app = getFirebaseAppInstance();
-const db = getFirestore(app);
-const auth = getAuth(app);
+app = getFirebaseAppInstance();
+db = getFirestore(app);
+auth = getAuth(app);
 
 // Connect to emulators if running in a local development environment
-if (typeof window !== 'undefined' && window.location.hostname === "localhost") {
+if (typeof window !== 'undefined' && window.location.hostname === "localhost" && !emulatorsConnected) {
   console.log("Connecting client to Firebase Emulators...");
   // NOTE: The ports must match firebase.json
   connectFirestoreEmulator(db, "localhost", 8083); 
   connectAuthEmulator(auth, "http://localhost:9101");
+  emulatorsConnected = true;
 }
 
 
