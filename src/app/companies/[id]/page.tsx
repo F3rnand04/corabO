@@ -32,6 +32,8 @@ import { Input } from '@/components/ui/input';
 import { getProfileGallery, getProfileProducts } from '@/ai/flows/profile-flow';
 import { CartPopoverContent } from '@/components/CartPopoverContent';
 import { CheckoutAlertDialogContent } from '@/components/CheckoutAlertDialogContent';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 
 export default function CompanyProfilePage() {
   const params = useParams();
@@ -85,10 +87,6 @@ export default function CompanyProfilePage() {
     return providerProducts.filter(p => p.name.toLowerCase().includes(catalogSearchQuery.toLowerCase()));
   }, [providerProducts, catalogSearchQuery]);
   
-  const isProductProvider = provider?.profileSetupData?.offerType === 'product';
-  const isCurrentUserTransactionReady = currentUser?.isTransactionsActive;
-  const isProviderTransactionReady = provider?.isTransactionsActive;
-
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
@@ -148,9 +146,12 @@ export default function CompanyProfilePage() {
     );
   }
   
+  const isProductProvider = provider.profileSetupData?.offerType === 'product';
+  const isCurrentUserTransactionReady = currentUser?.isTransactionsActive;
+  const isProviderTransactionReady = provider.isTransactionsActive;
+
   const handleDirectMessage = () => {
-    if (!provider) return;
-    const conversationId = sendMessage(provider.id, '', true);
+    const conversationId = sendMessage({recipientId: provider.id, text: `¡Hola! Me interesa tu publicación.`});
     router.push(`/messages/${conversationId}`);
   };
 
