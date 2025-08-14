@@ -13,7 +13,8 @@
 import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
 
+// By defining the plugin here, we make it available to all flows
+// that import this `ai` object. The initialization is deferred.
 export const ai = genkit({
-  plugins: [googleAI()], // This is now safe as we removed the plugin initialization
-  model: 'google-ai/gemini-1.5-flash',
+  plugins: [googleAI()],
 });

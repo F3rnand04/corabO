@@ -4,17 +4,9 @@
 
 import { initializeApp, getApp, getApps, type FirebaseApp } from "firebase/app";
 import { getFirestore, type Firestore } from "firebase/firestore";
+import { firebaseConfig } from './firebase'; // Import from the client-side config
 
-// Your web app's Firebase configuration - KEEP THIS AS IS FROM THE CONSOLE
-const firebaseConfig = {
-  "projectId": "corabo-demo",
-  "appId": "1:220291714642:web:3aca123e39a92f16c0998b",
-  "storageBucket": "corabo-demo.firebasestorage.app",
-  "apiKey": "AIzaSyAOZ9eRQz1Sry6pdLNwCVZ3QNsr1pZgHnQ",
-  "authDomain": "corabo-demo.firebaseapp.com",
-  "measurementId": "",
-  "messagingSenderId": "220291714642"
-};
+// Your web app's Firebase configuration is now inherited.
 
 let app: FirebaseApp;
 let db: Firestore;
