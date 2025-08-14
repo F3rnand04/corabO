@@ -9,7 +9,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { add, subDays, startOfDay, differenceInDays, differenceInHours, differenceInMinutes, addDays as addDaysFns } from 'date-fns';
 import { credicoraLevels } from '@/lib/types';
-import { getAuth, signInWithPopup, signOut, User as FirebaseUser, GoogleAuthProvider, setPersistence, browserLocalPersistence, getRedirectResult } from 'firebase/auth';
+import { getAuth, signInWithRedirect, signOut, User as FirebaseUser, GoogleAuthProvider, setPersistence, browserLocalPersistence, getRedirectResult } from 'firebase/auth';
 import { getFirebaseApp, getFirestoreDb } from '@/lib/firebase';
 import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, arrayUnion, getDocs, deleteDoc, collectionGroup, Unsubscribe, orderBy } from 'firebase/firestore';
 import { createCampaign, type CreateCampaignInput } from '@/ai/flows/campaign-flow';
@@ -170,7 +170,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return null;
   }, []);
 
-  const handleUserAuth = async (firebaseUser: FirebaseUser | null) => {
+  const handleUserAuth = useCallback(async (firebaseUser: FirebaseUser | null) => {
     listeners.current.forEach(unsubscribe => unsubscribe());
     listeners.current.clear();
     setQrSession(null); 
@@ -231,7 +231,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         setConversations([]);
     }
     setIsLoadingAuth(false);
-  };
+  }, []);
 
   useEffect(() => {
     if (currentUser?.isGpsActive) {
@@ -257,8 +257,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const provider = new GoogleAuthProvider();
     try {
       await setPersistence(auth, browserLocalPersistence);
-      const result = await signInWithPopup(auth, provider);
-      // The onAuthStateChanged listener in AppLayout will handle the user state update.
+      await signInWithRedirect(auth, provider);
+      // The redirect result is handled in AppLayout's useEffect
     } catch (error: any) {
       console.error("Error signing in with Google: ", error);
       if (error.code !== 'auth/popup-closed-by-user') {
@@ -936,3 +936,5 @@ export const useCorabo = () => {
   return { ...context, router };
 };
 export type { Transaction };
+
+    

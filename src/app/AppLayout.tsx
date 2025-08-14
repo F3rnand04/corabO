@@ -22,18 +22,36 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   
   useEffect(() => {
     const auth = getAuth();
-    
-    // This effect runs only once on initial mount to set up auth listeners.
+
+    // This effect runs once on initial mount to set up the auth listener.
+    // It handles both existing sessions and results from a redirect login.
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
-      // We pass the user state to the context to handle data fetching and state updates.
-      // This avoids having auth logic inside the context causing re-renders.
-      await handleUserAuth(firebaseUser);
+      if (firebaseUser) {
+        // If a user is detected by the listener, handle them.
+        await handleUserAuth(firebaseUser);
+      } else {
+        // No user from the listener, check for a redirect result.
+        try {
+          const result = await getRedirectResult(auth);
+          if (result) {
+            // User signed in via redirect.
+            await handleUserAuth(result.user);
+          } else {
+            // No user from listener, no result from redirect.
+            // This means the user is truly logged out.
+            await handleUserAuth(null);
+          }
+        } catch (error) {
+          console.error("Error getting redirect result:", error);
+          await handleUserAuth(null); // Ensure loading state is turned off on error
+        }
+      }
     });
-      
+
     // Cleanup subscription on unmount
     return () => unsubscribe();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array ensures this runs only once.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
 
   useEffect(() => {
@@ -164,3 +182,5 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return null;
 }
+
+    
