@@ -96,7 +96,7 @@ interface CoraboState {
   activateTransactions: (userId: string, paymentDetails: any) => void;
   deactivateTransactions: (userId: string) => void;
   downloadTransactionsPDF: (transactions: Transaction[]) => void;
-  sendMessage: (recipientId: string, text: string, createOnly?: boolean) => string;
+  sendMessage: (options: { recipientId: string; text?: string; createOnly?: boolean; location?: { lat: number; lon: number } }) => string;
   sendProposalMessage: (conversationId: string, proposal: AgreementProposal) => void;
   acceptProposal: (conversationId: string, messageId: string) => void;
   createAppointmentRequest: (request: Omit<AppointmentRequest, 'clientId'>) => void;
@@ -161,10 +161,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     if (userCache.current.has(userId)) {
         return userCache.current.get(userId)!;
     }
-    // Instead of a direct getDoc, call the secure Genkit flow
     const publicProfile = await getPublicProfileFlow({ userId });
     if (publicProfile) {
-        // We cast because the public profile is a subset of the full User type
         const userData = publicProfile as User;
         userCache.current.set(userId, userData);
         return userData;
@@ -173,7 +171,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const handleUserAuth = useCallback(async (firebaseUser: FirebaseUser | null) => {
-    // Cleanup previous listeners to prevent memory leaks on user switch
     listeners.current.forEach(unsubscribe => unsubscribe());
     listeners.current.clear();
     setQrSession(null); 
@@ -192,7 +189,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
         const db = getFirestoreDb();
         
-        // Setup all listeners now that we are authenticated
         const allUsersListener = onSnapshot(collection(db, 'users'), (snapshot) => {
             const allUsers = snapshot.docs.map(doc => doc.data() as User);
             setUsers(allUsers);
@@ -216,7 +212,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         
         const conversationsListener = onSnapshot(query(collection(db, "conversations"), where("participantIds", "array-contains", userData.id)), (snapshot) => {
             const convos = snapshot.docs.map(doc => doc.data() as Conversation);
-            // Sort client-side
             convos.sort((a,b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime());
             setConversations(convos);
         });
@@ -235,7 +230,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         setTransactions([]);
         setConversations([]);
     }
-    // Crucially, mark loading as false AFTER all async operations are done.
     setIsLoadingAuth(false);
   }, []);
 
@@ -397,7 +391,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const completeInitialSetup = async (userId: string, data: { lastName: string; idNumber: string; birthDate: string }) => {
-    // This now calls the secure Genkit flow instead of writing from the client
     await completeInitialSetupFlow({ userId, ...data });
   };
   
@@ -414,7 +407,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const getDistanceToProvider = (provider: User): string | null => {
     let userLatLon: GeolocationCoords | null = currentUserLocation;
     
-    // Fallback to profile location if live location is not available
     if (!userLatLon && currentUser?.profileSetupData?.location) {
         const [lat, lon] = currentUser.profileSetupData.location.split(',').map(Number);
         if (!isNaN(lat) && !isNaN(lon)) {
@@ -442,6 +434,28 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         return `~${Math.ceil(distance)} km`;
     }
   };
+
+  const sendMessage = useCallback((options: { recipientId: string; text?: string; createOnly?: boolean; location?: { lat: number, lon: number } }): string => {
+    const { recipientId, text, createOnly, location } = options;
+    if (!currentUser) return '';
+    
+    const participantIds = [currentUser.id, recipientId].sort();
+    const conversationId = participantIds.join('-');
+
+    if (!createOnly) {
+      const payload: any = {
+        conversationId,
+        senderId: currentUser.id,
+        recipientId,
+      };
+      if (text) payload.text = text;
+      if (location) payload.location = location;
+
+      sendMessage(payload);
+    }
+    
+    return conversationId;
+  }, [currentUser]);
 
   const sendProposalMessage = async (conversationId: string, proposal: AgreementProposal) => {
     if (!currentUser) return;
@@ -583,9 +597,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const removeGalleryImage = async (userId: string, imageId: string) => {
     if (!currentUser) return;
-    // This now correctly deletes from the backend collection directly.
     const db = getFirestoreDb();
-    await deleteDoc(doc(db, 'publications', imageId));
+    await deleteDoc(db, 'publications', imageId);
     toast({ title: "Publicación eliminada" });
   };
   
@@ -921,3 +934,5 @@ export const useCorabo = () => {
   return { ...context, router };
 };
 export type { Transaction };
+
+    

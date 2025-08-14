@@ -23,7 +23,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const auth = getAuth();
     
-    // This handles the redirect result from Google Sign-In
     getRedirectResult(auth)
       .then(async (result) => {
         if (result && result.user) {
@@ -31,7 +30,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         }
       })
       .catch((error) => {
-        // Handle specific auth errors if needed
         console.error("Error getting redirect result:", error);
         if (error.code === 'auth/account-exists-with-different-credential') {
             toast({
@@ -48,10 +46,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         }
       });
       
-    // This handles user session changes (login, logout)
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      // We call handleUserAuth here to ensure the state is always in sync
-      // with Firebase's auth state. It handles both login and logout cases.
       if (!currentUser && firebaseUser) {
         await handleUserAuth(firebaseUser);
       } else if (currentUser && !firebaseUser) {
@@ -59,14 +54,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       }
     });
 
-
     return () => unsubscribe();
-  }, [handleUserAuth, toast, currentUser]);
+  }, [currentUser, handleUserAuth, toast]);
 
 
-  // This effect handles redirection for a logged-in user to the correct page
   useEffect(() => {
-    if (isLoadingAuth) return; // Wait until auth state is determined
+    if (isLoadingAuth) return;
 
     if (currentUser) {
         if (!currentUser.isInitialSetupComplete && pathname !== '/initial-setup') {
@@ -74,12 +67,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         } else if (currentUser.isInitialSetupComplete && (pathname === '/login' || pathname === '/initial-setup')) {
             router.replace('/');
         }
-    } else if (!isLoadingAuth && pathname !== '/login') {
+    } else if (pathname !== '/login') {
         router.replace('/login');
     }
   }, [currentUser, isLoadingAuth, pathname, router]);
 
-  // Request notification permission
   useEffect(() => {
     if (typeof window !== 'undefined' && 'Notification' in window && currentUser) {
       if (Notification.permission !== 'granted' && Notification.permission !== 'denied') {
@@ -107,7 +99,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [currentUser, toast]);
 
 
-  // 1. While checking auth state, show a global loader
   if (isLoadingAuth) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -116,12 +107,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
   
-  // 2. If no user, or user is in setup, render the specific page without main layout
-  if (!currentUser || !currentUser.isInitialSetupComplete) {
-     if (pathname === '/login' || pathname === '/initial-setup') {
-        return <main>{children}</main>;
-     }
-     // While redirecting, show a loader
+  const isSpecialPage = pathname === '/login' || pathname === '/initial-setup';
+
+  if (!currentUser || (currentUser && !currentUser.isInitialSetupComplete && !isSpecialPage)) {
      return (
         <div className="flex items-center justify-center min-h-screen">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -129,7 +117,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
      );
   }
   
-  // 3. If authenticated and setup is complete, render the main app layout
+  if (isSpecialPage) {
+    return <main>{children}</main>;
+  }
+  
   if(currentUser && currentUser.isInitialSetupComplete) {
       if (pathname.startsWith('/admin') && currentUser?.role !== 'admin') {
           router.replace('/');
@@ -193,3 +184,5 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return null;
 }
+
+    
