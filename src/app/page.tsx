@@ -1,4 +1,3 @@
-
 "use client";
 
 import { PublicationCard } from "@/components/PublicationCard";
@@ -39,8 +38,8 @@ export default function HomePage() {
 
   if (isLoadingAuth && allPublications.length === 0) {
     return (
-      <main className="container py-4 space-y-4">
-        {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[500px] w-full rounded-2xl" />)}
+      <main className="space-y-4">
+        {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[500px] w-full" />)}
       </main>
     );
   }
@@ -48,9 +47,11 @@ export default function HomePage() {
   if (!currentUser) return null; // Should be handled by AppLayout, but good practice
 
   return (
-    <main className="container py-4 space-y-4">
+    <main className="space-y-4">
        {currentUser && !currentUser.isTransactionsActive && (
-          <ActivationWarning userType={currentUser.type} />
+          <div className="container py-4">
+            <ActivationWarning userType={currentUser.type} />
+          </div>
       )}
        
         <div className="space-y-4">

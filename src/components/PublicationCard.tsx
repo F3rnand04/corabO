@@ -140,9 +140,9 @@ export function PublicationCard({ publication, className }: PublicationCardProps
     
     return (
         <>
-        <div className={cn("flex flex-col rounded-2xl overflow-hidden shadow-lg border bg-card", className)}>
+        <div className={cn("flex flex-col bg-card border-b", className)}>
             {/* Card Header */}
-            <div className="flex items-start p-3 gap-3">
+            <div className="flex items-start p-3 gap-3 container">
                 <Link href={profileLink} className="flex-shrink-0">
                     <Avatar>
                         <AvatarImage src={owner.profileImage} alt={owner.name} />
@@ -222,7 +222,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
             </div>
             
              {/* Card Actions */}
-             <div className="flex items-center p-2">
+             <div className="flex items-center p-2 container">
                  <Button variant="ghost" className="flex-1" onClick={handleLike}>
                     <Heart className={cn("w-5 h-5", isLiked && "text-red-500 fill-red-500")} />
                     <span className="ml-2 text-xs">{likeCount}</span>
@@ -241,7 +241,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
              </div>
 
              {/* Card Footer */}
-             <div className="px-4 pb-4">
+             <div className="px-4 pb-4 container">
                  <p className="text-sm">
                     <Link href={profileLink} className="font-semibold hover:underline">{displayName}</Link>
                     <span className="text-muted-foreground ml-1">{publication.description}</span>
