@@ -264,62 +264,148 @@ export default function TransactionsPage() {
                                     <ActionButton icon={ListChecks} label="Pendientes" count={pendingTx.length} onClick={() => setView('pending')} />
                                     <ActionButton icon={History} label="Historial" count={0} onClick={() => setView('history')} />
                                     <ActionButton icon={CalendarClock} label="Compromisos" count={commitmentTx.length} onClick={() => setView('commitments')} />
-                                    {/* Cart Button */}
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                             <Button variant="outline" className="flex flex-col h-24 w-full items-center justify-center gap-1 relative">
-                                                {totalCartItems > 0 && <span className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">{totalCartItems}</span>}
-                                                <ShoppingCart className="w-8 h-8 text-primary" />
-                                                <span className="text-xs text-center">Carrito</span>
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-80">
-                                            <div className="grid gap-4">
-                                            <div className="space-y-2">
-                                                <h4 className="font-medium leading-none">Carrito de Compras</h4>
-                                                <p className="text-sm text-muted-foreground">
-                                                Resumen de tu pedido.
-                                                </p>
-                                            </div>
-                                                {cart.length > 0 ? (
-                                                <>
-                                                <div className="grid gap-2 max-h-64 overflow-y-auto">
-                                                {cart.map(item => (
-                                                    <div key={item.product.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-2">
-                                                        <Link href={`/companies/${item.product.providerId}`} className="cursor-pointer hover:underline">
-                                                            <p className="font-medium text-sm truncate">{item.product.name}</p>
-                                                            <p className="text-xs text-muted-foreground">${item.product.price.toFixed(2)}</p>
-                                                        </Link>
-                                                        <div className="flex items-center gap-1 border rounded-md">
-                                                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateCartQuantity(item.product.id, item.quantity - 1)}>
-                                                            <Minus className="h-3 w-3" />
-                                                        </Button>
-                                                        <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
-                                                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateCartQuantity(item.product.id, item.quantity + 1)}>
-                                                            <Plus className="h-3 w-3" />
-                                                        </Button>
+                                    
+                                    <AlertDialog open={isCheckoutAlertOpen} onOpenChange={setIsCheckoutAlertOpen}>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                 <Button variant="outline" className="flex flex-col h-24 w-full items-center justify-center gap-1 relative">
+                                                    {totalCartItems > 0 && <span className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">{totalCartItems}</span>}
+                                                    <ShoppingCart className="w-8 h-8 text-primary" />
+                                                    <span className="text-xs text-center">Carrito</span>
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-80">
+                                                <div className="grid gap-4">
+                                                <div className="space-y-2">
+                                                    <h4 className="font-medium leading-none">Carrito de Compras</h4>
+                                                    <p className="text-sm text-muted-foreground">
+                                                    Resumen de tu pedido.
+                                                    </p>
+                                                </div>
+                                                    {cart.length > 0 ? (
+                                                    <>
+                                                    <div className="grid gap-2 max-h-64 overflow-y-auto">
+                                                    {cart.map(item => (
+                                                        <div key={item.product.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-2">
+                                                            <Link href={`/companies/${item.product.providerId}`} className="cursor-pointer hover:underline">
+                                                                <p className="font-medium text-sm truncate">{item.product.name}</p>
+                                                                <p className="text-xs text-muted-foreground">${item.product.price.toFixed(2)}</p>
+                                                            </Link>
+                                                            <div className="flex items-center gap-1 border rounded-md">
+                                                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateCartQuantity(item.product.id, item.quantity - 1)}>
+                                                                <Minus className="h-3 w-3" />
+                                                            </Button>
+                                                            <span className="text-sm font-medium w-4 text-center">{item.quantity}</span>
+                                                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateCartQuantity(item.product.id, item.quantity + 1)}>
+                                                                <Plus className="h-3 w-3" />
+                                                            </Button>
+                                                            </div>
+                                                            <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => updateCartQuantity(item.product.id, 0)}>
+                                                            <X className="h-4 w-4" />
+                                                            </Button>
                                                         </div>
-                                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => updateCartQuantity(item.product.id, 0)}>
-                                                        <X className="h-4 w-4" />
-                                                        </Button>
+                                                    ))}
                                                     </div>
-                                                ))}
+                                                    <Separator />
+                                                    <div className="flex justify-between font-bold text-sm">
+                                                        <span>Total:</span>
+                                                        <span>${getCartTotal().toFixed(2)}</span>
+                                                    </div>
+                                                    <Button className="w-full" onClick={() => setIsCheckoutAlertOpen(true)}>Ver Pre-factura</Button>
+                                                    </>
+                                                    ) : (
+                                                    <p className="text-sm text-center text-muted-foreground py-4">Tu carrito está vacío.</p>
+                                                    )}
                                                 </div>
-                                                <Separator />
-                                                <div className="flex justify-between font-bold text-sm">
-                                                    <span>Total:</span>
-                                                    <span>${getCartTotal().toFixed(2)}</span>
-                                                </div>
-                                                <AlertDialogTrigger asChild>
-                                                  <Button className="w-full" onClick={() => setIsCheckoutAlertOpen(true)}>Ver Pre-factura</Button>
-                                                </AlertDialogTrigger>
-                                                </>
-                                                ) : (
-                                                <p className="text-sm text-center text-muted-foreground py-4">Tu carrito está vacío.</p>
-                                                )}
+                                            </PopoverContent>
+                                        </Popover>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Confirmar Compra</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Revisa tu pedido. Puedes incluir el costo de envío y pagar con Credicora si está disponible.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <div className="py-4 space-y-4">
+                                                {(() => {
+                                                    if (!cartProvider) return <p>Cargando datos del proveedor...</p>;
+                                                    
+                                                    const isOnlyDelivery = cartProvider.profileSetupData?.isOnlyDelivery || false;
+                                                    const providerAcceptsCredicora = cartProvider.profileSetupData?.acceptsCredicora || false;
+
+                                                    const subtotal = getCartTotal();
+                                                    const deliveryCost = getDeliveryCost();
+                                                    const totalWithDelivery = subtotal + ((includeDelivery || isOnlyDelivery) ? deliveryCost : 0);
+                                                    
+                                                    const userCredicoraLevel = currentUser.credicoraLevel || 1;
+                                                    const credicoraDetails = credicoraLevels[userCredicoraLevel.toString()];
+                                                    const creditLimit = currentUser.credicoraLimit || 0;
+                                                    
+                                                    const financingPercentage = 1 - credicoraDetails.initialPaymentPercentage;
+                                                    const potentialFinancing = subtotal * financingPercentage;
+                                                    const financedAmount = useCredicora ? Math.min(potentialFinancing, creditLimit) : 0;
+                                                    const productInitialPayment = subtotal - financedAmount;
+                                                    const totalToPayToday = productInitialPayment + ((includeDelivery || isOnlyDelivery) ? deliveryCost : 0);
+                                                    const installmentAmount = financedAmount > 0 ? financedAmount / credicoraDetails.installments : 0;
+
+                                                    return (
+                                                        <>
+                                                            <div className="flex justify-between text-sm">
+                                                                <span>Subtotal:</span>
+                                                                <span className="font-semibold">${subtotal.toFixed(2)}</span>
+                                                            </div>
+                                                            <div className="flex items-center justify-between">
+                                                                <Label htmlFor="delivery-switch" className="flex items-center gap-2">
+                                                                    <Truck className="h-4 w-4" />
+                                                                    Incluir Delivery
+                                                                </Label>
+                                                                <Switch
+                                                                    id="delivery-switch"
+                                                                    checked={includeDelivery || isOnlyDelivery}
+                                                                    onCheckedChange={setIncludeDelivery}
+                                                                    disabled={isOnlyDelivery}
+                                                                />
+                                                            </div>
+                                                            {isOnlyDelivery && <p className="text-xs text-muted-foreground -mt-2">Este proveedor solo trabaja con delivery.</p>}
+                                                            <div className="flex justify-between text-sm">
+                                                                <span>Costo de envío (aprox):</span>
+                                                                <span className="font-semibold">${(includeDelivery || isOnlyDelivery) ? deliveryCost.toFixed(2) : '0.00'}</span>
+                                                            </div>
+
+                                                            {providerAcceptsCredicora && (
+                                                                <div className="flex items-center justify-between pt-2 border-t mt-2">
+                                                                    <Label htmlFor="credicora-switch" className="flex items-center gap-2 text-blue-600 font-semibold">
+                                                                        <Star className="w-4 h-4 fill-current"/>
+                                                                        Pagar con Credicora
+                                                                    </Label>
+                                                                    <Switch
+                                                                        id="credicora-switch"
+                                                                        checked={useCredicora}
+                                                                        onCheckedChange={setUseCredicora}
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                            
+                                                            <Separator />
+                                                            <div className="flex justify-between text-lg font-bold">
+                                                                <span>Total a Pagar Hoy:</span>
+                                                                <span>${useCredicora ? totalToPayToday.toFixed(2) : totalWithDelivery.toFixed(2)}</span>
+                                                            </div>
+                                                            {useCredicora && financedAmount > 0 && (
+                                                                <p className="text-xs text-muted-foreground -mt-2 text-right">
+                                                                    y {credicoraDetails.installments} cuotas de ${installmentAmount.toFixed(2)}
+                                                                </p>
+                                                            )}
+                                                        </>
+                                                    );
+                                                })()}
                                             </div>
-                                        </PopoverContent>
-                                    </Popover>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                <AlertDialogAction onClick={handleCheckout} disabled={!cartTransaction}>Pagar Ahora</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
                                 </div>
                             </CardContent>
                         </Card>
@@ -366,94 +452,6 @@ export default function TransactionsPage() {
                 transaction={selectedTransaction}
             />
             <SubscriptionDialog isOpen={isSubscriptionDialogOpen} onOpenChange={setIsSubscriptionDialogOpen} />
-             <AlertDialog open={isCheckoutAlertOpen} onOpenChange={setIsCheckoutAlertOpen}>
-                 <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Confirmar Compra</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Revisa tu pedido. Puedes incluir el costo de envío y pagar con Credicora si está disponible.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <div className="py-4 space-y-4">
-                        {(() => {
-                            if (!cartProvider) return <p>Cargando datos del proveedor...</p>;
-                            
-                            const isOnlyDelivery = cartProvider.profileSetupData?.isOnlyDelivery || false;
-                            const providerAcceptsCredicora = cartProvider.profileSetupData?.acceptsCredicora || false;
-
-                            const subtotal = getCartTotal();
-                            const deliveryCost = getDeliveryCost();
-                            const totalWithDelivery = subtotal + ((includeDelivery || isOnlyDelivery) ? deliveryCost : 0);
-                            
-                            const userCredicoraLevel = currentUser.credicoraLevel || 1;
-                            const credicoraDetails = credicoraLevels[userCredicoraLevel.toString()];
-                            const creditLimit = currentUser.credicoraLimit || 0;
-                            
-                            const financingPercentage = 1 - credicoraDetails.initialPaymentPercentage;
-                            const potentialFinancing = subtotal * financingPercentage;
-                            const financedAmount = useCredicora ? Math.min(potentialFinancing, creditLimit) : 0;
-                            const productInitialPayment = subtotal - financedAmount;
-                            const totalToPayToday = productInitialPayment + ((includeDelivery || isOnlyDelivery) ? deliveryCost : 0);
-                            const installmentAmount = financedAmount > 0 ? financedAmount / credicoraDetails.installments : 0;
-
-                            return (
-                                <>
-                                    <div className="flex justify-between text-sm">
-                                        <span>Subtotal:</span>
-                                        <span className="font-semibold">${subtotal.toFixed(2)}</span>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <Label htmlFor="delivery-switch" className="flex items-center gap-2">
-                                            <Truck className="h-4 w-4" />
-                                            Incluir Delivery
-                                        </Label>
-                                        <Switch
-                                            id="delivery-switch"
-                                            checked={includeDelivery || isOnlyDelivery}
-                                            onCheckedChange={setIncludeDelivery}
-                                            disabled={isOnlyDelivery}
-                                        />
-                                    </div>
-                                    {isOnlyDelivery && <p className="text-xs text-muted-foreground -mt-2">Este proveedor solo trabaja con delivery.</p>}
-                                    <div className="flex justify-between text-sm">
-                                        <span>Costo de envío (aprox):</span>
-                                        <span className="font-semibold">${(includeDelivery || isOnlyDelivery) ? deliveryCost.toFixed(2) : '0.00'}</span>
-                                    </div>
-
-                                    {providerAcceptsCredicora && (
-                                        <div className="flex items-center justify-between pt-2 border-t mt-2">
-                                            <Label htmlFor="credicora-switch" className="flex items-center gap-2 text-blue-600 font-semibold">
-                                                <Star className="w-4 h-4 fill-current"/>
-                                                Pagar con Credicora
-                                            </Label>
-                                            <Switch
-                                                id="credicora-switch"
-                                                checked={useCredicora}
-                                                onCheckedChange={setUseCredicora}
-                                            />
-                                        </div>
-                                    )}
-                                    
-                                    <Separator />
-                                    <div className="flex justify-between text-lg font-bold">
-                                        <span>Total a Pagar Hoy:</span>
-                                        <span>${useCredicora ? totalToPayToday.toFixed(2) : totalWithDelivery.toFixed(2)}</span>
-                                    </div>
-                                    {useCredicora && financedAmount > 0 && (
-                                        <p className="text-xs text-muted-foreground -mt-2 text-right">
-                                            y {credicoraDetails.installments} cuotas de ${installmentAmount.toFixed(2)}
-                                        </p>
-                                    )}
-                                </>
-                            );
-                        })()}
-                    </div>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleCheckout} disabled={!cartTransaction}>Pagar Ahora</AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-             </AlertDialog>
         </div>
     );
 }
