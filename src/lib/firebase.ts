@@ -4,8 +4,8 @@
 "use client";
 
 import { initializeApp, getApp, getApps, type FirebaseApp } from "firebase/app";
-import { getFirestore, connectFirestoreEmulator, type Firestore } from "firebase/firestore";
-import { getAuth, connectAuthEmulator } from "firebase/auth";
+import { getFirestore, type Firestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 
 // Your web app's Firebase configuration - KEEP THIS AS IS FROM THE CONSOLE
 const firebaseConfig = {
@@ -37,15 +37,10 @@ app = getFirebaseAppInstance();
 db = getFirestore(app);
 auth = getAuth(app);
 
-// Connect to emulators if running in a local development environment
-if (typeof window !== 'undefined' && !emulatorsConnected && process.env.NODE_ENV === 'development') {
-  console.log("Connecting client to Firebase Emulators...");
-  // NOTE: The ports must match firebase.json
-  const host = window.location.hostname;
-  connectFirestoreEmulator(db, host, 8083); 
-  connectAuthEmulator(auth, `http://${host}:9101`, { disableWarnings: true });
-  emulatorsConnected = true;
-}
+// NOTE: We are now relying on the Firebase SDK's automatic detection of emulators
+// based on environment variables (like FIREBASE_AUTH_EMULATOR_HOST), which are
+// set by the Firebase Studio environment. Explicit connection calls are removed
+// to prevent network errors in the hosted development environment.
 
 
 export function getFirebaseApp(): FirebaseApp {
