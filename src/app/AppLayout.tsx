@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { onAuthStateChanged, User as FirebaseUser, getRedirectResult } from 'firebase/auth';
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { getAuthInstance } from '@/lib/firebase';
 
 
@@ -23,30 +23,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   
   useEffect(() => {
     const auth = getAuthInstance();
-
     // This effect runs once on initial mount to set up the auth listener.
-    // It handles both existing sessions and results from a redirect login.
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
-      if (firebaseUser) {
-        // If a user is detected by the listener, handle them.
+        // This function will be called whenever the user's login state changes.
         await handleUserAuth(firebaseUser);
-      } else {
-        // No user from the listener, check for a redirect result.
-        try {
-          const result = await getRedirectResult(auth);
-          if (result) {
-            // User signed in via redirect.
-            await handleUserAuth(result.user);
-          } else {
-            // No user from listener, no result from redirect.
-            // This means the user is truly logged out.
-            await handleUserAuth(null);
-          }
-        } catch (error) {
-          console.error("Error getting redirect result:", error);
-          await handleUserAuth(null); // Ensure loading state is turned off on error
-        }
-      }
     });
 
     // Cleanup subscription on unmount
@@ -183,5 +163,3 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return null;
 }
-
-    

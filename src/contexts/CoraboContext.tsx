@@ -9,7 +9,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { add, subDays, startOfDay, differenceInDays, differenceInHours, differenceInMinutes, addDays as addDaysFns } from 'date-fns';
 import { credicoraLevels } from '@/lib/types';
-import { getAuth, signInWithRedirect, signOut, User as FirebaseUser, GoogleAuthProvider, setPersistence, browserLocalPersistence, getRedirectResult } from 'firebase/auth';
+import { getAuth, signInWithPopup, signOut, User as FirebaseUser, GoogleAuthProvider } from 'firebase/auth';
 import { getFirebaseApp, getFirestoreDb, getAuthInstance } from '@/lib/firebase';
 import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, arrayUnion, getDocs, deleteDoc, collectionGroup, Unsubscribe, orderBy } from 'firebase/firestore';
 import { createCampaign, type CreateCampaignInput } from '@/ai/flows/campaign-flow';
@@ -157,25 +157,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const userCache = useRef<Map<string, User>>(new Map());
   const listeners = useRef<Map<string, Unsubscribe>>(new Map());
 
-  const fetchUser = useCallback(async (userId: string): Promise<User | null> => {
-    if (userCache.current.has(userId)) {
-        return userCache.current.get(userId)!;
-    }
-    const publicProfile = await getPublicProfileFlow({ userId });
-    if (publicProfile) {
-        const userData = publicProfile as User;
-        userCache.current.set(userId, userData);
-        return userData;
-    }
-    return null;
-  }, []);
-
   const handleUserAuth = useCallback(async (firebaseUser: FirebaseUser | null) => {
+    // 1. Clean up old listeners to prevent memory leaks
     listeners.current.forEach(unsubscribe => unsubscribe());
     listeners.current.clear();
     setQrSession(null); 
 
     if (firebaseUser) {
+        // 2. Get or create the user profile from the backend
         const firebaseUserInput: FirebaseUserInput = {
             uid: firebaseUser.uid,
             displayName: firebaseUser.displayName,
@@ -187,6 +176,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         userCache.current.set(userData.id, userData);
         setCurrentUser(userData);
 
+        // 3. Set up new real-time listeners for the logged-in user
         const db = getFirestoreDb();
         
         const allUsersListener = onSnapshot(collection(db, 'users'), (snapshot) => {
@@ -224,12 +214,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         listeners.current.set('qrSessions', qrSessionsListener);
 
     } else {
+        // 4. User is logged out, clear all local state
         setCurrentUser(null);
         setUsers([]);
         setAllPublications([]);
         setTransactions([]);
         setConversations([]);
     }
+    // 5. Signal that authentication process is complete
     setIsLoadingAuth(false);
   }, []);
 
@@ -256,7 +248,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const auth = getAuthInstance();
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithRedirect(auth, provider);
+      await signInWithPopup(auth, provider);
+      // The onAuthStateChanged listener in AppLayout will handle the result
     } catch (error: any) {
       console.error("Error signing in with Google: ", error);
       if (error.code !== 'auth/popup-closed-by-user') {
@@ -839,6 +832,19 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       toast({ title: '¡Pago Completado!', description: 'La transacción ha sido registrada exitosamente.' });
   };
 
+  const fetchUser = useCallback(async (userId: string): Promise<User | null> => {
+    if (userCache.current.has(userId)) {
+        return userCache.current.get(userId)!;
+    }
+    const publicProfile = await getPublicProfileFlow({ userId });
+    if (publicProfile) {
+        const userData = publicProfile as User;
+        userCache.current.set(userId, userData);
+        return userData;
+    }
+    return null;
+  }, []);
+
   const value: CoraboState = {
     currentUser,
     users,
@@ -934,5 +940,3 @@ export const useCorabo = () => {
   return { ...context, router };
 };
 export type { Transaction };
-
-    
