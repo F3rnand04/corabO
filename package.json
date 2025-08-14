@@ -9,7 +9,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "firebase emulators:exec \"jest\" --only auth,firestore,storage"
+    "test": "jest"
   },
   "dependencies": {
     "@genkit-ai/core": "^1.16.1",

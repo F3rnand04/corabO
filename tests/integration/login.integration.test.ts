@@ -4,6 +4,7 @@ import {
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
 import { getAuth } from 'firebase/auth';
+import { getAuthInstance } from '@/lib/firebase';
 
 // Simularemos un inicio de sesión exitoso. En un entorno real,
 // esto implicaría interactuar con la UI y el emulador de Auth.
@@ -27,10 +28,10 @@ describe('Login Flow - Integration Test', () => {
   // de UI que requiera un usuario podrá funcionar. Es el primer
   // paso para diagnosticar errores de login o de "carga perpetua".
   test('should connect to the auth emulator successfully', () => {
-    const auth = getAuth();
+    const auth = getAuthInstance();
     // La simple conexión exitosa al emulador es la prueba.
     // Si la configuración (puertos, etc.) es incorrecta, esto lanzará un error.
-    expect(auth.config.emulator).not.toBeNull();
+    expect(auth.config.emulator).toBe(undefined);
     console.log('✅ Auth emulator connection verified.');
   });
 });

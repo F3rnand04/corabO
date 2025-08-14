@@ -4,7 +4,7 @@
 
 import { initializeApp, getApp, getApps, type FirebaseApp } from "firebase/app";
 import { getFirestore, connectFirestoreEmulator, type Firestore } from "firebase/firestore";
-import { initializeAuth, connectAuthEmulator, browserLocalPersistence, type Auth } from "firebase/auth";
+import { initializeAuth, connectAuthEmulator, browserLocalPersistence, type Auth, getAuth } from "firebase/auth";
 
 // Your web app's Firebase configuration - KEEP THIS AS IS FROM THE CONSOLE
 const firebaseConfig = {
@@ -20,6 +20,7 @@ const firebaseConfig = {
 let app: FirebaseApp;
 let db: Firestore;
 let auth: Auth;
+let emulatorsConnected = false;
 
 function getFirebaseAppInstance(): FirebaseApp {
     if (getApps().length === 0) {
@@ -29,31 +30,25 @@ function getFirebaseAppInstance(): FirebaseApp {
     }
 }
 
-app = getFirebaseAppInstance();
-
-// Use initializeAuth to configure persistence.
-// The SDK will automatically detect emulator settings from environment variables.
-auth = initializeAuth(app, {
-  persistence: browserLocalPersistence
-});
-
-db = getFirestore(app);
-
-// NOTE: We no longer need to manually connect to emulators here.
-// Firebase's SDK automatically detects the FIREBASE_AUTH_EMULATOR_HOST 
-// and FIREBASE_FIRESTORE_EMULATOR_HOST environment variables set by Firebase Studio.
-// Manually calling connect*Emulator was causing initialization conflicts.
-
 export function getFirebaseApp(): FirebaseApp {
+    if (!app) {
+        app = getFirebaseAppInstance();
+    }
     return app;
 }
 
-// This function provides a client-side instance of Firestore.
 export function getFirestoreDb(): Firestore {
+    if (!db) {
+        app = getFirebaseApp();
+        db = getFirestore(app);
+    }
     return db;
 }
 
-// This function provides a client-side instance of Auth.
 export function getAuthInstance(): Auth {
+    if (!auth) {
+        app = getFirebaseApp();
+        auth = getAuth(app);
+    }
     return auth;
 }

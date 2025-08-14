@@ -27,11 +27,11 @@ fi
 echo "  - Gestor de paquetes detectado: $PM"
 
 # 1.2 Verificando e instalando dependencias críticas
-echo "  - Asegurando que 'next' y 'react-day-picker' estén instalados..."
-$INSTALL_CMD next@latest react-day-picker
+echo "  - Asegurando que 'jest' esté instalado..."
+$INSTALL_CMD jest
 
 if [ $? -ne 0 ]; then
-    echo "❌ Error Crítico: La instalación de dependencias falló."
+    echo "❌ Error Crítico: La instalación de dependencias de test falló."
     exit 1
 fi
 echo "✅ Dependencias críticas verificadas y alineadas."
