@@ -36,7 +36,7 @@ function PaymentPageContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { toast } = useToast();
-    const { transactions, payCommitment, updateUser, createCampaign } = useCorabo(); // Added createCampaign
+    const { currentUser, transactions, payCommitment } = useCorabo();
 
     const [commitment, setCommitment] = useState<Transaction | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -44,6 +44,8 @@ function PaymentPageContent() {
     // For direct payments
     const [directPaymentAmount, setDirectPaymentAmount] = useState<number | null>(null);
     const [paymentConcept, setPaymentConcept] = useState<string | null>(null);
+    const [isSubscription, setIsSubscription] = useState(false);
+    const [campaignData, setCampaignData] = useState<any>(null);
     
     // Form state
     const [paymentReference, setPaymentReference] = useState('');
@@ -54,6 +56,8 @@ function PaymentPageContent() {
         const commitmentId = searchParams.get('commitmentId');
         const amount = searchParams.get('amount');
         const concept = searchParams.get('concept');
+        const subscriptionFlag = searchParams.get('isSubscription');
+        const campaignDataString = searchParams.get('campaignData');
 
         if (commitmentId) {
             const foundTx = transactions.find(tx => tx.id === commitmentId);
@@ -61,6 +65,8 @@ function PaymentPageContent() {
         } else if (amount && concept) {
             setDirectPaymentAmount(parseFloat(amount));
             setPaymentConcept(decodeURIComponent(concept));
+            if(subscriptionFlag) setIsSubscription(true);
+            if(campaignDataString) setCampaignData(JSON.parse(decodeURIComponent(campaignDataString)));
         }
         setIsLoading(false);
     }, [searchParams, transactions]);
@@ -73,19 +79,33 @@ function PaymentPageContent() {
 
         setIsSubmitting(true);
         try {
-            if (commitment) {
-                await payCommitment(commitment.id);
-            } else {
-                 // This is a direct payment (e.g. subscription or campaign)
-                 // The logic here should create the necessary documents AFTER confirming payment.
-                 // For now, we just show a toast and redirect.
-                 const campaignDataString = searchParams.get('campaignData');
-                 if(campaignDataString){
-                    await createCampaign(JSON.parse(decodeURIComponent(campaignDataString)));
-                 }
+             // For direct payments, we now create a system transaction
+            if (!commitment && currentUser) {
+                 const newTx: Transaction = {
+                    id: `systx-${Date.now()}`,
+                    type: 'Sistema',
+                    status: 'Pago Enviado - Esperando Confirmación',
+                    date: new Date().toISOString(),
+                    amount: directPaymentAmount || 0,
+                    clientId: currentUser.id,
+                    providerId: 'corabo-admin',
+                    participantIds: [currentUser.id, 'corabo-admin'],
+                    details: {
+                        system: paymentConcept || 'Pago de servicio de plataforma',
+                        paymentVoucherUrl: 'placeholder' // Will be uploaded
+                    }
+                };
+                 await setDoc(doc(getFirestoreDb(), 'transactions', newTx.id), newTx);
+                 // Now handle what this payment does (subscribes user, etc.)
+                 await payCommitment(newTx.id, isSubscription, campaignData);
+            } else if (commitment) {
+                // Regular commitment payment
+                 await payCommitment(commitment.id);
             }
+            
             toast({ title: '¡Pago Registrado!', description: 'Gracias. Tu pago será verificado por un administrador pronto.' });
             router.push('/transactions');
+
         } catch (error) {
             console.error(error);
             toast({ variant: 'destructive', title: 'Error', description: 'No se pudo registrar tu pago. Inténtalo de nuevo.' });
