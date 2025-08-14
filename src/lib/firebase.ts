@@ -1,10 +1,11 @@
+
 // IMPORTANT: This file MUST have the "use client" directive.
 // It's intended for client-side components and hooks.
 "use client";
 
 import { initializeApp, getApp, getApps, type FirebaseApp } from "firebase/app";
-import { getFirestore, connectFirestoreEmulator, type Firestore } from "firebase/firestore";
-import { getAuth, connectAuthEmulator, type Auth } from "firebase/auth";
+import { getFirestore, type Firestore } from "firebase/firestore";
+import { getAuth, type Auth } from "firebase/auth";
 
 // Your web app's Firebase configuration - KEEP THIS AS IS FROM THE CONSOLE
 const firebaseConfig = {
@@ -17,11 +18,12 @@ const firebaseConfig = {
   "messagingSenderId": "220291714642"
 };
 
+// Singleton instances
 let app: FirebaseApp;
 let db: Firestore;
 let auth: Auth;
-let emulatorsConnected = false;
 
+// This function ensures Firebase is initialized only once.
 function getFirebaseAppInstance(): FirebaseApp {
     if (getApps().length === 0) {
         return initializeApp(firebaseConfig);
@@ -30,6 +32,9 @@ function getFirebaseAppInstance(): FirebaseApp {
     }
 }
 
+// These functions provide singleton instances of Firebase services.
+// The Firebase SDK will automatically detect and connect to emulators
+// if the appropriate environment variables are set by the hosting environment.
 export function getFirebaseApp(): FirebaseApp {
     if (!app) {
         app = getFirebaseAppInstance();
@@ -37,42 +42,18 @@ export function getFirebaseApp(): FirebaseApp {
     return app;
 }
 
-function connectToEmulators() {
-    if (emulatorsConnected) return;
-
-    const host = window.location.hostname;
-    
-    // Ensure instances exist before connecting
-    // This is the core fix: get the instances before using them.
-    const firestoreInstance = getFirestoreDb(); 
-    const authInstance = getAuthInstance();
-
-    connectFirestoreEmulator(firestoreInstance, host, 8083);
-    connectAuthEmulator(authInstance, `http://${host}:9101`, { disableWarnings: true });
-    
-    emulatorsConnected = true;
-    console.log("Firebase Emulators connected.");
-}
-
-
 export function getFirestoreDb(): Firestore {
     if (!db) {
-        app = getFirebaseApp();
+        const app = getFirebaseApp();
         db = getFirestore(app);
-        if (process.env.NODE_ENV === 'development') {
-            connectToEmulators();
-        }
     }
     return db;
 }
 
 export function getAuthInstance(): Auth {
     if (!auth) {
-        app = getFirebaseApp();
+        const app = getFirebaseApp();
         auth = getAuth(app);
-        if (process.env.NODE_ENV === 'development') {
-            connectToEmulators();
-        }
     }
     return auth;
 }
