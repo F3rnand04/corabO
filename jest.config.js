@@ -10,7 +10,7 @@ module.exports = {
   testMatch: [
     '<rootDir>/tests/unit/**/*.test.ts',
     '<rootDir>/tests/integration/**/*.test.ts',
-    '<rootDir>/tests/load-tests/**/*.test.js',
+    '<rootDir>/tests/load-tests/**/*.k6.js',
   ],
   // Ignora las carpetas que no contienen tests
   testPathIgnorePatterns: [
