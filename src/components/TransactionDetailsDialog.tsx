@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "./ui/badge";
 import type { Transaction, User } from "@/lib/types";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert, Truck, Banknote, ClipboardCheck, CalendarCheck, Contact, Star, Calendar as CalendarIcon, Upload, Smartphone, MapPin } from "lucide-react";
+import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert, Truck, Banknote, ClipboardCheck, CalendarCheck, Contact, Star, Calendar as CalendarIcon, Upload, Smartphone, MapPin, XCircle } from "lucide-react";
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
@@ -70,7 +70,7 @@ function ConfirmPaymentDialog({ onConfirm, onReportThirdParty, onCancel }: { onC
 
 
 export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: TransactionDetailsDialogProps) {
-  const { currentUser, fetchUser, sendQuote, acceptQuote, startDispute, completeWork, confirmWorkReceived, acceptAppointment, payCommitment, confirmPaymentReceived, sendMessage } = useCorabo();
+  const { currentUser, fetchUser, sendQuote, acceptQuote, startDispute, completeWork, confirmWorkReceived, acceptAppointment, payCommitment, confirmPaymentReceived, sendMessage, cancelSystemTransaction } = useCorabo();
   const router = useRouter();
   const { toast } = useToast();
   const [quoteBreakdown, setQuoteBreakdown] = useState('');
@@ -107,6 +107,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   const isProvider = currentUser?.type === 'provider';
   const isClient = currentUser?.type === 'client';
   const isSystemTx = transaction.type === 'Sistema';
+  const isRenewableTx = isSystemTx && transaction.details.isRenewable;
 
   const handleClose = () => {
     setShowRatingScreen(false);
@@ -127,6 +128,8 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   };
 
   const handlePayCommitmentRedirect = () => {
+    // For regular commitments, go to the payment page.
+    // System transactions (like subscriptions) are handled differently now.
     router.push(`/quotes/payment?commitmentId=${transaction.id}`);
     handleClose();
   }
@@ -182,6 +185,11 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
     }
   };
 
+  const handleCancelRenewal = async () => {
+    await cancelSystemTransaction(transaction.id);
+    handleClose();
+  }
+
 
   const statusInfo = {
     'Solicitud Pendiente': { icon: MessageSquare, color: 'bg-yellow-500' },
@@ -204,7 +212,8 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   const CurrentIcon = statusInfo[transaction.status]?.icon || AlertTriangle;
   const iconColor = statusInfo[transaction.status]?.color || 'bg-gray-500';
 
-  const showPayButton = isClient && (['Finalizado - Pendiente de Pago', 'Acuerdo Aceptado - Pendiente de Ejecución', 'Cotización Recibida', 'Cita Solicitada'].includes(transaction.status) || transaction.type === 'Sistema');
+  const showPayButton = isClient && ['Finalizado - Pendiente de Pago', 'Cotización Recibida', 'Cita Solicitada'].includes(transaction.status);
+
 
   if (showPaymentScreen) {
     return (
@@ -407,7 +416,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
                 )}
             </div>
           )}
-          {transaction.type === 'Sistema' && (
+          {isSystemTx && (
             <div>
                 <h4 className="font-semibold mb-2">Detalles:</h4>
                  <div className="p-3 bg-muted rounded-md text-muted-foreground">
@@ -430,6 +439,11 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
                 {!isSystemTx && (
                     <Button variant="outline" onClick={() => startDispute(transaction.id)} disabled={transaction.status === 'En Disputa'}>
                         <ShieldAlert className="mr-2 h-4 w-4" /> Iniciar Disputa
+                    </Button>
+                )}
+                {isRenewableTx && (
+                     <Button variant="destructive" onClick={handleCancelRenewal}>
+                        <XCircle className="mr-2 h-4 w-4" /> Cancelar Renovación
                     </Button>
                 )}
                  {isProvider && transaction.type === "Compra" && transaction.details.deliveryLocation && transaction.status === 'Buscando Repartidor' && (

@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation";
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { add, subDays, startOfDay, differenceInDays, differenceInHours, differenceInMinutes, addDays as addDaysFns } from 'date-fns';
+import { add, subDays, startOfDay, differenceInDays, differenceInHours, differenceInMinutes, addDays as addDaysFns, addMonths } from 'date-fns';
 import { credicoraLevels } from '@/lib/types';
 import { getAuth, signInWithPopup, signOut, User as FirebaseUser, GoogleAuthProvider } from 'firebase/auth';
 import { getFirebaseApp, getFirestoreDb, getAuthInstance } from '@/lib/firebase';
@@ -75,7 +75,7 @@ interface CoraboState {
   sendQuote: (transactionId: string, quote: { breakdown: string; total: number }) => void;
   acceptQuote: (transactionId: string) => void;
   acceptAppointment: (transactionId: string) => void;
-  payCommitment: (transactionId: string, isSubscription?: boolean, campaignData?: any) => Promise<void>;
+  payCommitment: (transactionId: string) => Promise<void>;
   confirmPaymentReceived: (transactionId: string, fromThirdParty: boolean) => void;
   completeWork: (transactionId: string) => void;
   confirmWorkReceived: (transactionId: string, rating: number, comment?: string) => void;
@@ -125,6 +125,8 @@ interface CoraboState {
   finalizeQrSession: (sessionId: string, voucherUrl: string) => Promise<void>;
   cancelQrSession: (sessionId: string) => Promise<void>;
   handleUserAuth: (firebaseUser: FirebaseUser | null) => Promise<void>;
+  registerSystemPayment: (concept: string, amount: number, isSubscription: boolean) => Promise<void>;
+  cancelSystemTransaction: (transactionId: string) => Promise<void>;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -670,7 +672,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const subscribeUser = (userId: string, planName: string, amount: number) => {
-    const encodedConcept = encodeURIComponent(`Pago de suscripción: ${planName}`);
+    const encodedConcept = encodeURIComponent(`Suscripción: ${planName}`);
     router.push(`/quotes/payment?amount=${amount}&concept=${encodedConcept}&isSubscription=true`);
   };
 
@@ -834,25 +836,70 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return null;
   }, []);
   
-    const payCommitment = async (transactionId: string, isSubscription: boolean = false, campaignData?: any) => {
-        if (!currentUser) return;
-        const db = getFirestoreDb();
-        const batch = writeBatch(db);
-        const txRef = doc(db, 'transactions', transactionId);
+  const registerSystemPayment = async (concept: string, amount: number, isSubscription: boolean) => {
+    if (!currentUser) return;
+    const db = getFirestoreDb();
+    const batch = writeBatch(db);
 
-        batch.update(txRef, { status: 'Pago Enviado - Esperando Confirmación' });
-
-        if(isSubscription){
-            const userRef = doc(db, 'users', currentUser.id);
-            batch.update(userRef, { isSubscribed: true });
-        } else if (campaignData) {
-            await createCampaignFlow({ ...campaignData, userId: currentUser.id });
-        }
-
-        await batch.commit();
-
-        toast({ title: 'Pago registrado', description: 'Tu pago será verificado por un administrador.' });
+    // Create the payment transaction for the admin to verify
+    const newTxId = `systx-${Date.now()}`;
+    const newTx: Transaction = {
+      id: newTxId,
+      type: 'Sistema',
+      status: 'Pago Enviado - Esperando Confirmación',
+      date: new Date().toISOString(),
+      amount: amount,
+      clientId: currentUser.id,
+      providerId: 'corabo-admin',
+      participantIds: [currentUser.id, 'corabo-admin'],
+      details: {
+        system: concept,
+        isSubscription: isSubscription, // Flag to identify subscription payments
+      }
     };
+    batch.set(doc(db, 'transactions', newTxId), newTx);
+
+    // If it's a subscription, activate benefits and create the renewal reminder
+    if (isSubscription) {
+        const userRef = doc(db, 'users', currentUser.id);
+        batch.update(userRef, { isSubscribed: true });
+
+        const renewalDate = addMonths(new Date(), 1);
+        const renewalTxId = `systx-renew-${currentUser.id}-${renewalDate.getTime()}`;
+        const renewalTx: Transaction = {
+            id: renewalTxId,
+            type: 'Sistema',
+            status: 'Finalizado - Pendiente de Pago',
+            date: renewalDate.toISOString(),
+            amount: amount,
+            clientId: currentUser.id,
+            providerId: 'corabo-admin',
+            participantIds: [currentUser.id, 'corabo-admin'],
+            details: {
+                system: `Renovación: ${concept}`,
+                isRenewable: true,
+            }
+        };
+        batch.set(doc(db, 'transactions', renewalTxId), renewalTx);
+    }
+    
+    await batch.commit();
+
+    toast({ title: 'Pago registrado', description: 'Tu pago será verificado por un administrador.' });
+    router.push('/transactions');
+  };
+  
+  const payCommitment = async (transactionId: string) => {
+      const db = getFirestoreDb();
+      await updateDoc(doc(db, 'transactions', transactionId), { status: 'Pago Enviado - Esperando Confirmación' });
+      toast({ title: 'Pago registrado', description: 'Tu pago será verificado por el proveedor.' });
+  }
+
+  const cancelSystemTransaction = async (transactionId: string) => {
+    const db = getFirestoreDb();
+    await deleteDoc(doc(db, 'transactions', transactionId));
+    toast({ title: "Compromiso cancelado", description: "La renovación ha sido cancelada." });
+  }
 
   const value: CoraboState = {
     currentUser,
@@ -935,6 +982,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 finalizeQrSession,
     cancelQrSession,
     handleUserAuth,
+    registerSystemPayment,
+    cancelSystemTransaction,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;

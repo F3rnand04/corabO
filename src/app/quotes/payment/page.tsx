@@ -38,7 +38,7 @@ function PaymentPageContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { toast } = useToast();
-    const { currentUser, transactions, payCommitment } = useCorabo();
+    const { currentUser, transactions, payCommitment, registerSystemPayment } = useCorabo();
 
     const [commitment, setCommitment] = useState<Transaction | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -47,7 +47,6 @@ function PaymentPageContent() {
     const [directPaymentAmount, setDirectPaymentAmount] = useState<number | null>(null);
     const [paymentConcept, setPaymentConcept] = useState<string | null>(null);
     const [isSubscription, setIsSubscription] = useState(false);
-    const [campaignData, setCampaignData] = useState<any>(null);
     
     // Form state
     const [paymentReference, setPaymentReference] = useState('');
@@ -59,7 +58,6 @@ function PaymentPageContent() {
         const amount = searchParams.get('amount');
         const concept = searchParams.get('concept');
         const subscriptionFlag = searchParams.get('isSubscription');
-        const campaignDataString = searchParams.get('campaignData');
 
         if (commitmentId) {
             const foundTx = transactions.find(tx => tx.id === commitmentId);
@@ -68,7 +66,6 @@ function PaymentPageContent() {
             setDirectPaymentAmount(parseFloat(amount));
             setPaymentConcept(decodeURIComponent(concept));
             if(subscriptionFlag) setIsSubscription(true);
-            if(campaignDataString) setCampaignData(JSON.parse(decodeURIComponent(campaignDataString)));
         }
         setIsLoading(false);
     }, [searchParams, transactions]);
@@ -82,30 +79,13 @@ function PaymentPageContent() {
         setIsSubmitting(true);
         try {
              // For direct payments (subscriptions, campaigns), we create a system transaction
-            if (!commitment && currentUser) {
-                 const newTxId = `systx-${Date.now()}`;
-                 const newTx: Transaction = {
-                    id: newTxId,
-                    type: 'Sistema',
-                    status: 'Pago Enviado - Esperando Confirmación', // This will be the initial state
-                    date: new Date().toISOString(),
-                    amount: directPaymentAmount || 0,
-                    clientId: currentUser.id,
-                    providerId: 'corabo-admin',
-                    participantIds: [currentUser.id, 'corabo-admin'],
-                    details: {
-                        system: paymentConcept || 'Pago de servicio de plataforma',
-                        paymentVoucherUrl: 'placeholder' // Will be uploaded later
-                    }
-                };
-                 await setDoc(doc(getFirestoreDb(), 'transactions', newTx.id), newTx);
-                 await payCommitment(newTx.id, isSubscription, campaignData);
+            if (directPaymentAmount && paymentConcept) {
+                 await registerSystemPayment(paymentConcept, directPaymentAmount, isSubscription);
             } else if (commitment) {
                 // Regular commitment payment, handled by payCommitment which will update the status
                  await payCommitment(commitment.id);
             }
             
-            toast({ title: '¡Pago Registrado!', description: 'Gracias. Tu pago será verificado por un administrador pronto.' });
             router.push('/transactions');
 
         } catch (error) {
