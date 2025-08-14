@@ -271,9 +271,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const auth = getAuth(getFirebaseApp());
     const provider = new GoogleAuthProvider();
     try {
-      // Use signInWithPopup instead of signInWithRedirect
-      const result = await signInWithPopup(auth, provider);
-      // The onAuthStateChanged observer will handle the user creation/retrieval
+      // Use signInWithRedirect for better compatibility
+      await signInWithRedirect(auth, provider);
     } catch (error) {
       console.error("Error signing in with Google: ", error);
       toast({

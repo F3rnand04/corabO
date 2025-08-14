@@ -23,10 +23,30 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const auth = getAuth();
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      await handleUserAuth(firebaseUser);
+      if (!firebaseUser) {
+        // Handle explicit sign-out or no user
+        await handleUserAuth(null);
+      }
     });
+    
+    // Handle the redirect result from Google Sign-In
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (result && result.user) {
+          await handleUserAuth(result.user);
+        }
+      })
+      .catch((error) => {
+        console.error("Error getting redirect result:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Error de Autenticación',
+            description: 'No se pudo completar el inicio de sesión. Inténtalo de nuevo.'
+        });
+      });
+
     return () => unsubscribe();
-  }, [handleUserAuth]);
+  }, [handleUserAuth, toast]);
 
 
   // This effect handles redirection for a logged-in user to the correct page
