@@ -86,7 +86,7 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex =
   }
 
 
-  if (!gallery || gallery.length === 0) return null;
+  if (!gallery || gallery.length === 0 || !currentUser) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
