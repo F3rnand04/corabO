@@ -271,7 +271,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const auth = getAuth(getFirebaseApp());
     const provider = new GoogleAuthProvider();
     try {
-      // Use signInWithRedirect for better compatibility
+      // Set persistence to local to help with cross-domain issues
+      await setPersistence(auth, browserLocalPersistence);
       await signInWithRedirect(auth, provider);
     } catch (error) {
       console.error("Error signing in with Google: ", error);

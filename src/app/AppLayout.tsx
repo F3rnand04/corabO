@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { usePathname, useRouter } from 'next/navigation';
@@ -22,14 +23,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   
   useEffect(() => {
     const auth = getAuth();
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (!firebaseUser) {
-        // Handle explicit sign-out or no user
-        await handleUserAuth(null);
-      }
-    });
     
-    // Handle the redirect result from Google Sign-In
+    // This handles the redirect result from Google Sign-In
     getRedirectResult(auth)
       .then(async (result) => {
         if (result && result.user) {
@@ -37,16 +32,37 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         }
       })
       .catch((error) => {
+        // Handle specific auth errors if needed
         console.error("Error getting redirect result:", error);
-        toast({
-            variant: 'destructive',
-            title: 'Error de Autenticación',
-            description: 'No se pudo completar el inicio de sesión. Inténtalo de nuevo.'
-        });
+        if (error.code === 'auth/account-exists-with-different-credential') {
+            toast({
+                variant: 'destructive',
+                title: 'Error de Autenticación',
+                description: 'Ya existe una cuenta con el mismo correo electrónico pero con un método de inicio de sesión diferente.'
+            });
+        } else {
+            toast({
+                variant: 'destructive',
+                title: 'Error de Autenticación',
+                description: 'No se pudo completar el inicio de sesión. Inténtalo de nuevo.'
+            });
+        }
       });
+      
+    // This handles user session changes (login, logout)
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      // We call handleUserAuth here to ensure the state is always in sync
+      // with Firebase's auth state. It handles both login and logout cases.
+      if (!currentUser && firebaseUser) {
+        await handleUserAuth(firebaseUser);
+      } else if (currentUser && !firebaseUser) {
+        await handleUserAuth(null);
+      }
+    });
+
 
     return () => unsubscribe();
-  }, [handleUserAuth, toast]);
+  }, [handleUserAuth, toast, currentUser]);
 
 
   // This effect handles redirection for a logged-in user to the correct page
