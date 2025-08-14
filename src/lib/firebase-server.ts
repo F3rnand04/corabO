@@ -18,6 +18,9 @@ const firebaseConfig = {
 let app: FirebaseApp;
 let db: Firestore;
 
+// This flag ensures we only connect to the emulators once.
+let emulatorsConnected = false;
+
 function getFirebaseAppInstance(): FirebaseApp {
     if (!getApps().length) {
         app = initializeApp(firebaseConfig);
@@ -34,15 +37,15 @@ app = getFirebaseAppInstance();
 export function getFirestoreDb(): Firestore {
     if (!db) {
         db = getFirestore(app);
-        // Connect to emulators if running in a local/dev environment
-        // Genkit/Firebase Functions emulators often set this env var.
-        if (process.env.FIRESTORE_EMULATOR_HOST) {
-            console.log(`(Server) Connecting to Firestore Emulator: ${process.env.FIRESTORE_EMULATOR_HOST}`);
-            const [host, port] = process.env.FIRESTORE_EMULATOR_HOST.split(":");
-            connectFirestoreEmulator(db, host, parseInt(port));
-        } else if(process.env.NODE_ENV === 'development') {
-            console.log("(Server) NODE_ENV is development, connecting to Firestore Emulator at localhost:8081");
-            connectFirestoreEmulator(db, "localhost", 8081);
+    }
+    // Connect to emulators if running in a local/dev environment and not already connected
+    if (!emulatorsConnected) {
+        const isEmulator = process.env.FIRESTORE_EMULATOR_HOST || process.env.NODE_ENV === 'development';
+        if (isEmulator) {
+            console.log(`(Server) Connecting to Firestore Emulator...`);
+            // NOTE: The port must match firebase.json for the firestore emulator
+            connectFirestoreEmulator(db, "localhost", 8083);
+            emulatorsConnected = true;
         }
     }
     return db;
