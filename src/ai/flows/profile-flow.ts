@@ -9,7 +9,7 @@ import { ai } from '@/ai/genkit';
 import { getFirestoreDb } from '@/lib/firebase-server';
 import { collection, getDocs, query, where, limit, startAfter, doc, getDoc, orderBy, updateDoc } from 'firebase/firestore';
 import { GetProfileGalleryInputSchema, GetProfileGalleryOutputSchema, GetProfileProductsInputSchema, GetProfileProductsOutputSchema } from '@/lib/types';
-import type { GalleryImage, Product } from '@/lib/types';
+import type { GalleryImage, Product, User } from '@/lib/types';
 import { z } from 'zod';
 
 
@@ -39,6 +39,58 @@ export const completeInitialSetupFlow = ai.defineFlow(
       birthDate,
       isInitialSetupComplete: true,
     });
+  }
+);
+
+// --- Get Public Profile Flow ---
+const GetPublicProfileInputSchema = z.object({
+  userId: z.string(),
+});
+
+// Define only the public fields we want to expose
+const PublicUserOutputSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.string(),
+  profileImage: z.string(),
+  reputation: z.number(),
+  effectiveness: z.number().optional(),
+  verified: z.boolean().optional(),
+  isGpsActive: z.boolean().optional(),
+  isTransactionsActive: z.boolean().optional(),
+  profileSetupData: z.any().optional(), // Using any for simplicity, can be stricter
+});
+
+export const getPublicProfileFlow = ai.defineFlow(
+  {
+    name: 'getPublicProfileFlow',
+    inputSchema: GetPublicProfileInputSchema,
+    outputSchema: PublicUserOutputSchema.nullable(),
+  },
+  async ({ userId }) => {
+    const db = getFirestoreDb();
+    const userRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userRef);
+
+    if (!userSnap.exists()) {
+      return null;
+    }
+
+    const fullUser = userSnap.data() as User;
+
+    // Return only the public-facing data
+    return {
+      id: fullUser.id,
+      name: fullUser.name,
+      type: fullUser.type,
+      profileImage: fullUser.profileImage,
+      reputation: fullUser.reputation,
+      effectiveness: fullUser.effectiveness,
+      verified: fullUser.verified,
+      isGpsActive: fullUser.isGpsActive,
+      isTransactionsActive: fullUser.isTransactionsActive,
+      profileSetupData: fullUser.profileSetupData,
+    };
   }
 );
 

@@ -21,7 +21,7 @@ import { autoVerifyIdWithAI, type VerificationInput } from '@/ai/flows/verificat
 import { getExchangeRate } from '@/ai/flows/exchange-rate-flow';
 import { sendSmsVerificationCodeFlow, verifySmsCodeFlow } from '@/ai/flows/sms-flow';
 import { createProduct, createPublication } from '@/ai/flows/publication-flow';
-import { completeInitialSetupFlow } from '@/ai/flows/profile-flow'; // Import the new flow
+import { completeInitialSetupFlow, getPublicProfileFlow } from '@/ai/flows/profile-flow';
 import type { GetFeedInputSchema, GetFeedOutputSchema, GetProfileGalleryInputSchema, GetProfileGalleryOutputSchema, GetProfileProductsInputSchema, GetProfileProductsOutputSchema } from '@/lib/types';
 import { z } from 'zod';
 import { haversineDistance } from '@/lib/utils';
@@ -162,11 +162,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     if (userCache.current.has(userId)) {
         return userCache.current.get(userId)!;
     }
-    const db = getFirestoreDb();
-    const userDocRef = doc(db, 'users', userId);
-    const userDocSnap = await getDoc(userDocRef);
-    if (userDocSnap.exists()) {
-        const userData = userDocSnap.data() as User;
+    // Instead of a direct getDoc, call the secure Genkit flow
+    const publicProfile = await getPublicProfileFlow({ userId });
+    if (publicProfile) {
+        // We cast because the public profile is a subset of the full User type
+        const userData = publicProfile as User;
         userCache.current.set(userId, userData);
         return userData;
     }
@@ -238,7 +238,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
     // Crucially, mark loading as false AFTER all async operations are done.
     setIsLoadingAuth(false);
-  }, []); // Dependencies can be added if this function relies on external state
+  }, [fetchUser]);
 
   useEffect(() => {
     const auth = getAuth(getFirebaseApp());
