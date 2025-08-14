@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState } from 'react';
@@ -92,11 +91,11 @@ function PaymentMethodCard({
 }
 
 export default function TransactionsSettingsPage() {
-    const { currentUser, deactivateTransactions, updateUser, validateEmail, sendPhoneVerification, verifyPhoneCode, sendMessage } = useCorabo();
+    const { currentUser, deactivateTransactions, updateUser, validateEmail, sendPhoneVerification, verifyPhoneCode, sendMessage, activateTransactions } = useCorabo();
     const { toast } = useToast();
     const router = useRouter();
 
-    // **FIX:** Safely initialize paymentDetails state to prevent runtime errors.
+    // **FIX**: Safely initialize paymentDetails state to prevent runtime errors.
     const [paymentDetails, setPaymentDetails] = useState(() => {
         const pd = currentUser?.profileSetupData?.paymentDetails;
         return {
@@ -122,11 +121,6 @@ export default function TransactionsSettingsPage() {
         return null;
     }
 
-    if (!currentUser.isTransactionsActive) {
-      router.replace('/profile');
-      return null;
-    }
-    
     const handleToggle = (method: 'account' | 'mobile' | 'crypto', active: boolean) => {
         setPaymentDetails(prev => ({ ...prev, [method]: { ...prev[method], active } }));
     };
@@ -139,20 +133,20 @@ export default function TransactionsSettingsPage() {
     };
     
     const handleSaveChanges = () => {
-        const updatedProfileData = {
-            ...currentUser.profileSetupData,
-            paymentDetails: {
-                ...currentUser.profileSetupData?.paymentDetails,
-                ...paymentDetails,
-                // Ensure the crypto email is always the user's main email
-                crypto: {
-                    ...paymentDetails.crypto,
-                    binanceEmail: currentUser.email,
-                }
-            }
-        };
-        updateUser(currentUser.id, { profileSetupData: updatedProfileData });
-        toast({ title: "Cambios Guardados", description: "Tus métodos de pago han sido actualizados." });
+        // **FIX**: Check if module is already active or not
+        const wasActive = currentUser.isTransactionsActive;
+        activateTransactions(currentUser.id, paymentDetails);
+
+        toast({ 
+            title: wasActive ? "Cambios Guardados" : "¡Registro Activado!",
+            description: wasActive 
+                ? "Tus métodos de pago han sido actualizados." 
+                : "Ahora puedes recibir pagos y gestionar transacciones."
+        });
+        
+        if (!wasActive) {
+            router.push('/transactions');
+        }
     }
 
     const handleContactSupportForEmailChange = () => {
@@ -165,6 +159,15 @@ export default function TransactionsSettingsPage() {
         <>
             <SettingsHeader />
             <main className="container py-8 max-w-2xl mx-auto space-y-8">
+                 {!currentUser.isTransactionsActive && (
+                    <Alert variant="destructive">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertTitle>Registro de Transacciones Inactivo</AlertTitle>
+                        <AlertDescription>
+                            Para empezar a recibir pagos, configura al menos un método de pago y guarda los cambios para activar tu registro.
+                        </AlertDescription>
+                    </Alert>
+                )}
                 <Card>
                     <CardHeader>
                         <CardTitle>Métodos de Pago</CardTitle>
@@ -258,59 +261,64 @@ export default function TransactionsSettingsPage() {
                         </PaymentMethodCard>
 
                         <Button className="w-full" onClick={handleSaveChanges}>
-                            <ShieldCheck className="mr-2 h-4 w-4"/> Guardar Cambios
+                            <ShieldCheck className="mr-2 h-4 w-4"/>
+                            {currentUser.isTransactionsActive ? 'Guardar Cambios' : 'Guardar y Activar Registro'}
                         </Button>
                     </CardContent>
                 </Card>
                 
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                           <FileText className="w-5 h-5"/>
-                           Políticas y Documentación
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <Button variant="outline" className="w-full" asChild>
-                            <Link href="/policies">
-                                <LinkIcon className="mr-2 h-4 w-4"/>
-                                Ver Políticas del Registro de Transacciones
-                            </Link>
-                        </Button>
-                    </CardContent>
-                </Card>
-
-                 <Card className="border-destructive">
-                    <CardHeader>
-                        <CardTitle className="text-destructive flex items-center gap-2">
-                           <AlertTriangle className="w-5 h-5"/>
-                           Zona de Peligro
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="destructive" className="w-full">
-                                    <Trash2 className="mr-2 h-4 w-4"/>
-                                    Desactivar Registro de Transacciones
+                {currentUser.isTransactionsActive && (
+                    <>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                <FileText className="w-5 h-5"/>
+                                Políticas y Documentación
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <Button variant="outline" className="w-full" asChild>
+                                    <Link href="/policies">
+                                        <LinkIcon className="mr-2 h-4 w-4"/>
+                                        Ver Políticas del Registro de Transacciones
+                                    </Link>
                                 </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        Al desactivar el registro, no podrás recibir pagos ni gestionar transacciones a través de Corabo.
-                                        Tu cuenta no será eliminada, pero esta funcionalidad quedará inactiva hasta que la vuelvas a configurar.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => deactivateTransactions(currentUser.id)}>Sí, desactivar</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    </CardContent>
-                </Card>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="border-destructive">
+                            <CardHeader>
+                                <CardTitle className="text-destructive flex items-center gap-2">
+                                <AlertTriangle className="w-5 h-5"/>
+                                Zona de Peligro
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="destructive" className="w-full">
+                                            <Trash2 className="mr-2 h-4 w-4"/>
+                                            Desactivar Registro de Transacciones
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Al desactivar el registro, no podrás recibir pagos ni gestionar transacciones a través de Corabo.
+                                                Tu cuenta no será eliminada, pero esta funcionalidad quedará inactiva hasta que la vuelvas a configurar.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => deactivateTransactions(currentUser.id)}>Sí, desactivar</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </CardContent>
+                        </Card>
+                    </>
+                )}
             </main>
         </>
     );

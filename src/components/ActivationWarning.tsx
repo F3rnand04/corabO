@@ -3,14 +3,31 @@
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { useCorabo } from "@/contexts/CoraboContext";
 import { AlertCircle } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface ActivationWarningProps {
   userType: 'client' | 'provider' | 'repartidor';
 }
 
 export function ActivationWarning({ userType }: ActivationWarningProps) {
+  const { currentUser } = useCorabo();
+  const router = useRouter();
+
+  const handleActivationClick = () => {
+    if (!currentUser) return;
+    
+    // **FIX**: Implement smart redirection logic
+    if (currentUser.isInitialSetupComplete) {
+      // If identity is set up, go to payment/transaction settings
+      router.push('/transactions/settings');
+    } else {
+      // Otherwise, go to the initial identity setup
+      router.push('/initial-setup');
+    }
+  };
 
   const messages = {
     client: {
@@ -35,8 +52,8 @@ export function ActivationWarning({ userType }: ActivationWarningProps) {
         <AlertTitle className="font-semibold">{title}</AlertTitle>
         <AlertDescription className="flex justify-between items-center">
             <span>{description}</span>
-            <Button variant="link" size="sm" asChild className="p-0 h-auto text-current font-bold">
-              <Link href="/initial-setup">Activar ahora &rarr;</Link>
+            <Button variant="link" size="sm" onClick={handleActivationClick} className="p-0 h-auto text-current font-bold">
+              Activar ahora &rarr;
             </Button>
         </AlertDescription>
     </Alert>
