@@ -4,7 +4,7 @@
 
 import { initializeApp, getApp, getApps, type FirebaseApp } from "firebase/app";
 import { getFirestore, connectFirestoreEmulator, type Firestore } from "firebase/firestore";
-import { initializeAuth, connectAuthEmulator, browserLocalPersistence, type Auth, getAuth } from "firebase/auth";
+import { getAuth, connectAuthEmulator, type Auth } from "firebase/auth";
 
 // Your web app's Firebase configuration - KEEP THIS AS IS FROM THE CONSOLE
 const firebaseConfig = {
@@ -37,10 +37,31 @@ export function getFirebaseApp(): FirebaseApp {
     return app;
 }
 
+function connectToEmulators() {
+    if (emulatorsConnected) return;
+
+    const host = window.location.hostname;
+    
+    // Ensure instances exist before connecting
+    // This is the core fix: get the instances before using them.
+    const firestoreInstance = getFirestoreDb(); 
+    const authInstance = getAuthInstance();
+
+    connectFirestoreEmulator(firestoreInstance, host, 8083);
+    connectAuthEmulator(authInstance, `http://${host}:9101`, { disableWarnings: true });
+    
+    emulatorsConnected = true;
+    console.log("Firebase Emulators connected.");
+}
+
+
 export function getFirestoreDb(): Firestore {
     if (!db) {
         app = getFirebaseApp();
         db = getFirestore(app);
+        if (process.env.NODE_ENV === 'development') {
+            connectToEmulators();
+        }
     }
     return db;
 }
@@ -48,19 +69,10 @@ export function getFirestoreDb(): Firestore {
 export function getAuthInstance(): Auth {
     if (!auth) {
         app = getFirebaseApp();
-        // Use initializeAuth to configure persistence and emulator
-        auth = initializeAuth(app, {
-            persistence: browserLocalPersistence,
-        });
+        auth = getAuth(app);
+        if (process.env.NODE_ENV === 'development') {
+            connectToEmulators();
+        }
     }
-
-    // Connect to emulators only in development environment and only once.
-    if (process.env.NODE_ENV === 'development' && !emulatorsConnected) {
-        const host = window.location.hostname;
-        connectFirestoreEmulator(db, host, 8083); 
-        connectAuthEmulator(auth, `http://${host}:9101`, { disableWarnings: true });
-        emulatorsConnected = true;
-    }
-    
     return auth;
 }
