@@ -38,8 +38,8 @@ auth = getAuth(app);
 
 // Connect to emulators only in the local development environment.
 if (typeof window !== 'undefined' && window.location.hostname === 'localhost' && !emulatorsConnected) {
-  connectFirestoreEmulator(db, 'localhost', 8083);
   connectAuthEmulator(auth, 'http://localhost:9101', { disableWarnings: true });
+  connectFirestoreEmulator(db, 'localhost', 8083);
   emulatorsConnected = true;
 }
 
