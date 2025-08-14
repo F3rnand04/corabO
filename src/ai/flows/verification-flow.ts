@@ -8,10 +8,9 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { googleAI } from '@genkit-ai/googleai';
+import { generate } from 'genkit/ai';
+import { geminiProVision } from '@genkit-ai/googleai';
 
-// Initialize the plugin here, safely on the server-side.
-ai.use(googleAI());
 
 const VerificationInputSchema = z.object({
   userId: z.string(),
@@ -41,21 +40,6 @@ export async function autoVerifyIdWithAI(input: VerificationInput): Promise<Veri
   // If documentImageUrl is missing, Zod will throw an error before this function is even called.
   return autoVerifyIdWithAIFlow(input);
 }
-
-const verificationPrompt = ai.definePrompt({
-    name: 'idVerificationPrompt',
-    input: { schema: z.object({ documentImageUrl: z.string() }) }, // Prompt only needs the image
-    output: { 
-        schema: z.object({
-            extractedName: z.string().describe("The full name of the person on the ID, including all given names and surnames."),
-            extractedId: z.string().describe("The full identification number, including any prefix like 'V-' or 'E-'."),
-        })
-    },
-    prompt: `You are an expert document analyst. Analyze the provided image of an identification document.
-    Extract the full name and the full identification number exactly as they appear.
-    
-    Image: {{media url=documentImageUrl}}`,
-});
 
 // Levenshtein distance function to calculate similarity between two strings
 function levenshteinDistance(a: string, b: string): number {
@@ -104,9 +88,25 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
   },
   async (input) => {
     
-    const { output } = await verificationPrompt({ 
-        documentImageUrl: input.documentImageUrl 
+    const response = await generate({
+        model: geminiProVision, // Specify the correct multimodal model
+        output: {
+            schema: z.object({
+                extractedName: z.string().describe("The full name of the person on the ID, including all given names and surnames."),
+                extractedId: z.string().describe("The full identification number, including any prefix like 'V-' or 'E-'."),
+            })
+        },
+        prompt: [{
+            text: `You are an expert document analyst. Analyze the provided image of an identification document.
+            Extract the full name and the full identification number exactly as they appear.`
+        }, {
+            media: {
+                url: input.documentImageUrl
+            }
+        }],
     });
+
+    const output = response.output();
 
     if (!output) {
       throw new Error('AI model did not return an output.');
@@ -121,6 +121,7 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
             .replace(/[\s.-]/g, ''); // Remove separators
     };
     
+    // The test user has V-20.123.456, we check against just the number.
     const idMatch = normalizeId(output.extractedId) === normalizeId(input.idInRecord);
     
     const normalizeName = (str: string) => str.trim().toLowerCase().replace(/\s+/g, ' ');
