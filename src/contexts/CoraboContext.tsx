@@ -21,7 +21,7 @@ import { autoVerifyIdWithAI, type VerificationInput } from '@/ai/flows/verificat
 import { getExchangeRate } from '@/ai/flows/exchange-rate-flow';
 import { sendSmsVerificationCodeFlow, verifySmsCodeFlow } from '@/ai/flows/sms-flow';
 import { createProduct, createPublication } from '@/ai/flows/publication-flow';
-import { completeInitialSetupFlow, getPublicProfileFlow } from '@/ai/flows/profile-flow';
+import { completeInitialSetupFlow, getPublicProfileFlow, deleteUserFlow } from '@/ai/flows/profile-flow';
 import type { GetFeedInputSchema, GetFeedOutputSchema, GetProfileGalleryInputSchema, GetProfileGalleryOutputSchema, GetProfileProductsInputSchema, GetProfileProductsOutputSchema } from '@/lib/types';
 import { z } from 'zod';
 import { haversineDistance } from '@/lib/utils';
@@ -116,6 +116,7 @@ interface CoraboState {
   setDeliveryAddress: (address: string) => void;
   markConversationAsRead: (conversationId: string) => void;
   toggleUserPause: (userId: string, currentIsPaused: boolean) => void;
+  deleteUser: (userId: string) => Promise<void>;
   verifyCampaignPayment: (transactionId: string, campaignId: string) => void;
   verifyUserId: (userId: string) => void;
   rejectUserId: (userId: string) => void;
@@ -518,6 +519,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const toggleUserPause = (userId: string, currentIsPaused: boolean) => {
     updateUser(userId, { isPaused: !currentIsPaused });
   };
+  
+  const deleteUser = async (userId: string) => {
+      await deleteUserFlow({ userId });
+      toast({ title: 'Usuario eliminado', description: 'El usuario ha sido eliminado de la base de datos.' });
+  }
+
   const verifyCampaignPayment = async (transactionId: string, campaignId: string) => {
     const db = getFirestoreDb();
     const batch = writeBatch(db);
@@ -1073,6 +1080,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     createPublication,
     createProduct,
     toggleUserPause,
+    deleteUser,
     verifyCampaignPayment,
     verifyUserId,
     rejectUserId,

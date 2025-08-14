@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -9,9 +10,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
+import { Button } from '../ui/button';
+import { Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 
 export function UserManagementTab() {
-  const { users, toggleUserPause } = useCorabo();
+  const { users, toggleUserPause, deleteUser } = useCorabo();
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredUsers = users.filter(u => 
@@ -24,7 +28,7 @@ export function UserManagementTab() {
     <Card>
       <CardHeader>
         <CardTitle>Gestión de Usuarios</CardTitle>
-        <CardDescription>Activa o desactiva usuarios en la plataforma. Los usuarios desactivados no aparecerán en búsquedas ni podrán interactuar.</CardDescription>
+        <CardDescription>Activa, desactiva o elimina usuarios de la plataforma.</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="mb-4">
@@ -41,7 +45,7 @@ export function UserManagementTab() {
                 <TableHead>Usuario</TableHead>
                 <TableHead>Tipo</TableHead>
                 <TableHead>Estado</TableHead>
-                <TableHead className="text-right">Acción</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
@@ -65,11 +69,30 @@ export function UserManagementTab() {
                                 {user.isPaused ? 'Inactivo' : 'Activo'}
                             </Badge>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right space-x-2">
                            <Switch
                                 checked={!user.isPaused}
                                 onCheckedChange={() => toggleUserPause(user.id, !!user.isPaused)}
                            />
+                           <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                                      <Trash2 className="w-4 h-4"/>
+                                  </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                      <AlertDialogTitle>¿Eliminar a {user.name}?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                          Esta acción es permanente y no se puede deshacer. Se eliminarán todos los datos asociados a este usuario.
+                                      </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => deleteUser(user.id)}>Sí, eliminar usuario</AlertDialogAction>
+                                  </AlertDialogFooter>
+                              </AlertDialogContent>
+                           </AlertDialog>
                         </TableCell>
                     </TableRow>
                 ))}

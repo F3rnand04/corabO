@@ -7,10 +7,31 @@
 
 import { ai } from '@/ai/genkit';
 import { getFirestoreDb } from '@/lib/firebase-server';
-import { collection, getDocs, query, where, limit, startAfter, doc, getDoc, orderBy, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, limit, startAfter, doc, getDoc, orderBy, updateDoc, deleteDoc } from 'firebase/firestore';
 import { GetProfileGalleryInputSchema, GetProfileGalleryOutputSchema, GetProfileProductsInputSchema, GetProfileProductsOutputSchema } from '@/lib/types';
 import type { GalleryImage, Product, User } from '@/lib/types';
 import { z } from 'zod';
+
+
+// --- Delete User Flow ---
+const DeleteUserInputSchema = z.object({
+  userId: z.string(),
+});
+
+export const deleteUserFlow = ai.defineFlow(
+  {
+    name: 'deleteUserFlow',
+    inputSchema: DeleteUserInputSchema,
+    outputSchema: z.void(),
+  },
+  async ({ userId }) => {
+    const db = getFirestoreDb();
+    const userRef = doc(db, 'users', userId);
+    // Note: In a production app, this would also trigger cleanup of related data
+    // (e.g., publications, transactions) for data integrity.
+    await deleteDoc(userRef);
+  }
+);
 
 
 // --- Complete Initial Setup ---
