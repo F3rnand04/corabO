@@ -48,7 +48,19 @@ export function getFirestoreDb(): Firestore {
 export function getAuthInstance(): Auth {
     if (!auth) {
         app = getFirebaseApp();
-        auth = getAuth(app);
+        // Use initializeAuth to configure persistence and emulator
+        auth = initializeAuth(app, {
+            persistence: browserLocalPersistence,
+        });
     }
+
+    // Connect to emulators only in development environment and only once.
+    if (process.env.NODE_ENV === 'development' && !emulatorsConnected) {
+        const host = window.location.hostname;
+        connectFirestoreEmulator(db, host, 8083); 
+        connectAuthEmulator(auth, `http://${host}:9101`, { disableWarnings: true });
+        emulatorsConnected = true;
+    }
+    
     return auth;
 }
