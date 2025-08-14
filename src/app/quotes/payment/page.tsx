@@ -1,7 +1,8 @@
 
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { useToast } from '@/hooks/use-toast';
@@ -31,14 +32,18 @@ function PaymentHeader() {
   );
 }
 
-export default function PaymentPage() {
+function PaymentPageContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { toast } = useToast();
-    const { transactions, payCommitment, updateUser } = useCorabo();
+    const { transactions, payCommitment, updateUser, createCampaign } = useCorabo(); // Added createCampaign
 
     const [commitment, setCommitment] = useState<Transaction | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    
+    // For direct payments
+    const [directPaymentAmount, setDirectPaymentAmount] = useState<number | null>(null);
+    const [paymentConcept, setPaymentConcept] = useState<string | null>(null);
     
     // Form state
     const [paymentReference, setPaymentReference] = useState('');
@@ -47,24 +52,38 @@ export default function PaymentPage() {
 
     useEffect(() => {
         const commitmentId = searchParams.get('commitmentId');
+        const amount = searchParams.get('amount');
+        const concept = searchParams.get('concept');
+
         if (commitmentId) {
             const foundTx = transactions.find(tx => tx.id === commitmentId);
             setCommitment(foundTx || null);
+        } else if (amount && concept) {
+            setDirectPaymentAmount(parseFloat(amount));
+            setPaymentConcept(decodeURIComponent(concept));
         }
         setIsLoading(false);
     }, [searchParams, transactions]);
 
     const handleConfirmPayment = async () => {
-        if (!commitment || !paymentReference || !paymentVoucher) {
+        if (!paymentReference || !paymentVoucher) {
             toast({ variant: 'destructive', title: 'Faltan datos', description: 'Por favor, sube el comprobante y añade la referencia.' });
             return;
         }
 
         setIsSubmitting(true);
         try {
-            // This reuses the payCommitment logic, which is fine for system payments.
-            // For a real app, you might have a dedicated `confirmSystemPayment` flow.
-            await payCommitment(commitment.id);
+            if (commitment) {
+                await payCommitment(commitment.id);
+            } else {
+                 // This is a direct payment (e.g. subscription or campaign)
+                 // The logic here should create the necessary documents AFTER confirming payment.
+                 // For now, we just show a toast and redirect.
+                 const campaignDataString = searchParams.get('campaignData');
+                 if(campaignDataString){
+                    await createCampaign(JSON.parse(decodeURIComponent(campaignDataString)));
+                 }
+            }
             toast({ title: '¡Pago Registrado!', description: 'Gracias. Tu pago será verificado por un administrador pronto.' });
             router.push('/transactions');
         } catch (error) {
@@ -79,7 +98,7 @@ export default function PaymentPage() {
         return <div className="flex items-center justify-center min-h-screen"><Loader2 className="w-8 h-8 animate-spin"/></div>
     }
 
-    if (!commitment) {
+    if (!commitment && !directPaymentAmount) {
         return (
              <div className="flex flex-col items-center justify-center min-h-screen text-center">
                 <h2 className="text-xl font-bold">Transacción no encontrada</h2>
@@ -88,6 +107,9 @@ export default function PaymentPage() {
             </div>
         )
     }
+    
+    const displayAmount = commitment?.amount ?? directPaymentAmount;
+    const displayConcept = commitment?.details.system ?? paymentConcept;
 
     return (
         <>
@@ -103,11 +125,11 @@ export default function PaymentPage() {
                     <CardContent className="space-y-4">
                          <div className="flex justify-between items-center text-sm">
                             <span className="text-muted-foreground">Concepto:</span>
-                            <span className="font-semibold">{commitment.details.system}</span>
+                            <span className="font-semibold">{displayConcept}</span>
                         </div>
                         <div className="flex justify-between items-center text-2xl font-bold">
                             <span className="text-muted-foreground">Monto a Pagar:</span>
-                            <span>${commitment.amount.toFixed(2)}</span>
+                            <span>${displayAmount?.toFixed(2)}</span>
                         </div>
                     </CardContent>
                 </Card>
@@ -177,4 +199,13 @@ export default function PaymentPage() {
             </main>
         </>
     );
+}
+
+
+export default function PaymentPage() {
+    return (
+        <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader2 className="w-8 h-8 animate-spin"/></div>}>
+            <PaymentPageContent />
+        </Suspense>
+    )
 }

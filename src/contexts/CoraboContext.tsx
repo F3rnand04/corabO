@@ -670,24 +670,18 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const subscribeUser = (userId: string, planName: string, amount: number) => {
-      const txId = `txn-sub-${Date.now()}`;
-      const db = getFirestoreDb();
-      const subscriptionTransaction: Transaction = {
-          id: txId,
-          type: 'Sistema',
-          status: 'Finalizado - Pendiente de Pago',
-          date: new Date().toISOString(),
-          amount: amount,
-          clientId: userId,
-          providerId: 'corabo-admin',
-          participantIds: [userId, 'corabo-admin'],
-          details: {
-              system: `Pago de suscripción: ${planName}`,
-          },
-      };
-      const txRef = doc(db, 'transactions', txId);
-      setDoc(txRef, subscriptionTransaction);
-      router.push(`/quotes/payment?commitmentId=${txId}&amount=${amount}`);
+      // Redirect to payment page instead of creating a pending transaction
+      const encodedConcept = encodeURIComponent(`Pago de suscripción: ${planName}`);
+      router.push(`/quotes/payment?amount=${amount}&concept=${encodedConcept}`);
+  };
+
+  const createCampaign = async (data: Omit<CreateCampaignInput, 'userId'>) => {
+    if (!currentUser) return;
+    // Redirect to payment page with campaign details
+    const encodedConcept = encodeURIComponent(`Pago de campaña publicitaria`);
+    router.push(`/quotes/payment?amount=${data.budget}&concept=${encodedConcept}&campaignData=${encodeURIComponent(JSON.stringify(data))}`);
+    // The actual campaign creation will now happen AFTER payment is confirmed.
+    // This requires a new flow or modifying the payment confirmation logic.
   };
   
   const activateTransactions = async (userId: string, paymentDetails: any) => {

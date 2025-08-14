@@ -106,6 +106,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
 
   const isProvider = currentUser?.type === 'provider';
   const isClient = currentUser?.type === 'client';
+  const isSystemTx = transaction.type === 'Sistema';
 
   const handleClose = () => {
     setShowRatingScreen(false);
@@ -126,6 +127,14 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   };
 
   const handlePayCommitment = () => {
+    const commitmentId = transaction.id;
+    // For system payments, we redirect to the dedicated payment page
+    if (transaction.type === 'Sistema') {
+      router.push(`/quotes/payment?commitmentId=${commitmentId}`);
+      handleClose();
+      return;
+    }
+    
     if (!paymentReference || !paymentVoucher) {
         toast({ variant: 'destructive', title: 'Faltan datos', description: 'Sube el comprobante y añade la referencia.' });
         return;
@@ -156,7 +165,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
 
   const handleContactToReschedule = () => {
      if(otherParty?.id) {
-       const conversationId = sendMessage(otherParty.id, `Hola, vi tu solicitud de cita para el ${new Date(transaction.date).toLocaleDateString()}. Me gustaría discutir otra hora.`, false);
+       const conversationId = sendMessage({recipientId: otherParty.id, text: `Hola, vi tu solicitud de cita para el ${new Date(transaction.date).toLocaleDateString()}. Me gustaría discutir otra hora.`});
        router.push(`/messages/${conversationId}`);
        handleClose();
      }
@@ -178,7 +187,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
     // A real implementation would show a contact picker.
     if(currentUser.contacts && currentUser.contacts.length > 0){
       const deliveryContactId = currentUser.contacts[0].id;
-      const conversationId = sendMessage(deliveryContactId, deliveryMessage, false);
+      const conversationId = sendMessage({recipientId: deliveryContactId, text: deliveryMessage});
       router.push(`/messages/${conversationId}`);
       handleClose();
     } else {
@@ -207,6 +216,8 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
 
   const CurrentIcon = statusInfo[transaction.status]?.icon || AlertTriangle;
   const iconColor = statusInfo[transaction.status]?.color || 'bg-gray-500';
+
+  const showPayButton = isClient && ['Finalizado - Pendiente de Pago', 'Acuerdo Aceptado - Pendiente de Ejecución', 'Cotización Recibida', 'Cita Solicitada'].includes(transaction.status);
 
   if (showPaymentScreen) {
     return (
@@ -358,7 +369,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
             <div><span className="font-semibold">Tipo:</span> {transaction.type}</div>
             <div><span className="font-semibold">Monto:</span> ${transaction.amount.toFixed(2)}</div>
              <div><span className="font-semibold">Cliente:</span> {isClient ? "Tú" : otherParty?.name}</div>
-             <div><span className="font-semibold">Proveedor:</span> {isProvider ? "Tú" : otherParty?.name}</div>
+             <div><span className="font-semibold">Proveedor:</span> {isProvider ? "Tú" : otherParty?.name || 'Sistema'}</div>
              {transaction.details.paymentFromThirdParty && (
                 <div className="col-span-2">
                     <Badge variant="destructive">
@@ -409,6 +420,15 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
                 )}
             </div>
           )}
+          {transaction.type === 'Sistema' && (
+            <div>
+                <h4 className="font-semibold mb-2">Detalles:</h4>
+                 <div className="p-3 bg-muted rounded-md text-muted-foreground">
+                   {transaction.details.system}
+                 </div>
+            </div>
+          )}
+
 
           {isProvider && transaction.status === 'Solicitud Pendiente' && (
             <div className="space-y-2 pt-4 border-t">
@@ -420,16 +440,18 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
         </div>
         <DialogFooter className="flex-wrap sm:justify-between gap-2">
             <div className="flex gap-2">
-                 <Button variant="outline" onClick={() => startDispute(transaction.id)} disabled={transaction.status === 'En Disputa'}>
-                    <ShieldAlert className="mr-2 h-4 w-4" /> Iniciar Disputa
-                 </Button>
+                {!isSystemTx && (
+                    <Button variant="outline" onClick={() => startDispute(transaction.id)} disabled={transaction.status === 'En Disputa'}>
+                        <ShieldAlert className="mr-2 h-4 w-4" /> Iniciar Disputa
+                    </Button>
+                )}
                  {isProvider && transaction.type === "Compra" && transaction.details.deliveryLocation && transaction.status === 'Buscando Repartidor' && (
                     <Button variant="outline" onClick={handleSendToDelivery} disabled>
                         <Send className="mr-2 h-4 w-4"/> Notificar a Repartidor
                     </Button>
                  )}
             </div>
-            <div className="flex gap-2 justify-end">
+            <div className="flex gap-2 justify-end flex-wrap">
                 {isProvider && transaction.status === 'Solicitud Pendiente' && <Button onClick={handleSendQuote}>Enviar Cotización</Button>}
                 
                 {isProvider && transaction.status === 'Pago Enviado - Esperando Confirmación' && 
@@ -458,40 +480,19 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
                 
                 {isProvider && transaction.status === 'Acuerdo Aceptado - Pendiente de Ejecución' && <Button onClick={handleCompleteWork}><ClipboardCheck className="mr-2 h-4 w-4" />Marcar como Finalizado</Button>}
                 
-                {isClient && transaction.status === 'Cotización Recibida' && <Button onClick={() => acceptQuote(transaction.id)}>Aceptar y Pagar</Button>}
-                
                 {isClient && transaction.status === 'Pendiente de Confirmación del Cliente' && <Button onClick={() => setShowRatingScreen(true)}>Confirmar Recepción y Calificar</Button>}
-
-                {isClient && transaction.status === 'Finalizado - Pendiente de Pago' && <Button onClick={() => setShowPaymentScreen(true)}>Realizar Pago</Button>}
                 
-                {isClient && transaction.status === 'Acuerdo Aceptado - Pendiente de Ejecución' && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button>
-                          <Banknote className="mr-2 h-4 w-4" />
-                          Pagar Ahora
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                          <AlertDialogTitle>¿Confirmas que recibiste el servicio?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                              Estás a punto de pagar, pero primero necesitamos confirmar que el trabajo se completó a tu satisfacción.
-                          </AlertDialogDescription>
-                      </AlertDialogHeader>
-                       <AlertDialogFooter>
-                           <AlertDialogCancel>No, aún no</AlertDialogCancel>
-                           <AlertDialogAction onClick={() => { setHasConfirmedReception(true); setShowRatingScreen(true); }}>Sí, confirmar y continuar</AlertDialogAction>
-                       </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                {showPayButton && (
+                  <Button onClick={handlePayCommitment}>
+                      <Banknote className="mr-2 h-4 w-4" />
+                      Pagar Ahora
+                  </Button>
                 )}
-                 <Button variant="secondary" onClick={handleClose}>Cerrar</Button>
+                
+                <Button variant="secondary" onClick={handleClose}>Cerrar</Button>
             </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
-
-    
