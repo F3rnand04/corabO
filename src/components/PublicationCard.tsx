@@ -35,6 +35,8 @@ export function PublicationCard({ publication, className }: PublicationCardProps
     const [isLiked, setIsLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(0);
     const [shareCount, setShareCount] = useState(0);
+    const [isAvatarExpanded, setIsAvatarExpanded] = useState(false);
+
 
     const { owner } = publication;
     
@@ -54,16 +56,17 @@ export function PublicationCard({ publication, className }: PublicationCardProps
 
     const showLocationInfo = currentUser?.country === (owner as User)?.country;
 
-    // **FIX**: The logic for display name was incorrect. This is the correct implementation.
     const displayName = owner.profileSetupData?.username || owner.name;
         
     const specialty = owner.profileSetupData?.specialty || "Especialidad no definida";
+    const affiliation = owner.activeAffiliation;
 
     useEffect(() => {
         if (!currentUser || !owner) return;
         setIsSaved(isContact(owner.id));
-        setLikeCount(publication.likes || 0); // Correctly initialize from publication data
+        setLikeCount(publication.likes || 0);
         setShareCount(0);
+        setIsAvatarExpanded(false);
     }, [isContact, owner.id, publication, currentUser, owner]);
 
     const handleSaveContact = () => {
@@ -148,41 +151,72 @@ export function PublicationCard({ publication, className }: PublicationCardProps
         <div className={cn("flex flex-col bg-card border-b", className)}>
             {/* Card Header */}
             <div className="flex items-start p-3 container">
-                <Link href={profileLink} className="flex-shrink-0">
-                    <Avatar>
+                
+                 <div className="relative flex-shrink-0 cursor-pointer" onClick={() => affiliation && setIsAvatarExpanded(!isAvatarExpanded)}>
+                    <Avatar className="w-12 h-12 transition-transform duration-300 ease-in-out" style={{ transform: isAvatarExpanded ? 'translateX(-16px)' : 'translateX(0)' }}>
                         <AvatarImage src={owner.profileImage} alt={owner.name} />
                         <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
                     </Avatar>
-                </Link>
-                <div className="flex-grow ml-3">
-                    <Link href={profileLink} className="font-semibold text-sm hover:underline flex items-center gap-1.5">
-                        {displayName}
-                        {/* **FIX**: Check isSubscribed, not verified */}
-                        {(owner as User).isSubscribed && <CheckCircle className="w-4 h-4 text-blue-500" />}
-                    </Link>
-                    <p className="text-xs text-muted-foreground">{specialty}</p>
-                     <div className="flex items-center gap-2 text-xs mt-1 text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                            <Star className="w-3 h-3 text-yellow-400 fill-yellow-400"/>
-                            <span className="font-semibold text-foreground">{reputation.toFixed(1)}</span>
+                    {affiliation && (
+                        <>
+                        <Avatar className="w-12 h-12 border-2 border-background absolute top-0 left-0 transition-transform duration-300 ease-in-out" style={{ transform: isAvatarExpanded ? 'translateX(16px)' : 'translateX(0)', zIndex: isAvatarExpanded ? 10 : -1, opacity: isAvatarExpanded ? 1 : 0 }}>
+                            <AvatarImage src={affiliation.companyProfileImage} alt={affiliation.companyName} />
+                            <AvatarFallback>{affiliation.companyName.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div className={cn("w-5 h-5 bg-background rounded-full absolute -bottom-1 -right-1 flex items-center justify-center transition-opacity duration-200", isAvatarExpanded && "opacity-0")}>
+                             <Image src={affiliation.companyProfileImage} alt={affiliation.companyName} width={18} height={18} className="rounded-full object-cover" />
                         </div>
-                        <Separator orientation="vertical" className="h-3" />
-                        {isNewProvider ? (
-                            <Badge variant="secondary" className="text-xs px-1.5 py-0">Nuevo</Badge>
-                        ) : (
-                            <>
-                                <span>{effectiveness.toFixed(0)}% Efec.</span>
-                                <Separator orientation="vertical" className="h-3" />
-                                <span className="font-semibold text-green-600">{responseTime}</span>
-                            </>
-                        )}
-                    </div>
+                        </>
+                    )}
                 </div>
+
+                <div className="flex-grow ml-3">
+                    <div
+                        className={cn("transition-transform duration-300 ease-in-out", isAvatarExpanded && "translate-y-2")}
+                        onClick={() => isAvatarExpanded ? router.push(`/companies/${owner.id}`) : {}}
+                    >
+                        <p className={cn("font-semibold text-sm hover:underline flex items-center gap-1.5", isAvatarExpanded && "cursor-pointer")}>
+                            {displayName}
+                            {(owner as User).isSubscribed && <CheckCircle className="w-4 h-4 text-blue-500" />}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{specialty}</p>
+                    </div>
+
+                    {isAvatarExpanded && affiliation && (
+                         <div
+                            className="transition-transform duration-300 ease-in-out -translate-y-2 cursor-pointer"
+                            onClick={() => router.push(`/companies/${affiliation.companyId}`)}
+                        >
+                            <p className="text-xs text-muted-foreground">Verificado por:</p>
+                            <p className="font-semibold text-sm hover:underline">{affiliation.companyName}</p>
+                        </div>
+                    )}
+
+
+                     {!isAvatarExpanded && (
+                         <div className="flex items-center gap-2 text-xs mt-1 text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                                <Star className="w-3 h-3 text-yellow-400 fill-yellow-400"/>
+                                <span className="font-semibold text-foreground">{reputation.toFixed(1)}</span>
+                            </div>
+                            <Separator orientation="vertical" className="h-3" />
+                            {isNewProvider ? (
+                                <Badge variant="secondary" className="text-xs px-1.5 py-0">Nuevo</Badge>
+                            ) : (
+                                <>
+                                    <span>{effectiveness.toFixed(0)}% Efec.</span>
+                                    <Separator orientation="vertical" className="h-3" />
+                                    <span className="font-semibold text-green-600">{responseTime}</span>
+                                </>
+                            )}
+                        </div>
+                     )}
+                </div>
+
                 <div className="flex flex-col items-end">
                     <Button variant="ghost" size="sm" onClick={handleContact}>
                         Contactar
                     </Button>
-                     {/* **FIX**: Added GPS/Distance indicator block */}
                      {showLocationInfo && distance && (
                         <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                             <MapPin className={cn("h-3 w-3", owner.isGpsActive && "text-green-500")} />
@@ -234,12 +268,10 @@ export function PublicationCard({ publication, className }: PublicationCardProps
              <div className="flex items-center p-2 container">
                  <Button variant="ghost" className="flex-1" onClick={handleLike}>
                     <Heart className={cn("w-5 h-5", isLiked && "text-red-500 fill-red-500")} />
-                     {/* **FIX**: Read from state, not a random number */}
                     <span className="ml-2 text-xs">{likeCount}</span>
                 </Button>
                  <Button variant="ghost" className="flex-1" onClick={() => setIsDetailsDialogOpen(true)}>
                     <MessageCircle className="w-5 h-5"/>
-                     {/* **FIX**: Read real comment count */}
                     <span className="ml-2 text-xs">{publication.comments?.length || 0}</span>
                 </Button>
                  <Button variant="ghost" className="flex-1" onClick={handleShare}>

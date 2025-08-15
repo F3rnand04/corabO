@@ -84,6 +84,12 @@ export type PublicationOwner = {
     username?: string;
     primaryCategory?: string;
   }
+  activeAffiliation?: {
+    companyId: string;
+    companyName: string;
+    companyProfileImage: string;
+    companySpecialty: string;
+  } | null;
 };
 
 export type ProductDetails = {

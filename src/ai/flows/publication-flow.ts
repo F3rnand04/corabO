@@ -53,8 +53,8 @@ export const createPublication = ai.defineFlow(
           profileImage: user.profileImage || 'https://placehold.co/150x150.png',
           verified: user.verified || false,
           isGpsActive: user.isGpsActive || false,
-          isSubscribed: user.isSubscribed || false, // Ensure this is carried over
           reputation: user.reputation || 0,
+          activeAffiliation: user.activeAffiliation || null,
           profileSetupData: {
               specialty: user.profileSetupData?.specialty || 'Especialidad no definida',
               providerType: user.profileSetupData?.providerType || 'professional',
@@ -111,8 +111,8 @@ export const createProduct = ai.defineFlow(
               profileImage: user.profileImage || 'https://placehold.co/150x150.png',
               verified: user.verified || false,
               isGpsActive: user.isGpsActive || false,
-              isSubscribed: user.isSubscribed || false, // Ensure this is carried over
               reputation: user.reputation || 0,
+              activeAffiliation: user.activeAffiliation || null,
               profileSetupData: {
                   specialty: user.profileSetupData?.specialty || 'Especialidad no definida',
                   providerType: user.profileSetupData?.providerType || 'professional',
