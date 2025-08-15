@@ -160,7 +160,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
                 <div className="flex-grow ml-3">
                     <Link href={profileLink} className="font-semibold text-sm hover:underline flex items-center gap-1.5">
                         {displayName}
-                        {owner.verified && <CheckCircle className="w-4 h-4 text-blue-500" />}
+                        {(owner as User).isSubscribed && <CheckCircle className="w-4 h-4 text-blue-500" />}
                     </Link>
                     <p className="text-xs text-muted-foreground">{specialty}</p>
                      <div className="flex items-center gap-2 text-xs mt-1 text-muted-foreground">
