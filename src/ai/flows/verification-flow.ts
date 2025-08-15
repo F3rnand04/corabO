@@ -84,8 +84,6 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
   },
   async (input) => {
     
-    // **FIX**: The `output` schema was removed. We ask the model for plain text and process it manually.
-    // This is more reliable than forcing a specific JSON structure which can fail.
     const response = await ai.generate({
         model: 'gemini-1.5-flash',
         prompt: [{
