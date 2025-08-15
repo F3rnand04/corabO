@@ -25,7 +25,7 @@ interface Step6_ReviewProps {
   onBack: () => void;
   formData: ProfileSetupData;
   setFormData: (data: ProfileSetupData) => void;
-  profileType: 'client' | 'provider';
+  profileType: 'client' | 'provider' | 'repartidor';
   goToStep: (step: number) => void;
 }
 
