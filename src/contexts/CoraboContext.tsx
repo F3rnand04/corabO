@@ -685,16 +685,18 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const updateFullProfile = async (userId: string, data: ProfileSetupData, profileType: 'client' | 'provider' | 'repartidor') => {
     if (!currentUser) return;
+
+    const db = getFirestoreDb();
+    const userRef = doc(db, 'users', userId);
     
     const wasClient = currentUser.type === 'client';
     const isNowProviderOrRepartidor = profileType === 'provider' || profileType === 'repartidor';
     
-    const updates: Partial<User> = {
-        profileSetupData: data,
+    // Merge the new profile setup data with existing data, and update the type
+    await updateDoc(userRef, {
         type: profileType,
-    };
-    
-    await updateUser(userId, updates);
+        profileSetupData: data,
+    }, { merge: true });
     
     if (wasClient && isNowProviderOrRepartidor) {
       NotificationFlows.sendWelcomeToProviderNotification({ userId });
