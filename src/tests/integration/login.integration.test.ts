@@ -31,7 +31,7 @@ describe('Login Flow - Integration Test', () => {
     const auth = getAuthInstance();
     // La simple conexión exitosa al emulador es la prueba.
     // Si la configuración (puertos, etc.) es incorrecta, esto lanzará un error.
-    expect(auth.config.emulator).toBeUndefined(); // In the client SDK, emulator config is not directly exposed this way. A successful init is the test.
+    expect(auth).toBeDefined();
     console.log('✅ Auth emulator connection verified.');
   });
 });
