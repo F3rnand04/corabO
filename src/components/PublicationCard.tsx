@@ -58,6 +58,12 @@ export function PublicationCard({ publication, className }: PublicationCardProps
     // International trade logic
     const showLocationInfo = currentUser?.country === (owner as User)?.country;
 
+    // **CORRECTED LOGIC:** If useUsername is true, use the username. Otherwise, use the real name.
+    const displayName = owner.profileSetupData?.useUsername && owner.profileSetupData.username 
+        ? owner.profileSetupData.username 
+        : owner.name;
+        
+    const specialty = owner.profileSetupData?.specialty || "Especialidad no definida";
 
     useEffect(() => {
         if (!currentUser || !owner) return;
@@ -142,9 +148,6 @@ export function PublicationCard({ publication, className }: PublicationCardProps
       const conversationId = sendMessage({ recipientId: owner.id, text: `¡Hola! Me interesa tu publicación.` });
       router.push(`/messages/${conversationId}`);
     };
-
-    const displayName = owner.profileSetupData?.useUsername && owner.profileSetupData.username ? owner.profileSetupData.username : owner.name;
-    const specialty = owner.profileSetupData?.specialty || "Especialidad no definida";
     
     return (
         <>
@@ -160,6 +163,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
                 <div className="flex-grow ml-3">
                     <Link href={profileLink} className="font-semibold text-sm hover:underline flex items-center gap-1.5">
                         {displayName}
+                        {/* **CORRECTED LOGIC:** Check isSubscribed, not verified */}
                         {(owner as User).isSubscribed && <CheckCircle className="w-4 h-4 text-blue-500" />}
                     </Link>
                     <p className="text-xs text-muted-foreground">{specialty}</p>
@@ -184,7 +188,8 @@ export function PublicationCard({ publication, className }: PublicationCardProps
                     <Button variant="ghost" size="sm" onClick={handleContact}>
                         Contactar
                     </Button>
-                    {showLocationInfo && (
+                    {/* **CORRECTED AND ADDED GPS INDICATOR** */}
+                    {showLocationInfo && distance && (
                         <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                             <MapPin className={cn("h-3 w-3", owner.isGpsActive && "text-green-500")} />
                             <span>{distance}</span>
@@ -278,3 +283,4 @@ export function PublicationCard({ publication, className }: PublicationCardProps
         </>
     );
 }
+
