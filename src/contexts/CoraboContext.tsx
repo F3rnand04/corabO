@@ -200,62 +200,66 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, [logout]);
   
   useEffect(() => {
+    const db = getFirestoreDb();
+    
+    // Global listeners - they don't depend on currentUser
+    const usersListener = onSnapshot(collection(db, 'users'), (snapshot) => {
+        const fetchedUsers = snapshot.docs.map(doc => doc.data() as User);
+        setUsers(fetchedUsers);
+    });
+
+    const publicationsListener = onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
+        setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage));
+    });
+
+    // Clear previous user-specific listeners if any
+    if (listeners.current.has('user-specific')) {
+        listeners.current.get('user-specific')?.forEach((unsubscribe: Unsubscribe) => unsubscribe());
+    }
+
     if (currentUser?.id) {
-        const db = getFirestoreDb();
+        const userSpecificListeners: Unsubscribe[] = [];
 
-        const usersListener = onSnapshot(collection(db, 'users'), (snapshot) => {
-            const fetchedUsers = snapshot.docs.map(doc => {
-                const u = doc.data() as User;
-                if (!u.profileSetupData) {
-                    u.profileSetupData = {};
-                }
-                return u;
-            });
-            setUsers(fetchedUsers);
-        });
-        listeners.current.set('users', usersListener);
-        
-        const publicationsListener = onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
-            setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage));
-        });
-        listeners.current.set('publications', publicationsListener);
-
-        const userListener = onSnapshot(doc(db, 'users', currentUser.id), (doc) => {
+        // Dedicated listener for the current user's document
+        const userDocListener = onSnapshot(doc(db, 'users', currentUser.id), (doc) => {
             if (doc.exists()) {
                 setCurrentUser(doc.data() as User);
             }
         });
-        listeners.current.set('currentUser', userListener);
-        
+        userSpecificListeners.push(userDocListener);
+
         const transactionsListener = onSnapshot(query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id)), (snapshot) => {
             setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
         });
-        listeners.current.set('transactions', transactionsListener);
+        userSpecificListeners.push(transactionsListener);
         
         const conversationsListener = onSnapshot(query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id)), (snapshot) => {
             const convos = snapshot.docs.map(doc => doc.data() as Conversation);
             convos.sort((a,b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime());
             setConversations(convos);
         });
-        listeners.current.set('conversations', conversationsListener);
+        userSpecificListeners.push(conversationsListener);
 
         const qrSessionsListener = onSnapshot(query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', currentUser.id)), (snapshot) => {
             const sessions = snapshot.docs.map(d => d.data() as QrSession);
             setQrSession(sessions.find(s => s.status !== 'completed' && s.status !== 'cancelled') || null);
         });
-        listeners.current.set('qrSessions', qrSessionsListener);
+        userSpecificListeners.push(qrSessionsListener);
+
+        listeners.current.set('user-specific', userSpecificListeners as any);
+
     } else {
-      setUsers([]);
-      setAllPublications([]);
-      setTransactions([]);
-      setConversations([]);
+        // Clear user-specific data if no user is logged in
+        setTransactions([]);
+        setConversations([]);
     }
     
     return () => {
-        listeners.current.forEach(unsubscribe => unsubscribe());
-        listeners.current.clear();
+        usersListener();
+        publicationsListener();
+        listeners.current.get('user-specific')?.forEach((unsubscribe: Unsubscribe) => unsubscribe());
     };
-  }, [currentUser?.id]);
+}, [currentUser?.id]);
 
   useEffect(() => {
     if (currentUser?.isGpsActive) {
@@ -1135,5 +1139,3 @@ export const useCorabo = (): CoraboState & CoraboActions => {
   return { ...state, ...actions };
 };
 export type { Transaction };
-
-    
