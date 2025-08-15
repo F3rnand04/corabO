@@ -47,7 +47,21 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
 
   const handleScheduleChange = (day: string, field: 'from' | 'to' | 'active', value: string | boolean) => {
     // **FIX**: Defensive check to prevent crash on undefined schedule object.
-    if (!formData || !formData.schedule) return;
+    if (!formData.schedule) {
+        // If schedule doesn't exist, initialize it before updating
+        const initialSchedule = daysOfWeek.reduce((acc, d) => {
+            acc[d] = { from: '09:00', to: '17:00', active: d !== 'Sábado' && d !== 'Domingo' };
+            return acc;
+        }, {} as ProfileSetupData['schedule']);
+        setFormData({
+            ...formData,
+            schedule: {
+                ...initialSchedule,
+                [day]: { ...(initialSchedule?.[day] || {}), [field]: value }
+            }
+        });
+        return;
+    }
 
     const newSchedule = { ...(formData.schedule), [day]: { ...(formData.schedule[day] || {}), [field]: value } };
     handleFormDataChange('schedule', newSchedule);

@@ -12,6 +12,7 @@ module.exports = {
   testPathIgnorePatterns: [
     '<rootDir>/.next/',
     '<rootDir>/node_modules/',
+    'node_modules/(?!(yaml)/)',
   ],
   transform: {
     '^.+\\.(ts|tsx)$': 'ts-jest',
