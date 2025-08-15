@@ -13,14 +13,14 @@ import { getAuth, signInWithPopup, signOut, User as FirebaseUser, GoogleAuthProv
 import { getFirebaseApp, getFirestoreDb, getAuthInstance } from '@/lib/firebase';
 import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, arrayUnion, getDocs, deleteDoc, collectionGroup, Unsubscribe, orderBy } from 'firebase/firestore';
 import { createCampaign as createCampaignFlow, type CreateCampaignInput } from '@/ai/flows/campaign-flow';
-import { sendMessage as sendMessageFlow, acceptProposal } from '@/ai/flows/message-flow';
+import { sendMessage as sendMessageFlow, acceptProposal as acceptProposalFlow } from '@/ai/flows/message-flow';
 import * as TransactionFlows from '@/ai/flows/transaction-flow';
 import * as NotificationFlows from '@/ai/flows/notification-flow';
-import { autoVerifyIdWithAI, type VerificationInput } from '@/ai/flows/verification-flow';
-import { getExchangeRate } from '@/ai/flows/exchange-rate-flow';
+import { autoVerifyIdWithAI as autoVerifyIdWithAIFlow, type VerificationInput } from '@/ai/flows/verification-flow';
+import { getExchangeRate as getExchangeRateFlow } from '@/ai/flows/exchange-rate-flow';
 import { sendSmsVerificationCodeFlow, verifySmsCodeFlow } from '@/ai/flows/sms-flow';
-import { createProduct, createPublication } from '@/ai/flows/publication-flow';
-import { completeInitialSetupFlow, getPublicProfileFlow, deleteUserFlow } from '@/ai/flows/profile-flow';
+import { createProduct as createProductFlow, createPublication as createPublicationFlow } from '@/ai/flows/publication-flow';
+import { completeInitialSetupFlow, getPublicProfileFlow, deleteUserFlow, getProfileGallery, getProfileProducts } from '@/ai/flows/profile-flow';
 import type { GetFeedInputSchema, GetFeedOutputSchema, GetProfileGalleryInputSchema, GetProfileGalleryOutputSchema, GetProfileProductsInputSchema, GetProfileProductsOutputSchema } from '@/lib/types';
 import { z } from 'zod';
 import { haversineDistance } from '@/lib/utils';
@@ -144,9 +144,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
+  const [allPublications, setAllPublications] = useState<GalleryImage[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [allPublications, setAllPublications] = useState<GalleryImage[]>([]);
 
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   
@@ -536,8 +536,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const verifyUserId = (userId: string) => updateUser(userId, { idVerificationStatus: 'verified', verified: true });
   const rejectUserId = (userId: string) => updateUser(userId, { idVerificationStatus: 'rejected' });
   
-  const autoVerifyIdWithAI_callback = async (input: VerificationInput): Promise<VerificationOutput> => {
-      return autoVerifyIdWithAI(input);
+  const autoVerifyIdWithAI = async (input: VerificationInput): Promise<VerificationOutput> => {
+      return autoVerifyIdWithAIFlow(input);
   }
 
   const checkout = (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {
@@ -692,7 +692,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const wasClient = currentUser.type === 'client';
     const isNowProviderOrRepartidor = profileType === 'provider' || profileType === 'repartidor';
     
-    // Merge the new profile setup data with existing data, and update the type
     await updateDoc(userRef, {
         type: profileType,
         profileSetupData: data,
@@ -842,19 +841,19 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       
       const completedTransactions = providerTransactions.filter(tx => ['Pagado', 'Resuelto'].includes(tx.status));
 
+      if (completedTransactions.length === 0) {
+        return { reputation: 0, effectiveness: 0, responseTime: 'Nuevo' };
+      }
+      
       const ratedTransactions = completedTransactions.filter(tx => tx.details.clientRating && tx.details.clientRating > 0);
       const totalRating = ratedTransactions.reduce((acc, tx) => acc + (tx.details.clientRating || 0), 0);
       const reputation = ratedTransactions.length > 0 ? totalRating / ratedTransactions.length : 0;
       
       const effectiveness = providerTransactions.length > 0 ? (completedTransactions.length / providerTransactions.length) * 100 : 0;
 
-      if(completedTransactions.length === 0) {
-        return { reputation, effectiveness: effectiveness || 0, responseTime: 'Nuevo' };
-      }
-
       const lastTransaction = completedTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
       if (!lastTransaction || !lastTransaction.details.paymentConfirmationDate) {
-        return { reputation, effectiveness: effectiveness || 0, responseTime: 'Nuevo' };
+        return { reputation, effectiveness: effectiveness, responseTime: 'Nuevo' };
       }
 
       const requestDate = new Date(lastTransaction.date);
@@ -1076,7 +1075,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     downloadTransactionsPDF,
     sendMessage,
     sendProposalMessage,
-    acceptProposal: acceptProposal,
+    acceptProposal: acceptProposalFlow,
     createAppointmentRequest: TransactionFlows.createAppointmentRequest,
     getAgendaEvents,
     addCommentToImage,
@@ -1084,14 +1083,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     getCartItemQuantity,
     activatePromotion,
     createCampaign,
-    createPublication,
-    createProduct,
+    createPublication: createPublicationFlow,
+    createProduct: createProductFlow,
     toggleUserPause,
     deleteUser,
     verifyCampaignPayment,
     verifyUserId,
     rejectUserId,
-    autoVerifyIdWithAI: autoVerifyIdWithAI_callback,
+    autoVerifyIdWithAI: autoVerifyIdWithAIFlow,
     markConversationAsRead,
     getUserMetrics,
     fetchUser,
