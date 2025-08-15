@@ -47,15 +47,15 @@ export const createPublication = ai.defineFlow(
       likes: 0,
       owner: {
           id: user.id,
-          name: user.profileSetupData?.useUsername ? (user.profileSetupData.username ?? user.name) : user.name,
-          profileImage: user.profileImage ?? 'https://placehold.co/150x150.png',
-          verified: user.verified ?? false,
-          isGpsActive: user.isGpsActive ?? false,
-          reputation: user.reputation ?? 0,
+          name: user.profileSetupData?.useUsername ? (user.profileSetupData.username || user.name) : user.name,
+          profileImage: user.profileImage || 'https://placehold.co/150x150.png',
+          verified: user.verified || false,
+          isGpsActive: user.isGpsActive || false,
+          reputation: user.reputation || 0,
           profileSetupData: {
-              specialty: user.profileSetupData?.specialty ?? 'Especialidad no definida',
-              providerType: user.profileSetupData?.providerType ?? 'professional',
-              username: user.profileSetupData?.username ?? user.name.replace(/\s+/g, '').toLowerCase(),
+              specialty: user.profileSetupData?.specialty || 'Especialidad no definida',
+              providerType: user.profileSetupData?.providerType || 'professional',
+              username: user.profileSetupData?.username || user.name.replace(/\s+/g, '').toLowerCase(),
           },
       },
     };
@@ -97,19 +97,19 @@ export const createProduct = ai.defineFlow(
             productDetails: {
               name: name,
               price: price,
-              category: user.profileSetupData?.primaryCategory ?? 'General',
+              category: user.profileSetupData?.primaryCategory || 'General',
             },
             owner: {
               id: user.id,
-              name: user.profileSetupData?.useUsername ? (user.profileSetupData.username ?? user.name) : user.name,
-              profileImage: user.profileImage ?? 'https://placehold.co/150x150.png',
-              verified: user.verified ?? false,
-              isGpsActive: user.isGpsActive ?? false,
-              reputation: user.reputation ?? 0,
+              name: user.profileSetupData?.useUsername ? (user.profileSetupData.username || user.name) : user.name,
+              profileImage: user.profileImage || 'https://placehold.co/150x150.png',
+              verified: user.verified || false,
+              isGpsActive: user.isGpsActive || false,
+              reputation: user.reputation || 0,
               profileSetupData: {
-                  specialty: user.profileSetupData?.specialty ?? 'Especialidad no definida',
-                  providerType: user.profileSetupData?.providerType ?? 'professional',
-                  username: user.profileSetupData?.username ?? user.name.replace(/\s+/g, '').toLowerCase(),
+                  specialty: user.profileSetupData?.specialty || 'Especialidad no definida',
+                  providerType: user.profileSetupData?.providerType || 'professional',
+                  username: user.profileSetupData?.username || user.name.replace(/\s+/g, '').toLowerCase(),
               },
             }
         };

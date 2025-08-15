@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect, useRef, ChangeEvent, useCallback } from 'react';
@@ -63,7 +61,7 @@ export function ProfileHeader() {
   };
   
   const displayName = currentUser.profileSetupData?.useUsername 
-    ? currentUser.profileSetupData.username || currentUser.name 
+    ? (currentUser.profileSetupData.username || currentUser.name)
     : currentUser.name;
   const specialty = currentUser.profileSetupData?.specialty || 'Sin especialidad';
 
@@ -186,5 +184,3 @@ export function ProfileHeader() {
     </>
   );
 }
-
-    
