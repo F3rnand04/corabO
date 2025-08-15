@@ -34,7 +34,8 @@ export default function Step1_ProfileType({ onSelect, currentType, onNext }: Ste
   const handleSelection = (typeId: UserType['type']) => {
     // If the type is already selected, just navigate to the next step.
     if (typeId === currentType) {
-        onNext();
+        // This was the source of an infinite loop. We should not navigate here.
+        // Navigation is handled by the parent's "Next" button.
         return;
     }
 
@@ -43,7 +44,7 @@ export default function Step1_ProfileType({ onSelect, currentType, onNext }: Ste
         setNextSelection(typeId);
         setIsAlertOpen(true);
     } else {
-        // If it's the very first selection, just update the state without navigating yet.
+        // If it's the very first selection, just update the state.
         onSelect(typeId, providerType);
     }
   };
@@ -53,8 +54,6 @@ export default function Step1_ProfileType({ onSelect, currentType, onNext }: Ste
       onSelect(nextSelection, providerType);
     }
     setIsAlertOpen(false);
-    // After confirming the change, we go to the next step.
-    onNext();
   }
   
   const isChangingToProviderOrRepartidor = (currentType === 'client' && (nextSelection === 'provider' || nextSelection === 'repartidor'));
