@@ -39,6 +39,7 @@ export function ProfileGalleryView({ gallery, owner, isLoading }: ProfileGallery
         setStarCount(currentImage.likes || 0);
         setMessageCount(currentImage.comments?.length || 0);
         setShareCount(0); // Reset share count on image change
+        setIsLiked(false); // Reset like state on image change
     }
   }, [currentImageIndex, gallery]);
 
