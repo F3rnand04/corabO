@@ -176,57 +176,80 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const handleUserAuth = useCallback(async (firebaseUser: FirebaseUser | null) => {
-    // Clear old listeners on auth state change
     listeners.current.forEach(unsubscribe => unsubscribe());
     listeners.current.clear();
     setQrSession(null); 
-
+    
     if (firebaseUser) {
-        const firebaseUserInput: FirebaseUserInput = {
-            uid: firebaseUser.uid,
-            displayName: firebaseUser.displayName,
-            email: firebaseUser.email,
-            photoURL: firebaseUser.photoURL,
-            emailVerified: firebaseUser.emailVerified
-        };
-        const userData = await getOrCreateUser(firebaseUserInput);
-        
-        if (userData) {
-            userCache.current.set(userData.id, userData);
-            setCurrentUser(userData);
+        const db = getFirestoreDb();
+        const userDocRef = doc(db, 'users', firebaseUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (userDocSnap.exists()) {
+            const user = userDocSnap.data() as User;
+            setCurrentUser(user);
         } else {
-            await logout();
+            // New user, create the document.
+            const name = firebaseUser.displayName || 'Nuevo Usuario';
+            const firstName = name.split(' ')[0] || "USER";
+            const coraboId = (firstName.substring(0, 3)).toUpperCase() + Math.random().toString(36).substring(2, 8).toUpperCase();
+            
+            const newUser: User = {
+                id: firebaseUser.uid,
+                coraboId: coraboId,
+                name: name,
+                lastName: '',
+                idNumber: '',
+                birthDate: '',
+                country: '',
+                createdAt: new Date().toISOString(),
+                type: 'client',
+                reputation: 0,
+                effectiveness: 0,
+                profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
+                email: firebaseUser.email || '',
+                phone: '',
+                emailValidated: firebaseUser.emailVerified,
+                phoneValidated: false,
+                isGpsActive: true,
+                isInitialSetupComplete: false,
+                credicoraLevel: 1,
+                credicoraLimit: 150,
+                profileSetupData: { location: "10.4806,-66.9036" },
+                isSubscribed: false,
+                isTransactionsActive: false,
+                idVerificationStatus: 'pending',
+            };
+            if (newUser.email === 'fernandopbt@gmail.com') newUser.role = 'admin';
+            
+            await setDoc(userDocRef, newUser); // This line was missing
+            setCurrentUser(newUser);
         }
     } else {
         setCurrentUser(null);
     }
-    // Set loading to false only after auth state is fully resolved
     setIsLoadingAuth(false);
   }, [logout]);
   
   useEffect(() => {
-    // Separate effect to set up listeners once currentUser is set
     if (currentUser) {
         const db = getFirestoreDb();
 
-        // Optimized: Fetch static collections once.
         const usersListener = onSnapshot(collection(db, 'users'), (snapshot) => {
-          const fetchedUsers = snapshot.docs.map(doc => {
-              const u = doc.data() as User;
-              // Defensive coding: ensure profileSetupData exists
-              if (!u.profileSetupData) {
-                  u.profileSetupData = {};
-              }
-              return u;
-          });
-          setUsers(fetchedUsers);
-      });
-      listeners.current.set('users', usersListener);
+            const fetchedUsers = snapshot.docs.map(doc => {
+                const u = doc.data() as User;
+                if (!u.profileSetupData) {
+                    u.profileSetupData = {};
+                }
+                return u;
+            });
+            setUsers(fetchedUsers);
+        });
+        listeners.current.set('users', usersListener);
         
-        const publicationsSnapshot = getDocs(query(collection(db, 'publications'), orderBy('createdAt', 'desc')));
-        publicationsSnapshot.then(snapshot => setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage)));
+        getDocs(query(collection(db, 'publications'), orderBy('createdAt', 'desc')))
+            .then(snapshot => setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage)));
 
-        // Listeners for dynamic, user-specific data
         const userListener = onSnapshot(doc(db, 'users', currentUser.id), (doc) => {
             if (doc.exists()) setCurrentUser(doc.data() as User);
         });
@@ -250,13 +273,13 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         });
         listeners.current.set('qrSessions', qrSessionsListener);
     } else {
-      // Clear data if no user
       setUsers([]);
       setAllPublications([]);
       setTransactions([]);
       setConversations([]);
     }
-  }, [currentUser]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.id]);
 
   useEffect(() => {
     if (currentUser?.isGpsActive) {
@@ -282,7 +305,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
-      // The onAuthStateChanged listener in AppLayout will handle the result
     } catch (error: any) {
       console.error("Error signing in with Google: ", error);
       if (error.code !== 'auth/popup-closed-by-user') {
@@ -1135,3 +1157,5 @@ export const useCorabo = () => {
   return { ...context, router };
 };
 export type { Transaction };
+
+    
