@@ -59,7 +59,9 @@ export function PublicationCard({ publication, className }: PublicationCardProps
     const showLocationInfo = currentUser?.country === (owner as User)?.country;
 
     // **CORRECTED LOGIC:** If useUsername is true, use the username. Otherwise, use the real name.
-    const displayName = owner.profileSetupData?.useUsername ? (owner.profileSetupData.username || owner.name) : owner.name;
+    const displayName = owner.profileSetupData?.useUsername && owner.profileSetupData.username
+        ? owner.profileSetupData.username
+        : owner.name;
         
     const specialty = owner.profileSetupData?.specialty || "Especialidad no definida";
 
