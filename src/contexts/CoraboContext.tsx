@@ -135,6 +135,7 @@ interface CoraboState {
   cancelSystemTransaction: (transactionId: string) => Promise<void>;
   payCommitment: (transactionId: string, isSubscriptionPayment?: boolean) => Promise<void>;
   updateUserProfileAndGallery: (userId: string, image: GalleryImage) => Promise<void>;
+  router: ReturnType<typeof useRouter>;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -210,8 +211,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         });
         listeners.current.set('users', usersListener);
         
-        getDocs(query(collection(db, 'publications'), orderBy('createdAt', 'desc')))
-            .then(snapshot => setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage)));
+        const publicationsListener = onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
+            setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage));
+        });
+        listeners.current.set('publications', publicationsListener);
 
         const userListener = onSnapshot(doc(db, 'users', currentUser.id), (doc) => {
             if (doc.exists()) setCurrentUser(doc.data() as User);
@@ -241,7 +244,13 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       setTransactions([]);
       setConversations([]);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
+    // Cleanup listeners on unmount or when user ID changes
+    return () => {
+        listeners.current.forEach(unsubscribe => unsubscribe());
+        listeners.current.clear();
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser?.id]);
 
   useEffect(() => {
@@ -1100,6 +1109,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     registerSystemPayment,
     cancelSystemTransaction,
     updateUserProfileAndGallery,
+    router,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;
@@ -1110,8 +1120,7 @@ export const useCorabo = () => {
   if (context === undefined) {
     throw new Error('useCorabo must be used within a CoraboProvider');
   }
-  const router = useRouter();
-  return { ...context, router };
+  return context;
 };
 export type { Transaction };
 
@@ -1127,3 +1136,4 @@ export type { Transaction };
     
 
     
+
