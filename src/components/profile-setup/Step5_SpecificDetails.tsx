@@ -46,8 +46,10 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
   };
 
   const handleScheduleChange = (day: string, field: 'from' | 'to' | 'active', value: string | boolean) => {
-    // Defensive check to prevent crash on undefined schedule
+    // **FIX**: Defensive check to prevent crash on undefined schedule object.
+    // This was the root cause of the "Maximum call stack size exceeded" error.
     if (!formData || !formData.schedule) return;
+
     const newSchedule = { ...(formData.schedule), [day]: { ...(formData.schedule[day] || {}), [field]: value } };
     handleFormDataChange('schedule', newSchedule);
   };
