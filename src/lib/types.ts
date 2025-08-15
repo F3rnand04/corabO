@@ -1,4 +1,5 @@
 
+
 import { z } from 'zod';
 
 export type QrSession = {
@@ -105,6 +106,7 @@ export type GalleryImage = {
 export type CredicoraLevel = {
     level: number;
     name: string;
+    color: string; // HEX or HSL color string
     creditLimit: number;
     initialPaymentPercentage: number;
     installments: number;
@@ -115,6 +117,7 @@ export const credicoraLevels: Record<string, CredicoraLevel> = {
     '1': {
         level: 1,
         name: 'Alfa',
+        color: '#3b82f6', // blue-500
         creditLimit: 150,
         initialPaymentPercentage: 0.60,
         installments: 3,
@@ -123,6 +126,7 @@ export const credicoraLevels: Record<string, CredicoraLevel> = {
     '2': {
         level: 2,
         name: 'Delta',
+        color: '#8b5cf6', // violet-500
         creditLimit: 200,
         initialPaymentPercentage: 0.50,
         installments: 6,
@@ -131,6 +135,7 @@ export const credicoraLevels: Record<string, CredicoraLevel> = {
      '3': {
         level: 3,
         name: 'Lambda',
+        color: '#ec4899', // pink-500
         creditLimit: 300,
         initialPaymentPercentage: 0.40,
         installments: 9,
@@ -139,6 +144,7 @@ export const credicoraLevels: Record<string, CredicoraLevel> = {
     '4': {
         level: 4,
         name: 'Sigma',
+        color: '#f97316', // orange-500
         creditLimit: 600,
         initialPaymentPercentage: 0.30,
         installments: 12,
@@ -147,6 +153,7 @@ export const credicoraLevels: Record<string, CredicoraLevel> = {
     '5': {
         level: 5,
         name: 'Omega',
+        color: '#ca8a04', // yellow-600 (gold)
         creditLimit: 1000,
         initialPaymentPercentage: 0.0,
         installments: 18,

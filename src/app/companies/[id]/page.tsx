@@ -227,9 +227,9 @@ export default function CompanyProfilePage() {
 
   const gallery: GalleryImage[] = providerGallery || [];
   
-  const displayName = provider.profileSetupData?.useUsername 
-        ? provider.profileSetupData.username || provider.name 
-        : provider.name;
+  const displayName = provider.profileSetupData?.useUsername && provider.profileSetupData.username
+    ? provider.profileSetupData.username
+    : provider.name;
     const specialty = provider.profileSetupData?.specialty || "Especialidad de la Empresa";
   
   const distance = getDistanceToProvider(provider);
@@ -387,7 +387,7 @@ export default function CompanyProfilePage() {
               <div className="flex-grow">
                 <div className="flex items-center gap-2">
                   <h1 className="text-lg font-bold text-foreground">{profileData.name}</h1>
-                  {provider.verified && <CheckCircle className="w-5 h-5 text-blue-500" />}
+                  {provider.isSubscribed && <CheckCircle className="w-5 h-5 text-blue-500" />}
                 </div>
                 <p className="text-sm text-muted-foreground">{profileData.specialty}</p>
                 <div className="flex items-center gap-2 text-sm mt-1 text-muted-foreground">

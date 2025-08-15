@@ -19,6 +19,7 @@ import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Label } from './ui/label';
 import { cn } from '@/lib/utils';
 import type { Transaction } from '@/lib/types';
+import { credicoraLevels } from '@/lib/types';
 
 
 interface SubscriptionDialogProps {
@@ -70,7 +71,7 @@ const plans = {
 
 
 export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogProps) {
-  const { currentUser, subscribeUser } = useCorabo();
+  const { currentUser, subscribeUser, updateUser } = useCorabo();
   const [paymentCycle, setPaymentCycle] = useState<'monthly' | 'annually'>('monthly');
 
   if (!currentUser) {
@@ -106,8 +107,14 @@ export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogP
   const currentPlanKey = getPlanKey();
   const currentPlan = plans[currentPlanKey];
 
-  const handleSubscribe = () => {
+  const handleSubscribe = async () => {
     const amount = paymentCycle === 'monthly' ? currentPlan.price : currentPlan.annualPrice;
+    
+    // Set the user's credicora details upon subscribing
+    const currentCredicoraLevel = currentUser.credicoraLevel || 1;
+    const credicoraDetails = credicoraLevels[currentCredicoraLevel.toString()];
+    await updateUser(currentUser.id, { credicoraDetails });
+    
     subscribeUser(currentUser.id, `Plan ${currentPlan.title} (${paymentCycle === 'monthly' ? 'Mensual' : 'Anual'})`, amount);
     onOpenChange(false);
   }
