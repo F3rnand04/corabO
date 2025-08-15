@@ -229,7 +229,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         setCurrentUser(null);
     }
     setIsLoadingAuth(false);
-  }, [logout]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
   useEffect(() => {
     if (currentUser) {
@@ -1157,5 +1158,7 @@ export const useCorabo = () => {
   return { ...context, router };
 };
 export type { Transaction };
+
+    
 
     
