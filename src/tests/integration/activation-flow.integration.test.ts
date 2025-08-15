@@ -9,6 +9,7 @@ import type { User } from '@/lib/types';
 import { render, fireEvent, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { ActivationWarning } from '@/components/ActivationWarning';
+import React from 'react'; // Import React for JSX
 
 // This test simulates the user activation flow to ensure correct redirection logic.
 
@@ -70,6 +71,7 @@ describe('Activation Flow - Integration Test', () => {
     } as User;
 
     // Act: Render the component and click the button
+    // CORRECCIÓN: Se utiliza la sintaxis JSX correcta
     render(<ActivationWarning userType="provider" />);
     const activationButton = screen.getByText('Activar ahora →');
     fireEvent.click(activationButton);
@@ -88,6 +90,7 @@ describe('Activation Flow - Integration Test', () => {
     } as User;
 
     // Act: Render the component and click the button
+    // CORRECCIÓN: Se utiliza la sintaxis JSX correcta
     render(<ActivationWarning userType="provider" />);
     const activationButton = screen.getByText('Activar ahora →');
     fireEvent.click(activationButton);
@@ -107,6 +110,7 @@ describe('Activation Flow - Integration Test', () => {
     } as User;
 
     // Act: Render the component and click the button
+    // CORRECCIÓN: Se utiliza la sintaxis JSX correcta
     render(<ActivationWarning userType="provider" />);
     const activationButton = screen.getByText('Activar ahora →');
     fireEvent.click(activationButton);

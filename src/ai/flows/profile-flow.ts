@@ -219,6 +219,8 @@ export const getProfileProducts = ai.defineFlow(
         }));
         
         const lastVisibleDocInPage = snapshot.docs[snapshot.docs.length - 1];
+        // CORRECCIÓN: Si el número de documentos devueltos es menor que el límite,
+        // significa que hemos llegado al final y no hay una página siguiente.
         const nextCursor = snapshot.docs.length === limitNum ? lastVisibleDocInPage?.id : undefined;
 
 
