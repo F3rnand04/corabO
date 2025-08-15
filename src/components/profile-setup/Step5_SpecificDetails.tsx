@@ -46,7 +46,7 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
   };
 
   const handleScheduleChange = (day: string, field: 'from' | 'to' | 'active', value: string | boolean) => {
-    const newSchedule = { ...formData.schedule, [day]: { ...formData.schedule?.[day], [field]: value } };
+    const newSchedule = { ...(formData.schedule || {}), [day]: { ...(formData.schedule?.[day] || {}), [field]: value } };
     handleFormDataChange('schedule', newSchedule);
   };
   
@@ -100,8 +100,8 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
             </div>
 
             {formData.acceptsCredicora && (
-                <Alert className="bg-blue-50 border-blue-200 text-blue-800">
-                    <Info className="h-4 w-4 !text-current" />
+                <Alert variant="warning">
+                    <Info className="h-4 w-4" />
                     <AlertTitle className="font-bold">¡Amplía tu Horizonte de Clientes con CrediCora!</AlertTitle>
                     <AlertDescription>
                         Al aceptar pagos con CrediCora, no solo aseguras recibir tu dinero de forma segura, sino que abres las puertas a un universo de clientes que valoran la flexibilidad. Tus ingresos se multiplicarán.
@@ -214,7 +214,7 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
             {daysOfWeek.map(day => (
                  <div key={day} className="flex flex-col sm:flex-row sm:items-center justify-between">
                     <div className="flex items-center gap-3 mb-2 sm:mb-0">
-                        <Switch id={`switch-${day}`} checked={formData.schedule?.[day]?.active} onCheckedChange={(checked) => handleScheduleChange(day, 'active', checked)} />
+                        <Switch id={`switch-${day}`} checked={formData.schedule?.[day]?.active ?? false} onCheckedChange={(checked) => handleScheduleChange(day, 'active', checked)} />
                         <Label htmlFor={`switch-${day}`} className="w-24">{day}</Label>
                     </div>
                     <div className="flex items-center gap-2">

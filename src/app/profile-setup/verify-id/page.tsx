@@ -158,7 +158,7 @@ export default function VerifyIdPage() {
             )}
           </div>
 
-          <Alert>
+          <Alert variant="warning">
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>¿Por qué hacemos esto?</AlertTitle>
               <AlertDescription>
