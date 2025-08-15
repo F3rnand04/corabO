@@ -698,6 +698,15 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const subscribeUser = (userId: string, planName: string, amount: number) => {
+    if (!currentUser) return;
+    
+    // FIX: Instead of passing the whole complex object, pass only the necessary data.
+    const currentCredicoraLevel = currentUser.credicoraLevel || 1;
+    const credicoraDetails = credicoraLevels[currentCredicoraLevel.toString()];
+    
+    // Update the user state with a *simple* object, not the entire credicoraLevels map
+    updateUser(userId, { credicoraDetails: credicoraDetails });
+
     const encodedConcept = encodeURIComponent(`Suscripción: ${planName}`);
     router.push(`/quotes/payment?amount=${amount}&concept=${encodedConcept}&isSubscription=true`);
   };
@@ -1120,5 +1129,7 @@ export type { Transaction };
 
 
 
+
+    
 
     
