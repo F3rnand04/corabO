@@ -230,7 +230,8 @@ export default function CompanyProfilePage() {
   const displayName = provider.profileSetupData?.useUsername && provider.profileSetupData.username
     ? provider.profileSetupData.username
     : provider.name;
-    const specialty = provider.profileSetupData?.specialty || "Especialidad de la Empresa";
+
+  const specialty = provider.profileSetupData?.specialty || "Especialidad de la Empresa";
   
   const distance = getDistanceToProvider(provider);
   

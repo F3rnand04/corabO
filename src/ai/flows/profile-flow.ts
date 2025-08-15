@@ -90,6 +90,7 @@ const PublicUserOutputSchema = z.object({
   reputation: z.number(),
   effectiveness: z.number().optional(),
   verified: z.boolean().optional(),
+  isSubscribed: z.boolean().optional(), // Added this field
   isGpsActive: z.boolean().optional(),
   isTransactionsActive: z.boolean().optional(),
   profileSetupData: z.any().optional(), // Using any for simplicity, can be stricter
@@ -123,6 +124,7 @@ export const getPublicProfileFlow = ai.defineFlow(
       reputation: fullUser.reputation,
       effectiveness: fullUser.effectiveness,
       verified: fullUser.verified,
+      isSubscribed: fullUser.isSubscribed,
       isGpsActive: fullUser.isGpsActive,
       isTransactionsActive: fullUser.isTransactionsActive,
       profileSetupData: fullUser.profileSetupData,
