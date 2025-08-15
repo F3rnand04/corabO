@@ -701,11 +701,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const isNowProviderOrRepartidor = profileType === 'provider' || profileType === 'repartidor';
     
     // Infer providerType based on whether lastName is present (for individuals) vs absent (for companies)
-    const providerType = currentUser.lastName ? 'professional' : 'company';
+    const inferredProviderType = currentUser.lastName ? 'professional' : 'company';
     
     await updateDoc(userRef, {
         type: profileType,
-        profileSetupData: { ...data, providerType },
+        profileSetupData: { ...data, providerType: inferredProviderType },
     }, { merge: true });
     
     if (wasClient && isNowProviderOrRepartidor) {

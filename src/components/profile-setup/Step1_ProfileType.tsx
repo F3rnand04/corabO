@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -29,7 +29,7 @@ export default function Step1_ProfileType({ onSelect, currentType, onNext }: Ste
   const [nextSelection, setNextSelection] = useState<UserType['type'] | null>(null);
 
   // Infer providerType from initial setup data
-  const providerType = currentUser?.profileSetupData?.providerType || 'professional';
+  const inferredProviderType = currentUser?.lastName ? 'professional' : 'company';
 
   const handleSelection = (typeId: UserType['type']) => {
     // If the type is already selected, just navigate to the next step.
@@ -45,13 +45,13 @@ export default function Step1_ProfileType({ onSelect, currentType, onNext }: Ste
         setIsAlertOpen(true);
     } else {
         // If it's the very first selection, just update the state.
-        onSelect(typeId, providerType);
+        onSelect(typeId, inferredProviderType);
     }
   };
 
   const handleConfirmChange = () => {
     if (nextSelection) {
-      onSelect(nextSelection, providerType);
+      onSelect(nextSelection, inferredProviderType);
     }
     setIsAlertOpen(false);
   }
