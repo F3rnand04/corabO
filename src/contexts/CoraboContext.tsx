@@ -140,6 +140,7 @@ interface CoraboActions {
   updateUserProfileAndGallery: (userId: string, image: GalleryImage) => Promise<void>;
 }
 
+// ARCHITECTURAL FIX: Separate state and actions into two different contexts
 const CoraboStateContext = createContext<CoraboState | undefined>(undefined);
 const CoraboActionsContext = createContext<CoraboActions | undefined>(undefined);
 
