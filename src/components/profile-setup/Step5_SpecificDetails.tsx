@@ -36,6 +36,7 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
   
   const MAX_RADIUS_FREE = 10;
   const isOverFreeRadius = (formData.serviceRadius || 0) > MAX_RADIUS_FREE && !(currentUser?.isSubscribed);
+  const isProfessional = formData.providerType === 'professional';
 
   const handleFormDataChange = (field: keyof ProfileSetupData, value: any) => {
     setFormData({ ...formData, [field]: value });
@@ -46,24 +47,7 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
   };
 
   const handleScheduleChange = (day: string, field: 'from' | 'to' | 'active', value: string | boolean) => {
-    // **FIX**: Defensive check to prevent crash on undefined schedule object.
-    if (!formData.schedule) {
-        // If schedule doesn't exist, initialize it before updating
-        const initialSchedule = daysOfWeek.reduce((acc, d) => {
-            acc[d] = { from: '09:00', to: '17:00', active: d !== 'Sábado' && d !== 'Domingo' };
-            return acc;
-        }, {} as ProfileSetupData['schedule']);
-        setFormData({
-            ...formData,
-            schedule: {
-                ...initialSchedule,
-                [day]: { ...(initialSchedule?.[day] || {}), [field]: value }
-            }
-        });
-        return;
-    }
-
-    const newSchedule = { ...(formData.schedule), [day]: { ...(formData.schedule[day] || {}), [field]: value } };
+    const newSchedule = { ...(formData.schedule || {}), [day]: { ...(formData.schedule?.[day] || {}), [field]: value } };
     handleFormDataChange('schedule', newSchedule);
   };
   
@@ -88,26 +72,22 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
        <div className="space-y-3">
         <Label>Ofrezco principalmente</Label>
         <RadioGroup value={formData.offerType || 'service'} onValueChange={(value: 'product' | 'service') => handleFormDataChange('offerType', value)} className="flex gap-4">
-            <div className="flex items-center space-x-2">
-                <RadioGroupItem value="service" id="service" />
-                <Label htmlFor="service" className="flex items-center gap-2 font-normal cursor-pointer"><Hand className="w-4 h-4"/> Servicios</Label>
-            </div>
-             <div className="flex items-center space-x-2">
-                <RadioGroupItem value="product" id="product" />
-                <Label htmlFor="product" className="flex items-center gap-2 font-normal cursor-pointer"><Package className="w-4 h-4"/> Productos</Label>
-            </div>
+            <div className="flex items-center space-x-2"><RadioGroupItem value="service" id="service" /><Label htmlFor="service" className="flex items-center gap-2 font-normal cursor-pointer"><Hand className="w-4 h-4"/> Servicios</Label></div>
+             <div className="flex items-center space-x-2"><RadioGroupItem value="product" id="product" /><Label htmlFor="product" className="flex items-center gap-2 font-normal cursor-pointer"><Package className="w-4 h-4"/> Productos</Label></div>
         </RadioGroup>
       </div>
 
-      <div className="space-y-3">
-        <Label>Afiliación Profesional</Label>
-        <div className="p-4 rounded-md border">
-          <p className="text-sm text-muted-foreground mb-2">Solicita la verificación de la empresa donde trabajas para aumentar tu confianza.</p>
-          <Button variant="outline" onClick={() => console.log('Open company search modal')}>
-            Buscar y Solicitar Afiliación
-          </Button>
+      {isProfessional && (
+        <div className="space-y-3">
+          <Label>Afiliación Profesional</Label>
+          <div className="p-4 rounded-md border">
+            <p className="text-sm text-muted-foreground mb-2">Solicita la verificación de la empresa donde trabajas para aumentar tu confianza.</p>
+            <Button variant="outline" onClick={() => console.log('Open company search modal')}>
+              Buscar y Solicitar Afiliación
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
       
       <div className="space-y-3">
           <Label>Opciones de Pago y Citas</Label>

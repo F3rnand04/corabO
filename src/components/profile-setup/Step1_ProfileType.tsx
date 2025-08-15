@@ -5,86 +5,80 @@ import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { User, Briefcase, Truck } from 'lucide-react';
+import { User, Briefcase, Truck, Building } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../../components/ui/alert-dialog';
 import type { ProfileSetupData, User as UserType } from '@/lib/types';
-import { useCorabo } from '@/contexts/CoraboContext';
-
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import { Label } from '../ui/label';
 
 interface Step1_ProfileTypeProps {
   onSelect: (type: UserType['type'], providerType?: ProfileSetupData['providerType']) => void;
   currentType: UserType['type'];
+  formData: ProfileSetupData;
   onNext: () => void;
 }
 
-const profileTypes = [
-  { id: 'client', name: 'Cliente', description: 'Busca y contrata servicios o productos.', icon: User },
-  { id: 'provider', name: 'Proveedor', description: 'Ofrece productos, servicios o fletes a la comunidad.', icon: Briefcase },
-  { id: 'repartidor', name: 'Repartidor', description: 'Realiza entregas locales (delivery).', icon: Truck },
-];
-
-export default function Step1_ProfileType({ onSelect, currentType, onNext }: Step1_ProfileTypeProps) {
-  const { currentUser } = useCorabo();
+export default function Step1_ProfileType({ onSelect, currentType, formData, onNext }: Step1_ProfileTypeProps) {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [nextSelection, setNextSelection] = useState<UserType['type'] | null>(null);
 
   const handleSelection = (typeId: UserType['type']) => {
     if (typeId === currentType) {
-      return;
+        onNext();
+        return;
     }
-    
+
     if (currentType && typeId !== currentType) {
         setNextSelection(typeId);
         setIsAlertOpen(true);
     } else {
-        const providerType = currentUser?.lastName ? 'professional' : 'company';
-        onSelect(typeId, providerType);
+        onSelect(typeId, 'professional');
+        onNext();
     }
   };
 
   const handleConfirmChange = () => {
     if (nextSelection) {
-      const providerType = currentUser?.lastName ? 'professional' : 'company';
-      onSelect(nextSelection, providerType);
+      onSelect(nextSelection, 'professional');
     }
     setIsAlertOpen(false);
+    onNext();
   }
   
   const isChangingToProviderOrRepartidor = (currentType === 'client' && (nextSelection === 'provider' || nextSelection === 'repartidor'));
 
-
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold">Paso 1: ¿Cómo usarás Corabo?</h2>
+      
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {profileTypes.map((type) => (
           <Card
-            key={type.id}
-            onClick={() => handleSelection(type.id as UserType['type'])}
-            className={cn(
-              'cursor-pointer transition-all text-center',
-              (currentType === type.id) 
-              ? 'border-primary ring-2 ring-primary' 
-              : 'hover:border-primary/50'
-            )}
+            onClick={() => handleSelection('client')}
+            className={cn('cursor-pointer transition-all text-center', currentType === 'client' && 'border-primary ring-2 ring-primary')}
+          ><CardHeader><div className="flex flex-col items-center gap-2"><User className="w-10 h-10 text-primary" /><CardTitle>Cliente</CardTitle></div></CardHeader><CardContent><CardDescription>Busca y contrata servicios o productos.</CardDescription></CardContent></Card>
+          <Card
+            onClick={() => handleSelection('provider')}
+            className={cn('cursor-pointer transition-all text-center', currentType === 'provider' && 'border-primary ring-2 ring-primary')}
+          ><CardHeader><div className="flex flex-col items-center gap-2"><Briefcase className="w-10 h-10 text-primary" /><CardTitle>Proveedor</CardTitle></div></CardHeader><CardContent><CardDescription>Ofrece productos o servicios a la comunidad.</CardDescription></CardContent></Card>
+          <Card
+            onClick={() => handleSelection('repartidor')}
+            className={cn('cursor-pointer transition-all text-center', currentType === 'repartidor' && 'border-primary ring-2 ring-primary')}
+          ><CardHeader><div className="flex flex-col items-center gap-2"><Truck className="w-10 h-10 text-primary" /><CardTitle>Repartidor</CardTitle></div></CardHeader><CardContent><CardDescription>Realiza entregas locales (delivery).</CardDescription></CardContent></Card>
+      </div>
+
+      {currentType === 'provider' && (
+        <div className="pt-4 space-y-3">
+          <Label className="font-semibold">¿Qué tipo de proveedor eres?</Label>
+          <RadioGroup 
+            value={formData.providerType || 'professional'} 
+            onValueChange={(value: 'professional' | 'company') => onSelect(currentType, value)} 
+            className="flex gap-4"
           >
-            <CardHeader>
-              <div className="flex flex-col items-center gap-2">
-                <type.icon className="w-10 h-10 text-primary" />
-                <CardTitle>{type.name}</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <CardDescription>{type.description}</CardDescription>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-       <div className="flex justify-end pt-4">
-        <Button onClick={onNext} disabled={!currentType}>
-          Siguiente
-        </Button>
-      </div>
+              <div className="flex items-center space-x-2"><RadioGroupItem value="professional" id="professional" /><Label htmlFor="professional" className="flex items-center gap-2 font-normal cursor-pointer"><User className="w-4 h-4"/> Profesional Independiente</Label></div>
+              <div className="flex items-center space-x-2"><RadioGroupItem value="company" id="company" /><Label htmlFor="company" className="flex items-center gap-2 font-normal cursor-pointer"><Building className="w-4 h-4"/> Empresa</Label></div>
+          </RadioGroup>
+        </div>
+      )}
       
        <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <AlertDialogContent>
