@@ -358,6 +358,17 @@ export default function CompanyProfilePage() {
 
   if (!currentUser) return null;
 
+  const categoryPlaceholders: { [key: string]: string } = {
+    'Hogar y Reparaciones': 'Ej: Revisión general de plomería, tengo una pequeña fuga en el baño.',
+    'Tecnología y Soporte': 'Ej: Mi laptop no enciende y necesito un diagnóstico.',
+    'Automotriz y Repuestos': 'Ej: Solicito un cambio de aceite y revisión de frenos para mi vehículo.',
+    'Alimentos y Restaurantes': 'Ej: Cotización para un evento de 20 personas.',
+    'Salud y Bienestar': 'Ej: Necesito una consulta de fisioterapia por un dolor de espalda.',
+    'Belleza': 'Ej: Quisiera agendar un corte de cabello y un manicure.',
+    'Eventos': 'Ej: Busco un fotógrafo para una fiesta de cumpleaños el próximo mes.',
+  };
+  const appointmentPlaceholder = categoryPlaceholders[provider.profileSetupData?.primaryCategory || ''] || 'Ej: Quisiera discutir los detalles para un posible servicio.';
+
   return (
     <>
       <div className="bg-background min-h-screen">
@@ -656,7 +667,7 @@ export default function CompanyProfilePage() {
             <AlertDialogHeader>
                 <AlertDialogTitle>Solicitar Cita</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Estás solicitando una cita con <strong>{provider.name}</strong> para el día <strong>{appointmentDate && format(appointmentDate, "dd 'de' MMMM", { locale: es })}</strong>.
+                    Estás solicitando una cita con <strong>{displayName}</strong> para el día <strong>{appointmentDate && format(appointmentDate, "dd 'de' MMMM", { locale: es })}</strong>.
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <div className="py-4 space-y-4">
@@ -664,7 +675,7 @@ export default function CompanyProfilePage() {
                     <Label htmlFor="appointment-details">Motivo o resumen (opcional)</Label>
                     <Textarea
                         id="appointment-details"
-                        placeholder="Ej: Revisión general de plomería, tengo una pequeña fuga en el baño."
+                        placeholder={appointmentPlaceholder}
                         value={appointmentDetails}
                         onChange={(e) => setAppointmentDetails(e.target.value)}
                     />
