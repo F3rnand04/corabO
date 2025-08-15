@@ -91,7 +91,7 @@ function PaymentMethodCard({
 }
 
 export default function TransactionsSettingsPage() {
-    const { currentUser, deactivateTransactions, updateUser, validateEmail, sendPhoneVerification, verifyPhoneCode, sendMessage, activateTransactions } from 'use-corabo';
+    const { currentUser, deactivateTransactions, updateUser, validateEmail, sendPhoneVerification, verifyPhoneCode, sendMessage, activateTransactions } = useCorabo();
     const { toast } = useToast();
     const router = useRouter();
 

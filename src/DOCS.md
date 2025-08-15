@@ -76,4 +76,12 @@ Para acelerar la fase de desarrollo, las reglas de `firestore.rules` se han conf
 -   **Regla Actual:** `allow read, write: if request.auth != null;`
 -   **Propósito:** Esto elimina los permisos como una posible causa de error durante el desarrollo. Cualquier fallo que ocurra ahora es 100% un problema en el código TypeScript (React o Genkit), lo que hace la depuración mucho más rápida y directa.
 
+### 5.4. Verificación de Identidad con IA
+
+El sistema utiliza el modelo `googleai/gemini-1.5-flash` de Google para la verificación de documentos de identidad. El proceso está diseñado para ser flexible y robusto.
+
+-   **Extracción Multimodal:** El flujo de Genkit (`verification-flow.ts`) envía una solicitud multimodal a la API, proporcionando tanto la imagen del documento como un prompt de texto en un array estructurado. Esto permite al modelo analizar visualmente el documento y extraer el texto solicitado.
+-   **Normalización de ID:** Para evitar fallos por formato, el número de identidad extraído y el registrado por el usuario se "normalizan" antes de la comparación. Este proceso elimina prefijos (`V-`, `E-`), espacios, puntos y guiones, asegurando que `V-12.345.678` y `12345678` se consideren idénticos.
+-   **Comparación Flexible de Nombres:** En lugar de una coincidencia exacta, se utiliza una lógica de comparación avanzada. Los nombres se descomponen en palabras individuales, se normalizan a minúsculas y se ordenan alfabéticamente. Luego, se verifica si el conjunto de palabras del nombre más corto es un subconjunto del más largo. Esto permite que `"Fernando Infante"` coincida con `"INFANTE FERNANDO ANTONIO"`, manejando así la omisión de segundos nombres o el cambio de orden, un caso de uso muy común.
+
 **Conclusión:** La combinación de un modelo de datos limpio, consultas simples y reglas de seguridad permisivas (para desarrollo) ha creado un entorno estable. Cualquier funcionalidad futura debe construirse sobre estos tres pilares para mantener la estabilidad.
