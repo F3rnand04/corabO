@@ -27,11 +27,19 @@ export default function Step1_ProfileType({ onSelect, currentType, onNext }: Ste
   const [nextSelection, setNextSelection] = useState<UserType['type'] | null>(null);
 
   const handleSelection = (typeId: UserType['type']) => {
+    // If the type is already selected, do nothing until the user wants to change it.
+    // The navigation to the next step is handled by the parent component's stepper logic.
+    if (typeId === currentType) {
+        onNext();
+        return;
+    }
+
     if (currentType && typeId !== currentType) {
         setNextSelection(typeId);
         setIsAlertOpen(true);
     } else {
         onSelect(typeId, 'professional'); // Default providerType
+        onNext();
     }
   };
 
@@ -40,6 +48,7 @@ export default function Step1_ProfileType({ onSelect, currentType, onNext }: Ste
       onSelect(nextSelection, 'professional');
     }
     setIsAlertOpen(false);
+    onNext(); // Go to next step after confirmation
   }
   
   const isChangingToProviderOrRepartidor = (currentType === 'client' && (nextSelection === 'provider' || nextSelection === 'repartidor'));
@@ -73,11 +82,6 @@ export default function Step1_ProfileType({ onSelect, currentType, onNext }: Ste
         ))}
       </div>
       
-      <div className="flex justify-end pt-4">
-        <Button onClick={onNext}>Siguiente</Button>
-      </div>
-
-
        <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
