@@ -99,7 +99,6 @@ interface CoraboActions {
   sendPhoneVerification: (userId: string, phone: string) => Promise<void>;
   verifyPhoneCode: (userId: string, code: string) => Promise<boolean>;
   updateFullProfile: (userId: string, data: ProfileSetupData, profileType: 'client' | 'provider' | 'repartidor') => Promise<void>;
-  completeInitialSetup: (userId: string, data: { name: string; lastName: string; idNumber: string; birthDate: string; country: string; }) => Promise<void>;
   subscribeUser: (userId: string, planName: string, amount: number) => void;
   activateTransactions: (userId: string, paymentDetails: any) => void;
   deactivateTransactions: (userId: string) => void;
@@ -195,27 +194,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
     setIsLoadingAuth(false);
   }, [cleanupListeners]);
-
-  useEffect(() => {
-    const auth = getAuthInstance();
-    const authUnsubscribe = onAuthStateChanged(auth, handleUserAuth);
-    
-    const db = getFirestoreDb();
-    const usersUnsubscribe = onSnapshot(collection(db, 'users'), (snapshot) => {
-        setUsers(snapshot.docs.map(doc => doc.data() as User));
-    });
-    const publicationsUnsubscribe = onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
-        setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage));
-    });
-
-    return () => {
-      authUnsubscribe();
-      usersUnsubscribe();
-      publicationsUnsubscribe();
-      cleanupListeners();
-    };
-  }, [handleUserAuth, cleanupListeners]);
-  
   
   useEffect(() => {
     cleanupListeners();
@@ -241,16 +219,28 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         const sessions = snapshot.docs.map(d => d.data() as QrSession);
         setQrSession(sessions.find(s => s.status !== 'completed' && s.status !== 'cancelled') || null);
       });
+
+      const usersUnsubscribe = onSnapshot(collection(db, 'users'), (snapshot) => {
+        setUsers(snapshot.docs.map(doc => doc.data() as User));
+      });
+
+      const publicationsUnsubscribe = onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
+        setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage));
+      });
   
       activeListeners.current = [
         userDocUnsubscribe,
         transactionsUnsubscribe,
         conversationsUnsubscribe,
         qrSessionsUnsubscribe,
+        usersUnsubscribe,
+        publicationsUnsubscribe,
       ];
     } else {
       setTransactions([]);
       setConversations([]);
+      setUsers([]);
+      setAllPublications([]);
     }
 
     return () => cleanupListeners();
@@ -409,11 +399,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const updateUser = useCallback(async (userId: string, updates: Partial<User>) => {
     const db = getFirestoreDb();
     const userDocRef = doc(db, 'users', userId);
-    await updateDoc(userDocRef, updates);
-  }, []);
-
-  const completeInitialSetup = useCallback(async (userId: string, data: { name: string; lastName: string; idNumber: string; birthDate: string; country: string; }) => {
-    await completeInitialSetupFlow({userId, ...data});
+    await updateDoc(userDocRef, updates, { merge: true });
   }, []);
   
   const toggleGps = useCallback((userId: string) => {
@@ -1082,7 +1068,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     sendPhoneVerification,
     verifyPhoneCode,
     updateFullProfile,
-    completeInitialSetup,
     subscribeUser,
     activateTransactions,
     deactivateTransactions,

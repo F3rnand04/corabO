@@ -16,7 +16,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRouter } from 'next/navigation';
-import { checkIdUniquenessFlow } from '@/ai/flows/profile-flow';
+import { checkIdUniquenessFlow, completeInitialSetupFlow } from '@/ai/flows/profile-flow';
 
 const countries = [
   { code: 'VE', name: 'Venezuela', idLabel: 'Cédula de Identidad', companyIdLabel: 'RIF' },
@@ -42,7 +42,7 @@ const CountrySelector = memo(function CountrySelector({ value, onValueChange }: 
 
 
 export default function InitialSetupPage() {
-  const { currentUser, completeInitialSetup, sendMessage, updateUser } = useCorabo();
+  const { currentUser, sendMessage, updateUser } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -61,7 +61,6 @@ export default function InitialSetupPage() {
       setName(currentUser.name || '');
       setLastName(currentUser.lastName || '');
       setCountry(currentUser.country || '');
-      // Check if user was previously set as a company
       if (currentUser.profileSetupData?.providerType === 'company') {
         setIsCompany(true);
       }
@@ -77,11 +76,12 @@ export default function InitialSetupPage() {
         
         if (!isUnique) {
             setIdInUseError(true);
-            setIsSubmitting(false);
-            return;
+            return; // Stop submission
         }
         
-        // Update providerType in profileSetupData before saving
+        // This is now an isolated action that doesn't trigger a context update loop.
+        await completeInitialSetupFlow({ userId: currentUser.id, name, lastName, idNumber, birthDate, country });
+        
         await updateUser(currentUser.id, { 
             profileSetupData: {
                 ...currentUser.profileSetupData,
@@ -89,8 +89,6 @@ export default function InitialSetupPage() {
             }
         });
 
-        await completeInitialSetup(currentUser.id, { name, lastName, idNumber, birthDate, country });
-        
     } catch (error: any) {
         console.error("Failed to complete setup:", error);
         toast({
@@ -223,5 +221,3 @@ export default function InitialSetupPage() {
     </Card>
   );
 }
-
-    

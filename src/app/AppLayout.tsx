@@ -39,14 +39,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     // This effect handles redirection based on the auth state.
     if (isLoadingAuth) return;
 
-    if (currentUser) {
-        if (!currentUser.isInitialSetupComplete && pathname !== '/initial-setup') {
-            router.replace('/initial-setup');
-        } else if (currentUser.isInitialSetupComplete && (pathname === '/login' || pathname === '/initial-setup')) {
-            router.replace('/');
+    if (!currentUser) {
+        if (pathname !== '/login') {
+            router.replace('/login');
         }
-    } else if (pathname !== '/login') {
-        router.replace('/login');
+    } else {
+        if (!currentUser.isInitialSetupComplete) {
+            if (pathname !== '/initial-setup') {
+                router.replace('/initial-setup');
+            }
+        } else {
+            if (pathname === '/login' || pathname === '/initial-setup') {
+                router.replace('/');
+            }
+        }
     }
   }, [currentUser, isLoadingAuth, pathname, router]);
 
@@ -87,7 +93,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
   
   const isLoginPage = pathname === '/login';
-  
+  const isSetupPage = pathname === '/initial-setup';
+
   if (!currentUser && !isLoginPage) {
      return (
         <div className="flex items-center justify-center min-h-screen">
@@ -96,7 +103,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
      );
   }
   
-  if (isLoginPage || (currentUser && !currentUser.isInitialSetupComplete)) {
+  if (isLoginPage || (currentUser && !currentUser.isInitialSetupComplete && isSetupPage)) {
     return <main>{children}</main>;
   }
   
