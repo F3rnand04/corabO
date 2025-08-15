@@ -168,26 +168,17 @@ export function ProfileHeader() {
             </Button>
         </div>
         
-        <div className="flex justify-around text-center text-xs text-muted-foreground pt-4">
-            <div>
-              <p className="font-semibold text-foreground">{galleryCount}</p>
-              <p>Publicaciones</p>
-            </div>
-            {isProvider && currentUser.profileSetupData?.offerType !== 'service' && (
-              <div>
-                <p className="font-semibold text-foreground">{productCount}</p>
-                <p>Productos</p>
-              </div>
-            )}
-        </div>
-        
-        <div className="flex justify-around font-semibold text-center border-b mt-2">
+        <div className="flex justify-around font-semibold text-center border-b mt-4">
             <Button asChild variant="ghost" className="flex-1 p-3 rounded-none text-muted-foreground data-[active=true]:text-primary data-[active=true]:border-b-2 data-[active=true]:border-primary" data-active={pathname === '/profile/publications'}>
-               <Link href="/profile/publications">Publicaciones</Link>
+               <Link href="/profile/publications">
+                    Publicaciones <span className='font-mono ml-2 text-xs'>({galleryCount})</span>
+               </Link>
             </Button>
             {isProvider && currentUser.profileSetupData?.offerType !== 'service' && (
                 <Button asChild variant="ghost" className="flex-1 p-3 rounded-none text-muted-foreground data-[active=true]:text-primary data-[active=true]:border-b-2 data-[active=true]:border-primary" data-active={pathname === '/profile/catalog'}>
-                    <Link href="/profile/catalog">Catálogo</Link>
+                    <Link href="/profile/catalog">
+                        Catálogo <span className='font-mono ml-2 text-xs'>({productCount})</span>
+                    </Link>
                 </Button>
             )}
         </div>
