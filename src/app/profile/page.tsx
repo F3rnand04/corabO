@@ -10,9 +10,12 @@ export default function ProfilePage() {
     const router = useRouter();
 
     useEffect(() => {
-        // Redirect to the publications page by default
-        router.replace('/profile/publications');
-    }, [router]);
+        if (currentUser) {
+            // Redirect to the appropriate default view based on offer type.
+            const defaultView = currentUser.profileSetupData?.offerType === 'product' ? 'catalog' : 'publications';
+            router.replace(`/profile/${defaultView}`);
+        }
+    }, [currentUser, router]);
 
     // Render a loader while redirecting
     return (

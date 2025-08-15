@@ -169,11 +169,11 @@ export function ProfileHeader() {
         
         <div className="flex justify-around font-semibold text-center border-b mt-4">
             <Button asChild variant="ghost" className="flex-1 p-3 rounded-none text-muted-foreground data-[active=true]:text-primary data-[active=true]:border-b-2 data-[active=true]:border-primary" data-active={pathname === '/profile/publications'}>
-               <Link href="/profile/publications">{`Publicaciones ${galleryCount}`}</Link>
+               <Link href="/profile/publications">{`Publicaciones`}</Link>
             </Button>
             {isProvider && currentUser.profileSetupData?.offerType !== 'service' && (
                 <Button asChild variant="ghost" className="flex-1 p-3 rounded-none text-muted-foreground data-[active=true]:text-primary data-[active=true]:border-b-2 data-[active=true]:border-primary" data-active={pathname === '/profile/catalog'}>
-                    <Link href="/profile/catalog">{`Catálogo ${productCount}`}</Link>
+                    <Link href="/profile/catalog">{`Catálogo`}</Link>
                 </Button>
             )}
         </div>
