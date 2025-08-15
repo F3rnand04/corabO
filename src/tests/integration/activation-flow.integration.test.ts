@@ -3,7 +3,6 @@ import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { doc, setDoc } from 'firebase/firestore';
 import * as fs from 'fs';
 import * as path from 'path';
 import type { User } from '@/lib/types';
@@ -26,7 +25,6 @@ jest.mock('next/navigation', () => ({
 // Mock Corabo context to control user state
 const mockCoraboContext = {
   currentUser: null as User | null,
-  // We don't need the other functions for this test
 };
 
 jest.mock('@/contexts/CoraboContext', () => ({
@@ -66,7 +64,6 @@ describe('Activation Flow - Integration Test', () => {
       id: 'user1',
       name: 'Test User',
       isInitialSetupComplete: false,
-      isTransactionsActive: false,
     } as User;
 
     // Act: Render the component and click the button
@@ -77,13 +74,32 @@ describe('Activation Flow - Integration Test', () => {
     // Assert: The user is redirected to the initial setup page
     expect(mockRouter.push).toHaveBeenCalledWith('/initial-setup');
   });
-
-  test('should redirect to /transactions/settings if initial setup is complete', () => {
-    // Arrange: User has completed initial setup but transactions are not active
+  
+  test('should redirect to /profile-setup/verify-id if setup is complete but ID is not verified', () => {
+    // Arrange: User has completed initial setup but ID is not verified
     mockCoraboContext.currentUser = {
       id: 'user2',
       name: 'Test User 2',
       isInitialSetupComplete: true,
+      idVerificationStatus: 'pending', // or 'rejected'
+    } as User;
+
+    // Act: Render the component and click the button
+    render(<ActivationWarning userType="provider" />);
+    const activationButton = screen.getByText('Activar ahora →');
+    fireEvent.click(activationButton);
+
+    // Assert: The user is redirected to the ID verification page
+    expect(mockRouter.push).toHaveBeenCalledWith('/profile-setup/verify-id');
+  });
+
+  test('should redirect to /transactions/settings if ID is verified but transactions are inactive', () => {
+    // Arrange: User is fully verified but transactions module is not yet active
+    mockCoraboContext.currentUser = {
+      id: 'user3',
+      name: 'Test User 3',
+      isInitialSetupComplete: true,
+      idVerificationStatus: 'verified',
       isTransactionsActive: false,
     } as User;
 
@@ -92,7 +108,8 @@ describe('Activation Flow - Integration Test', () => {
     const activationButton = screen.getByText('Activar ahora →');
     fireEvent.click(activationButton);
 
-    // Assert: The user is redirected to the transaction settings page, breaking the loop
+    // Assert: The user is redirected to the final activation step
     expect(mockRouter.push).toHaveBeenCalledWith('/transactions/settings');
   });
 });
+
