@@ -19,6 +19,8 @@ const getTestEnv = async () => {
   return await initializeTestEnvironment({
     projectId: PROJECT_ID,
     firestore: {
+      host: 'localhost',
+      port: 8083,
       rules: fs.readFileSync(path.resolve(__dirname, '../../firestore.rules'), 'utf8'),
     },
   });
@@ -68,7 +70,7 @@ describe('Publication Flow - Data Resilience Integration Tests', () => {
       phoneValidated: false,
       isGpsActive: false,
       reputation: 0,
-      // `profileSetupData` se omite deliberadamente.
+      profileSetupData: {}, // Explicitly set as empty for clarity
     };
     await setDoc(doc(db, 'users/user_incomplete'), incompleteUser);
 
@@ -124,8 +126,7 @@ describe('Publication Flow - Data Resilience Integration Tests', () => {
         id: 'user_denormalized',
         name: 'John Doe',
         profileImage: 'http://example.com/johndoe.jpg',
-        type: 'provider',
-        email: 'john@doe.com', phone: '', emailValidated: true, phoneValidated: false, isGpsActive: true, reputation: 5,
+        type: 'provider', email: 'john@doe.com', phone: '', emailValidated: true, phoneValidated: false, isGpsActive: true, reputation: 5,
         verified: true,
         profileSetupData: { username: 'john_doe', specialty: 'Denormalization Expert', providerType: 'professional', useUsername: true }
     };
@@ -150,6 +151,6 @@ describe('Publication Flow - Data Resilience Integration Tests', () => {
     expect(publicationOwnerData.name).toBe(specificUser.profileSetupData?.username); // Verifica que usa el username
     expect(publicationOwnerData.profileImage).toBe(specificUser.profileImage);
     expect(publicationOwnerData.verified).toBe(specificUser.verified);
-    expect(publicationOwnerData.profileSetupData.specialty).toBe(specificUser.profileSetupData.specialty);
+    expect(publicationOwnerData.profileSetupData.specialty).toBe(specificUser.profileSetupData?.specialty);
   });
 });

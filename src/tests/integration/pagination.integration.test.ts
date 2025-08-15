@@ -16,6 +16,8 @@ const getTestEnv = async () => {
   return await initializeTestEnvironment({
     projectId: PROJECT_ID,
     firestore: {
+      host: 'localhost',
+      port: 8083, // Explicitly set from firebase.json
       rules: fs.readFileSync(path.resolve(__dirname, '../../firestore.rules'), 'utf8'),
     },
   });

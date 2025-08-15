@@ -6,6 +6,9 @@ import {
 import * as fs from 'fs';
 import * as path from 'path';
 import type { User } from '@/lib/types';
+import { render, fireEvent, screen } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import { ActivationWarning } from '@/components/ActivationWarning';
 
 // This test simulates the user activation flow to ensure correct redirection logic.
 
@@ -23,19 +26,16 @@ jest.mock('next/navigation', () => ({
 }));
 
 // Mock Corabo context to control user state
+let mockCurrentUser: User | null = null;
 const mockCoraboContext = {
-  currentUser: null as User | null,
+  get currentUser() {
+    return mockCurrentUser;
+  }
 };
 
 jest.mock('@/contexts/CoraboContext', () => ({
   useCorabo: () => mockCoraboContext,
 }));
-
-// We need to import the component we are testing *after* the mocks are set up
-import { ActivationWarning } from '@/components/ActivationWarning';
-import { render, fireEvent, screen } from '@testing-library/react';
-import '@testing-library/jest-dom';
-
 
 describe('Activation Flow - Integration Test', () => {
   let testEnv: RulesTestEnvironment;
@@ -44,6 +44,8 @@ describe('Activation Flow - Integration Test', () => {
     testEnv = await initializeTestEnvironment({
       projectId: PROJECT_ID,
       firestore: {
+        host: 'localhost',
+        port: 8083,
         rules: fs.readFileSync(path.resolve(__dirname, '../../firestore.rules'), 'utf8'),
       },
     });
@@ -56,11 +58,12 @@ describe('Activation Flow - Integration Test', () => {
   beforeEach(() => {
     mockRouter.push.mockClear();
     mockRouter.replace.mockClear();
+    mockCurrentUser = null;
   });
   
   test('should redirect to /initial-setup if user has not completed it', () => {
     // Arrange: User exists but initial setup is incomplete
-    mockCoraboContext.currentUser = {
+    mockCurrentUser = {
       id: 'user1',
       name: 'Test User',
       isInitialSetupComplete: false,
@@ -77,7 +80,7 @@ describe('Activation Flow - Integration Test', () => {
   
   test('should redirect to /profile-setup/verify-id if setup is complete but ID is not verified', () => {
     // Arrange: User has completed initial setup but ID is not verified
-    mockCoraboContext.currentUser = {
+    mockCurrentUser = {
       id: 'user2',
       name: 'Test User 2',
       isInitialSetupComplete: true,
@@ -95,7 +98,7 @@ describe('Activation Flow - Integration Test', () => {
 
   test('should redirect to /transactions/settings if ID is verified but transactions are inactive', () => {
     // Arrange: User is fully verified but transactions module is not yet active
-    mockCoraboContext.currentUser = {
+    mockCurrentUser = {
       id: 'user3',
       name: 'Test User 3',
       isInitialSetupComplete: true,
@@ -112,4 +115,3 @@ describe('Activation Flow - Integration Test', () => {
     expect(mockRouter.push).toHaveBeenCalledWith('/transactions/settings');
   });
 });
-
