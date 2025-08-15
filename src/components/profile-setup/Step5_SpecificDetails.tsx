@@ -18,6 +18,7 @@ import { useRouter } from 'next/navigation';
 import type { ProfileSetupData } from '@/lib/types';
 import { useState } from 'react';
 import { useCorabo } from '@/contexts/CoraboContext';
+import { requestAffiliation } from "@/ai/flows/affiliation-flow";
 
 interface Step5_SpecificDetailsProps {
   onBack: () => void;
@@ -31,7 +32,7 @@ const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sába
 export default function Step5_SpecificDetails({ onBack, onNext, formData, setFormData }: Step5_SpecificDetailsProps) {
   const router = useRouter();
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
-  const { currentUser } = useCorabo();
+  const { currentUser, users } = useCorabo();
   
   const MAX_RADIUS_FREE = 10;
   const isOverFreeRadius = (formData.serviceRadius || 0) > MAX_RADIUS_FREE && !(currentUser?.isSubscribed);
@@ -45,7 +46,9 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
   };
 
   const handleScheduleChange = (day: string, field: 'from' | 'to' | 'active', value: string | boolean) => {
-    const newSchedule = { ...(formData.schedule || {}), [day]: { ...(formData.schedule?.[day] || {}), [field]: value } };
+    // Defensive check
+    if (!formData || !formData.schedule) return;
+    const newSchedule = { ...(formData.schedule), [day]: { ...(formData.schedule[day] || {}), [field]: value } };
     handleFormDataChange('schedule', newSchedule);
   };
   
@@ -79,6 +82,16 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
                 <Label htmlFor="product" className="flex items-center gap-2 font-normal cursor-pointer"><Package className="w-4 h-4"/> Productos</Label>
             </div>
         </RadioGroup>
+      </div>
+
+      <div className="space-y-3">
+        <Label>Afiliación Profesional</Label>
+        <div className="p-4 rounded-md border">
+          <p className="text-sm text-muted-foreground mb-2">Solicita la verificación de la empresa donde trabajas para aumentar tu confianza.</p>
+          <Button variant="outline" onClick={() => console.log('Open company search modal')}>
+            Buscar y Solicitar Afiliación
+          </Button>
+        </div>
       </div>
       
       <div className="space-y-3">
@@ -213,13 +226,13 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
             {daysOfWeek.map(day => (
                  <div key={day} className="flex flex-col sm:flex-row sm:items-center justify-between">
                     <div className="flex items-center gap-3 mb-2 sm:mb-0">
-                        <Switch id={`switch-${day}`} checked={formData.schedule?.[day]?.active ?? false} onCheckedChange={(checked) => handleScheduleChange(day, 'active', checked)} />
+                        <Switch id={`switch-${day}`} checked={formData?.schedule?.[day]?.active ?? false} onCheckedChange={(checked) => handleScheduleChange(day, 'active', checked)} />
                         <Label htmlFor={`switch-${day}`} className="w-24">{day}</Label>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Input type="time" value={formData.schedule?.[day]?.from || '09:00'} onChange={(e) => handleScheduleChange(day, 'from', e.target.value)} className="w-full sm:w-auto"/>
+                        <Input type="time" value={formData?.schedule?.[day]?.from || '09:00'} onChange={(e) => handleScheduleChange(day, 'from', e.target.value)} className="w-full sm:w-auto"/>
                         <span>-</span>
-                        <Input type="time" value={formData.schedule?.[day]?.to || '17:00'} onChange={(e) => handleScheduleChange(day, 'to', e.target.value)} className="w-full sm:w-auto"/>
+                        <Input type="time" value={formData?.schedule?.[day]?.to || '17:00'} onChange={(e) => handleScheduleChange(day, 'to', e.target.value)} className="w-full sm:w-auto"/>
                     </div>
                  </div>
             ))}

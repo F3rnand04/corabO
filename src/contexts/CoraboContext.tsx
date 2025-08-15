@@ -25,6 +25,7 @@ import type { GetFeedInputSchema, GetFeedOutputSchema, GetProfileGalleryInputSch
 import { z } from 'zod';
 import { haversineDistance } from '@/lib/utils';
 import { getOrCreateUser, type FirebaseUserInput } from '@/ai/flows/auth-flow';
+import { requestAffiliation, approveAffiliation, rejectAffiliation, revokeAffiliation } from '@/ai/flows/affiliation-flow';
 
 // --- FEATURE FLAG ---
 // Set to `true` in production to enable country-specific data updates.
@@ -209,8 +210,18 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         const db = getFirestoreDb();
 
         // Optimized: Fetch static collections once.
-        const usersSnapshot = getDocs(collection(db, 'users'));
-        usersSnapshot.then(snapshot => setUsers(snapshot.docs.map(doc => doc.data() as User)));
+        const usersListener = onSnapshot(collection(db, 'users'), (snapshot) => {
+          const fetchedUsers = snapshot.docs.map(doc => {
+              const u = doc.data() as User;
+              // Defensive coding: ensure profileSetupData exists
+              if (!u.profileSetupData) {
+                  u.profileSetupData = {};
+              }
+              return u;
+          });
+          setUsers(fetchedUsers);
+      });
+      listeners.current.set('users', usersListener);
         
         const publicationsSnapshot = getDocs(query(collection(db, 'publications'), orderBy('createdAt', 'desc')));
         publicationsSnapshot.then(snapshot => setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage)));
