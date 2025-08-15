@@ -54,23 +54,26 @@ export const sendMessage = ai.defineFlow(
     const convoRef = doc(getFirestoreDb(), 'conversations', input.conversationId);
     const convoSnap = await getDoc(convoRef);
 
-    const getMessageType = () => {
-        if (input.proposal) return 'proposal';
-        if (input.location) return 'location';
-        return 'text';
-    }
-
+    // Dynamically build the message object to avoid undefined fields
     const newMessage: Message = {
       id: `msg-${Date.now()}`,
       senderId: input.senderId,
       timestamp: new Date().toISOString(),
-      type: getMessageType(),
-      text: input.text,
-      proposal: input.proposal,
-      location: input.location,
+      text: input.text || '', // Ensure text is always a string
       isProposalAccepted: false,
       isRead: false, // New messages are always unread
     };
+
+    if (input.proposal) {
+        newMessage.type = 'proposal';
+        newMessage.proposal = input.proposal;
+    } else if (input.location) {
+        newMessage.type = 'location';
+        newMessage.location = input.location;
+    } else {
+        newMessage.type = 'text';
+    }
+
 
     if (convoSnap.exists()) {
       // SECURITY CHECK: Ensure the sender is a participant of the conversation
