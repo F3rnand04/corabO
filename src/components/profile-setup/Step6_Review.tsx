@@ -101,6 +101,8 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
 
   if (!currentUser) return null;
 
+  const publicName = formData.useUsername ? formData.username : currentUser.name;
+
   return (
     <>
     <div className="space-y-6">
@@ -120,7 +122,7 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
               {renderItem("Nombre Público", (
                 <div className="flex items-center gap-2">
                     <UserCircle className="w-5 h-5 text-muted-foreground" />
-                    <span>{formData.useUsername ? formData.username : currentUser.name}</span>
+                    <span>{publicName}</span>
                 </div>
               ), 2)}
 

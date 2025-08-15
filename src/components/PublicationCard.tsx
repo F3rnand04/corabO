@@ -1,6 +1,6 @@
 
 
-"use client";
+'use client';
 
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -59,9 +59,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
     const showLocationInfo = currentUser?.country === (owner as User)?.country;
 
     // **CORRECTED LOGIC:** If useUsername is true, use the username. Otherwise, use the real name.
-    const displayName = owner.profileSetupData?.useUsername && owner.profileSetupData.username 
-        ? owner.profileSetupData.username 
-        : owner.name;
+    const displayName = owner.profileSetupData?.useUsername ? (owner.profileSetupData.username || owner.name) : owner.name;
         
     const specialty = owner.profileSetupData?.specialty || "Especialidad no definida";
 
@@ -163,7 +161,6 @@ export function PublicationCard({ publication, className }: PublicationCardProps
                 <div className="flex-grow ml-3">
                     <Link href={profileLink} className="font-semibold text-sm hover:underline flex items-center gap-1.5">
                         {displayName}
-                        {/* **CORRECTED LOGIC:** Check isSubscribed, not verified */}
                         {(owner as User).isSubscribed && <CheckCircle className="w-4 h-4 text-blue-500" />}
                     </Link>
                     <p className="text-xs text-muted-foreground">{specialty}</p>
@@ -188,7 +185,6 @@ export function PublicationCard({ publication, className }: PublicationCardProps
                     <Button variant="ghost" size="sm" onClick={handleContact}>
                         Contactar
                     </Button>
-                    {/* **CORRECTED AND ADDED GPS INDICATOR** */}
                     {showLocationInfo && distance && (
                         <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                             <MapPin className={cn("h-3 w-3", owner.isGpsActive && "text-green-500")} />
@@ -283,4 +279,3 @@ export function PublicationCard({ publication, className }: PublicationCardProps
         </>
     );
 }
-

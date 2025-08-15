@@ -197,7 +197,7 @@ export default function CompanyProfilePage() {
         if (appointmentDate && provider && currentUser && isCurrentUserTransactionReady && isProviderTransactionReady) {
             const request: Omit<AppointmentRequest, 'clientId'> = {
                 providerId: provider.id,
-                date: appointmentDate,
+                date: appointmentDate.toISOString(),
                 details: appointmentDetails,
                 amount: provider.profileSetupData?.appointmentCost || 0,
             };
