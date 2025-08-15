@@ -34,8 +34,6 @@ export async function autoVerifyIdWithAI(input: VerificationInput): Promise<Veri
     console.error("GEMINI_API_KEY is not set.");
     throw new Error("El servicio de verificación IA no está configurado.");
   }
-  // The check for the document URL is now implicitly handled by the input schema.
-  // If documentImageUrl is missing, Zod will throw an error before this function is even called.
   return autoVerifyIdWithAIFlow(input);
 }
 
@@ -86,30 +84,39 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
   },
   async (input) => {
     
+    // **FIX**: The `output` schema was removed. We ask the model for plain text and process it manually.
+    // This is more reliable than forcing a specific JSON structure which can fail.
     const response = await ai.generate({
         model: 'gemini-1.5-flash',
-        output: {
-            schema: z.object({
-                extractedName: z.string().describe("The full name of the person on the ID, including all given names and surnames."),
-                extractedId: z.string().describe("The full identification number, including any prefix like 'V-' or 'E-'."),
-            })
-        },
         prompt: [{
             text: `You are an expert document analyst. Analyze the provided image of an identification document.
-            Extract the full name and the full identification number exactly as they appear.`
+            Extract the full name and the full identification number exactly as they appear.
+            Provide the output STRICTLY in the following format, with each piece of data on a new line:
+            Nombre: [Full Name Here]
+            ID: [Full ID Number Here]`
         }, {
             media: {
                 url: input.documentImageUrl
             }
         }],
     });
-
-    const output = response.output();
-
-    if (!output) {
-      throw new Error('AI model did not return an output.');
+    
+    const responseText = response.text;
+    if (!responseText) {
+        throw new Error('AI model did not return a text response.');
     }
     
+    // Manual parsing of the text response
+    const nameMatchResult = responseText.match(/Nombre: (.*)/);
+    const idMatchResult = responseText.match(/ID: (.*)/);
+
+    const extractedName = nameMatchResult ? nameMatchResult[1].trim() : '';
+    const extractedId = idMatchResult ? idMatchResult[1].trim() : '';
+
+    if (!extractedName || !extractedId) {
+        throw new Error('AI failed to extract the required fields from the document.');
+    }
+
     const normalizeId = (str: string) => {
         return str
             .trim()
@@ -119,22 +126,19 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
             .replace(/[\s.-]/g, ''); // Remove separators
     };
     
-    // The test user has V-20.123.456, we check against just the number.
-    const idMatch = normalizeId(output.extractedId) === normalizeId(input.idInRecord);
+    const idMatch = normalizeId(extractedId) === normalizeId(input.idInRecord);
     
     const normalizeName = (str: string) => str.trim().toLowerCase().replace(/\s+/g, ' ');
     
-    const extractedNameLower = normalizeName(output.extractedName);
+    const extractedNameLower = normalizeName(extractedName);
     const recordNameLower = normalizeName(input.nameInRecord);
 
-    // Flexible name matching using Levenshtein distance.
-    // A similarity of 80% is a reasonable threshold for a match, accounting for OCR errors or typos.
     const nameSimilarity = calculateNameSimilarity(recordNameLower, extractedNameLower);
     const nameMatch = nameSimilarity >= 0.8;
 
     return {
-      extractedName: output.extractedName,
-      extractedId: output.extractedId,
+      extractedName: extractedName,
+      extractedId: extractedId,
       nameMatch,
       idMatch,
     };
