@@ -268,5 +268,3 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
     </>
   );
 }
-
-    
