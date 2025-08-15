@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation";
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { add, subDays, startOfDay, differenceInDays, differenceInHours, differenceInMinutes, addDays as addDaysFns, addMonths } from 'date-fns';
+import { add, subDays, startOfDay, differenceInDays, differenceInMinutes, addDays as addDaysFns, addMonths } from 'date-fns';
 import { credicoraLevels } from '@/lib/types';
 import { getAuth, signInWithPopup, signOut, User as FirebaseUser, GoogleAuthProvider } from 'firebase/auth';
 import { getFirebaseApp, getFirestoreDb, getAuthInstance } from '@/lib/firebase';
@@ -847,6 +847,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       const reputation = ratedTransactions.length > 0 ? totalRating / ratedTransactions.length : 0;
       
       const effectiveness = providerTransactions.length > 0 ? (completedTransactions.length / providerTransactions.length) * 100 : 0;
+
+      if(completedTransactions.length === 0) {
+        return { reputation, effectiveness: effectiveness || 0, responseTime: 'Nuevo' };
+      }
 
       const lastTransaction = completedTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
       if (!lastTransaction || !lastTransaction.details.paymentConfirmationDate) {

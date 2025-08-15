@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, ChangeEvent, useCallback } from 'react';
@@ -108,6 +109,8 @@ export function ProfileHeader() {
                     <>
                         <div className="w-px h-3 bg-border mx-1"></div>
                         <span>{effectiveness.toFixed(0)}% Efec.</span>
+                         <div className="w-px h-3 bg-border mx-1"></div>
+                         <span className="font-semibold text-green-600">{responseTime}</span>
                     </>
                     )}
                 </div>
