@@ -137,6 +137,11 @@ export function PublicationCard({ publication, className }: PublicationCardProps
             imageUrl: publication.src,
         }, 1);
     };
+    
+    const handleContact = () => {
+      const conversationId = sendMessage({ recipientId: owner.id, text: `¡Hola! Me interesa tu publicación.` });
+      router.push(`/messages/${conversationId}`);
+    };
 
     const displayName = owner.profileSetupData?.username || owner.name || 'Usuario Corabo';
     const specialty = owner.profileSetupData?.specialty || "Especialidad no definida";
@@ -176,7 +181,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
                     </div>
                 </div>
                 <div className="flex flex-col items-end">
-                    <Button variant="ghost" size="sm" onClick={() => sendMessage({recipientId: owner.id, text: `¡Hola! Me interesa tu publicación.`})}>
+                    <Button variant="ghost" size="sm" onClick={handleContact}>
                         Contactar
                     </Button>
                     {showLocationInfo && (
