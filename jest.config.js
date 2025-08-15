@@ -7,13 +7,8 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
     '\\.css$': '<rootDir>/tests/styleMock.js',
   },
-  // Patrones para encontrar archivos de test
-  testMatch: [
-    '<rootDir>/src/tests/unit/**/*.test.ts',
-    '<rootDir>/src/tests/integration/**/*.test.ts',
-    '<rootDir>/src/tests/load-tests/**/*.k6.js',
-  ],
-  // Ignora las carpetas que no contienen tests
+  // Se elimina testMatch para que Jest use su comportamiento por defecto
+  // y encuentre los archivos .test.ts en la carpeta /tests
   testPathIgnorePatterns: [
     '<rootDir>/.next/',
     '<rootDir>/node_modules/',
@@ -23,7 +18,7 @@ module.exports = {
     '^.+\\.(ts|tsx)$': 'ts-jest',
   },
   // Archivo de setup global para los tests
-  setupFilesAfterEnv: ['<rootDir>/src/tests/setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
   // Asegura que Jest busque módulos en la carpeta node_modules raíz
   moduleDirectories: ['node_modules', '<rootDir>/src'],
 };
