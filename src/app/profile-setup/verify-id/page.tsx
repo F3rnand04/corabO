@@ -50,7 +50,7 @@ export default function VerifyIdPage() {
             userId: currentUser.id,
             nameInRecord: `${currentUser.name} ${currentUser.lastName || ''}`,
             idInRecord: currentUser.idNumber,
-            documentImageUrl: imagePreview // Pass the base64 data URI with the correct key
+            documentImageUrl: imagePreview,
         });
         setVerificationResult(result);
         if (result.idMatch && result.nameMatch) {
