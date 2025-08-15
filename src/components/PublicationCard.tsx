@@ -58,7 +58,6 @@ export function PublicationCard({ publication, className }: PublicationCardProps
     // International trade logic
     const showLocationInfo = currentUser?.country === (owner as User)?.country;
 
-    // **CORRECTED LOGIC:** If useUsername is true, use the username. Otherwise, use the real name.
     const displayName = owner.profileSetupData?.useUsername && owner.profileSetupData.username
         ? owner.profileSetupData.username
         : owner.name;
@@ -157,7 +156,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
                 <Link href={profileLink} className="flex-shrink-0">
                     <Avatar>
                         <AvatarImage src={owner.profileImage} alt={owner.name} />
-                        <AvatarFallback>{owner.name.charAt(0)}</AvatarFallback>
+                        <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
                     </Avatar>
                 </Link>
                 <div className="flex-grow ml-3">
