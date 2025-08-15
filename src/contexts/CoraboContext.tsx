@@ -831,36 +831,34 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     await batch.commit();
   };
   
-  const getUserMetrics = (userId: string, transactions: Transaction[]): UserMetrics => {
-    const completedTransactions = transactions.filter(
-      (tx) => tx.providerId === userId && (tx.status === 'Pagado' || tx.status === 'Resuelto')
-    );
-    if (completedTransactions.length === 0) {
-      return { reputation: 0, effectiveness: 0, responseTime: 'Nuevo' };
-    }
+  const getUserMetrics = (userId: string, allTransactions: Transaction[]): UserMetrics => {
+      const providerTransactions = allTransactions.filter(tx => tx.providerId === userId);
+      const completedTransactions = providerTransactions.filter(tx => ['Pagado', 'Resuelto'].includes(tx.status));
 
-    const totalRating = completedTransactions.reduce(
-      (acc, tx) => acc + (tx.details.clientRating || 0),
-      0
-    );
-    const reputation = totalRating / completedTransactions.filter(tx => tx.details.clientRating).length || 0;
+      if (providerTransactions.length === 0) {
+        return { reputation: 0, effectiveness: 100, responseTime: 'Nuevo' };
+      }
 
-    const effectiveness =
-      (completedTransactions.length / transactions.filter((tx) => tx.providerId === userId).length) * 100;
-    
-    const lastTransaction = completedTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
-    if (!lastTransaction) return { reputation, effectiveness, responseTime: 'Nuevo' };
-    
-    const requestDate = new Date(lastTransaction.date);
-    const completionDate = new Date(lastTransaction.details.paymentConfirmationDate || new Date());
-    
-    const diffMinutes = differenceInMinutes(completionDate, requestDate);
-    let responseTime = '30+ min';
-    if(diffMinutes < 5) responseTime = '00-05 min';
-    else if(diffMinutes < 15) responseTime = '05-15 min';
-    else if(diffMinutes < 30) responseTime = '15-30 min';
+      const ratedTransactions = completedTransactions.filter(tx => tx.details.clientRating && tx.details.clientRating > 0);
+      const totalRating = ratedTransactions.reduce((acc, tx) => acc + (tx.details.clientRating || 0), 0);
+      const reputation = ratedTransactions.length > 0 ? totalRating / ratedTransactions.length : 0;
 
-    return { reputation, effectiveness, responseTime };
+      const effectiveness = (completedTransactions.length / providerTransactions.length) * 100;
+
+      const lastTransaction = completedTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+      if (!lastTransaction || !lastTransaction.details.paymentConfirmationDate) {
+        return { reputation, effectiveness: effectiveness || 100, responseTime: 'Nuevo' };
+      }
+
+      const requestDate = new Date(lastTransaction.date);
+      const completionDate = new Date(lastTransaction.details.paymentConfirmationDate);
+      const diffMinutes = differenceInMinutes(completionDate, requestDate);
+      let responseTime = '30+ min';
+      if(diffMinutes < 5) responseTime = '00-05 min';
+      else if(diffMinutes < 15) responseTime = '05-15 min';
+      else if(diffMinutes < 30) responseTime = '15-30 min';
+
+      return { reputation, effectiveness, responseTime };
   };
 
   const startQrSession = async (providerId: string) => {
