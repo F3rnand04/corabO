@@ -200,9 +200,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, [logout]);
   
   useEffect(() => {
-    // Definitive Fix: This effect now ONLY depends on `currentUser.id`.
-    // It no longer depends on the entire `currentUser` object, which prevents
-    // the infinite re-render loop.
     if (currentUser?.id) {
         const db = getFirestoreDb();
 
@@ -223,7 +220,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         });
         listeners.current.set('publications', publicationsListener);
 
-        // Dedicated listener for the current user. This is key to avoiding the loop.
         const userListener = onSnapshot(doc(db, 'users', currentUser.id), (doc) => {
             if (doc.exists()) {
                 setCurrentUser(doc.data() as User);
@@ -1139,3 +1135,5 @@ export const useCorabo = (): CoraboState & CoraboActions => {
   return { ...state, ...actions };
 };
 export type { Transaction };
+
+    
