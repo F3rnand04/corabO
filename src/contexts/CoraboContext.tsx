@@ -166,6 +166,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const userCache = useRef<Map<string, User>>(new Map());
   const listeners = useRef<Map<string, Unsubscribe>>(new Map());
 
+  const logout = useCallback(async () => {
+    try {
+        await signOut(getAuthInstance());
+    } catch (error) {
+        console.error("Error signing out: ", error);
+    }
+  }, []);
+
   const handleUserAuth = useCallback(async (firebaseUser: FirebaseUser | null) => {
     // 1. Clean up old listeners to prevent memory leaks
     listeners.current.forEach(unsubscribe => unsubscribe());
@@ -173,7 +181,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     setQrSession(null); 
 
     if (firebaseUser) {
-        // 2. Get or create the user profile from the backend
         const firebaseUserInput: FirebaseUserInput = {
             uid: firebaseUser.uid,
             displayName: firebaseUser.displayName,
@@ -182,57 +189,58 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             emailVerified: firebaseUser.emailVerified
         };
         const userData = await getOrCreateUser(firebaseUserInput);
-        userCache.current.set(userData.id, userData);
-        setCurrentUser(userData);
+        
+        if (userData) {
+            userCache.current.set(userData.id, userData);
+            setCurrentUser(userData);
 
-        // 3. Set up new real-time listeners for the logged-in user
-        const db = getFirestoreDb();
-        
-        const allUsersListener = onSnapshot(collection(db, 'users'), (snapshot) => {
-            const allUsers = snapshot.docs.map(doc => doc.data() as User);
-            setUsers(allUsers);
-        });
-        listeners.current.set('allUsers', allUsersListener);
-        
-        const userListener = onSnapshot(doc(db, 'users', userData.id), (doc) => {
-            if (doc.exists()) setCurrentUser(doc.data() as User);
-        });
-        listeners.current.set('currentUser', userListener);
-        
-        const publicationsListener = onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
-            setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage));
-        });
-        listeners.current.set('publications', publicationsListener);
-        
-        const transactionsListener = onSnapshot(query(collection(db, "transactions"), where("participantIds", "array-contains", userData.id)), (snapshot) => {
-            setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
-        });
-        listeners.current.set('transactions', transactionsListener);
-        
-        const conversationsListener = onSnapshot(query(collection(db, "conversations"), where("participantIds", "array-contains", userData.id)), (snapshot) => {
-            const convos = snapshot.docs.map(doc => doc.data() as Conversation);
-            convos.sort((a,b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime());
-            setConversations(convos);
-        });
-        listeners.current.set('conversations', conversationsListener);
+            const db = getFirestoreDb();
+            const allUsersListener = onSnapshot(collection(db, 'users'), (snapshot) => {
+                const allUsers = snapshot.docs.map(doc => doc.data() as User);
+                setUsers(allUsers);
+            });
+            listeners.current.set('allUsers', allUsersListener);
+            
+            const userListener = onSnapshot(doc(db, 'users', userData.id), (doc) => {
+                if (doc.exists()) setCurrentUser(doc.data() as User);
+            });
+            listeners.current.set('currentUser', userListener);
+            
+            const publicationsListener = onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
+                setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage));
+            });
+            listeners.current.set('publications', publicationsListener);
+            
+            const transactionsListener = onSnapshot(query(collection(db, "transactions"), where("participantIds", "array-contains", userData.id)), (snapshot) => {
+                setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
+            });
+            listeners.current.set('transactions', transactionsListener);
+            
+            const conversationsListener = onSnapshot(query(collection(db, "conversations"), where("participantIds", "array-contains", userData.id)), (snapshot) => {
+                const convos = snapshot.docs.map(doc => doc.data() as Conversation);
+                convos.sort((a,b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime());
+                setConversations(convos);
+            });
+            listeners.current.set('conversations', conversationsListener);
 
-        const qrSessionsListener = onSnapshot(query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', userData.id)), (snapshot) => {
-            const sessions = snapshot.docs.map(d => d.data() as QrSession);
-            setQrSession(sessions.find(s => s.status !== 'completed' && s.status !== 'cancelled') || null);
-        });
-        listeners.current.set('qrSessions', qrSessionsListener);
-
+            const qrSessionsListener = onSnapshot(query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', userData.id)), (snapshot) => {
+                const sessions = snapshot.docs.map(d => d.data() as QrSession);
+                setQrSession(sessions.find(s => s.status !== 'completed' && s.status !== 'cancelled') || null);
+            });
+            listeners.current.set('qrSessions', qrSessionsListener);
+        } else {
+            // **FIX**: If userData is null (meaning user auth exists but Firestore doc is deleted), force logout.
+            await logout();
+        }
     } else {
-        // 4. User is logged out, clear all local state
         setCurrentUser(null);
         setUsers([]);
         setAllPublications([]);
         setTransactions([]);
         setConversations([]);
     }
-    // 5. Signal that authentication process is complete
     setIsLoadingAuth(false);
-  }, []);
+  }, [logout]);
 
   useEffect(() => {
     if (currentUser?.isGpsActive) {
@@ -268,14 +276,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
           description: 'No se pudo iniciar sesión con Google. Por favor, inténtalo de nuevo.'
         });
       }
-    }
-  };
-
-  const logout = async () => {
-    try {
-        await signOut(getAuthInstance());
-    } catch (error) {
-        console.error("Error signing out: ", error);
     }
   };
 
@@ -393,7 +393,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     await updateDoc(userDocRef, updates);
   };
 
-  const completeInitialSetup = async (userId: string, data: { name: string; lastName: string; idNumber: string; birthDate: string; country: string }) => {
+  const completeInitialSetup = async (userId: string, data: { name: string; lastName: string; idNumber: string; birthDate: string; country: string; }) => {
     if (ENABLE_COUNTRY_UPDATE_LOGIC) {
         await completeInitialSetupFlow({userId, ...data});
     } else {
