@@ -181,56 +181,18 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     setQrSession(null); 
     
     if (firebaseUser) {
-        const db = getFirestoreDb();
-        const userDocRef = doc(db, 'users', firebaseUser.uid);
-        const userDocSnap = await getDoc(userDocRef);
-
-        if (userDocSnap.exists()) {
-            const user = userDocSnap.data() as User;
-            setCurrentUser(user);
+        const user = await getOrCreateUser(firebaseUser as FirebaseUserInput);
+        if (user) {
+          setCurrentUser(user as User);
         } else {
-            // New user, create the document.
-            const name = firebaseUser.displayName || 'Nuevo Usuario';
-            const firstName = name.split(' ')[0] || "USER";
-            const coraboId = (firstName.substring(0, 3)).toUpperCase() + Math.random().toString(36).substring(2, 8).toUpperCase();
-            
-            const newUser: User = {
-                id: firebaseUser.uid,
-                coraboId: coraboId,
-                name: name,
-                lastName: '',
-                idNumber: '',
-                birthDate: '',
-                country: '',
-                createdAt: new Date().toISOString(),
-                type: 'client',
-                reputation: 0,
-                effectiveness: 0,
-                profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
-                email: firebaseUser.email || '',
-                phone: '',
-                emailValidated: firebaseUser.emailVerified,
-                phoneValidated: false,
-                isGpsActive: true,
-                isInitialSetupComplete: false,
-                credicoraLevel: 1,
-                credicoraLimit: 150,
-                profileSetupData: { location: "10.4806,-66.9036" },
-                isSubscribed: false,
-                isTransactionsActive: false,
-                idVerificationStatus: 'pending',
-            };
-            if (newUser.email === 'fernandopbt@gmail.com') newUser.role = 'admin';
-            
-            await setDoc(userDocRef, newUser);
-            setCurrentUser(newUser);
+          // User was likely deleted from DB, so log them out
+          logout();
         }
     } else {
         setCurrentUser(null);
     }
     setIsLoadingAuth(false);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [logout]);
   
   useEffect(() => {
     if (currentUser) {
@@ -722,9 +684,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const wasClient = currentUser.type === 'client';
     const isNowProviderOrRepartidor = profileType === 'provider' || profileType === 'repartidor';
     
+    // Infer providerType based on whether lastName is present (for individuals) vs absent (for companies)
+    const providerType = currentUser.lastName ? 'professional' : 'company';
+    
     await updateDoc(userRef, {
         type: profileType,
-        profileSetupData: data,
+        profileSetupData: { ...data, providerType },
     }, { merge: true });
     
     if (wasClient && isNowProviderOrRepartidor) {
@@ -736,7 +701,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const encodedConcept = encodeURIComponent(`Suscripción: ${planName}`);
     router.push(`/quotes/payment?amount=${amount}&concept=${encodedConcept}&isSubscription=true`);
   };
-
+  
   const createCampaign = async (data: Omit<CreateCampaignInput, 'userId'>) => {
     if (!currentUser) return;
     await createCampaignFlow({ ...data, userId: currentUser.id });
@@ -1154,3 +1119,6 @@ export type { Transaction };
     
 
 
+
+
+    

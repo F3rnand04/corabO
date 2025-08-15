@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,8 +26,23 @@ const countries = [
   { code: 'MX', name: 'México', idLabel: 'CURP', companyIdLabel: 'RFC' },
 ];
 
+// Memoized component to prevent re-render issues
+const CountrySelector = memo(function CountrySelector({ value, onValueChange }: { value: string, onValueChange: (value: string) => void }) {
+    return (
+         <Select onValueChange={onValueChange} value={value}>
+            <SelectTrigger id="country">
+                <SelectValue placeholder="Selecciona tu país" />
+            </SelectTrigger>
+            <SelectContent>
+                {countries.map(c => <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>)}
+            </SelectContent>
+        </Select>
+    );
+});
+
+
 export default function InitialSetupPage() {
-  const { currentUser, completeInitialSetup, sendMessage } = useCorabo();
+  const { currentUser, completeInitialSetup, sendMessage, updateUser } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -36,6 +51,7 @@ export default function InitialSetupPage() {
   const [idNumber, setIdNumber] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [country, setCountry] = useState('');
+  const [isCompany, setIsCompany] = useState(false);
   const [hasAcceptedPolicies, setHasAcceptedPolicies] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [idInUseError, setIdInUseError] = useState(false);
@@ -45,6 +61,10 @@ export default function InitialSetupPage() {
       setName(currentUser.name || '');
       setLastName(currentUser.lastName || '');
       setCountry(currentUser.country || '');
+      // Check if user was previously set as a company
+      if (currentUser.profileSetupData?.providerType === 'company') {
+        setIsCompany(true);
+      }
     }
   }, [currentUser]);
 
@@ -53,7 +73,6 @@ export default function InitialSetupPage() {
     setIsSubmitting(true);
     setIdInUseError(false);
     try {
-        // Step 1: Check for ID uniqueness before proceeding
         const isUnique = await checkIdUniquenessFlow({ idNumber, country, currentUserId: currentUser.id });
         
         if (!isUnique) {
@@ -61,10 +80,17 @@ export default function InitialSetupPage() {
             setIsSubmitting(false);
             return;
         }
+        
+        // Update providerType in profileSetupData before saving
+        await updateUser(currentUser.id, { 
+            profileSetupData: {
+                ...currentUser.profileSetupData,
+                providerType: isCompany ? 'company' : 'professional'
+            }
+        });
 
-        // Step 2: If unique, complete the setup
         await completeInitialSetup(currentUser.id, { name, lastName, idNumber, birthDate, country });
-        // The context change will trigger the AppLayout to redirect automatically.
+        
     } catch (error: any) {
         console.error("Failed to complete setup:", error);
         toast({
@@ -91,7 +117,6 @@ export default function InitialSetupPage() {
     );
   }
   
-  const isCompany = currentUser.profileSetupData?.providerType === 'company';
   const selectedCountryInfo = countries.find(c => c.code === country);
   const idLabel = isCompany ? (selectedCountryInfo?.companyIdLabel || 'ID Fiscal') : (selectedCountryInfo?.idLabel || 'Documento de Identidad');
   
@@ -119,7 +144,7 @@ export default function InitialSetupPage() {
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Datos de Identificación en Uso</AlertTitle>
             <AlertDescription>
-                El número de documento ingresado ya está registrado en nuestro sistema para el país seleccionado. Si crees que esto es un error, por favor
+                El número de documento ingresado ya está registrado. Si crees que es un error,
                 <Button variant="link" className="p-1 h-auto text-current underline" onClick={handleContactSupport}>contacta a soporte</Button>.
             </AlertDescription>
           </Alert>
@@ -128,21 +153,20 @@ export default function InitialSetupPage() {
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>¡Atención!</AlertTitle>
             <AlertDescription>
-                Esta información es privada y se usará para verificar tu identidad. <strong>No podrás modificarla después.</strong> Por favor, asegúrate de que sea correcta.
+                Esta información es privada y se usará para verificar tu identidad. <strong>No podrás modificarla después.</strong>
             </AlertDescription>
         </Alert>
 
         <div className="space-y-2">
             <Label htmlFor="country" className="flex items-center gap-2"><Globe className="w-4 h-4"/>País</Label>
-            <Select onValueChange={(value) => setCountry(value)} value={country}>
-                <SelectTrigger id="country">
-                    <SelectValue placeholder="Selecciona tu país" />
-                </SelectTrigger>
-                <SelectContent>
-                    {countries.map(c => <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>)}
-                </SelectContent>
-            </Select>
+            <CountrySelector value={country} onValueChange={setCountry} />
         </div>
+        
+        <div className="flex items-center space-x-2">
+            <Checkbox id="is-company" checked={isCompany} onCheckedChange={(checked) => setIsCompany(checked as boolean)} />
+            <Label htmlFor="is-company">Registrar como empresa</Label>
+        </div>
+
         <div className="space-y-2">
           <Label htmlFor="name">{isCompany ? 'Razón Social' : 'Nombre(s)'}</Label>
           <Input id="name" placeholder={isCompany ? 'Nombre de tu empresa' : 'Tus nombres'} value={name} onChange={(e) => setName(e.target.value)} />
@@ -184,7 +208,7 @@ export default function InitialSetupPage() {
                 <AlertDialogHeader>
                 <AlertDialogTitle>¿Estás seguro que los datos son correctos?</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Recuerda que tu {isCompany ? 'Razón Social y ID Fiscal' : 'nombre, apellido y documento de identidad'} no podrán ser modificados una vez guardados.
+                    Recuerda que tu {isCompany ? 'Razón Social y ID Fiscal' : 'nombre y documento de identidad'} no podrán ser modificados una vez guardados.
                 </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -199,3 +223,5 @@ export default function InitialSetupPage() {
     </Card>
   );
 }
+
+    

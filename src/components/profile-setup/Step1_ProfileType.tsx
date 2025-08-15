@@ -5,9 +5,10 @@ import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { User, Briefcase, Truck, Building } from 'lucide-react';
+import { User, Briefcase, Truck } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../../components/ui/alert-dialog';
 import type { ProfileSetupData, User as UserType } from '@/lib/types';
+import { useCorabo } from '@/contexts/CoraboContext';
 
 
 interface Step1_ProfileTypeProps {
@@ -19,13 +20,16 @@ interface Step1_ProfileTypeProps {
 const profileTypes = [
   { id: 'client', name: 'Cliente', description: 'Busca y contrata servicios o productos.', icon: User },
   { id: 'provider', name: 'Proveedor', description: 'Ofrece productos, servicios o fletes a la comunidad.', icon: Briefcase },
-  { id: 'repartidor', name: 'Repartidor', description: 'Realiza entregas locales (delivery) para otros proveedores.', icon: Truck },
+  { id: 'repartidor', name: 'Repartidor', description: 'Realiza entregas locales (delivery).', icon: Truck },
 ];
 
 export default function Step1_ProfileType({ onSelect, currentType, onNext }: Step1_ProfileTypeProps) {
+  const { currentUser } = useCorabo();
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [nextSelection, setNextSelection] = useState<UserType['type'] | null>(null);
-  const [providerTypeSelection, setProviderTypeSelection] = useState<ProfileSetupData['providerType']>('professional');
+
+  // Infer providerType from initial setup data
+  const providerType = currentUser?.profileSetupData?.providerType || 'professional';
 
   const handleSelection = (typeId: UserType['type']) => {
     if (typeId === currentType) {
@@ -37,14 +41,14 @@ export default function Step1_ProfileType({ onSelect, currentType, onNext }: Ste
         setNextSelection(typeId);
         setIsAlertOpen(true);
     } else {
-        onSelect(typeId, providerTypeSelection);
+        onSelect(typeId, providerType);
         onNext();
     }
   };
 
   const handleConfirmChange = () => {
     if (nextSelection) {
-      onSelect(nextSelection, providerTypeSelection);
+      onSelect(nextSelection, providerType);
     }
     setIsAlertOpen(false);
     onNext();
@@ -52,10 +56,6 @@ export default function Step1_ProfileType({ onSelect, currentType, onNext }: Ste
   
   const isChangingToProviderOrRepartidor = (currentType === 'client' && (nextSelection === 'provider' || nextSelection === 'repartidor'));
 
-  const handleProviderTypeSelect = (type: ProfileSetupData['providerType']) => {
-    setProviderTypeSelection(type);
-    onSelect('provider', type);
-  }
 
   return (
     <div className="space-y-6">
@@ -85,34 +85,6 @@ export default function Step1_ProfileType({ onSelect, currentType, onNext }: Ste
         ))}
       </div>
       
-      {currentType === 'provider' && (
-        <div className="pt-6 space-y-4">
-            <h3 className="font-semibold text-center">Como proveedor, ¿eres...</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card
-                    onClick={() => handleProviderTypeSelect('professional')}
-                    className={cn('cursor-pointer transition-all text-center', providerTypeSelection === 'professional' && 'border-primary ring-2 ring-primary')}
-                >
-                    <CardHeader>
-                        <User className="w-8 h-8 mx-auto text-primary"/>
-                        <CardTitle className="text-base">Profesional Independiente</CardTitle>
-                    </CardHeader>
-                    <CardContent className="text-xs text-muted-foreground">Una persona natural que ofrece sus servicios.</CardContent>
-                </Card>
-                <Card
-                    onClick={() => handleProviderTypeSelect('company')}
-                    className={cn('cursor-pointer transition-all text-center', providerTypeSelection === 'company' && 'border-primary ring-2 ring-primary')}
-                >
-                    <CardHeader>
-                         <Building className="w-8 h-8 mx-auto text-primary"/>
-                        <CardTitle className="text-base">Empresa / Persona Jurídica</CardTitle>
-                    </CardHeader>
-                     <CardContent className="text-xs text-muted-foreground">Una entidad legalmente constituida (C.A., S.A., etc.).</CardContent>
-                </Card>
-            </div>
-        </div>
-      )}
-
        <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -135,3 +107,4 @@ export default function Step1_ProfileType({ onSelect, currentType, onNext }: Ste
   );
 }
 
+    
