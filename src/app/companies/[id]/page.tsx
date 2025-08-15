@@ -7,7 +7,7 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, MessageCircle, CheckCircle, Flag, Package, Hand, ShoppingCart, Plus, Minus, X, Truck, AlertTriangle, Loader2, Search } from 'lucide-react';
+import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, MessageCircle, CheckCircle, Flag, Package, Hand, ShoppingCart, Plus, Minus, X, Truck, AlertTriangle, Loader2, Search, Building } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
@@ -500,6 +500,22 @@ export default function CompanyProfilePage() {
                 </div>
                )}
             </div>
+
+            {provider.activeAffiliation && (
+                <Link href={`/companies/${provider.activeAffiliation.companyId}`} className="group">
+                    <div className="mt-2 mb-4 p-3 bg-muted/50 rounded-lg flex items-center gap-3 border hover:border-primary/50 transition-colors">
+                        <Avatar className="w-10 h-10 shrink-0">
+                            <AvatarImage src={provider.activeAffiliation.companyProfileImage} />
+                            <AvatarFallback>{provider.activeAffiliation.companyName.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <p className="text-xs text-muted-foreground">Verificado por:</p>
+                            <p className="font-semibold text-foreground group-hover:underline">{provider.activeAffiliation.companyName}</p>
+                        </div>
+                    </div>
+                </Link>
+            )}
+
           </div>
           
           <main className="px-2">

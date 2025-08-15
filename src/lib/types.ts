@@ -2,6 +2,16 @@
 
 import { z } from 'zod';
 
+export type Affiliation = {
+  id: string;
+  providerId: string;
+  companyId: string;
+  status: 'pending' | 'approved' | 'rejected' | 'revoked';
+  requestedAt: string;
+  updatedAt: string;
+};
+
+
 export type QrSession = {
   id: string;
   providerId: string;
@@ -20,7 +30,7 @@ export type QrSession = {
 export type Notification = {
   id: string;
   userId: string;
-  type: 'new_campaign' | 'payment_reminder' | 'admin_alert' | 'welcome';
+  type: 'new_campaign' | 'payment_reminder' | 'admin_alert' | 'welcome' | 'affiliation_request';
   title: string;
   message: string;
   link?: string;
@@ -237,6 +247,12 @@ export type User = {
   phoneVerificationCode?: string | null;
   phoneVerificationCodeExpires?: string | null;
   credicoraDetails?: CredicoraLevel;
+  activeAffiliation?: {
+    companyId: string;
+    companyName: string;
+    companyProfileImage: string;
+    companySpecialty: string;
+  } | null;
 };
 
 export type Product = {
