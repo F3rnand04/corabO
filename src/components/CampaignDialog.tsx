@@ -212,6 +212,7 @@ export function CampaignDialog({ isOpen, onOpenChange }: CampaignDialogProps) {
                              <Separator/>
                              <div className="flex justify-between font-bold text-base"><span>Total Campaña:</span><span className="font-mono">${calculatedCosts.finalCost.toFixed(2)}</span></div>
                          </div>
+                         <p className='text-xs text-muted-foreground text-right italic'>Los montos no incluyen IVA (16%).</p>
                          {calculatedCosts.finalCost >= 20 && (
                             <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
                                 <Label htmlFor="use-credicora" className="flex items-center gap-2 font-medium text-blue-600">

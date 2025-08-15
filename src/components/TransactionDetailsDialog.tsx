@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "./ui/badge";
 import type { Transaction, User } from "@/lib/types";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert, Truck, Banknote, ClipboardCheck, CalendarCheck, Contact, Star, Calendar as CalendarIcon, Upload, Smartphone, MapPin, XCircle, KeyRound } from "lucide-react";
+import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert, Truck, Banknote, ClipboardCheck, CalendarCheck, Contact, Star, Calendar as CalendarIcon, Upload, Smartphone, MapPin, XCircle, KeyRound, FileText } from "lucide-react";
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
@@ -71,7 +71,7 @@ function ConfirmPaymentDialog({ onConfirm, onReportThirdParty, onCancel }: { onC
 
 
 export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: TransactionDetailsDialogProps) {
-  const { currentUser, fetchUser, sendQuote, acceptQuote, startDispute, completeWork, confirmWorkReceived, acceptAppointment, payCommitment, confirmPaymentReceived, sendMessage, cancelSystemTransaction } = useCorabo();
+  const { currentUser, fetchUser, sendQuote, acceptQuote, startDispute, completeWork, confirmWorkReceived, acceptAppointment, payCommitment, confirmPaymentReceived, sendMessage, cancelSystemTransaction, downloadTransactionsPDF } = useCorabo();
   const router = useRouter();
   const { toast } = useToast();
   const [quoteBreakdown, setQuoteBreakdown] = useState('');
@@ -446,6 +446,8 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
                  </div>
             </div>
           )}
+          
+          <p className='text-xs text-muted-foreground text-right italic'>Los montos no incluyen IVA (16%).</p>
 
 
           {isProvider && transaction.status === 'Solicitud Pendiente' && (
@@ -472,6 +474,11 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
                     <Button variant="outline" onClick={handleSendToDelivery} disabled>
                         <Send className="mr-2 h-4 w-4"/> Notificar a Repartidor
                     </Button>
+                 )}
+                 {transaction.status === 'Pagado' && (
+                  <Button variant="outline" onClick={() => downloadTransactionsPDF([transaction])}>
+                      <FileText className="mr-2 h-4 w-4" /> Descargar PDF
+                  </Button>
                  )}
             </div>
             <div className="flex gap-2 justify-end flex-wrap">

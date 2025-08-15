@@ -160,6 +160,7 @@ export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogP
                       </div>
                     </RadioGroup>
                 </div>
+                <p className='text-xs text-muted-foreground text-center italic'>Los precios incluyen IVA (16%).</p>
             </div>
         )}
         
