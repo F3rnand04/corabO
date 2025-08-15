@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -93,9 +93,9 @@ export default function TransactionsPage() {
         );
     }
     
-    const agendaEvents = getAgendaEvents(transactions);
-    const paymentDates = agendaEvents.filter(e => e.type === 'payment').map(e => e.date);
-    const totalCartItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+    const agendaEvents = useMemo(() => getAgendaEvents(transactions), [transactions, getAgendaEvents]);
+    const paymentDates = useMemo(() => agendaEvents.filter(e => e.type === 'payment').map(e => e.date), [agendaEvents]);
+    const totalCartItems = useMemo(() => cart.reduce((sum, item) => sum + item.quantity, 0), [cart]);
 
     const handleDayClick = (day: Date) => {
         const eventOnDay = agendaEvents.find(e => format(e.date, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd'));
@@ -108,9 +108,9 @@ export default function TransactionsPage() {
 
     const isModuleActive = currentUser.isTransactionsActive ?? false;
     
-    const { reputation, effectiveness } = getUserMetrics(currentUser.id, transactions);
+    const { reputation, effectiveness } = useMemo(() => getUserMetrics(currentUser.id, transactions), [currentUser.id, transactions, getUserMetrics]);
 
-    const pendingTx = transactions.filter(t => {
+    const pendingTx = useMemo(() => transactions.filter(t => {
         if (currentUser.type === 'provider') {
             return (t.providerId === currentUser.id && (
                 t.status === 'Solicitud Pendiente' || 
@@ -125,15 +125,15 @@ export default function TransactionsPage() {
                 t.status === 'Pendiente de Confirmación del Cliente'
             ));
         }
-    });
+    }), [transactions, currentUser]);
 
-    const historyTx = transactions.filter(t => t.status === 'Pagado' || t.status === 'Resuelto');
-    const commitmentTx = transactions.filter(t => t.status === 'Acuerdo Aceptado - Pendiente de Ejecución' || t.status === 'Finalizado - Pendiente de Pago');
+    const historyTx = useMemo(() => transactions.filter(t => t.status === 'Pagado' || t.status === 'Resuelto'), [transactions]);
+    const commitmentTx = useMemo(() => transactions.filter(t => t.status === 'Acuerdo Aceptado - Pendiente de Ejecución' || t.status === 'Finalizado - Pendiente de Pago'), [transactions]);
     
     const credicoraLevelDetails = credicoraLevels[(currentUser.credicoraLevel || 1).toString()];
     const nextCredicoraLevelDetails = credicoraLevels[((currentUser.credicoraLevel || 1) + 1).toString()];
 
-    const completedTransactionsCount = transactions.filter(tx => tx.clientId === currentUser.id && (tx.status === 'Pagado' || tx.status === 'Resuelto')).length;
+    const completedTransactionsCount = useMemo(() => transactions.filter(tx => tx.clientId === currentUser.id && (tx.status === 'Pagado' || tx.status === 'Resuelto')).length, [transactions, currentUser.id]);
     const transactionsNeeded = credicoraLevelDetails.transactionsForNextLevel;
     const progressToNextLevel = (completedTransactionsCount / transactionsNeeded) * 100;
     
@@ -233,7 +233,7 @@ export default function TransactionsPage() {
                                         <PopoverContent className="w-auto p-0">
                                             <Calendar
                                                 mode="multiple"
-                                                selected={paymentDates.map(d => new Date(d))}
+                                                selected={paymentDates}
                                                 onDayClick={handleDayClick}
                                             />
                                             <div className="p-2 border-t text-center text-xs text-muted-foreground">

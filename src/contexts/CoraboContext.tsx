@@ -208,12 +208,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     if (currentUser) {
         const db = getFirestoreDb();
 
+        // Optimized: Fetch static collections once.
         const usersSnapshot = getDocs(collection(db, 'users'));
         usersSnapshot.then(snapshot => setUsers(snapshot.docs.map(doc => doc.data() as User)));
         
         const publicationsSnapshot = getDocs(query(collection(db, 'publications'), orderBy('createdAt', 'desc')));
         publicationsSnapshot.then(snapshot => setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage)));
 
+        // Listeners for dynamic, user-specific data
         const userListener = onSnapshot(doc(db, 'users', currentUser.id), (doc) => {
             if (doc.exists()) setCurrentUser(doc.data() as User);
         });
