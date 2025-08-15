@@ -18,6 +18,7 @@ import { SubscriptionDialog } from '../SubscriptionDialog';
 import { Checkbox } from '../ui/checkbox';
 import Link from 'next/link';
 import type { ProfileSetupData } from '@/lib/types';
+import { ValidationItem } from '../ValidationItem';
 
 
 interface Step6_ReviewProps {
@@ -44,7 +45,7 @@ const MAX_RADIUS_FREE = 10;
 
 
 export default function Step6_Review({ onBack, formData, setFormData, profileType, goToStep }: Step6_ReviewProps) {
-  const { currentUser, updateFullProfile } = useCorabo();
+  const { currentUser, updateFullProfile, validateEmail, sendPhoneVerification, verifyPhoneCode, updateUser } = useCorabo();
   const router = useRouter();
   const { toast } = useToast();
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
@@ -138,14 +139,18 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
                     <p>Nombre: {currentUser.name} {currentUser.lastName}</p>
                     <p>Doc. Identidad: {currentUser.idNumber}</p>
                     <p>Fecha de Nacimiento: {currentUser.birthDate}</p>
-                    <p className="flex items-center gap-2">
+                    <div className="flex items-center gap-2">
                         {currentUser.emailValidated ? <CheckCircle className="w-4 h-4 text-green-600"/> : <XCircle className="w-4 h-4 text-destructive"/>}
                         {currentUser.email}
-                    </p>
-                    <p className="flex items-center gap-2">
-                         {currentUser.phoneValidated ? <CheckCircle className="w-4 h-4 text-green-600"/> : <XCircle className="w-4 h-4 text-destructive"/>}
-                        {currentUser.phone || 'No especificado'}
-                    </p>
+                    </div>
+                     <ValidationItem
+                        label=""
+                        value={currentUser.phone || ''}
+                        initialStatus={currentUser.phoneValidated ? 'validated' : 'idle'}
+                        onValidate={() => sendPhoneVerification(currentUser.id, currentUser.phone || '')}
+                        onValueChange={(value) => updateUser(currentUser.id, { phone: value })}
+                        type="phone"
+                    />
                 </div>
               ), 4)}
 
