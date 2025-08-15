@@ -259,7 +259,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         publicationsListener();
         listeners.current.get('user-specific')?.forEach((unsubscribe: Unsubscribe) => unsubscribe());
     };
-}, [currentUser?.id]);
+}, [currentUser?.id]); // DEPENDENCY CHANGE: Only re-run when user ID changes.
 
   useEffect(() => {
     if (currentUser?.isGpsActive) {
