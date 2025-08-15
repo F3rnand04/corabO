@@ -32,17 +32,19 @@ export default function Step1_ProfileType({ onSelect, currentType, onNext }: Ste
   const providerType = currentUser?.profileSetupData?.providerType || 'professional';
 
   const handleSelection = (typeId: UserType['type']) => {
+    // If the type is already selected, just navigate to the next step.
     if (typeId === currentType) {
         onNext();
         return;
     }
 
+    // If the user is changing their type, show a confirmation dialog.
     if (currentType && typeId !== currentType) {
         setNextSelection(typeId);
         setIsAlertOpen(true);
     } else {
+        // If it's the very first selection, just update the state without navigating yet.
         onSelect(typeId, providerType);
-        onNext();
     }
   };
 
@@ -51,6 +53,7 @@ export default function Step1_ProfileType({ onSelect, currentType, onNext }: Ste
       onSelect(nextSelection, providerType);
     }
     setIsAlertOpen(false);
+    // After confirming the change, we go to the next step.
     onNext();
   }
   
@@ -84,6 +87,11 @@ export default function Step1_ProfileType({ onSelect, currentType, onNext }: Ste
           </Card>
         ))}
       </div>
+       <div className="flex justify-end pt-4">
+        <Button onClick={onNext} disabled={!currentType}>
+          Siguiente
+        </Button>
+      </div>
       
        <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
         <AlertDialogContent>
@@ -106,5 +114,3 @@ export default function Step1_ProfileType({ onSelect, currentType, onNext }: Ste
     </div>
   );
 }
-
-    
