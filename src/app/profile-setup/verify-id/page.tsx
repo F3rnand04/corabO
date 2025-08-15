@@ -41,14 +41,16 @@ export default function VerifyIdPage() {
   };
 
   const handleAutoVerify = async () => {
-    if (!imagePreview || !currentUser) return;
+    if (!imagePreview || !currentUser || !currentUser.name || !currentUser.idNumber) return;
 
     setIsVerifying(true);
     setVerificationResult(null);
     try {
         const result = await autoVerifyIdWithAI({
-            ...currentUser,
-            idDocumentUrl: imagePreview // Pass the base64 data URI
+            userId: currentUser.id,
+            nameInRecord: `${currentUser.name} ${currentUser.lastName || ''}`,
+            idInRecord: currentUser.idNumber,
+            documentImageUrl: imagePreview // Pass the base64 data URI with the correct key
         });
         setVerificationResult(result);
         if (result.idMatch && result.nameMatch) {
@@ -126,7 +128,7 @@ export default function VerifyIdPage() {
           
           {verificationResult && (
             <div className="mt-4 p-3 rounded-md border text-sm space-y-2">
-              <h5 className="font-semibold mb-2">Resultado de la Verificación IA:</h5>
+              <h5 className="font-semibold mb-2">Resultado de la Verificación:</h5>
               {'error' in verificationResult ? (
                 <p className="text-destructive flex items-center gap-2"><AlertTriangle className="h-4 w-4"/> {verificationResult.error}</p>
               ) : (
@@ -147,7 +149,7 @@ export default function VerifyIdPage() {
           <div className="space-y-2">
             <Button className="w-full" onClick={handleAutoVerify} disabled={!imagePreview || isVerifying}>
                 {isVerifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4"/>}
-                {isVerifying ? 'Verificando...' : 'Verificar con IA'}
+                {isVerifying ? 'Verificando...' : 'Verificar'}
             </Button>
             {!allChecksPass && (
                  <Button className="w-full" variant="secondary" onClick={handleManualReview} disabled={!imagePreview || isVerifying}>

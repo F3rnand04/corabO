@@ -119,7 +119,7 @@ interface CoraboState {
   verifyCampaignPayment: (transactionId: string, campaignId: string) => void;
   verifyUserId: (userId: string) => void;
   rejectUserId: (userId: string) => void;
-  autoVerifyIdWithAI: (input: User) => Promise<VerificationOutput>;
+  autoVerifyIdWithAI: (input: VerificationInput) => Promise<VerificationOutput>;
   getUserMetrics: (userId: string, transactions: Transaction[]) => UserMetrics;
   fetchUser: (userId: string) => Promise<User | null>;
   acceptDelivery: (transactionId: string) => void;
@@ -229,7 +229,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             });
             listeners.current.set('qrSessions', qrSessionsListener);
         } else {
-            // **FIX**: If userData is null (meaning user auth exists but Firestore doc is deleted), force logout.
             await logout();
         }
     } else {
@@ -537,6 +536,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const verifyUserId = (userId: string) => updateUser(userId, { idVerificationStatus: 'verified', verified: true });
   const rejectUserId = (userId: string) => updateUser(userId, { idVerificationStatus: 'rejected' });
   
+  const autoVerifyIdWithAI_callback = async (input: VerificationInput): Promise<VerificationOutput> => {
+      return autoVerifyIdWithAI(input);
+  }
+
   const checkout = (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {
       if(!currentUser) return;
       const db = getFirestoreDb();
@@ -1083,7 +1086,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     verifyCampaignPayment,
     verifyUserId,
     rejectUserId,
-    autoVerifyIdWithAI,
+    autoVerifyIdWithAI: autoVerifyIdWithAI_callback,
     markConversationAsRead,
     getUserMetrics,
     fetchUser,
