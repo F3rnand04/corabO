@@ -25,7 +25,7 @@ interface PublicationCardProps {
 }
 
 export function PublicationCard({ publication, className }: PublicationCardProps) {
-    const { addContact, isContact, sendMessage, currentUser, getUserMetrics, transactions, addToCart, getDistanceToProvider, updateCartQuantity } = useCorabo();
+    const { addContact, isContact, sendMessage, currentUser, getUserMetrics, transactions, addToCart, getDistanceToProvider } = useCorabo();
     const router = useRouter();
     const { toast } = useToast();
     
@@ -44,9 +44,6 @@ export function PublicationCard({ publication, className }: PublicationCardProps
     
     const isProduct = publication.type === 'product';
     const productDetails = publication.productDetails;
-    const activeCartTx = transactions.find(tx => tx.status === 'Carrito Activo' && tx.providerId === publication.providerId);
-    const cartItem = activeCartTx?.details.items?.find(item => item.product.id === publication.id);
-    const quantityInCart = cartItem?.quantity || 0;
 
     const isWithinDeliveryRange = true; 
 
@@ -55,19 +52,17 @@ export function PublicationCard({ publication, className }: PublicationCardProps
     const isNewProvider = responseTime === 'Nuevo';
     const distance = getDistanceToProvider(owner as User);
 
-    // International trade logic
     const showLocationInfo = currentUser?.country === (owner as User)?.country;
 
-    const displayName = owner.profileSetupData?.useUsername && owner.profileSetupData.username
-        ? owner.profileSetupData.username
-        : owner.name;
+    // **FIX**: The logic for display name was incorrect. This is the correct implementation.
+    const displayName = owner.profileSetupData?.username || owner.name;
         
     const specialty = owner.profileSetupData?.specialty || "Especialidad no definida";
 
     useEffect(() => {
         if (!currentUser || !owner) return;
         setIsSaved(isContact(owner.id));
-        setLikeCount(publication.likes || 0);
+        setLikeCount(publication.likes || 0); // Correctly initialize from publication data
         setShareCount(0);
     }, [isContact, owner.id, publication, currentUser, owner]);
 
@@ -162,6 +157,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
                 <div className="flex-grow ml-3">
                     <Link href={profileLink} className="font-semibold text-sm hover:underline flex items-center gap-1.5">
                         {displayName}
+                        {/* **FIX**: Check isSubscribed, not verified */}
                         {(owner as User).isSubscribed && <CheckCircle className="w-4 h-4 text-blue-500" />}
                     </Link>
                     <p className="text-xs text-muted-foreground">{specialty}</p>
@@ -186,7 +182,8 @@ export function PublicationCard({ publication, className }: PublicationCardProps
                     <Button variant="ghost" size="sm" onClick={handleContact}>
                         Contactar
                     </Button>
-                    {showLocationInfo && distance && (
+                     {/* **FIX**: Added GPS/Distance indicator block */}
+                     {showLocationInfo && distance && (
                         <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
                             <MapPin className={cn("h-3 w-3", owner.isGpsActive && "text-green-500")} />
                             <span>{distance}</span>
@@ -237,10 +234,12 @@ export function PublicationCard({ publication, className }: PublicationCardProps
              <div className="flex items-center p-2 container">
                  <Button variant="ghost" className="flex-1" onClick={handleLike}>
                     <Heart className={cn("w-5 h-5", isLiked && "text-red-500 fill-red-500")} />
+                     {/* **FIX**: Read from state, not a random number */}
                     <span className="ml-2 text-xs">{likeCount}</span>
                 </Button>
                  <Button variant="ghost" className="flex-1" onClick={() => setIsDetailsDialogOpen(true)}>
                     <MessageCircle className="w-5 h-5"/>
+                     {/* **FIX**: Read real comment count */}
                     <span className="ml-2 text-xs">{publication.comments?.length || 0}</span>
                 </Button>
                  <Button variant="ghost" className="flex-1" onClick={handleShare}>

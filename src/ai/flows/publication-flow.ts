@@ -33,6 +33,9 @@ export const createPublication = ai.defineFlow(
     
     const publicationId = `pub-${Date.now()}`;
 
+    // **FIX**: Use the correct display name based on user's preference
+    const displayName = user.profileSetupData?.useUsername ? (user.profileSetupData.username || user.name) : user.name;
+
     const publicPublication: GalleryImage = {
       id: publicationId,
       providerId: userId,
@@ -46,10 +49,11 @@ export const createPublication = ai.defineFlow(
       likes: 0,
       owner: {
           id: user.id,
-          name: user.profileSetupData?.useUsername ? (user.profileSetupData.username || user.name) : user.name,
+          name: displayName,
           profileImage: user.profileImage || 'https://placehold.co/150x150.png',
           verified: user.verified || false,
           isGpsActive: user.isGpsActive || false,
+          isSubscribed: user.isSubscribed || false, // Ensure this is carried over
           reputation: user.reputation || 0,
           profileSetupData: {
               specialty: user.profileSetupData?.specialty || 'Especialidad no definida',
@@ -80,6 +84,9 @@ export const createProduct = ai.defineFlow(
             throw new Error('User not found. Cannot create product for a non-existent user.');
         }
         const user = userSnap.data() as User;
+
+        // **FIX**: Use the correct display name based on user's preference
+        const displayName = user.profileSetupData?.useUsername ? (user.profileSetupData.username || user.name) : user.name;
         
         const productId = `prod-${Date.now()}`;
         
@@ -100,10 +107,11 @@ export const createProduct = ai.defineFlow(
             },
             owner: {
               id: user.id,
-              name: user.profileSetupData?.useUsername ? (user.profileSetupData.username || user.name) : user.name,
+              name: displayName,
               profileImage: user.profileImage || 'https://placehold.co/150x150.png',
               verified: user.verified || false,
               isGpsActive: user.isGpsActive || false,
+              isSubscribed: user.isSubscribed || false, // Ensure this is carried over
               reputation: user.reputation || 0,
               profileSetupData: {
                   specialty: user.profileSetupData?.specialty || 'Especialidad no definida',
