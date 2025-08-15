@@ -61,9 +61,10 @@ export function ProfileHeader() {
     fileInputRef.current?.click();
   };
   
-  const displayName = currentUser.profileSetupData?.useUsername 
-    ? (currentUser.profileSetupData.username || currentUser.name)
+  const displayName = currentUser.profileSetupData?.useUsername && currentUser.profileSetupData.username 
+    ? currentUser.profileSetupData.username 
     : currentUser.name;
+    
   const specialty = currentUser.profileSetupData?.specialty || 'Sin especialidad';
 
   const galleryCount = allPublications.filter(p => p.providerId === currentUser.id && p.type !== 'product').length;

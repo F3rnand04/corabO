@@ -833,38 +833,36 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const getUserMetrics = (userId: string, allTransactions: Transaction[]): UserMetrics => {
-      const providerTransactions = allTransactions.filter(tx => tx.providerId === userId);
-      
-      if (providerTransactions.length === 0) {
-        return { reputation: 0, effectiveness: 0, responseTime: 'Nuevo' };
-      }
-      
-      const completedTransactions = providerTransactions.filter(tx => ['Pagado', 'Resuelto'].includes(tx.status));
-
-      if (completedTransactions.length === 0) {
-        return { reputation: 0, effectiveness: 0, responseTime: 'Nuevo' };
-      }
-      
-      const ratedTransactions = completedTransactions.filter(tx => tx.details.clientRating && tx.details.clientRating > 0);
-      const totalRating = ratedTransactions.reduce((acc, tx) => acc + (tx.details.clientRating || 0), 0);
-      const reputation = ratedTransactions.length > 0 ? totalRating / ratedTransactions.length : 0;
-      
-      const effectiveness = providerTransactions.length > 0 ? (completedTransactions.length / providerTransactions.length) * 100 : 0;
-
-      const lastTransaction = completedTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
-      if (!lastTransaction || !lastTransaction.details.paymentConfirmationDate) {
-        return { reputation, effectiveness: effectiveness, responseTime: 'Nuevo' };
-      }
-
-      const requestDate = new Date(lastTransaction.date);
-      const completionDate = new Date(lastTransaction.details.paymentConfirmationDate);
-      const diffMinutes = differenceInMinutes(completionDate, requestDate);
-      let responseTime = '30+ min';
-      if(diffMinutes < 5) responseTime = '00-05 min';
-      else if(diffMinutes < 15) responseTime = '05-15 min';
-      else if(diffMinutes < 30) responseTime = '15-30 min';
-
-      return { reputation, effectiveness, responseTime };
+    const providerTransactions = allTransactions.filter(tx => tx.providerId === userId);
+    if (providerTransactions.length === 0) {
+      return { reputation: 0, effectiveness: 0, responseTime: 'Nuevo' };
+    }
+  
+    const completedTransactions = providerTransactions.filter(tx => ['Pagado', 'Resuelto'].includes(tx.status));
+    if (completedTransactions.length === 0) {
+      return { reputation: 0, effectiveness: 0, responseTime: 'Nuevo' };
+    }
+  
+    const ratedTransactions = completedTransactions.filter(tx => tx.details.clientRating && tx.details.clientRating > 0);
+    const totalRating = ratedTransactions.reduce((acc, tx) => acc + (tx.details.clientRating || 0), 0);
+    const reputation = ratedTransactions.length > 0 ? totalRating / ratedTransactions.length : 0;
+  
+    const effectiveness = (completedTransactions.length / providerTransactions.length) * 100;
+  
+    const lastTransaction = completedTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+    if (!lastTransaction || !lastTransaction.details.paymentConfirmationDate) {
+      return { reputation, effectiveness: effectiveness, responseTime: 'Nuevo' };
+    }
+  
+    const requestDate = new Date(lastTransaction.date);
+    const completionDate = new Date(lastTransaction.details.paymentConfirmationDate);
+    const diffMinutes = differenceInMinutes(completionDate, requestDate);
+    let responseTime = '30+ min';
+    if(diffMinutes < 5) responseTime = '00-05 min';
+    else if(diffMinutes < 15) responseTime = '05-15 min';
+    else if(diffMinutes < 30) responseTime = '15-30 min';
+  
+    return { reputation, effectiveness, responseTime };
   };
 
   const startQrSession = async (providerId: string) => {
