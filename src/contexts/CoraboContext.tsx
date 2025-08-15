@@ -65,6 +65,9 @@ interface CoraboState {
   deliveryAddress: string;
   exchangeRate: number;
   qrSession: QrSession | null;
+}
+
+interface CoraboActions {
   signInWithGoogle: () => void;
   setSearchQuery: (query: string) => void;
   setCategoryFilter: (category: string | null) => void;
@@ -138,6 +141,8 @@ interface CoraboState {
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
+const CoraboActionsContext = createContext<CoraboActions | undefined>(undefined);
+
 
 export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
@@ -195,6 +200,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, [logout]);
   
   useEffect(() => {
+    // Definitive Fix: This effect now ONLY depends on `currentUser.id`.
+    // It no longer depends on the entire `currentUser` object, which prevents
+    // the infinite re-render loop.
     if (currentUser?.id) {
         const db = getFirestoreDb();
 
@@ -215,8 +223,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         });
         listeners.current.set('publications', publicationsListener);
 
+        // Dedicated listener for the current user. This is key to avoiding the loop.
         const userListener = onSnapshot(doc(db, 'users', currentUser.id), (doc) => {
-            if (doc.exists()) setCurrentUser(doc.data() as User);
+            if (doc.exists()) {
+                setCurrentUser(doc.data() as User);
+            }
         });
         listeners.current.set('currentUser', userListener);
         
@@ -244,12 +255,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       setConversations([]);
     }
     
-    // Cleanup listeners on unmount or when user ID changes
     return () => {
         listeners.current.forEach(unsubscribe => unsubscribe());
         listeners.current.clear();
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser?.id]);
 
   useEffect(() => {
@@ -452,20 +461,19 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const sendMessage = useCallback((options: { recipientId: string; text?: string; createOnly?: boolean; location?: { lat: number, lon: number } }): string => {
-    const { recipientId, text, createOnly, location } = options;
     if (!currentUser) return '';
     
-    const participantIds = [currentUser.id, recipientId].sort();
+    const participantIds = [currentUser.id, options.recipientId].sort();
     const conversationId = participantIds.join('-');
 
-    if (!createOnly) {
+    if (!options.createOnly) {
       const payload: any = {
         conversationId,
         senderId: currentUser.id,
-        recipientId,
+        recipientId: options.recipientId,
       };
-      if (text) payload.text = text;
-      if (location) payload.location = location;
+      if (options.text) payload.text = options.text;
+      if (options.location) payload.location = options.location;
 
       sendMessageFlow(payload);
     }
@@ -1022,7 +1030,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     toast({ title: "Compromiso cancelado", description: "La renovación ha sido cancelada." });
   }
 
-  const value: CoraboState = {
+  const state: CoraboState = {
     currentUser,
     users,
     allPublications,
@@ -1038,6 +1046,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     deliveryAddress,
     exchangeRate,
     qrSession,
+  };
+
+  const actions: CoraboActions = {
     signInWithGoogle,
     setSearchQuery,
     setCategoryFilter,
@@ -1110,29 +1121,21 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     updateUserProfileAndGallery,
   };
 
-  return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;
+  return (
+    <CoraboContext.Provider value={state}>
+        <CoraboActionsContext.Provider value={actions}>
+            {children}
+        </CoraboActionsContext.Provider>
+    </CoraboContext.Provider>
+  );
 };
 
-export const useCorabo = () => {
-  const context = useContext(CoraboContext);
-  if (context === undefined) {
+export const useCorabo = (): CoraboState & CoraboActions => {
+  const state = useContext(CoraboContext);
+  const actions = useContext(CoraboActionsContext);
+  if (state === undefined || actions === undefined) {
     throw new Error('useCorabo must be used within a CoraboProvider');
   }
-  return context;
+  return { ...state, ...actions };
 };
 export type { Transaction };
-
-    
-
-    
-
-
-
-
-    
-
-    
-
-    
-
-
