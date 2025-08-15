@@ -3,12 +3,13 @@
 "use client";
 
 import { useState } from 'react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { CheckCircle, Loader2 } from 'lucide-react';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { cn } from '@/lib/utils';
+import { Label } from '@/components/ui/label';
 
 type ValidationStatus = 'idle' | 'pending' | 'validated';
 
@@ -77,7 +78,7 @@ export function ValidationItem({
         return (
              <div className="flex items-center justify-between mt-1 h-9">
                 <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">{label}</span>
+                    <Label className="text-sm text-muted-foreground">{label}</Label>
                     <span className="text-sm">{currentValue}</span>
                 </div>
                  <p className="text-sm font-semibold text-green-600 flex items-center gap-1"><CheckCircle className="w-4 h-4"/> Validado</p>
@@ -89,7 +90,7 @@ export function ValidationItem({
          return (
              <div className="flex items-center justify-between mt-1 h-9">
                  <div className="flex items-center gap-2 flex-grow">
-                    <span className="text-sm text-muted-foreground">{label}</span>
+                    <Label className="text-sm text-muted-foreground">{label}</Label>
                     <Input 
                         className="h-8 text-sm w-auto flex-grow" 
                         value={currentValue} 
@@ -111,7 +112,7 @@ export function ValidationItem({
     return (
         <div className="flex items-center justify-between mt-1 h-9">
             <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">{label}</span>
+                <Label className="text-sm text-muted-foreground">{label}</Label>
                 <span className="text-sm">{currentValue}</span>
             </div>
 

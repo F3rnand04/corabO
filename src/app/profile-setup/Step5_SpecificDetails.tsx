@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from '../ui/textarea';
 import { MapPin, Building, AlertCircle, Package, Hand, Star, Info, LocateFixed } from 'lucide-react';
-import { Switch } from '../ui/switch';
+import { Switch } from '@/components/ui/switch';
 import { Slider } from '../ui/slider';
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
