@@ -94,7 +94,7 @@ export const getOrCreateUser = ai.defineFlow(
              createdAt: new Date().toISOString(),
              type: 'client',
              reputation: 0,
-             effectiveness: 100,
+             effectiveness: 0,
              profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
              email: firebaseUser.email || '',
              phone: '',
