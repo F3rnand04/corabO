@@ -222,7 +222,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             };
             if (newUser.email === 'fernandopbt@gmail.com') newUser.role = 'admin';
             
-            await setDoc(userDocRef, newUser); // This line was missing
+            await setDoc(userDocRef, newUser);
             setCurrentUser(newUser);
         }
     } else {
@@ -1162,3 +1162,4 @@ export type { Transaction };
     
 
     
+
