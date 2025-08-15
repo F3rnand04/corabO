@@ -3,11 +3,11 @@
 
 import { useState, useEffect } from 'react';
 import { Stepper } from '@/components/profile-setup/Stepper';
-import Step1_ProfileType from './Step1_ProfileType';
+import Step1_ProfileType from '@/components/profile-setup/Step1_ProfileType';
 import Step2_Username from '@/components/profile-setup/Step2_Username';
 import Step3_Category from '@/components/profile-setup/Step3_Category';
 import Step4_GeneralDetails from '@/components/profile-setup/Step4_GeneralDetails';
-import Step5_SpecificDetails from './Step5_SpecificDetails';
+import Step5_SpecificDetails from '@/components/profile-setup/Step5_SpecificDetails';
 import Step6_Review from '@/components/profile-setup/Step6_Review';
 import { useCorabo } from '@/contexts/CoraboContext';
 import type { ProfileSetupData, User as UserType } from '@/lib/types';
