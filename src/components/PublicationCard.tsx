@@ -143,7 +143,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
       router.push(`/messages/${conversationId}`);
     };
 
-    const displayName = owner.profileSetupData?.username || owner.name || 'Usuario Corabo';
+    const displayName = owner.profileSetupData?.useUsername && owner.profileSetupData.username ? owner.profileSetupData.username : owner.name;
     const specialty = owner.profileSetupData?.specialty || "Especialidad no definida";
     
     return (
