@@ -135,7 +135,6 @@ interface CoraboState {
   cancelSystemTransaction: (transactionId: string) => Promise<void>;
   payCommitment: (transactionId: string, isSubscriptionPayment?: boolean) => Promise<void>;
   updateUserProfileAndGallery: (userId: string, image: GalleryImage) => Promise<void>;
-  router: ReturnType<typeof useRouter>;
 }
 
 const CoraboContext = createContext<CoraboState | undefined>(undefined);
@@ -1109,7 +1108,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     registerSystemPayment,
     cancelSystemTransaction,
     updateUserProfileAndGallery,
-    router,
   };
 
   return <CoraboContext.Provider value={value}>{children}</CoraboContext.Provider>;
@@ -1136,4 +1134,5 @@ export type { Transaction };
     
 
     
+
 
