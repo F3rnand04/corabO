@@ -20,7 +20,7 @@ import { autoVerifyIdWithAI as autoVerifyIdWithAIFlow, type VerificationInput } 
 import { getExchangeRate as getExchangeRateFlow } from '@/ai/flows/exchange-rate-flow';
 import { sendSmsVerificationCodeFlow, verifySmsCodeFlow } from '@/ai/flows/sms-flow';
 import { createProduct as createProductFlow, createPublication as createPublicationFlow } from '@/ai/flows/publication-flow';
-import { completeInitialSetupFlow, getPublicProfileFlow, deleteUserFlow, getProfileGallery, getProfileProducts } from '@/ai/flows/profile-flow';
+import { completeInitialSetupFlow, getPublicProfileFlow, deleteUserFlow, getProfileGallery, getProfileProducts, checkIdUniquenessFlow } from '@/ai/flows/profile-flow';
 import type { GetFeedInputSchema, GetFeedOutputSchema, GetProfileGalleryInputSchema, GetProfileGalleryOutputSchema, GetProfileProductsInputSchema, GetProfileProductsOutputSchema } from '@/lib/types';
 import { z } from 'zod';
 import { haversineDistance } from '@/lib/utils';
@@ -433,17 +433,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const completeInitialSetup = async (userId: string, data: { name: string; lastName: string; idNumber: string; birthDate: string; country: string; }) => {
-    if (ENABLE_COUNTRY_UPDATE_LOGIC) {
-        await completeInitialSetupFlow({userId, ...data});
-    } else {
-        console.warn("La lógica de actualización por cambio de país está deshabilitada en el entorno de pruebas.");
-        const q = query(collection(getFirestoreDb(), 'users'), where("idNumber", "==", data.idNumber), where("country", "==", data.country));
-        const querySnapshot = await getDocs(q);
-        if (!querySnapshot.empty) {
-            throw new Error("ID_IN_USE");
-        }
-        await updateUser(userId, { ...data, isInitialSetupComplete: true });
-    }
+    await completeInitialSetupFlow({userId, ...data});
   };
   
   const toggleGps = (userId: string) => {
@@ -1162,4 +1152,5 @@ export type { Transaction };
     
 
     
+
 

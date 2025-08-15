@@ -16,6 +16,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRouter } from 'next/navigation';
+import { checkIdUniquenessFlow } from '@/ai/flows/profile-flow';
 
 const countries = [
   { code: 'VE', name: 'Venezuela', idLabel: 'Cédula de Identidad' },
@@ -48,22 +49,29 @@ export default function InitialSetupPage() {
   }, [currentUser]);
 
   const handleSubmit = async () => {
+    if (!currentUser) return;
     setIsSubmitting(true);
     setIdInUseError(false);
     try {
-        await completeInitialSetup(currentUser!.id, { name, lastName, idNumber, birthDate, country });
+        // Step 1: Check for ID uniqueness before proceeding
+        const isUnique = await checkIdUniquenessFlow({ idNumber, country, currentUserId: currentUser.id });
+        
+        if (!isUnique) {
+            setIdInUseError(true);
+            setIsSubmitting(false);
+            return;
+        }
+
+        // Step 2: If unique, complete the setup
+        await completeInitialSetup(currentUser.id, { name, lastName, idNumber, birthDate, country });
         // The context change will trigger the AppLayout to redirect automatically.
     } catch (error: any) {
-        if (error.message === 'ID_IN_USE') {
-            setIdInUseError(true);
-        } else {
-            console.error("Failed to complete setup:", error);
-            toast({
-                variant: 'destructive',
-                title: 'Error',
-                description: 'No se pudo guardar tu información. Inténtalo de nuevo.'
-            });
-        }
+        console.error("Failed to complete setup:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'No se pudo guardar tu información. Inténtalo de nuevo.'
+        });
     } finally {
         setIsSubmitting(false);
     }

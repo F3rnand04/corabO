@@ -33,6 +33,39 @@ export const deleteUserFlow = ai.defineFlow(
   }
 );
 
+// --- Check ID Uniqueness Flow ---
+const CheckIdUniquenessInputSchema = z.object({
+  idNumber: z.string(),
+  country: z.string(),
+  currentUserId: z.string(),
+});
+
+export const checkIdUniquenessFlow = ai.defineFlow(
+  {
+    name: 'checkIdUniquenessFlow',
+    inputSchema: CheckIdUniquenessInputSchema,
+    outputSchema: z.boolean(), // Returns true if unique, false if not
+  },
+  async ({ idNumber, country, currentUserId }) => {
+    if (!idNumber || !country) {
+      return true; // Don't run check if data is incomplete
+    }
+    const db = getFirestoreDb();
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where("idNumber", "==", idNumber), where("country", "==", country));
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+      return true; // ID is unique
+    }
+
+    // If a document is found, check if it belongs to the current user.
+    // This allows a user to re-submit their own ID without it being flagged as a duplicate.
+    const isOwnDocument = querySnapshot.docs[0].id === currentUserId;
+    return isOwnDocument;
+  }
+);
+
 
 // --- Complete Initial Setup ---
 const CompleteInitialSetupInputSchema = z.object({
@@ -52,18 +85,8 @@ export const completeInitialSetupFlow = ai.defineFlow(
   },
   async ({ userId, name, lastName, idNumber, birthDate, country }) => {
     const db = getFirestoreDb();
-    
-    // Check for duplicate ID in the same country
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where("idNumber", "==", idNumber), where("country", "==", country));
-    const querySnapshot = await getDocs(q);
-
-    if (!querySnapshot.empty) {
-      // Found a user with the same ID number in the same country.
-      throw new Error("ID_IN_USE");
-    }
-
     const userRef = doc(db, 'users', userId);
+    
     await updateDoc(userRef, {
       name,
       lastName,
