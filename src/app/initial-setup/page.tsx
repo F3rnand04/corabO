@@ -19,11 +19,11 @@ import { useRouter } from 'next/navigation';
 import { checkIdUniquenessFlow } from '@/ai/flows/profile-flow';
 
 const countries = [
-  { code: 'VE', name: 'Venezuela', idLabel: 'Cédula de Identidad' },
-  { code: 'CO', name: 'Colombia', idLabel: 'Cédula de Ciudadanía' },
-  { code: 'CL', name: 'Chile', idLabel: 'RUT / DNI' },
-  { code: 'ES', name: 'España', idLabel: 'DNI / NIE' },
-  { code: 'MX', name: 'México', idLabel: 'CURP' },
+  { code: 'VE', name: 'Venezuela', idLabel: 'Cédula de Identidad', companyIdLabel: 'RIF' },
+  { code: 'CO', name: 'Colombia', idLabel: 'Cédula de Ciudadanía', companyIdLabel: 'NIT' },
+  { code: 'CL', name: 'Chile', idLabel: 'RUT / DNI', companyIdLabel: 'RUT' },
+  { code: 'ES', name: 'España', idLabel: 'DNI / NIE', companyIdLabel: 'NIF' },
+  { code: 'MX', name: 'México', idLabel: 'CURP', companyIdLabel: 'RFC' },
 ];
 
 export default function InitialSetupPage() {
@@ -90,9 +90,12 @@ export default function InitialSetupPage() {
         </div>
     );
   }
-
-  const selectedCountryLabel = countries.find(c => c.code === country)?.idLabel || 'Documento de Identidad';
-  const canSubmit = name && lastName && idNumber && birthDate && country && hasAcceptedPolicies;
+  
+  const isCompany = currentUser.profileSetupData?.providerType === 'company';
+  const selectedCountryInfo = countries.find(c => c.code === country);
+  const idLabel = isCompany ? (selectedCountryInfo?.companyIdLabel || 'ID Fiscal') : (selectedCountryInfo?.idLabel || 'Documento de Identidad');
+  
+  const canSubmit = name && idNumber && country && hasAcceptedPolicies && (isCompany || (lastName && birthDate));
 
   return (
     <Card className="w-full max-w-md shadow-2xl">
@@ -141,21 +144,26 @@ export default function InitialSetupPage() {
             </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="name">Nombre(s)</Label>
-          <Input id="name" placeholder="Tus nombres" value={name} onChange={(e) => setName(e.target.value)} />
+          <Label htmlFor="name">{isCompany ? 'Razón Social' : 'Nombre(s)'}</Label>
+          <Input id="name" placeholder={isCompany ? 'Nombre de tu empresa' : 'Tus nombres'} value={name} onChange={(e) => setName(e.target.value)} />
         </div>
+        {!isCompany && (
+            <>
+            <div className="space-y-2">
+              <Label htmlFor="lastName">Apellido(s)</Label>
+              <Input id="lastName" placeholder="Tus apellidos" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="birthDate">Fecha de Nacimiento</Label>
+                <Input id="birthDate" type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
+            </div>
+            </>
+        )}
         <div className="space-y-2">
-          <Label htmlFor="lastName">Apellido(s)</Label>
-          <Input id="lastName" placeholder="Tus apellidos" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+          <Label htmlFor="idNumber">{idLabel}</Label>
+          <Input id="idNumber" placeholder={`Tu ${idLabel}`} value={idNumber} onChange={(e) => setIdNumber(e.target.value)} />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="idNumber">{selectedCountryLabel}</Label>
-          <Input id="idNumber" placeholder="Tu número de identificación" value={idNumber} onChange={(e) => setIdNumber(e.target.value)} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="birthDate">Fecha de Nacimiento</Label>
-          <Input id="birthDate" type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
-        </div>
+        
         <div className="flex items-center space-x-2 pt-4">
           <Checkbox id="terms" checked={hasAcceptedPolicies} onCheckedChange={(checked) => setHasAcceptedPolicies(checked as boolean)} />
           <label htmlFor="terms" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
@@ -176,7 +184,7 @@ export default function InitialSetupPage() {
                 <AlertDialogHeader>
                 <AlertDialogTitle>¿Estás seguro que los datos son correctos?</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Recuerda que tu nombre, apellido y documento de identidad no podrán ser modificados una vez guardados.
+                    Recuerda que tu {isCompany ? 'Razón Social y ID Fiscal' : 'nombre, apellido y documento de identidad'} no podrán ser modificados una vez guardados.
                 </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -191,3 +199,4 @@ export default function InitialSetupPage() {
     </Card>
   );
 }
+

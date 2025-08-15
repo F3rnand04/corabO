@@ -46,7 +46,7 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
   };
 
   const handleScheduleChange = (day: string, field: 'from' | 'to' | 'active', value: string | boolean) => {
-    // Defensive check
+    // Defensive check to prevent crash on undefined schedule
     if (!formData || !formData.schedule) return;
     const newSchedule = { ...(formData.schedule), [day]: { ...(formData.schedule[day] || {}), [field]: value } };
     handleFormDataChange('schedule', newSchedule);
