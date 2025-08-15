@@ -66,7 +66,7 @@ describe('Pagination Flow - Integration Test', () => {
       setupPromises.push(setDoc(doc(db, 'publications', publicationId), publication));
     }
     await Promise.all(setupPromises);
-  });
+  }, 30000); // Increase timeout for setup
 
   afterAll(async () => {
     await testEnv.cleanup();

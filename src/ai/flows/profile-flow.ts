@@ -166,10 +166,12 @@ export const getProfileGallery = ai.defineFlow(
         const galleryItems = snapshot.docs.map(doc => doc.data() as GalleryImage);
 
         const lastVisibleDocInPage = snapshot.docs[snapshot.docs.length - 1];
+        const nextCursor = snapshot.docs.length === limitNum ? lastVisibleDocInPage?.id : undefined;
+
 
         return { 
             gallery: galleryItems, 
-            lastVisibleDocId: lastVisibleDocInPage?.id
+            lastVisibleDocId: nextCursor
         };
     }
 );
@@ -217,10 +219,12 @@ export const getProfileProducts = ai.defineFlow(
         }));
         
         const lastVisibleDocInPage = snapshot.docs[snapshot.docs.length - 1];
+        const nextCursor = snapshot.docs.length === limitNum ? lastVisibleDocInPage?.id : undefined;
+
 
         return { 
             products: finalProducts, 
-            lastVisibleDocId: lastVisibleDocInPage?.id
+            lastVisibleDocId: nextCursor
         };
     }
 );
