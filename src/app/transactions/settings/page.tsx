@@ -133,6 +133,7 @@ export default function TransactionsSettingsPage() {
     };
     
     const handleSaveChanges = () => {
+        if (!currentUser) return;
         const wasActive = currentUser.isTransactionsActive;
         activateTransactions(currentUser.id, paymentDetails);
 
