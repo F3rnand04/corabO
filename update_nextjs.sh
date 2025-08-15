@@ -21,7 +21,7 @@ fi
 # Instalar/actualizar Next.js y dependencias relacionadas
 # Se añade react-day-picker como parte de la verificación de dependencias clave.
 echo "  - Alineando Next.js y dependencias críticas (react, react-dom)..."
-$INSTALL_CMD next@latest react@latest react-dom@latest
+$INSTALL_CMD next@14.2.6 react@18.3.1 react-dom@18.3.1
 
 if [ $? -ne 0 ]; then
     echo "❌ Error Crítico: La actualización de Next.js falló."
