@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -28,30 +28,24 @@ export default function Step1_ProfileType({ onSelect, currentType, onNext }: Ste
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [nextSelection, setNextSelection] = useState<UserType['type'] | null>(null);
 
-  // Infer providerType from initial setup data
-  const inferredProviderType = currentUser?.lastName ? 'professional' : 'company';
-
   const handleSelection = (typeId: UserType['type']) => {
-    // If the type is already selected, just navigate to the next step.
     if (typeId === currentType) {
-        // This was the source of an infinite loop. We should not navigate here.
-        // Navigation is handled by the parent's "Next" button.
-        return;
+      return;
     }
-
-    // If the user is changing their type, show a confirmation dialog.
+    
     if (currentType && typeId !== currentType) {
         setNextSelection(typeId);
         setIsAlertOpen(true);
     } else {
-        // If it's the very first selection, just update the state.
-        onSelect(typeId, inferredProviderType);
+        const providerType = currentUser?.lastName ? 'professional' : 'company';
+        onSelect(typeId, providerType);
     }
   };
 
   const handleConfirmChange = () => {
     if (nextSelection) {
-      onSelect(nextSelection, inferredProviderType);
+      const providerType = currentUser?.lastName ? 'professional' : 'company';
+      onSelect(nextSelection, providerType);
     }
     setIsAlertOpen(false);
   }

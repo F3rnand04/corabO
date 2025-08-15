@@ -9,7 +9,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { add, subDays, startOfDay, differenceInDays, differenceInMinutes, addDays as addDaysFns, addMonths } from 'date-fns';
 import { credicoraLevels } from '@/lib/types';
-import { getAuth, signInWithPopup, signOut, User as FirebaseUser, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth, signInWithPopup, signOut, User as FirebaseUser, GoogleAuthProvider, onAuthStateChanged } from 'firebase/auth';
 import { getFirebaseApp, getFirestoreDb, getAuthInstance } from '@/lib/firebase';
 import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, arrayUnion, getDocs, deleteDoc, collectionGroup, Unsubscribe, orderBy } from 'firebase/firestore';
 import { createCampaign as createCampaignFlow, type CreateCampaignInput } from '@/ai/flows/campaign-flow';
@@ -140,7 +140,7 @@ interface CoraboActions {
   updateUserProfileAndGallery: (userId: string, image: GalleryImage) => Promise<void>;
 }
 
-const CoraboContext = createContext<CoraboState | undefined>(undefined);
+const CoraboStateContext = createContext<CoraboState | undefined>(undefined);
 const CoraboActionsContext = createContext<CoraboActions | undefined>(undefined);
 
 
@@ -170,19 +170,15 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [qrSession, setQrSession] = useState<QrSession | null>(null);
   
   const userCache = useRef<Map<string, User>>(new Map());
-  const listeners = useRef<Map<string, Unsubscribe>>(new Map());
+  const activeListeners = useRef<Unsubscribe[]>([]);
 
-  const logout = useCallback(async () => {
-    try {
-        await signOut(getAuthInstance());
-    } catch (error) {
-        console.error("Error signing out: ", error);
-    }
-  }, []);
+  const cleanupListeners = () => {
+    activeListeners.current.forEach(unsubscribe => unsubscribe());
+    activeListeners.current = [];
+  };
 
   const handleUserAuth = useCallback(async (firebaseUser: FirebaseUser | null) => {
-    listeners.current.forEach(unsubscribe => unsubscribe());
-    listeners.current.clear();
+    cleanupListeners();
     setQrSession(null); 
     
     if (firebaseUser) {
@@ -190,76 +186,78 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         if (user) {
           setCurrentUser(user as User);
         } else {
-          // User was likely deleted from DB, so log them out
-          logout();
+          await signOut(getAuthInstance());
+          setCurrentUser(null);
         }
     } else {
         setCurrentUser(null);
     }
     setIsLoadingAuth(false);
-  }, [logout]);
-  
-  useEffect(() => {
-    const db = getFirestoreDb();
-    
-    // Global listeners - they don't depend on currentUser
-    const usersListener = onSnapshot(collection(db, 'users'), (snapshot) => {
-        const fetchedUsers = snapshot.docs.map(doc => doc.data() as User);
-        setUsers(fetchedUsers);
-    });
+  }, []);
 
-    const publicationsListener = onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
+  useEffect(() => {
+    const auth = getAuthInstance();
+    const authUnsubscribe = onAuthStateChanged(auth, handleUserAuth);
+    
+    // Global listeners that do not depend on the user
+    const db = getFirestoreDb();
+    const usersUnsubscribe = onSnapshot(collection(db, 'users'), (snapshot) => {
+        setUsers(snapshot.docs.map(doc => doc.data() as User));
+    });
+    const publicationsUnsubscribe = onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
         setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage));
     });
 
-    // Clear previous user-specific listeners if any
-    if (listeners.current.has('user-specific')) {
-        listeners.current.get('user-specific')?.forEach((unsubscribe: Unsubscribe) => unsubscribe());
-    }
-
-    if (currentUser?.id) {
-        const userSpecificListeners: Unsubscribe[] = [];
-
-        // Dedicated listener for the current user's document
-        const userDocListener = onSnapshot(doc(db, 'users', currentUser.id), (doc) => {
-            if (doc.exists()) {
-                setCurrentUser(doc.data() as User);
-            }
-        });
-        userSpecificListeners.push(userDocListener);
-
-        const transactionsListener = onSnapshot(query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id)), (snapshot) => {
-            setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
-        });
-        userSpecificListeners.push(transactionsListener);
-        
-        const conversationsListener = onSnapshot(query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id)), (snapshot) => {
-            const convos = snapshot.docs.map(doc => doc.data() as Conversation);
-            convos.sort((a,b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime());
-            setConversations(convos);
-        });
-        userSpecificListeners.push(conversationsListener);
-
-        const qrSessionsListener = onSnapshot(query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', currentUser.id)), (snapshot) => {
-            const sessions = snapshot.docs.map(d => d.data() as QrSession);
-            setQrSession(sessions.find(s => s.status !== 'completed' && s.status !== 'cancelled') || null);
-        });
-        userSpecificListeners.push(qrSessionsListener);
-
-        listeners.current.set('user-specific', userSpecificListeners as any);
-
-    } else {
-        // Clear user-specific data if no user is logged in
-        setTransactions([]);
-        setConversations([]);
-    }
-    
     return () => {
-        usersListener();
-        publicationsListener();
-        listeners.current.get('user-specific')?.forEach((unsubscribe: Unsubscribe) => unsubscribe());
+      authUnsubscribe();
+      usersUnsubscribe();
+      publicationsUnsubscribe();
+      cleanupListeners();
     };
-}, [currentUser?.id]);
+  }, [handleUserAuth]);
+  
+  
+  useEffect(() => {
+    cleanupListeners(); // Clean up previous user's listeners before setting up new ones
+  
+    if (currentUser?.id) {
+      const db = getFirestoreDb();
+  
+      const userDocUnsubscribe = onSnapshot(doc(db, 'users', currentUser.id), (doc) => {
+        if (doc.exists()) {
+          setCurrentUser(doc.data() as User);
+        }
+      });
+  
+      const transactionsUnsubscribe = onSnapshot(query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id)), (snapshot) => {
+        setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
+      });
+  
+      const conversationsUnsubscribe = onSnapshot(query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id), orderBy("lastUpdated", "desc")), (snapshot) => {
+        setConversations(snapshot.docs.map(doc => doc.data() as Conversation));
+      });
+  
+      const qrSessionsUnsubscribe = onSnapshot(query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', currentUser.id)), (snapshot) => {
+        const sessions = snapshot.docs.map(d => d.data() as QrSession);
+        setQrSession(sessions.find(s => s.status !== 'completed' && s.status !== 'cancelled') || null);
+      });
+  
+      activeListeners.current = [
+        userDocUnsubscribe,
+        transactionsUnsubscribe,
+        conversationsUnsubscribe,
+        qrSessionsUnsubscribe,
+      ];
+    } else {
+      // Clear data if no user
+      setTransactions([]);
+      setConversations([]);
+    }
+  
+    // The cleanup function for this effect will be called when currentUser.id changes
+    return () => cleanupListeners();
+  }, [currentUser?.id]);
+
 
   useEffect(() => {
     if (currentUser?.isGpsActive) {
@@ -295,6 +293,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         });
       }
     }
+  };
+  
+  const logout = async () => {
+    await signOut(getAuthInstance());
+    setCurrentUser(null); // Clear user state immediately
+    router.push('/login');
   };
 
   const setSearchQuery = (query: string) => {
@@ -408,7 +412,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const updateUser = async (userId: string, updates: Partial<User>) => {
     const db = getFirestoreDb();
     const userDocRef = doc(db, 'users', userId);
-    await updateDoc(userDocRef, updates);
+    await updateDoc(userDocRef, updates, { merge: true });
   };
 
   const completeInitialSetup = async (userId: string, data: { name: string; lastName: string; idNumber: string; birthDate: string; country: string; }) => {
@@ -582,7 +586,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
           updates.details!.initialPayment = initialPayment;
           updates.details!.financedAmount = financedAmount;
 
-          const installmentAmount = financedAmount / crediDetails.installments;
+          const installmentAmount = financedAmount > 0 ? financedAmount / crediDetails.installments : 0;
           for (let i = 1; i <= crediDetails.installments; i++) {
               const installmentTxId = `txn-credicora-${transactionId.slice(-6)}-${i}`;
               const dueDate = addDaysFns(new Date(), i * 15);
@@ -1122,16 +1126,16 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <CoraboContext.Provider value={state}>
+    <CoraboStateContext.Provider value={state}>
         <CoraboActionsContext.Provider value={actions}>
             {children}
         </CoraboActionsContext.Provider>
-    </CoraboContext.Provider>
+    </CoraboStateContext.Provider>
   );
 };
 
 export const useCorabo = (): CoraboState & CoraboActions => {
-  const state = useContext(CoraboContext);
+  const state = useContext(CoraboStateContext);
   const actions = useContext(CoraboActionsContext);
   if (state === undefined || actions === undefined) {
     throw new Error('useCorabo must be used within a CoraboProvider');
