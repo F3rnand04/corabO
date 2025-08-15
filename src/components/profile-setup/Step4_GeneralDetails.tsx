@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -24,25 +23,6 @@ interface Step4_GeneralDetailsProps {
 export default function Step4_GeneralDetails({ onBack, onNext, formData, setFormData }: Step4_GeneralDetailsProps) {
   const { currentUser, validateEmail, updateUser, sendMessage } = useCorabo();
   const router = useRouter();
-
-  const handleValueChange = (field: 'phone' | 'email', value: string) => {
-    // This now correctly calls the updateUser function from the context
-    if (currentUser) {
-      updateUser(currentUser.id, { [field]: value });
-    }
-  };
-  
-  useEffect(() => {
-    // Ensure form data is synced with the latest from the current user
-    if (currentUser) {
-        setFormData({
-            ...formData,
-            email: currentUser.email,
-            phone: currentUser.phone
-        });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser]);
   
   const isIdentityComplete = currentUser?.lastName && currentUser?.idNumber && currentUser?.birthDate;
 
@@ -91,17 +71,17 @@ export default function Step4_GeneralDetails({ onBack, onNext, formData, setForm
 
             <ValidationItem
                 label="Correo Electrónico:"
-                value={formData.email}
+                value={currentUser?.email || ''}
                 initialStatus={currentUser?.emailValidated ? 'validated' : 'idle'}
-                onValidate={() => validateEmail(currentUser!.id, formData.email)}
-                onValueChange={(value) => handleValueChange('email', value)}
+                onValidate={() => validateEmail(currentUser!.id, currentUser?.email || '')}
+                onValueChange={(value) => updateUser(currentUser!.id, { email: value })}
                 type="email"
             />
              <ValidationItem
                 label="Teléfono:"
-                value={formData.phone}
+                value={currentUser?.phone || ''}
                 initialStatus={currentUser?.phoneValidated ? 'validated' : 'idle'}
-                onValueChange={(value) => handleValueChange('phone', value)}
+                onValueChange={(value) => updateUser(currentUser!.id, { phone: value })}
                 type="phone"
             />
         </div>

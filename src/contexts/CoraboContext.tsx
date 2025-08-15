@@ -172,10 +172,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const userCache = useRef<Map<string, User>>(new Map());
   const activeListeners = useRef<Unsubscribe[]>([]);
 
-  const cleanupListeners = () => {
+  const cleanupListeners = useCallback(() => {
     activeListeners.current.forEach(unsubscribe => unsubscribe());
     activeListeners.current = [];
-  };
+  }, []);
 
   const handleUserAuth = useCallback(async (firebaseUser: FirebaseUser | null) => {
     cleanupListeners();
@@ -193,13 +193,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         setCurrentUser(null);
     }
     setIsLoadingAuth(false);
-  }, []);
+  }, [cleanupListeners]);
 
   useEffect(() => {
     const auth = getAuthInstance();
     const authUnsubscribe = onAuthStateChanged(auth, handleUserAuth);
     
-    // Global listeners that do not depend on the user
     const db = getFirestoreDb();
     const usersUnsubscribe = onSnapshot(collection(db, 'users'), (snapshot) => {
         setUsers(snapshot.docs.map(doc => doc.data() as User));
@@ -214,11 +213,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       publicationsUnsubscribe();
       cleanupListeners();
     };
-  }, [handleUserAuth]);
+  }, [handleUserAuth, cleanupListeners]);
   
   
   useEffect(() => {
-    cleanupListeners(); // Clean up previous user's listeners before setting up new ones
+    cleanupListeners();
   
     if (currentUser?.id) {
       const db = getFirestoreDb();
@@ -249,14 +248,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         qrSessionsUnsubscribe,
       ];
     } else {
-      // Clear data if no user
       setTransactions([]);
       setConversations([]);
     }
-  
-    // The cleanup function for this effect will be called when currentUser.id changes
+
     return () => cleanupListeners();
-  }, [currentUser?.id]);
+  }, [currentUser?.id, cleanupListeners]);
 
 
   useEffect(() => {
@@ -277,8 +274,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [currentUser?.isGpsActive]);
 
-
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = useCallback(async () => {
     const auth = getAuthInstance();
     const provider = new GoogleAuthProvider();
     try {
@@ -293,33 +289,33 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         });
       }
     }
-  };
+  }, [toast]);
   
-  const logout = async () => {
+  const logout = useCallback(async () => {
     await signOut(getAuthInstance());
-    setCurrentUser(null); // Clear user state immediately
+    setCurrentUser(null);
     router.push('/login');
-  };
+  }, [router]);
 
-  const setSearchQuery = (query: string) => {
+  const setSearchQuery = useCallback((query: string) => {
     _setSearchQuery(query);
     if (query.trim() && !searchHistory.includes(query.trim())) {
         setSearchHistory(prev => [query.trim(), ...prev].slice(0, 10));
     }
-  }
+  }, [searchHistory]);
   
-  const clearSearchHistory = () => {
+  const clearSearchHistory = useCallback(() => {
     setSearchHistory([]);
-  };
+  }, []);
 
-  const addToCart = async (product: Product, quantity: number) => {
+  const addToCart = useCallback(async (product: Product, quantity: number) => {
     if (!currentUser) return;
     if (!currentUser.isTransactionsActive) {
       toast({ variant: "destructive", title: "Acción Requerida", description: "Debes activar tu registro de transacciones para poder comprar." });
       return;
     }
   
-    const provider = await fetchUser(product.providerId);
+    const provider = await getPublicProfileFlow({ userId: product.providerId });
     if (!provider?.isTransactionsActive) {
       toast({ variant: "destructive", title: "Proveedor no disponible", description: "Este proveedor no tiene las transacciones activas en este momento." });
       return;
@@ -358,9 +354,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       await setDoc(doc(db, 'transactions', newTx.id), newTx);
     }
     toast({ title: "Producto añadido", description: `${product.name} fue añadido a tu carrito.` });
-  };
+  }, [currentUser, toast, transactions]);
   
-  const updateCartQuantity = async (productId: string, quantity: number) => {
+  const updateCartQuantity = useCallback(async (productId: string, quantity: number) => {
     if (!currentUser || !currentUser.isTransactionsActive) return;
   
     const db = getFirestoreDb();
@@ -377,49 +373,49 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     } else {
       await updateDoc(doc(db, 'transactions', activeCartTx.id), { 'details.items': updatedItems });
     }
-  };
+  }, [currentUser, transactions]);
 
-  const removeFromCart = (productId: string) => {
+  const removeFromCart = useCallback((productId: string) => {
     updateCartQuantity(productId, 0);
-  };
+  }, [updateCartQuantity]);
   
-  const getCartItemQuantity = (productId: string) => {
+  const getCartItemQuantity = useCallback((productId: string) => {
     const item = cart.find(item => item.product.id === productId);
     return item ? item.quantity : 0;
-  };
+  }, [cart]);
 
-  const getCartTotal = () => cart.reduce((total, item) => total + item.product.price * item.quantity, 0);
+  const getCartTotal = useCallback(() => cart.reduce((total, item) => total + item.product.price * item.quantity, 0), [cart]);
   
-  const getDeliveryCost = () => {
+  const getDeliveryCost = useCallback(() => {
     const distanceInKm = (Math.random() * 9) + 1;
     return distanceInKm * 1.5;
-  };
+  }, []);
   
-  const addContact = (user: User) => {
+  const addContact = useCallback((user: User) => {
     if (contacts.some(c => c.id === user.id)) return false;
     setContacts(prev => [...prev, user]);
     return true;
-  };
+  }, [contacts]);
 
-  const removeContact = (userId: string) => {
+  const removeContact = useCallback((userId: string) => {
     setContacts(prev => prev.filter(c => c.id !== userId));
-  };
+  }, []);
   
-  const isContact = (userId: string) => {
+  const isContact = useCallback((userId: string) => {
     return contacts.some(c => c.id === userId);
-  };
+  }, [contacts]);
   
-  const updateUser = async (userId: string, updates: Partial<User>) => {
+  const updateUser = useCallback(async (userId: string, updates: Partial<User>) => {
     const db = getFirestoreDb();
     const userDocRef = doc(db, 'users', userId);
-    await updateDoc(userDocRef, updates, { merge: true });
-  };
+    await updateDoc(userDocRef, updates);
+  }, []);
 
-  const completeInitialSetup = async (userId: string, data: { name: string; lastName: string; idNumber: string; birthDate: string; country: string; }) => {
+  const completeInitialSetup = useCallback(async (userId: string, data: { name: string; lastName: string; idNumber: string; birthDate: string; country: string; }) => {
     await completeInitialSetupFlow({userId, ...data});
-  };
+  }, []);
   
-  const toggleGps = (userId: string) => {
+  const toggleGps = useCallback((userId: string) => {
     if (!currentUser) return;
     const newGpsState = !currentUser.isGpsActive;
     updateUser(userId, { isGpsActive: newGpsState });
@@ -427,9 +423,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       title: `GPS ${newGpsState ? 'Habilitado' : 'Deshabilitado'}`,
       description: newGpsState ? 'Tu ubicación ahora es visible para otros.' : 'Ya no estás compartiendo tu ubicación.',
     });
-  };
+  }, [currentUser, updateUser, toast]);
 
-  const getDistanceToProvider = (provider: User): string | null => {
+  const getDistanceToProvider = useCallback((provider: User): string | null => {
     let userLatLon: GeolocationCoords | null = currentUserLocation;
     
     if (!userLatLon && currentUser?.profileSetupData?.location) {
@@ -462,7 +458,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         if (distance < 1) return `~1 km`;
         return `~${Math.ceil(distance)} km`;
     }
-  };
+  }, [currentUser?.country, currentUser?.profileSetupData.location, currentUserLocation]);
 
   const sendMessage = useCallback((options: { recipientId: string; text?: string; createOnly?: boolean; location?: { lat: number, lon: number } }): string => {
     if (!currentUser) return '';
@@ -485,7 +481,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return conversationId;
   }, [currentUser]);
 
-  const sendProposalMessage = async (conversationId: string, proposal: AgreementProposal) => {
+  const sendProposalMessage = useCallback(async (conversationId: string, proposal: AgreementProposal) => {
     if (!currentUser) return;
     try {
         const conversationDoc = await getDoc(doc(getFirestoreDb(), 'conversations', conversationId));
@@ -505,9 +501,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         console.error("Error enviando propuesta:", error);
         toast({ variant: 'destructive', title: 'Error al enviar la propuesta' });
     }
-  };
+  }, [currentUser, toast]);
 
-  const markConversationAsRead = async (conversationId: string) => {
+  const markConversationAsRead = useCallback(async (conversationId: string) => {
     if (!currentUser) return;
     const db = getFirestoreDb();
     const convoRef = doc(db, 'conversations', conversationId);
@@ -524,18 +520,18 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             await updateDoc(convoRef, { messages: updatedMessages });
         }
     }
-  };
+  }, [currentUser]);
 
-  const toggleUserPause = (userId: string, currentIsPaused: boolean) => {
+  const toggleUserPause = useCallback((userId: string, currentIsPaused: boolean) => {
     updateUser(userId, { isPaused: !currentIsPaused });
-  };
+  }, [updateUser]);
   
-  const deleteUser = async (userId: string) => {
+  const deleteUser = useCallback(async (userId: string) => {
       await deleteUserFlow({ userId });
       toast({ title: 'Usuario eliminado', description: 'El usuario ha sido eliminado de la base de datos.' });
-  }
+  }, [toast]);
 
-  const verifyCampaignPayment = async (transactionId: string, campaignId: string) => {
+  const verifyCampaignPayment = useCallback(async (transactionId: string, campaignId: string) => {
     const db = getFirestoreDb();
     const batch = writeBatch(db);
     const txRef = doc(db, "transactions", transactionId);
@@ -544,15 +540,16 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     batch.update(campaignRef, { status: "active" });
     await batch.commit();
     toast({ title: "Campaña Activada" });
-  };
-  const verifyUserId = (userId: string) => updateUser(userId, { idVerificationStatus: 'verified', verified: true });
-  const rejectUserId = (userId: string) => updateUser(userId, { idVerificationStatus: 'rejected' });
-  
-  const autoVerifyIdWithAI = async (input: VerificationInput): Promise<VerificationOutput> => {
-      return autoVerifyIdWithAIFlow(input);
-  }
+  }, [toast]);
 
-  const checkout = (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {
+  const verifyUserId = useCallback((userId: string) => updateUser(userId, { idVerificationStatus: 'verified', verified: true }), [updateUser]);
+  const rejectUserId = useCallback((userId: string) => updateUser(userId, { idVerificationStatus: 'rejected' }), [updateUser]);
+  
+  const autoVerifyIdWithAI = useCallback(async (input: VerificationInput): Promise<VerificationOutput> => {
+      return autoVerifyIdWithAIFlow(input);
+  }, []);
+
+  const checkout = useCallback((transactionId: string, withDelivery: boolean, useCredicora: boolean) => {
       if(!currentUser) return;
       const db = getFirestoreDb();
       const batch = writeBatch(db);
@@ -613,9 +610,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
           toast({ title: "Pedido realizado", description: "Tu pedido ha sido enviado al proveedor." });
           router.push('/transactions');
       });
-  };
+  }, [currentUser, getCartTotal, getDeliveryCost, transactions, cart, deliveryAddress, toast, router]);
 
-  const acceptDelivery = (transactionId: string) => {
+  const acceptDelivery = useCallback((transactionId: string) => {
     if (!currentUser || currentUser.type !== 'repartidor') return;
     const db = getFirestoreDb();
     const txRef = doc(db, 'transactions', transactionId);
@@ -624,23 +621,23 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         'details.deliveryProviderId': currentUser.id,
     });
     toast({ title: "¡Pedido Aceptado!", description: "El proveedor ha sido notificado. ¡A entregar!" });
-  };
+  }, [currentUser, toast]);
 
-  const requestService = (service: Service) => {};
-  const requestQuoteFromGroup = (serviceName: string, items: string[], groupOrProvider: string): boolean => { return true; };
+  const requestService = useCallback((service: Service) => {}, []);
+  const requestQuoteFromGroup = useCallback((serviceName: string, items: string[], groupOrProvider: string): boolean => { return true; }, []);
   
-  const updateUserProfileImage = async (userId: string, imageUrl: string) => {
+  const updateUserProfileImage = useCallback(async (userId: string, imageUrl: string) => {
      await updateUser(userId, { profileImage: imageUrl });
-  };
+  }, [updateUser]);
   
-  const removeGalleryImage = async (userId: string, imageId: string) => {
+  const removeGalleryImage = useCallback(async (userId: string, imageId: string) => {
     if (!currentUser) return;
     const db = getFirestoreDb();
     await deleteDoc(doc(db, 'publications', imageId));
     toast({ title: "Publicación eliminada" });
-  };
+  }, [currentUser, toast]);
   
-  const validateEmail = async (userId: string, emailToValidate: string): Promise<boolean> => {
+  const validateEmail = useCallback(async (userId: string, emailToValidate: string): Promise<boolean> => {
     const verificationCode = Math.floor(1000 + Math.random() * 9000).toString();
     console.log(`CÓDIGO DE VERIFICACIÓN PARA ${emailToValidate}: ${verificationCode}`);
     toast({
@@ -648,9 +645,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         description: `Se ha enviado un código a tu correo. (Revisa la consola del navegador para ver el código).`
     });
     return true;
-  };
+  }, [toast]);
 
-  const sendPhoneVerification = async (userId: string, phone: string) => {
+  const sendPhoneVerification = useCallback(async (userId: string, phone: string) => {
     try {
         await sendSmsVerificationCodeFlow({ userId, phoneNumber: phone });
         toast({
@@ -665,9 +662,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             description: 'No se pudo enviar el código de verificación. Intenta más tarde.'
         });
     }
-  };
+  }, [toast]);
 
-  const verifyPhoneCode = async (userId: string, code: string): Promise<boolean> => {
+  const verifyPhoneCode = useCallback(async (userId: string, code: string): Promise<boolean> => {
     try {
         const result = await verifySmsCodeFlow({ userId, code });
         if (result.success) {
@@ -693,9 +690,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         });
         return false;
     }
-  };
+  }, [toast]);
 
-  const updateFullProfile = async (userId: string, data: ProfileSetupData, profileType: 'client' | 'provider' | 'repartidor') => {
+  const updateFullProfile = useCallback(async (userId: string, data: ProfileSetupData, profileType: 'client' | 'provider' | 'repartidor') => {
     if (!currentUser) return;
 
     const db = getFirestoreDb();
@@ -715,20 +712,20 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     if (wasClient && isNowProviderOrRepartidor) {
       NotificationFlows.sendWelcomeToProviderNotification({ userId });
     }
-  };
+  }, [currentUser]);
 
-  const subscribeUser = (userId: string, planName: string, amount: number) => {
+  const subscribeUser = useCallback((userId: string, planName: string, amount: number) => {
     if (!currentUser) return;
     const encodedConcept = encodeURIComponent(`Suscripción: ${planName}`);
     router.push(`/quotes/payment?amount=${amount}&concept=${encodedConcept}&isSubscription=true`);
-  };
+  }, [currentUser, router]);
   
-  const createCampaign = async (data: Omit<CreateCampaignInput, 'userId'>) => {
+  const createCampaign = useCallback(async (data: Omit<CreateCampaignInput, 'userId'>) => {
     if (!currentUser) return;
     await createCampaignFlow({ ...data, userId: currentUser.id });
-  };
+  }, [currentUser]);
   
-  const activateTransactions = async (userId: string, paymentDetails: any) => {
+  const activateTransactions = useCallback(async (userId: string, paymentDetails: any) => {
       if (!currentUser) return;
       const db = getFirestoreDb();
       const userRef = doc(db, 'users', userId);
@@ -742,11 +739,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       };
 
       await updateDoc(userRef, updates);
-  };
+  }, [currentUser]);
   
-  const deactivateTransactions = (userId: string) => {};
+  const deactivateTransactions = useCallback((userId: string) => {}, []);
   
-  const downloadTransactionsPDF = (transactionsToDownload: Transaction[]) => {
+  const downloadTransactionsPDF = useCallback((transactionsToDownload: Transaction[]) => {
     const doc = new jsPDF();
     const tableColumn = ["Fecha", "ID", "Tipo", "Descripción", "Monto"];
     const tableRows: any[][] = [];
@@ -768,9 +765,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
     (doc as any).autoTable(tableColumn, tableRows, { startY: 40 });
     doc.save('corabo_transactions.pdf');
-  };
+  }, []);
   
-  const getAgendaEvents = (transactions: Transaction[]): { date: Date; type: 'payment' | 'task'; description: string, transactionId: string }[] => {
+  const getAgendaEvents = useCallback((transactions: Transaction[]): { date: Date; type: 'payment' | 'task'; description: string, transactionId: string }[] => {
     const events: { date: Date; type: 'payment' | 'task'; description: string, transactionId: string }[] = [];
     if (!currentUser || !transactions) return events;
 
@@ -794,9 +791,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return events;
-  };
+  }, [currentUser]);
   
-  const updateUserProfileAndGallery = async (userId: string, image: GalleryImage) => {
+  const updateUserProfileAndGallery = useCallback(async (userId: string, image: GalleryImage) => {
     const db = getFirestoreDb();
     const batch = writeBatch(db);
     
@@ -809,12 +806,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     batch.update(userRef, { promotion: null });
     
     await batch.commit();
-  };
+  }, []);
 
-  const addCommentToImage = (ownerId: string, imageId: string, commentText: string) => {};
-  const removeCommentFromImage = (ownerId: string, imageId: string, commentIndex: number) => {};
+  const addCommentToImage = useCallback((ownerId: string, imageId: string, commentText: string) => {}, []);
+  const removeCommentFromImage = useCallback((ownerId: string, imageId: string, commentIndex: number) => {}, []);
   
-  const activatePromotion = async (details: { imageId: string, promotionText: string, cost: number }) => {
+  const activatePromotion = useCallback(async (details: { imageId: string, promotionText: string, cost: number }) => {
     if (!currentUser) return;
     const db = getFirestoreDb();
     const batch = writeBatch(db);
@@ -846,9 +843,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     batch.set(txRef, newTransaction);
     
     await batch.commit();
-  };
+  }, [currentUser]);
   
-  const getUserMetrics = (userId: string, allTransactions: Transaction[]): UserMetrics => {
+  const getUserMetrics = useCallback((userId: string, allTransactions: Transaction[]): UserMetrics => {
     const providerTransactions = allTransactions.filter(tx => tx.providerId === userId);
     if (providerTransactions.length === 0) {
       return { reputation: 0, effectiveness: 0, responseTime: 'Nuevo' };
@@ -879,9 +876,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     else if(diffMinutes < 30) responseTime = '15-30 min';
   
     return { reputation, effectiveness, responseTime };
-  };
+  }, []);
 
-  const startQrSession = async (providerId: string) => {
+  const startQrSession = useCallback(async (providerId: string) => {
     if (!currentUser) return null;
     const db = getFirestoreDb();
     const sessionId = `qrsess-${Date.now()}`;
@@ -897,13 +894,13 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     };
     await setDoc(sessionRef, newSession);
     return sessionId;
-  };
+  }, [currentUser]);
 
-  const setQrSessionAmount = async (sessionId: string, amount: number) => {
+  const setQrSessionAmount = useCallback(async (sessionId: string, amount: number) => {
     if (!currentUser || !qrSession) return;
     const db = getFirestoreDb();
     const sessionRef = doc(db, 'qr_sessions', sessionId);
-    const client = await fetchUser(qrSession.clientId);
+    const client = await getPublicProfileFlow({ userId: qrSession.clientId });
     if (!client) return;
 
     const crediDetails = credicoraLevels[(client.credicoraLevel || 1).toString()];
@@ -921,27 +918,27 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         status: 'pendingClientApproval',
         updatedAt: new Date().toISOString(),
     });
-  };
+  }, [currentUser, qrSession]);
 
-  const approveQrSession = async (sessionId: string) => {
+  const approveQrSession = useCallback(async (sessionId: string) => {
     const db = getFirestoreDb();
     const sessionRef = doc(db, 'qr_sessions', sessionId);
     await updateDoc(sessionRef, { status: 'pendingVoucherUpload', updatedAt: new Date().toISOString() });
-  };
+  }, []);
   
-  const cancelQrSession = async (sessionId: string) => {
+  const cancelQrSession = useCallback(async (sessionId: string) => {
       const db = getFirestoreDb();
       const sessionRef = doc(db, 'qr_sessions', sessionId);
       await updateDoc(sessionRef, { status: 'cancelled', updatedAt: new Date().toISOString() });
-  }
+  }, []);
 
-  const finalizeQrSession = async (sessionId: string, voucherUrl: string) => {
+  const finalizeQrSession = useCallback(async (sessionId: string, voucherUrl: string) => {
       const db = getFirestoreDb();
       const sessionRef = doc(db, 'qr_sessions', sessionId);
       await updateDoc(sessionRef, { voucherUrl });
       await TransactionFlows.processDirectPayment({ sessionId });
       toast({ title: '¡Pago Completado!', description: 'La transacción ha sido registrada exitosamente.' });
-  };
+  }, [toast]);
 
   const fetchUser = useCallback(async (userId: string): Promise<User | null> => {
     if (userCache.current.has(userId)) {
@@ -956,7 +953,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return null;
   }, []);
   
-  const registerSystemPayment = async (concept: string, amount: number, isSubscription: boolean) => {
+  const registerSystemPayment = useCallback(async (concept: string, amount: number, isSubscription: boolean) => {
     if (!currentUser) return;
     const db = getFirestoreDb();
     const batch = writeBatch(db);
@@ -983,9 +980,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
     toast({ title: 'Pago registrado', description: 'Tu pago será verificado por un administrador.' });
     router.push('/transactions');
-  };
+  }, [currentUser, toast, router]);
   
-  const payCommitment = async (transactionId: string, isSubscriptionPayment = false) => {
+  const payCommitment = useCallback(async (transactionId: string, isSubscriptionPayment = false) => {
       const db = getFirestoreDb();
       const batch = writeBatch(db);
       
@@ -1026,13 +1023,13 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       } else {
         toast({ title: 'Pago registrado', description: 'Tu pago será verificado por el proveedor.' });
       }
-  }
+  }, [currentUser, toast]);
 
-  const cancelSystemTransaction = async (transactionId: string) => {
+  const cancelSystemTransaction = useCallback(async (transactionId: string) => {
     const db = getFirestoreDb();
     await deleteDoc(doc(db, 'transactions', transactionId));
     toast({ title: "Compromiso cancelado", description: "La renovación ha sido cancelada." });
-  }
+  }, [toast]);
 
   const state: CoraboState = {
     currentUser,
