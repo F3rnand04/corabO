@@ -37,42 +37,18 @@ export async function autoVerifyIdWithAI(input: VerificationInput): Promise<Veri
   return autoVerifyIdWithAIFlow(input);
 }
 
-// Levenshtein distance function to calculate similarity between two strings
-function levenshteinDistance(a: string, b: string): number {
-    if (a.length === 0) return b.length;
-    if (b.length === 0) return a.length;
+// Advanced name comparison logic
+function compareNamesFlexibly(nameA: string, nameB: string): boolean {
+    const normalize = (name: string) => 
+        name.toLowerCase().trim().replace(/\s+/g, ' ').split(' ').sort();
 
-    const matrix = Array(b.length + 1).fill(null).map(() => Array(a.length + 1).fill(null));
+    const partsA = normalize(nameA);
+    const partsB = normalize(nameB);
 
-    for (let i = 0; i <= a.length; i++) {
-        matrix[0][i] = i;
-    }
+    const [shorter, longer] = partsA.length < partsB.length ? [partsA, partsB] : [partsB, partsA];
 
-    for (let j = 0; j <= b.length; j++) {
-        matrix[j][0] = j;
-    }
-
-    for (let j = 1; j <= b.length; j++) {
-        for (let i = 1; i <= a.length; i++) {
-            const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-            matrix[j][i] = Math.min(
-                matrix[j][i - 1] + 1, // deletion
-                matrix[j - 1][i] + 1, // insertion
-                matrix[j - 1][i - 1] + cost // substitution
-            );
-        }
-    }
-
-    return matrix[b.length][a.length];
-}
-
-function calculateNameSimilarity(a: string, b: string): number {
-    const longer = a.length > b.length ? a : b;
-    const shorter = a.length > b.length ? b : a;
-    if (longer.length === 0) {
-        return 1.0;
-    }
-    return (longer.length - levenshteinDistance(longer, shorter)) / longer.length;
+    // Check if every word in the shorter name exists in the longer name
+    return shorter.every(part => longer.includes(part));
 }
 
 
@@ -126,13 +102,7 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
     
     const idMatch = normalizeId(extractedId) === normalizeId(input.idInRecord);
     
-    const normalizeName = (str: string) => str.trim().toLowerCase().replace(/\s+/g, ' ');
-    
-    const extractedNameLower = normalizeName(extractedName);
-    const recordNameLower = normalizeName(input.nameInRecord);
-
-    const nameSimilarity = calculateNameSimilarity(recordNameLower, extractedNameLower);
-    const nameMatch = nameSimilarity >= 0.8;
+    const nameMatch = compareNamesFlexibly(input.nameInRecord, extractedName);
 
     return {
       extractedName: extractedName,
