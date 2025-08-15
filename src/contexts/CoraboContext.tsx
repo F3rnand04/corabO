@@ -241,6 +241,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       setTransactions([]);
       setConversations([]);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser?.id]);
 
   useEffect(() => {
