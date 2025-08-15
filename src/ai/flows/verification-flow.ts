@@ -85,7 +85,7 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
   async (input) => {
     
     const response = await ai.generate({
-        model: 'gemini-1.5-flash',
+        model: 'googleai/gemini-1.5-flash',
         prompt: [{
             text: `You are an expert document analyst. Analyze the provided image of an identification document.
             Extract the full name and the full identification number exactly as they appear.
