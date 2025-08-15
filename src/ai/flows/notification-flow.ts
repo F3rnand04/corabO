@@ -20,7 +20,7 @@ const SendNotificationInputSchema = z.object({
   title: z.string(),
   message: z.string(),
   link: z.string().optional(),
-  type: z.enum(['new_campaign', 'payment_reminder', 'admin_alert', 'welcome']),
+  type: z.enum(['new_campaign', 'payment_reminder', 'admin_alert', 'welcome', 'affiliation_request']),
 });
 
 /**

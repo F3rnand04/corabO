@@ -7,7 +7,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestoreDb } from '@/lib/firebase-server';
-import { doc, setDoc, updateDoc, writeBatch, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, writeBatch, collection, query, where, getDocs, getDoc } from 'firebase/firestore';
 import type { Affiliation, User } from '@/lib/types';
 import { sendNotification } from './notification-flow';
 
