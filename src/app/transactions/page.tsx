@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from "react";
@@ -78,13 +77,12 @@ export default function TransactionsPage() {
     const [useCredicora, setUseCredicora] = useState(false);
 
     useEffect(() => {
-        if (!currentUser) {
+        // We consider loading to be finished once the currentUser is available.
+        // The transaction listener will update the state reactively.
+        if (currentUser) {
             setIsLoading(false);
-            return;
         }
-
-        setIsLoading(transactions.length === 0);
-    }, [currentUser, transactions]);
+    }, [currentUser]);
 
 
     if (!currentUser) {
