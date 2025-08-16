@@ -134,10 +134,11 @@ export default function TransactionsSettingsPage() {
         }));
     };
     
-    const handleSaveChanges = () => {
+    const handleSaveChanges = async () => {
         if (!currentUser) return;
         const wasActive = currentUser.isTransactionsActive;
-        activateTransactions(currentUser.id, paymentDetails);
+        
+        await activateTransactions(currentUser.id, paymentDetails);
 
         toast({ 
             title: wasActive ? "Cambios Guardados" : "¡Registro Activado!",

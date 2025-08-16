@@ -86,7 +86,7 @@ interface CoraboActions {
   verifyPhoneCode: (userId: string, code: string) => Promise<boolean>;
   updateFullProfile: (userId: string, data: ProfileSetupData, profileType: 'client' | 'provider' | 'repartidor') => Promise<void>;
   subscribeUser: (userId: string, planName: string, amount: number) => void;
-  activateTransactions: (userId: string, paymentDetails: any) => void;
+  activateTransactions: (userId: string, paymentDetails: any) => Promise<void>;
   deactivateTransactions: (userId: string) => void;
   downloadTransactionsPDF: (transactions: Transaction[]) => void;
   sendMessage: (options: { recipientId: string; text?: string; createOnly?: boolean; location?: { lat: number, lon: number } }) => string;
@@ -259,12 +259,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       }
   }, []);
   
-  const updateUser = async (userId: string, updates: Partial<User>) => {
+  const updateUser = useCallback(async (userId: string, updates: Partial<User>) => {
       const db = getFirestoreDb();
       await updateDoc(doc(db, 'users', userId), updates);
       // **FIX**: Proactively update the local state to avoid race conditions
       setCurrentUser(prevUser => prevUser && prevUser.id === userId ? { ...prevUser, ...updates } : prevUser);
-  };
+  }, []);
       
   const actions = useMemo(() => ({
     signInWithGoogle: async () => {
@@ -301,6 +301,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     isContact: (userId: string) => contacts.some(c => c.id === userId),
     getCartItemQuantity: (productId: string) => cart.find(item => item.product.id === productId)?.quantity || 0,
     updateUser,
+    activateTransactions: async (userId: string, paymentDetails: any) => {
+        if (!currentUser) return;
+        const updatedData = { 
+            isTransactionsActive: true,
+            profileSetupData: { ...currentUser.profileSetupData, paymentDetails } 
+        };
+        await updateUser(userId, updatedData);
+    },
     toggleGps: async (userId: string) => {
         const user = users.find(u => u.id === userId);
         if (!user) return;
@@ -412,7 +420,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     subscribeUser: (userId: string, planName: string, amount: number) => {
         router.push(`/quotes/payment?concept=${encodeURIComponent(`Suscripción: ${planName}`)}&amount=${amount}&isSubscription=true`);
     },
-    activateTransactions: (a:any,b:any)=>{},
     deactivateTransactions: (a:any)=>{},
     downloadTransactionsPDF: (a:any)=>{},
     sendProposalMessage: (a:any,b:any)=>{},
@@ -462,7 +469,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     },
   }), [
     searchHistory, contacts, cart, transactions, getCartTotal, 
-    getDeliveryCost, users, updateCart, router, currentUser
+    getDeliveryCost, users, updateCart, router, currentUser, updateUser
   ]);
   
   return (
