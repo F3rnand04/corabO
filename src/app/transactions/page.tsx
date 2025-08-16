@@ -435,11 +435,11 @@ export default function TransactionsPage() {
             <main className="container py-6">
                  {isModuleActive ? renderContent() : (
                     <div className="space-y-4">
-                        <ActivationWarning userType={currentUser.type} />
-                        <div className="text-center py-12 opacity-50">
+                        <div className="text-center py-12">
                             <Wallet className="mx-auto h-16 w-16 text-muted-foreground" />
                             <h2 className="mt-4 text-2xl font-semibold">Módulo Desactivado</h2>
                             <p className="mt-2 text-muted-foreground">Activa el módulo para ver tus finanzas.</p>
+                            <Button className="mt-4" onClick={() => router.push('/transactions/settings')}>Activar Módulo</Button>
                         </div>
                     </div>
                 )}
