@@ -201,13 +201,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         } catch (error) {
             console.error("Error in getOrCreateUserFlow:", error);
             setCurrentUser(null);
-        } finally {
-            setIsLoadingAuth(false);
         }
     } else {
         setCurrentUser(null);
-        setIsLoadingAuth(false); // **CRITICAL FIX**: Ensure loading is stopped even if there's no user
     }
+    // **CRITICAL FIX**: This must be outside the `if` block to handle both login and logout cases.
+    setIsLoadingAuth(false);
   }, [cleanupListeners]);
 
   // **STABILIZED MAIN EFFECT**
@@ -218,7 +217,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return () => {
         unsubscribeAuth();
     };
-}, [handleUserAuth]); // Dependency is now stable.
+  }, [handleUserAuth]); // Dependency is now stable.
 
   // **STABILIZED DATA LISTENERS EFFECT**
   useEffect(() => {
