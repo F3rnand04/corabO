@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, memo } from 'react';
@@ -79,19 +78,24 @@ export default function InitialSetupPage() {
             return; // Stop submission
         }
         
-        // This is now an isolated action that doesn't trigger a context update loop.
         await completeInitialSetupFlow({ userId: currentUser.id, name, lastName, idNumber, birthDate, country });
         
-        // This is a small, safe update that doesn't cause issues.
-        await updateUser(currentUser.id, { 
+        // **FIX:** Ensure user type is updated correctly based on the checkbox.
+        // This synchronizes the backend state with the frontend selection.
+        const userTypeUpdate: Partial<User> = {
             profileSetupData: {
                 ...currentUser.profileSetupData,
                 providerType: isCompany ? 'company' : 'professional'
-            },
-            type: isCompany ? 'provider' : currentUser.type // Companies are providers by default
-        });
-        // The AppLayout will now handle the redirection automatically because
-        // the onSnapshot listener will update the currentUser and trigger its useEffect.
+            }
+        };
+
+        if (isCompany) {
+            userTypeUpdate.type = 'provider';
+        }
+        
+        await updateUser(currentUser.id, userTypeUpdate);
+
+        // Let AppLayout handle redirection based on the now-consistent state.
 
     } catch (error: any) {
         console.error("Failed to complete setup:", error);
