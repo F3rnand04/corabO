@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from '../ui/textarea';
-import { MapPin, Building, AlertCircle, Package, Hand, Star, Info, LocateFixed } from 'lucide-react';
+import { MapPin, Building, AlertCircle, Package, Hand, Star, Info, LocateFixed, Handshake } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '../ui/slider';
 import { Badge } from '../ui/badge';
@@ -18,7 +18,8 @@ import { useRouter } from 'next/navigation';
 import type { ProfileSetupData } from '@/lib/types';
 import { useState } from 'react';
 import { useCorabo } from '@/contexts/CoraboContext';
-import { requestAffiliation } from "@/ai/flows/affiliation-flow";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { useToast } from '@/hooks/use-toast';
 
 interface Step5_SpecificDetailsProps {
   onBack: () => void;
@@ -32,11 +33,14 @@ const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sába
 export default function Step5_SpecificDetails({ onBack, onNext, formData, setFormData }: Step5_SpecificDetailsProps) {
   const router = useRouter();
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
-  const { currentUser, users } = useCorabo();
+  const { currentUser, users, requestAffiliation } = useCorabo();
+  const { toast } = useToast();
   
   const MAX_RADIUS_FREE = 10;
   const isOverFreeRadius = (formData.serviceRadius || 0) > MAX_RADIUS_FREE && !(currentUser?.isSubscribed);
   const isProfessional = formData.providerType === 'professional';
+
+  const companies = users.filter(u => u.profileSetupData?.providerType === 'company');
 
   const handleFormDataChange = (field: keyof ProfileSetupData, value: any) => {
     setFormData({ ...formData, [field]: value });
@@ -50,6 +54,23 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
     const currentSchedule = formData.schedule || {};
     const newSchedule = { ...currentSchedule, [day]: { ...(currentSchedule?.[day] || {}), [field]: value } };
     handleFormDataChange('schedule', newSchedule);
+  };
+
+  const handleRequestAffiliation = async (companyId: string) => {
+      if (!currentUser || !companyId) return;
+      try {
+          await requestAffiliation(currentUser.id, companyId);
+          toast({
+              title: "Solicitud Enviada",
+              description: "Tu solicitud de afiliación ha sido enviada a la empresa."
+          })
+      } catch (error: any) {
+          toast({
+              variant: "destructive",
+              title: "Error al solicitar",
+              description: error.message || "No se pudo enviar la solicitud."
+          })
+      }
   };
   
   return (
@@ -81,11 +102,25 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
       {isProfessional && (
         <div className="space-y-3">
           <Label>Afiliación Profesional</Label>
-          <div className="p-4 rounded-md border">
-            <p className="text-sm text-muted-foreground mb-2">Solicita la verificación de la empresa donde trabajas para aumentar tu confianza.</p>
-            <Button variant="outline" onClick={() => console.log('Open company search modal')}>
-              Buscar y Solicitar Afiliación
-            </Button>
+          <div className="p-4 rounded-md border space-y-3">
+            <p className="text-sm text-muted-foreground">Solicita la verificación de la empresa donde trabajas para aumentar tu confianza. La empresa deberá aprobar tu solicitud desde su panel.</p>
+             <Select onValueChange={handleRequestAffiliation}>
+                <SelectTrigger>
+                    <SelectValue placeholder="Busca y selecciona una empresa..." />
+                </SelectTrigger>
+                <SelectContent>
+                    {companies.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                </SelectContent>
+            </Select>
+            {currentUser?.activeAffiliation && (
+                <Alert className="bg-green-50 border-green-200 text-green-800">
+                    <Handshake className="h-4 w-4 !text-current" />
+                    <AlertTitle className="font-bold">¡Ya estás afiliado!</AlertTitle>
+                    <AlertDescription>
+                        Actualmente estas verificado por: <strong>{currentUser.activeAffiliation.companyName}</strong>.
+                    </AlertDescription>
+                </Alert>
+            )}
           </div>
         </div>
       )}

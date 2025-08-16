@@ -7,13 +7,13 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, MessageCircle, CheckCircle, Flag, Package, Hand, ShoppingCart, Plus, Minus, X, Truck, AlertTriangle, Loader2, Search, Building } from 'lucide-react';
+import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, MessageCircle, CheckCircle, Flag, Package, Hand, ShoppingCart, Plus, Minus, X, Truck, AlertTriangle, Loader2, Search, Building, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useState, TouchEvent, useEffect, useCallback, useMemo } from 'react';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
-import type { User, GalleryImage, Product, Transaction, AppointmentRequest } from '@/lib/types';
+import type { User, GalleryImage, Product, Transaction, AppointmentRequest, Affiliation } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { ReportDialog } from '@/components/ReportDialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -34,10 +34,11 @@ import { CartPopoverContent } from '@/components/CartPopoverContent';
 import { CheckoutAlertDialogContent } from '@/components/CheckoutAlertDialogContent';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { getFirestore, collection, query, where, onSnapshot } from 'firebase/firestore';
 
 export default function CompanyProfilePage() {
   const params = useParams();
-  const { addContact, isContact, transactions, createAppointmentRequest, currentUser, cart, updateCartQuantity, sendMessage, toggleGps, fetchUser, getDistanceToProvider, getUserMetrics } = useCorabo();
+  const { addContact, isContact, transactions, createAppointmentRequest, currentUser, cart, updateCartQuantity, sendMessage, toggleGps, fetchUser, getDistanceToProvider, getUserMetrics, users } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -48,6 +49,7 @@ export default function CompanyProfilePage() {
   const [providerGallery, setProviderGallery] = useState<GalleryImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [catalogSearchQuery, setCatalogSearchQuery] = useState('');
+  const [affiliatedProfessionals, setAffiliatedProfessionals] = useState<User[]>([]);
 
   useEffect(() => {
     if (!providerId) {
@@ -62,7 +64,7 @@ export default function CompanyProfilePage() {
             setProvider(fetchedProvider);
 
             if (fetchedProvider) {
-              if (fetchedProvider.profileSetupData?.offerType === 'product') {
+              if (fetchedProvider.profileSetupData?.offerType === 'product' || fetchedProvider.profileSetupData?.providerType === 'company') {
                   const productsResult = await getProfileProducts({ userId: providerId });
                   setProviderProducts(productsResult.products || []);
               } else {
@@ -81,6 +83,23 @@ export default function CompanyProfilePage() {
     loadProfileData();
 
   }, [providerId, fetchUser, toast]);
+
+  useEffect(() => {
+    if (provider?.profileSetupData?.providerType === 'company') {
+      const db = getFirestore();
+      const q = query(
+        collection(db, 'affiliations'),
+        where('companyId', '==', provider.id),
+        where('status', '==', 'approved')
+      );
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const professionalIds = snapshot.docs.map(doc => (doc.data() as Affiliation).providerId);
+        const professionals = users.filter(u => professionalIds.includes(u.id));
+        setAffiliatedProfessionals(professionals);
+      });
+      return () => unsubscribe();
+    }
+  }, [provider, users]);
 
   const filteredProducts = useMemo(() => {
     if (!catalogSearchQuery) return providerProducts;
@@ -146,6 +165,7 @@ export default function CompanyProfilePage() {
     );
   }
   
+  const isCompany = provider.profileSetupData?.providerType === 'company';
   const isProductProvider = provider.profileSetupData?.offerType === 'product';
   const isCurrentUserTransactionReady = currentUser?.isTransactionsActive;
   const isProviderTransactionReady = provider.isTransactionsActive;
@@ -482,13 +502,13 @@ export default function CompanyProfilePage() {
             </div>
             
             <div className="flex justify-around text-center text-xs text-muted-foreground pt-4 pb-4">
-              {!isProductProvider && (
+              {!isProductProvider && !isCompany && (
                 <div>
                   <p className="font-semibold text-foreground">{profileData.publications}</p>
                   <p>Publicaciones</p>
                 </div>
               )}
-              {isProductProvider ? (
+              {isProductProvider || isCompany ? (
                  <div>
                     <p className="font-semibold text-foreground">{providerProducts.length}</p>
                     <p>Productos</p>
@@ -499,6 +519,12 @@ export default function CompanyProfilePage() {
                     <p>Trab. Realizados</p>
                 </div>
                )}
+                {isCompany && (
+                     <div>
+                        <p className="font-semibold text-foreground">{affiliatedProfessionals.length}</p>
+                        <p>Afiliados</p>
+                    </div>
+                )}
             </div>
 
             {provider.activeAffiliation && (
@@ -529,7 +555,7 @@ export default function CompanyProfilePage() {
                 </Button>
               </div>
               <CardContent className="p-0">
-               {isProductProvider ? (
+               {isProductProvider || isCompany ? (
                   <div>
                       <div className="p-4 border-b">
                         <div className="relative">
@@ -675,6 +701,29 @@ export default function CompanyProfilePage() {
                 )}
               </CardContent>
             </Card>
+
+             {isCompany && affiliatedProfessionals.length > 0 && (
+              <Card className="mt-4">
+                  <CardContent className="p-4">
+                      <h3 className="font-bold text-lg mb-2 flex items-center gap-2"><Users className="w-5 h-5"/> Profesionales Afiliados</h3>
+                       <div className="space-y-2">
+                          {affiliatedProfessionals.map(prof => (
+                            <Link key={prof.id} href={`/companies/${prof.id}`} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted">
+                                <Avatar>
+                                    <AvatarImage src={prof.profileImage} />
+                                    <AvatarFallback>{prof.name.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <p className="font-semibold text-sm">{prof.name}</p>
+                                    <p className="text-xs text-muted-foreground">{prof.profileSetupData?.specialty}</p>
+                                </div>
+                            </Link>
+                          ))}
+                      </div>
+                  </CardContent>
+              </Card>
+            )}
+
           </main>
         </div>
       </div>

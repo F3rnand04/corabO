@@ -4,11 +4,12 @@
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { Shield, Home, Users, Banknote, ShieldAlert, BadgeInfo } from 'lucide-react';
+import { Shield, Home, Users, Banknote, ShieldAlert, BadgeInfo, Handshake } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UserManagementTab } from '@/components/admin/UserManagementTab';
 import { PaymentVerificationTab } from '@/components/admin/PaymentVerificationTab';
 import { DocumentVerificationTab } from '@/components/admin/DocumentVerificationTab';
+import { AffiliationManagementTab } from '@/components/admin/AffiliationManagementTab';
 
 function AdminHeader() {
   const router = useRouter();
@@ -44,18 +45,20 @@ export default function AdminPage() {
         // This is a fallback, AppLayout should prevent this render.
         return null; 
     }
+    
+    const isCompany = currentUser.profileSetupData?.providerType === 'company';
 
   return (
     <>
       <AdminHeader />
       <main className="container max-w-7xl mx-auto py-8">
         <Tabs defaultValue="user-management">
-          <TabsList className="grid w-full grid-cols-3 md:grid-cols-5">
+          <TabsList className={isCompany ? "grid w-full grid-cols-4 md:grid-cols-5" : "grid w-full grid-cols-3 md:grid-cols-5"}>
             <TabsTrigger value="user-management"><Users className="w-4 h-4 mr-2" />Usuarios</TabsTrigger>
             <TabsTrigger value="payment-verification"><Banknote className="w-4 h-4 mr-2" />Pagos</TabsTrigger>
             <TabsTrigger value="document-verification"><BadgeInfo className="w-4 h-4 mr-2" />Documentos</TabsTrigger>
+            {isCompany && <TabsTrigger value="affiliations"><Handshake className="w-4 h-4 mr-2" />Afiliaciones</TabsTrigger>}
             <TabsTrigger value="disputes" disabled><ShieldAlert className="w-4 h-4 mr-2" />Disputas</TabsTrigger>
-            <TabsTrigger value="reports" disabled>Reportes</TabsTrigger>
           </TabsList>
           
           <TabsContent value="user-management" className="mt-4">
@@ -67,9 +70,13 @@ export default function AdminPage() {
           <TabsContent value="document-verification" className="mt-4">
             <DocumentVerificationTab />
           </TabsContent>
+          {isCompany && (
+             <TabsContent value="affiliations" className="mt-4">
+                <AffiliationManagementTab />
+            </TabsContent>
+          )}
           {/* Placeholder for future tabs */}
           <TabsContent value="disputes"><p>Gestión de disputas próximamente.</p></TabsContent>
-          <TabsContent value="reports"><p>Gestión de reportes próximamente.</p></TabsContent>
         </Tabs>
       </main>
     </>
