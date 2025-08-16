@@ -196,10 +196,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     setQrSession(null); 
     
     if (firebaseUser) {
+        setIsLoadingAuth(true); // Start loading when a firebase user is detected
         try {
             const user = await getOrCreateUser(firebaseUser as FirebaseUserInput);
             
-            // Critical Validation: Ensure the backend returned a valid user object.
             if (user && user.id) {
                 setCurrentUser(user as User);
             } else {
@@ -221,12 +221,13 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             });
             await signOut(getAuthInstance());
             setCurrentUser(null);
+        } finally {
+            setIsLoadingAuth(false); // Stop loading after all operations are complete
         }
     } else {
         setCurrentUser(null);
+        setIsLoadingAuth(false); // Stop loading if no user is found
     }
-    // Set loading to false only after all auth logic is complete
-    setIsLoadingAuth(false);
   }, [cleanupListeners, toast]);
 
   useEffect(() => {
@@ -240,7 +241,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     if (currentUser?.id) {
       const db = getFirestoreDb();
       const listeners: Unsubscribe[] = [
-        onSnapshot(doc(db, 'users', currentUser.id), (doc) => doc.exists() && setCurrentUser(doc.data() as User)),
+        onSnapshot(doc(db, 'users', currentUser.id), (doc) => {
+          if (doc.exists()) {
+              // Only update if data has actually changed to prevent loops
+              if (JSON.stringify(currentUser) !== JSON.stringify(doc.data())) {
+                setCurrentUser(doc.data() as User)
+              }
+          }
+        }),
         onSnapshot(query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id)), (snapshot) => setTransactions(snapshot.docs.map(doc => doc.data() as Transaction))),
         onSnapshot(query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id), orderBy("lastUpdated", "desc")), (snapshot) => setConversations(snapshot.docs.map(doc => doc.data() as Conversation))),
         onSnapshot(query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', currentUser.id)), (snapshot) => setQrSession(snapshot.docs.map(d => d.data() as QrSession).find(s => s.status !== 'completed' && s.status !== 'cancelled') || null)),
@@ -252,7 +260,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       setTransactions([]); setConversations([]); setUsers([]); setAllPublications([]);
     }
     return () => cleanupListeners();
-  }, [currentUser?.id, cleanupListeners]);
+  }, [currentUser?.id, cleanupListeners, currentUser]);
 
   const state = useMemo(() => ({
     currentUser, users, allPublications, transactions, conversations, cart, searchQuery,
@@ -267,23 +275,24 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const getCartTotal = useCallback(() => cart.reduce((total, item) => total + item.product.price * item.quantity, 0), [cart]);
   const getDeliveryCost = useCallback(() => ((Math.random() * 9) + 1) * 1.5, []);
 
+  // Isolate actions into their own memoized object to break dependency cycles
   const actions = useMemo(() => {
-    const updateCart = async (newCart: CartItem[]) => {
-        if (!currentUser) return;
+    const updateCart = async (newCart: CartItem[], currentUserId: string, currentTransactions: Transaction[]) => {
+        if (!currentUserId) return;
         
         const db = getFirestoreDb();
-        let cartTx = transactions.find(tx => tx.status === 'Carrito Activo');
+        let cartTx = currentTransactions.find(tx => tx.status === 'Carrito Activo');
         
         if (newCart.length > 0) {
             if (cartTx) {
                 const txRef = doc(db, 'transactions', cartTx.id);
                 await updateDoc(txRef, { 'details.items': newCart });
             } else {
-                const newTxId = `txn-cart-${currentUser.id}-${Date.now()}`;
+                const newTxId = `txn-cart-${currentUserId}-${Date.now()}`;
                 const providerId = newCart[0].product.providerId;
                 const newCartTx: Transaction = {
                     id: newTxId, type: 'Compra', status: 'Carrito Activo', date: new Date().toISOString(), amount: 0,
-                    clientId: currentUser.id, providerId: providerId, participantIds: [currentUser.id, providerId], details: { items: newCart }
+                    clientId: currentUserId, providerId: providerId, participantIds: [currentUserId, providerId], details: { items: newCart }
                 };
                 await setDoc(doc(db, 'transactions', newTxId), newCartTx);
             }
@@ -331,84 +340,121 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
           await updateDoc(doc(db, 'users', userId), updates, { merge: true });
       },
       toggleGps: async (userId: string) => {
-          if (!currentUser) return;
-          const newStatus = !currentUser.isGpsActive;
+          const user = users.find(u => u.id === userId);
+          if (!user) return;
+          const newStatus = !user.isGpsActive;
           await updateDoc(doc(getFirestoreDb(), 'users', userId), { isGpsActive: newStatus });
           toast({ title: `GPS ${newStatus ? 'Activado' : 'Desactivado'}` });
       },
       addToCart(product: Product, quantity: number) {
-          updateCart(
-              (currentCart => {
-                  const existingItemIndex = currentCart.findIndex(item => item.product.id === product.id);
-                  if (existingItemIndex > -1) {
-                      currentCart[existingItemIndex].quantity += quantity;
-                  } else {
-                      currentCart.push({ product, quantity });
-                  }
-                  return currentCart;
-              })([...cart])
-          );
+          const currentCart = transactions.find(tx => tx.status === 'Carrito Activo')?.details.items || [];
+          const newCart = [...currentCart];
+          const existingItemIndex = newCart.findIndex(item => item.product.id === product.id);
+          if (existingItemIndex > -1) {
+              newCart[existingItemIndex].quantity += quantity;
+          } else {
+              newCart.push({ product, quantity });
+          }
+          if(currentUser?.id) updateCart(newCart, currentUser.id, transactions);
       },
       updateCartQuantity(productId: string, quantity: number) {
-          updateCart(
-              (currentCart => {
-                  const itemIndex = currentCart.findIndex(item => item.product.id === productId);
-                  if (itemIndex > -1) {
-                      if (quantity > 0) {
-                          currentCart[itemIndex].quantity = quantity;
-                      } else {
-                          currentCart.splice(itemIndex, 1);
-                      }
-                  }
-                  return currentCart;
-              })([...cart])
-          );
+          const currentCart = transactions.find(tx => tx.status === 'Carrito Activo')?.details.items || [];
+          let newCart = [...currentCart];
+          const itemIndex = newCart.findIndex(item => item.product.id === productId);
+          if (itemIndex > -1) {
+              if (quantity > 0) {
+                  newCart[itemIndex].quantity = quantity;
+              } else {
+                  newCart.splice(itemIndex, 1);
+              }
+          }
+          if(currentUser?.id) updateCart(newCart, currentUser.id, transactions);
       },
       removeFromCart(productId: string) {
-          updateCart(cart.filter(item => item.product.id !== productId));
+          const currentCart = transactions.find(tx => tx.status === 'Carrito Activo')?.details.items || [];
+          const newCart = currentCart.filter(item => item.product.id !== productId);
+          if(currentUser?.id) updateCart(newCart, currentUser.id, transactions);
       },
       checkout: (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {
-          if(!currentUser) return;
+          const user = currentUser;
+          if(!user) return;
           const db = getFirestoreDb();
           const batch = writeBatch(db);
           const originalTxRef = doc(db, 'transactions', transactionId);
-          const totalAmount = getCartTotal() + (withDelivery ? getDeliveryCost() : 0);
+          const cartTotal = getCartTotal();
+          const deliveryCostValue = getDeliveryCost();
+          const totalAmount = cartTotal + (withDelivery ? deliveryCostValue : 0);
           const updates: Partial<Transaction> = {
               status: withDelivery ? 'Buscando Repartidor' : 'Finalizado - Pendiente de Pago',
               amount: totalAmount,
-              details: { ...transactions.find(t => t.id === transactionId)?.details, items: cart, delivery: withDelivery, deliveryCost: withDelivery ? getDeliveryCost() : 0, deliveryLocation: withDelivery && deliveryAddress ? { lat: 0, lon: 0, address: deliveryAddress } : undefined, paymentMethod: useCredicora ? 'credicora' : 'direct' }
+              details: { ...transactions.find(t => t.id === transactionId)?.details, items: cart, delivery: withDelivery, deliveryCost: withDelivery ? deliveryCostValue : 0, deliveryLocation: withDelivery && deliveryAddress ? { lat: 0, lon: 0, address: deliveryAddress } : undefined, paymentMethod: useCredicora ? 'credicora' : 'direct' }
           };
-          if (useCredicora && currentUser.credicoraDetails) {
-              const crediDetails = currentUser.credicoraDetails;
-              const financedAmount = Math.min(getCartTotal() * (1 - crediDetails.initialPaymentPercentage), currentUser.credicoraLimit || 0);
-              const initialPayment = getCartTotal() - financedAmount;
-              updates.amount = initialPayment + (withDelivery ? getDeliveryCost() : 0);
+          if (useCredicora && user.credicoraDetails) {
+              const crediDetails = user.credicoraDetails;
+              const financedAmount = Math.min(cartTotal * (1 - crediDetails.initialPaymentPercentage), user.credicoraLimit || 0);
+              const initialPayment = cartTotal - financedAmount;
+              updates.amount = initialPayment + (withDelivery ? deliveryCostValue : 0);
               updates.details!.initialPayment = initialPayment;
               updates.details!.financedAmount = financedAmount;
               const installmentAmount = financedAmount > 0 ? financedAmount / crediDetails.installments : 0;
               for (let i = 1; i <= crediDetails.installments; i++) {
                   const installmentTxId = `txn-credicora-${transactionId.slice(-6)}-${i}`;
                   const dueDate = addDaysFns(new Date(), i * 15);
-                  const installmentTx: Transaction = { id: installmentTxId, type: 'Sistema', status: 'Finalizado - Pendiente de Pago', date: dueDate.toISOString(), amount: installmentAmount, clientId: currentUser.id, providerId: 'corabo-admin', participantIds: [currentUser.id, 'corabo-admin'], details: { system: `Cuota ${i}/${crediDetails.installments} de Compra ${transactionId.slice(-6)}` } };
+                  const installmentTx: Transaction = { id: installmentTxId, type: 'Sistema', status: 'Finalizado - Pendiente de Pago', date: dueDate.toISOString(), amount: installmentAmount, clientId: user.id, providerId: 'corabo-admin', participantIds: [user.id, 'corabo-admin'], details: { system: `Cuota ${i}/${crediDetails.installments} de Compra ${transactionId.slice(-6)}` } };
                   batch.set(doc(db, 'transactions', installmentTxId), installmentTx);
               }
-              const newCredicoraLimit = (currentUser.credicoraLimit || 0) - financedAmount;
-              batch.update(doc(db, 'users', currentUser.id), { credicoraLimit: newCredicoraLimit });
+              const newCredicoraLimit = (user.credicoraLimit || 0) - financedAmount;
+              batch.update(doc(db, 'users', user.id), { credicoraLimit: newCredicoraLimit });
           }
+          batch.update(originalTxRef, updates);
           batch.commit().then(() => {
               toast({ title: "Pedido realizado", description: "Tu pedido ha sido enviado al proveedor." });
               router.push('/transactions');
           });
       },
-      sendMessage: (options: any) => { if (!currentUser) return ''; const conversationId = [currentUser.id, options.recipientId].sort().join('-'); if (!options.createOnly) { sendMessageFlow({ conversationId, senderId: currentUser.id, ...options }); } return conversationId; },
-      payCommitment: async (transactionId: string) => { if(!currentUser) return; await TransactionFlows.payCommitment({ transactionId, userId: currentUser.id }); },
-      sendQuote: async (transactionId: string, quote: { breakdown: string; total: number }) => { if(!currentUser) return; await updateDoc(doc(getFirestoreDb(), 'transactions', transactionId), { status: 'Cotización Recibida', amount: quote.total, 'details.quote': quote }); },
-      acceptQuote: async (transactionId: string) => { if(!currentUser) return; await updateDoc(doc(getFirestoreDb(), 'transactions', transactionId), { status: 'Finalizado - Pendiente de Pago' }); },
-      acceptAppointment: async (transactionId: string) => { if(!currentUser) return; await TransactionFlows.acceptAppointment({ transactionId, userId: currentUser.id }); },
-      confirmPaymentReceived: async (transactionId: string, fromThirdParty: boolean) => { if(!currentUser) return; await TransactionFlows.confirmPaymentReceived({ transactionId, userId: currentUser.id, fromThirdParty }); },
-      completeWork: async (transactionId: string) => { if(!currentUser) return; await TransactionFlows.completeWork({ transactionId, userId: currentUser.id }); },
-      confirmWorkReceived: async (transactionId: string, rating: number, comment?: string) => { if(!currentUser) return; await TransactionFlows.confirmWorkReceived({ transactionId, userId: currentUser.id, rating, comment }); },
-      startDispute: async (transactionId: string) => { await TransactionFlows.startDispute(transactionId); },
+      sendMessage: (options: any) => { 
+          const user = currentUser;
+          if (!user) return ''; 
+          const conversationId = [user.id, options.recipientId].sort().join('-'); 
+          if (!options.createOnly) { sendMessageFlow({ conversationId, senderId: user.id, ...options }); } 
+          return conversationId; 
+      },
+      payCommitment: async (transactionId: string) => { 
+          const user = currentUser;
+          if(!user) return; 
+          await TransactionFlows.payCommitment({ transactionId, userId: user.id }); 
+      },
+      sendQuote: async (transactionId: string, quote: { breakdown: string; total: number }) => { 
+          await updateDoc(doc(getFirestoreDb(), 'transactions', transactionId), { status: 'Cotización Recibida', amount: quote.total, 'details.quote': quote }); 
+      },
+      acceptQuote: async (transactionId: string) => { 
+          const user = currentUser;
+          if(!user) return; 
+          await updateDoc(doc(getFirestoreDb(), 'transactions', transactionId), { status: 'Finalizado - Pendiente de Pago' }); 
+      },
+      acceptAppointment: async (transactionId: string) => { 
+          const user = currentUser;
+          if(!user) return; 
+          await TransactionFlows.acceptAppointment({ transactionId, userId: user.id }); 
+      },
+      confirmPaymentReceived: async (transactionId: string, fromThirdParty: boolean) => { 
+          const user = currentUser;
+          if(!user) return; 
+          await TransactionFlows.confirmPaymentReceived({ transactionId, userId: user.id, fromThirdParty }); 
+      },
+      completeWork: async (transactionId: string) => { 
+          const user = currentUser;
+          if(!user) return; 
+          await TransactionFlows.completeWork({ transactionId, userId: user.id }); 
+      },
+      confirmWorkReceived: async (transactionId: string, rating: number, comment?: string) => { 
+          const user = currentUser;
+          if(!user) return; 
+          await TransactionFlows.confirmWorkReceived({ transactionId, userId: user.id, rating, comment }); 
+      },
+      startDispute: async (transactionId: string) => { 
+          await TransactionFlows.startDispute(transactionId); 
+      },
       fetchUser: async (userId: string) => {
           if (userCache.current.has(userId)) return userCache.current.get(userId)!;
           const publicProfile = await getPublicProfileFlow({ userId });
@@ -419,12 +465,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
           }
           return null;
       },
-      updateUserProfileImage: async(a:any,b:any)=>{},
-      removeGalleryImage: async(a:any,b:any)=>{},
-      validateEmail: async(a:any,b:any)=>{return true},
-      sendPhoneVerification: async(a:any,b:any)=>{},
-      verifyPhoneCode: async(a:any,b:any)=>{return true},
-      updateFullProfile: async(a:any,b:any,c:any)=>{},
+      updateUserProfileImage: (a:any,b:any)=>{},
+      removeGalleryImage: (a:any,b:any)=>{},
+      validateEmail: (a:any,b:any)=>{return true},
+      sendPhoneVerification: (a:any,b:any)=>{},
+      verifyPhoneCode: (a:any,b:any)=>{return true},
+      updateFullProfile: (a:any,b:any,c:any)=>{},
       subscribeUser: (a:any,b:any,c:any)=>{},
       activateTransactions: (a:any,b:any)=>{},
       deactivateTransactions: (a:any)=>{},
@@ -463,9 +509,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       rejectAffiliation: async(a:any)=>{},
       revokeAffiliation: async(a:any)=>{},
     }
+  // The dependencies array is crucial. We only include things that, when changed,
+  // should actually cause the actions object to be recreated.
+  // Functions from hooks like `toast` and `router` are stable and don't need to be dependencies.
   }, [
-      currentUser, handleUserAuth, searchHistory, toast, router, 
-      transactions, cart, getCartTotal, getDeliveryCost, deliveryAddress, contacts
+      handleUserAuth, searchHistory, contacts, cart, 
+      transactions, deliveryAddress, getCartTotal, getDeliveryCost
   ]);
   
   return (
