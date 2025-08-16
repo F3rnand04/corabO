@@ -195,7 +195,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     setQrSession(null); 
     
     if (firebaseUser) {
-        setIsLoadingAuth(true); 
         try {
             const user = await getOrCreateUser(firebaseUser as FirebaseUserInput);
             setCurrentUser(user ? (user as User) : null);
@@ -207,7 +206,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         }
     } else {
         setCurrentUser(null);
-        setIsLoadingAuth(false);
+        setIsLoadingAuth(false); // **CRITICAL FIX**: Ensure loading is stopped even if there's no user
     }
   }, [cleanupListeners]);
 
