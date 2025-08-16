@@ -140,7 +140,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
   
   // All state variables are managed here.
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, _setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [allPublications, setAllPublications] = useState<GalleryImage[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -157,6 +157,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [qrSession, setQrSession] = useState<QrSession | null>(null);
   
   const userCache = useRef<Map<string, User>>(new Map());
+
+  const setCurrentUser = useCallback((user: User | null) => {
+    _setCurrentUser(user);
+  }, []);
   
   const activeCartTx = useMemo(() => transactions.find(tx => tx.status === 'Carrito Activo'), [transactions]);
   const cart: CartItem[] = useMemo(() => activeCartTx?.details.items || [], [activeCartTx]);
@@ -264,7 +268,25 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       await updateDoc(doc(db, 'users', userId), updates);
       // **FIX**: Proactively update the local state to avoid race conditions
       setCurrentUser(prevUser => prevUser && prevUser.id === userId ? { ...prevUser, ...updates } : prevUser);
-  }, []);
+  }, [setCurrentUser]);
+
+  const updateFullProfile = useCallback(async (userId: string, data: ProfileSetupData, profileType: 'client' | 'provider' | 'repartidor') => {
+        const existingUser = users.find(u => u.id === userId);
+        if (!existingUser) return;
+
+        // **FIX:** Correctly merge new profileSetupData with existing data
+        const newProfileSetupData = {
+            ...existingUser.profileSetupData,
+            ...data
+        };
+        
+        const dataToSave: Partial<User> = {
+            type: profileType,
+            profileSetupData: newProfileSetupData,
+        };
+
+        await updateUser(userId, dataToSave);
+  }, [users, updateUser]);
       
   const actions = useMemo(() => ({
     signInWithGoogle: async () => {
@@ -301,11 +323,13 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     isContact: (userId: string) => contacts.some(c => c.id === userId),
     getCartItemQuantity: (productId: string) => cart.find(item => item.product.id === productId)?.quantity || 0,
     updateUser,
+    updateFullProfile,
     activateTransactions: async (userId: string, paymentDetails: any) => {
-        if (!currentUser) return;
+        const userToUpdate = users.find(u => u.id === userId);
+        if (!userToUpdate) return;
         const updatedData = { 
             isTransactionsActive: true,
-            profileSetupData: { ...currentUser.profileSetupData, paymentDetails } 
+            profileSetupData: { ...userToUpdate.profileSetupData, paymentDetails } 
         };
         await updateUser(userId, updatedData);
     },
@@ -416,7 +440,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     validateEmail: (a:any,b:any)=>{return Promise.resolve(true)},
     sendPhoneVerification: (a:any,b:any)=>{return Promise.resolve();},
     verifyPhoneCode: (a:any,b:any)=>{return Promise.resolve(true)},
-    updateFullProfile: (a:any,b:any,c:any)=>{return Promise.resolve();},
     subscribeUser: (userId: string, planName: string, amount: number) => {
         router.push(`/quotes/payment?concept=${encodeURIComponent(`Suscripción: ${planName}`)}&amount=${amount}&isSubscription=true`);
     },
@@ -469,7 +492,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     },
   }), [
     searchHistory, contacts, cart, transactions, getCartTotal, 
-    getDeliveryCost, users, updateCart, router, currentUser, updateUser
+    getDeliveryCost, users, updateCart, router, currentUser, updateUser, updateFullProfile
   ]);
   
   return (
@@ -491,3 +514,5 @@ export const useCorabo = (): CoraboState & CoraboActions => {
 };
 
 export type { Transaction };
+
+    

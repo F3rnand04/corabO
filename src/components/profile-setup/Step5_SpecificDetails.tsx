@@ -47,7 +47,17 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
   };
   
   const handleMapClick = () => {
-    router.push('/map');
+    // **FIX:** Directly open Google Maps in a new tab instead of using a broken internal page.
+    if (formData.location) {
+        const [lat, lon] = formData.location.split(',');
+        const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+        window.open(mapsUrl, '_blank');
+    } else {
+        toast({
+            title: "Ubicación no definida",
+            description: "Por favor, ingresa una ubicación en el campo de texto primero."
+        });
+    }
   };
 
   const handleScheduleChange = (day: string, field: 'from' | 'to' | 'active', value: string | boolean) => {
@@ -284,3 +294,5 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
     </>
   );
 }
+
+    
