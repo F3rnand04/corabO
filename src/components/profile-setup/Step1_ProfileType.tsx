@@ -18,6 +18,12 @@ interface Step1_ProfileTypeProps {
   onNext: () => void;
 }
 
+const profileTypes = [
+  { id: 'client', name: 'Cliente', description: 'Busca y contrata servicios o productos.', icon: User },
+  { id: 'provider', name: 'Proveedor', description: 'Ofrece productos o servicios a la comunidad.', icon: Briefcase },
+  { id: 'repartidor', name: 'Repartidor', description: 'Realiza entregas locales (delivery).', icon: Truck },
+];
+
 export default function Step1_ProfileType({ onSelect, currentType, formData, onNext }: Step1_ProfileTypeProps) {
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [nextSelection, setNextSelection] = useState<UserType['type'] | null>(null);
@@ -52,18 +58,23 @@ export default function Step1_ProfileType({ onSelect, currentType, formData, onN
       <h2 className="text-xl font-semibold">Paso 1: ¿Cómo usarás Corabo?</h2>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card
-            onClick={() => handleSelection('client')}
-            className={cn('cursor-pointer transition-all text-center', currentType === 'client' && 'border-primary ring-2 ring-primary')}
-          ><CardHeader><div className="flex flex-col items-center gap-2"><User className="w-10 h-10 text-primary" /><CardTitle>Cliente</CardTitle></div></CardHeader><CardContent><CardDescription>Busca y contrata servicios o productos.</CardDescription></CardContent></Card>
-          <Card
-            onClick={() => handleSelection('provider')}
-            className={cn('cursor-pointer transition-all text-center', currentType === 'provider' && 'border-primary ring-2 ring-primary')}
-          ><CardHeader><div className="flex flex-col items-center gap-2"><Briefcase className="w-10 h-10 text-primary" /><CardTitle>Proveedor</CardTitle></div></CardHeader><CardContent><CardDescription>Ofrece productos o servicios a la comunidad.</CardDescription></CardContent></Card>
-          <Card
-            onClick={() => handleSelection('repartidor')}
-            className={cn('cursor-pointer transition-all text-center', currentType === 'repartidor' && 'border-primary ring-2 ring-primary')}
-          ><CardHeader><div className="flex flex-col items-center gap-2"><Truck className="w-10 h-10 text-primary" /><CardTitle>Repartidor</CardTitle></div></CardHeader><CardContent><CardDescription>Realiza entregas locales (delivery).</CardDescription></CardContent></Card>
+          {profileTypes.map((type) => (
+               <Card
+                    key={type.id}
+                    onClick={() => handleSelection(type.id as UserType['type'])}
+                    className={cn('cursor-pointer transition-all text-center', currentType === type.id && 'border-primary ring-2 ring-primary')}
+                >
+                    <CardHeader>
+                        <div className="flex flex-col items-center gap-2">
+                            <type.icon className="w-10 h-10 text-primary" />
+                            <CardTitle>{type.name}</CardTitle>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
+                        <CardDescription>{type.description}</CardDescription>
+                    </CardContent>
+                </Card>
+          ))}
       </div>
 
       {currentType === 'provider' && (

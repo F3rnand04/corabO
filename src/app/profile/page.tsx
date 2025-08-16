@@ -11,7 +11,14 @@ export default function ProfilePage() {
 
     useEffect(() => {
         if (currentUser) {
-            // Redirect to the appropriate default view based on offer type.
+            // If user is not a provider, they don't have a specific profile view,
+            // so we redirect them to the home page to avoid loops.
+            if (currentUser.type !== 'provider') {
+                router.replace('/');
+                return;
+            }
+
+            // Redirect providers to the appropriate default view based on offer type.
             const defaultView = currentUser.profileSetupData?.offerType === 'product' ? 'catalog' : 'publications';
             router.replace(`/profile/${defaultView}`);
         }
