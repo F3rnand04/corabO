@@ -470,6 +470,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const approveAffiliation = useCallback(async (affiliationId: string) => { if(!currentUser) return; await approveAffiliation({affiliationId, actorId: currentUser.id}); }, [currentUser]);
   const rejectAffiliation = useCallback(async (affiliationId: string) => { if(!currentUser) return; await rejectAffiliation({affiliationId, actorId: currentUser.id}); }, [currentUser]);
   const revokeAffiliation = useCallback(async (affiliationId: string) => { if(!currentUser) return; await revokeAffiliation({affiliationId, actorId: currentUser.id}); }, [currentUser]);
+  const autoVerifyIdWithAI = useCallback(async (input: VerificationInput): Promise<VerificationOutput> => { return await autoVerifyIdWithAIFlow(input); }, []);
 
 
   useEffect(() => {
@@ -510,7 +511,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     createAppointmentRequest: TransactionFlows.createAppointmentRequest, getAgendaEvents, addCommentToImage,
     removeCommentFromImage, getCartItemQuantity, activatePromotion, createCampaign, createPublication,
     createProduct, setDeliveryAddress, markConversationAsRead, toggleUserPause, deleteUser, verifyCampaignPayment,
-    verifyUserId, rejectUserId, autoVerifyIdWithAI: autoVerifyIdWithAIFlow, getUserMetrics, fetchUser, acceptDelivery,
+    verifyUserId, rejectUserId, autoVerifyIdWithAI, getUserMetrics, fetchUser, acceptDelivery,
     getDistanceToProvider, startQrSession, setQrSessionAmount, approveQrSession, finalizeQrSession, cancelQrSession,
     handleUserAuth, registerSystemPayment, cancelSystemTransaction, updateUserProfileAndGallery,
     requestAffiliation, approveAffiliation, rejectAffiliation, revokeAffiliation
@@ -522,7 +523,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     deactivateTransactions, downloadTransactionsPDF, sendMessage, sendProposalMessage, getAgendaEvents, addCommentToImage,
     removeCommentFromImage, getCartItemQuantity, activatePromotion, createCampaign, createPublication,
     createProduct, setDeliveryAddress, markConversationAsRead, toggleUserPause, deleteUser, verifyCampaignPayment,
-    verifyUserId, rejectUserId, getUserMetrics, fetchUser, acceptDelivery, getDistanceToProvider,
+    verifyUserId, rejectUserId, autoVerifyIdWithAI, getUserMetrics, fetchUser, acceptDelivery, getDistanceToProvider,
     startQrSession, setQrSessionAmount, approveQrSession, finalizeQrSession, cancelQrSession, handleUserAuth,
     registerSystemPayment, cancelSystemTransaction, updateUserProfileAndGallery,
     requestAffiliation, approveAffiliation, rejectAffiliation, revokeAffiliation
