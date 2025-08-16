@@ -78,14 +78,6 @@ interface CoraboActions {
   removeFromCart: (productId: string) => void;
   getCartTotal: () => number;
   getDeliveryCost: () => number;
-  requestQuoteFromGroup: (serviceName: string, items: string[]) => boolean;
-  sendQuote: (transactionId: string, quote: { breakdown: string; total: number }) => void;
-  acceptQuote: (transactionId: string) => void;
-  acceptAppointment: (transactionId: string) => void;
-  confirmPaymentReceived: (transactionId: string, fromThirdParty: boolean) => void;
-  completeWork: (transactionId: string) => void;
-  confirmWorkReceived: (transactionId: string, rating: number, comment?: string) => void;
-  startDispute: (transactionId: string) => void;
   checkout: (transactionId: string, withDelivery: boolean, useCredicora: boolean) => void;
   addContact: (user: User) => boolean;
   removeContact: (userId: string) => void;
@@ -402,8 +394,42 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     updateCart(newCart);
   }, [cart, updateCart]);
 
+  const requestQuoteFromGroup = useCallback(async (serviceName: string, items: string[]): Promise<boolean> => {
+    if (!currentUser) return false;
+    const today = startOfDay(new Date()).toISOString();
+    const requestSignature = `${serviceName}-${items.join('-')}`;
+    const userQuotesToday = currentUser.dailyQuotes?.[today] || [];
+    const quoteCount = userQuotesToday.find(q => q.requestSignature === requestSignature)?.count || 0;
+    if (quoteCount >= 3 && !currentUser.isSubscribed) {
+        return false;
+    }
+    const updatedQuotes = userQuotesToday.filter(q => q.requestSignature !== requestSignature);
+    updatedQuotes.push({ requestSignature, count: quoteCount + 1 });
+    await updateUser(currentUser.id, { dailyQuotes: { ...currentUser.dailyQuotes, [today]: updatedQuotes } });
+    const providers = users.filter(u => u.profileSetupData?.categories?.includes(serviceName) || u.profileSetupData?.specialty?.toLowerCase().includes(serviceName.toLowerCase())).slice(0, 3);
+    const db = getFirestoreDb();
+    const batch = writeBatch(db);
+    providers.forEach(provider => {
+        const txId = `txn-quote-${currentUser.id}-${provider.id}-${Date.now()}`;
+        const newTransaction: Transaction = {
+            id: txId, type: 'Servicio', status: 'Solicitud Pendiente', date: new Date().toISOString(), amount: 0,
+            clientId: currentUser.id, providerId: provider.id, participantIds: [currentUser.id, provider.id],
+            details: { serviceName: items.join(', ') }
+        };
+        batch.set(doc(db, 'transactions', txId), newTransaction);
+    });
+    await batch.commit();
+    return true;
+  }, [currentUser, users, updateUser]);
 
-  const requestQuoteFromGroup = useCallback((serviceName: string, items: string[]): boolean => { return true; }, []);
+  const sendQuote = useCallback(async (transactionId: string, quote: { breakdown: string; total: number }) => { await updateDoc(doc(getFirestoreDb(), 'transactions', transactionId), { status: 'Cotización Recibida', amount: quote.total, 'details.quote': quote }); }, []);
+  const acceptQuote = useCallback(async (transactionId: string) => { await updateDoc(doc(getFirestoreDb(), 'transactions', transactionId), { status: 'Finalizado - Pendiente de Pago' }); }, []);
+  const acceptAppointment = useCallback(async (transactionId: string) => { await TransactionFlows.acceptAppointment({ transactionId, userId: currentUser!.id }); }, [currentUser]);
+  const confirmPaymentReceived = useCallback(async (transactionId: string, fromThirdParty: boolean) => { await TransactionFlows.confirmPaymentReceived({ transactionId, userId: currentUser!.id, fromThirdParty }); }, [currentUser]);
+  const completeWork = useCallback(async (transactionId: string) => { await TransactionFlows.completeWork({ transactionId, userId: currentUser!.id }); }, [currentUser]);
+  const confirmWorkReceived = useCallback(async (transactionId: string, rating: number, comment?: string) => { await TransactionFlows.confirmWorkReceived({ transactionId, userId: currentUser!.id, rating, comment }); }, [currentUser]);
+  const startDispute = useCallback(async (transactionId: string) => { await TransactionFlows.startDispute(transactionId); }, []);
+
   const updateUserProfileImage = useCallback(async (userId: string, imageUrl: string) => { await updateUser(userId, { profileImage: imageUrl }); }, [updateUser]);
   const removeGalleryImage = useCallback(async (userId: string, imageId: string) => { if (!currentUser) return; await deleteDoc(doc(getFirestoreDb(), 'publications', imageId)); toast({ title: "Publicación eliminada" }); }, [currentUser, toast]);
   const validateEmail = useCallback(async (userId: string, emailToValidate: string): Promise<boolean> => { console.log(`CÓDIGO DE VERIFICACIÓN PARA ${emailToValidate}: ${Math.floor(1000 + Math.random() * 9000)}`); toast({ title: 'Código de Verificación Enviado', description: `Se ha enviado un código a tu correo. (Revisa la consola del navegador).` }); return true; }, [toast]);
@@ -513,7 +539,3 @@ export const useCorabo = (): CoraboState & CoraboActions => {
 };
 
 export type { Transaction };
-
-    
-
-    

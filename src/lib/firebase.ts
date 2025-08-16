@@ -5,7 +5,7 @@
 
 import { initializeApp, getApp, getApps, type FirebaseApp } from "firebase/app";
 import { getFirestore, type Firestore } from "firebase/firestore";
-import { getAuth, type Auth } from "firebase/auth";
+import { getAuth, type Auth, updateProfile } from "firebase/auth";
 import { firebaseConfig } from './firebase-config'; // Import from the SHARED config
 
 // Singleton instances
