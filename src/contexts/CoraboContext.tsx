@@ -166,14 +166,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     // Load contacts from local storage on initial mount
-    const savedContacts = localStorage.getItem('coraboContacts');
-    if (savedContacts) {
-      try {
-        setContacts(JSON.parse(savedContacts));
-      } catch (e) {
+    try {
+        const savedContacts = localStorage.getItem('coraboContacts');
+        if (savedContacts) {
+            setContacts(JSON.parse(savedContacts));
+        }
+    } catch (e) {
         console.error("Failed to parse contacts from localStorage", e);
         setContacts([]);
-      }
     }
   }, []);
 
@@ -216,11 +216,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
-      // The onAuthStateChanged listener in AppLayout will handle the rest.
+      // The onAuthStateChanged listener will handle the rest.
     } catch (error: any) {
-      // Gracefully handle when the user closes the popup.
-      if (error.code === 'auth/cancelled-popup-request') {
-        return; // Do nothing, this is a normal user action.
+      if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user') {
+        return; 
       }
       console.error("Error signing in with Google: ", error);
       toast({
@@ -331,7 +330,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
               await setDoc(doc(db, 'transactions', newTxId), newCartTx);
           }
       } else if (cartTx) {
-          // If the new cart is empty and a cart transaction exists, delete it.
           await deleteDoc(doc(db, 'transactions', cartTx.id));
       }
   }, [currentUser, transactions]);
@@ -400,36 +398,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
           router.push('/transactions');
       });
   }, [currentUser, getCartTotal, getDeliveryCost, transactions, cart, deliveryAddress, toast, router, updateCart]);
-
-  const requestQuoteFromGroup = useCallback(async (serviceName: string, items: string[]): Promise<boolean> => {
-    if (!currentUser) return false;
-    const today = startOfDay(new Date()).toISOString();
-    const requestSignature = `${serviceName}-${items.join('-')}`;
-    // @ts-ignore
-    const userQuotesToday = currentUser.dailyQuotes?.[today] || [];
-    const quoteCount = userQuotesToday.find(q => q.requestSignature === requestSignature)?.count || 0;
-    if (quoteCount >= 3 && !currentUser.isSubscribed) {
-        return false;
-    }
-    const updatedQuotes = userQuotesToday.filter(q => q.requestSignature !== requestSignature);
-    updatedQuotes.push({ requestSignature, count: quoteCount + 1 });
-    // @ts-ignore
-    await updateUser(currentUser.id, { dailyQuotes: { ...currentUser.dailyQuotes, [today]: updatedQuotes } });
-    const providers = users.filter(u => u.profileSetupData?.categories?.includes(serviceName) || u.profileSetupData?.specialty?.toLowerCase().includes(serviceName.toLowerCase())).slice(0, 3);
-    const db = getFirestoreDb();
-    const batch = writeBatch(db);
-    providers.forEach(provider => {
-        const txId = `txn-quote-${currentUser.id}-${provider.id}-${Date.now()}`;
-        const newTransaction: Transaction = {
-            id: txId, type: 'Servicio', status: 'Solicitud Pendiente', date: new Date().toISOString(), amount: 0,
-            clientId: currentUser.id, providerId: provider.id, participantIds: [currentUser.id, provider.id],
-            details: { serviceName: items.join(', ') }
-        };
-        batch.set(doc(db, 'transactions', txId), newTransaction);
-    });
-    await batch.commit();
-    return true;
-  }, [currentUser, users, updateUser]);
 
   const sendQuote = useCallback(async (transactionId: string, quote: { breakdown: string; total: number }) => { await updateDoc(doc(getFirestoreDb(), 'transactions', transactionId), { status: 'Cotización Recibida', amount: quote.total, 'details.quote': quote }); }, []);
   const acceptQuote = useCallback(async (transactionId: string) => { await updateDoc(doc(getFirestoreDb(), 'transactions', transactionId), { status: 'Finalizado - Pendiente de Pago' }); }, []);
@@ -506,7 +474,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const actions = useMemo(() => ({
     signInWithGoogle, setSearchQuery, setCategoryFilter, clearSearchHistory, logout, addToCart,
-    updateCartQuantity, removeFromCart, getCartTotal, getDeliveryCost, checkout, requestQuoteFromGroup,
+    updateCartQuantity, removeFromCart, getCartTotal, getDeliveryCost, checkout, 
     payCommitment, addContact, isContact, removeContact, toggleGps, updateUser, updateUserProfileImage, removeGalleryImage,
     validateEmail, sendPhoneVerification, verifyPhoneCode, updateFullProfile, subscribeUser, activateTransactions,
     deactivateTransactions, downloadTransactionsPDF, sendMessage, sendProposalMessage, acceptProposal: acceptProposalFlow,
@@ -518,7 +486,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     handleUserAuth, registerSystemPayment, cancelSystemTransaction, updateUserProfileAndGallery,
   }), [
     signInWithGoogle, setSearchQuery, setCategoryFilter, clearSearchHistory, logout, addToCart,
-    updateCartQuantity, removeFromCart, getCartTotal, getDeliveryCost, checkout, requestQuoteFromGroup,
+    updateCartQuantity, removeFromCart, getCartTotal, getDeliveryCost, checkout, 
     payCommitment, addContact, isContact, removeContact, toggleGps, updateUser, updateUserProfileImage, removeGalleryImage,
     validateEmail, sendPhoneVerification, verifyPhoneCode, updateFullProfile, subscribeUser, activateTransactions,
     deactivateTransactions, downloadTransactionsPDF, sendMessage, sendProposalMessage, getAgendaEvents, addCommentToImage,
