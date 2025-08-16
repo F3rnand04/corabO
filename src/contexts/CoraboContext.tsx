@@ -188,8 +188,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const handleUserAuth = useCallback(async (firebaseUser: FirebaseUser | null) => {
+    console.log('handleUserAuth: Iniciando con firebaseUser:', firebaseUser ? firebaseUser.uid : 'null');
     cleanupListeners();
     setQrSession(null); 
+
     
     if (firebaseUser) {
         const user = await getOrCreateUser(firebaseUser as FirebaseUserInput);
@@ -202,6 +204,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     } else {
         setCurrentUser(null);
     }
+    console.log('handleUserAuth: Finalizado. currentUser:', firebaseUser ? firebaseUser.uid : 'null');
     setIsLoadingAuth(false);
   }, [cleanupListeners]);
 
@@ -397,7 +400,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
           toast({ title: "Pedido realizado", description: "Tu pedido ha sido enviado al proveedor." });
           router.push('/transactions');
       });
-  }, [currentUser, getCartTotal, getDeliveryCost, transactions, cart, deliveryAddress, toast, router, updateCart]);
+  }, [currentUser, getCartTotal, getDeliveryCost, transactions, cart, deliveryAddress, toast, router]);
 
   const sendQuote = useCallback(async (transactionId: string, quote: { breakdown: string; total: number }) => { await updateDoc(doc(getFirestoreDb(), 'transactions', transactionId), { status: 'Cotización Recibida', amount: quote.total, 'details.quote': quote }); }, []);
   const acceptQuote = useCallback(async (transactionId: string) => { await updateDoc(doc(getFirestoreDb(), 'transactions', transactionId), { status: 'Finalizado - Pendiente de Pago' }); }, []);
@@ -444,6 +447,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const createProduct = useCallback(async (data: CreateProductInput) => { if (!currentUser) return; await createProductFlow({ ...data, userId: currentUser.id }); }, [currentUser]);
 
   useEffect(() => {
+    console.log('useEffect [currentUser?.id]: Activado. currentUser?.id:', currentUser?.id);
     cleanupListeners();
     if (currentUser?.id) {
       const db = getFirestoreDb();
@@ -456,6 +460,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage))),
       ];
       activeListeners.current = listeners;
+      console.log(`useEffect [currentUser?.id]: Listeners set up for user ${currentUser.id}`);
     } else {
       setTransactions([]); setConversations([]); setUsers([]); setAllPublications([]);
     }
@@ -516,3 +521,5 @@ export const useCorabo = (): CoraboState & CoraboActions => {
 };
 
 export type { Transaction };
+
+    
