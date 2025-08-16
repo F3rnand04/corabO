@@ -29,6 +29,8 @@ export default function VerifyIdPage() {
     return <div className="flex items-center justify-center min-h-screen"><Loader2 className="h-12 w-12 animate-spin"/></div>;
   }
 
+  const isCompany = currentUser.profileSetupData?.providerType === 'company';
+
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -93,15 +95,17 @@ export default function VerifyIdPage() {
     <div className="bg-muted/40 min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader>
-          <CardTitle>Verificación de Identidad</CardTitle>
+          <CardTitle>{isCompany ? 'Verificación de Empresa' : 'Verificación de Identidad'}</CardTitle>
           <CardDescription>
-            Sube una foto clara de tu documento de identidad para activar las funciones de pago.
+            {isCompany 
+              ? 'Sube tu documento de registro fiscal (ej. RIF) para activar las funciones de pago.'
+              : 'Sube una foto clara de tu documento de identidad para activar las funciones de pago.'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="id-document">Documento de Identidad</Label>
-            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+            <Label htmlFor="id-document">{isCompany ? 'Documento Fiscal (PDF o Imagen)' : 'Documento de Identidad'}</Label>
+            <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*,application/pdf" />
             {imagePreview ? (
               <div className="relative group w-full aspect-[1.58] rounded-md overflow-hidden bg-black">
                 <Image src={imagePreview} alt="Vista previa del documento" fill style={{ objectFit: 'contain' }} sizes="400px"/>
@@ -120,7 +124,7 @@ export default function VerifyIdPage() {
                 onClick={() => fileInputRef.current?.click()}
               >
                 <UploadCloud className="w-10 h-10 mb-2" />
-                <p className="text-sm font-semibold">Haz clic para subir una foto</p>
+                <p className="text-sm font-semibold">Haz clic para subir un archivo</p>
                 <p className="text-xs">Asegúrate de que sea legible</p>
               </div>
             )}
@@ -147,11 +151,13 @@ export default function VerifyIdPage() {
           )}
 
           <div className="space-y-2">
-            <Button className="w-full" onClick={handleAutoVerify} disabled={!imagePreview || isVerifying}>
-                {isVerifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4"/>}
-                Verificar
-            </Button>
-            {!allChecksPass && (
+            {!isCompany && (
+              <Button className="w-full" onClick={handleAutoVerify} disabled={!imagePreview || isVerifying}>
+                  {isVerifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4"/>}
+                  Verificar con IA
+              </Button>
+            )}
+            {(isCompany || !allChecksPass) && (
                  <Button className="w-full" variant="secondary" onClick={handleManualReview} disabled={!imagePreview || isVerifying}>
                     Enviar para Revisión Manual
                 </Button>
@@ -162,7 +168,7 @@ export default function VerifyIdPage() {
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>¿Por qué hacemos esto?</AlertTitle>
               <AlertDescription>
-                Verificar tu identidad es un paso crucial para construir una comunidad segura y confiable, y para cumplir con las regulaciones de prevención de fraude.
+                Verificar tu identidad o empresa es un paso crucial para construir una comunidad segura y confiable, y para cumplir con las regulaciones de prevención de fraude.
               </AlertDescription>
           </Alert>
 

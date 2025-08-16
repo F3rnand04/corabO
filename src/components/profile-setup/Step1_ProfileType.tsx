@@ -28,6 +28,8 @@ export default function Step1_ProfileType({ onSelect, currentType, formData, onN
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [nextSelection, setNextSelection] = useState<UserType['type'] | null>(null);
 
+  const isCompany = formData.providerType === 'company';
+
   const handleSelection = (typeId: UserType['type']) => {
     if (typeId === currentType) {
         onNext();
@@ -38,14 +40,14 @@ export default function Step1_ProfileType({ onSelect, currentType, formData, onN
         setNextSelection(typeId);
         setIsAlertOpen(true);
     } else {
-        onSelect(typeId, 'professional');
+        onSelect(typeId, formData.providerType || 'professional');
         onNext();
     }
   };
 
   const handleConfirmChange = () => {
     if (nextSelection) {
-      onSelect(nextSelection, 'professional');
+      onSelect(nextSelection, formData.providerType || 'professional');
     }
     setIsAlertOpen(false);
     onNext();
@@ -84,10 +86,12 @@ export default function Step1_ProfileType({ onSelect, currentType, formData, onN
             value={formData.providerType || 'professional'} 
             onValueChange={(value: 'professional' | 'company') => onSelect(currentType, value)} 
             className="flex gap-4"
+            disabled={isCompany} // Disable if already a company
           >
               <div className="flex items-center space-x-2"><RadioGroupItem value="professional" id="professional" /><Label htmlFor="professional" className="flex items-center gap-2 font-normal cursor-pointer"><User className="w-4 h-4"/> Profesional Independiente</Label></div>
               <div className="flex items-center space-x-2"><RadioGroupItem value="company" id="company" /><Label htmlFor="company" className="flex items-center gap-2 font-normal cursor-pointer"><Building className="w-4 h-4"/> Empresa</Label></div>
           </RadioGroup>
+          {isCompany && <p className="text-xs text-muted-foreground">El tipo de perfil de empresa no se puede cambiar una vez registrado.</p>}
         </div>
       )}
       
