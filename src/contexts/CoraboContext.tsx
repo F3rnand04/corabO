@@ -258,6 +258,13 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
           await deleteDoc(doc(db, 'transactions', cartTx.id));
       }
   }, []);
+  
+  const updateUser = async (userId: string, updates: Partial<User>) => {
+      const db = getFirestoreDb();
+      await updateDoc(doc(db, 'users', userId), updates);
+      // **FIX**: Proactively update the local state to avoid race conditions
+      setCurrentUser(prevUser => prevUser && prevUser.id === userId ? { ...prevUser, ...updates } : prevUser);
+  };
       
   const actions = useMemo(() => ({
     signInWithGoogle: async () => {
@@ -293,15 +300,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     removeContact: (userId: string) => setContacts(prev => prev.filter(c => c.id !== userId)),
     isContact: (userId: string) => contacts.some(c => c.id === userId),
     getCartItemQuantity: (productId: string) => cart.find(item => item.product.id === productId)?.quantity || 0,
-    updateUser: async (userId: string, updates: Partial<User>) => {
-        const db = getFirestoreDb();
-        await updateDoc(doc(db, 'users', userId), updates);
-    },
+    updateUser,
     toggleGps: async (userId: string) => {
         const user = users.find(u => u.id === userId);
         if (!user) return;
         const newStatus = !user.isGpsActive;
-        await updateDoc(doc(getFirestoreDb(), 'users', userId), { isGpsActive: newStatus });
+        await updateUser(userId, { isGpsActive: newStatus });
     },
     addToCart(product: Product, quantity: number) {
         if(!currentUser?.id) return;

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef, ChangeEvent } from 'react';
+import { useState, useRef, ChangeEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useCorabo } from '@/contexts/CoraboContext';
@@ -22,10 +22,20 @@ export default function VerifyIdPage() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationResult, setVerificationResult] = useState<VerificationOutput | { error: string } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  if (!currentUser) {
+  // Effect to check if user data is ready for verification
+  useEffect(() => {
+    if (currentUser && currentUser.name && currentUser.idNumber) {
+      setIsLoading(false);
+    } else {
+      setIsLoading(true);
+    }
+  }, [currentUser]);
+
+  if (isLoading || !currentUser) {
     return <div className="flex items-center justify-center min-h-screen"><Loader2 className="h-12 w-12 animate-spin"/></div>;
   }
 
@@ -36,25 +46,28 @@ export default function VerifyIdPage() {
     if (file) {
       setImageFile(file);
       const reader = new FileReader();
-      reader.onloadend = () => setImagePreview(reader.result as string);
+      reader.onloadend = () => {
+        const dataUrl = reader.result as string;
+        setImagePreview(dataUrl);
+        // Also update the document URL in the user's profile immediately
+        updateUser(currentUser.id, { idDocumentUrl: dataUrl });
+      };
       reader.readAsDataURL(file);
       setVerificationResult(null); // Reset previous results
     }
   };
 
   const handleAutoVerify = async () => {
-    if (!imagePreview || !currentUser || !currentUser.name || !currentUser.idNumber) return;
+    // Re-check for required data right before calling the AI flow
+    if (!currentUser.idDocumentUrl || !currentUser.name || !currentUser.idNumber) {
+       toast({ variant: 'destructive', title: 'Error de Datos', description: "Faltan datos del usuario o el documento. Por favor, recarga la página." });
+       return;
+    }
 
     setIsVerifying(true);
     setVerificationResult(null);
     try {
-        const result = await autoVerifyIdWithAI({
-            userId: currentUser.id,
-            nameInRecord: `${currentUser.name} ${currentUser.lastName || ''}`,
-            idInRecord: currentUser.idNumber,
-            documentImageUrl: imagePreview,
-            isCompany: isCompany,
-        });
+        const result = await autoVerifyIdWithAI(currentUser);
         setVerificationResult(result);
         if (result.idMatch && result.nameMatch) {
             toast({
@@ -62,7 +75,7 @@ export default function VerifyIdPage() {
                 description: "Tus datos han sido confirmados. Ahora puedes activar tus transacciones.",
                 className: "bg-green-100 border-green-200"
             });
-            await updateUser(currentUser.id, { idVerificationStatus: 'verified', verified: true, idDocumentUrl: imagePreview });
+            await updateUser(currentUser.id, { idVerificationStatus: 'verified', verified: true });
             router.push('/transactions/settings');
         } else {
              toast({
@@ -70,7 +83,7 @@ export default function VerifyIdPage() {
                 title: "Verificación Automática Fallida",
                 description: "Los datos no coinciden. Tu solicitud pasará a revisión manual.",
             });
-            await updateUser(currentUser.id, { idVerificationStatus: 'pending', idDocumentUrl: imagePreview });
+            await updateUser(currentUser.id, { idVerificationStatus: 'pending' });
         }
     } catch (error: any) {
         setVerificationResult({ error: 'Fallo al ejecutar la verificación por IA.' });
@@ -81,8 +94,8 @@ export default function VerifyIdPage() {
   };
 
   const handleManualReview = async () => {
-    if(!currentUser || !imagePreview) return;
-    await updateUser(currentUser.id, { idVerificationStatus: 'pending', idDocumentUrl: imagePreview });
+    if(!currentUser || !currentUser.idDocumentUrl) return;
+    await updateUser(currentUser.id, { idVerificationStatus: 'pending' });
     toast({
         title: "Solicitud Enviada a Revisión",
         description: "Nuestro equipo revisará tu documento en las próximas 24-48 horas."
@@ -91,6 +104,8 @@ export default function VerifyIdPage() {
   }
 
   const allChecksPass = verificationResult && !('error' in verificationResult) && verificationResult.idMatch && verificationResult.nameMatch;
+  const canVerify = !!currentUser.idDocumentUrl && !isLoading;
+
 
   return (
     <div className="bg-muted/40 min-h-screen flex items-center justify-center p-4">
@@ -107,9 +122,9 @@ export default function VerifyIdPage() {
           <div className="space-y-2">
             <Label htmlFor="id-document">{isCompany ? 'Documento Fiscal (PDF o Imagen)' : 'Documento de Identidad'}</Label>
             <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*,application/pdf" />
-            {imagePreview ? (
+            {imagePreview || currentUser.idDocumentUrl ? (
               <div className="relative group w-full aspect-[1.58] rounded-md overflow-hidden bg-black">
-                <Image src={imagePreview} alt="Vista previa del documento" fill style={{ objectFit: 'contain' }} sizes="400px"/>
+                <Image src={imagePreview || currentUser.idDocumentUrl!} alt="Vista previa del documento" fill style={{ objectFit: 'contain' }} sizes="400px"/>
                 <Button 
                   variant="destructive" 
                   size="icon" 
@@ -152,12 +167,12 @@ export default function VerifyIdPage() {
           )}
 
           <div className="space-y-2">
-            <Button className="w-full" onClick={handleAutoVerify} disabled={!imagePreview || isVerifying}>
+            <Button className="w-full" onClick={handleAutoVerify} disabled={!canVerify || isVerifying}>
                 {isVerifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4"/>}
                 Verificar con IA
             </Button>
             {(!allChecksPass) && (
-                 <Button className="w-full" variant="secondary" onClick={handleManualReview} disabled={!imagePreview || isVerifying}>
+                 <Button className="w-full" variant="secondary" onClick={handleManualReview} disabled={!canVerify || isVerifying}>
                     Enviar para Revisión Manual
                 </Button>
             )}
