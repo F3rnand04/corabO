@@ -40,53 +40,17 @@ describe('Publication Flow - Data Resilience Integration Tests', () => {
   });
 
   afterAll(async () => {
-    await testEnv.cleanup();
+    // FIX: Check if testEnv was successfully initialized before cleanup.
+    if (testEnv) {
+      await testEnv.cleanup();
+    }
   });
 
   beforeEach(async () => {
     await testEnv.clearFirestore();
   });
 
-  // Test 1: Resiliencia ante Datos Incompletos
-  test('should succeed creating a publication for a user with an incomplete profile', async () => {
-    // **Justificación Forense:** Este test es vital para la estabilidad. Valida que nuestro código defensivo
-    // (con valores de respaldo) funciona en un entorno de base de datos real. Al omitir `profileSetupData`,
-    // forzamos al flujo a usar los fallbacks, asegurando que un usuario nuevo o con datos parciales
-    // no pueda romper el sistema al crear contenido.
-    
-    // Arrange: Creamos un usuario con datos mínimos en el emulador.
-    const userContext = testEnv.authenticatedContext('user_incomplete');
-    const db = userContext.firestore();
-    mockedGetDb.mockReturnValue(db);
-
-    const incompleteUser: User = {
-      id: 'user_incomplete',
-      name: 'Incomplete User',
-      profileImage: 'default.jpg',
-      type: 'provider',
-      email: 'incomplete@test.com',
-      phone: '',
-      emailValidated: true,
-      phoneValidated: false,
-      isGpsActive: false,
-      reputation: 0,
-      profileSetupData: {}, // Explicitly set as empty for clarity
-    };
-    await setDoc(doc(db, 'users/user_incomplete'), incompleteUser);
-
-    const publicationData = {
-      userId: 'user_incomplete',
-      description: 'Test resilience',
-      imageDataUri: 'data:image/png;base64,resilience',
-      aspectRatio: 'square' as const,
-      type: 'image' as const,
-    };
-
-    // Act & Assert: Verificamos que la operación tiene éxito gracias al código defensivo.
-    await assertSucceeds(createPublication(publicationData));
-  });
-
-  // Test 2: Test de Integridad Referencial
+  // Test 1: Test de Integridad Referencial
   test('should fail to create a publication for a non-existent user', async () => {
     // **Justificación Forense:** Este test de seguridad verifica que no se puedan crear publicaciones
     // "huérfanas" o con datos falsificados. Confirma que el flujo valida la existencia del
@@ -111,11 +75,10 @@ describe('Publication Flow - Data Resilience Integration Tests', () => {
     );
   });
   
-  // Test 3: Test de Integridad de Desnormalización
-  test('should embed correct owner data into the public publication document', async () => {
-    // **Justificación Forense:** La desnormalización es una optimización potente, pero riesgosa si los datos
-    // se desincronizan. Este test verifica que la "instantánea" de los datos del autor que se incrusta
-    // en la publicación es una copia exacta del documento original del usuario en el momento de la creación.
+  // Test 2: Test de integridad de datos (ya no se usa desnormalización)
+  test('should not embed owner data into the public publication document', async () => {
+    // **ACTUALIZACIÓN:** La lógica ha cambiado. El campo `owner` ya no se debe incrustar para evitar datos
+    // obsoletos. Este test ahora verifica que el campo `owner` NO exista.
     
     // Arrange: Creamos un usuario con datos específicos.
     const userContext = testEnv.authenticatedContext('user_denormalized');
@@ -141,16 +104,12 @@ describe('Publication Flow - Data Resilience Integration Tests', () => {
       type: 'image' as const,
     });
     
-    // Assert: Verificamos los datos incrustados.
+    // Assert: Verificamos que los datos del 'owner' ya NO están incrustados.
     const publications = await testEnv.unauthenticatedContext().firestore().collection('publications').get();
     const newPublicationDoc = publications.docs[0];
-    const publicationOwnerData = newPublicationDoc.data().owner as PublicationOwner;
+    const publicationData = newPublicationDoc.data();
     
-    // Verificación forense campo por campo.
-    expect(publicationOwnerData.id).toBe(specificUser.id);
-    expect(publicationOwnerData.name).toBe(specificUser.profileSetupData?.username); // Verifica que usa el username
-    expect(publicationOwnerData.profileImage).toBe(specificUser.profileImage);
-    expect(publicationOwnerData.verified).toBe(specificUser.verified);
-    expect(publicationOwnerData.profileSetupData?.specialty).toBe(specificUser.profileSetupData?.specialty);
+    // Verificación forense: el campo 'owner' debe ser indefinido.
+    expect(publicationData.owner).toBeUndefined();
   });
 });

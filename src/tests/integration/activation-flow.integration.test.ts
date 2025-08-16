@@ -53,7 +53,10 @@ describe('Activation Flow - Integration Test', () => {
   });
 
   afterAll(async () => {
-    await testEnv.cleanup();
+    // FIX: Check if testEnv was successfully initialized before cleanup.
+    if (testEnv) {
+      await testEnv.cleanup();
+    }
   });
 
   beforeEach(() => {

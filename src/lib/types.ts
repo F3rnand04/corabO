@@ -439,5 +439,3 @@ export const CreateProductInputSchema = z.object({
   imageDataUri: z.string(),
 });
 export type CreateProductInput = z.infer<typeof CreateProductInputSchema>;
-
-    

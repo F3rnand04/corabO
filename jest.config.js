@@ -1,15 +1,13 @@
 
 module.exports = {
   preset: 'ts-jest',
-  // Explicitly set testEnvironment to 'jsdom' for browser-like environment
   // Se establece 'jsdom' como entorno para soportar tanto tests de UI como de backend.
   testEnvironment: 'jest-environment-jsdom', 
-  // Specify root directory for tests
   // Se especifica explícitamente dónde buscar los archivos de prueba.
-  roots: ['<rootDir>/tests'], 
+  roots: ['<rootDir>/src/tests'], 
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
-    '\\.css$': '<rootDir>/tests/styleMock.js',
+    '\\.css$': '<rootDir>/src/tests/styleMock.js',
   },
   // Use a less restrictive transformIgnorePatterns to allow transforming specific node_modules
   transformIgnorePatterns: ['/node_modules/(?!(yaml)/)'],
@@ -22,5 +20,5 @@ module.exports = {
     '^.+\\.js$': 'ts-jest', // Añadido para transformar archivos .js, incluyendo los de node_modules.
     '^.+\\.mjs$': 'ts-jest', // Add rule for .mjs files often used in node_modules
   },
-  setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
+  setupFilesAfterEnv: ['<rootDir>/src/tests/setup.ts'],
 };

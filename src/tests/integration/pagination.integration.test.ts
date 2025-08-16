@@ -56,11 +56,6 @@ describe('Pagination Flow - Integration Test', () => {
             price: 10 + i,
             category: 'Test',
         },
-        owner: { // Add dummy owner data as it's part of the type
-          id: PROVIDER_ID,
-          name: 'Test Provider',
-          profileImage: '',
-        }
       };
       // Corrected: insert into 'publications' collection
       setupPromises.push(setDoc(doc(db, 'publications', publicationId), publication));
@@ -69,7 +64,10 @@ describe('Pagination Flow - Integration Test', () => {
   }, 30000);
 
   afterAll(async () => {
-    await testEnv.cleanup();
+    // FIX: Check if testEnv was successfully initialized before cleanup.
+    if (testEnv) {
+      await testEnv.cleanup();
+    }
   });
   
   // **Justificación Forense:** Este test verifica la lógica de paginación de extremo a extremo.
