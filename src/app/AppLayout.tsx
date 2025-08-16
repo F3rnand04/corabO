@@ -40,11 +40,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             } catch (error) {
                 console.error("Error fetching/creating user:", error);
                 setCurrentUser(null);
+            } finally {
+                setIsLoadingAuth(false);
             }
         } else {
             setCurrentUser(null);
+            setIsLoadingAuth(false);
         }
-        setIsLoadingAuth(false);
     });
 
     // Cleanup subscription on unmount
@@ -121,25 +123,28 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
   
   const isLoginPage = pathname === '/login';
-  const isSetupPage = pathname === '/initial-setup';
-
-  // If the user is not logged in, and we are not already on the login page,
-  // show a loader until the redirection logic kicks in.
-  if (!currentUser && !isLoginPage) {
-     return (
-        <div className="flex items-center justify-center min-h-screen">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
-     );
-  }
   
-  // Render the login or setup page without the main layout
-  if (isLoginPage || (currentUser && !currentUser.isInitialSetupComplete && isSetupPage)) {
-    return <main>{children}</main>;
+  // Render the login page without the main layout
+  if (!currentUser) {
+    return isLoginPage ? <main>{children}</main> : (
+        <div className="flex items-center justify-center min-h-screen">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+    );
+  }
+
+  // At this point, currentUser is guaranteed to exist.
+  const isSetupPage = pathname === '/initial-setup';
+  if (!currentUser.isInitialSetupComplete) {
+    return isSetupPage ? <main>{children}</main> : (
+        <div className="flex items-center justify-center min-h-screen">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+    );
   }
   
   // Render the full app layout for authenticated and set-up users
-  if(currentUser && currentUser.isInitialSetupComplete) {
+  if(currentUser.isInitialSetupComplete) {
       // Admin role check
       if (pathname.startsWith('/admin') && currentUser?.role !== 'admin') {
           router.replace('/');
@@ -205,3 +210,4 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // Fallback return null if no other condition is met
   return null;
 }
+
