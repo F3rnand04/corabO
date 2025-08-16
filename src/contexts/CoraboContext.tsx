@@ -191,12 +191,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     activeListeners.current = [];
   }, []);
 
+  // **STABILIZED AUTH HANDLER**
   const handleUserAuth = useCallback(async (firebaseUser: FirebaseUser | null) => {
     cleanupListeners();
     setQrSession(null); 
     
     if (firebaseUser) {
-        setIsLoadingAuth(true);
+        // We set loading true here, but not inside the main `useEffect` to avoid loops.
+        setIsLoadingAuth(true); 
         try {
             const user = await getOrCreateUser(firebaseUser as FirebaseUserInput);
             
@@ -204,22 +206,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
                 setCurrentUser(user as User);
             } else {
                 console.error("Authentication failed: Backend did not return a valid user object.", user);
-                toast({
-                    variant: 'destructive',
-                    title: 'Error de Sincronización',
-                    description: 'No se pudieron cargar los datos de tu perfil. Inténtalo de nuevo.'
-                });
-                await signOut(getAuthInstance());
                 setCurrentUser(null);
             }
         } catch (error) {
             console.error("Error in getOrCreateUserFlow:", error);
-             toast({
-                variant: 'destructive',
-                title: 'Error Crítico de Autenticación',
-                description: 'No se pudo procesar tu inicio de sesión en el servidor.'
-            });
-            await signOut(getAuthInstance());
             setCurrentUser(null);
         } finally {
             setIsLoadingAuth(false);
@@ -228,44 +218,49 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         setCurrentUser(null);
         setIsLoadingAuth(false);
     }
-  }, [cleanupListeners, toast]);
+  }, [cleanupListeners]); // This function is now stable and doesn't depend on changing values.
 
-  // Main listener setup effect
+  // **STABILIZED MAIN EFFECT**
   useEffect(() => {
     const auth = getAuthInstance();
     const unsubscribeAuth = onAuthStateChanged(auth, handleUserAuth);
 
-    if (currentUser?.id) {
-      const db = getFirestoreDb();
-      const listeners: Unsubscribe[] = [
-        onSnapshot(doc(db, 'users', currentUser.id), (doc) => {
-          if (doc.exists()) {
-              const newUserData = doc.data() as User;
-              setCurrentUser(current => {
-                if (JSON.stringify(current) !== JSON.stringify(newUserData)) {
-                  return newUserData;
-                }
-                return current;
-              });
-          }
-        }),
-        onSnapshot(query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id)), (snapshot) => setTransactions(snapshot.docs.map(doc => doc.data() as Transaction))),
-        onSnapshot(query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id), orderBy("lastUpdated", "desc")), (snapshot) => setConversations(snapshot.docs.map(doc => doc.data() as Conversation))),
-        onSnapshot(query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', currentUser.id)), (snapshot) => setQrSession(snapshot.docs.map(d => d.data() as QrSession).find(s => s.status !== 'completed' && s.status !== 'cancelled') || null)),
-        onSnapshot(collection(db, 'users'), (snapshot) => setUsers(snapshot.docs.map(doc => doc.data() as User))),
-        onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage))),
-      ];
-      activeListeners.current = listeners;
-    } else {
-      setTransactions([]); setConversations([]); setUsers([]); setAllPublications([]);
-    }
-
-    // Cleanup function
     return () => {
         unsubscribeAuth();
+    };
+}, [handleUserAuth]); // Dependency is now stable.
+
+  // **STABILIZED DATA LISTENERS EFFECT**
+  useEffect(() => {
+    if (currentUser?.id) {
+        const db = getFirestoreDb();
+        const listeners: Unsubscribe[] = [
+          onSnapshot(doc(db, 'users', currentUser.id), (doc) => {
+            if (doc.exists()) {
+                const newUserData = doc.data() as User;
+                setCurrentUser(newUserData);
+            }
+          }),
+          onSnapshot(query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id)), (snapshot) => setTransactions(snapshot.docs.map(doc => doc.data() as Transaction))),
+          onSnapshot(query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id), orderBy("lastUpdated", "desc")), (snapshot) => setConversations(snapshot.docs.map(doc => doc.data() as Conversation))),
+          onSnapshot(query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', currentUser.id)), (snapshot) => setQrSession(snapshot.docs.map(d => d.data() as QrSession).find(s => s.status !== 'completed' && s.status !== 'cancelled') || null)),
+          onSnapshot(collection(db, 'users'), (snapshot) => setUsers(snapshot.docs.map(doc => doc.data() as User))),
+          onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage))),
+        ];
+        activeListeners.current = listeners;
+    } else {
+        // Clear data if no user is logged in
+        setTransactions([]); 
+        setConversations([]); 
+        setUsers([]); 
+        setAllPublications([]);
+    }
+
+    return () => {
+        // Cleanup listeners when user ID changes or component unmounts
         cleanupListeners();
     };
-}, [currentUser?.id, cleanupListeners, handleUserAuth]);
+}, [currentUser?.id, cleanupListeners]); // Effect runs only when user ID changes.
 
 
   const state = useMemo(() => ({
@@ -313,7 +308,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         try { await signInWithPopup(auth, provider); } catch (error: any) {
             if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user' || error.code === 'auth/popup-blocked') { return; }
             console.error("Error signing in with Google: ", error);
-            toast({ variant: 'destructive', title: 'Error de Autenticación', description: 'No se pudo iniciar sesión con Google. Por favor, inténtalo de nuevo.' });
         }
     },
     logout: async () => {
@@ -349,7 +343,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         if (!user) return;
         const newStatus = !user.isGpsActive;
         await updateDoc(doc(getFirestoreDb(), 'users', userId), { isGpsActive: newStatus });
-        toast({ title: `GPS ${newStatus ? 'Activado' : 'Desactivado'}` });
     },
     addToCart(product: Product, quantity: number) {
         if(!currentUser?.id) return;
@@ -414,7 +407,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         }
         batch.update(originalTxRef, updates);
         batch.commit().then(() => {
-            toast({ title: "Pedido realizado", description: "Tu pedido ha sido enviado al proveedor." });
             router.push('/transactions');
         });
     },
@@ -478,12 +470,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
           isCompany: user.profileSetupData?.providerType === 'company',
       });
     },
-    updateUserProfileImage: (a:any,b:any)=>{},
-    removeGalleryImage: (a:any,b:any)=>{},
+    updateUserProfileImage: (a:any,b:any)=>{return Promise.resolve();},
+    removeGalleryImage: (a:any,b:any)=>{return Promise.resolve();},
     validateEmail: (a:any,b:any)=>{return Promise.resolve(true)},
-    sendPhoneVerification: (a:any,b:any)=>{},
+    sendPhoneVerification: (a:any,b:any)=>{return Promise.resolve();},
     verifyPhoneCode: (a:any,b:any)=>{return Promise.resolve(true)},
-    updateFullProfile: (a:any,b:any,c:any)=>{},
+    updateFullProfile: (a:any,b:any,c:any)=>{return Promise.resolve();},
     subscribeUser: (a:any,b:any,c:any)=>{},
     activateTransactions: (a:any,b:any)=>{},
     deactivateTransactions: (a:any)=>{},
@@ -494,14 +486,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     getAgendaEvents: (a:any) => [],
     addCommentToImage: (a:any,b:any,c:any)=>{},
     removeCommentFromImage: (a:any,b:any,c:any)=>{},
-    activatePromotion: async(a:any)=>{},
-    createCampaign: async(a:any)=>{},
-    createPublication: async(a:any)=>{},
-    createProduct: async(a:any)=>{},
+    activatePromotion: async(a:any)=>{return Promise.resolve();},
+    createCampaign: async(a:any)=>{return Promise.resolve();},
+    createPublication: async(a:any)=>{return Promise.resolve();},
+    createProduct: async(a:any)=>{return Promise.resolve();},
     setDeliveryAddress: (a:any)=>{},
-    markConversationAsRead: async(a:any)=>{},
+    markConversationAsRead: async(a:any)=>{return Promise.resolve();},
     toggleUserPause: (a:any,b:any)=>{},
-    deleteUser: async(a:any)=>{},
+    deleteUser: async(a:any)=>{return Promise.resolve();},
     verifyCampaignPayment: (a:any,b:any)=>{},
     verifyUserId: (a:any)=>{},
     rejectUserId: (a:any)=>{},
@@ -509,20 +501,20 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     acceptDelivery: (a:any)=>{},
     getDistanceToProvider: (a:any) => null,
     startQrSession: async (a:any) => null,
-    setQrSessionAmount: async(a:any,b:any)=>{},
-    approveQrSession: async(a:any)=>{},
-    finalizeQrSession: async(a:any,b:any)=>{},
-    cancelQrSession: async(a:any,b:any)=>{},
-    registerSystemPayment: async(a:any,b:any,c:any)=>{},
-    cancelSystemTransaction: async(a:any)=>{},
-    updateUserProfileAndGallery: async(a:any,b:any)=>{},
-    requestAffiliation: async(a:any,b:any)=>{},
+    setQrSessionAmount: async(a:any,b:any)=>{return Promise.resolve();},
+    approveQrSession: async(a:any)=>{return Promise.resolve();},
+    finalizeQrSession: async(a:any,b:any)=>{return Promise.resolve();},
+    cancelQrSession: async(a:any,b:any)=>{return Promise.resolve();},
+    registerSystemPayment: async(a:any,b:any,c:any)=>{return Promise.resolve();},
+    cancelSystemTransaction: async(a:any)=>{return Promise.resolve();},
+    updateUserProfileAndGallery: async(a:any,b:any)=>{return Promise.resolve();},
+    requestAffiliation: async(a:any,b:any)=>{return Promise.resolve();},
     approveAffiliation: (a:any) => Promise.resolve(),
     rejectAffiliation: (a:any) => Promise.resolve(),
     revokeAffiliation: (a:any) => Promise.resolve(),
   }), [
     handleUserAuth, searchHistory, contacts, cart, transactions, deliveryAddress, getCartTotal, 
-    getDeliveryCost, users, toast, router, updateCart
+    getDeliveryCost, users, updateCart, router, currentUser
   ]);
   
   return (
