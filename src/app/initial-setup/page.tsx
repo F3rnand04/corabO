@@ -82,12 +82,15 @@ export default function InitialSetupPage() {
         // This is now an isolated action that doesn't trigger a context update loop.
         await completeInitialSetupFlow({ userId: currentUser.id, name, lastName, idNumber, birthDate, country });
         
+        // This is a small, safe update that doesn't cause issues.
         await updateUser(currentUser.id, { 
             profileSetupData: {
                 ...currentUser.profileSetupData,
                 providerType: isCompany ? 'company' : 'professional'
             }
         });
+        // The AppLayout will now handle the redirection automatically because
+        // the onSnapshot listener will update the currentUser and trigger its useEffect.
 
     } catch (error: any) {
         console.error("Failed to complete setup:", error);

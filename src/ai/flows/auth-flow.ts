@@ -45,46 +45,43 @@ export const getOrCreateUser = ai.defineFlow(
       }
       return user;
     } else {
-      const name = ''; // Let user input their name on setup
-      const firstName = "USER";
+      // Create a new, minimal user object.
+      // The user will be forced to complete the setup on their first login.
+      const newUser: User = {
+        id: firebaseUser.uid,
+        name: firebaseUser.displayName || 'Nuevo Usuario',
+        email: firebaseUser.email || '',
+        profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
+        createdAt: new Date().toISOString(),
+        isInitialSetupComplete: false, // This is the key field for the redirection logic
+        // Set default values for all other required fields
+        lastName: '',
+        idNumber: '',
+        birthDate: '',
+        country: '',
+        type: 'client',
+        reputation: 0,
+        effectiveness: 0,
+        phone: '',
+        emailValidated: firebaseUser.emailVerified,
+        phoneValidated: false,
+        isGpsActive: true,
+        credicoraLevel: 1,
+        credicoraLimit: 150,
+        isSubscribed: false,
+        isTransactionsActive: false,
+        idVerificationStatus: 'rejected',
+        profileSetupData: {
+            location: "10.4806,-66.9036"
+        },
+      };
 
-      const coraboId = (firstName.substring(0, 3)).toUpperCase() + Math.random().toString(36).substring(2, 8).toUpperCase();
-       
-       const newUser: User = {
-         id: firebaseUser.uid,
-         coraboId: coraboId,
-         name: name, // Intentionally left blank for user input
-         lastName: '', // Intentionally left blank for user input
-         idNumber: '',
-         birthDate: '',
-         country: '',
-         createdAt: new Date().toISOString(),
-         type: 'client',
-         reputation: 0,
-         effectiveness: 0,
-         profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
-         email: firebaseUser.email || '',
-         phone: '',
-         emailValidated: firebaseUser.emailVerified,
-         phoneValidated: false,
-         isGpsActive: true,
-         isInitialSetupComplete: false,
-         credicoraLevel: 1,
-         credicoraLimit: 150,
-         profileSetupData: {
-             location: "10.4806,-66.9036"
-         },
-         isSubscribed: false,
-         isTransactionsActive: false,
-         idVerificationStatus: 'rejected',
-       };
-       
-       if (newUser.email === 'fernandopbt@gmail.com') {
-           newUser.role = 'admin';
-       }
+      if (newUser.email === 'fernandopbt@gmail.com') {
+          newUser.role = 'admin';
+      }
 
-       await setDoc(userDocRef, newUser);
-       return newUser;
+      await setDoc(userDocRef, newUser);
+      return newUser;
     }
   }
 );

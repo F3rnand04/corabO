@@ -118,6 +118,8 @@ const PublicUserOutputSchema = z.object({
   isTransactionsActive: z.boolean().optional(),
   profileSetupData: z.any().optional(), // Using any for simplicity, can be stricter
   country: z.string().optional(),
+  credicoraLevel: z.number().optional(),
+  credicoraLimit: z.number().optional(),
 });
 
 export const getPublicProfileFlow = ai.defineFlow(
@@ -152,6 +154,8 @@ export const getPublicProfileFlow = ai.defineFlow(
       isTransactionsActive: fullUser.isTransactionsActive,
       profileSetupData: fullUser.profileSetupData,
       country: fullUser.country,
+      credicoraLevel: fullUser.credicoraLevel,
+      credicoraLimit: fullUser.credicoraLimit,
     };
   }
 );
