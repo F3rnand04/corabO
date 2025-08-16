@@ -1,8 +1,9 @@
+
 {
   "name": "corabo.app",
   "private": true,
   "scripts": {
-    "dev": "NODE_OPTIONS='--inspect' next dev",
+    "dev": "next dev",
     "genkit:dev": "genkit start",
     "genkit:watch": "genkit start --watch",
     "build": "next build",
@@ -53,7 +54,7 @@
     "jspdf": "2.5.1",
     "jspdf-autotable": "3.8.2",
     "lucide-react": "0.488.0",
-    "next": "^15.4.6",
+    "next": "14.2.6",
     "next-themes": "0.3.0",
     "patch-package": "8.0.0",
     "qrcode.react": "3.1.0",
@@ -71,7 +72,7 @@
     "@testing-library/jest-dom": "^6.4.6",
     "@testing-library/react": "^16.0.0",
     "@types/google.maps": "3.55.11",
-    "@types/jest": "29.5.12",
+    "@types/jest": "29.5.5",
     "@types/jspdf": "2.0.0",
     "@types/node": "20.14.12",
     "@types/qrcode.react": "1.0.5",
