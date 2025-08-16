@@ -31,20 +31,9 @@ export default function HomePage() {
           (p.type === 'product' && p.productDetails?.name.toLowerCase().includes(searchQuery.toLowerCase()))
       );
     }
-
-    // --- Inicio de la depuración ---
-    try {
-      console.log("Debugging allPublications:", JSON.stringify(allPublications, null, 2));
-    } catch (e) {
-      console.error("Error serializing allPublications:", (e as any).message);
-    }
-
-    try {
-      console.log("Debugging filteredPublications:", JSON.stringify(results, null, 2));
-    } catch (e) {
-      console.error("Error serializing filteredPublications:", (e as any).message);
-    }
-    // --- Fin de la depuración ---
+    // --- INICIO DE DEPURACIÓN ---
+    console.log(`[HomePage] Recalculando filtro. Query: "${searchQuery}", Category: "${categoryFilter}". Publicaciones totales: ${allPublications.length}, Filtradas: ${results.length}`);
+    // --- FIN DE DEPURACIÓN ---
     return results;
   }, [allPublications, searchQuery, categoryFilter]);
 
@@ -81,5 +70,3 @@ export default function HomePage() {
     </main>
   );
 }
-
-    

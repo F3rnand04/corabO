@@ -22,7 +22,8 @@ const FirebaseUserSchema = z.object({
 });
 export type FirebaseUserInput = z.infer<typeof FirebaseUserSchema>;
 
-// Schema for the User object we return - can be a User object or null
+// The output MUST be a plain JSON-serializable object.
+// We are explicitly NOT using the User type here to enforce serialization.
 const UserOutputSchema = z.any().nullable();
 
 
@@ -44,10 +45,10 @@ export const getOrCreateUser = ai.defineFlow(
         user.role = 'admin';
         await setDoc(userDocRef, user, { merge: true });
       }
-      return user;
+      // Return a plain, serializable object
+      return JSON.parse(JSON.stringify(user));
     } else {
       // Create a new, minimal user object.
-      // The user will be forced to complete the setup on their first login.
       const initialCredicoraLevel = credicoraLevels['1'];
       const newUser: User = {
         id: firebaseUser.uid,
@@ -56,8 +57,7 @@ export const getOrCreateUser = ai.defineFlow(
         email: firebaseUser.email || '',
         profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
         createdAt: new Date().toISOString(),
-        isInitialSetupComplete: false, // This is the key field for the redirection logic
-        // Set default values for all other required fields
+        isInitialSetupComplete: false, 
         lastName: '',
         idNumber: '',
         birthDate: '',
@@ -69,7 +69,7 @@ export const getOrCreateUser = ai.defineFlow(
         emailValidated: firebaseUser.emailVerified,
         phoneValidated: false,
         isGpsActive: true,
-        credicoraLevel: 1,
+        credicoraLevel: initialCredicoraLevel.level,
         credicoraLimit: initialCredicoraLevel.creditLimit,
         credicoraDetails: initialCredicoraLevel,
         isSubscribed: false,
@@ -85,7 +85,8 @@ export const getOrCreateUser = ai.defineFlow(
       }
 
       await setDoc(userDocRef, newUser);
-      return newUser;
+      // Return a plain, serializable object
+      return JSON.parse(JSON.stringify(newUser));
     }
   }
 );

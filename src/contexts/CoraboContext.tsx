@@ -196,21 +196,38 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     setQrSession(null); 
     
     if (firebaseUser) {
-        // Use the auth flow to ensure user data is fetched/created before setting state
-        const user = await getOrCreateUser(firebaseUser as FirebaseUserInput);
-        if (user) {
-          setCurrentUser(user as User);
-        } else {
-          // If flow returns null (error case), sign out from Firebase to be safe
-          await signOut(getAuthInstance());
-          setCurrentUser(null);
+        try {
+            const user = await getOrCreateUser(firebaseUser as FirebaseUserInput);
+            
+            // Critical Validation: Ensure the backend returned a valid user object.
+            if (user && user.id) {
+                setCurrentUser(user as User);
+            } else {
+                console.error("Authentication failed: Backend did not return a valid user object.", user);
+                toast({
+                    variant: 'destructive',
+                    title: 'Error de Sincronización',
+                    description: 'No se pudieron cargar los datos de tu perfil. Inténtalo de nuevo.'
+                });
+                await signOut(getAuthInstance());
+                setCurrentUser(null);
+            }
+        } catch (error) {
+            console.error("Error in getOrCreateUserFlow:", error);
+             toast({
+                variant: 'destructive',
+                title: 'Error Crítico de Autenticación',
+                description: 'No se pudo procesar tu inicio de sesión en el servidor.'
+            });
+            await signOut(getAuthInstance());
+            setCurrentUser(null);
         }
     } else {
         setCurrentUser(null);
     }
     // Set loading to false only after all auth logic is complete
     setIsLoadingAuth(false);
-  }, [cleanupListeners]);
+  }, [cleanupListeners, toast]);
 
   const logout = useCallback(async () => {
     await signOut(getAuthInstance());
@@ -530,5 +547,3 @@ export const useCorabo = (): CoraboState & CoraboActions => {
 };
 
 export type { Transaction };
-
-    
