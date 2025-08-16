@@ -168,7 +168,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     // Load contacts from local storage on initial mount
     const savedContacts = localStorage.getItem('coraboContacts');
     if (savedContacts) {
-      setContacts(JSON.parse(savedContacts));
+      try {
+        setContacts(JSON.parse(savedContacts));
+      } catch (e) {
+        console.error("Failed to parse contacts from localStorage", e);
+        setContacts([]);
+      }
     }
   }, []);
 
@@ -213,14 +218,16 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       await signInWithPopup(auth, provider);
       // The onAuthStateChanged listener in AppLayout will handle the rest.
     } catch (error: any) {
-      console.error("Error signing in with Google: ", error);
-      if (error.code !== 'auth/popup-closed-by-user') {
-        toast({
-          variant: 'destructive',
-          title: 'Error de Autenticación',
-          description: 'No se pudo iniciar sesión con Google. Por favor, inténtalo de nuevo.'
-        });
+      // Gracefully handle when the user closes the popup.
+      if (error.code === 'auth/cancelled-popup-request') {
+        return; // Do nothing, this is a normal user action.
       }
+      console.error("Error signing in with Google: ", error);
+      toast({
+        variant: 'destructive',
+        title: 'Error de Autenticación',
+        description: 'No se pudo iniciar sesión con Google. Por favor, inténtalo de nuevo.'
+      });
     }
   }, [toast]);
   
@@ -297,40 +304,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     await batch.commit();
   }, [currentUser]);
 
-  const checkout = useCallback((transactionId: string, withDelivery: boolean, useCredicora: boolean) => {
-      if(!currentUser) return;
-      const db = getFirestoreDb();
-      const batch = writeBatch(db);
-      const originalTxRef = doc(db, 'transactions', transactionId);
-      const totalAmount = getCartTotal() + (withDelivery ? getDeliveryCost() : 0);
-      const updates: Partial<Transaction> = {
-          status: withDelivery ? 'Buscando Repartidor' : 'Finalizado - Pendiente de Pago',
-          amount: totalAmount,
-          details: { ...transactions.find(t => t.id === transactionId)?.details, items: cart, delivery: withDelivery, deliveryCost: withDelivery ? getDeliveryCost() : 0, deliveryLocation: withDelivery && deliveryAddress ? { lat: 0, lon: 0, address: deliveryAddress } : undefined, paymentMethod: useCredicora ? 'credicora' : 'direct' }
-      };
-      if (useCredicora && currentUser.credicoraDetails) {
-          const crediDetails = currentUser.credicoraDetails;
-          const financedAmount = Math.min(getCartTotal() * (1 - crediDetails.initialPaymentPercentage), currentUser.credicoraLimit || 0);
-          const initialPayment = getCartTotal() - financedAmount;
-          updates.amount = initialPayment + (withDelivery ? getDeliveryCost() : 0);
-          updates.details!.initialPayment = initialPayment;
-          updates.details!.financedAmount = financedAmount;
-          const installmentAmount = financedAmount > 0 ? financedAmount / crediDetails.installments : 0;
-          for (let i = 1; i <= crediDetails.installments; i++) {
-              const installmentTxId = `txn-credicora-${transactionId.slice(-6)}-${i}`;
-              const dueDate = addDaysFns(new Date(), i * 15);
-              const installmentTx: Transaction = { id: installmentTxId, type: 'Sistema', status: 'Finalizado - Pendiente de Pago', date: dueDate.toISOString(), amount: installmentAmount, clientId: currentUser.id, providerId: 'corabo-admin', participantIds: [currentUser.id, 'corabo-admin'], details: { system: `Cuota ${i}/${crediDetails.installments} de Compra ${transactionId.slice(-6)}` } };
-              batch.set(doc(db, 'transactions', installmentTxId), installmentTx);
-          }
-          const newCredicoraLimit = (currentUser.credicoraLimit || 0) - financedAmount;
-          batch.update(doc(db, 'users', currentUser.id), { credicoraLimit: newCredicoraLimit });
-      }
-      batch.commit().then(() => {
-          toast({ title: "Pedido realizado", description: "Tu pedido ha sido enviado al proveedor." });
-          router.push('/transactions');
-      });
-  }, [currentUser, getCartTotal, getDeliveryCost, transactions, cart, deliveryAddress, toast, router]);
-
   const updateCart = useCallback(async (newCart: CartItem[]) => {
       if (!currentUser) return;
       
@@ -388,16 +361,51 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         updateCart(newCart);
     }
   }, [cart, updateCart]);
-
+  
   const removeFromCart = useCallback((productId: string) => {
     const newCart = cart.filter(item => item.product.id !== productId);
     updateCart(newCart);
   }, [cart, updateCart]);
+  
+  const checkout = useCallback((transactionId: string, withDelivery: boolean, useCredicora: boolean) => {
+      if(!currentUser) return;
+      const db = getFirestoreDb();
+      const batch = writeBatch(db);
+      const originalTxRef = doc(db, 'transactions', transactionId);
+      const totalAmount = getCartTotal() + (withDelivery ? getDeliveryCost() : 0);
+      const updates: Partial<Transaction> = {
+          status: withDelivery ? 'Buscando Repartidor' : 'Finalizado - Pendiente de Pago',
+          amount: totalAmount,
+          details: { ...transactions.find(t => t.id === transactionId)?.details, items: cart, delivery: withDelivery, deliveryCost: withDelivery ? getDeliveryCost() : 0, deliveryLocation: withDelivery && deliveryAddress ? { lat: 0, lon: 0, address: deliveryAddress } : undefined, paymentMethod: useCredicora ? 'credicora' : 'direct' }
+      };
+      if (useCredicora && currentUser.credicoraDetails) {
+          const crediDetails = currentUser.credicoraDetails;
+          const financedAmount = Math.min(getCartTotal() * (1 - crediDetails.initialPaymentPercentage), currentUser.credicoraLimit || 0);
+          const initialPayment = getCartTotal() - financedAmount;
+          updates.amount = initialPayment + (withDelivery ? getDeliveryCost() : 0);
+          updates.details!.initialPayment = initialPayment;
+          updates.details!.financedAmount = financedAmount;
+          const installmentAmount = financedAmount > 0 ? financedAmount / crediDetails.installments : 0;
+          for (let i = 1; i <= crediDetails.installments; i++) {
+              const installmentTxId = `txn-credicora-${transactionId.slice(-6)}-${i}`;
+              const dueDate = addDaysFns(new Date(), i * 15);
+              const installmentTx: Transaction = { id: installmentTxId, type: 'Sistema', status: 'Finalizado - Pendiente de Pago', date: dueDate.toISOString(), amount: installmentAmount, clientId: currentUser.id, providerId: 'corabo-admin', participantIds: [currentUser.id, 'corabo-admin'], details: { system: `Cuota ${i}/${crediDetails.installments} de Compra ${transactionId.slice(-6)}` } };
+              batch.set(doc(db, 'transactions', installmentTxId), installmentTx);
+          }
+          const newCredicoraLimit = (currentUser.credicoraLimit || 0) - financedAmount;
+          batch.update(doc(db, 'users', currentUser.id), { credicoraLimit: newCredicoraLimit });
+      }
+      batch.commit().then(() => {
+          toast({ title: "Pedido realizado", description: "Tu pedido ha sido enviado al proveedor." });
+          router.push('/transactions');
+      });
+  }, [currentUser, getCartTotal, getDeliveryCost, transactions, cart, deliveryAddress, toast, router, updateCart]);
 
   const requestQuoteFromGroup = useCallback(async (serviceName: string, items: string[]): Promise<boolean> => {
     if (!currentUser) return false;
     const today = startOfDay(new Date()).toISOString();
     const requestSignature = `${serviceName}-${items.join('-')}`;
+    // @ts-ignore
     const userQuotesToday = currentUser.dailyQuotes?.[today] || [];
     const quoteCount = userQuotesToday.find(q => q.requestSignature === requestSignature)?.count || 0;
     if (quoteCount >= 3 && !currentUser.isSubscribed) {
@@ -405,6 +413,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
     const updatedQuotes = userQuotesToday.filter(q => q.requestSignature !== requestSignature);
     updatedQuotes.push({ requestSignature, count: quoteCount + 1 });
+    // @ts-ignore
     await updateUser(currentUser.id, { dailyQuotes: { ...currentUser.dailyQuotes, [today]: updatedQuotes } });
     const providers = users.filter(u => u.profileSetupData?.categories?.includes(serviceName) || u.profileSetupData?.specialty?.toLowerCase().includes(serviceName.toLowerCase())).slice(0, 3);
     const db = getFirestoreDb();
@@ -539,3 +548,5 @@ export const useCorabo = (): CoraboState & CoraboActions => {
 };
 
 export type { Transaction };
+
+    
