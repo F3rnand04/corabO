@@ -420,6 +420,7 @@ export default function CompanyProfilePage() {
                 <div className="flex items-center gap-2">
                   <h1 className="text-lg font-bold text-foreground">{profileData.name}</h1>
                   {provider.isSubscribed && <CheckCircle className="w-5 h-5 text-blue-500" />}
+                  {isCompany && <Building className="w-4 h-4 text-muted-foreground" />}
                 </div>
                 <p className="text-sm text-muted-foreground">{profileData.specialty}</p>
                 <div className="flex items-center gap-2 text-sm mt-1 text-muted-foreground">
