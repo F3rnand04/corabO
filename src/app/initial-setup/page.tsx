@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, memo } from 'react';
@@ -41,7 +42,7 @@ const CountrySelector = memo(function CountrySelector({ value, onValueChange }: 
 
 
 export default function InitialSetupPage() {
-  const { currentUser, sendMessage, updateUser } = useCorabo();
+  const { currentUser, sendMessage } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -78,23 +79,17 @@ export default function InitialSetupPage() {
             return; // Stop submission
         }
         
-        await completeInitialSetupFlow({ userId: currentUser.id, name, lastName, idNumber, birthDate, country });
+        await completeInitialSetupFlow({ 
+          userId: currentUser.id, 
+          name, 
+          lastName, 
+          idNumber, 
+          birthDate, 
+          country,
+          type: isCompany ? 'provider' : 'client', // Set user type based on checkbox
+          providerType: isCompany ? 'company' : 'professional'
+        });
         
-        // **FIX:** Ensure user type is updated correctly based on the checkbox.
-        // This synchronizes the backend state with the frontend selection.
-        const userTypeUpdate: Partial<User> = {
-            profileSetupData: {
-                ...currentUser.profileSetupData,
-                providerType: isCompany ? 'company' : 'professional'
-            }
-        };
-
-        if (isCompany) {
-            userTypeUpdate.type = 'provider';
-        }
-        
-        await updateUser(currentUser.id, userTypeUpdate);
-
         // Let AppLayout handle redirection based on the now-consistent state.
 
     } catch (error: any) {

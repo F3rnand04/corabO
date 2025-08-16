@@ -7,9 +7,9 @@
 
 import { ai } from '@/ai/genkit';
 import { getFirestoreDb } from '@/lib/firebase-server';
-import { collection, getDocs, query, where, limit, startAfter, doc, getDoc, orderBy, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, limit, startAfter, doc, getDoc, orderBy, updateDoc, deleteDoc, setDoc } from 'firebase/firestore';
 import { GetProfileGalleryInputSchema, GetProfileGalleryOutputSchema, GetProfileProductsInputSchema, GetProfileProductsOutputSchema } from '@/lib/types';
-import type { GalleryImage, Product, User } from '@/lib/types';
+import type { GalleryImage, Product, User, ProfileSetupData } from '@/lib/types';
 import { z } from 'zod';
 
 
@@ -75,6 +75,8 @@ const CompleteInitialSetupInputSchema = z.object({
   idNumber: z.string(),
   birthDate: z.string(),
   country: z.string(),
+  type: z.enum(['client', 'provider', 'repartidor']),
+  providerType: z.enum(['professional', 'company']),
 });
 
 export const completeInitialSetupFlow = ai.defineFlow(
@@ -83,18 +85,26 @@ export const completeInitialSetupFlow = ai.defineFlow(
     inputSchema: CompleteInitialSetupInputSchema,
     outputSchema: z.void(),
   },
-  async ({ userId, name, lastName, idNumber, birthDate, country }) => {
+  async ({ userId, name, lastName, idNumber, birthDate, country, type, providerType }) => {
     const db = getFirestoreDb();
     const userRef = doc(db, 'users', userId);
     
-    await updateDoc(userRef, {
+    const dataToSave: Partial<User> = {
       name,
       lastName,
       idNumber,
       birthDate,
       country,
       isInitialSetupComplete: true,
-    });
+      type,
+      profileSetupData: {
+        providerType: providerType,
+      }
+    };
+
+    // Using set with merge: true ensures the doc is created if it doesn't exist,
+    // or updated if it does, without overwriting existing fields not included here.
+    await setDoc(userRef, dataToSave, { merge: true });
   }
 );
 
