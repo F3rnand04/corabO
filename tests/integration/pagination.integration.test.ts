@@ -18,7 +18,7 @@ const getTestEnv = async () => {
     firestore: {
       host: 'localhost',
       port: 8083, // Explicitly set from firebase.json
-      rules: fs.readFileSync(path.resolve(__dirname, '../../src/firestore.rules'), 'utf8'),
+      rules: fs.readFileSync(path.resolve(__dirname, '../../firestore.rules'), 'utf8'),
     },
   });
 };
