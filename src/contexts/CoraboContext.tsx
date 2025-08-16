@@ -196,7 +196,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     setQrSession(null); 
     
     if (firebaseUser) {
-        setIsLoadingAuth(true); // Start loading when a firebase user is detected
+        setIsLoadingAuth(true);
         try {
             const user = await getOrCreateUser(firebaseUser as FirebaseUserInput);
             
@@ -222,29 +222,25 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             await signOut(getAuthInstance());
             setCurrentUser(null);
         } finally {
-            setIsLoadingAuth(false); // Stop loading after all operations are complete
+            setIsLoadingAuth(false);
         }
     } else {
         setCurrentUser(null);
-        setIsLoadingAuth(false); // Stop loading if no user is found
+        setIsLoadingAuth(false);
     }
   }, [cleanupListeners, toast]);
 
+  // Main listener setup effect
   useEffect(() => {
     const auth = getAuthInstance();
-    const unsubscribe = onAuthStateChanged(auth, handleUserAuth);
-    // Cleanup subscription on unmount
-    return () => unsubscribe();
-  }, [handleUserAuth]);
+    const unsubscribeAuth = onAuthStateChanged(auth, handleUserAuth);
 
-  useEffect(() => {
     if (currentUser?.id) {
       const db = getFirestoreDb();
       const listeners: Unsubscribe[] = [
         onSnapshot(doc(db, 'users', currentUser.id), (doc) => {
           if (doc.exists()) {
               const newUserData = doc.data() as User;
-              // Only update if data has actually changed to prevent loops
               setCurrentUser(current => {
                 if (JSON.stringify(current) !== JSON.stringify(newUserData)) {
                   return newUserData;
@@ -263,8 +259,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     } else {
       setTransactions([]); setConversations([]); setUsers([]); setAllPublications([]);
     }
-    return () => cleanupListeners();
-  }, [currentUser?.id, cleanupListeners]);
+
+    // Cleanup function
+    return () => {
+        unsubscribeAuth();
+        cleanupListeners();
+    };
+}, [currentUser?.id, cleanupListeners, handleUserAuth]);
+
 
   const state = useMemo(() => ({
     currentUser, users, allPublications, transactions, conversations, cart, searchQuery,
@@ -278,263 +280,249 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const getCartTotal = useCallback(() => cart.reduce((total, item) => total + item.product.price * item.quantity, 0), [cart]);
   const getDeliveryCost = useCallback(() => ((Math.random() * 9) + 1) * 1.5, []);
-
-  // Isolate actions into their own memoized object to break dependency cycles
-  const actions = useMemo(() => {
-    const updateCart = async (newCart: CartItem[], currentUserId: string, currentTransactions: Transaction[]) => {
-        if (!currentUserId) return;
-        
-        const db = getFirestoreDb();
-        let cartTx = currentTransactions.find(tx => tx.status === 'Carrito Activo');
-        
-        if (newCart.length > 0) {
-            if (cartTx) {
-                const txRef = doc(db, 'transactions', cartTx.id);
-                await updateDoc(txRef, { 'details.items': newCart });
-            } else {
-                const newTxId = `txn-cart-${currentUserId}-${Date.now()}`;
-                const providerId = newCart[0].product.providerId;
-                const newCartTx: Transaction = {
-                    id: newTxId, type: 'Compra', status: 'Carrito Activo', date: new Date().toISOString(), amount: 0,
-                    clientId: currentUserId, providerId: providerId, participantIds: [currentUserId, providerId], details: { items: newCart }
-                };
-                await setDoc(doc(db, 'transactions', newTxId), newCartTx);
-            }
-        } else if (cartTx) {
-            await deleteDoc(doc(db, 'transactions', cartTx.id));
-        }
-    };
+  
+  const updateCart = useCallback(async (newCart: CartItem[], currentUserId: string, currentTransactions: Transaction[]) => {
+      if (!currentUserId) return;
       
-    return {
-      signInWithGoogle: async () => {
-          const auth = getAuthInstance();
-          const provider = new GoogleAuthProvider();
-          try { await signInWithPopup(auth, provider); } catch (error: any) {
-              if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user' || error.code === 'auth/popup-blocked') { return; }
-              console.error("Error signing in with Google: ", error);
-              toast({ variant: 'destructive', title: 'Error de Autenticación', description: 'No se pudo iniciar sesión con Google. Por favor, inténtalo de nuevo.' });
-          }
-      },
-      logout: async () => {
-          await signOut(getAuthInstance());
-          setCurrentUser(null);
-          router.push('/login');
-      },
-      handleUserAuth,
-      setSearchQuery: (query: string) => {
-          _setSearchQuery(query);
-          if (query.trim() && !searchHistory.includes(query.trim())) {
-              setSearchHistory(prev => [query.trim(), ...prev].slice(0, 10));
-          }
-      },
-      setCategoryFilter,
-      clearSearchHistory: () => setSearchHistory([]),
-      getCartTotal,
-      getDeliveryCost,
-      addContact: (user: User) => {
-          if (contacts.some(c => c.id === user.id)) return false;
-          setContacts(prev => [...prev, user]);
-          return true;
-      },
-      removeContact: (userId: string) => setContacts(prev => prev.filter(c => c.id !== userId)),
-      isContact: (userId: string) => contacts.some(c => c.id === userId),
-      getCartItemQuantity: (productId: string) => cart.find(item => item.product.id === productId)?.quantity || 0,
-      updateUser: async (userId: string, updates: Partial<User>) => {
-          const db = getFirestoreDb();
-          await updateDoc(doc(db, 'users', userId), updates, { merge: true });
-      },
-      toggleGps: async (userId: string) => {
-          const user = users.find(u => u.id === userId);
-          if (!user) return;
-          const newStatus = !user.isGpsActive;
-          await updateDoc(doc(getFirestoreDb(), 'users', userId), { isGpsActive: newStatus });
-          toast({ title: `GPS ${newStatus ? 'Activado' : 'Desactivado'}` });
-      },
-      addToCart(product: Product, quantity: number) {
-          if(!currentUser?.id) return;
-          const currentCart = transactions.find(tx => tx.status === 'Carrito Activo')?.details.items || [];
-          const newCart = [...currentCart];
-          const existingItemIndex = newCart.findIndex(item => item.product.id === product.id);
-          if (existingItemIndex > -1) {
-              newCart[existingItemIndex].quantity += quantity;
+      const db = getFirestoreDb();
+      let cartTx = currentTransactions.find(tx => tx.status === 'Carrito Activo');
+      
+      if (newCart.length > 0) {
+          if (cartTx) {
+              const txRef = doc(db, 'transactions', cartTx.id);
+              await updateDoc(txRef, { 'details.items': newCart });
           } else {
-              newCart.push({ product, quantity });
+              const newTxId = `txn-cart-${currentUserId}-${Date.now()}`;
+              const providerId = newCart[0].product.providerId;
+              const newCartTx: Transaction = {
+                  id: newTxId, type: 'Compra', status: 'Carrito Activo', date: new Date().toISOString(), amount: 0,
+                  clientId: currentUserId, providerId: providerId, participantIds: [currentUserId, providerId], details: { items: newCart }
+              };
+              await setDoc(doc(db, 'transactions', newTxId), newCartTx);
           }
-          updateCart(newCart, currentUser.id, transactions);
-      },
-      updateCartQuantity(productId: string, quantity: number) {
-          if(!currentUser?.id) return;
-          let newCart = [...cart];
-          const itemIndex = newCart.findIndex(item => item.product.id === productId);
-          if (itemIndex > -1) {
-              if (quantity > 0) {
-                  newCart[itemIndex].quantity = quantity;
-              } else {
-                  newCart.splice(itemIndex, 1);
-              }
-          }
-          updateCart(newCart, currentUser.id, transactions);
-      },
-      removeFromCart(productId: string) {
-          if(!currentUser?.id) return;
-          const newCart = cart.filter(item => item.product.id !== productId);
-          updateCart(newCart, currentUser.id, transactions);
-      },
-      checkout: (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {
-          const user = currentUser;
-          if(!user) return;
-          const db = getFirestoreDb();
-          const batch = writeBatch(db);
-          const originalTxRef = doc(db, 'transactions', transactionId);
-          const cartTotal = getCartTotal();
-          const deliveryCostValue = getDeliveryCost();
-          const totalAmount = cartTotal + (withDelivery ? deliveryCostValue : 0);
-          const updates: Partial<Transaction> = {
-              status: withDelivery ? 'Buscando Repartidor' : 'Finalizado - Pendiente de Pago',
-              amount: totalAmount,
-              details: { ...transactions.find(t => t.id === transactionId)?.details, items: cart, delivery: withDelivery, deliveryCost: withDelivery ? deliveryCostValue : 0, deliveryLocation: withDelivery && deliveryAddress ? { lat: 0, lon: 0, address: deliveryAddress } : undefined, paymentMethod: useCredicora ? 'credicora' : 'direct' }
-          };
-          if (useCredicora && user.credicoraDetails) {
-              const crediDetails = user.credicoraDetails;
-              const financedAmount = Math.min(cartTotal * (1 - crediDetails.initialPaymentPercentage), user.credicoraLimit || 0);
-              const initialPayment = cartTotal - financedAmount;
-              updates.amount = initialPayment + (withDelivery ? deliveryCostValue : 0);
-              updates.details!.initialPayment = initialPayment;
-              updates.details!.financedAmount = financedAmount;
-              const installmentAmount = financedAmount > 0 ? financedAmount / crediDetails.installments : 0;
-              for (let i = 1; i <= crediDetails.installments; i++) {
-                  const installmentTxId = `txn-credicora-${transactionId.slice(-6)}-${i}`;
-                  const dueDate = addDaysFns(new Date(), i * 15);
-                  const installmentTx: Transaction = { id: installmentTxId, type: 'Sistema', status: 'Finalizado - Pendiente de Pago', date: dueDate.toISOString(), amount: installmentAmount, clientId: user.id, providerId: 'corabo-admin', participantIds: [user.id, 'corabo-admin'], details: { system: `Cuota ${i}/${crediDetails.installments} de Compra ${transactionId.slice(-6)}` } };
-                  batch.set(doc(db, 'transactions', installmentTxId), installmentTx);
-              }
-              const newCredicoraLimit = (user.credicoraLimit || 0) - financedAmount;
-              batch.update(doc(db, 'users', user.id), { credicoraLimit: newCredicoraLimit });
-          }
-          batch.update(originalTxRef, updates);
-          batch.commit().then(() => {
-              toast({ title: "Pedido realizado", description: "Tu pedido ha sido enviado al proveedor." });
-              router.push('/transactions');
-          });
-      },
-      sendMessage: (options: any) => { 
-          const user = currentUser;
-          if (!user) return ''; 
-          const conversationId = [user.id, options.recipientId].sort().join('-'); 
-          if (!options.createOnly) { sendMessageFlow({ conversationId, senderId: user.id, ...options }); } 
-          return conversationId; 
-      },
-      payCommitment: async (transactionId: string) => { 
-          const user = currentUser;
-          if(!user) return; 
-          await TransactionFlows.payCommitment({ transactionId, userId: user.id }); 
-      },
-      sendQuote: async (transactionId: string, quote: { breakdown: string; total: number }) => { 
-          await updateDoc(doc(getFirestoreDb(), 'transactions', transactionId), { status: 'Cotización Recibida', amount: quote.total, 'details.quote': quote }); 
-      },
-      acceptQuote: async (transactionId: string) => { 
-          if(!currentUser) return; 
-          await updateDoc(doc(getFirestoreDb(), 'transactions', transactionId), { status: 'Finalizado - Pendiente de Pago' }); 
-      },
-      acceptAppointment: async (transactionId: string) => { 
-          if(!currentUser) return; 
-          await TransactionFlows.acceptAppointment({ transactionId, userId: currentUser.id }); 
-      },
-      confirmPaymentReceived: async (transactionId: string, fromThirdParty: boolean) => { 
-          if(!currentUser) return; 
-          await TransactionFlows.confirmPaymentReceived({ transactionId, userId: currentUser.id, fromThirdParty }); 
-      },
-      completeWork: async (transactionId: string) => { 
-          if(!currentUser) return; 
-          await TransactionFlows.completeWork({ transactionId, userId: currentUser.id }); 
-      },
-      confirmWorkReceived: async (transactionId: string, rating: number, comment?: string) => { 
-          if(!currentUser) return; 
-          await TransactionFlows.confirmWorkReceived({ transactionId, userId: currentUser.id, rating, comment }); 
-      },
-      startDispute: async (transactionId: string) => { 
-          await TransactionFlows.startDispute(transactionId); 
-      },
-      fetchUser: async (userId: string) => {
-          if (userCache.current.has(userId)) return userCache.current.get(userId)!;
-          const publicProfile = await getPublicProfileFlow({ userId });
-          if (publicProfile) {
-              const userData = publicProfile as User;
-              userCache.current.set(userId, userData);
-              return userData;
-          }
-          return null;
-      },
-      autoVerifyIdWithAI: async (user: User) => {
-        if (!user.name || !user.idNumber || !user.idDocumentUrl) {
-            throw new Error("Faltan datos del usuario para la verificación.");
+      } else if (cartTx) {
+          await deleteDoc(doc(db, 'transactions', cartTx.id));
+      }
+  }, []);
+      
+  // Isolate actions into their own memoized object to break dependency cycles
+  const actions = useMemo(() => ({
+    signInWithGoogle: async () => {
+        const auth = getAuthInstance();
+        const provider = new GoogleAuthProvider();
+        try { await signInWithPopup(auth, provider); } catch (error: any) {
+            if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user' || error.code === 'auth/popup-blocked') { return; }
+            console.error("Error signing in with Google: ", error);
+            toast({ variant: 'destructive', title: 'Error de Autenticación', description: 'No se pudo iniciar sesión con Google. Por favor, inténtalo de nuevo.' });
         }
-        return await autoVerifyIdWithAIFlow({
-            userId: user.id,
-            nameInRecord: `${user.name} ${user.lastName || ''}`,
-            idInRecord: user.idNumber,
-            documentImageUrl: user.idDocumentUrl,
-            isCompany: user.profileSetupData?.providerType === 'company',
+    },
+    logout: async () => {
+        await signOut(getAuthInstance());
+        setCurrentUser(null);
+        router.push('/login');
+    },
+    handleUserAuth,
+    setSearchQuery: (query: string) => {
+        _setSearchQuery(query);
+        if (query.trim() && !searchHistory.includes(query.trim())) {
+            setSearchHistory(prev => [query.trim(), ...prev].slice(0, 10));
+        }
+    },
+    setCategoryFilter,
+    clearSearchHistory: () => setSearchHistory([]),
+    getCartTotal,
+    getDeliveryCost,
+    addContact: (user: User) => {
+        if (contacts.some(c => c.id === user.id)) return false;
+        setContacts(prev => [...prev, user]);
+        return true;
+    },
+    removeContact: (userId: string) => setContacts(prev => prev.filter(c => c.id !== userId)),
+    isContact: (userId: string) => contacts.some(c => c.id === userId),
+    getCartItemQuantity: (productId: string) => cart.find(item => item.product.id === productId)?.quantity || 0,
+    updateUser: async (userId: string, updates: Partial<User>) => {
+        const db = getFirestoreDb();
+        await updateDoc(doc(db, 'users', userId), updates);
+    },
+    toggleGps: async (userId: string) => {
+        const user = users.find(u => u.id === userId);
+        if (!user) return;
+        const newStatus = !user.isGpsActive;
+        await updateDoc(doc(getFirestoreDb(), 'users', userId), { isGpsActive: newStatus });
+        toast({ title: `GPS ${newStatus ? 'Activado' : 'Desactivado'}` });
+    },
+    addToCart(product: Product, quantity: number) {
+        if(!currentUser?.id) return;
+        const currentCart = transactions.find(tx => tx.status === 'Carrito Activo')?.details.items || [];
+        const newCart = [...currentCart];
+        const existingItemIndex = newCart.findIndex(item => item.product.id === product.id);
+        if (existingItemIndex > -1) {
+            newCart[existingItemIndex].quantity += quantity;
+        } else {
+            newCart.push({ product, quantity });
+        }
+        updateCart(newCart, currentUser.id, transactions);
+    },
+    updateCartQuantity(productId: string, quantity: number) {
+        if(!currentUser?.id) return;
+        let newCart = [...cart];
+        const itemIndex = newCart.findIndex(item => item.product.id === productId);
+        if (itemIndex > -1) {
+            if (quantity > 0) {
+                newCart[itemIndex].quantity = quantity;
+            } else {
+                newCart.splice(itemIndex, 1);
+            }
+        }
+        updateCart(newCart, currentUser.id, transactions);
+    },
+    removeFromCart(productId: string) {
+        if(!currentUser?.id) return;
+        const newCart = cart.filter(item => item.product.id !== productId);
+        updateCart(newCart, currentUser.id, transactions);
+    },
+    checkout: (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {
+        const user = currentUser;
+        if(!user) return;
+        const db = getFirestoreDb();
+        const batch = writeBatch(db);
+        const originalTxRef = doc(db, 'transactions', transactionId);
+        const cartTotal = getCartTotal();
+        const deliveryCostValue = getDeliveryCost();
+        const totalAmount = cartTotal + (withDelivery ? deliveryCostValue : 0);
+        const updates: Partial<Transaction> = {
+            status: withDelivery ? 'Buscando Repartidor' : 'Finalizado - Pendiente de Pago',
+            amount: totalAmount,
+            details: { ...transactions.find(t => t.id === transactionId)?.details, items: cart, delivery: withDelivery, deliveryCost: withDelivery ? deliveryCostValue : 0, deliveryLocation: withDelivery && deliveryAddress ? { lat: 0, lon: 0, address: deliveryAddress } : undefined, paymentMethod: useCredicora ? 'credicora' : 'direct' }
+        };
+        if (useCredicora && user.credicoraDetails) {
+            const crediDetails = user.credicoraDetails;
+            const financedAmount = Math.min(cartTotal * (1 - crediDetails.initialPaymentPercentage), user.credicoraLimit || 0);
+            const initialPayment = cartTotal - financedAmount;
+            updates.amount = initialPayment + (withDelivery ? deliveryCostValue : 0);
+            updates.details!.initialPayment = initialPayment;
+            updates.details!.financedAmount = financedAmount;
+            const installmentAmount = financedAmount > 0 ? financedAmount / crediDetails.installments : 0;
+            for (let i = 1; i <= crediDetails.installments; i++) {
+                const installmentTxId = `txn-credicora-${transactionId.slice(-6)}-${i}`;
+                const dueDate = addDaysFns(new Date(), i * 15);
+                const installmentTx: Transaction = { id: installmentTxId, type: 'Sistema', status: 'Finalizado - Pendiente de Pago', date: dueDate.toISOString(), amount: installmentAmount, clientId: user.id, providerId: 'corabo-admin', participantIds: [user.id, 'corabo-admin'], details: { system: `Cuota ${i}/${crediDetails.installments} de Compra ${transactionId.slice(-6)}` } };
+                batch.set(doc(db, 'transactions', installmentTxId), installmentTx);
+            }
+            const newCredicoraLimit = (user.credicoraLimit || 0) - financedAmount;
+            batch.update(doc(db, 'users', user.id), { credicoraLimit: newCredicoraLimit });
+        }
+        batch.update(originalTxRef, updates);
+        batch.commit().then(() => {
+            toast({ title: "Pedido realizado", description: "Tu pedido ha sido enviado al proveedor." });
+            router.push('/transactions');
         });
-      },
-      revokeAffiliation: async (affiliationId: string) => {
-        if (!currentUser) return;
-        await revokeAffiliationFlow({ affiliationId, actorId: currentUser.id });
-        toast({ title: "Afiliación Revocada" });
-      },
-      approveAffiliation: async (affiliationId: string) => {
-        if (!currentUser) return;
-        await approveAffiliationFlow({ affiliationId, actorId: currentUser.id });
-        toast({ title: "Afiliación Aprobada" });
-      },
-      rejectAffiliation: async (affiliationId: string) => {
-        if (!currentUser) return;
-        await rejectAffiliationFlow({ affiliationId, actorId: currentUser.id });
-        toast({ title: "Solicitud Rechazada" });
-      },
-      updateUserProfileImage: (a:any,b:any)=>{},
-      removeGalleryImage: (a:any,b:any)=>{},
-      validateEmail: (a:any,b:any)=>{return Promise.resolve(true)},
-      sendPhoneVerification: (a:any,b:any)=>{},
-      verifyPhoneCode: (a:any,b:any)=>{return Promise.resolve(true)},
-      updateFullProfile: (a:any,b:any,c:any)=>{},
-      subscribeUser: (a:any,b:any,c:any)=>{},
-      activateTransactions: (a:any,b:any)=>{},
-      deactivateTransactions: (a:any)=>{},
-      downloadTransactionsPDF: (a:any)=>{},
-      sendProposalMessage: (a:any,b:any)=>{},
-      acceptProposal: (a:any,b:any)=>{},
-      createAppointmentRequest: (a:any)=>{},
-      getAgendaEvents: (a:any) => [],
-      addCommentToImage: (a:any,b:any,c:any)=>{},
-      removeCommentFromImage: (a:any,b:any,c:any)=>{},
-      activatePromotion: async(a:any)=>{},
-      createCampaign: async(a:any)=>{},
-      createPublication: async(a:any)=>{},
-      createProduct: async(a:any)=>{},
-      setDeliveryAddress: (a:any)=>{},
-      markConversationAsRead: async(a:any)=>{},
-      toggleUserPause: (a:any,b:any)=>{},
-      deleteUser: async(a:any)=>{},
-      verifyCampaignPayment: (a:any,b:any)=>{},
-      verifyUserId: (a:any)=>{},
-      rejectUserId: (a:any)=>{},
-      getUserMetrics: (a:any,b:any)=>{return {reputation: 0, effectiveness: 0, responseTime: 'Nuevo'}},
-      acceptDelivery: (a:any)=>{},
-      getDistanceToProvider: (a:any) => null,
-      startQrSession: async (a:any) => null,
-      setQrSessionAmount: async(a:any,b:any)=>{},
-      approveQrSession: async(a:any)=>{},
-      finalizeQrSession: async(a:any,b:any)=>{},
-      cancelQrSession: async(a:any,b:any)=>{},
-      registerSystemPayment: async(a:any,b:any,c:any)=>{},
-      cancelSystemTransaction: async(a:any)=>{},
-      updateUserProfileAndGallery: async(a:any,b:any)=>{},
-      requestAffiliation: async(a:any,b:any)=>{},
-    }
-  }, [
-      handleUserAuth, searchHistory, contacts, cart, 
-      transactions, deliveryAddress, getCartTotal, getDeliveryCost, users, toast, router
+    },
+    sendMessage: (options: any) => { 
+        const user = currentUser;
+        if (!user) return ''; 
+        const conversationId = [user.id, options.recipientId].sort().join('-'); 
+        if (!options.createOnly) { sendMessageFlow({ conversationId, senderId: user.id, ...options }); } 
+        return conversationId; 
+    },
+    payCommitment: async (transactionId: string) => { 
+        const user = currentUser;
+        if(!user) return; 
+        await TransactionFlows.payCommitment({ transactionId, userId: user.id }); 
+    },
+    sendQuote: async (transactionId: string, quote: { breakdown: string; total: number }) => { 
+        await updateDoc(doc(getFirestoreDb(), 'transactions', transactionId), { status: 'Cotización Recibida', amount: quote.total, 'details.quote': quote }); 
+    },
+    acceptQuote: async (transactionId: string) => { 
+        if(!currentUser) return; 
+        await updateDoc(doc(getFirestoreDb(), 'transactions', transactionId), { status: 'Finalizado - Pendiente de Pago' }); 
+    },
+    acceptAppointment: async (transactionId: string) => { 
+        if(!currentUser) return; 
+        await TransactionFlows.acceptAppointment({ transactionId, userId: currentUser.id }); 
+    },
+    confirmPaymentReceived: async (transactionId: string, fromThirdParty: boolean) => { 
+        if(!currentUser) return; 
+        await TransactionFlows.confirmPaymentReceived({ transactionId, userId: currentUser.id, fromThirdParty }); 
+    },
+    completeWork: async (transactionId: string) => { 
+        if(!currentUser) return; 
+        await TransactionFlows.completeWork({ transactionId, userId: currentUser.id }); 
+    },
+    confirmWorkReceived: async (transactionId: string, rating: number, comment?: string) => { 
+        if(!currentUser) return; 
+        await TransactionFlows.confirmWorkReceived({ transactionId, userId: currentUser.id, rating, comment }); 
+    },
+    startDispute: async (transactionId: string) => { 
+        await TransactionFlows.startDispute(transactionId); 
+    },
+    fetchUser: async (userId: string) => {
+        if (userCache.current.has(userId)) return userCache.current.get(userId)!;
+        const publicProfile = await getPublicProfileFlow({ userId });
+        if (publicProfile) {
+            const userData = publicProfile as User;
+            userCache.current.set(userId, userData);
+            return userData;
+        }
+        return null;
+    },
+    autoVerifyIdWithAI: async (user: User) => {
+      if (!user.name || !user.idNumber || !user.idDocumentUrl) {
+          throw new Error("Faltan datos del usuario para la verificación.");
+      }
+      return await autoVerifyIdWithAIFlow({
+          userId: user.id,
+          nameInRecord: `${user.name} ${user.lastName || ''}`,
+          idInRecord: user.idNumber,
+          documentImageUrl: user.idDocumentUrl,
+          isCompany: user.profileSetupData?.providerType === 'company',
+      });
+    },
+    updateUserProfileImage: (a:any,b:any)=>{},
+    removeGalleryImage: (a:any,b:any)=>{},
+    validateEmail: (a:any,b:any)=>{return Promise.resolve(true)},
+    sendPhoneVerification: (a:any,b:any)=>{},
+    verifyPhoneCode: (a:any,b:any)=>{return Promise.resolve(true)},
+    updateFullProfile: (a:any,b:any,c:any)=>{},
+    subscribeUser: (a:any,b:any,c:any)=>{},
+    activateTransactions: (a:any,b:any)=>{},
+    deactivateTransactions: (a:any)=>{},
+    downloadTransactionsPDF: (a:any)=>{},
+    sendProposalMessage: (a:any,b:any)=>{},
+    acceptProposal: (a:any,b:any)=>{},
+    createAppointmentRequest: (a:any)=>{},
+    getAgendaEvents: (a:any) => [],
+    addCommentToImage: (a:any,b:any,c:any)=>{},
+    removeCommentFromImage: (a:any,b:any,c:any)=>{},
+    activatePromotion: async(a:any)=>{},
+    createCampaign: async(a:any)=>{},
+    createPublication: async(a:any)=>{},
+    createProduct: async(a:any)=>{},
+    setDeliveryAddress: (a:any)=>{},
+    markConversationAsRead: async(a:any)=>{},
+    toggleUserPause: (a:any,b:any)=>{},
+    deleteUser: async(a:any)=>{},
+    verifyCampaignPayment: (a:any,b:any)=>{},
+    verifyUserId: (a:any)=>{},
+    rejectUserId: (a:any)=>{},
+    getUserMetrics: (a:any,b:any)=>{return {reputation: 0, effectiveness: 0, responseTime: 'Nuevo'}},
+    acceptDelivery: (a:any)=>{},
+    getDistanceToProvider: (a:any) => null,
+    startQrSession: async (a:any) => null,
+    setQrSessionAmount: async(a:any,b:any)=>{},
+    approveQrSession: async(a:any)=>{},
+    finalizeQrSession: async(a:any,b:any)=>{},
+    cancelQrSession: async(a:any,b:any)=>{},
+    registerSystemPayment: async(a:any,b:any,c:any)=>{},
+    cancelSystemTransaction: async(a:any)=>{},
+    updateUserProfileAndGallery: async(a:any,b:any)=>{},
+    requestAffiliation: async(a:any,b:any)=>{},
+    approveAffiliation: (a:any) => Promise.resolve(),
+    rejectAffiliation: (a:any) => Promise.resolve(),
+    revokeAffiliation: (a:any) => Promise.resolve(),
+  }), [
+    handleUserAuth, searchHistory, contacts, cart, transactions, deliveryAddress, getCartTotal, 
+    getDeliveryCost, users, toast, router, updateCart
   ]);
   
   return (
@@ -556,3 +544,5 @@ export const useCorabo = (): CoraboState & CoraboActions => {
 };
 
 export type { Transaction };
+
+    
