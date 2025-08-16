@@ -38,7 +38,7 @@ export async function autoVerifyIdWithAI(input: VerificationInput): Promise<Veri
   return autoVerifyIdWithAIFlow(input);
 }
 
-// Advanced name comparison logic
+// Advanced name comparison logic as per documentation
 function compareNamesFlexibly(nameA: string, nameB: string): boolean {
     const normalize = (name: string) => 
         name.toLowerCase().trim().replace(/\s+/g, ' ').split(' ').sort();
@@ -46,11 +46,26 @@ function compareNamesFlexibly(nameA: string, nameB: string): boolean {
     const partsA = normalize(nameA);
     const partsB = normalize(nameB);
 
+    // Handles cases where one name is shorter (e.g., missing a middle name)
     const [shorter, longer] = partsA.length < partsB.length ? [partsA, partsB] : [partsB, partsA];
 
     // Check if every word in the shorter name exists in the longer name
     return shorter.every(part => longer.includes(part));
 }
+
+// ID normalization logic as per documentation
+const normalizeId = (id: string): string => {
+    if (!id) return '';
+    return id
+        .trim()
+        .toLowerCase()
+        // Common OCR error: 'o' instead of '0'
+        .replace(/o/g, '0') 
+        // Remove common prefixes for Venezuelan IDs (V, E, J, G)
+        .replace(/^[vejg]-?/, "") 
+        // Remove all non-digit characters (dots, dashes, spaces)
+        .replace(/\D/g, ''); 
+};
 
 
 const autoVerifyIdWithAIFlow = ai.defineFlow(
@@ -90,8 +105,8 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
     }
     
     // Manual parsing of the text response
-    const nameMatchResult = responseText.match(/(?:Nombre|Razón Social): (.*)/);
-    const idMatchResult = responseText.match(/(?:ID|ID Fiscal): (.*)/);
+    const nameMatchResult = responseText.match(/(?:Nombre|Razón Social):\s*(.*)/);
+    const idMatchResult = responseText.match(/(?:ID|ID Fiscal):\s*(.*)/);
 
     const extractedName = nameMatchResult ? nameMatchResult[1].trim() : '';
     const extractedId = idMatchResult ? idMatchResult[1].trim() : '';
@@ -100,17 +115,8 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
         throw new Error('La IA no pudo extraer los campos necesarios del documento. Por favor, asegúrate de que la imagen sea clara y legible, o solicita una revisión manual.');
     }
 
-    const normalizeId = (str: string) => {
-        return str
-            .trim()
-            .toLowerCase()
-            .replace(/o/g, '0') // Correct common OCR errors (O -> 0)
-            .replace(/^[vejg]-?/, "") // Remove V, E, J, G prefix
-            .replace(/[\s.-]/g, ''); // Remove separators
-    };
-    
+    // Apply the flexible and normalized comparison logic
     const idMatch = normalizeId(extractedId) === normalizeId(input.idInRecord);
-    
     const nameMatch = compareNamesFlexibly(input.nameInRecord, extractedName);
 
     return {
