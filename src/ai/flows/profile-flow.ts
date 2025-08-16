@@ -214,7 +214,7 @@ export const getProfileProducts = ai.defineFlow(
     },
     async ({ userId, limitNum = 10, startAfterDocId }) => {
         const db = getFirestoreDb();
-        const productsCollection = collection(db, 'publications');
+        const publicationsCollection = collection(db, 'publications');
         
         const queryConstraints: any[] = [
             where("providerId", "==", userId),
@@ -230,7 +230,7 @@ export const getProfileProducts = ai.defineFlow(
             }
         }
 
-        const q = query(productsCollection, ...queryConstraints);
+        const q = query(publicationsCollection, ...queryConstraints);
         const snapshot = await getDocs(q);
 
         const userProductsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as GalleryImage));
@@ -246,8 +246,6 @@ export const getProfileProducts = ai.defineFlow(
         }));
         
         const lastVisibleDocInPage = snapshot.docs[snapshot.docs.length - 1];
-        // CORRECCIÓN: Si el número de documentos devueltos es menor que el límite,
-        // significa que hemos llegado al final y no hay una página siguiente.
         const nextCursor = snapshot.docs.length === limitNum ? lastVisibleDocInPage?.id : undefined;
 
 
@@ -257,5 +255,3 @@ export const getProfileProducts = ai.defineFlow(
         };
     }
 );
-
-    

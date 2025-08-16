@@ -516,5 +516,3 @@ export const useCorabo = (): CoraboState & CoraboActions => {
 };
 
 export type { Transaction };
-
-    
