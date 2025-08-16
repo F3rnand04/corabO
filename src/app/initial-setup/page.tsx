@@ -92,9 +92,11 @@ export default function InitialSetupPage() {
           providerType: isCompany ? 'company' : 'professional'
         });
         
-        // AppLayout will automatically detect the `isInitialSetupComplete` change
-        // and handle the redirection.
         toast({ title: "Perfil Guardado", description: "Tus datos han sido guardados correctamente."});
+        
+        // **FIX**: Force navigation to the home page after successful submission.
+        // AppLayout will then re-evaluate the route and take the user to the correct next step.
+        router.push('/');
 
     } catch (error: any) {
         console.error("Failed to complete setup:", error);
@@ -103,6 +105,7 @@ export default function InitialSetupPage() {
             title: 'Error',
             description: 'No se pudo guardar tu información. Inténtalo de nuevo.'
         });
+    } finally {
         setIsSubmitting(false);
     }
   };
@@ -114,6 +117,7 @@ export default function InitialSetupPage() {
   };
 
   if (!currentUser) {
+    // This part is handled by AppLayout, but it's a good safeguard.
     return (
         <div className="flex items-center justify-center min-h-screen">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
