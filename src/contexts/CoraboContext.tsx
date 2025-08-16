@@ -79,6 +79,7 @@ interface CoraboActions {
   getCartTotal: () => number;
   getDeliveryCost: () => number;
   checkout: (transactionId: string, withDelivery: boolean, useCredicora: boolean) => void;
+  requestQuoteFromGroup: (title: string, items: string[], group?: string) => boolean;
   addContact: (user: User) => boolean;
   removeContact: (userId: string) => void;
   isContact: (userId: string) => boolean;
@@ -221,7 +222,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       await signInWithPopup(auth, provider);
       // The onAuthStateChanged listener will handle the rest.
     } catch (error: any) {
-      if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user') {
+      if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user' || error.code === 'auth/popup-blocked') {
         return; 
       }
       console.error("Error signing in with Google: ", error);
@@ -401,6 +402,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
           router.push('/transactions');
       });
   }, [currentUser, getCartTotal, getDeliveryCost, transactions, cart, deliveryAddress, toast, router]);
+  
+  const requestQuoteFromGroup = useCallback((title: string, items: string[], group?: string): boolean => {
+    // This function is now deprecated and will be removed.
+    return true; 
+  }, []);
 
   const sendQuote = useCallback(async (transactionId: string, quote: { breakdown: string; total: number }) => { await updateDoc(doc(getFirestoreDb(), 'transactions', transactionId), { status: 'Cotización Recibida', amount: quote.total, 'details.quote': quote }); }, []);
   const acceptQuote = useCallback(async (transactionId: string) => { await updateDoc(doc(getFirestoreDb(), 'transactions', transactionId), { status: 'Finalizado - Pendiente de Pago' }); }, []);
@@ -479,7 +485,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const actions = useMemo(() => ({
     signInWithGoogle, setSearchQuery, setCategoryFilter, clearSearchHistory, logout, addToCart,
-    updateCartQuantity, removeFromCart, getCartTotal, getDeliveryCost, checkout, 
+    updateCartQuantity, removeFromCart, getCartTotal, getDeliveryCost, checkout, requestQuoteFromGroup,
     payCommitment, addContact, isContact, removeContact, toggleGps, updateUser, updateUserProfileImage, removeGalleryImage,
     validateEmail, sendPhoneVerification, verifyPhoneCode, updateFullProfile, subscribeUser, activateTransactions,
     deactivateTransactions, downloadTransactionsPDF, sendMessage, sendProposalMessage, acceptProposal: acceptProposalFlow,
@@ -491,7 +497,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     handleUserAuth, registerSystemPayment, cancelSystemTransaction, updateUserProfileAndGallery,
   }), [
     signInWithGoogle, setSearchQuery, setCategoryFilter, clearSearchHistory, logout, addToCart,
-    updateCartQuantity, removeFromCart, getCartTotal, getDeliveryCost, checkout, 
+    updateCartQuantity, removeFromCart, getCartTotal, getDeliveryCost, checkout, requestQuoteFromGroup,
     payCommitment, addContact, isContact, removeContact, toggleGps, updateUser, updateUserProfileImage, removeGalleryImage,
     validateEmail, sendPhoneVerification, verifyPhoneCode, updateFullProfile, subscribeUser, activateTransactions,
     deactivateTransactions, downloadTransactionsPDF, sendMessage, sendProposalMessage, getAgendaEvents, addCommentToImage,
