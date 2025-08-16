@@ -47,7 +47,8 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
   };
 
   const handleScheduleChange = (day: string, field: 'from' | 'to' | 'active', value: string | boolean) => {
-    const newSchedule = { ...(formData.schedule || {}), [day]: { ...(formData.schedule?.[day] || {}), [field]: value } };
+    const currentSchedule = formData.schedule || {};
+    const newSchedule = { ...currentSchedule, [day]: { ...(currentSchedule?.[day] || {}), [field]: value } };
     handleFormDataChange('schedule', newSchedule);
   };
   

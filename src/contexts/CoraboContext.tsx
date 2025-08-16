@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from 'react';
@@ -1126,5 +1125,3 @@ export const useCorabo = (): CoraboState & CoraboActions => {
   return { ...state, ...actions };
 };
 export type { Transaction };
-
-    
