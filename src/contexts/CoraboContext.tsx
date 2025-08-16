@@ -2,16 +2,16 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef, useMemo } from 'react';
-import type { User, Product, Service, CartItem, Transaction, TransactionStatus, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest, PublicationOwner, CreatePublicationInput, CreateProductInput, QrSession } from '@/lib/types';
+import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest, PublicationOwner, CreatePublicationInput, CreateProductInput, QrSession } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast"
 import { useRouter } from "next/navigation";
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { add, subDays, startOfDay, differenceInDays, differenceInMinutes, addDays as addDaysFns, addMonths } from 'date-fns';
+import { addDays } from 'date-fns';
 import { credicoraLevels } from '@/lib/types';
 import { getAuth, signInWithPopup, signOut, User as FirebaseUser, GoogleAuthProvider, onAuthStateChanged } from 'firebase/auth';
 import { getFirebaseApp, getFirestoreDb, getAuthInstance } from '@/lib/firebase';
-import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, arrayUnion, getDocs, deleteDoc, collectionGroup, Unsubscribe, orderBy } from 'firebase/firestore';
+import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, arrayUnion, getDocs, deleteDoc, collectionGroup, Unsubscribe, orderBy, deleteField } from 'firebase/firestore';
 import { createCampaign as createCampaignFlow, type CreateCampaignInput } from '@/ai/flows/campaign-flow';
 import { sendMessage as sendMessageFlow, acceptProposal as acceptProposalFlow } from '@/ai/flows/message-flow';
 import * as TransactionFlows from '@/ai/flows/transaction-flow';
@@ -21,8 +21,6 @@ import { getExchangeRate as getExchangeRateFlow } from '@/ai/flows/exchange-rate
 import { sendSmsVerificationCodeFlow, verifySmsCodeFlow } from '@/ai/flows/sms-flow';
 import { createProduct as createProductFlow, createPublication as createPublicationFlow } from '@/ai/flows/publication-flow';
 import { completeInitialSetupFlow, getPublicProfileFlow, deleteUserFlow, getProfileGallery, getProfileProducts, checkIdUniquenessFlow } from '@/ai/flows/profile-flow';
-import type { GetFeedInputSchema, GetFeedOutputSchema, GetProfileGalleryInputSchema, GetProfileGalleryOutputSchema, GetProfileProductsInputSchema, GetProfileProductsOutputSchema } from '@/lib/types';
-import { z } from 'zod';
 import { haversineDistance } from '@/lib/utils';
 import { getOrCreateUser, type FirebaseUserInput } from '@/ai/flows/auth-flow';
 import { requestAffiliation as requestAffiliationFlow, approveAffiliation as approveAffiliationFlow, rejectAffiliation as rejectAffiliationFlow, revokeAffiliation as revokeAffiliationFlow } from '@/ai/flows/affiliation-flow';
@@ -197,17 +195,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     setQrSession(null); 
     
     if (firebaseUser) {
-        // We set loading true here, but not inside the main `useEffect` to avoid loops.
         setIsLoadingAuth(true); 
         try {
             const user = await getOrCreateUser(firebaseUser as FirebaseUserInput);
-            
-            if (user && user.id) {
-                setCurrentUser(user as User);
-            } else {
-                console.error("Authentication failed: Backend did not return a valid user object.", user);
-                setCurrentUser(null);
-            }
+            setCurrentUser(user ? (user as User) : null);
         } catch (error) {
             console.error("Error in getOrCreateUserFlow:", error);
             setCurrentUser(null);
@@ -218,7 +209,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         setCurrentUser(null);
         setIsLoadingAuth(false);
     }
-  }, [cleanupListeners]); // This function is now stable and doesn't depend on changing values.
+  }, [cleanupListeners]);
 
   // **STABILIZED MAIN EFFECT**
   useEffect(() => {
@@ -312,7 +303,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     },
     logout: async () => {
         await signOut(getAuthInstance());
-        setCurrentUser(null);
         router.push('/login');
     },
     handleUserAuth,
@@ -375,40 +365,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         updateCart(newCart, currentUser.id, transactions);
     },
     checkout: (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {
-        const user = currentUser;
-        if(!user) return;
-        const db = getFirestoreDb();
-        const batch = writeBatch(db);
-        const originalTxRef = doc(db, 'transactions', transactionId);
-        const cartTotal = getCartTotal();
-        const deliveryCostValue = getDeliveryCost();
-        const totalAmount = cartTotal + (withDelivery ? deliveryCostValue : 0);
-        const updates: Partial<Transaction> = {
-            status: withDelivery ? 'Buscando Repartidor' : 'Finalizado - Pendiente de Pago',
-            amount: totalAmount,
-            details: { ...transactions.find(t => t.id === transactionId)?.details, items: cart, delivery: withDelivery, deliveryCost: withDelivery ? deliveryCostValue : 0, deliveryLocation: withDelivery && deliveryAddress ? { lat: 0, lon: 0, address: deliveryAddress } : undefined, paymentMethod: useCredicora ? 'credicora' : 'direct' }
-        };
-        if (useCredicora && user.credicoraDetails) {
-            const crediDetails = user.credicoraDetails;
-            const financedAmount = Math.min(cartTotal * (1 - crediDetails.initialPaymentPercentage), user.credicoraLimit || 0);
-            const initialPayment = cartTotal - financedAmount;
-            updates.amount = initialPayment + (withDelivery ? deliveryCostValue : 0);
-            updates.details!.initialPayment = initialPayment;
-            updates.details!.financedAmount = financedAmount;
-            const installmentAmount = financedAmount > 0 ? financedAmount / crediDetails.installments : 0;
-            for (let i = 1; i <= crediDetails.installments; i++) {
-                const installmentTxId = `txn-credicora-${transactionId.slice(-6)}-${i}`;
-                const dueDate = addDaysFns(new Date(), i * 15);
-                const installmentTx: Transaction = { id: installmentTxId, type: 'Sistema', status: 'Finalizado - Pendiente de Pago', date: dueDate.toISOString(), amount: installmentAmount, clientId: user.id, providerId: 'corabo-admin', participantIds: [user.id, 'corabo-admin'], details: { system: `Cuota ${i}/${crediDetails.installments} de Compra ${transactionId.slice(-6)}` } };
-                batch.set(doc(db, 'transactions', installmentTxId), installmentTx);
-            }
-            const newCredicoraLimit = (user.credicoraLimit || 0) - financedAmount;
-            batch.update(doc(db, 'users', user.id), { credicoraLimit: newCredicoraLimit });
-        }
-        batch.update(originalTxRef, updates);
-        batch.commit().then(() => {
-            router.push('/transactions');
-        });
+        if(!currentUser) return;
+        TransactionFlows.processDirectPayment({ sessionId: transactionId });
+        router.push('/transactions');
     },
     sendMessage: (options: any) => { 
         const user = currentUser;
@@ -423,11 +382,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         await TransactionFlows.payCommitment({ transactionId, userId: user.id }); 
     },
     sendQuote: async (transactionId: string, quote: { breakdown: string; total: number }) => { 
-        await updateDoc(doc(getFirestoreDb(), 'transactions', transactionId), { status: 'Cotización Recibida', amount: quote.total, 'details.quote': quote }); 
+        if(!currentUser) return;
+        await TransactionFlows.sendQuote({ transactionId, userId: currentUser.id, breakdown: quote.breakdown, total: quote.total });
     },
     acceptQuote: async (transactionId: string) => { 
         if(!currentUser) return; 
-        await updateDoc(doc(getFirestoreDb(), 'transactions', transactionId), { status: 'Finalizado - Pendiente de Pago' }); 
+        await TransactionFlows.acceptQuote({ transactionId, userId: currentUser.id }); 
     },
     acceptAppointment: async (transactionId: string) => { 
         if(!currentUser) return; 
@@ -476,7 +436,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     sendPhoneVerification: (a:any,b:any)=>{return Promise.resolve();},
     verifyPhoneCode: (a:any,b:any)=>{return Promise.resolve(true)},
     updateFullProfile: (a:any,b:any,c:any)=>{return Promise.resolve();},
-    subscribeUser: (a:any,b:any,c:any)=>{},
+    subscribeUser: (userId: string, planName: string, amount: number) => {
+        router.push(`/quotes/payment?concept=${encodeURIComponent(`Suscripción: ${planName}`)}&amount=${amount}&isSubscription=true`);
+    },
     activateTransactions: (a:any,b:any)=>{},
     deactivateTransactions: (a:any)=>{},
     downloadTransactionsPDF: (a:any)=>{},
@@ -487,7 +449,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     addCommentToImage: (a:any,b:any,c:any)=>{},
     removeCommentFromImage: (a:any,b:any,c:any)=>{},
     activatePromotion: async(a:any)=>{return Promise.resolve();},
-    createCampaign: async(a:any)=>{return Promise.resolve();},
+    createCampaign: async(data: Omit<CreateCampaignInput, 'userId'>) => {
+        if(!currentUser) return;
+        await createCampaignFlow({userId: currentUser.id, ...data});
+        router.push(`/quotes/payment?concept=${encodeURIComponent(`Activación de Campaña`)}&amount=${data.budget}`);
+    },
     createPublication: async(a:any)=>{return Promise.resolve();},
     createProduct: async(a:any)=>{return Promise.resolve();},
     setDeliveryAddress: (a:any)=>{},
@@ -509,9 +475,18 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     cancelSystemTransaction: async(a:any)=>{return Promise.resolve();},
     updateUserProfileAndGallery: async(a:any,b:any)=>{return Promise.resolve();},
     requestAffiliation: async(a:any,b:any)=>{return Promise.resolve();},
-    approveAffiliation: (a:any) => Promise.resolve(),
-    rejectAffiliation: (a:any) => Promise.resolve(),
-    revokeAffiliation: (a:any) => Promise.resolve(),
+    approveAffiliation: async (affiliationId: string) => {
+        if(!currentUser) return;
+        await approveAffiliationFlow({ affiliationId, actorId: currentUser.id });
+    },
+    rejectAffiliation: async (affiliationId: string) => {
+        if(!currentUser) return;
+        await rejectAffiliationFlow({ affiliationId, actorId: currentUser.id });
+    },
+    revokeAffiliation: async (affiliationId: string) => {
+        if(!currentUser) return;
+        await revokeAffiliationFlow({ affiliationId, actorId: currentUser.id });
+    },
   }), [
     handleUserAuth, searchHistory, contacts, cart, transactions, deliveryAddress, getCartTotal, 
     getDeliveryCost, users, updateCart, router, currentUser

@@ -5,33 +5,93 @@ import {
 } from '@firebase/rules-unit-testing';
 import { getAuth } from 'firebase/auth';
 import { getAuthInstance } from '@/lib/firebase';
+import { getOrCreateUser } from '@/ai/flows/auth-flow';
+import { User as FirebaseUser } from 'firebase/auth';
+import { getFirestoreDb } from '@/lib/firebase-server';
+import { doc, setDoc } from 'firebase/firestore';
 
-// Simularemos un inicio de sesión exitoso. En un entorno real,
-// esto implicaría interactuar con la UI y el emulador de Auth.
-describe('Login Flow - Integration Test', () => {
+
+jest.mock('@/lib/firebase-server', () => ({
+  getFirestoreDb: jest.fn(),
+}));
+const { getFirestoreDb: mockedGetDb } = require('@/lib/firebase-server');
+
+
+describe('Login and Auth Flow - Integration Test', () => {
   let testEnv: RulesTestEnvironment;
 
   beforeAll(async () => {
     testEnv = await initializeTestEnvironment({
       projectId: 'corabo-demo-test-login',
-      // La configuración del emulador se toma del archivo firebase.json automáticamente.
     });
   });
 
   afterAll(async () => {
-    await testEnv.cleanup();
+    if (testEnv) {
+      await testEnv.cleanup();
+    }
   });
+  
+  beforeEach(() => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    mockedGetDb.mockReturnValue(db);
+  })
 
-  // **Justificación Forense:** Este test no prueba la UI, sino la
-  // conexión con el emulador de autenticación. Verifica el "cableado"
-  // fundamental del sistema. Si este test falla, ninguna prueba
-  // de UI que requiera un usuario podrá funcionar. Es el primer
-  // paso para diagnosticar errores de login o de "carga perpetua".
   test('should connect to the auth emulator successfully', () => {
     const auth = getAuthInstance();
-    // La simple conexión exitosa al emulador es la prueba.
-    // Si la configuración (puertos, etc.) es incorrecta, esto lanzará un error.
     expect(auth).toBeDefined();
     console.log('✅ Auth emulator connection verified.');
   });
+  
+  test('getOrCreateUser should return an existing user', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    mockedGetDb.mockReturnValue(db);
+    
+    // Arrange: Create a user document in the database first.
+    const existingUserData = { id: 'user_exists', name: 'Existing User', email: 'exists@test.com' };
+    await setDoc(doc(db, 'users', 'user_exists'), existingUserData);
+
+    const firebaseUserMock = {
+        uid: 'user_exists',
+        displayName: 'Existing User',
+        email: 'exists@test.com',
+        photoURL: '',
+        emailVerified: true,
+    } as FirebaseUser;
+    
+    // Act: Call the flow.
+    const user = await getOrCreateUser(firebaseUserMock);
+
+    // Assert: The flow should return the user data from the database.
+    expect(user).toBeDefined();
+    expect(user.id).toBe('user_exists');
+    expect(user.name).toBe('Existing User');
+  });
+  
+   test('getOrCreateUser should create a new user if one does not exist', async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    mockedGetDb.mockReturnValue(db);
+    
+    // Arrange: Mock a Firebase user that is not yet in our database.
+    const firebaseUserMock = {
+        uid: 'user_new',
+        displayName: 'New User',
+        email: 'new@test.com',
+        photoURL: 'new.jpg',
+        emailVerified: true,
+    } as FirebaseUser;
+
+    // Act: Call the flow.
+    const user = await getOrCreateUser(firebaseUserMock);
+
+    // Assert: A new user object should be created and returned.
+    expect(user).toBeDefined();
+    expect(user.id).toBe('user_new');
+    expect(user.name).toBe('New User');
+    expect(user.profileImage).toBe('new.jpg');
+    expect(user.isInitialSetupComplete).toBe(false);
+  });
+
 });
+
+    
