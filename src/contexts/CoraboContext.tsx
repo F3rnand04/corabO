@@ -25,11 +25,6 @@ import { haversineDistance } from '@/lib/utils';
 import { getOrCreateUser, type FirebaseUserInput } from '@/ai/flows/auth-flow';
 import { requestAffiliation as requestAffiliationFlow, approveAffiliation as approveAffiliationFlow, rejectAffiliation as rejectAffiliationFlow, revokeAffiliation as revokeAffiliationFlow } from '@/ai/flows/affiliation-flow';
 
-// --- FEATURE FLAG ---
-// Set to `true` in production to enable country-specific data updates.
-const ENABLE_COUNTRY_UPDATE_LOGIC = false;
-
-
 interface DailyQuote {
     requestSignature: string;
     count: number;
@@ -162,7 +157,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [qrSession, setQrSession] = useState<QrSession | null>(null);
   
   const userCache = useRef<Map<string, User>>(new Map());
-  const activeListeners = useRef<Unsubscribe[]>([]);
   
   const activeCartTx = useMemo(() => transactions.find(tx => tx.status === 'Carrito Activo'), [transactions]);
   const cart: CartItem[] = useMemo(() => activeCartTx?.details.items || [], [activeCartTx]);
@@ -185,43 +179,47 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('coraboContacts', JSON.stringify(contacts));
   }, [contacts]);
 
-  const cleanupListeners = useCallback(() => {
-    activeListeners.current.forEach(unsubscribe => unsubscribe());
-    activeListeners.current = [];
-  }, []);
-
-
   // **STABILIZED DATA LISTENERS EFFECT**
   useEffect(() => {
+    const db = getFirestoreDb();
+    
+    // These listeners are for general data and don't depend on the current user
+    const unsubscribeUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
+        setUsers(snapshot.docs.map(doc => doc.data() as User));
+    });
+    
+    const unsubscribePublications = onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
+        setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage));
+    });
+
+    let unsubscribeUserSpecificData = () => {};
+
     if (currentUser?.id) {
-        const db = getFirestoreDb();
-        const listeners: Unsubscribe[] = [
-          onSnapshot(doc(db, 'users', currentUser.id), (doc) => {
-            if (doc.exists()) {
-                const newUserData = doc.data() as User;
-                setCurrentUser(newUserData);
-            }
-          }),
-          onSnapshot(query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id)), (snapshot) => setTransactions(snapshot.docs.map(doc => doc.data() as Transaction))),
-          onSnapshot(query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id), orderBy("lastUpdated", "desc")), (snapshot) => setConversations(snapshot.docs.map(doc => doc.data() as Conversation))),
-          onSnapshot(query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', currentUser.id)), (snapshot) => setQrSession(snapshot.docs.map(d => d.data() as QrSession).find(s => s.status !== 'completed' && s.status !== 'cancelled') || null)),
-          onSnapshot(collection(db, 'users'), (snapshot) => setUsers(snapshot.docs.map(doc => doc.data() as User))),
-          onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage))),
-        ];
-        activeListeners.current = listeners;
+        const userTransactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
+        const userConversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id), orderBy("lastUpdated", "desc"));
+        const userQrSessionQuery = query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', currentUser.id));
+        
+        const unsubscribeTransactions = onSnapshot(userTransactionsQuery, (snapshot) => setTransactions(snapshot.docs.map(doc => doc.data() as Transaction)));
+        const unsubscribeConversations = onSnapshot(userConversationsQuery, (snapshot) => setConversations(snapshot.docs.map(doc => doc.data() as Conversation)));
+        const unsubscribeQrSession = onSnapshot(userQrSessionQuery, (snapshot) => setQrSession(snapshot.docs.map(d => d.data() as QrSession).find(s => s.status !== 'completed' && s.status !== 'cancelled') || null));
+
+        unsubscribeUserSpecificData = () => {
+            unsubscribeTransactions();
+            unsubscribeConversations();
+            unsubscribeQrSession();
+        };
     } else {
-        // Clear data if no user is logged in
+        // Clear user-specific data if no user is logged in
         setTransactions([]); 
         setConversations([]); 
-        setUsers([]); 
-        setAllPublications([]);
     }
 
     return () => {
-        // Cleanup listeners when user ID changes or component unmounts
-        cleanupListeners();
+        unsubscribeUsers();
+        unsubscribePublications();
+        unsubscribeUserSpecificData();
     };
-}, [currentUser?.id, cleanupListeners]); // Effect runs only when user ID changes.
+}, [currentUser?.id]); // Effect runs only when user ID changes.
 
 
   const state = useMemo(() => ({
@@ -241,7 +239,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       if (!currentUserId) return;
       
       const db = getFirestoreDb();
-      let cartTx = currentTransactions.find(tx => tx.status === 'Carrito Activo');
+      let cartTx = currentTransactions.find(tx => tx.status === 'Carrito Activo' && tx.clientId === currentUserId);
       
       if (newCart.length > 0) {
           if (cartTx) {
@@ -261,7 +259,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       }
   }, []);
       
-  // Isolate actions into their own memoized object to break dependency cycles
   const actions = useMemo(() => ({
     signInWithGoogle: async () => {
         const auth = getAuthInstance();
@@ -273,6 +270,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     },
     logout: async () => {
         await signOut(getAuthInstance());
+        setCurrentUser(null);
         router.push('/login');
     },
     setCurrentUser,

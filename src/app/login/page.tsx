@@ -4,22 +4,12 @@
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
-  const { signInWithGoogle, currentUser, isLoadingAuth } = useCorabo();
-  const router = useRouter();
+  const { signInWithGoogle } = useCorabo();
 
-  useEffect(() => {
-    // AppLayout now handles all redirection logic.
-    // This useEffect is kept for clarity but can be removed.
-    if (currentUser && !isLoadingAuth) {
-      router.push('/');
-    }
-  }, [currentUser, router, isLoadingAuth]);
-
-
+  // AppLayout now handles all redirection logic. This component is now very simple.
+  
   return (
     <div className="flex items-center justify-center min-h-screen bg-muted/40 p-4">
       <div className="relative z-10 text-center p-8 bg-background rounded-2xl shadow-xl max-w-sm w-full border">

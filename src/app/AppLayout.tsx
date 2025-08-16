@@ -40,6 +40,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             } catch (error) {
                 console.error("Error fetching/creating user:", error);
                 setCurrentUser(null);
+                 toast({
+                    variant: "destructive",
+                    title: "Error de autenticación",
+                    description: "No se pudo obtener la información de tu perfil.",
+                });
             } finally {
                 setIsLoadingAuth(false);
             }
@@ -52,7 +57,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     // Cleanup subscription on unmount
     return () => unsubscribe();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); // Empty dependency array ensures this runs only once.
 
 
   useEffect(() => {
@@ -210,4 +215,3 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // Fallback return null if no other condition is met
   return null;
 }
-

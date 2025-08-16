@@ -113,5 +113,3 @@ describe('Publication Flow - Data Resilience Integration Tests', () => {
     expect(publicationData.owner).toBeUndefined();
   });
 });
-
-    
