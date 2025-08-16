@@ -28,7 +28,17 @@ export default function CatalogPage() {
       setIsLoading(true);
       try {
         const result = await getProfileProducts({ userId: currentUser.id });
-        setProducts(result.products || []);
+
+        // --- Inicio de la depuración ---
+        try {
+          console.log("Debugging products from getProfileProducts:", JSON.stringify(result.products, null, 2));
+        } catch (e: any) { // Added type annotation for catch error
+          console.error("Error serializing products from getProfileProducts:", e.message); // Log only the error message for clarity
+        }
+        // --- Fin de la depuración ---
+
+        // Update the state with the fetched products
+        setProducts(result.products || []); // Ensure you set the state after potential logging
       } catch (error) {
         console.error("Error fetching profile products:", error);
         toast({

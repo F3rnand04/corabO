@@ -32,6 +32,19 @@ export default function HomePage() {
       );
     }
 
+    // --- Inicio de la depuración ---
+    try {
+      console.log("Debugging allPublications:", JSON.stringify(allPublications, null, 2));
+    } catch (e) {
+      console.error("Error serializing allPublications:", (e as any).message);
+    }
+
+    try {
+      console.log("Debugging filteredPublications:", JSON.stringify(results, null, 2));
+    } catch (e) {
+      console.error("Error serializing filteredPublications:", (e as any).message);
+    }
+    // --- Fin de la depuración ---
     return results;
   }, [allPublications, searchQuery, categoryFilter]);
 

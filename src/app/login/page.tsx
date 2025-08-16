@@ -46,6 +46,10 @@ export default function LoginPage() {
             <Separator className="flex-1"/>
         </div>
         <UserSwitcher />
+        {/* Botón de marcador de posición para cambiar de rol */}
+        <Button variant="outline" className="w-full mt-4">
+          Cambiar a Perfil de Empresa (Funcionalidad Pendiente)
+        </Button>
       </div>
     </div>
   );
