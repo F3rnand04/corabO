@@ -97,7 +97,7 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
     const extractedId = idMatchResult ? idMatchResult[1].trim() : '';
 
     if (!extractedName || !extractedId) {
-        throw new Error('AI failed to extract the required fields from the document.');
+        throw new Error('La IA no pudo extraer los campos necesarios del documento. Por favor, asegúrate de que la imagen sea clara y legible, o solicita una revisión manual.');
     }
 
     const normalizeId = (str: string) => {

@@ -6,13 +6,14 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Check, X } from 'lucide-react';
+import { Check, X, Trash2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Affiliation, User } from '@/lib/types';
 import { getFirestore, collection, query, where, onSnapshot } from 'firebase/firestore';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 
 export function AffiliationManagementTab() {
-  const { currentUser, users, approveAffiliation, rejectAffiliation } = useCorabo();
+  const { currentUser, users, approveAffiliation, rejectAffiliation, revokeAffiliation } = useCorabo();
   const [affiliations, setAffiliations] = useState<Affiliation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -104,11 +105,12 @@ export function AffiliationManagementTab() {
               <TableRow>
                 <TableHead>Profesional</TableHead>
                 <TableHead>Fecha Aprobación</TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                <TableRow><TableCell colSpan={2} className="text-center">Cargando...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={3} className="text-center">Cargando...</TableCell></TableRow>
               ) : approvedAffiliations.length > 0 ? (
                 approvedAffiliations.map(aff => {
                     const professional = getProfessionalById(aff.providerId);
@@ -128,11 +130,35 @@ export function AffiliationManagementTab() {
                                 </div>
                              </TableCell>
                              <TableCell>{new Date(aff.updatedAt).toLocaleDateString()}</TableCell>
+                              <TableCell className="text-right">
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" size="sm">
+                                      <Trash2 className="h-4 w-4 mr-2" />
+                                      Revocar
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>¿Revocar Afiliación?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Esta acción desvinculará al profesional de tu empresa y eliminará la verificación. ¿Estás seguro?
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => revokeAffiliation(aff.id)}>
+                                        Sí, revocar
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </TableCell>
                          </TableRow>
                      )
                 })
               ) : (
-                 <TableRow><TableCell colSpan={2} className="text-center">Aún no tienes profesionales afiliados.</TableCell></TableRow>
+                 <TableRow><TableCell colSpan={3} className="text-center">Aún no tienes profesionales afiliados.</TableCell></TableRow>
               )}
             </TableBody>
            </Table>

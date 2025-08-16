@@ -7,7 +7,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestoreDb } from '@/lib/firebase-server';
-import { doc, setDoc, updateDoc, writeBatch, collection, query, where, getDocs, getDoc } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, writeBatch, collection, query, where, getDocs, getDoc, FieldValue, deleteField } from 'firebase/firestore';
 import type { Affiliation, User } from '@/lib/types';
 import { sendNotification } from './notification-flow';
 
@@ -152,8 +152,8 @@ export const revokeAffiliation = ai.defineFlow(
      // Update affiliation to revoked
      batch.update(affiliationRef, { status: 'revoked', updatedAt: new Date().toISOString() });
      
-     // Remove affiliation from provider's profile
-     batch.update(providerRef, { activeAffiliation: null });
+     // Remove affiliation from provider's profile using deleteField
+     batch.update(providerRef, { activeAffiliation: deleteField() });
      
      await batch.commit();
   }

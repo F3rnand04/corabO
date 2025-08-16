@@ -25,7 +25,7 @@ import type { GetFeedInputSchema, GetFeedOutputSchema, GetProfileGalleryInputSch
 import { z } from 'zod';
 import { haversineDistance } from '@/lib/utils';
 import { getOrCreateUser, type FirebaseUserInput } from '@/ai/flows/auth-flow';
-import { requestAffiliation, approveAffiliation, rejectAffiliation, revokeAffiliation } from '@/ai/flows/affiliation-flow';
+import { requestAffiliation as requestAffiliationFlow, approveAffiliation as approveAffiliationFlow, rejectAffiliation as rejectAffiliationFlow, revokeAffiliation as revokeAffiliationFlow } from '@/ai/flows/affiliation-flow';
 
 // --- FEATURE FLAG ---
 // Set to `true` in production to enable country-specific data updates.
@@ -113,7 +113,7 @@ interface CoraboActions {
   verifyCampaignPayment: (transactionId: string, campaignId: string) => void;
   verifyUserId: (userId: string) => void;
   rejectUserId: (userId: string) => void;
-  autoVerifyIdWithAI: (input: VerificationInput) => Promise<VerificationOutput>;
+  autoVerifyIdWithAI: (user: User) => Promise<VerificationOutput>;
   getUserMetrics: (userId: string, transactions: Transaction[]) => UserMetrics;
   fetchUser: (userId: string) => Promise<User | null>;
   acceptDelivery: (transactionId: string) => void;
@@ -243,10 +243,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       const listeners: Unsubscribe[] = [
         onSnapshot(doc(db, 'users', currentUser.id), (doc) => {
           if (doc.exists()) {
+              const newUserData = doc.data() as User;
               // Only update if data has actually changed to prevent loops
-              if (JSON.stringify(currentUser) !== JSON.stringify(doc.data())) {
-                setCurrentUser(doc.data() as User)
-              }
+              setCurrentUser(current => {
+                if (JSON.stringify(current) !== JSON.stringify(newUserData)) {
+                  return newUserData;
+                }
+                return current;
+              });
           }
         }),
         onSnapshot(query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id)), (snapshot) => setTransactions(snapshot.docs.map(doc => doc.data() as Transaction))),
@@ -260,7 +264,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       setTransactions([]); setConversations([]); setUsers([]); setAllPublications([]);
     }
     return () => cleanupListeners();
-  }, [currentUser?.id, cleanupListeners, currentUser]);
+  }, [currentUser?.id, cleanupListeners]);
 
   const state = useMemo(() => ({
     currentUser, users, allPublications, transactions, conversations, cart, searchQuery,
@@ -347,6 +351,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
           toast({ title: `GPS ${newStatus ? 'Activado' : 'Desactivado'}` });
       },
       addToCart(product: Product, quantity: number) {
+          if(!currentUser?.id) return;
           const currentCart = transactions.find(tx => tx.status === 'Carrito Activo')?.details.items || [];
           const newCart = [...currentCart];
           const existingItemIndex = newCart.findIndex(item => item.product.id === product.id);
@@ -355,11 +360,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
           } else {
               newCart.push({ product, quantity });
           }
-          if(currentUser?.id) updateCart(newCart, currentUser.id, transactions);
+          updateCart(newCart, currentUser.id, transactions);
       },
       updateCartQuantity(productId: string, quantity: number) {
-          const currentCart = transactions.find(tx => tx.status === 'Carrito Activo')?.details.items || [];
-          let newCart = [...currentCart];
+          if(!currentUser?.id) return;
+          let newCart = [...cart];
           const itemIndex = newCart.findIndex(item => item.product.id === productId);
           if (itemIndex > -1) {
               if (quantity > 0) {
@@ -368,12 +373,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
                   newCart.splice(itemIndex, 1);
               }
           }
-          if(currentUser?.id) updateCart(newCart, currentUser.id, transactions);
+          updateCart(newCart, currentUser.id, transactions);
       },
       removeFromCart(productId: string) {
-          const currentCart = transactions.find(tx => tx.status === 'Carrito Activo')?.details.items || [];
-          const newCart = currentCart.filter(item => item.product.id !== productId);
-          if(currentUser?.id) updateCart(newCart, currentUser.id, transactions);
+          if(!currentUser?.id) return;
+          const newCart = cart.filter(item => item.product.id !== productId);
+          updateCart(newCart, currentUser.id, transactions);
       },
       checkout: (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {
           const user = currentUser;
@@ -428,29 +433,24 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
           await updateDoc(doc(getFirestoreDb(), 'transactions', transactionId), { status: 'Cotización Recibida', amount: quote.total, 'details.quote': quote }); 
       },
       acceptQuote: async (transactionId: string) => { 
-          const user = currentUser;
-          if(!user) return; 
+          if(!currentUser) return; 
           await updateDoc(doc(getFirestoreDb(), 'transactions', transactionId), { status: 'Finalizado - Pendiente de Pago' }); 
       },
       acceptAppointment: async (transactionId: string) => { 
-          const user = currentUser;
-          if(!user) return; 
-          await TransactionFlows.acceptAppointment({ transactionId, userId: user.id }); 
+          if(!currentUser) return; 
+          await TransactionFlows.acceptAppointment({ transactionId, userId: currentUser.id }); 
       },
       confirmPaymentReceived: async (transactionId: string, fromThirdParty: boolean) => { 
-          const user = currentUser;
-          if(!user) return; 
-          await TransactionFlows.confirmPaymentReceived({ transactionId, userId: user.id, fromThirdParty }); 
+          if(!currentUser) return; 
+          await TransactionFlows.confirmPaymentReceived({ transactionId, userId: currentUser.id, fromThirdParty }); 
       },
       completeWork: async (transactionId: string) => { 
-          const user = currentUser;
-          if(!user) return; 
-          await TransactionFlows.completeWork({ transactionId, userId: user.id }); 
+          if(!currentUser) return; 
+          await TransactionFlows.completeWork({ transactionId, userId: currentUser.id }); 
       },
       confirmWorkReceived: async (transactionId: string, rating: number, comment?: string) => { 
-          const user = currentUser;
-          if(!user) return; 
-          await TransactionFlows.confirmWorkReceived({ transactionId, userId: user.id, rating, comment }); 
+          if(!currentUser) return; 
+          await TransactionFlows.confirmWorkReceived({ transactionId, userId: currentUser.id, rating, comment }); 
       },
       startDispute: async (transactionId: string) => { 
           await TransactionFlows.startDispute(transactionId); 
@@ -464,6 +464,33 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
               return userData;
           }
           return null;
+      },
+      autoVerifyIdWithAI: async (user: User) => {
+        if (!user.name || !user.idNumber || !user.idDocumentUrl) {
+            throw new Error("Faltan datos del usuario para la verificación.");
+        }
+        return await autoVerifyIdWithAIFlow({
+            userId: user.id,
+            nameInRecord: `${user.name} ${user.lastName || ''}`,
+            idInRecord: user.idNumber,
+            documentImageUrl: user.idDocumentUrl,
+            isCompany: user.profileSetupData?.providerType === 'company',
+        });
+      },
+      revokeAffiliation: async (affiliationId: string) => {
+        if (!currentUser) return;
+        await revokeAffiliationFlow({ affiliationId, actorId: currentUser.id });
+        toast({ title: "Afiliación Revocada" });
+      },
+      approveAffiliation: async (affiliationId: string) => {
+        if (!currentUser) return;
+        await approveAffiliationFlow({ affiliationId, actorId: currentUser.id });
+        toast({ title: "Afiliación Aprobada" });
+      },
+      rejectAffiliation: async (affiliationId: string) => {
+        if (!currentUser) return;
+        await rejectAffiliationFlow({ affiliationId, actorId: currentUser.id });
+        toast({ title: "Solicitud Rechazada" });
       },
       updateUserProfileImage: (a:any,b:any)=>{},
       removeGalleryImage: (a:any,b:any)=>{},
@@ -492,7 +519,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       verifyCampaignPayment: (a:any,b:any)=>{},
       verifyUserId: (a:any)=>{},
       rejectUserId: (a:any)=>{},
-      autoVerifyIdWithAI: async(a:any)=>{return {} as VerificationOutput},
       getUserMetrics: (a:any,b:any)=>{return {reputation: 0, effectiveness: 0, responseTime: 'Nuevo'}},
       acceptDelivery: (a:any)=>{},
       getDistanceToProvider: (a:any) => null,
@@ -505,16 +531,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       cancelSystemTransaction: async(a:any)=>{},
       updateUserProfileAndGallery: async(a:any,b:any)=>{},
       requestAffiliation: async(a:any,b:any)=>{},
-      approveAffiliation: async(a:any)=>{},
-      rejectAffiliation: async(a:any)=>{},
-      revokeAffiliation: async(a:any)=>{},
     }
-  // The dependencies array is crucial. We only include things that, when changed,
-  // should actually cause the actions object to be recreated.
-  // Functions from hooks like `toast` and `router` are stable and don't need to be dependencies.
   }, [
       handleUserAuth, searchHistory, contacts, cart, 
-      transactions, deliveryAddress, getCartTotal, getDeliveryCost
+      transactions, deliveryAddress, getCartTotal, getDeliveryCost, users
   ]);
   
   return (
@@ -536,5 +556,3 @@ export const useCorabo = (): CoraboState & CoraboActions => {
 };
 
 export type { Transaction };
-
-    
