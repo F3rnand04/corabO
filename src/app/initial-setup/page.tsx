@@ -67,23 +67,6 @@ export default function InitialSetupPage() {
     }
   }, [currentUser]);
   
-  // This effect will run when currentUser is updated by the context listener
-  // after the data has been saved to Firestore.
-   useEffect(() => {
-    if (isSubmitting && currentUser?.isInitialSetupComplete) {
-      // Data is now in context, we can safely redirect.
-      setIsSubmitting(false); // Stop the spinner
-      
-       // After setup, the next logical step for a provider is verification.
-      if(currentUser.type === 'provider') {
-           router.push('/profile-setup/verify-id');
-      } else {
-           router.push('/profile');
-      }
-    }
-  }, [currentUser, isSubmitting, router]);
-
-
   const handleSubmit = async () => {
     if (!currentUser) return;
     setIsSubmitting(true);
@@ -97,7 +80,7 @@ export default function InitialSetupPage() {
             return;
         }
         
-        // This call updates the backend. The useEffect above will handle the redirect.
+        // This call updates the backend.
         await completeInitialSetupFlow({ 
           userId: currentUser.id, 
           name, 
@@ -109,9 +92,9 @@ export default function InitialSetupPage() {
           providerType: isCompany ? 'company' : 'professional'
         });
         
-        // Do NOT redirect here. Let the useEffect handle it when the state is updated.
-        // This prevents the race condition.
-        toast({ title: "Guardando perfil...", description: "Un momento por favor..."});
+        // AppLayout will automatically detect the `isInitialSetupComplete` change
+        // and handle the redirection.
+        toast({ title: "Perfil Guardado", description: "Tus datos han sido guardados correctamente."});
 
     } catch (error: any) {
         console.error("Failed to complete setup:", error);

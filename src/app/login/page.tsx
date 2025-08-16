@@ -12,6 +12,8 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
+    // AppLayout now handles all redirection logic.
+    // This useEffect is kept for clarity but can be removed.
     if (currentUser && !isLoadingAuth) {
       router.push('/');
     }
