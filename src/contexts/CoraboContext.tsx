@@ -9,7 +9,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { addDays } from 'date-fns';
 import { credicoraLevels } from '@/lib/types';
-import { getAuth, signInWithPopup, signOut, User as FirebaseUser, GoogleAuthProvider, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, signInWithPopup, signOut, User as FirebaseUser, GoogleAuthProvider } from 'firebase/auth';
 import { getFirebaseApp, getFirestoreDb, getAuthInstance } from '@/lib/firebase';
 import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, arrayUnion, getDocs, deleteDoc, collectionGroup, Unsubscribe, orderBy, deleteField } from 'firebase/firestore';
 import { createCampaign as createCampaignFlow, type CreateCampaignInput } from '@/ai/flows/campaign-flow';
@@ -67,6 +67,8 @@ interface CoraboState {
 
 interface CoraboActions {
   signInWithGoogle: () => void;
+  setCurrentUser: (user: User | null) => void;
+  setIsLoadingAuth: (loading: boolean) => void;
   setSearchQuery: (query: string) => void;
   setCategoryFilter: (category: string | null) => void;
   clearSearchHistory: () => void;
@@ -121,7 +123,6 @@ interface CoraboActions {
   approveQrSession: (sessionId: string) => Promise<void>;
   finalizeQrSession: (sessionId: string, voucherUrl: string) => Promise<void>;
   cancelQrSession: (sessionId: string, byProvider?: boolean) => Promise<void>;
-  handleUserAuth: (firebaseUser: FirebaseUser | null) => Promise<void>;
   registerSystemPayment: (concept: string, amount: number, isSubscription: boolean) => Promise<void>;
   cancelSystemTransaction: (transactionId: string) => Promise<void>;
   payCommitment: (transactionId: string, isSubscriptionPayment?: boolean) => Promise<void>;
@@ -189,35 +190,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     activeListeners.current = [];
   }, []);
 
-  // **STABILIZED AUTH HANDLER**
-  const handleUserAuth = useCallback(async (firebaseUser: FirebaseUser | null) => {
-    cleanupListeners();
-    setQrSession(null); 
-    
-    if (firebaseUser) {
-        try {
-            const user = await getOrCreateUser(firebaseUser as FirebaseUserInput);
-            setCurrentUser(user ? (user as User) : null);
-        } catch (error) {
-            console.error("Error in getOrCreateUserFlow:", error);
-            setCurrentUser(null);
-        }
-    } else {
-        setCurrentUser(null);
-    }
-    // **CRITICAL FIX**: This must be outside the `if` block to handle both login and logout cases.
-    setIsLoadingAuth(false);
-  }, [cleanupListeners]);
-
-  // **STABILIZED MAIN EFFECT**
-  useEffect(() => {
-    const auth = getAuthInstance();
-    const unsubscribeAuth = onAuthStateChanged(auth, handleUserAuth);
-
-    return () => {
-        unsubscribeAuth();
-    };
-  }, [handleUserAuth]); // Dependency is now stable.
 
   // **STABILIZED DATA LISTENERS EFFECT**
   useEffect(() => {
@@ -303,7 +275,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         await signOut(getAuthInstance());
         router.push('/login');
     },
-    handleUserAuth,
+    setCurrentUser,
+    setIsLoadingAuth,
     setSearchQuery: (query: string) => {
         _setSearchQuery(query);
         if (query.trim() && !searchHistory.includes(query.trim())) {
@@ -486,7 +459,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         await revokeAffiliationFlow({ affiliationId, actorId: currentUser.id });
     },
   }), [
-    handleUserAuth, searchHistory, contacts, cart, transactions, deliveryAddress, getCartTotal, 
+    searchHistory, contacts, cart, transactions, getCartTotal, 
     getDeliveryCost, users, updateCart, router, currentUser
   ]);
   

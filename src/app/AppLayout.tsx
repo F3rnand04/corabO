@@ -13,10 +13,12 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { getAuthInstance } from '@/lib/firebase';
+import { getOrCreateUser } from '@/ai/flows/auth-flow';
+import type { User } from '@/lib/types';
 
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { currentUser, isLoadingAuth, handleUserAuth, logout } = useCorabo();
+  const { currentUser, isLoadingAuth, setIsLoadingAuth, setCurrentUser, logout } = useCorabo();
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
@@ -25,8 +27,24 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const auth = getAuthInstance();
     // This effect runs once on initial mount to set up the auth listener.
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
-        // This function will be called whenever the user's login state changes.
-        await handleUserAuth(firebaseUser);
+        if (firebaseUser) {
+            try {
+                const user = await getOrCreateUser({
+                    uid: firebaseUser.uid,
+                    displayName: firebaseUser.displayName,
+                    email: firebaseUser.email,
+                    photoURL: firebaseUser.photoURL,
+                    emailVerified: firebaseUser.emailVerified
+                });
+                setCurrentUser(user as User | null);
+            } catch (error) {
+                console.error("Error fetching/creating user:", error);
+                setCurrentUser(null);
+            }
+        } else {
+            setCurrentUser(null);
+        }
+        setIsLoadingAuth(false);
     });
 
     // Cleanup subscription on unmount
