@@ -79,7 +79,6 @@ interface CoraboActions {
   getCartTotal: () => number;
   getDeliveryCost: () => number;
   checkout: (transactionId: string, withDelivery: boolean, useCredicora: boolean) => void;
-  requestQuoteFromGroup: (title: string, items: string[], group?: string) => boolean;
   addContact: (user: User) => boolean;
   removeContact: (userId: string) => void;
   isContact: (userId: string) => boolean;
@@ -129,6 +128,10 @@ interface CoraboActions {
   cancelSystemTransaction: (transactionId: string) => Promise<void>;
   payCommitment: (transactionId: string, isSubscriptionPayment?: boolean) => Promise<void>;
   updateUserProfileAndGallery: (userId: string, image: GalleryImage) => Promise<void>;
+  requestAffiliation: (providerId: string, companyId: string) => Promise<void>;
+  approveAffiliation: (affiliationId: string) => Promise<void>;
+  rejectAffiliation: (affiliationId: string) => Promise<void>;
+  revokeAffiliation: (affiliationId: string) => Promise<void>;
 }
 
 // **DEFINITIVE FIX:** Separating State from Actions to prevent circular references.
@@ -193,10 +196,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     setQrSession(null); 
     
     if (firebaseUser) {
+        // Use the auth flow to ensure user data is fetched/created before setting state
         const user = await getOrCreateUser(firebaseUser as FirebaseUserInput);
         if (user) {
           setCurrentUser(user as User);
         } else {
+          // If flow returns null (error case), sign out from Firebase to be safe
           await signOut(getAuthInstance());
           setCurrentUser(null);
         }
@@ -401,10 +406,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       });
   }, [currentUser, getCartTotal, getDeliveryCost, transactions, cart, deliveryAddress, toast, router]);
   
-  const requestQuoteFromGroup = useCallback((title: string, items: string[], group?: string): boolean => {
-    return true; 
-  }, []);
-
   const sendQuote = useCallback(async (transactionId: string, quote: { breakdown: string; total: number }) => { await updateDoc(doc(getFirestoreDb(), 'transactions', transactionId), { status: 'Cotización Recibida', amount: quote.total, 'details.quote': quote }); }, []);
   const acceptQuote = useCallback(async (transactionId: string) => { await updateDoc(doc(getFirestoreDb(), 'transactions', transactionId), { status: 'Finalizado - Pendiente de Pago' }); }, []);
   const acceptAppointment = useCallback(async (transactionId: string) => { await TransactionFlows.acceptAppointment({ transactionId, userId: currentUser!.id }); }, [currentUser]);
@@ -448,6 +449,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const sendMessage = useCallback((options: { recipientId: string; text?: string; createOnly?: boolean; location?: { lat: number, lon: number } }): string => { if (!currentUser) return ''; const conversationId = [currentUser.id, options.recipientId].sort().join('-'); if (!options.createOnly) { const payload: any = { conversationId, senderId: currentUser.id, recipientId: options.recipientId }; if (options.text) payload.text = options.text; if (options.location) payload.location = options.location; sendMessageFlow(payload); } return conversationId; }, [currentUser]);
   const createPublication = useCallback(async (data: CreatePublicationInput) => { if (!currentUser) return; await createPublicationFlow({ ...data, userId: currentUser.id }); }, [currentUser]);
   const createProduct = useCallback(async (data: CreateProductInput) => { if (!currentUser) return; await createProductFlow({ ...data, userId: currentUser.id }); }, [currentUser]);
+  const requestAffiliation = useCallback(async (providerId: string, companyId: string) => { await requestAffiliation({providerId, companyId}); }, []);
+  const approveAffiliation = useCallback(async (affiliationId: string) => { if(!currentUser) return; await approveAffiliation({affiliationId, actorId: currentUser.id}); }, [currentUser]);
+  const rejectAffiliation = useCallback(async (affiliationId: string) => { if(!currentUser) return; await rejectAffiliation({affiliationId, actorId: currentUser.id}); }, [currentUser]);
+  const revokeAffiliation = useCallback(async (affiliationId: string) => { if(!currentUser) return; await revokeAffiliation({affiliationId, actorId: currentUser.id}); }, [currentUser]);
+
 
   useEffect(() => {
     cleanupListeners();
@@ -480,7 +486,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const actions = useMemo(() => ({
     signInWithGoogle, setSearchQuery, setCategoryFilter, clearSearchHistory, logout, addToCart,
-    updateCartQuantity, removeFromCart, getCartTotal, getDeliveryCost, checkout, requestQuoteFromGroup,
+    updateCartQuantity, removeFromCart, getCartTotal, getDeliveryCost, checkout, 
     payCommitment, addContact, isContact, removeContact, toggleGps, updateUser, updateUserProfileImage, removeGalleryImage,
     validateEmail, sendPhoneVerification, verifyPhoneCode, updateFullProfile, subscribeUser, activateTransactions,
     deactivateTransactions, downloadTransactionsPDF, sendMessage, sendProposalMessage, acceptProposal: acceptProposalFlow,
@@ -490,9 +496,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     verifyUserId, rejectUserId, autoVerifyIdWithAI: autoVerifyIdWithAIFlow, getUserMetrics, fetchUser, acceptDelivery,
     getDistanceToProvider, startQrSession, setQrSessionAmount, approveQrSession, finalizeQrSession, cancelQrSession,
     handleUserAuth, registerSystemPayment, cancelSystemTransaction, updateUserProfileAndGallery,
+    requestAffiliation, approveAffiliation, rejectAffiliation, revokeAffiliation
   }), [
     signInWithGoogle, setSearchQuery, setCategoryFilter, clearSearchHistory, logout, addToCart,
-    updateCartQuantity, removeFromCart, getCartTotal, getDeliveryCost, checkout, requestQuoteFromGroup,
+    updateCartQuantity, removeFromCart, getCartTotal, getDeliveryCost, checkout,
     payCommitment, addContact, isContact, removeContact, toggleGps, updateUser, updateUserProfileImage, removeGalleryImage,
     validateEmail, sendPhoneVerification, verifyPhoneCode, updateFullProfile, subscribeUser, activateTransactions,
     deactivateTransactions, downloadTransactionsPDF, sendMessage, sendProposalMessage, getAgendaEvents, addCommentToImage,
@@ -501,6 +508,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     verifyUserId, rejectUserId, getUserMetrics, fetchUser, acceptDelivery, getDistanceToProvider,
     startQrSession, setQrSessionAmount, approveQrSession, finalizeQrSession, cancelQrSession, handleUserAuth,
     registerSystemPayment, cancelSystemTransaction, updateUserProfileAndGallery,
+    requestAffiliation, approveAffiliation, rejectAffiliation, revokeAffiliation
   ]);
   
   return (
@@ -522,3 +530,5 @@ export const useCorabo = (): CoraboState & CoraboActions => {
 };
 
 export type { Transaction };
+
+    
