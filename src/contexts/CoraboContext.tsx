@@ -172,6 +172,19 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const activeCartTx = useMemo(() => transactions.find(tx => tx.status === 'Carrito Activo'), [transactions]);
   const cart: CartItem[] = useMemo(() => activeCartTx?.details.items || [], [activeCartTx]);
 
+  useEffect(() => {
+    // Load contacts from local storage on initial mount
+    const savedContacts = localStorage.getItem('coraboContacts');
+    if (savedContacts) {
+      setContacts(JSON.parse(savedContacts));
+    }
+  }, []);
+
+  useEffect(() => {
+    // Save contacts to local storage whenever they change
+    localStorage.setItem('coraboContacts', JSON.stringify(contacts));
+  }, [contacts]);
+
   const cleanupListeners = useCallback(() => {
     activeListeners.current.forEach(unsubscribe => unsubscribe());
     activeListeners.current = [];
@@ -233,6 +246,16 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const userDocRef = doc(db, 'users', userId);
     await updateDoc(userDocRef, updates, { merge: true });
   }, []);
+
+  const toggleGps = useCallback(async (userId: string) => {
+    if (!currentUser) return;
+    const newStatus = !currentUser.isGpsActive;
+    await updateUser(userId, { isGpsActive: newStatus });
+    toast({
+        title: `GPS ${newStatus ? 'Activado' : 'Desactivado'}`,
+        description: 'Tu estado de ubicación ha sido actualizado.',
+    });
+  }, [currentUser, updateUser, toast]);
   
   const getCartTotal = useCallback(() => cart.reduce((total, item) => total + item.product.price * item.quantity, 0), [cart]);
   const getDeliveryCost = useCallback(() => ((Math.random() * 9) + 1) * 1.5, []);
@@ -449,10 +472,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const actions = useMemo(() => ({
     signInWithGoogle, setSearchQuery, setCategoryFilter, clearSearchHistory, logout, addToCart,
     updateCartQuantity, removeFromCart, getCartTotal, getDeliveryCost, checkout, requestQuoteFromGroup,
-    sendQuote: TransactionFlows.sendQuote, acceptQuote: TransactionFlows.acceptQuote, acceptAppointment: TransactionFlows.acceptAppointment,
-    payCommitment, confirmPaymentReceived: TransactionFlows.confirmPaymentReceived, completeWork: TransactionFlows.completeWork,
-    confirmWorkReceived: TransactionFlows.confirmWorkReceived, startDispute: TransactionFlows.startDispute,
-    addContact, isContact, removeContact, toggleGps, updateUser, updateUserProfileImage, removeGalleryImage,
+    payCommitment, addContact, isContact, removeContact, toggleGps, updateUser, updateUserProfileImage, removeGalleryImage,
     validateEmail, sendPhoneVerification, verifyPhoneCode, updateFullProfile, subscribeUser, activateTransactions,
     deactivateTransactions, downloadTransactionsPDF, sendMessage, sendProposalMessage, acceptProposal: acceptProposalFlow,
     createAppointmentRequest: TransactionFlows.createAppointmentRequest, getAgendaEvents, addCommentToImage,
@@ -493,5 +513,7 @@ export const useCorabo = (): CoraboState & CoraboActions => {
 };
 
 export type { Transaction };
+
+    
 
     

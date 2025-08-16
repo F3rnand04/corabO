@@ -9,10 +9,13 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
     '\\.css$': '<rootDir>/tests/styleMock.js',
   },
+  // SOLUCIÓN: Se modifica transformIgnorePatterns para que Jest transpile el módulo 'yaml'.
+  transformIgnorePatterns: [
+    '/node_modules/(?!yaml).+\\.js$',
+  ],
   testPathIgnorePatterns: [
     '<rootDir>/.next/',
     '<rootDir>/node_modules/',
-    'node_modules/(?!(yaml)/)',
   ],
   transform: {
     '^.+\\.(ts|tsx)$': 'ts-jest',

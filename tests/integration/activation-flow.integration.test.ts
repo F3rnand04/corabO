@@ -71,6 +71,7 @@ describe('Activation Flow - Integration Test', () => {
     } as User;
 
     // Act: Render the component and click the button
+    // SOLUCIÓN: Se añade la prop 'userType' requerida.
     render(<ActivationWarning userType="provider" />);
     const activationButton = screen.getByText('Activar ahora →');
     fireEvent.click(activationButton);
@@ -89,6 +90,7 @@ describe('Activation Flow - Integration Test', () => {
     } as User;
 
     // Act: Render the component and click the button
+    // SOLUCIÓN: Se añade la prop 'userType' requerida.
     render(<ActivationWarning userType="provider" />);
     const activationButton = screen.getByText('Activar ahora →');
     fireEvent.click(activationButton);
@@ -108,6 +110,7 @@ describe('Activation Flow - Integration Test', () => {
     } as User;
 
     // Act: Render the component and click the button
+    // SOLUCIÓN: Se añade la prop 'userType' requerida.
     render(<ActivationWarning userType="provider" />);
     const activationButton = screen.getByText('Activar ahora →');
     fireEvent.click(activationButton);
