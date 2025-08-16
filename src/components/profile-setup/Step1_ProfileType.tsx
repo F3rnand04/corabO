@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -11,7 +12,7 @@ import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 import { Label } from '../ui/label';
 
 interface Step1_ProfileTypeProps {
-  onSelect: (type: UserType['type'], providerType?: ProfileSetupData['providerType']) => void;
+  onSelect: (type: UserType['type'], newFormData: ProfileSetupData) => void;
   currentType: UserType['type'];
   formData: ProfileSetupData;
   onNext: () => void;
@@ -27,7 +28,7 @@ export default function Step1_ProfileType({ onSelect, currentType, formData, onN
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [nextSelection, setNextSelection] = useState<UserType['type'] | null>(null);
 
-  const isAlreadyCompany = formData.providerType === 'company';
+  const isAlreadyCompany = formData?.providerType === 'company';
 
   const handleSelection = (typeId: UserType['type']) => {
     if (typeId === currentType) {
@@ -39,17 +40,21 @@ export default function Step1_ProfileType({ onSelect, currentType, formData, onN
         setNextSelection(typeId);
         setIsAlertOpen(true);
     } else {
-        onSelect(typeId, formData.providerType || 'professional');
+        onSelect(typeId, { ...formData, providerType: formData?.providerType || 'professional' });
         onNext();
     }
   };
 
   const handleConfirmChange = () => {
     if (nextSelection) {
-      onSelect(nextSelection, formData.providerType || 'professional');
+      onSelect(nextSelection, { ...formData, providerType: formData?.providerType || 'professional' });
     }
     setIsAlertOpen(false);
     onNext();
+  }
+
+  const handleProviderTypeChange = (value: 'professional' | 'company') => {
+      onSelect(currentType, { ...formData, providerType: value });
   }
   
   const isChangingToProviderOrRepartidor = (currentType === 'client' && (nextSelection === 'provider' || nextSelection === 'repartidor'));
@@ -83,9 +88,9 @@ export default function Step1_ProfileType({ onSelect, currentType, formData, onN
           <Label className="font-semibold">¿Qué tipo de proveedor eres?</Label>
           <RadioGroup 
             value={formData.providerType || 'professional'} 
-            onValueChange={(value: 'professional' | 'company') => onSelect(currentType, value)} 
+            onValueChange={handleProviderTypeChange} 
             className="flex gap-4"
-            disabled={isAlreadyCompany} // Disable if already a company
+            disabled={isAlreadyCompany}
           >
               <div className="flex items-center space-x-2"><RadioGroupItem value="professional" id="professional" /><Label htmlFor="professional" className="flex items-center gap-2 font-normal cursor-pointer"><User className="w-4 h-4"/> Profesional Independiente</Label></div>
               <div className="flex items-center space-x-2"><RadioGroupItem value="company" id="company" /><Label htmlFor="company" className="flex items-center gap-2 font-normal cursor-pointer"><Building className="w-4 h-4"/> Empresa</Label></div>

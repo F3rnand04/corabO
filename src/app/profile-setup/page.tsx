@@ -42,16 +42,16 @@ export default function ProfileSetupPage() {
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
-    // This effect ensures formData is always in sync with the latest currentUser data.
     if (currentUser) {
-        setProfileType(currentUser.type);
-        setFormData({
+        const initialFormData = {
             ...currentUser.profileSetupData,
             schedule: currentUser.profileSetupData?.schedule || initialSchedule,
             username: currentUser.profileSetupData?.username || currentUser.name || '',
             email: currentUser.email,
             phone: currentUser.phone,
-        });
+        };
+        setFormData(initialFormData);
+        setProfileType(currentUser.type);
         setIsLoading(false);
     }
   }, [currentUser]);
@@ -62,7 +62,6 @@ export default function ProfileSetupPage() {
 
   const handleNext = () => {
     if (!profileType) return;
-    // For 'client', skip step 3 and 5
     if (profileType === 'client' && currentStep === 2) {
       setCurrentStep(4);
     } else if (profileType === 'client' && currentStep === 4) {
@@ -75,7 +74,6 @@ export default function ProfileSetupPage() {
 
   const handleBack = () => {
     if (!profileType) return;
-    // For 'client', skip step 3 and 5
     if (profileType === 'client' && currentStep === 4) {
       setCurrentStep(2);
     } else if (profileType === 'client' && currentStep === 6) {
@@ -86,18 +84,18 @@ export default function ProfileSetupPage() {
     }
   };
 
-  const handleProfileTypeSelect = (type: UserType['type'], providerType?: ProfileSetupData['providerType']) => {
+  const handleProfileTypeSelect = (type: UserType['type'], newFormData: ProfileSetupData) => {
     setProfileType(type);
-    setFormData(prev => ({...prev, providerType: providerType || 'professional'}));
+    setFormData(newFormData);
   }
 
   const renderStep = () => {
-    if (isLoading || !profileType) {
+    if (isLoading || !profileType || !formData) {
         return <div className="h-64 flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" /></div>;
     }
     switch (currentStep) {
       case 1:
-        return <Step1_ProfileType onSelect={handleProfileTypeSelect} currentType={profileType} onNext={handleNext} />;
+        return <Step1_ProfileType onSelect={handleProfileTypeSelect} currentType={profileType} formData={formData} onNext={handleNext} />;
       case 2:
         return <Step2_Username onBack={handleBack} onNext={handleNext} formData={formData} setFormData={setFormData} />;
       case 3:
@@ -109,7 +107,7 @@ export default function ProfileSetupPage() {
       case 6:
         return <Step6_Review onBack={handleBack} formData={formData} setFormData={setFormData} profileType={profileType} goToStep={goToStep} />;
       default:
-        return <Step1_ProfileType onSelect={handleProfileTypeSelect} currentType={profileType} onNext={handleNext} />;
+        return <Step1_ProfileType onSelect={handleProfileTypeSelect} currentType={profileType} formData={formData} onNext={handleNext} />;
     }
   };
 
