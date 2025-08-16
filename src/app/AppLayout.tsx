@@ -187,5 +187,3 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   // Fallback return null if no other condition is met
   return null;
 }
-
-    
