@@ -1,3 +1,4 @@
+
 "use client";
 
 import { PublicationCard } from "@/components/PublicationCard";
@@ -26,8 +27,7 @@ export default function HomePage() {
     if (searchQuery) {
       results = results.filter(p => 
           p.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.owner?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.owner?.profileSetupData?.specialty?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.alt?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           (p.type === 'product' && p.productDetails?.name.toLowerCase().includes(searchQuery.toLowerCase()))
       );
     }
@@ -68,3 +68,5 @@ export default function HomePage() {
     </main>
   );
 }
+
+    

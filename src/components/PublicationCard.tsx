@@ -20,12 +20,12 @@ import { Separator } from "./ui/separator";
 
 
 interface PublicationCardProps {
-    publication: GalleryImage & { owner?: PublicationOwner }; // owner is optional for safety
+    publication: GalleryImage;
     className?: string;
 }
 
 export function PublicationCard({ publication, className }: PublicationCardProps) {
-    const { addContact, isContact, sendMessage, currentUser, getUserMetrics, transactions, addToCart, getDistanceToProvider } = useCorabo();
+    const { addContact, isContact, sendMessage, currentUser, getUserMetrics, transactions, addToCart, getDistanceToProvider, fetchUser } = useCorabo();
     const router = useRouter();
     const { toast } = useToast();
     
@@ -36,9 +36,13 @@ export function PublicationCard({ publication, className }: PublicationCardProps
     const [likeCount, setLikeCount] = useState(0);
     const [shareCount, setShareCount] = useState(0);
     const [isAvatarExpanded, setIsAvatarExpanded] = useState(false);
+    const [owner, setOwner] = useState<User | null>(null);
 
-
-    const { owner } = publication;
+    useEffect(() => {
+        if (publication.providerId) {
+            fetchUser(publication.providerId).then(setOwner);
+        }
+    }, [publication.providerId, fetchUser]);
     
     if (!owner || !owner.id) {
         return null; 
@@ -311,3 +315,5 @@ export function PublicationCard({ publication, className }: PublicationCardProps
         </>
     );
 }
+
+    

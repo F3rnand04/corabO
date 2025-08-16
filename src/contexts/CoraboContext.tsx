@@ -78,7 +78,6 @@ interface CoraboActions {
   removeFromCart: (productId: string) => void;
   getCartTotal: () => number;
   getDeliveryCost: () => number;
-  requestService: (service: Service) => void;
   requestQuoteFromGroup: (serviceName: string, items: string[]) => boolean;
   sendQuote: (transactionId: string, quote: { breakdown: string; total: number }) => void;
   acceptQuote: (transactionId: string) => void;
@@ -610,7 +609,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     toast({ title: "¡Pedido Aceptado!", description: "El proveedor ha sido notificado. ¡A entregar!" });
   }, [currentUser, toast]);
 
-  const requestService = useCallback((service: Service) => {}, []);
   const requestQuoteFromGroup = useCallback((serviceName: string, items: string[]): boolean => { return true; }, []);
   
   const updateUserProfileImage = useCallback(async (userId: string, imageUrl: string) => {
@@ -1047,7 +1045,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     getCartTotal,
     getDeliveryCost,
     checkout,
-    requestService,
     requestQuoteFromGroup,
     sendQuote: TransactionFlows.sendQuote,
     acceptQuote: TransactionFlows.acceptQuote,
@@ -1125,3 +1122,5 @@ export const useCorabo = (): CoraboState & CoraboActions => {
   return { ...state, ...actions };
 };
 export type { Transaction };
+
+    

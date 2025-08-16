@@ -115,8 +115,10 @@ export type GalleryImage = {
   campaignId?: string;
   aspectRatio?: 'square' | 'horizontal' | 'vertical';
   likes?: number;
-  owner?: PublicationOwner; // Denormalized owner data
-  productDetails?: ProductDetails; // Product-specific data
+  // DEPRECATED: owner data will now be fetched on demand.
+  // This helps prevent stale data and simplifies writes.
+  owner?: PublicationOwner; 
+  productDetails?: ProductDetails;
 };
 
 export type CredicoraLevel = {
@@ -437,3 +439,5 @@ export const CreateProductInputSchema = z.object({
   imageDataUri: z.string(),
 });
 export type CreateProductInput = z.infer<typeof CreateProductInputSchema>;
+
+    

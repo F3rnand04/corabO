@@ -3,7 +3,7 @@
 /**
  * @fileOverview Flows for creating publications and products securely on the backend.
  *
- * - createPublication - Handles creating a new gallery post and its public copy.
+ * - createPublication - Handles creating a new gallery post.
  * - createProduct - Handles creating a new product in the catalog.
  */
 
@@ -11,7 +11,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestoreDb } from '@/lib/firebase-server';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import type { GalleryImage, PublicationOwner, User } from '@/lib/types';
+import type { GalleryImage, User } from '@/lib/types';
 import { CreatePublicationInputSchema, CreateProductInputSchema } from '@/lib/types';
 
 // --- Create Publication Flow ---
@@ -25,18 +25,15 @@ export const createPublication = ai.defineFlow(
   async ({ userId, description, imageDataUri, aspectRatio, type }) => {
     const db = getFirestoreDb();
     
+    // Security: Validate the user exists before creating content for them.
     const userSnap = await getDoc(doc(db, 'users', userId));
     if (!userSnap.exists()) {
       throw new Error('User not found. Cannot create publication for a non-existent user.');
     }
-    const user = userSnap.data() as User;
     
     const publicationId = `pub-${Date.now()}`;
 
-    // **FIX**: Use the correct display name based on user's preference
-    const displayName = user.profileSetupData?.useUsername ? (user.profileSetupData.username || user.name) : user.name;
-
-    const publicPublication: GalleryImage = {
+    const newPublication: GalleryImage = {
       id: publicationId,
       providerId: userId,
       type: type,
@@ -45,26 +42,14 @@ export const createPublication = ai.defineFlow(
       description,
       createdAt: new Date().toISOString(),
       comments: [],
-      aspectRatio,
       likes: 0,
-      owner: {
-          id: user.id,
-          name: displayName,
-          profileImage: user.profileImage || 'https://placehold.co/150x150.png',
-          verified: user.verified || false,
-          isGpsActive: user.isGpsActive || false,
-          reputation: user.reputation || 0,
-          activeAffiliation: user.activeAffiliation || null,
-          profileSetupData: {
-              specialty: user.profileSetupData?.specialty || 'Especialidad no definida',
-              providerType: user.profileSetupData?.providerType || 'professional',
-              username: user.profileSetupData?.username || user.name.replace(/\s+/g, '').toLowerCase(),
-          },
-      },
+      aspectRatio,
+      // The 'owner' field is deprecated to prevent stale data.
+      // It will be fetched on-demand by the client.
     };
     
     const publicationRef = doc(db, 'publications', publicationId);
-    await setDoc(publicationRef, publicPublication);
+    await setDoc(publicationRef, newPublication);
   }
 );
 
@@ -84,9 +69,6 @@ export const createProduct = ai.defineFlow(
             throw new Error('User not found. Cannot create product for a non-existent user.');
         }
         const user = userSnap.data() as User;
-
-        // **FIX**: Use the correct display name based on user's preference
-        const displayName = user.profileSetupData?.useUsername ? (user.profileSetupData.username || user.name) : user.name;
         
         const productId = `prod-${Date.now()}`;
         
@@ -105,20 +87,6 @@ export const createProduct = ai.defineFlow(
               price: price,
               category: user.profileSetupData?.primaryCategory || 'General',
             },
-            owner: {
-              id: user.id,
-              name: displayName,
-              profileImage: user.profileImage || 'https://placehold.co/150x150.png',
-              verified: user.verified || false,
-              isGpsActive: user.isGpsActive || false,
-              reputation: user.reputation || 0,
-              activeAffiliation: user.activeAffiliation || null,
-              profileSetupData: {
-                  specialty: user.profileSetupData?.specialty || 'Especialidad no definida',
-                  providerType: user.profileSetupData?.providerType || 'professional',
-                  username: user.profileSetupData?.username || user.name.replace(/\s+/g, '').toLowerCase(),
-              },
-            }
         };
         
         const productRef = doc(db, 'publications', productId);
@@ -127,3 +95,5 @@ export const createProduct = ai.defineFlow(
         return productId;
     }
 );
+
+    
