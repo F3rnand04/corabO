@@ -9,6 +9,7 @@ import { getFirestoreDb } from '@/lib/firebase-server';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 import { z } from 'zod';
+import { credicoraLevels } from '@/lib/types';
 
 
 // Schema for the user object we expect from the client (FirebaseUser)
@@ -47,8 +48,10 @@ export const getOrCreateUser = ai.defineFlow(
     } else {
       // Create a new, minimal user object.
       // The user will be forced to complete the setup on their first login.
+      const initialCredicoraLevel = credicoraLevels['1'];
       const newUser: User = {
         id: firebaseUser.uid,
+        coraboId: `${firebaseUser.displayName?.split(' ')[0].toLowerCase() || 'user'}${Math.floor(1000 + Math.random() * 9000)}`,
         name: firebaseUser.displayName || 'Nuevo Usuario',
         email: firebaseUser.email || '',
         profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
@@ -67,7 +70,8 @@ export const getOrCreateUser = ai.defineFlow(
         phoneValidated: false,
         isGpsActive: true,
         credicoraLevel: 1,
-        credicoraLimit: 150,
+        credicoraLimit: initialCredicoraLevel.creditLimit,
+        credicoraDetails: initialCredicoraLevel,
         isSubscribed: false,
         isTransactionsActive: false,
         idVerificationStatus: 'rejected',
@@ -85,5 +89,3 @@ export const getOrCreateUser = ai.defineFlow(
     }
   }
 );
-
-    
