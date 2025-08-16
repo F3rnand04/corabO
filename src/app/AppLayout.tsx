@@ -37,19 +37,29 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // This effect handles redirection based on the auth state.
-    if (isLoadingAuth) return;
+    if (isLoadingAuth) {
+        // While auth state is resolving, do nothing to prevent premature redirects.
+        return;
+    }
+
+    const isLoginPage = pathname === '/login';
+    const isSetupPage = pathname === '/initial-setup';
 
     if (!currentUser) {
-        if (pathname !== '/login') {
+        // User is not logged in, redirect to login page if not already there.
+        if (!isLoginPage) {
             router.replace('/login');
         }
     } else {
+        // User is logged in.
         if (!currentUser.isInitialSetupComplete) {
-            if (pathname !== '/initial-setup') {
+            // If setup is not complete, force user to the setup page.
+            if (!isSetupPage) {
                 router.replace('/initial-setup');
             }
         } else {
-            if (pathname === '/login' || pathname === '/initial-setup') {
+            // If setup is complete, redirect away from login/setup pages.
+            if (isLoginPage || isSetupPage) {
                 router.replace('/');
             }
         }

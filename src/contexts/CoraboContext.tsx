@@ -189,10 +189,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const handleUserAuth = useCallback(async (firebaseUser: FirebaseUser | null) => {
-    console.log('handleUserAuth: Iniciando con firebaseUser:', firebaseUser ? firebaseUser.uid : 'null');
     cleanupListeners();
     setQrSession(null); 
-
     
     if (firebaseUser) {
         const user = await getOrCreateUser(firebaseUser as FirebaseUserInput);
@@ -205,7 +203,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     } else {
         setCurrentUser(null);
     }
-    console.log('handleUserAuth: Finalizado. currentUser:', firebaseUser ? firebaseUser.uid : 'null');
+    // Set loading to false only after all auth logic is complete
     setIsLoadingAuth(false);
   }, [cleanupListeners]);
 
@@ -404,7 +402,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, [currentUser, getCartTotal, getDeliveryCost, transactions, cart, deliveryAddress, toast, router]);
   
   const requestQuoteFromGroup = useCallback((title: string, items: string[], group?: string): boolean => {
-    // This function is now deprecated and will be removed.
     return true; 
   }, []);
 
@@ -453,7 +450,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const createProduct = useCallback(async (data: CreateProductInput) => { if (!currentUser) return; await createProductFlow({ ...data, userId: currentUser.id }); }, [currentUser]);
 
   useEffect(() => {
-    console.log('useEffect [currentUser?.id]: Activado. currentUser?.id:', currentUser?.id);
     cleanupListeners();
     if (currentUser?.id) {
       const db = getFirestoreDb();
@@ -466,7 +462,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage))),
       ];
       activeListeners.current = listeners;
-      console.log(`useEffect [currentUser?.id]: Listeners set up for user ${currentUser.id}`);
     } else {
       setTransactions([]); setConversations([]); setUsers([]); setAllPublications([]);
     }
@@ -527,5 +522,3 @@ export const useCorabo = (): CoraboState & CoraboActions => {
 };
 
 export type { Transaction };
-
-    
