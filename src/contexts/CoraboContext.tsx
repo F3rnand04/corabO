@@ -79,7 +79,7 @@ interface CoraboActions {
   getCartTotal: () => number;
   getDeliveryCost: () => number;
   requestService: (service: Service) => void;
-  requestQuoteFromGroup: (serviceName: string, items: string[], groupOrProvider: string) => boolean;
+  requestQuoteFromGroup: (serviceName: string, items: string[]) => boolean;
   sendQuote: (transactionId: string, quote: { breakdown: string; total: number }) => void;
   acceptQuote: (transactionId: string) => void;
   acceptAppointment: (transactionId: string) => void;
@@ -611,7 +611,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, [currentUser, toast]);
 
   const requestService = useCallback((service: Service) => {}, []);
-  const requestQuoteFromGroup = useCallback((serviceName: string, items: string[], groupOrProvider: string): boolean => { return true; }, []);
+  const requestQuoteFromGroup = useCallback((serviceName: string, items: string[]): boolean => { return true; }, []);
   
   const updateUserProfileImage = useCallback(async (userId: string, imageUrl: string) => {
      await updateUser(userId, { profileImage: imageUrl });

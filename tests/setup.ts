@@ -1,3 +1,4 @@
+
 // Este archivo se ejecuta antes de cada suite de tests.
 // Es ideal para configurar mocks globales o variables de entorno.
 
