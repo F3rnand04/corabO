@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useCorabo } from '@/contexts/CoraboContext';
@@ -42,14 +41,10 @@ export default function LoginPage() {
         </Button>
         <div className="flex items-center gap-4 my-6">
             <Separator className="flex-1"/>
-            <span className="text-xs text-muted-foreground">O</span>
+            <span className="text-xs text-muted-foreground">O simula un usuario</span>
             <Separator className="flex-1"/>
         </div>
         <UserSwitcher />
-        {/* Botón de marcador de posición para cambiar de rol */}
-        <Button variant="outline" className="w-full mt-4">
-          Cambiar a Perfil de Empresa (Funcionalidad Pendiente)
-        </Button>
       </div>
     </div>
   );
