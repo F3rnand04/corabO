@@ -177,9 +177,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     activeListeners.current = [];
   }, []);
 
-  // All functions that modify state are defined here, using `useCallback` to ensure
-  // they have stable references unless their own dependencies change.
-  
   const handleUserAuth = useCallback(async (firebaseUser: FirebaseUser | null) => {
     cleanupListeners();
     setQrSession(null); 
@@ -237,7 +234,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     await updateDoc(userDocRef, updates, { merge: true });
   }, []);
   
-  // ... all other actions wrapped in useCallback ...
   const getCartTotal = useCallback(() => cart.reduce((total, item) => total + item.product.price * item.quantity, 0), [cart]);
   const getDeliveryCost = useCallback(() => ((Math.random() * 9) + 1) * 1.5, []);
   const addContact = useCallback((user: User) => {
@@ -320,7 +316,70 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       });
   }, [currentUser, getCartTotal, getDeliveryCost, transactions, cart, deliveryAddress, toast, router]);
 
-   //... other actions ...
+  const updateCart = useCallback(async (newCart: CartItem[]) => {
+      if (!currentUser) return;
+      
+      const db = getFirestoreDb();
+      let cartTx = transactions.find(tx => tx.status === 'Carrito Activo');
+      
+      if (newCart.length > 0) {
+          if (cartTx) {
+              const txRef = doc(db, 'transactions', cartTx.id);
+              await updateDoc(txRef, { 'details.items': newCart });
+          } else {
+              const newTxId = `txn-cart-${currentUser.id}-${Date.now()}`;
+              const providerId = newCart[0].product.providerId;
+              const newCartTx: Transaction = {
+                  id: newTxId,
+                  type: 'Compra',
+                  status: 'Carrito Activo',
+                  date: new Date().toISOString(),
+                  amount: 0,
+                  clientId: currentUser.id,
+                  providerId: providerId,
+                  participantIds: [currentUser.id, providerId],
+                  details: { items: newCart }
+              };
+              await setDoc(doc(db, 'transactions', newTxId), newCartTx);
+          }
+      } else if (cartTx) {
+          // If the new cart is empty and a cart transaction exists, delete it.
+          await deleteDoc(doc(db, 'transactions', cartTx.id));
+      }
+  }, [currentUser, transactions]);
+
+  const addToCart = useCallback((product: Product, quantity: number) => {
+    let newCart = [...cart];
+    const existingItemIndex = newCart.findIndex(item => item.product.id === product.id);
+
+    if (existingItemIndex > -1) {
+        newCart[existingItemIndex].quantity += quantity;
+    } else {
+        newCart.push({ product, quantity });
+    }
+    updateCart(newCart);
+  }, [cart, updateCart]);
+
+  const updateCartQuantity = useCallback((productId: string, quantity: number) => {
+    let newCart = [...cart];
+    const itemIndex = newCart.findIndex(item => item.product.id === productId);
+
+    if (itemIndex > -1) {
+        if (quantity > 0) {
+            newCart[itemIndex].quantity = quantity;
+        } else {
+            newCart.splice(itemIndex, 1);
+        }
+        updateCart(newCart);
+    }
+  }, [cart, updateCart]);
+
+  const removeFromCart = useCallback((productId: string) => {
+    const newCart = cart.filter(item => item.product.id !== productId);
+    updateCart(newCart);
+  }, [cart, updateCart]);
+
+
   const requestQuoteFromGroup = useCallback((serviceName: string, items: string[]): boolean => { return true; }, []);
   const updateUserProfileImage = useCallback(async (userId: string, imageUrl: string) => { await updateUser(userId, { profileImage: imageUrl }); }, [updateUser]);
   const removeGalleryImage = useCallback(async (userId: string, imageId: string) => { if (!currentUser) return; await deleteDoc(doc(getFirestoreDb(), 'publications', imageId)); toast({ title: "Publicación eliminada" }); }, [currentUser, toast]);
@@ -377,7 +436,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return () => cleanupListeners();
   }, [currentUser?.id, cleanupListeners]);
 
-  // **THE FIX:** The state object is memoized and only contains data.
   const state = useMemo(() => ({
     currentUser, users, allPublications, transactions, conversations, cart, searchQuery,
     categoryFilter, contacts, isGpsActive, searchHistory, isLoadingAuth,
@@ -388,7 +446,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     deliveryAddress, exchangeRate, qrSession,
   ]);
 
-  // **THE FIX:** The actions object is memoized and only contains functions.
   const actions = useMemo(() => ({
     signInWithGoogle, setSearchQuery, setCategoryFilter, clearSearchHistory, logout, addToCart,
     updateCartQuantity, removeFromCart, getCartTotal, getDeliveryCost, checkout, requestQuoteFromGroup,
@@ -436,3 +493,5 @@ export const useCorabo = (): CoraboState & CoraboActions => {
 };
 
 export type { Transaction };
+
+    

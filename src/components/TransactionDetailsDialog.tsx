@@ -62,7 +62,7 @@ function ConfirmPaymentDialog({ onConfirm, onReportThirdParty, onCancel }: { onC
             </AlertDialogHeader>
             <AlertDialogFooter className="gap-2 sm:flex-row-reverse">
                 <AlertDialogAction onClick={onConfirm}>Confirmar Pago del Titular</AlertDialogAction>
-                <Button variant="destructive" onClick={onReportThirdParty}>Reportar Pago de Tercero</Button>
+                <Button variant="destructive" type="button" onClick={onReportThirdParty}>Reportar Pago de Tercero</Button>
                 <AlertDialogCancel onClick={onCancel} className="mt-2 sm:mt-0">Cancelar</AlertDialogCancel>
             </AlertDialogFooter>
         </AlertDialogContent>
