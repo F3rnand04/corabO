@@ -1,5 +1,4 @@
 
-
 import { createPublication, createProduct } from '@/ai/flows/publication-flow';
 import { getFirestoreDb } from '@/lib/firebase-server';
 import { doc, getDoc, setDoc, writeBatch } from 'firebase/firestore';

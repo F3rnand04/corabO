@@ -8,7 +8,7 @@ import {
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { createPublication } from '@/ai/flows/publication-flow';
 import { getFirestoreDb } from '@/lib/firebase-server';
-import type { User } from '@/lib/types';
+import type { User, PublicationOwner } from '@/lib/types';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -144,13 +144,13 @@ describe('Publication Flow - Data Resilience Integration Tests', () => {
     // Assert: Verificamos los datos incrustados.
     const publications = await testEnv.unauthenticatedContext().firestore().collection('publications').get();
     const newPublicationDoc = publications.docs[0];
-    const publicationOwnerData = newPublicationDoc.data().owner;
+    const publicationOwnerData = newPublicationDoc.data().owner as PublicationOwner;
     
     // Verificación forense campo por campo.
     expect(publicationOwnerData.id).toBe(specificUser.id);
     expect(publicationOwnerData.name).toBe(specificUser.profileSetupData?.username); // Verifica que usa el username
     expect(publicationOwnerData.profileImage).toBe(specificUser.profileImage);
     expect(publicationOwnerData.verified).toBe(specificUser.verified);
-    expect(publicationOwnerData.profileSetupData.specialty).toBe(specificUser.profileSetupData?.specialty);
+    expect(publicationOwnerData.profileSetupData?.specialty).toBe(specificUser.profileSetupData?.specialty);
   });
 });
