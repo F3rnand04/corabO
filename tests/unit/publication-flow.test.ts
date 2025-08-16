@@ -1,8 +1,12 @@
 
+/**
+ * @jest-environment node
+ */
 import { createPublication, createProduct } from '@/ai/flows/publication-flow';
 import { getFirestoreDb } from '@/lib/firebase-server';
 import { doc, getDoc, setDoc, writeBatch } from 'firebase/firestore';
 import type { User, PublicationOwner } from '@/lib/types';
+import { ai } from '@/ai/genkit';
 
 // Mockear completamente el módulo de Firestore para un aislamiento total.
 jest.mock('firebase/firestore', () => ({
@@ -10,15 +14,17 @@ jest.mock('firebase/firestore', () => ({
   doc: jest.fn((db, collection, id) => ({ path: `${collection}/${id}`})), // Mock path for call identification
   getDoc: jest.fn(),
   setDoc: jest.fn(),
-  writeBatch: jest.fn(() => ({
-    set: jest.fn(),
-    commit: jest.fn().mockResolvedValue(undefined),
-  })),
 }));
 
+// Mockear Genkit para evitar la necesidad de una API Key real en tests unitarios.
+jest.mock('@/ai/genkit', () => ({
+  ai: {
+    defineFlow: jest.fn((config, implementation) => implementation),
+  },
+}));
+
+
 const mockedGetDoc = getDoc as jest.Mock;
-const mockedWriteBatch = writeBatch as jest.Mock;
-const mockedSet = mockedWriteBatch().set as jest.Mock;
 const mockedSetDoc = setDoc as jest.Mock;
 
 describe('Publication and Product Flow - Unit Tests', () => {

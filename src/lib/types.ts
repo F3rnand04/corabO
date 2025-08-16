@@ -273,6 +273,15 @@ export type Product = {
   imageUrl: string;
 };
 
+export type Service = {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  providerId: string;
+  imageUrl: string;
+};
+
 export type CartItem = {
   product: Product;
   quantity: number;

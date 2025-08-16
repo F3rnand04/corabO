@@ -18,7 +18,7 @@ const getTestEnv = async () => {
     firestore: {
       host: 'localhost',
       port: 8083, // Explicitly set from firebase.json
-      rules: fs.readFileSync(path.resolve(__dirname, '../../firestore.rules'), 'utf8'),
+      rules: fs.readFileSync(path.resolve(__dirname, '../../src/firestore.rules'), 'utf8'),
     },
   });
 };
@@ -64,7 +64,10 @@ describe('Pagination Flow - Integration Test', () => {
   }, 30000);
 
   afterAll(async () => {
-    await testEnv.cleanup();
+    // FIX: Check if testEnv was successfully initialized before cleanup.
+    if (testEnv) {
+      await testEnv.cleanup();
+    }
   });
   
   // **Justificación Forense:** Este test verifica la lógica de paginación de extremo a extremo.
@@ -88,7 +91,7 @@ describe('Pagination Flow - Integration Test', () => {
     expect(page1Result.lastVisibleDocId).toBeDefined();
 
     // 2. Segunda Petición: Usar el cursor para obtener la segunda página
-    const page2Result = await getProfileProducts({ userId: PROVIDER_ID, limitNum: 10, startAfterDocId: page1Result.lastVisibleDocId });
+    const page2Result = await getProfileProducts({ userId: PROVIDER_ID, limitNum: 10, startAfterDocId: page1Result.lastVisibleDocId! });
 
     // Verificación Forense 4: Tamaño exacto de la segunda página
     expect(page2Result.products).toHaveLength(10);
@@ -98,7 +101,7 @@ describe('Pagination Flow - Integration Test', () => {
     expect(page2Result.lastVisibleDocId).toBeDefined();
     
     // 3. Tercera Petición: Obtener la última página (que es más corta)
-    const page3Result = await getProfileProducts({ userId: PROVIDER_ID, limitNum: 10, startAfterDocId: page2Result.lastVisibleDocId });
+    const page3Result = await getProfileProducts({ userId: PROVIDER_ID, limitNum: 10, startAfterDocId: page2Result.lastVisibleDocId! });
     
     // Verificación Forense 6: Tamaño exacto de la última página
     expect(page3Result.products).toHaveLength(5);

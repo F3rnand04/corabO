@@ -47,13 +47,16 @@ describe('Activation Flow - Integration Test', () => {
       firestore: {
         host: 'localhost',
         port: 8083,
-        rules: fs.readFileSync(path.resolve(__dirname, '../../firestore.rules'), 'utf8'),
+        rules: fs.readFileSync(path.resolve(__dirname, '../../src/firestore.rules'), 'utf8'),
       },
     });
   });
 
   afterAll(async () => {
-    await testEnv.cleanup();
+    // FIX: Check if testEnv was successfully initialized before cleanup.
+    if (testEnv) {
+      await testEnv.cleanup();
+    }
   });
 
   beforeEach(() => {
@@ -71,7 +74,6 @@ describe('Activation Flow - Integration Test', () => {
     } as User;
 
     // Act: Render the component and click the button
-    // SOLUCIÓN: Se añade la prop 'userType' requerida.
     render(<ActivationWarning userType="provider" />);
     const activationButton = screen.getByText('Activar ahora →');
     fireEvent.click(activationButton);
@@ -90,7 +92,6 @@ describe('Activation Flow - Integration Test', () => {
     } as User;
 
     // Act: Render the component and click the button
-    // SOLUCIÓN: Se añade la prop 'userType' requerida.
     render(<ActivationWarning userType="provider" />);
     const activationButton = screen.getByText('Activar ahora →');
     fireEvent.click(activationButton);
@@ -110,7 +111,6 @@ describe('Activation Flow - Integration Test', () => {
     } as User;
 
     // Act: Render the component and click the button
-    // SOLUCIÓN: Se añade la prop 'userType' requerida.
     render(<ActivationWarning userType="provider" />);
     const activationButton = screen.getByText('Activar ahora →');
     fireEvent.click(activationButton);

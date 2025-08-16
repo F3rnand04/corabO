@@ -494,9 +494,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       },
       updateUserProfileImage: (a:any,b:any)=>{},
       removeGalleryImage: (a:any,b:any)=>{},
-      validateEmail: (a:any,b:any)=>{return true},
+      validateEmail: (a:any,b:any)=>{return Promise.resolve(true)},
       sendPhoneVerification: (a:any,b:any)=>{},
-      verifyPhoneCode: (a:any,b:any)=>{return true},
+      verifyPhoneCode: (a:any,b:any)=>{return Promise.resolve(true)},
       updateFullProfile: (a:any,b:any,c:any)=>{},
       subscribeUser: (a:any,b:any,c:any)=>{},
       activateTransactions: (a:any,b:any)=>{},
@@ -534,7 +534,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [
       handleUserAuth, searchHistory, contacts, cart, 
-      transactions, deliveryAddress, getCartTotal, getDeliveryCost, users
+      transactions, deliveryAddress, getCartTotal, getDeliveryCost, users, toast, router
   ]);
   
   return (

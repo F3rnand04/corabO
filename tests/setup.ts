@@ -2,12 +2,16 @@
 // Este archivo se ejecuta antes de cada suite de tests.
 // Es ideal para configurar mocks globales o variables de entorno.
 
-// Ya no es necesario mockear el API KEY aquí, ya que los tests de integración
-// deberían ejecutarse contra los emuladores sin necesidad de claves reales.
-// Los tests unitarios mockearán sus propias dependencias.
-
-// Mock global fetch for tests that require it (e.g., firebase rules-unit-testing)
-// This is a basic mock; more complex scenarios might require a more sophisticated one.
+// FIX: Add a global fetch mock.
+// This is required by firebase-rules-unit-testing to communicate with the emulator.
 global.fetch = jest.fn(() =>
-  Promise.resolve({ json: () => Promise.resolve({}) })
+  Promise.resolve({
+    json: () => Promise.resolve({}),
+    text: () => Promise.resolve(''), // Add a text() method to the mock response
+  })
 ) as jest.Mock;
+
+
+// Mockea las variables de entorno para los tests
+// En una aplicación real, usarías un archivo .env.test
+process.env.GEMINI_API_KEY = 'test_api_key';
