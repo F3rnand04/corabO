@@ -87,7 +87,8 @@ export default function InitialSetupPage() {
             profileSetupData: {
                 ...currentUser.profileSetupData,
                 providerType: isCompany ? 'company' : 'professional'
-            }
+            },
+            type: isCompany ? 'provider' : currentUser.type // Companies are providers by default
         });
         // The AppLayout will now handle the redirection automatically because
         // the onSnapshot listener will update the currentUser and trigger its useEffect.
