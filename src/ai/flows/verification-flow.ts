@@ -15,6 +15,7 @@ const VerificationInputSchema = z.object({
   nameInRecord: z.string(),
   idInRecord: z.string(), // The ID number from the user's record
   documentImageUrl: z.string(),
+  isCompany: z.boolean().optional(),
 });
 
 export type VerificationInput = z.infer<typeof VerificationInputSchema>;
@@ -60,14 +61,22 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
   },
   async (input) => {
     
+    const promptText = input.isCompany
+    ? `You are an expert document analyst. Analyze the provided image of a company registration document (like a RIF).
+       Extract the full company name (Razón Social) and the full fiscal identification number (RIF / ID Fiscal) exactly as they appear.
+       Provide the output STRICTLY in the following format, with each piece of data on a new line:
+       Razón Social: [Full Company Name Here]
+       ID Fiscal: [Full ID Number Here]`
+    : `You are an expert document analyst. Analyze the provided image of an identification document.
+       Extract the full name and the full identification number exactly as they appear.
+       Provide the output STRICTLY in the following format, with each piece of data on a new line:
+       Nombre: [Full Name Here]
+       ID: [Full ID Number Here]`;
+
     const response = await ai.generate({
         model: 'googleai/gemini-1.5-flash',
         prompt: [{
-            text: `You are an expert document analyst. Analyze the provided image of an identification document.
-            Extract the full name and the full identification number exactly as they appear.
-            Provide the output STRICTLY in the following format, with each piece of data on a new line:
-            Nombre: [Full Name Here]
-            ID: [Full ID Number Here]`
+            text: promptText
         }, {
             media: {
                 url: input.documentImageUrl
@@ -81,8 +90,8 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
     }
     
     // Manual parsing of the text response
-    const nameMatchResult = responseText.match(/Nombre: (.*)/);
-    const idMatchResult = responseText.match(/ID: (.*)/);
+    const nameMatchResult = responseText.match(/(?:Nombre|Razón Social): (.*)/);
+    const idMatchResult = responseText.match(/(?:ID|ID Fiscal): (.*)/);
 
     const extractedName = nameMatchResult ? nameMatchResult[1].trim() : '';
     const extractedId = idMatchResult ? idMatchResult[1].trim() : '';
@@ -96,7 +105,7 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
             .trim()
             .toLowerCase()
             .replace(/o/g, '0') // Correct common OCR errors (O -> 0)
-            .replace(/^[ve]-?/, "") // Remove V or E prefix
+            .replace(/^[vejg]-?/, "") // Remove V, E, J, G prefix
             .replace(/[\s.-]/g, ''); // Remove separators
     };
     

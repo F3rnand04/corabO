@@ -53,6 +53,7 @@ export default function VerifyIdPage() {
             nameInRecord: `${currentUser.name} ${currentUser.lastName || ''}`,
             idInRecord: currentUser.idNumber,
             documentImageUrl: imagePreview,
+            isCompany: isCompany,
         });
         setVerificationResult(result);
         if (result.idMatch && result.nameMatch) {
@@ -151,13 +152,11 @@ export default function VerifyIdPage() {
           )}
 
           <div className="space-y-2">
-            {!isCompany && (
-              <Button className="w-full" onClick={handleAutoVerify} disabled={!imagePreview || isVerifying}>
-                  {isVerifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4"/>}
-                  Verificar con IA
-              </Button>
-            )}
-            {(isCompany || !allChecksPass) && (
+            <Button className="w-full" onClick={handleAutoVerify} disabled={!imagePreview || isVerifying}>
+                {isVerifying ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4"/>}
+                Verificar con IA
+            </Button>
+            {(!allChecksPass) && (
                  <Button className="w-full" variant="secondary" onClick={handleManualReview} disabled={!imagePreview || isVerifying}>
                     Enviar para Revisión Manual
                 </Button>

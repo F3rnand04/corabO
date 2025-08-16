@@ -121,6 +121,8 @@ export default function TransactionsSettingsPage() {
         return null;
     }
 
+    const isCompany = currentUser.profileSetupData?.providerType === 'company';
+
     const handleToggle = (method: 'account' | 'mobile' | 'crypto', active: boolean) => {
         setPaymentDetails(prev => ({ ...prev, [method]: { ...prev[method], active } }));
     };
@@ -184,7 +186,7 @@ export default function TransactionsSettingsPage() {
                         >
                             <div className="space-y-1">
                                 <Label>Titular</Label>
-                                <Input value={`${currentUser.name} ${currentUser.lastName || ''}`} disabled />
+                                <Input value={isCompany ? currentUser.name : `${currentUser.name} ${currentUser.lastName || ''}`} disabled />
                             </div>
                             <div className="space-y-2">
                                 <Label>Banco</Label>
