@@ -66,6 +66,23 @@ export default function InitialSetupPage() {
       }
     }
   }, [currentUser]);
+  
+  // This effect will run when currentUser is updated by the context listener
+  // after the data has been saved to Firestore.
+   useEffect(() => {
+    if (isSubmitting && currentUser?.isInitialSetupComplete) {
+      // Data is now in context, we can safely redirect.
+      setIsSubmitting(false); // Stop the spinner
+      
+       // After setup, the next logical step for a provider is verification.
+      if(currentUser.type === 'provider') {
+           router.push('/profile-setup/verify-id');
+      } else {
+           router.push('/profile');
+      }
+    }
+  }, [currentUser, isSubmitting, router]);
+
 
   const handleSubmit = async () => {
     if (!currentUser) return;
@@ -76,9 +93,11 @@ export default function InitialSetupPage() {
         
         if (!isUnique) {
             setIdInUseError(true);
-            return; // Stop submission
+            setIsSubmitting(false); // Stop submission
+            return;
         }
         
+        // This call updates the backend. The useEffect above will handle the redirect.
         await completeInitialSetupFlow({ 
           userId: currentUser.id, 
           name, 
@@ -90,7 +109,9 @@ export default function InitialSetupPage() {
           providerType: isCompany ? 'company' : 'professional'
         });
         
-        // Let AppLayout handle redirection based on the now-consistent state.
+        // Do NOT redirect here. Let the useEffect handle it when the state is updated.
+        // This prevents the race condition.
+        toast({ title: "Guardando perfil...", description: "Un momento por favor..."});
 
     } catch (error: any) {
         console.error("Failed to complete setup:", error);
@@ -99,15 +120,14 @@ export default function InitialSetupPage() {
             title: 'Error',
             description: 'No se pudo guardar tu información. Inténtalo de nuevo.'
         });
-    } finally {
         setIsSubmitting(false);
     }
   };
 
   const handleContactSupport = () => {
     const supportMessage = "Hola, mi número de documento de identidad ya está en uso y necesito ayuda para verificar mi cuenta.";
-    const conversationId = sendMessage({ recipientId: 'corabo-admin', text: supportMessage });
-    router.push(`/messages/${conversationId}`);
+    sendMessage({ recipientId: 'corabo-admin', text: supportMessage });
+    router.push(`/messages/corabo-admin`);
   };
 
   if (!currentUser) {
