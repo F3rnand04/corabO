@@ -1,6 +1,5 @@
 
-
-'use client';
+"use client";
 
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -44,6 +43,14 @@ export function PublicationCard({ publication, className }: PublicationCardProps
         }
     }, [publication.providerId, fetchUser]);
     
+    useEffect(() => {
+        if (!currentUser || !owner) return;
+        setIsSaved(isContact(owner.id));
+        setLikeCount(publication.likes || 0);
+        setShareCount(0);
+        setIsAvatarExpanded(false);
+    }, [isContact, publication, currentUser, owner]);
+
     if (!owner || !owner.id) {
         return null; 
     }
@@ -64,14 +71,6 @@ export function PublicationCard({ publication, className }: PublicationCardProps
         
     const specialty = owner.profileSetupData?.specialty || "Especialidad no definida";
     const affiliation = owner.activeAffiliation;
-
-    useEffect(() => {
-        if (!currentUser || !owner) return;
-        setIsSaved(isContact(owner.id));
-        setLikeCount(publication.likes || 0);
-        setShareCount(0);
-        setIsAvatarExpanded(false);
-    }, [isContact, owner.id, publication, currentUser, owner]);
 
     const handleSaveContact = () => {
         const success = addContact(owner as User);
@@ -315,5 +314,3 @@ export function PublicationCard({ publication, className }: PublicationCardProps
         </>
     );
 }
-
-    

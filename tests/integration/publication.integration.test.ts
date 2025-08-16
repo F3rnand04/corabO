@@ -6,7 +6,7 @@ import {
   type RulesTestEnvironment,
 } from '@firebase/rules-unit-testing';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { createPublication } from '@/ai/flows/publication-flow';
+import { createPublication, createProduct } from '@/ai/flows/publication-flow';
 import { getFirestoreDb } from '@/lib/firebase-server';
 import type { User, PublicationOwner } from '@/lib/types';
 import * as fs from 'fs';
@@ -112,10 +112,12 @@ describe('Publication Flow - Data Resilience Integration Tests', () => {
   });
   
   // Test 3: Test de Integridad de Desnormalización
-  test('should embed correct owner data into the public publication document', async () => {
+  test('should not embed owner data into the publication document anymore', async () => {
     // **Justificación Forense:** La desnormalización es una optimización potente, pero riesgosa si los datos
     // se desincronizan. Este test verifica que la "instantánea" de los datos del autor que se incrusta
     // en la publicación es una copia exacta del documento original del usuario en el momento de la creación.
+    // **ACTUALIZACIÓN:** La lógica ha cambiado. El campo `owner` ya no se debe incrustar para evitar datos
+    // obsoletos. Este test ahora verifica que el campo `owner` NO exista.
     
     // Arrange: Creamos un usuario con datos específicos.
     const userContext = testEnv.authenticatedContext('user_denormalized');
@@ -141,16 +143,12 @@ describe('Publication Flow - Data Resilience Integration Tests', () => {
       type: 'image' as const,
     });
     
-    // Assert: Verificamos los datos incrustados.
+    // Assert: Verificamos que los datos del 'owner' ya NO están incrustados.
     const publications = await testEnv.unauthenticatedContext().firestore().collection('publications').get();
     const newPublicationDoc = publications.docs[0];
-    const publicationOwnerData = newPublicationDoc.data().owner as PublicationOwner;
+    const publicationData = newPublicationDoc.data();
     
-    // Verificación forense campo por campo.
-    expect(publicationOwnerData.id).toBe(specificUser.id);
-    expect(publicationOwnerData.name).toBe(specificUser.profileSetupData?.username); // Verifica que usa el username
-    expect(publicationOwnerData.profileImage).toBe(specificUser.profileImage);
-    expect(publicationOwnerData.verified).toBe(specificUser.verified);
-    expect(publicationOwnerData.profileSetupData?.specialty).toBe(specificUser.profileSetupData?.specialty);
+    // Verificación forense: el campo 'owner' debe ser indefinido.
+    expect(publicationData.owner).toBeUndefined();
   });
 });
