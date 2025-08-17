@@ -12,7 +12,7 @@ import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, AlertTriangle, Globe } from 'lucide-react';
 import Image from 'next/image';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRouter } from 'next/navigation';
@@ -55,6 +55,7 @@ export default function InitialSetupPage() {
   const [hasAcceptedPolicies, setHasAcceptedPolicies] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [idInUseError, setIdInUseError] = useState(false);
+  const [submissionAttempts, setSubmissionAttempts] = useState(0);
 
   useEffect(() => {
     if (currentUser) {
@@ -71,15 +72,27 @@ export default function InitialSetupPage() {
     if (!currentUser) return;
     setIsSubmitting(true);
     setIdInUseError(false);
+
     try {
         const isUnique = await checkIdUniquenessFlow({ idNumber, country, currentUserId: currentUser.id });
         
         if (!isUnique) {
             setIdInUseError(true);
+            const newAttemptCount = submissionAttempts + 1;
+            setSubmissionAttempts(newAttemptCount);
+            
+            if (newAttemptCount >= 2) {
+                toast({
+                    variant: 'destructive',
+                    title: 'Demasiados Intentos Fallidos',
+                    description: 'Has superado el límite de intentos. Serás redirigido al inicio de sesión.',
+                    duration: 5000,
+                });
+                setTimeout(() => router.push('/login'), 5000);
+            }
             return; // Stop submission
         }
         
-        // This call updates the backend.
         await completeInitialSetupFlow({ 
           userId: currentUser.id, 
           name, 
@@ -87,16 +100,14 @@ export default function InitialSetupPage() {
           idNumber, 
           birthDate, 
           country,
-          type: isCompany ? 'provider' : 'client', // Set user type based on checkbox
+          type: isCompany ? 'provider' : 'client',
           providerType: isCompany ? 'company' : 'professional'
         });
         
         toast({ title: "Perfil Guardado", description: "Tus datos han sido guardados correctamente."});
         
-        // **FIX**: Force navigation to the home page after successful submission.
-        // AppLayout will then re-evaluate the route and take the user to the correct next step.
         router.push('/');
-        router.refresh(); // Force a full refresh to re-trigger AppLayout logic
+        router.refresh();
 
     } catch (error: any) {
         console.error("Failed to complete setup:", error);
@@ -117,7 +128,6 @@ export default function InitialSetupPage() {
   };
 
   if (!currentUser) {
-    // This part is handled by AppLayout, but it's a good safeguard.
     return (
         <div className="flex items-center justify-center min-h-screen">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -152,7 +162,7 @@ export default function InitialSetupPage() {
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>Datos de Identificación en Uso</AlertTitle>
             <AlertDescription>
-                El número de documento ingresado ya está registrado. Si crees que es un error,
+                El número de documento ingresado ya está registrado. Por favor, corrígelo. Si crees que es un error,
                 <Button variant="link" className="p-1 h-auto text-current underline" onClick={handleContactSupport}>contacta a soporte</Button>.
             </AlertDescription>
           </Alert>
