@@ -12,7 +12,7 @@ import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, AlertTriangle, Globe } from 'lucide-react';
 import Image from 'next/image';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRouter } from 'next/navigation';
@@ -86,7 +86,7 @@ export default function InitialSetupPage() {
                 toast({
                     variant: 'destructive',
                     title: `Demasiados Intentos Fallidos (${MAX_ATTEMPTS})`,
-                    description: 'Serás redirigido al inicio de sesión para proteger tu cuenta.',
+                    description: 'Su documento ya está en uso. Será redirigido al inicio de sesión para proteger su cuenta y la de otros usuarios.',
                     duration: 5000,
                 });
                 setTimeout(() => {
@@ -126,7 +126,7 @@ export default function InitialSetupPage() {
 
   const handleContactSupport = () => {
     const supportMessage = "Hola, mi número de documento de identidad ya está en uso y necesito ayuda para verificar mi cuenta.";
-    const conversationId = sendMessage({ recipientId: 'corabo-admin', text: supportMessage });
+    sendMessage({ recipientId: 'corabo-admin', text: supportMessage });
     router.push(`/messages/corabo-admin`);
   };
 
