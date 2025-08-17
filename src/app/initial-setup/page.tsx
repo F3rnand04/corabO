@@ -81,14 +81,17 @@ export default function InitialSetupPage() {
             const newAttemptCount = submissionAttempts + 1;
             setSubmissionAttempts(newAttemptCount);
             
-            if (newAttemptCount >= 2) {
+            if (newAttemptCount >= 3) {
                 toast({
                     variant: 'destructive',
                     title: 'Demasiados Intentos Fallidos',
                     description: 'Has superado el límite de intentos. Serás redirigido al inicio de sesión.',
                     duration: 5000,
                 });
-                setTimeout(() => router.push('/login'), 5000);
+                setTimeout(() => {
+                    // In a real app, you might want to sign the user out here before pushing to login
+                    router.push('/login');
+                }, 5000);
             }
             return; // Stop submission
         }
@@ -160,10 +163,11 @@ export default function InitialSetupPage() {
         {idInUseError && (
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Datos de Identificación en Uso</AlertTitle>
+            <AlertTitle>Documento en Uso</AlertTitle>
             <AlertDescription>
-                El número de documento ingresado ya está registrado. Por favor, corrígelo. Si crees que es un error,
+                Su documento ya está en uso. Por favor, corrígelo. Si crees que es un error, 
                 <Button variant="link" className="p-1 h-auto text-current underline" onClick={handleContactSupport}>contacta a soporte</Button>.
+                 (Intento {submissionAttempts} de 3)
             </AlertDescription>
           </Alert>
         )}
