@@ -42,7 +42,7 @@ const CountrySelector = memo(function CountrySelector({ value, onValueChange }: 
 
 
 export default function InitialSetupPage() {
-  const { currentUser, sendMessage } = useCorabo();
+  const { currentUser, sendMessage, logout } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -56,6 +56,7 @@ export default function InitialSetupPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [idInUseError, setIdInUseError] = useState(false);
   const [submissionAttempts, setSubmissionAttempts] = useState(0);
+  const MAX_ATTEMPTS = 3;
 
   useEffect(() => {
     if (currentUser) {
@@ -81,16 +82,15 @@ export default function InitialSetupPage() {
             const newAttemptCount = submissionAttempts + 1;
             setSubmissionAttempts(newAttemptCount);
             
-            if (newAttemptCount >= 3) {
+            if (newAttemptCount >= MAX_ATTEMPTS) {
                 toast({
                     variant: 'destructive',
-                    title: 'Demasiados Intentos Fallidos',
-                    description: 'Has superado el límite de intentos. Serás redirigido al inicio de sesión.',
+                    title: `Demasiados Intentos Fallidos (${MAX_ATTEMPTS})`,
+                    description: 'Serás redirigido al inicio de sesión para proteger tu cuenta.',
                     duration: 5000,
                 });
                 setTimeout(() => {
-                    // In a real app, you might want to sign the user out here before pushing to login
-                    router.push('/login');
+                    logout();
                 }, 5000);
             }
             return; // Stop submission
@@ -126,7 +126,7 @@ export default function InitialSetupPage() {
 
   const handleContactSupport = () => {
     const supportMessage = "Hola, mi número de documento de identidad ya está en uso y necesito ayuda para verificar mi cuenta.";
-    sendMessage({ recipientId: 'corabo-admin', text: supportMessage });
+    const conversationId = sendMessage({ recipientId: 'corabo-admin', text: supportMessage });
     router.push(`/messages/corabo-admin`);
   };
 
@@ -167,7 +167,7 @@ export default function InitialSetupPage() {
             <AlertDescription>
                 Su documento ya está en uso. Por favor, corrígelo. Si crees que es un error, 
                 <Button variant="link" className="p-1 h-auto text-current underline" onClick={handleContactSupport}>contacta a soporte</Button>.
-                 (Intento {submissionAttempts} de 3)
+                 (Intento {submissionAttempts} de {MAX_ATTEMPTS})
             </AlertDescription>
           </Alert>
         )}

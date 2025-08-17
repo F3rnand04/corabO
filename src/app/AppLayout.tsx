@@ -61,29 +61,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
 
   useEffect(() => {
-    // This effect handles redirection based on the auth state.
-    if (isLoadingAuth) {
-        // While auth state is resolving, do nothing to prevent premature redirects.
-        return;
-    }
+    if (isLoadingAuth) return;
 
     const isLoginPage = pathname === '/login';
     const isSetupPage = pathname === '/initial-setup';
 
     if (!currentUser) {
-        // User is not logged in, redirect to login page if not already there.
         if (!isLoginPage) {
             router.replace('/login');
         }
     } else {
-        // User is logged in.
         if (!currentUser.isInitialSetupComplete) {
-            // If setup is not complete, force user to the setup page.
             if (!isSetupPage) {
                 router.replace('/initial-setup');
             }
         } else {
-            // If setup is complete, redirect away from login/setup pages.
             if (isLoginPage || isSetupPage) {
                 router.replace('/');
             }
@@ -127,92 +119,83 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
   
-  const isLoginPage = pathname === '/login';
-  
-  // Render the login page without the main layout
+  // If no user, only render the login page.
   if (!currentUser) {
-    return isLoginPage ? <main>{children}</main> : (
+    return pathname === '/login' ? <main>{children}</main> : (
         <div className="flex items-center justify-center min-h-screen">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
     );
   }
 
-  // At this point, currentUser is guaranteed to exist.
-  const isSetupPage = pathname === '/initial-setup';
+  // If user is not setup, only render the setup page.
   if (!currentUser.isInitialSetupComplete) {
-    return isSetupPage ? <main>{children}</main> : (
+     return pathname === '/initial-setup' ? <main>{children}</main> : (
         <div className="flex items-center justify-center min-h-screen">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
     );
   }
   
-  // Render the full app layout for authenticated and set-up users
-  if(currentUser.isInitialSetupComplete) {
-      // Admin role check
-      if (pathname.startsWith('/admin') && currentUser?.role !== 'admin') {
-          router.replace('/');
-          return (
-            <div className="flex items-center justify-center min-h-screen">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            </div>
-          );
-      }
-      
-      const noHeaderFooterRoutes = [
-        '/profile-setup',
-        '/login',
-        '/map',
-        '/credicora',
-        '/search-history',
-        '/policies',
-        '/terms',
-        '/privacy',
-        '/community-guidelines',
-        '/admin',
-        '/initial-setup',
-        '/profile/publications',
-        '/profile/catalog',
-        '/profile/details', // **FIX** Add details route here
-      ];
-
-      const shouldHideAllLayout = noHeaderFooterRoutes.some(path => pathname.startsWith(path));
-
-      if(shouldHideAllLayout) {
-        return <main>{children}</main>;
-      }
-
-      // Main application view with Header and Footer
-      const shouldShowMainHeader = ![
-        '/profile',
-        '/quotes',
-        '/quotes/payment',
-        '/quotes/pro',
-        '/contacts',
-        '/search',
-        '/transactions',
-        '/transactions/settings',
-        '/messages',
-        '/videos',
-        '/emprende',
-      ].includes(pathname) && !/^\/messages\/.+/.test(pathname) && !/^\/companies\/.+/.test(pathname);
-      
-      const shouldShowFooter = !/^\/messages\/.+/.test(pathname);
-      
+  // Admin role check
+  if (pathname.startsWith('/admin') && currentUser.role !== 'admin') {
+      router.replace('/');
       return (
-        <div className="flex flex-col min-h-screen">
-          {shouldShowMainHeader && <Header />}
-          <main className="flex-grow">
-            <div className={shouldShowFooter ? "pb-20" : ""}>
-              {children}
-            </div>
-          </main>
-          {shouldShowFooter && <Footer />}
+        <div className="flex items-center justify-center min-h-screen">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
       );
   }
+  
+  const noHeaderFooterRoutes = [
+    '/profile-setup',
+    '/login',
+    '/map',
+    '/credicora',
+    '/search-history',
+    '/policies',
+    '/terms',
+    '/privacy',
+    '/community-guidelines',
+    '/admin',
+    '/initial-setup',
+    '/profile/publications',
+    '/profile/catalog',
+    '/profile/details', // **FIX** Add details route here
+  ];
 
-  // Fallback return null if no other condition is met
-  return null;
+  const shouldHideAllLayout = noHeaderFooterRoutes.some(path => pathname.startsWith(path));
+
+  if(shouldHideAllLayout) {
+    return <main>{children}</main>;
+  }
+
+  // Main application view with Header and Footer
+  const shouldShowMainHeader = ![
+    '/profile',
+    '/quotes',
+    '/quotes/payment',
+    '/quotes/pro',
+    '/contacts',
+    '/search',
+    '/transactions',
+    '/transactions/settings',
+    '/messages',
+    '/videos',
+    '/emprende',
+  ].includes(pathname) && !/^\/messages\/.+/.test(pathname) && !/^\/companies\/.+/.test(pathname);
+  
+  const shouldShowFooter = !/^\/messages\/.+/.test(pathname);
+  
+  return (
+    <div className="flex flex-col min-h-screen">
+      {shouldShowMainHeader && <Header />}
+      <main className="flex-grow">
+        <div className={shouldShowFooter ? "pb-20" : ""}>
+          {children}
+        </div>
+      </main>
+      {shouldShowFooter && <Footer />}
+    </div>
+  );
 }
