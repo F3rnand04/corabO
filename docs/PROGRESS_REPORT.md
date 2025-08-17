@@ -35,7 +35,7 @@ El enrutamiento está centralizado y controlado lógicamente por el componente `
 
 ### 3.1. Sistema de Reputación y Perfiles Especializados
 -   **Reputación Dinámica:** La calificación por estrellas, el índice de efectividad y la agilidad de pago se calculan y muestran en tiempo real.
--   **Perfiles Especializados:** Dependiendo de la categoría del proveedor (Salud, Hogar, Belleza, etc.), se muestran campos y detalles específicos en la configuración y en la vista pública, mejorando la calidad de la información.
+-   **Perfiles Especializados:** Dependiendo de la categoría del proveedor (Salud, Hogar, Alimentos y Bebidas, etc.), se muestran campos y detalles específicos en la configuración y en la vista pública, mejorando la calidad de la información para los clientes.
 
 ### 3.2. Panel de Control del Proveedor (`/transactions`)
 -   **Dashboard Financiero:** Los proveedores ahora tienen un panel de control con gráficos de líneas y de torta que muestran la evolución de sus ingresos/egresos y la distribución de sus finanzas.

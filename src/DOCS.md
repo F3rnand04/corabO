@@ -19,10 +19,12 @@ La aplicación ha evolucionado de un prototipo cliente-céntrico a una aplicaci�
 
 Para ofrecer una experiencia de usuario clara, Corabo implementa un sistema de **perfiles dinámicos** que se adaptan al tipo de negocio del proveedor.
 
--   **Campos Especializados:** Dependiendo de la categoría principal seleccionada por el proveedor (ej. "Salud y Bienestar", "Hogar y Reparaciones", "Belleza"), el formulario de configuración de perfil (`Step5_ProviderDetails`) muestra campos adicionales y opcionales para que puedan detallar sus servicios:
-    -   **Salud:** Nro. de Licencia, Especialidades, Modalidad de Atención.
-    -   **Hogar:** Oficios Principales (Plomería, etc.), Habilidades Específicas (tags).
+-   **Campos Especializados:** Dependiendo de la categoría principal seleccionada por el proveedor, el formulario de configuración de perfil (`profile/details`) muestra campos adicionales y opcionales para que puedan detallar sus servicios:
+    -   **Salud y Bienestar:** Nro. de Licencia, Especialidades, Modalidad de Atención.
+    -   **Hogar y Reparaciones:** Oficios Principales (Plomería, etc.), Habilidades Específicas (tags).
     -   **Belleza:** Oficios Principales (Manicure, Estilismo, etc.), Habilidades Específicas.
+    -   **Transporte y Asistencia:** Tipo de Vehículo, Capacidad de Carga, Condiciones Especiales.
+    -   **Alimentos y Restaurantes:** Tipo de Cocina, Opciones de Servicio (local, delivery, etc.), Enlace al Menú, Permiso Sanitario.
     -   **Otros Servicios Profesionales:** Habilidades Clave (tags), Marcas y Herramientas, Años de Experiencia.
 -   **Visualización Pública:** La información especializada se muestra de forma clara en el perfil público del proveedor (`/companies/[id]`) mediante etiquetas (`Badge`) y secciones de detalles, ayudando a los clientes a tomar decisiones informadas.
 

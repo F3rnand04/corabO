@@ -34,17 +34,18 @@ La barra de navegación inferior es el centro de control y su comportamiento es 
     -   **En la mayoría de las páginas:** Es tu **avatar de perfil** (`/profile`).
     -   **En tu propio perfil (`/profile`):** Se transforma en un **engranaje de Ajustes** (`/profile-setup`).
 
-### 3.3. Configuración de Perfil (`/profile-setup/page.tsx`)
-El asistente de configuración permite una personalización profunda.
+### 3.3. Configuración de Perfil (`/profile` y `/profile/details`)
+El perfil de un proveedor ahora tiene pestañas para una mejor organización.
 
--   **Paso 1: Cliente vs. Proveedor:** Elige si buscas o si ofreces servicios/productos.
--   **Paso 3 y 5: Categorías y Detalles:** Si eres proveedor, podrás seleccionar tu categoría principal (ej. "Hogar y Reparaciones", "Belleza") y el sistema te mostrará campos opcionales para que detalles tus habilidades (ej. "Plomería", "Manicure"), experiencia y las herramientas o marcas que dominas.
+-   **Pestañas del Perfil:** "Publicaciones", "Catálogo" (si aplica) y "Detalles".
+-   **Pestaña de Detalles:** Desde aquí, los proveedores pueden editar sus datos de contacto y, más importante, añadir **información especializada** según su categoría principal (ej. "Alimentos y Bebidas", "Hogar y Reparaciones", "Belleza"). El sistema muestra campos opcionales para que detallen sus habilidades, experiencia, certificaciones, menús, etc., enriqueciendo su perfil.
 
 ### 3.4. Perfil Público de un Proveedor (`/companies/[id]/page.tsx`)
 La vista pública de un proveedor es dinámica y se adapta a su oferta.
 
 -   **Vista de Servicios:** Muestra una galería de trabajos visual, con sus habilidades y oficios destacados como etiquetas para una fácil identificación.
 -   **Vista de Catálogo:** Si ofrece productos, el perfil se transforma en una tienda con una cuadrícula de productos, precios y carrito de compras.
+-   **Detalles Especializados:** Toda la información técnica o específica de la categoría (licencias, tipo de cocina, etc.) se muestra de forma clara para dar más confianza a los clientes.
 
 ### 3.5. Registro de Transacciones (`/transactions`) - ¡Nuevo Dashboard!
 Esta sección es ahora el **Panel de Control Financiero** del proveedor.

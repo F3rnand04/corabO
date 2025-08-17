@@ -26,23 +26,28 @@ graph TD
 
 ## 2. Flujo de Configuración de Perfil y Especialización
 
-Describe cómo un usuario configura su perfil y cómo se muestran detalles específicos según su categoría.
+Describe cómo un proveedor configura su perfil y cómo se muestran detalles específicos según su categoría.
 
 ```mermaid
 graph TD
-    A[Nuevo Usuario Completa Registro] --> B[Accede a Configuración de Perfil /profile-setup];
-    B --> C{Paso 1: Elige Tipo de Perfil};
-    C -- "Cliente" --> F[Continúa configuración de cliente];
-    C -- "Proveedor" --> D{Paso 3: Elige Categoría};
-    D -- "Salud" --> E_Health[Paso 5: Muestra campos de Licencia, Especialidades, etc.];
-    D -- "Hogar y Reparaciones" --> E_Home[Paso 5: Muestra campos de Oficios, Habilidades, etc.];
-    D -- "Belleza" --> E_Beauty[Paso 5: Muestra campos de Oficios, Habilidades, etc.];
-    D -- "Otros" --> E_General[Paso 5: Muestra campos generales de Habilidades, Experiencia, etc.];
+    A[Nuevo Proveedor Completa Registro Inicial] --> B[Accede a Configuración de Perfil /profile-setup];
+    B --> C{Paso 3: Elige Categoría Principal};
     
-    subgraph "Renderizado de Perfil (/companies/[id])"
+    subgraph "Lógica de Formulario Dinámico (/profile/details)"
+      C -- "Salud y Bienestar" --> E_Health[Muestra campos de Licencia, Especialidades, etc.];
+      C -- "Hogar y Reparaciones" --> E_Home[Muestra campos de Oficios, Habilidades, etc.];
+      C -- "Alimentos y Restaurantes" --> E_Food[Muestra campos de Tipo de Cocina, Menú, etc.];
+      C -- "Transporte y Asistencia" --> E_Transport[Muestra campos de Vehículo, Capacidad, etc.];
+      C -- "Belleza" --> E_Beauty[Muestra campos de Oficios, Habilidades, etc.];
+      C -- "Otros" --> E_General[Muestra campos generales de Habilidades, Experiencia, etc.];
+    end
+    
+    subgraph "Renderizado de Perfil Público (/companies/[id])"
         direction LR
         E_Health --> G{Leer datos del Proveedor};
         E_Home --> G;
+        E_Food --> G;
+        E_Transport --> G;
         E_Beauty --> G;
         E_General --> G;
         G --> H[Mostrar información general];
