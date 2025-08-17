@@ -82,11 +82,12 @@ export function ProfileDetailsTab() {
     
     const SpecializedComponent = categoryComponentMap[category];
     
+    // **FIX**: If a component is mapped, render it. Otherwise, render the general one.
     if (SpecializedComponent) {
         return <SpecializedComponent formData={formData} onSpecializedChange={handleSpecializedInputChange} />;
     }
 
-    // Fallback for categories without a specific component yet
+    // Fallback for categories without a specific component yet or general ones
     return <GeneralProviderFields formData={formData} onSpecializedChange={handleSpecializedInputChange} />;
   };
 
