@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from '../ui/textarea';
-import { MapPin, Building, AlertCircle, Package, Hand, Star, Info, LocateFixed, Handshake, Wrench, Stethoscope, BadgeCheck, Truck, Utensils, Link as LinkIcon, Briefcase, BrainCircuit } from 'lucide-react';
+import { MapPin, Building, AlertCircle, Package, Hand, Star, Info, LocateFixed, Handshake, Wrench, Stethoscope, BadgeCheck, Truck, Utensils, Link as LinkIcon, Briefcase, BrainCircuit, Scissors } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '../ui/slider';
 import { Badge } from '../ui/badge';
@@ -31,33 +31,35 @@ interface Step5_ProviderDetailsProps {
   setFormData: (data: ProfileSetupData) => void;
 }
 
+interface GeneralProviderFieldsProps {
+    formData: ProfileSetupData;
+    handleSpecializedInputChange: (field: keyof NonNullable<ProfileSetupData['specializedData']>, value: any) => void
+}
+
 const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const homeRepairTrades = ['Plomería', 'Electricidad', 'Albañilería', 'Pintura', 'Carpintería', 'Jardinería', 'Refrigeración'];
+const beautyTrades = ['Manicure y Pedicure', 'Estilismo y Peluquería', 'Maquillaje Profesional', 'Masajes', 'Cuidado Facial', 'Depilación'];
 
-const renderGeneralProviderFields = (
-    formData: ProfileSetupData,
-    handleSpecializedInputChange: (field: keyof NonNullable<ProfileSetupData['specializedData']>, value: any) => void,
-    isProfessionalServices?: boolean
-) => {
+// This is now a proper React component that can manage its own state.
+const GeneralProviderFields = ({ formData, handleSpecializedInputChange }: GeneralProviderFieldsProps) => {
     const [currentSkill, setCurrentSkill] = useState('');
     
-    function handleAddSkill (field: 'keySkills', currentTag: string, setTag: (val: string)) {
-        if (currentTag && !(formData.specializedData?.[field] || []).includes(currentTag)) {
-            const newSkills = [...(formData.specializedData?.[field] || []), currentTag];
+    const handleAddSkill = (field: 'keySkills') => {
+        if (currentSkill && !(formData.specializedData?.[field] || []).includes(currentSkill)) {
+            const newSkills = [...(formData.specializedData?.[field] || []), currentSkill];
             handleSpecializedInputChange(field, newSkills);
-            setTag('');
+            setCurrentSkill('');
         }
     };
     
-    function handleRemoveSkill(field: 'keySkills', skillToRemove: string) {
+    const handleRemoveSkill = (field: 'keySkills', skillToRemove: string) => {
         const newSkills = formData.specializedData?.[field]?.filter(skill => skill !== skillToRemove);
         handleSpecializedInputChange(field, newSkills);
     };
 
     return (
      <div className="space-y-4">
-       {isProfessionalServices && (
-         <div className="space-y-4">
+        <div className="space-y-4">
             <div className="space-y-2">
                 <Label htmlFor="keySkills" className="flex items-center gap-2"><Briefcase className="w-4 h-4"/> Habilidades Clave</Label>
                 <div className="flex gap-2">
@@ -66,9 +68,9 @@ const renderGeneralProviderFields = (
                         placeholder="Ej: Desarrollo Web, Figma" 
                         value={currentSkill}
                         onChange={(e) => setCurrentSkill(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSkill('keySkills', currentSkill, setCurrentSkill); }}}
+                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSkill('keySkills'); }}}
                     />
-                    <Button onClick={() => handleAddSkill('keySkills', currentSkill, setCurrentSkill)} type="button">Añadir</Button>
+                    <Button onClick={() => handleAddSkill('keySkills')} type="button">Añadir</Button>
                 </div>
                 <div className="flex flex-wrap gap-2 pt-2">
                     {formData.specializedData?.keySkills?.map(skill => (
@@ -102,7 +104,6 @@ const renderGeneralProviderFields = (
                 />
             </div>
         </div>
-       )}
     </div>
     );
 };
@@ -175,7 +176,7 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
     }));
   };
   
-  const handleAddSkill = (field: 'specialties' | 'specificSkills' | 'keySkills', currentTag: string, setTag: (val: string)) => {
+  const handleAddSkill = (field: 'specialties' | 'specificSkills' | 'keySkills' | 'beautyTrades' | 'mainTrades', currentTag: string, setTag: (val: string)) => {
     if (currentTag && !(formData.specializedData?.[field] || []).includes(currentTag)) {
         const newSkills = [...(formData.specializedData?.[field] || []), currentTag];
         handleSpecializedInputChange(field, newSkills);
@@ -183,7 +184,7 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
     }
   };
 
-  const handleRemoveSkill = (field: 'specialties' | 'specificSkills' | 'keySkills', skillToRemove: string) => {
+  const handleRemoveSkill = (field: 'specialties' | 'specificSkills' | 'keySkills' | 'beautyTrades' | 'mainTrades', skillToRemove: string) => {
     const newSkills = formData.specializedData?.[field]?.filter(skill => skill !== skillToRemove);
     handleSpecializedInputChange(field, newSkills);
   };
@@ -201,17 +202,39 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
     }));
   }
 
-  const handleTradeChange = (trade: string, checked: boolean) => {
-    const currentTrades = formData.specializedData?.mainTrades || [];
+  const handleTradeChange = (field: 'mainTrades' | 'beautyTrades', trade: string, checked: boolean) => {
+    const currentTrades = formData.specializedData?.[field] || [];
     const newTrades = checked
         ? [...currentTrades, trade]
         : currentTrades.filter(t => t !== trade);
-    handleSpecializedInputChange('mainTrades', newTrades);
+    handleSpecializedInputChange(field, newTrades);
   }
 
   const renderSpecializedFields = () => {
-    const isProfessionalServicesCategory = ['Tecnología y Soporte', 'Educación', 'Eventos', 'Belleza'].includes(formData.primaryCategory || '');
+    const professionalServicesCategories = ['Tecnología y Soporte', 'Educación', 'Eventos'];
+
+    if (professionalServicesCategories.includes(formData.primaryCategory || '')) {
+      return <GeneralProviderFields formData={formData} handleSpecializedInputChange={handleSpecializedInputChange} />;
+    }
+    
     switch (formData.primaryCategory) {
+      case 'Belleza':
+        return (
+             <div className="space-y-4">
+                <div className="space-y-2">
+                    <Label>Oficios Principales en Belleza</Label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-2 gap-x-4 p-3 border rounded-md">
+                        {beautyTrades.map(trade => (
+                             <div key={trade} className="flex items-center space-x-2">
+                                <Checkbox id={trade} checked={formData.specializedData?.beautyTrades?.includes(trade)} onCheckedChange={(c) => handleTradeChange('beautyTrades', trade, !!c)} />
+                                <Label htmlFor={trade}>{trade}</Label>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                 <GeneralProviderFields formData={formData} handleSpecializedInputChange={handleSpecializedInputChange} />
+            </div>
+        );
       case 'Transporte y Asistencia':
          return (
             <div className="space-y-4">
@@ -353,7 +376,7 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-2 gap-x-4 p-3 border rounded-md">
                         {homeRepairTrades.map(trade => (
                              <div key={trade} className="flex items-center space-x-2">
-                                <Checkbox id={trade} checked={formData.specializedData?.mainTrades?.includes(trade)} onCheckedChange={(c) => handleTradeChange(trade, !!c)} />
+                                <Checkbox id={trade} checked={formData.specializedData?.mainTrades?.includes(trade)} onCheckedChange={(c) => handleTradeChange('mainTrades', trade, !!c)} />
                                 <Label htmlFor={trade}>{trade}</Label>
                             </div>
                         ))}
@@ -395,7 +418,11 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
             </div>
         );
       default:
-        return renderGeneralProviderFields(formData, handleSpecializedInputChange, isProfessionalServicesCategory);
+        return (
+           <div className="p-4 bg-muted rounded-md text-center text-sm text-muted-foreground">
+                No hay detalles especializados para esta categoría aún. Puedes continuar al siguiente paso.
+            </div>
+        );
     }
   };
 

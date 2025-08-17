@@ -7,7 +7,7 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, MessageCircle, CheckCircle, Flag, Package, Hand, ShoppingCart, Plus, Minus, X, Truck, AlertTriangle, Loader2, Search, Building, Users, BadgeCheck, Stethoscope, Utensils, Link as LinkIcon, Home as HomeIcon, Briefcase } from 'lucide-react';
+import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, MessageCircle, CheckCircle, Flag, Package, Hand, ShoppingCart, Plus, Minus, X, Truck, AlertTriangle, Loader2, Search, Building, Users, BadgeCheck, Stethoscope, Utensils, Link as LinkIcon, Home as HomeIcon, Briefcase, Scissors } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
@@ -168,8 +168,8 @@ export default function CompanyProfilePage() {
   const isCompany = provider.profileSetupData?.providerType === 'company';
   const isProductProvider = provider.profileSetupData?.offerType === 'product';
   
-  const isProfessionalServices = ['Tecnología y Soporte', 'Educación', 'Eventos', 'Belleza'].includes(provider.profileSetupData?.primaryCategory || '');
-
+  const isProfessionalServices = ['Tecnología y Soporte', 'Educación', 'Eventos'].includes(provider.profileSetupData?.primaryCategory || '');
+  const isBeautyProvider = provider.profileSetupData?.primaryCategory === 'Belleza';
   const isHealthProvider = provider.profileSetupData?.primaryCategory === 'Salud y Bienestar';
   const isFoodProvider = provider.profileSetupData?.primaryCategory === 'Alimentos y Restaurantes';
   const isHomeRepairProvider = provider.profileSetupData?.primaryCategory === 'Hogar y Reparaciones';
@@ -549,13 +549,13 @@ export default function CompanyProfilePage() {
                 </Link>
             )}
             
-            {(isHealthProvider || isFoodProvider || isHomeRepairProvider || isProfessionalServices) && provider.profileSetupData?.specializedData && (
+            {(isHealthProvider || isFoodProvider || isHomeRepairProvider || isProfessionalServices || isBeautyProvider) && provider.profileSetupData?.specializedData && (
                  <div className="mt-2 mb-4 p-3 bg-muted/50 rounded-lg border space-y-2">
                     <p className="font-semibold flex items-center gap-2 text-sm">
                       {isHealthProvider && <Stethoscope className="w-4 h-4"/>}
                       {isFoodProvider && <Utensils className="w-4 h-4"/>}
                       {isHomeRepairProvider && <HomeIcon className="w-4 h-4" />}
-                      {isProfessionalServices && <Briefcase className="w-4 h-4" />}
+                      {(isProfessionalServices || isBeautyProvider) && <Briefcase className="w-4 h-4" />}
                       Detalles Especializados
                     </p>
                     {isHealthProvider && (<>
@@ -576,7 +576,6 @@ export default function CompanyProfilePage() {
                          )}
                     </>)}
                      {isHomeRepairProvider && (<>
-                        {provider.profileSetupData.specializedData.certifications && <p className="text-xs"><strong>Certificaciones:</strong> {provider.profileSetupData.specializedData.certifications}</p>}
                         {(provider.profileSetupData.specializedData.mainTrades?.length || 0) > 0 && (
                             <div className="flex flex-wrap gap-1">
                                 {provider.profileSetupData.specializedData.mainTrades?.map(trade => <Badge key={trade} variant="secondary">{trade}</Badge>)}
@@ -587,13 +586,19 @@ export default function CompanyProfilePage() {
                                 {provider.profileSetupData.specializedData.specificSkills?.map(skill => <Badge key={skill} variant="outline">{skill}</Badge>)}
                             </div>
                         )}
+                         {provider.profileSetupData.specializedData.certifications && <p className="text-xs pt-2 border-t mt-2"><strong>Certificaciones:</strong> {provider.profileSetupData.specializedData.certifications}</p>}
                     </>)}
-                    {isProfessionalServices && (<>
+                    {(isProfessionalServices || isBeautyProvider) && (<>
                         {provider.profileSetupData.specializedData.yearsOfExperience && <p className="text-xs"><strong>Años de Experiencia:</strong> {provider.profileSetupData.specializedData.yearsOfExperience}</p>}
                         {provider.profileSetupData.specializedData.toolsAndBrands && <p className="text-xs"><strong>Herramientas y Marcas:</strong> {provider.profileSetupData.specializedData.toolsAndBrands}</p>}
                         {(provider.profileSetupData.specializedData.keySkills?.length || 0) > 0 && (
                            <div className="flex flex-wrap gap-1 pt-2 border-t mt-2">
                                 {provider.profileSetupData.specializedData.keySkills?.map(skill => <Badge key={skill} variant="secondary">{skill}</Badge>)}
+                            </div>
+                        )}
+                        {(provider.profileSetupData.specializedData.beautyTrades?.length || 0) > 0 && (
+                           <div className="flex flex-wrap gap-1 pt-2 border-t mt-2">
+                                {provider.profileSetupData.specializedData.beautyTrades?.map(trade => <Badge key={trade} variant="secondary">{trade}</Badge>)}
                             </div>
                         )}
                     </>)}
