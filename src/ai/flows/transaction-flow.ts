@@ -227,7 +227,8 @@ export const confirmWorkReceived = ai.defineFlow(
             'details.clientRating': rating,
             'details.clientComment': comment || '',
             'details.exchangeRate': rate,
-            'details.amountUSD': transaction.amount / rate
+            'details.amountUSD': transaction.amount / rate,
+            'details.paymentRequestedAt': new Date().toISOString(), // Record when payment is formally requested
         });
     }
 );
@@ -260,6 +261,7 @@ export const payCommitment = ai.defineFlow(
             'details.paymentMethod': paymentDetails.paymentMethod,
             'details.paymentReference': paymentDetails.paymentReference,
             'details.paymentVoucherUrl': paymentDetails.paymentVoucherUrl,
+            'details.paymentSentAt': new Date().toISOString(), // Record when client sends payment
         };
 
         await updateDoc(txRef, updateData);

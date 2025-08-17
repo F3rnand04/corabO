@@ -6,7 +6,7 @@ import { useState, useEffect, useRef, ChangeEvent, useCallback } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Megaphone, Zap, Plus, Package, Wallet, MapPin, Calendar as CalendarIcon, TrendingUp } from 'lucide-react';
+import { Star, Megaphone, Zap, Plus, Package, Wallet, MapPin, Calendar as CalendarIcon, TrendingUp, Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
@@ -40,7 +40,7 @@ export function ProfileHeader() {
 
   const isProvider = currentUser.type === 'provider';
   
-  const { reputation, effectiveness, responseTime } = getUserMetrics(currentUser.id);
+  const { reputation, effectiveness, responseTime, paymentSpeed } = getUserMetrics(currentUser.id);
   const isNewProvider = responseTime === 'Nuevo';
   
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -83,6 +83,15 @@ export function ProfileHeader() {
     }
   }
 
+  const paymentSpeedColor = (speed: string | undefined) => {
+    if (!speed) return 'text-muted-foreground';
+    if (speed.includes('+')) {
+      if (parseInt(speed.replace('+', '')) >= 45) return 'text-red-500';
+      return 'text-orange-500';
+    }
+    return 'text-green-500';
+  };
+
 
   return (
     <>
@@ -114,6 +123,11 @@ export function ProfileHeader() {
                         <div className="flex items-center gap-1">
                             <TrendingUp className="w-4 h-4 text-green-500"/>
                             <span className="font-semibold text-foreground">{effectiveness.toFixed(0)}%</span>
+                        </div>
+                        <div className="w-px h-3 bg-border mx-1"></div>
+                        <div className={cn("flex items-center gap-1 font-semibold", paymentSpeedColor(paymentSpeed))}>
+                            <Timer className="w-4 h-4"/>
+                            <span>{paymentSpeed || 'N/A'}</span>
                         </div>
                     </>
                     )}

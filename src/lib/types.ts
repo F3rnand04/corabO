@@ -30,7 +30,7 @@ export type QrSession = {
 export type Notification = {
   id: string;
   userId: string;
-  type: 'new_campaign' | 'payment_reminder' | 'admin_alert' | 'welcome' | 'affiliation_request' | 'payment_warning' | 'payment_due';
+  type: 'new_campaign' | 'payment_reminder' | 'admin_alert' | 'welcome' | 'affiliation_request' | 'payment_warning' | 'payment_due' | 'new_publication';
   title: string;
   message: string;
   link?: string;
@@ -366,6 +366,8 @@ export type Transaction = {
     paymentVoucherUrl?: string;
     paymentReference?: string;
     paymentFromThirdParty?: boolean;
+    paymentRequestedAt?: string; // Timestamp for when payment was requested
+    paymentSentAt?: string; // Timestamp for when client sent payment
 
     // For system
     system?: string;
