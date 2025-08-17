@@ -190,6 +190,17 @@ export type SpecializedData = {
     licenseNumber?: string;
     specialties?: string[];
     consultationMode?: 'office' | 'home' | 'online' | 'hybrid';
+    
+    // Alimentos y Restaurantes
+    cuisineType?: string;
+    serviceOptions?: {
+        local?: boolean;
+        pickup?: boolean;
+        delivery?: boolean;
+        catering?: boolean;
+    };
+    menuUrl?: string;
+    sanitaryPermitId?: string;
 };
 
 
@@ -449,7 +460,7 @@ export const GetProfileGalleryOutputSchema = z.object({
 });
 
 export const GetProfileProductsInputSchema = z.object({
-    userId: z.string(), // providerId
+    userId: z.string(),
     limitNum: z.number().optional().default(10),
     startAfterDocId: z.string().optional(),
 });

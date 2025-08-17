@@ -1,11 +1,12 @@
 
+
 'use client';
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from '../ui/textarea';
-import { MapPin, Building, AlertCircle, Package, Hand, Star, Info, LocateFixed, Handshake, Wrench, Stethoscope, BadgeCheck, Truck } from 'lucide-react';
+import { MapPin, Building, AlertCircle, Package, Hand, Star, Info, LocateFixed, Handshake, Wrench, Stethoscope, BadgeCheck, Truck, Utensils, Link as LinkIcon } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '../ui/slider';
 import { Badge } from '../ui/badge';
@@ -21,6 +22,7 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { X } from 'lucide-react';
+import { Checkbox } from '../ui/checkbox';
 
 
 interface Step5_ProviderDetailsProps {
@@ -111,7 +113,7 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
       }
   };
 
-  const handleInputChange = (field: keyof NonNullable<ProfileSetupData['specializedData']>, value: any) => {
+  const handleSpecializedInputChange = (field: keyof NonNullable<ProfileSetupData['specializedData']>, value: any) => {
     setFormData({ 
         ...formData, 
         specializedData: {
@@ -124,16 +126,30 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
   const handleAddSpecialty = () => {
     if (currentSpecialty && !(formData.specializedData?.specialties || []).includes(currentSpecialty)) {
         const newSpecialties = [...(formData.specializedData?.specialties || []), currentSpecialty];
-        handleInputChange('specialties', newSpecialties);
+        handleSpecializedInputChange('specialties', newSpecialties);
         setCurrentSpecialty('');
     }
   };
 
   const handleRemoveSpecialty = (specToRemove: string) => {
     const newSpecialties = formData.specializedData?.specialties?.filter(spec => spec !== specToRemove);
-    handleInputChange('specialties', newSpecialties);
+    handleSpecializedInputChange('specialties', newSpecialties);
   };
   
+  const handleServiceOptionChange = (option: 'local' | 'pickup' | 'delivery' | 'catering', checked: boolean) => {
+    setFormData({
+        ...formData,
+        specializedData: {
+            ...formData.specializedData,
+            serviceOptions: {
+                ...formData.specializedData?.serviceOptions,
+                [option]: checked
+            }
+        }
+    });
+  }
+
+
   const renderSpecializedFields = () => {
     switch (formData.primaryCategory) {
       case 'Transporte y Asistencia':
@@ -145,7 +161,7 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                         id="vehicleType" 
                         placeholder="Ej: Camión 350, Grúa de Plataforma" 
                         value={formData?.specializedData?.vehicleType || ''}
-                        onChange={(e) => handleInputChange('vehicleType', e.target.value)}
+                        onChange={(e) => handleSpecializedInputChange('vehicleType', e.target.value)}
                     />
                 </div>
                 <div className="space-y-2">
@@ -154,7 +170,7 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                         id="capacity" 
                         placeholder="Ej: 3,500 Kg, 2 vehículos" 
                         value={formData?.specializedData?.capacity || ''}
-                        onChange={(e) => handleInputChange('capacity', e.target.value)}
+                        onChange={(e) => handleSpecializedInputChange('capacity', e.target.value)}
                     />
                 </div>
                  <div className="space-y-2">
@@ -163,7 +179,7 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                         id="specialConditions"
                         placeholder="Ej: Rampa hidráulica, GPS, Cava refrigerada..."
                         value={formData?.specializedData?.specialConditions || ''}
-                        onChange={(e) => handleInputChange('specialConditions', e.target.value)}
+                        onChange={(e) => handleSpecializedInputChange('specialConditions', e.target.value)}
                         rows={3}
                     />
                 </div>
@@ -178,7 +194,7 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                         id="licenseNumber" 
                         placeholder="Ej: MPPS 12345"
                         value={formData?.specializedData?.licenseNumber || ''}
-                        onChange={(e) => handleInputChange('licenseNumber', e.target.value)}
+                        onChange={(e) => handleSpecializedInputChange('licenseNumber', e.target.value)}
                     />
                 </div>
                  <div className="space-y-2">
@@ -213,7 +229,7 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                     <Label htmlFor="consultationMode" className="flex items-center gap-2"><Wrench className="w-4 h-4"/> Modalidad de Atención</Label>
                     <Select 
                         value={formData?.specializedData?.consultationMode || ''}
-                        onValueChange={(value) => handleInputChange('consultationMode', value)}
+                        onValueChange={(value) => handleSpecializedInputChange('consultationMode', value)}
                     >
                         <SelectTrigger id="consultationMode">
                             <SelectValue placeholder="Selecciona una modalidad" />
@@ -227,7 +243,48 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                     </Select>
                 </div>
             </div>
-          );
+        );
+       case 'Alimentos y Restaurantes':
+        return (
+             <div className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="cuisineType" className="flex items-center gap-2"><Utensils className="w-4 h-4"/> Tipo de Cocina</Label>
+                    <Input 
+                        id="cuisineType" 
+                        placeholder="Ej: Venezolana, Italiana, Sushi"
+                        value={formData?.specializedData?.cuisineType || ''}
+                        onChange={(e) => handleSpecializedInputChange('cuisineType', e.target.value)}
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label>Opciones de Servicio</Label>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 p-3 border rounded-md">
+                        <div className="flex items-center space-x-2"><Checkbox id="local" checked={formData.specializedData?.serviceOptions?.local} onCheckedChange={(c) => handleServiceOptionChange('local', !!c)} /><Label htmlFor="local">Consumo en Local</Label></div>
+                        <div className="flex items-center space-x-2"><Checkbox id="pickup" checked={formData.specializedData?.serviceOptions?.pickup} onCheckedChange={(c) => handleServiceOptionChange('pickup', !!c)}/><Label htmlFor="pickup">Para Llevar (Pickup)</Label></div>
+                        <div className="flex items-center space-x-2"><Checkbox id="delivery" checked={formData.specializedData?.serviceOptions?.delivery} onCheckedChange={(c) => handleServiceOptionChange('delivery', !!c)}/><Label htmlFor="delivery">Delivery Propio</Label></div>
+                        <div className="flex items-center space-x-2"><Checkbox id="catering" checked={formData.specializedData?.serviceOptions?.catering} onCheckedChange={(c) => handleServiceOptionChange('catering', !!c)}/><Label htmlFor="catering">Catering para Eventos</Label></div>
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="menuUrl" className="flex items-center gap-2"><LinkIcon className="w-4 h-4"/> Enlace al Menú</Label>
+                    <Input 
+                        id="menuUrl" 
+                        placeholder="https://ejemplo.com/menu.pdf"
+                        value={formData?.specializedData?.menuUrl || ''}
+                        onChange={(e) => handleSpecializedInputChange('menuUrl', e.target.value)}
+                    />
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="sanitaryPermitId" className="flex items-center gap-2"><BadgeCheck className="w-4 h-4"/> Permiso Sanitario (opcional)</Label>
+                    <Input 
+                        id="sanitaryPermitId" 
+                        placeholder="Nro. de permiso"
+                        value={formData?.specializedData?.sanitaryPermitId || ''}
+                        onChange={(e) => handleSpecializedInputChange('sanitaryPermitId', e.target.value)}
+                    />
+                </div>
+            </div>
+        );
       default:
         // Render general fields for all other categories
         return renderGeneralProviderFields(formData, handleFormDataChange);
