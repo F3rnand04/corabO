@@ -206,6 +206,11 @@ export type SpecializedData = {
     mainTrades?: string[];
     specificSkills?: string[];
     certifications?: string;
+
+    // Professional Services (Tech, Education, Beauty, Events)
+    keySkills?: string[];
+    toolsAndBrands?: string;
+    yearsOfExperience?: number;
 };
 
 

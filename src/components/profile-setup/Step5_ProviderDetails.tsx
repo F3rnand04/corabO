@@ -1,12 +1,11 @@
 
-
 'use client';
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from '../ui/textarea';
-import { MapPin, Building, AlertCircle, Package, Hand, Star, Info, LocateFixed, Handshake, Wrench, Stethoscope, BadgeCheck, Truck, Utensils, Link as LinkIcon } from 'lucide-react';
+import { MapPin, Building, AlertCircle, Package, Hand, Star, Info, LocateFixed, Handshake, Wrench, Stethoscope, BadgeCheck, Truck, Utensils, Link as LinkIcon, Briefcase, BrainCircuit } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '../ui/slider';
 import { Badge } from '../ui/badge';
@@ -35,30 +34,79 @@ interface Step5_ProviderDetailsProps {
 const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const homeRepairTrades = ['Plomería', 'Electricidad', 'Albañilería', 'Pintura', 'Carpintería', 'Jardinería', 'Refrigeración'];
 
-// Helper function to render the common fields
 const renderGeneralProviderFields = (
     formData: ProfileSetupData,
-    handleFormDataChange: (field: keyof ProfileSetupData, value: any) => void
-) => (
+    handleSpecializedInputChange: (field: keyof NonNullable<ProfileSetupData['specializedData']>, value: any) => void,
+    isProfessionalServices?: boolean
+) => {
+    const [currentSkill, setCurrentSkill] = useState('');
+    
+    function handleAddSkill (field: 'keySkills', currentTag: string, setTag: (val: string)) {
+        if (currentTag && !(formData.specializedData?.[field] || []).includes(currentTag)) {
+            const newSkills = [...(formData.specializedData?.[field] || []), currentTag];
+            handleSpecializedInputChange(field, newSkills);
+            setTag('');
+        }
+    };
+    
+    function handleRemoveSkill(field: 'keySkills', skillToRemove: string) {
+        const newSkills = formData.specializedData?.[field]?.filter(skill => skill !== skillToRemove);
+        handleSpecializedInputChange(field, newSkills);
+    };
+
+    return (
      <div className="space-y-4">
-        <div className="space-y-2">
-            <Label htmlFor="specialty">Especialidad / Descripción corta</Label>
-            <Textarea
-                id="specialty"
-                placeholder="Ej: Expertos en plomería y electricidad."
-                rows={2}
-                maxLength={30}
-                value={formData.specialty || ''}
-                onChange={(e) => handleFormDataChange('specialty', e.target.value)}
-            />
-             <p className="text-xs text-muted-foreground text-right">{formData.specialty?.length || 0} / 30</p>
+       {isProfessionalServices && (
+         <div className="space-y-4">
+            <div className="space-y-2">
+                <Label htmlFor="keySkills" className="flex items-center gap-2"><Briefcase className="w-4 h-4"/> Habilidades Clave</Label>
+                <div className="flex gap-2">
+                    <Input 
+                        id="keySkills" 
+                        placeholder="Ej: Desarrollo Web, Figma" 
+                        value={currentSkill}
+                        onChange={(e) => setCurrentSkill(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSkill('keySkills', currentSkill, setCurrentSkill); }}}
+                    />
+                    <Button onClick={() => handleAddSkill('keySkills', currentSkill, setCurrentSkill)} type="button">Añadir</Button>
+                </div>
+                <div className="flex flex-wrap gap-2 pt-2">
+                    {formData.specializedData?.keySkills?.map(skill => (
+                        <Badge key={skill} variant="secondary">
+                            {skill}
+                            <button onClick={() => handleRemoveSkill('keySkills', skill)} className="ml-2 rounded-full hover:bg-background/50">
+                                <X className="h-3 w-3"/>
+                            </button>
+                        </Badge>
+                    ))}
+                </div>
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="toolsAndBrands" className="flex items-center gap-2"><BrainCircuit className="w-4 h-4"/> Herramientas y Marcas</Label>
+                <Textarea
+                    id="toolsAndBrands"
+                    placeholder="Ej: Adobe Photoshop, Wella, OPI, Visual Studio Code"
+                    value={formData.specializedData?.toolsAndBrands || ''}
+                    onChange={(e) => handleSpecializedInputChange('toolsAndBrands', e.target.value)}
+                    rows={2}
+                />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="yearsOfExperience" className="flex items-center gap-2"><Wrench className="w-4 h-4"/> Años de Experiencia</Label>
+                <Input 
+                    id="yearsOfExperience"
+                    type="number"
+                    placeholder="Ej: 5"
+                    value={formData.specializedData?.yearsOfExperience || ''}
+                    onChange={(e) => handleSpecializedInputChange('yearsOfExperience', parseInt(e.target.value, 10))}
+                />
+            </div>
         </div>
-         <div className="space-y-2">
-            <Label htmlFor="website">Redes Sociales / Sitio Web (Opcional)</Label>
-            <Input id="website" placeholder="https://tu-sitio-web.com" value={formData.website || ''} onChange={(e) => handleFormDataChange('website', e.target.value)} />
-        </div>
+       )}
     </div>
-);
+    );
+};
+
 
 
 export default function Step5_ProviderDetails({ onBack, onNext, formData, setFormData }: Step5_ProviderDetailsProps) {
@@ -81,9 +129,11 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
   
   const handleMapClick = () => {
     if (formData.location) {
-        const [lat, lon] = formData.location.split(',');
-        const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
-        window.open(mapsUrl, '_blank');
+        const [lat, lon] = formData.location.split(',').map(Number);
+        if(!isNaN(lat) && !isNaN(lon)) {
+             const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+             window.open(mapsUrl, '_blank');
+        }
     } else {
         toast({
             title: "Ubicación no definida",
@@ -116,39 +166,39 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
   };
 
   const handleSpecializedInputChange = (field: keyof NonNullable<ProfileSetupData['specializedData']>, value: any) => {
-    setFormData({ 
-        ...formData, 
+    setFormData(prev => ({ 
+        ...prev, 
         specializedData: {
-            ...formData.specializedData,
+            ...prev.specializedData,
             [field]: value
         } 
-    });
+    }));
   };
-
-  const handleAddSpecialty = () => {
-    if (currentSpecialty && !(formData.specializedData?.specialties || []).includes(currentSpecialty)) {
-        const newSpecialties = [...(formData.specializedData?.specialties || []), currentSpecialty];
-        handleSpecializedInputChange('specialties', newSpecialties);
-        setCurrentSpecialty('');
+  
+  const handleAddSkill = (field: 'specialties' | 'specificSkills' | 'keySkills', currentTag: string, setTag: (val: string)) => {
+    if (currentTag && !(formData.specializedData?.[field] || []).includes(currentTag)) {
+        const newSkills = [...(formData.specializedData?.[field] || []), currentTag];
+        handleSpecializedInputChange(field, newSkills);
+        setTag('');
     }
   };
 
-  const handleRemoveSpecialty = (specToRemove: string) => {
-    const newSpecialties = formData.specializedData?.specialties?.filter(spec => spec !== specToRemove);
-    handleSpecializedInputChange('specialties', newSpecialties);
+  const handleRemoveSkill = (field: 'specialties' | 'specificSkills' | 'keySkills', skillToRemove: string) => {
+    const newSkills = formData.specializedData?.[field]?.filter(skill => skill !== skillToRemove);
+    handleSpecializedInputChange(field, newSkills);
   };
   
   const handleServiceOptionChange = (option: 'local' | 'pickup' | 'delivery' | 'catering', checked: boolean) => {
-    setFormData({
-        ...formData,
+    setFormData(prev => ({
+        ...prev,
         specializedData: {
-            ...formData.specializedData,
+            ...prev.specializedData,
             serviceOptions: {
-                ...formData.specializedData?.serviceOptions,
+                ...prev.specializedData?.serviceOptions,
                 [option]: checked
             }
         }
-    });
+    }));
   }
 
   const handleTradeChange = (trade: string, checked: boolean) => {
@@ -159,21 +209,8 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
     handleSpecializedInputChange('mainTrades', newTrades);
   }
 
-  const handleAddSkill = () => {
-    if (currentSkill && !(formData.specializedData?.specificSkills || []).includes(currentSkill)) {
-        const newSkills = [...(formData.specializedData?.specificSkills || []), currentSkill];
-        handleSpecializedInputChange('specificSkills', newSkills);
-        setCurrentSkill('');
-    }
-  };
-
-  const handleRemoveSkill = (skillToRemove: string) => {
-    const newSkills = formData.specializedData?.specificSkills?.filter(skill => skill !== skillToRemove);
-    handleSpecializedInputChange('specificSkills', newSkills);
-  };
-
-
   const renderSpecializedFields = () => {
+    const isProfessionalServicesCategory = ['Tecnología y Soporte', 'Educación', 'Eventos', 'Belleza'].includes(formData.primaryCategory || '');
     switch (formData.primaryCategory) {
       case 'Transporte y Asistencia':
          return (
@@ -231,17 +268,17 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                              onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
                                     e.preventDefault();
-                                    handleAddSpecialty();
+                                    handleAddSkill('specialties', currentSpecialty, setCurrentSpecialty);
                                 }
                             }}
                         />
-                        <Button onClick={handleAddSpecialty} type="button">Añadir</Button>
+                        <Button onClick={() => handleAddSkill('specialties', currentSpecialty, setCurrentSpecialty)} type="button">Añadir</Button>
                     </div>
                     <div className="flex flex-wrap gap-2 pt-2">
                         {formData.specializedData?.specialties?.map(spec => (
                             <Badge key={spec} variant="secondary">
                                 {spec}
-                                <button onClick={() => handleRemoveSpecialty(spec)} className="ml-2 rounded-full hover:bg-background/50">
+                                <button onClick={() => handleRemoveSkill('specialties', spec)} className="ml-2 rounded-full hover:bg-background/50">
                                     <X className="h-3 w-3"/>
                                 </button>
                             </Badge>
@@ -330,15 +367,15 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                             placeholder="Ej: Destape de cañerías" 
                             value={currentSkill}
                             onChange={(e) => setCurrentSkill(e.target.value)}
-                             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSkill(); }}}
+                             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSkill('specificSkills', currentSkill, setCurrentSkill); }}}
                         />
-                        <Button onClick={handleAddSkill} type="button">Añadir</Button>
+                        <Button onClick={() => handleAddSkill('specificSkills', currentSkill, setCurrentSkill)} type="button">Añadir</Button>
                     </div>
                     <div className="flex flex-wrap gap-2 pt-2">
                         {formData.specializedData?.specificSkills?.map(skill => (
                             <Badge key={skill} variant="secondary">
                                 {skill}
-                                <button onClick={() => handleRemoveSkill(skill)} className="ml-2 rounded-full hover:bg-background/50">
+                                <button onClick={() => handleRemoveSkill('specificSkills', skill)} className="ml-2 rounded-full hover:bg-background/50">
                                     <X className="h-3 w-3"/>
                                 </button>
                             </Badge>
@@ -358,8 +395,7 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
             </div>
         );
       default:
-        // Render general fields for all other categories
-        return renderGeneralProviderFields(formData, handleFormDataChange);
+        return renderGeneralProviderFields(formData, handleSpecializedInputChange, isProfessionalServicesCategory);
     }
   };
 
