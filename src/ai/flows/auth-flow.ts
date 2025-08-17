@@ -6,7 +6,7 @@
 
 import { ai } from '@/ai/genkit';
 import { getFirestoreDb } from '@/lib/firebase-server';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 import { z } from 'zod';
 import { credicoraLevels } from '@/lib/types';
@@ -44,14 +44,12 @@ export const getOrCreateUser = ai.defineFlow(
       let user = userDocSnap.data() as User;
       const updates: Partial<User> = {};
 
-      // Inactivity Logic
+      // Inactivity Logic: Pause account after 45 days.
+      // The effectiveness penalty is now handled centrally in CoraboContext.
       if (user.lastActivityAt) {
           const daysSinceLastActivity = differenceInDays(now, new Date(user.lastActivityAt));
-          if (daysSinceLastActivity >= 45) {
+          if (daysSinceLastActivity >= 45 && !user.isPaused) {
               updates.isPaused = true;
-              updates.effectiveness = (user.effectiveness || 100) * 0.67; // Penalize effectiveness
-          } else if (daysSinceLastActivity >= 31) {
-              updates.effectiveness = (user.effectiveness || 100) * 0.67;
           }
       }
       
@@ -65,7 +63,7 @@ export const getOrCreateUser = ai.defineFlow(
       
       // Apply updates if there are any
       if (Object.keys(updates).length > 0) {
-        await setDoc(userDocRef, updates, { merge: true });
+        await updateDoc(userDocRef, updates, { merge: true });
         user = { ...user, ...updates }; // Update local user object
       }
 

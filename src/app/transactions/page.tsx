@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from "react";
@@ -108,7 +109,7 @@ export default function TransactionsPage() {
 
     const isModuleActive = currentUser.isTransactionsActive ?? false;
     
-    const { reputation, effectiveness } = useMemo(() => getUserMetrics(currentUser.id, transactions), [currentUser.id, transactions, getUserMetrics]);
+    const { reputation, effectiveness } = useMemo(() => getUserMetrics(currentUser.id), [currentUser.id, getUserMetrics]);
 
     const pendingTx = useMemo(() => transactions.filter(t => {
         if (currentUser.type === 'provider') {
@@ -222,7 +223,7 @@ export default function TransactionsPage() {
                         <Card>
                             <CardHeader>
                                 <CardTitle className="text-lg flex justify-between items-center">
-                                    <span>Mi Progreso</span>
+                                    <span>Mi Reputación</span>
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <Button variant="outline" size="sm">
@@ -246,7 +247,7 @@ export default function TransactionsPage() {
                             <CardContent>
                                <div className="space-y-3">
                                     <div className="space-y-1">
-                                        <div className="flex justify-between text-xs font-medium"><span>Reputación</span><span>{reputation.toFixed(1)}/5.0</span></div>
+                                        <div className="flex justify-between text-xs font-medium"><span>Reputación (Estrellas)</span><span>{reputation.toFixed(1)}/5.0</span></div>
                                         <Progress value={(reputation / 5) * 100} />
                                     </div>
                                     <div className="space-y-1">

@@ -255,7 +255,7 @@ export default function CompanyProfilePage() {
   
   const distance = getDistanceToProvider(provider);
   
-  const { reputation, effectiveness, responseTime } = getUserMetrics(provider.id, transactions);
+  const { reputation, effectiveness, responseTime } = getUserMetrics(provider.id);
   const isNewProvider = responseTime === 'Nuevo';
 
   const profileData = {
