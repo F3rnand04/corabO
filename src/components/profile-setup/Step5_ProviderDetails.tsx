@@ -34,82 +34,6 @@ const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sába
 const homeRepairTrades = ['Plomería', 'Electricidad', 'Albañilería', 'Pintura', 'Carpintería', 'Jardinería', 'Refrigeración'];
 const beautyTrades = ['Manicure y Pedicure', 'Estilismo y Peluquería', 'Maquillaje Profesional', 'Masajes', 'Cuidado Facial', 'Depilación', 'Pestañas y Cejas'];
 
-// This is now a proper React component that can manage its own state.
-const GeneralProviderFields = ({ 
-    formData, 
-    handleSpecializedInputChange 
-}: {
-    formData: ProfileSetupData;
-    handleSpecializedInputChange: (field: keyof NonNullable<ProfileSetupData['specializedData']>, value: any) => void;
-}) => {
-    const [currentSkill, setCurrentSkill] = useState('');
-    
-    const handleAddSkill = (field: 'keySkills') => {
-        if (currentSkill && !(formData.specializedData?.[field] || []).includes(currentSkill)) {
-            const newSkills = [...(formData.specializedData?.[field] || []), currentSkill];
-            handleSpecializedInputChange(field, newSkills);
-            setCurrentSkill('');
-        }
-    };
-    
-    const handleRemoveSkill = (field: 'keySkills', skillToRemove: string) => {
-        const newSkills = formData.specializedData?.[field]?.filter(skill => skill !== skillToRemove);
-        handleSpecializedInputChange(field, newSkills);
-    };
-
-    return (
-     <div className="space-y-4">
-        <div className="space-y-4">
-            <div className="space-y-2">
-                <Label htmlFor="keySkills" className="flex items-center gap-2"><Briefcase className="w-4 h-4"/> Habilidades Clave</Label>
-                <div className="flex gap-2">
-                    <Input 
-                        id="keySkills" 
-                        placeholder="Ej: Desarrollo Web, Figma" 
-                        value={currentSkill}
-                        onChange={(e) => setCurrentSkill(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSkill('keySkills'); }}}
-                    />
-                    <Button onClick={() => handleAddSkill('keySkills')} type="button">Añadir</Button>
-                </div>
-                <div className="flex flex-wrap gap-2 pt-2">
-                    {formData.specializedData?.keySkills?.map(skill => (
-                        <Badge key={skill} variant="secondary">
-                            {skill}
-                            <button onClick={() => handleRemoveSkill('keySkills', skill)} className="ml-2 rounded-full hover:bg-background/50">
-                                <X className="h-3 w-3"/>
-                            </button>
-                        </Badge>
-                    ))}
-                </div>
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="toolsAndBrands" className="flex items-center gap-2"><BrainCircuit className="w-4 h-4"/> Herramientas y Marcas</Label>
-                <Textarea
-                    id="toolsAndBrands"
-                    placeholder="Ej: Adobe Photoshop, Wella, OPI, Visual Studio Code"
-                    value={formData.specializedData?.toolsAndBrands || ''}
-                    onChange={(e) => handleSpecializedInputChange('toolsAndBrands', e.target.value)}
-                    rows={2}
-                />
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="yearsOfExperience" className="flex items-center gap-2"><Wrench className="w-4 h-4"/> Años de Experiencia</Label>
-                <Input 
-                    id="yearsOfExperience"
-                    type="number"
-                    placeholder="Ej: 5"
-                    value={formData.specializedData?.yearsOfExperience || ''}
-                    onChange={(e) => handleSpecializedInputChange('yearsOfExperience', parseInt(e.target.value, 10) || 0)}
-                />
-            </div>
-        </div>
-    </div>
-    );
-};
-
-
-
 export default function Step5_ProviderDetails({ onBack, onNext, formData, setFormData }: Step5_ProviderDetailsProps) {
   const router = useRouter();
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
@@ -119,6 +43,7 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
   const MAX_RADIUS_FREE = 10;
   const isOverFreeRadius = (formData.serviceRadius || 0) > MAX_RADIUS_FREE && !(currentUser?.isSubscribed);
   const isProfessional = formData.providerType === 'professional';
+  
   const [currentSpecialty, setCurrentSpecialty] = useState('');
   const [currentSkill, setCurrentSkill] = useState('');
 
@@ -166,56 +91,103 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
       }
   };
 
-    const handleSpecializedInputChange = useCallback((field: keyof NonNullable<ProfileSetupData['specializedData']>, value: any) => {
-        setFormData(prev => ({
-            ...prev,
-            specializedData: {
-                ...prev.specializedData,
-                [field]: value
-            }
-        }));
-    }, [setFormData]);
+  const handleSpecializedInputChange = useCallback((field: keyof NonNullable<ProfileSetupData['specializedData']>, value: any) => {
+      setFormData(prev => ({
+          ...prev,
+          specializedData: {
+              ...prev.specializedData,
+              [field]: value
+          }
+      }));
+  }, [setFormData]);
 
-    const handleAddSkill = useCallback((field: 'specialties' | 'specificSkills' | 'keySkills' | 'beautyTrades' | 'mainTrades', currentTag: string, setTag: (val: string)) => {
-        if (currentTag && !(formData.specializedData?.[field] || []).includes(currentTag)) {
-            const newSkills = [...(formData.specializedData?.[field] || []), currentTag];
-            handleSpecializedInputChange(field, newSkills);
-            setTag('');
-        }
-    }, [formData.specializedData, handleSpecializedInputChange]);
+  const handleAddSkill = useCallback((field: 'specialties' | 'specificSkills' | 'keySkills' | 'beautyTrades' | 'mainTrades', currentTag: string, setTag: (val: string)) => {
+      if (currentTag && !(formData.specializedData?.[field] || []).includes(currentTag)) {
+          const newSkills = [...(formData.specializedData?.[field] || []), currentTag];
+          handleSpecializedInputChange(field, newSkills);
+          setTag('');
+      }
+  }, [formData.specializedData, handleSpecializedInputChange]);
 
-    const handleRemoveSkill = useCallback((field: 'specialties' | 'specificSkills' | 'keySkills' | 'beautyTrades' | 'mainTrades', skillToRemove: string) => {
-        const newSkills = formData.specializedData?.[field]?.filter(skill => skill !== skillToRemove);
-        handleSpecializedInputChange(field, newSkills);
-    }, [formData.specializedData, handleSpecializedInputChange]);
-  
-    const handleServiceOptionChange = useCallback((option: 'local' | 'pickup' | 'delivery' | 'catering', checked: boolean) => {
-        setFormData(prev => ({
-            ...prev,
-            specializedData: {
-                ...prev.specializedData,
-                serviceOptions: {
-                    ...prev.specializedData?.serviceOptions,
-                    [option]: checked
-                }
-            }
-        }));
-    }, [setFormData]);
+  const handleRemoveSkill = useCallback((field: 'specialties' | 'specificSkills' | 'keySkills' | 'beautyTrades' | 'mainTrades', skillToRemove: string) => {
+      const newSkills = formData.specializedData?.[field]?.filter(skill => skill !== skillToRemove);
+      handleSpecializedInputChange(field, newSkills);
+  }, [formData.specializedData, handleSpecializedInputChange]);
 
-    const handleTradeChange = useCallback((field: 'mainTrades' | 'beautyTrades', trade: string, checked: boolean) => {
-        const currentTrades = formData.specializedData?.[field] || [];
-        const newTrades = checked
-            ? [...currentTrades, trade]
-            : currentTrades.filter(t => t !== trade);
-        handleSpecializedInputChange(field, newTrades);
-    }, [formData.specializedData, handleSpecializedInputChange]);
+  const handleServiceOptionChange = useCallback((option: 'local' | 'pickup' | 'delivery' | 'catering', checked: boolean) => {
+      setFormData(prev => ({
+          ...prev,
+          specializedData: {
+              ...prev.specializedData,
+              serviceOptions: {
+                  ...prev.specializedData?.serviceOptions,
+                  [option]: checked
+              }
+          }
+      }));
+  }, [setFormData]);
 
+  const handleTradeChange = useCallback((field: 'mainTrades' | 'beautyTrades', trade: string, checked: boolean) => {
+      const currentTrades = formData.specializedData?.[field] || [];
+      const newTrades = checked
+          ? [...currentTrades, trade]
+          : currentTrades.filter(t => t !== trade);
+      handleSpecializedInputChange(field, newTrades);
+  }, [formData.specializedData, handleSpecializedInputChange]);
 
   const renderSpecializedFields = () => {
     const professionalServicesCategories = ['Tecnología y Soporte', 'Educación', 'Eventos'];
 
     if (professionalServicesCategories.includes(formData.primaryCategory || '')) {
-      return <GeneralProviderFields formData={formData} handleSpecializedInputChange={handleSpecializedInputChange} />;
+      return (
+         <div className="space-y-4">
+            <div className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="keySkills" className="flex items-center gap-2"><Briefcase className="w-4 h-4"/> Habilidades Clave</Label>
+                    <div className="flex gap-2">
+                        <Input 
+                            id="keySkills" 
+                            placeholder="Ej: Desarrollo Web, Figma" 
+                            value={currentSkill}
+                            onChange={(e) => setCurrentSkill(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSkill('keySkills', currentSkill, setCurrentSkill); }}}
+                        />
+                        <Button onClick={() => handleAddSkill('keySkills', currentSkill, setCurrentSkill)} type="button">Añadir</Button>
+                    </div>
+                    <div className="flex flex-wrap gap-2 pt-2">
+                        {formData.specializedData?.keySkills?.map(skill => (
+                            <Badge key={skill} variant="secondary">
+                                {skill}
+                                <button onClick={() => handleRemoveSkill('keySkills', skill)} className="ml-2 rounded-full hover:bg-background/50">
+                                    <X className="h-3 w-3"/>
+                                </button>
+                            </Badge>
+                        ))}
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="toolsAndBrands" className="flex items-center gap-2"><BrainCircuit className="w-4 h-4"/> Herramientas y Marcas</Label>
+                    <Textarea
+                        id="toolsAndBrands"
+                        placeholder="Ej: Adobe Photoshop, Wella, OPI, Visual Studio Code"
+                        value={formData.specializedData?.toolsAndBrands || ''}
+                        onChange={(e) => handleSpecializedInputChange('toolsAndBrands', e.target.value)}
+                        rows={2}
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="yearsOfExperience" className="flex items-center gap-2"><Wrench className="w-4 h-4"/> Años de Experiencia</Label>
+                    <Input 
+                        id="yearsOfExperience"
+                        type="number"
+                        placeholder="Ej: 5"
+                        value={formData.specializedData?.yearsOfExperience || ''}
+                        onChange={(e) => handleSpecializedInputChange('yearsOfExperience', parseInt(e.target.value, 10) || 0)}
+                    />
+                </div>
+            </div>
+        </div>
+      );
     }
     
     switch (formData.primaryCategory) {
@@ -233,7 +205,6 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                         ))}
                     </div>
                 </div>
-                 <GeneralProviderFields formData={formData} handleSpecializedInputChange={handleSpecializedInputChange} />
             </div>
         );
       case 'Transporte y Asistencia':
@@ -427,7 +398,6 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
     }
   };
 
-  
   return (
     <>
     <div className="space-y-8">
@@ -636,3 +606,5 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
     </>
   );
 }
+
+    

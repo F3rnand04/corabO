@@ -47,7 +47,6 @@ describe('Login and Auth Flow - Integration Test', () => {
     const db = testEnv.unauthenticatedContext().firestore();
     mockedGetDb.mockReturnValue(db);
     
-    // Arrange: Create a user document in the database first.
     const existingUserData = { id: 'user_exists', name: 'Existing User', email: 'exists@test.com' };
     await setDoc(doc(db, 'users', 'user_exists'), existingUserData);
 
@@ -59,10 +58,8 @@ describe('Login and Auth Flow - Integration Test', () => {
         emailVerified: true,
     } as FirebaseUser;
     
-    // Act: Call the flow.
     const user = await getOrCreateUser(firebaseUserMock);
 
-    // Assert: The flow should return the user data from the database.
     expect(user).toBeDefined();
     expect(user.id).toBe('user_exists');
     expect(user.name).toBe('Existing User');
@@ -72,7 +69,6 @@ describe('Login and Auth Flow - Integration Test', () => {
     const db = testEnv.unauthenticatedContext().firestore();
     mockedGetDb.mockReturnValue(db);
     
-    // Arrange: Mock a Firebase user that is not yet in our database.
     const firebaseUserMock = {
         uid: 'user_new',
         displayName: 'New User',
@@ -81,10 +77,8 @@ describe('Login and Auth Flow - Integration Test', () => {
         emailVerified: true,
     } as FirebaseUser;
 
-    // Act: Call the flow.
     const user = await getOrCreateUser(firebaseUserMock);
 
-    // Assert: A new user object should be created and returned.
     expect(user).toBeDefined();
     expect(user.id).toBe('user_new');
     expect(user.name).toBe('New User');

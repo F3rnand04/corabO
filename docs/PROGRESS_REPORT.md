@@ -12,7 +12,7 @@ La aplicación ha evolucionado hacia una arquitectura moderna y robusta Cliente-
 -   **Frontend:** Construido con React, TypeScript y componentes de **ShadCN/UI** sobre Tailwind CSS.
 -   **Backend (Lógica de Negocio):** La lógica crítica (creación de usuarios, publicaciones, transacciones, etc.) se gestiona a través de **flujos de Genkit**, marcados con la directiva `'use server'`. Esto asegura una separación clara entre el código que se ejecuta en el servidor y el que se ejecuta en el navegador.
 -   **Base de Datos y Autenticación:** Se utiliza **Firebase** como la plataforma principal:
-    -   **Firestore:** Actúa como la base de datos en tiempo real para toda la información (usuarios, publicaciones, transacciones, conversaciones).
+    -   **Firestore:** Actúa como la base de datos en tiempo real para toda la información (usuarios, publicaciones, transacciones).
     -   **Firebase Authentication:** Gestiona el registro y la autenticación de usuarios de forma segura (actualmente con Google).
 -   **Gestión de Estado (Cliente):** El `CoraboContext` (`src/contexts/CoraboContext.tsx`) funciona como el "cerebro" del lado del cliente. Se suscribe a los datos de Firestore en tiempo real para mantener la interfaz actualizada y actúa como un puente, llamando a los flujos de Genkit del backend para ejecutar acciones y persistir cambios.
 
@@ -33,33 +33,22 @@ El enrutamiento está centralizado y controlado lógicamente por el componente `
 
 ## 3. Funcionalidad y Características Principales
 
-### 3.1. Sistema de Reputación Dinámico
-El corazón de la confianza en Corabo. Es un sistema 100% funcional y automatizado que calcula la reputación de un usuario en tiempo real.
--   **Calificación por Estrellas:** Basada en el promedio de las calificaciones de los clientes.
--   **Índice de Efectividad:** Mide la fiabilidad. Comienza en 100% y se ajusta dinámicamente:
-    -   **Aumenta** con cada transacción completada con éxito.
-    -   **Disminuye** por disputas o cancelaciones.
--   **Agilidad de Pago:** Mide la rapidez con la que un cliente paga después de que un servicio es marcado como finalizado. Se categoriza y colorea para una fácil visualización (ej., "00-05 min" en verde, "+45 min" en rojo).
--   **Gestión de Inactividad:** Las cuentas se pausan automáticamente tras 45 días de inactividad para mantener la plataforma relevante.
+### 3.1. Sistema de Reputación y Perfiles Especializados
+-   **Reputación Dinámica:** La calificación por estrellas, el índice de efectividad y la agilidad de pago se calculan y muestran en tiempo real.
+-   **Perfiles Especializados:** Dependiendo de la categoría del proveedor (Salud, Hogar, Belleza, etc.), se muestran campos y detalles específicos en la configuración y en la vista pública, mejorando la calidad de la información.
 
-### 3.2. Gestión de Perfil y Publicaciones
--   **Autenticación Real:** El inicio de sesión con Google funciona y está conectado al emulador de Firebase.
--   **Perfiles Dinámicos:** La vista del perfil de un proveedor (`/companies/[id]`) cambia automáticamente según si ofrece `'service'` (galería tipo Instagram) o `'product'` (catálogo de productos con carrito).
--   **Creación de Contenido:** Los proveedores pueden subir nuevas publicaciones (imágenes/videos) o productos a través del diálogo de carga (`UploadDialog`), que invoca a los flujos seguros de Genkit.
+### 3.2. Panel de Control del Proveedor (`/transactions`)
+-   **Dashboard Financiero:** Los proveedores ahora tienen un panel de control con gráficos de líneas y de torta que muestran la evolución de sus ingresos/egresos y la distribución de sus finanzas.
+-   **Incentivo a la Suscripción:** Se ha integrado una tarjeta persuasiva que muestra los beneficios de suscribirse para mejorar la monetización.
 
 ### 3.3. Interacción y Transacciones
--   **Chat y Propuestas:** La mensajería entre usuarios está operativa. Los proveedores pueden enviar "Propuestas de Acuerdo" formales desde el chat.
--   **Ciclo de Vida de Transacciones:** El flujo completo está implementado:
-    1.  Proveedor marca trabajo como finalizado.
-    2.  Cliente confirma la recepción y califica.
-    3.  El sistema registra el **timestamp de la solicitud de pago**.
-    4.  Cliente registra el pago, y el sistema registra el **timestamp del envío del pago**.
-    5.  Proveedor confirma la recepción del pago, completando la transacción.
+-   **Chat y Propuestas:** La mensajería entre usuarios está operativa, con la capacidad de enviar "Propuestas de Acuerdo" formales desde el chat.
+-   **Ciclo de Vida de Transacciones:** El flujo completo (finalización, calificación, pago, confirmación) está implementado y es gestionado de forma segura por el backend.
 
 ### 3.4. Sistema de Notificaciones Inteligente
--   **Gestión de Cobranza:** El sistema envía recordatorios de pago automáticos y proactivos (7, 2 y 1 día antes del vencimiento). Si un pago se retrasa, las notificaciones escalan, primero al usuario con advertencias y luego al administrador para una intervención directa.
--   **Marketing Dirigido:** Se envían notificaciones moderadas y relevantes sobre nuevas campañas o productos a los usuarios interesados, basándose en sus contactos y categorías de interés.
+-   **Gestión de Cobranza:** El sistema envía recordatorios de pago automáticos y alertas de morosidad.
+-   **Marketing Dirigido:** Se envían notificaciones de campañas a usuarios segmentados por intereses.
 
 ### 3.5. Estabilidad y Pruebas
--   **Pipeline de Integración Corregido:** Todos los tests de integración (`login`, `activación`, `paginación`) han sido reparados y actualizados para reflejar la lógica actual, asegurando la estabilidad de las funcionalidades clave.
+-   **Pipeline de Integración Actualizado:** Todos los tests de integración (`login`, `activación`, `paginación`, `publicación`) han sido actualizados para reflejar la arquitectura y lógica actual, asegurando la estabilidad de las funcionalidades clave.
 -   **Estructura de Proyecto Limpia:** Se han eliminado rutas y componentes redundantes, y la configuración de Jest se ha estandarizado.

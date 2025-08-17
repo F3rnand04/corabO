@@ -53,7 +53,6 @@ describe('Activation Flow - Integration Test', () => {
   });
 
   afterAll(async () => {
-    // FIX: Check if testEnv was successfully initialized before cleanup.
     if (testEnv) {
       await testEnv.cleanup();
     }
@@ -66,42 +65,35 @@ describe('Activation Flow - Integration Test', () => {
   });
   
   test('should redirect to /initial-setup if user has not completed it', () => {
-    // Arrange: User exists but initial setup is incomplete
     mockCurrentUser = {
       id: 'user1',
       name: 'Test User',
       isInitialSetupComplete: false,
     } as User;
 
-    // Act: Render the component and click the button
     render(<ActivationWarning userType="provider" />);
     const activationButton = screen.getByText('Activar ahora →');
     fireEvent.click(activationButton);
 
-    // Assert: The user is redirected to the initial setup page
     expect(mockRouter.push).toHaveBeenCalledWith('/initial-setup');
   });
   
   test('should redirect to /profile-setup/verify-id if setup is complete but ID is not verified', () => {
-    // Arrange: User has completed initial setup but ID is not verified
     mockCurrentUser = {
       id: 'user2',
       name: 'Test User 2',
       isInitialSetupComplete: true,
-      idVerificationStatus: 'pending', // or 'rejected'
+      idVerificationStatus: 'pending', 
     } as User;
 
-    // Act: Render the component and click the button
     render(<ActivationWarning userType="provider" />);
     const activationButton = screen.getByText('Activar ahora →');
     fireEvent.click(activationButton);
 
-    // Assert: The user is redirected to the ID verification page
     expect(mockRouter.push).toHaveBeenCalledWith('/profile-setup/verify-id');
   });
 
   test('should redirect to /transactions/settings if ID is verified but transactions are inactive', () => {
-    // Arrange: User is fully verified but transactions module is not yet active
     mockCurrentUser = {
       id: 'user3',
       name: 'Test User 3',
@@ -110,12 +102,10 @@ describe('Activation Flow - Integration Test', () => {
       isTransactionsActive: false,
     } as User;
 
-    // Act: Render the component and click the button
     render(<ActivationWarning userType="provider" />);
     const activationButton = screen.getByText('Activar ahora →');
     fireEvent.click(activationButton);
 
-    // Assert: The user is redirected to the final activation step
     expect(mockRouter.push).toHaveBeenCalledWith('/transactions/settings');
   });
 });

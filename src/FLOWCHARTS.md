@@ -24,27 +24,31 @@ graph TD
 
 ---
 
-## 2. Flujo de Configuración de Perfil y Decisión de Vista
+## 2. Flujo de Configuración de Perfil y Especialización
 
-Describe cómo un usuario configura su perfil y cómo esto determina la interfaz que se le presenta a él y a otros.
+Describe cómo un usuario configura su perfil y cómo se muestran detalles específicos según su categoría.
 
 ```mermaid
 graph TD
     A[Nuevo Usuario Completa Registro] --> B[Accede a Configuración de Perfil /profile-setup];
-    B --> C{Paso 1: Elige Tipo};
-    C -- "Cliente" --> E[Continúa configuración de cliente (simplificada)];
-    C -- "Proveedor" --> D{Paso 5: ¿Qué ofreces?};
-    D -- "Servicios" --> F[Guarda offerType = 'service'];
-    D -- "Productos" --> G[Guarda offerType = 'product'];
-    E --> H[Finaliza y va al Perfil];
-    F --> H;
-    G --> H;
-
+    B --> C{Paso 1: Elige Tipo de Perfil};
+    C -- "Cliente" --> F[Continúa configuración de cliente];
+    C -- "Proveedor" --> D{Paso 3: Elige Categoría};
+    D -- "Salud" --> E_Health[Paso 5: Muestra campos de Licencia, Especialidades, etc.];
+    D -- "Hogar y Reparaciones" --> E_Home[Paso 5: Muestra campos de Oficios, Habilidades, etc.];
+    D -- "Belleza" --> E_Beauty[Paso 5: Muestra campos de Oficios, Habilidades, etc.];
+    D -- "Otros" --> E_General[Paso 5: Muestra campos generales de Habilidades, Experiencia, etc.];
+    
     subgraph "Renderizado de Perfil (/companies/[id])"
         direction LR
-        H --> I{Leer offerType del Proveedor};
-        I -- "'product'" --> J[Mostrar Vista de Catálogo de Productos];
-        I -- "'service'" --> K[Mostrar Vista de Galería de Servicios];
+        E_Health --> G{Leer datos del Proveedor};
+        E_Home --> G;
+        E_Beauty --> G;
+        E_General --> G;
+        G --> H[Mostrar información general];
+        G --> I{¿Tiene datos especializados?};
+        I -- Sí --> J[Renderizar sección de Detalles Especializados (Badges, etc.)];
+        I -- No --> K[Ocultar sección de Detalles];
     end
 ```
 
@@ -83,28 +87,25 @@ graph TD
 
 ---
 
-## 4. Flujo de Pago: Suscrito vs. No Suscrito
+## 4. Flujo de Panel de Control del Proveedor
 
-*Este flujo no cambia en su lógica de negocio, pero ahora las actualizaciones de estado de la transacción son manejadas por el backend.*
+Describe cómo un proveedor interactúa con su nuevo dashboard financiero.
 
 ```mermaid
 graph TD
-    A[Cliente y Proveedor aceptan un Acuerdo de Servicio] --> B[Se crea una transacción con estado 'Acuerdo Aceptado'];
-    B --> C{¿El CLIENTE está suscrito y verificado?};
-
-    C -- Sí (Suscrito) --> D[El Proveedor realiza el trabajo/servicio];
-    D --> E[El Cliente confirma la recepción del servicio];
-    E --> F[El Cliente procede a la pantalla de calificación y PAGO];
-    F --> G[El Proveedor confirma el pago];
-    G --> H[<B>Transacción Finalizada</B>];
-
-    C -- No (No Suscrito) --> I[Estado de la transacción cambia a 'Finalizado - Pendiente de Pago'];
-    I --> J[El sistema solicita al Cliente que PAGUE POR ADELANTADO];
-    J --> K{Cliente realiza el pago?};
-    K -- Sí --> L[Proveedor recibe notificación de pago y realiza el trabajo];
-    K -- No --> M[La transacción permanece pendiente de pago];
-    L --> G;
+    A[Proveedor accede a /transactions] --> B[Se renderiza el Panel de Control];
+    subgraph "Panel de Control"
+      B --> C[Componente `TransactionsLineChart` muestra ingresos/egresos históricos y pendientes];
+      B --> D[Componente `TransactionsPieChart` muestra distribución financiera actual];
+      B --> E[Botones de acción: 'Pendientes', 'Historial', 'Compromisos'];
+      B --> F{¿Usuario suscrito?};
+      F -- No --> G[Muestra tarjeta de invitación a suscribirse];
+      F -- Sí --> H[Oculta tarjeta de invitación];
+    end
+    E --> I[Usuario hace clic en 'Ver Historial'];
+    I --> J[Se renderiza el componente `TransactionList` con las transacciones filtradas por estado 'Pagado'/'Resuelto'];
 ```
+
 
 ---
 
