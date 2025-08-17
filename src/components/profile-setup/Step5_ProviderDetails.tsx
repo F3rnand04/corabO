@@ -16,7 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ProfileSetupData } from '@/lib/types';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { useToast } from '@/hooks/use-toast';
@@ -31,17 +31,15 @@ interface Step5_ProviderDetailsProps {
   setFormData: (data: ProfileSetupData) => void;
 }
 
-interface GeneralProviderFieldsProps {
-    formData: ProfileSetupData;
-    handleSpecializedInputChange: (field: keyof NonNullable<ProfileSetupData['specializedData']>, value: any) => void
-}
-
 const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const homeRepairTrades = ['Plomería', 'Electricidad', 'Albañilería', 'Pintura', 'Carpintería', 'Jardinería', 'Refrigeración'];
-const beautyTrades = ['Manicure y Pedicure', 'Estilismo y Peluquería', 'Maquillaje Profesional', 'Masajes', 'Cuidado Facial', 'Depilación'];
+const beautyTrades = ['Manicure y Pedicure', 'Estilismo y Peluquería', 'Maquillaje Profesional', 'Masajes', 'Cuidado Facial', 'Depilación', 'Pestañas y Cejas'];
 
 // This is now a proper React component that can manage its own state.
-const GeneralProviderFields = ({ formData, handleSpecializedInputChange }: GeneralProviderFieldsProps) => {
+const GeneralProviderFields = ({ formData, handleSpecializedInputChange }: {
+    formData: ProfileSetupData;
+    handleSpecializedInputChange: (field: keyof NonNullable<ProfileSetupData['specializedData']>, value: any) => void;
+}) => {
     const [currentSkill, setCurrentSkill] = useState('');
     
     const handleAddSkill = (field: 'keySkills') => {
@@ -166,49 +164,50 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
       }
   };
 
-  const handleSpecializedInputChange = (field: keyof NonNullable<ProfileSetupData['specializedData']>, value: any) => {
-    setFormData(prev => ({ 
-        ...prev, 
-        specializedData: {
-            ...prev.specializedData,
-            [field]: value
-        } 
-    }));
-  };
-  
-  const handleAddSkill = (field: 'specialties' | 'specificSkills' | 'keySkills' | 'beautyTrades' | 'mainTrades', currentTag: string, setTag: (val: string)) => {
-    if (currentTag && !(formData.specializedData?.[field] || []).includes(currentTag)) {
-        const newSkills = [...(formData.specializedData?.[field] || []), currentTag];
-        handleSpecializedInputChange(field, newSkills);
-        setTag('');
-    }
-  };
-
-  const handleRemoveSkill = (field: 'specialties' | 'specificSkills' | 'keySkills' | 'beautyTrades' | 'mainTrades', skillToRemove: string) => {
-    const newSkills = formData.specializedData?.[field]?.filter(skill => skill !== skillToRemove);
-    handleSpecializedInputChange(field, newSkills);
-  };
-  
-  const handleServiceOptionChange = (option: 'local' | 'pickup' | 'delivery' | 'catering', checked: boolean) => {
-    setFormData(prev => ({
-        ...prev,
-        specializedData: {
-            ...prev.specializedData,
-            serviceOptions: {
-                ...prev.specializedData?.serviceOptions,
-                [option]: checked
+    const handleSpecializedInputChange = useCallback((field: keyof NonNullable<ProfileSetupData['specializedData']>, value: any) => {
+        setFormData(prev => ({
+            ...prev,
+            specializedData: {
+                ...prev.specializedData,
+                [field]: value
             }
-        }
-    }));
-  }
+        }));
+    }, [setFormData]);
 
-  const handleTradeChange = (field: 'mainTrades' | 'beautyTrades', trade: string, checked: boolean) => {
-    const currentTrades = formData.specializedData?.[field] || [];
-    const newTrades = checked
-        ? [...currentTrades, trade]
-        : currentTrades.filter(t => t !== trade);
-    handleSpecializedInputChange(field, newTrades);
-  }
+    const handleAddSkill = useCallback((field: 'specialties' | 'specificSkills' | 'keySkills' | 'beautyTrades' | 'mainTrades', currentTag: string, setTag: (val: string)) => {
+        if (currentTag && !(formData.specializedData?.[field] || []).includes(currentTag)) {
+            const newSkills = [...(formData.specializedData?.[field] || []), currentTag];
+            handleSpecializedInputChange(field, newSkills);
+            setTag('');
+        }
+    }, [formData.specializedData, handleSpecializedInputChange]);
+
+    const handleRemoveSkill = useCallback((field: 'specialties' | 'specificSkills' | 'keySkills' | 'beautyTrades' | 'mainTrades', skillToRemove: string) => {
+        const newSkills = formData.specializedData?.[field]?.filter(skill => skill !== skillToRemove);
+        handleSpecializedInputChange(field, newSkills);
+    }, [formData.specializedData, handleSpecializedInputChange]);
+  
+    const handleServiceOptionChange = useCallback((option: 'local' | 'pickup' | 'delivery' | 'catering', checked: boolean) => {
+        setFormData(prev => ({
+            ...prev,
+            specializedData: {
+                ...prev.specializedData,
+                serviceOptions: {
+                    ...prev.specializedData?.serviceOptions,
+                    [option]: checked
+                }
+            }
+        }));
+    }, [setFormData]);
+
+    const handleTradeChange = useCallback((field: 'mainTrades' | 'beautyTrades', trade: string, checked: boolean) => {
+        const currentTrades = formData.specializedData?.[field] || [];
+        const newTrades = checked
+            ? [...currentTrades, trade]
+            : currentTrades.filter(t => t !== trade);
+        handleSpecializedInputChange(field, newTrades);
+    }, [formData.specializedData, handleSpecializedInputChange]);
+
 
   const renderSpecializedFields = () => {
     const professionalServicesCategories = ['Tecnología y Soporte', 'Educación', 'Eventos'];
@@ -227,7 +226,7 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                         {beautyTrades.map(trade => (
                              <div key={trade} className="flex items-center space-x-2">
                                 <Checkbox id={trade} checked={formData.specializedData?.beautyTrades?.includes(trade)} onCheckedChange={(c) => handleTradeChange('beautyTrades', trade, !!c)} />
-                                <Label htmlFor={trade}>{trade}</Label>
+                                <Label htmlFor={trade} className="text-sm font-normal">{trade}</Label>
                             </div>
                         ))}
                     </div>
@@ -342,10 +341,10 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                 <div className="space-y-2">
                     <Label>Opciones de Servicio</Label>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2 p-3 border rounded-md">
-                        <div className="flex items-center space-x-2"><Checkbox id="local" checked={formData.specializedData?.serviceOptions?.local} onCheckedChange={(c) => handleServiceOptionChange('local', !!c)} /><Label htmlFor="local">Consumo en Local</Label></div>
-                        <div className="flex items-center space-x-2"><Checkbox id="pickup" checked={formData.specializedData?.serviceOptions?.pickup} onCheckedChange={(c) => handleServiceOptionChange('pickup', !!c)}/><Label htmlFor="pickup">Para Llevar (Pickup)</Label></div>
-                        <div className="flex items-center space-x-2"><Checkbox id="delivery" checked={formData.specializedData?.serviceOptions?.delivery} onCheckedChange={(c) => handleServiceOptionChange('delivery', !!c)}/><Label htmlFor="delivery">Delivery Propio</Label></div>
-                        <div className="flex items-center space-x-2"><Checkbox id="catering" checked={formData.specializedData?.serviceOptions?.catering} onCheckedChange={(c) => handleServiceOptionChange('catering', !!c)}/><Label htmlFor="catering">Catering para Eventos</Label></div>
+                        <div className="flex items-center space-x-2"><Checkbox id="local" checked={formData.specializedData?.serviceOptions?.local} onCheckedChange={(c) => handleServiceOptionChange('local', !!c)} /><Label htmlFor="local" className="text-sm font-normal">Consumo en Local</Label></div>
+                        <div className="flex items-center space-x-2"><Checkbox id="pickup" checked={formData.specializedData?.serviceOptions?.pickup} onCheckedChange={(c) => handleServiceOptionChange('pickup', !!c)}/><Label htmlFor="pickup" className="text-sm font-normal">Para Llevar (Pickup)</Label></div>
+                        <div className="flex items-center space-x-2"><Checkbox id="delivery" checked={formData.specializedData?.serviceOptions?.delivery} onCheckedChange={(c) => handleServiceOptionChange('delivery', !!c)}/><Label htmlFor="delivery" className="text-sm font-normal">Delivery Propio</Label></div>
+                        <div className="flex items-center space-x-2"><Checkbox id="catering" checked={formData.specializedData?.serviceOptions?.catering} onCheckedChange={(c) => handleServiceOptionChange('catering', !!c)}/><Label htmlFor="catering" className="text-sm font-normal">Catering para Eventos</Label></div>
                     </div>
                 </div>
                 <div className="space-y-2">
@@ -377,7 +376,7 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                         {homeRepairTrades.map(trade => (
                              <div key={trade} className="flex items-center space-x-2">
                                 <Checkbox id={trade} checked={formData.specializedData?.mainTrades?.includes(trade)} onCheckedChange={(c) => handleTradeChange('mainTrades', trade, !!c)} />
-                                <Label htmlFor={trade}>{trade}</Label>
+                                <Label htmlFor={trade} className="text-sm font-normal">{trade}</Label>
                             </div>
                         ))}
                     </div>
