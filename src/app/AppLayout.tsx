@@ -1,4 +1,3 @@
-
 "use client";
 
 import { usePathname, useRouter } from 'next/navigation';
@@ -174,6 +173,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         '/initial-setup',
         '/profile/publications',
         '/profile/catalog',
+        '/profile/details', // **FIX** Add details route here
       ];
 
       const shouldHideAllLayout = noHeaderFooterRoutes.some(path => pathname.startsWith(path));

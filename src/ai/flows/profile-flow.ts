@@ -1,5 +1,3 @@
-
-
 'use server';
 /**
  * @fileOverview Flows for fetching profile-specific data securely with pagination.
@@ -89,6 +87,13 @@ export const completeInitialSetupFlow = ai.defineFlow(
     const db = getFirestoreDb();
     const userRef = doc(db, 'users', userId);
     
+    const userSnap = await getDoc(userRef);
+    if (!userSnap.exists()) {
+      throw new Error("User not found during setup completion.");
+    }
+    
+    const existingData = userSnap.data().profileSetupData || {};
+
     const dataToSave: Partial<User> = {
       name,
       lastName,
@@ -97,14 +102,15 @@ export const completeInitialSetupFlow = ai.defineFlow(
       country,
       isInitialSetupComplete: true,
       type,
+      // **FIX**: Merge existing profileSetupData with the new providerType
       profileSetupData: {
+        ...existingData,
         providerType: providerType,
       }
     };
 
-    // Using set with merge: true ensures the doc is created if it doesn't exist,
-    // or updated if it does, without overwriting existing fields not included here.
-    await setDoc(userRef, dataToSave, { merge: true });
+    // Using update to ensure we don't overwrite the whole user object
+    await updateDoc(userRef, dataToSave);
   }
 );
 

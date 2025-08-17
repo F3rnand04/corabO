@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, memo } from 'react';
@@ -76,8 +75,7 @@ export default function InitialSetupPage() {
         
         if (!isUnique) {
             setIdInUseError(true);
-            setIsSubmitting(false); // Stop submission
-            return;
+            return; // Stop submission
         }
         
         // This call updates the backend.
@@ -97,6 +95,7 @@ export default function InitialSetupPage() {
         // **FIX**: Force navigation to the home page after successful submission.
         // AppLayout will then re-evaluate the route and take the user to the correct next step.
         router.push('/');
+        router.refresh(); // Force a full refresh to re-trigger AppLayout logic
 
     } catch (error: any) {
         console.error("Failed to complete setup:", error);
@@ -209,7 +208,7 @@ export default function InitialSetupPage() {
          <AlertDialog>
             <AlertDialogTrigger asChild>
                  <Button className="w-full" disabled={!canSubmit || isSubmitting}>
-                  Finalizar Registro
+                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Finalizar Registro'}
                 </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
