@@ -228,7 +228,7 @@ export type User = {
   createdAt?: string;
   type: 'client' | 'provider' | 'repartidor';
   reputation: number;
-  effectiveness?: number;
+  effectiveness: number;
   profileImage: string;
   email: string;
   phone: string;
@@ -261,6 +261,7 @@ export type User = {
     companyProfileImage: string;
     companySpecialty: string;
   } | null;
+  lastActivityAt?: string; // New field to track last activity
 };
 
 export type Product = {
@@ -358,7 +359,7 @@ export type Transaction = {
     deliveryLocation?: { lat: number; lon: number; address: string };
 
     // For payments
-    paymentMethod?: string;
+    paymentMethod?: 'Efectivo' | 'Transferencia' | 'Pago Móvil' | 'Binance' | 'credicora' | 'direct';
     initialPayment?: number;
     financedAmount?: number;
     paymentConfirmationDate?: string;

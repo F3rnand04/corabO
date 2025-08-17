@@ -4,7 +4,7 @@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -16,8 +16,14 @@ export function ActivationWarning({ userType }: ActivationWarningProps) {
   const { currentUser } = useCorabo();
   const router = useRouter();
 
+  if (!currentUser) return null;
+
   const handleActivationClick = () => {
-    if (!currentUser) return;
+    // If paused due to inactivity, the first step is to reactivate transactions
+    if (currentUser?.isPaused) {
+        router.push('/transactions/settings');
+        return;
+    }
     
     if (!currentUser.isInitialSetupComplete) {
       // Step 1: Complete identity setup
@@ -31,31 +37,43 @@ export function ActivationWarning({ userType }: ActivationWarningProps) {
     }
   };
 
-  const messages = {
+  const isPaused = currentUser?.isPaused;
+  const pausedMessages = {
+    title: "¡Tu cuenta está en pausa!",
+    description: "Debido a inactividad, algunas funciones han sido desactivadas. Actívalas de nuevo.",
+    buttonText: "Reactivar Registro"
+  }
+
+  const defaultMessages = {
     client: {
       title: "¡Activa tu registro!",
       description: "Disfruta de compras seguras y con seguimiento.",
+      buttonText: "Activar ahora",
     },
     provider: {
       title: "¡Activa tu registro!",
       description: "Empieza a recibir pagos y a gestionar tus ingresos de forma segura.",
+      buttonText: "Activar ahora",
     },
     repartidor: {
         title: "¡Activa tu registro!",
         description: "Completa tu perfil para poder aceptar entregas.",
+        buttonText: "Activar ahora",
     }
   }
 
-  const { title, description } = messages[userType] || messages.client;
+  const { title, description, buttonText } = isPaused ? pausedMessages : (messages[userType] || messages.client);
+  const Icon = isPaused ? RotateCcw : AlertCircle;
+
 
   return (
      <Alert>
-        <AlertCircle className="h-4 w-4" />
+        <Icon className="h-4 w-4" />
         <AlertTitle className="font-semibold">{title}</AlertTitle>
         <AlertDescription className="flex justify-between items-center">
             <span>{description}</span>
             <Button variant="link" size="sm" onClick={handleActivationClick} className="p-0 h-auto text-current font-bold">
-              Activar ahora &rarr;
+              {buttonText} &rarr;
             </Button>
         </AlertDescription>
     </Alert>

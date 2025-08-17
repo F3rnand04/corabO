@@ -10,6 +10,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 import { z } from 'zod';
 import { credicoraLevels } from '@/lib/types';
+import { differenceInDays } from 'date-fns';
 
 
 // Schema for the user object we expect from the client (FirebaseUser)
@@ -37,14 +38,37 @@ export const getOrCreateUser = ai.defineFlow(
     const db = getFirestoreDb();
     const userDocRef = doc(db, 'users', firebaseUser.uid);
     const userDocSnap = await getDoc(userDocRef);
+    const now = new Date();
 
     if (userDocSnap.exists()) {
-      const user = userDocSnap.data() as User;
+      let user = userDocSnap.data() as User;
+      const updates: Partial<User> = {};
+
+      // Inactivity Logic
+      if (user.lastActivityAt) {
+          const daysSinceLastActivity = differenceInDays(now, new Date(user.lastActivityAt));
+          if (daysSinceLastActivity >= 45) {
+              updates.isPaused = true;
+              updates.effectiveness = (user.effectiveness || 100) * 0.67; // Penalize effectiveness
+          } else if (daysSinceLastActivity >= 31) {
+              updates.effectiveness = (user.effectiveness || 100) * 0.67;
+          }
+      }
+      
+      // Update last activity timestamp on every login
+      updates.lastActivityAt = now.toISOString();
+
       // Ensure the specified user always has the admin role.
       if (user.email === 'fernandopbt@gmail.com' && user.role !== 'admin') {
-        user.role = 'admin';
-        await setDoc(userDocRef, user, { merge: true });
+        updates.role = 'admin';
       }
+      
+      // Apply updates if there are any
+      if (Object.keys(updates).length > 0) {
+        await setDoc(userDocRef, updates, { merge: true });
+        user = { ...user, ...updates }; // Update local user object
+      }
+
       // Return a plain, serializable object
       return JSON.parse(JSON.stringify(user));
     } else {
@@ -56,7 +80,8 @@ export const getOrCreateUser = ai.defineFlow(
         name: firebaseUser.displayName || 'Nuevo Usuario',
         email: firebaseUser.email || '',
         profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
-        createdAt: new Date().toISOString(),
+        createdAt: now.toISOString(),
+        lastActivityAt: now.toISOString(), // Set initial activity
         isInitialSetupComplete: false, 
         lastName: '',
         idNumber: '',
@@ -64,7 +89,7 @@ export const getOrCreateUser = ai.defineFlow(
         country: '',
         type: 'client',
         reputation: 0,
-        effectiveness: 0,
+        effectiveness: 100, // Start with 100% effectiveness
         phone: '',
         emailValidated: firebaseUser.emailVerified,
         phoneValidated: false,
