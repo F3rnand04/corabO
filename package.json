@@ -12,6 +12,9 @@
     "test": "jest",
     "postinstall": "patch-package"
   },
+  "engines": {
+    "node": "18"
+  },
   "dependencies": {
     "@genkit-ai/core": "1.16.1",
     "@genkit-ai/firebase": "1.16.1",
