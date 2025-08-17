@@ -31,6 +31,7 @@ const getExchangeRateFlow = ai.defineFlow(
     // This flow would be triggered by a scheduled job (cron) once daily at 9 AM.
     // For this prototype, we return a fixed, realistic value.
     
-    return { rate: 130.06 };
+    return { rate: 36.54 };
   }
 );
+

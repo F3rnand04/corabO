@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -369,10 +370,21 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         const newCart = cart.filter(item => item.product.id !== productId);
         updateCart(newCart, currentUser.id, transactions);
     },
-    checkout: (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {
+    checkout: async (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {
         if(!currentUser) return;
-        TransactionFlows.processDirectPayment({ sessionId: transactionId });
-        router.push('/transactions');
+        // This is a simplified checkout. A real one would involve a payment gateway.
+        const db = getFirestoreDb();
+        const txRef = doc(db, 'transactions', transactionId);
+        
+        // Convert 'Carrito Activo' to 'Pre-factura Pendiente'
+        await updateDoc(txRef, { 
+            status: 'Pre-factura Pendiente',
+            'details.delivery': withDelivery,
+            'details.paymentMethod': useCredicora ? 'credicora' : 'direct',
+        });
+
+        // Redirect to the payment page. In a real app, this would be the gateway.
+        router.push(`/quotes/payment?commitmentId=${transactionId}`);
     },
     sendMessage: (options: any) => { 
         const user = currentUser;

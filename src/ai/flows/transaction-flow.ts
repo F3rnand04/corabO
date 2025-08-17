@@ -12,6 +12,7 @@ import { doc, getDoc, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import type { Transaction, User, AppointmentRequest, QrSession } from '@/lib/types';
 import { credicoraLevels } from '@/lib/types';
 import { addDays } from 'date-fns';
+import { getExchangeRate } from './exchange-rate-flow';
 
 // --- Schemas ---
 
@@ -53,6 +54,7 @@ const ProcessDirectPaymentSchema = z.object({
 /**
  * Creates the initial transaction and subsequent Credicora installment transactions
  * after a direct QR payment is finalized by the provider.
+ * This flow now includes the definitive commission logic.
  */
 export const processDirectPayment = ai.defineFlow(
     {
@@ -75,6 +77,30 @@ export const processDirectPayment = ai.defineFlow(
         if (!session.amount || !session.initialPayment) {
             throw new Error("Invalid session data: amount is missing.");
         }
+        
+        const clientRef = doc(db, 'users', session.clientId);
+        const clientSnap = await getDoc(clientRef);
+        if (!clientSnap.exists()) throw new Error("Client not found for commission calculation");
+        const client = clientSnap.data() as User;
+        
+        // --- Commission Calculation Logic ---
+        const { rate: exchangeRate } = await getExchangeRate();
+        const totalAmountUSD = session.amount / exchangeRate;
+        const taxRate = 0.16; // 16% IVA for Venezuela
+
+        let commissionRate = 0;
+        if(session.financedAmount && session.financedAmount > 0) { // Payment with Credicora
+            commissionRate = 0.08; // 8%
+        }
+        if(client.isSubscribed) { // Subscription overrides Credicora commission
+             commissionRate = 0.05; // 5%
+        }
+
+        const commissionAmountUSD = totalAmountUSD * commissionRate;
+        const taxAmountUSD = (totalAmountUSD + commissionAmountUSD) * taxRate;
+        const finalAmountUSD = totalAmountUSD + commissionAmountUSD + taxAmountUSD;
+        // --- End of Commission Logic ---
+
 
         // 1. Create the main transaction for the initial payment
         const initialTxId = `txndp-${sessionId}`;
@@ -84,13 +110,20 @@ export const processDirectPayment = ai.defineFlow(
             status: 'Pagado',
             date: new Date().toISOString(),
             amount: session.initialPayment,
+            participantIds: [session.clientId, session.providerId],
             clientId: session.clientId,
             providerId: session.providerId,
-            participantIds: [session.clientId, session.providerId],
             details: {
-                paymentMethod: 'direct',
+                paymentMethod: session.financedAmount && session.financedAmount > 0 ? 'credicora' : 'direct',
                 paymentVoucherUrl: session.voucherUrl,
-                system: `Pago inicial de compra por $${session.amount.toFixed(2)}`
+                system: `Pago inicial de compra por $${session.amount.toFixed(2)}`,
+                baseAmount: session.amount,
+                commissionRate,
+                commission: commissionAmountUSD * exchangeRate, // Store in local currency
+                taxRate,
+                tax: taxAmountUSD * exchangeRate, // Store in local currency
+                total: finalAmountUSD * exchangeRate, // Store in local currency
+                exchangeRate,
             }
         };
         batch.set(doc(db, 'transactions', initialTxId), initialTransaction);
@@ -118,13 +151,8 @@ export const processDirectPayment = ai.defineFlow(
             }
 
             // 3. Update client's Credicora limit
-            const clientRef = doc(db, 'users', session.clientId);
-            const clientSnap = await getDoc(clientRef);
-            if (clientSnap.exists()) {
-                const client = clientSnap.data() as User;
-                const newCredicoraLimit = (client.credicoraLimit || 0) - session.financedAmount;
-                batch.update(clientRef, { credicoraLimit: newCredicoraLimit });
-            }
+            const newCredicoraLimit = (client.credicoraLimit || 0) - session.financedAmount;
+            batch.update(clientRef, { credicoraLimit: newCredicoraLimit });
         }
         
         // 4. Mark session as completed
@@ -407,3 +435,4 @@ export const startDispute = ai.defineFlow(
         await updateDoc(txRef, { status: 'En Disputa' });
     }
 );
+

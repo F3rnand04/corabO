@@ -385,7 +385,17 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
             <div><span className="font-semibold">Estado:</span> <Badge variant="secondary">{transaction.status}</Badge></div>
             <div><span className="font-semibold">Fecha:</span> {new Date(transaction.date).toLocaleDateString()}</div>
             <div><span className="font-semibold">Tipo:</span> {transaction.type}</div>
-            <div><span className="font-semibold">Monto:</span> ${transaction.amount.toFixed(2)}</div>
+            {transaction.details.baseAmount ? (
+              <div className="col-span-2 space-y-1 mt-2 p-2 border-t">
+                <div className="flex justify-between"><span>Subtotal:</span> <span className="font-mono">Bs. {transaction.details.baseAmount.toFixed(2)}</span></div>
+                <div className="flex justify-between"><span>Comisión ({(transaction.details.commissionRate || 0) * 100}%):</span> <span className="font-mono">Bs. {transaction.details.commission?.toFixed(2) || '0.00'}</span></div>
+                <div className="flex justify-between"><span>IVA ({(transaction.details.taxRate || 0) * 100}%):</span> <span className="font-mono">Bs. {transaction.details.tax?.toFixed(2) || '0.00'}</span></div>
+                <div className="flex justify-between font-bold"><span>Total Factura:</span> <span className="font-mono">Bs. {transaction.details.total?.toFixed(2) || '0.00'}</span></div>
+                <div className="text-xs text-muted-foreground text-right">Tasa de cambio: Bs. {transaction.details.exchangeRate?.toFixed(2)} / USD</div>
+              </div>
+            ) : (
+                 <div><span className="font-semibold">Monto:</span> ${transaction.amount.toFixed(2)}</div>
+            )}
              <div><span className="font-semibold">Cliente:</span> {isClient ? "Tú" : otherParty?.name}</div>
              <div><span className="font-semibold">Proveedor:</span> {isProvider ? "Tú" : otherParty?.name || 'Sistema'}</div>
              {transaction.details.paymentFromThirdParty && (
@@ -447,7 +457,9 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
             </div>
           )}
           
-          <p className='text-xs text-muted-foreground text-right italic'>Los montos no incluyen IVA (16%).</p>
+          {transaction.type !== 'Compra Directa' && (
+            <p className='text-xs text-muted-foreground text-right italic'>Los montos no incluyen IVA (16%).</p>
+          )}
 
 
           {isProvider && transaction.status === 'Solicitud Pendiente' && (

@@ -375,6 +375,15 @@ export type Transaction = {
     clientComment?: string;
     providerRating?: number;
     providerComment?: string;
+
+    // For commission and taxes
+    baseAmount?: number; // Base amount in local currency
+    commissionRate?: number;
+    commission?: number; // Commission amount in local currency
+    taxRate?: number;
+    tax?: number; // Tax amount in local currency
+    total?: number; // Final total in local currency
+    exchangeRate?: number;
   };
 };
 
