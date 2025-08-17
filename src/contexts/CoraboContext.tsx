@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -25,6 +24,7 @@ import { completeInitialSetupFlow, getPublicProfileFlow, deleteUserFlow, getProf
 import { haversineDistance } from '@/lib/utils';
 import { getOrCreateUser, type FirebaseUserInput } from '@/ai/flows/auth-flow';
 import { requestAffiliation as requestAffiliationFlow, approveAffiliation as approveAffiliationFlow, rejectAffiliation as rejectAffiliationFlow, revokeAffiliation as revokeAffiliationFlow } from '@/ai/flows/affiliation-flow';
+import { getEta } from '@/ai/flows/directions-flow';
 
 interface DailyQuote {
     requestSignature: string;
@@ -34,7 +34,8 @@ interface DailyQuote {
 interface UserMetrics {
     reputation: number;
     effectiveness: number;
-    responseTime: string; // e.g., "00-05 min", "Nuevo"
+    responseTime: string;
+    paymentSpeed: string;
 }
 
 interface GeolocationCoords {
@@ -168,21 +169,41 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const cart: CartItem[] = useMemo(() => activeCartTx?.details.items || [], [activeCartTx]);
 
   useEffect(() => {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                setCurrentUserLocation({
-                    latitude: position.coords.latitude,
-                    longitude: position.coords.longitude,
-                });
-            },
-            (error) => {
-                console.error("Error getting geolocation: ", error);
-                // Optionally inform the user
-            }
-        );
-    }
-  }, []);
+    // **FIX**: Handle geolocation permission gracefully.
+    const checkGeolocation = () => {
+      if (navigator.geolocation) {
+        navigator.permissions.query({ name: 'geolocation' }).then((result) => {
+          if (result.state === 'granted') {
+            navigator.geolocation.getCurrentPosition(
+              (position) => setCurrentUserLocation({
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+              }),
+              (error) => console.error("Error getting geolocation: ", error)
+            );
+          } else if (result.state === 'prompt') {
+            // It will ask the user, which is fine.
+             navigator.geolocation.getCurrentPosition(
+              (position) => setCurrentUserLocation({
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+              }),
+              (error) => console.error("Error getting geolocation: ", error)
+            );
+          } else if (result.state === 'denied') {
+            // **IMPROVEMENT**: Inform the user gracefully.
+            toast({
+              title: "Permiso de Ubicación Denegado",
+              description: "Para ver distancias y usar el mapa, activa los permisos de ubicación en tu navegador.",
+              variant: "destructive",
+              duration: 10000
+            });
+          }
+        });
+      }
+    };
+    checkGeolocation();
+  }, [toast]);
 
 
   useEffect(() => {
@@ -474,6 +495,48 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
           isCompany: user.profileSetupData?.providerType === 'company',
       });
     },
+    acceptDelivery: async (transactionId: string) => {
+        if (!currentUser || !currentUserLocation) return;
+        const db = getFirestoreDb();
+        const txRef = doc(db, 'transactions', transactionId);
+        const txSnap = await getDoc(txRef);
+        if (!txSnap.exists()) return;
+        const tx = txSnap.data() as Transaction;
+        const client = users.find(u => u.id === tx.clientId);
+        if (!client || !client.profileSetupData?.location) return;
+
+        const [destLat, destLon] = client.profileSetupData.location.split(',').map(Number);
+        const etaResult = await getEta({
+            origin: { lat: currentUserLocation.latitude, lon: currentUserLocation.longitude },
+            destination: { lat: destLat, lon: destLon },
+        });
+
+        const deliveryLink = `https://www.google.com/maps/dir/?api=1&destination=${destLat},${destLon}`;
+
+        await updateDoc(txRef, { 
+            status: 'En Reparto', 
+            'details.deliveryProviderId': currentUser.id,
+        });
+
+        // Notify customer
+        await NotificationFlows.sendNotification({
+            userId: tx.clientId,
+            type: 'new_publication', // Re-using for general purpose alert
+            title: '¡Tu pedido está en camino!',
+            message: `El repartidor ${currentUser.name} ha recogido tu pedido. Tiempo de entrega estimado: ${etaResult.durationMinutes} minutos.`,
+            link: `/transactions`,
+        });
+
+        // Notify delivery person with link
+         await NotificationFlows.sendNotification({
+            userId: currentUser.id,
+            type: 'new_publication',
+            title: '¡Nuevo Servicio de Entrega!',
+            message: `Dirígete a la ubicación del cliente. Haz clic para navegar.`,
+            link: deliveryLink,
+        });
+
+    },
     updateUserProfileImage: (a:any,b:any)=>{return Promise.resolve();},
     removeGalleryImage: (a:any,b:any)=>{return Promise.resolve();},
     validateEmail: (a:any,b:any)=>{return Promise.resolve(true)},
@@ -505,8 +568,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     verifyCampaignPayment: (a:any,b:any)=>{},
     verifyUserId: (a:any)=>{},
     rejectUserId: (a:any)=>{},
-    getUserMetrics: (a:any,b:any)=>{return {reputation: 0, effectiveness: 0, responseTime: 'Nuevo'}},
-    acceptDelivery: (a:any)=>{},
+    getUserMetrics: (a:any,b:any)=>{return {reputation: 0, effectiveness: 0, responseTime: 'Nuevo', paymentSpeed: 'N/A'}},
     startQrSession: async (a:any) => null,
     setQrSessionAmount: async(a:any,b:any)=>{return Promise.resolve();},
     approveQrSession: async(a:any)=>{return Promise.resolve();},
@@ -531,7 +593,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }), [
     searchHistory, contacts, cart, transactions, getCartTotal, 
     getDeliveryCost, users, updateCart, router, currentUser, updateUser, updateFullProfile,
-    getDistanceToProvider
+    getDistanceToProvider, currentUserLocation, toast
   ]);
   
   return (
