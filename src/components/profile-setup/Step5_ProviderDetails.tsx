@@ -34,62 +34,89 @@ const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sába
 const homeRepairTrades = ['Plomería', 'Electricidad', 'Albañilería', 'Pintura', 'Carpintería', 'Jardinería', 'Refrigeración'];
 const beautyTrades = ['Manicure y Pedicure', 'Estilismo y Peluquería', 'Maquillaje Profesional', 'Masajes', 'Cuidado Facial', 'Depilación', 'Pestañas y Cejas'];
 
+// This is now a pure component, receiving state and handlers as props.
+const GeneralProviderFields = ({ formData, handleInputChange, handleAddSkill, handleRemoveSkill }: {
+    formData: ProfileSetupData,
+    handleInputChange: (field: keyof NonNullable<ProfileSetupData['specializedData']>, value: any) => void,
+    handleAddSkill: (field: 'keySkills', currentTag: string, setTag: (val: string)) => void,
+    handleRemoveSkill: (field: 'keySkills', skillToRemove: string) => void
+}) => {
+    const [currentSkill, setCurrentSkill] = useState('');
+
+    return (
+        <div className="space-y-4">
+            <div className="space-y-2">
+                <Label htmlFor="keySkills" className="flex items-center gap-2"><Briefcase className="w-4 h-4"/> Habilidades Clave</Label>
+                <div className="flex gap-2">
+                    <Input
+                        id="keySkills"
+                        placeholder="Ej: Desarrollo Web, Figma"
+                        value={currentSkill}
+                        onChange={(e) => setCurrentSkill(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSkill('keySkills', currentSkill, setCurrentSkill); }}}
+                    />
+                    <Button onClick={() => handleAddSkill('keySkills', currentSkill, setCurrentSkill)} type="button">Añadir</Button>
+                </div>
+                <div className="flex flex-wrap gap-2 pt-2">
+                    {formData.specializedData?.keySkills?.map(skill => (
+                        <Badge key={skill} variant="secondary">
+                            {skill}
+                            <button onClick={() => handleRemoveSkill('keySkills', skill)} className="ml-2 rounded-full hover:bg-background/50">
+                                <X className="h-3 w-3"/>
+                            </button>
+                        </Badge>
+                    ))}
+                </div>
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="toolsAndBrands" className="flex items-center gap-2"><BrainCircuit className="w-4 h-4"/> Herramientas y Marcas</Label>
+                <Textarea
+                    id="toolsAndBrands"
+                    placeholder="Ej: Adobe Photoshop, Wella, OPI, Visual Studio Code"
+                    value={formData.specializedData?.toolsAndBrands || ''}
+                    onChange={(e) => handleInputChange('toolsAndBrands', e.target.value)}
+                    rows={2}
+                />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="yearsOfExperience" className="flex items-center gap-2"><Wrench className="w-4 h-4"/> Años de Experiencia</Label>
+                <Input
+                    id="yearsOfExperience"
+                    type="number"
+                    placeholder="Ej: 5"
+                    value={formData.specializedData?.yearsOfExperience || ''}
+                    onChange={(e) => handleInputChange('yearsOfExperience', parseInt(e.target.value, 10) || 0)}
+                />
+            </div>
+        </div>
+    );
+};
+
+
 export default function Step5_ProviderDetails({ onBack, onNext, formData, setFormData }: Step5_ProviderDetailsProps) {
   const router = useRouter();
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
   const { currentUser, users, requestAffiliation } = useCorabo();
   const { toast } = useToast();
-  
+
   const MAX_RADIUS_FREE = 10;
   const isOverFreeRadius = (formData.serviceRadius || 0) > MAX_RADIUS_FREE && !(currentUser?.isSubscribed);
   const isProfessional = formData.providerType === 'professional';
-  
+
   const [currentSpecialty, setCurrentSpecialty] = useState('');
   const [currentSkill, setCurrentSkill] = useState('');
 
   const companies = users.filter(u => u.profileSetupData?.providerType === 'company');
 
-  const handleFormDataChange = (field: keyof ProfileSetupData, value: any) => {
+  const handleFormDataChange = useCallback((field: keyof ProfileSetupData, value: any) => {
     setFormData({ ...formData, [field]: value });
-  };
-  
-  const handleMapClick = () => {
-    if (formData.location) {
-        const [lat, lon] = formData.location.split(',').map(Number);
-        if(!isNaN(lat) && !isNaN(lon)) {
-             const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
-             window.open(mapsUrl, '_blank');
-        }
-    } else {
-        toast({
-            title: "Ubicación no definida",
-            description: "Por favor, ingresa una ubicación en el campo de texto primero."
-        });
-    }
-  };
+  }, [formData, setFormData]);
 
-  const handleScheduleChange = (day: string, field: 'from' | 'to' | 'active', value: string | boolean) => {
+  const handleScheduleChange = useCallback((day: string, field: 'from' | 'to' | 'active', value: string | boolean) => {
     const currentSchedule = formData.schedule || {};
     const newSchedule = { ...currentSchedule, [day]: { ...(currentSchedule?.[day] || {}), [field]: value } };
     handleFormDataChange('schedule', newSchedule);
-  };
-
-  const handleRequestAffiliation = async (companyId: string) => {
-      if (!currentUser || !companyId) return;
-      try {
-          await requestAffiliation(currentUser.id, companyId);
-          toast({
-              title: "Solicitud Enviada",
-              description: "Tu solicitud de afiliación ha sido enviada a la empresa."
-          })
-      } catch (error: any) {
-          toast({
-              variant: "destructive",
-              title: "Error al solicitar",
-              description: error.message || "No se pudo enviar la solicitud."
-          })
-      }
-  };
+  }, [formData, handleFormDataChange]);
 
   const handleSpecializedInputChange = useCallback((field: keyof NonNullable<ProfileSetupData['specializedData']>, value: any) => {
       setFormData(prev => ({
@@ -135,61 +162,46 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
       handleSpecializedInputChange(field, newTrades);
   }, [formData.specializedData, handleSpecializedInputChange]);
 
+
+  const handleMapClick = () => {
+    if (formData.location) {
+        const [lat, lon] = formData.location.split(',').map(Number);
+        if(!isNaN(lat) && !isNaN(lon)) {
+             const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+             window.open(mapsUrl, '_blank');
+        }
+    } else {
+        toast({
+            title: "Ubicación no definida",
+            description: "Por favor, ingresa una ubicación en el campo de texto primero."
+        });
+    }
+  };
+
+  const handleRequestAffiliation = async (companyId: string) => {
+      if (!currentUser || !companyId) return;
+      try {
+          await requestAffiliation(currentUser.id, companyId);
+          toast({
+              title: "Solicitud Enviada",
+              description: "Tu solicitud de afiliación ha sido enviada a la empresa."
+          })
+      } catch (error: any) {
+          toast({
+              variant: "destructive",
+              title: "Error al solicitar",
+              description: error.message || "No se pudo enviar la solicitud."
+          })
+      }
+  };
+
   const renderSpecializedFields = () => {
     const professionalServicesCategories = ['Tecnología y Soporte', 'Educación', 'Eventos'];
 
     if (professionalServicesCategories.includes(formData.primaryCategory || '')) {
-      return (
-         <div className="space-y-4">
-            <div className="space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="keySkills" className="flex items-center gap-2"><Briefcase className="w-4 h-4"/> Habilidades Clave</Label>
-                    <div className="flex gap-2">
-                        <Input 
-                            id="keySkills" 
-                            placeholder="Ej: Desarrollo Web, Figma" 
-                            value={currentSkill}
-                            onChange={(e) => setCurrentSkill(e.target.value)}
-                            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSkill('keySkills', currentSkill, setCurrentSkill); }}}
-                        />
-                        <Button onClick={() => handleAddSkill('keySkills', currentSkill, setCurrentSkill)} type="button">Añadir</Button>
-                    </div>
-                    <div className="flex flex-wrap gap-2 pt-2">
-                        {formData.specializedData?.keySkills?.map(skill => (
-                            <Badge key={skill} variant="secondary">
-                                {skill}
-                                <button onClick={() => handleRemoveSkill('keySkills', skill)} className="ml-2 rounded-full hover:bg-background/50">
-                                    <X className="h-3 w-3"/>
-                                </button>
-                            </Badge>
-                        ))}
-                    </div>
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="toolsAndBrands" className="flex items-center gap-2"><BrainCircuit className="w-4 h-4"/> Herramientas y Marcas</Label>
-                    <Textarea
-                        id="toolsAndBrands"
-                        placeholder="Ej: Adobe Photoshop, Wella, OPI, Visual Studio Code"
-                        value={formData.specializedData?.toolsAndBrands || ''}
-                        onChange={(e) => handleSpecializedInputChange('toolsAndBrands', e.target.value)}
-                        rows={2}
-                    />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="yearsOfExperience" className="flex items-center gap-2"><Wrench className="w-4 h-4"/> Años de Experiencia</Label>
-                    <Input 
-                        id="yearsOfExperience"
-                        type="number"
-                        placeholder="Ej: 5"
-                        value={formData.specializedData?.yearsOfExperience || ''}
-                        onChange={(e) => handleSpecializedInputChange('yearsOfExperience', parseInt(e.target.value, 10) || 0)}
-                    />
-                </div>
-            </div>
-        </div>
-      );
+      return <GeneralProviderFields formData={formData} handleInputChange={handleSpecializedInputChange} handleAddSkill={handleAddSkill} handleRemoveSkill={handleRemoveSkill} />;
     }
-    
+
     switch (formData.primaryCategory) {
       case 'Belleza':
         return (
@@ -205,6 +217,7 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                         ))}
                     </div>
                 </div>
+                <GeneralProviderFields formData={formData} handleInputChange={handleSpecializedInputChange} handleAddSkill={handleAddSkill} handleRemoveSkill={handleRemoveSkill} />
             </div>
         );
       case 'Transporte y Asistencia':
@@ -212,18 +225,18 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
             <div className="space-y-4">
                <div className="space-y-2">
                     <Label htmlFor="vehicleType" className="flex items-center gap-2"><Truck className="w-4 h-4"/> Tipo de Vehículo</Label>
-                    <Input 
-                        id="vehicleType" 
-                        placeholder="Ej: Camión 350, Grúa de Plataforma" 
+                    <Input
+                        id="vehicleType"
+                        placeholder="Ej: Camión 350, Grúa de Plataforma"
                         value={formData?.specializedData?.vehicleType || ''}
                         onChange={(e) => handleSpecializedInputChange('vehicleType', e.target.value)}
                     />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="capacity" className="flex items-center gap-2"><Package className="w-4 h-4"/> Capacidad de Carga</Label>
-                    <Input 
-                        id="capacity" 
-                        placeholder="Ej: 3,500 Kg, 2 vehículos" 
+                    <Input
+                        id="capacity"
+                        placeholder="Ej: 3,500 Kg, 2 vehículos"
                         value={formData?.specializedData?.capacity || ''}
                         onChange={(e) => handleSpecializedInputChange('capacity', e.target.value)}
                     />
@@ -245,8 +258,8 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
              <div className="space-y-4">
                 <div className="space-y-2">
                     <Label htmlFor="licenseNumber" className="flex items-center gap-2"><BadgeCheck className="w-4 h-4"/> Nro. Licencia / Colegiatura</Label>
-                    <Input 
-                        id="licenseNumber" 
+                    <Input
+                        id="licenseNumber"
                         placeholder="Ej: MPPS 12345"
                         value={formData?.specializedData?.licenseNumber || ''}
                         onChange={(e) => handleSpecializedInputChange('licenseNumber', e.target.value)}
@@ -255,9 +268,9 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                  <div className="space-y-2">
                     <Label htmlFor="specialties" className="flex items-center gap-2"><Stethoscope className="w-4 h-4"/> Especialidades</Label>
                     <div className="flex gap-2">
-                        <Input 
-                            id="specialties" 
-                            placeholder="Ej: Terapia Manual" 
+                        <Input
+                            id="specialties"
+                            placeholder="Ej: Terapia Manual"
                             value={currentSpecialty}
                             onChange={(e) => setCurrentSpecialty(e.target.value)}
                              onKeyDown={(e) => {
@@ -282,7 +295,7 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="consultationMode" className="flex items-center gap-2"><Wrench className="w-4 h-4"/> Modalidad de Atención</Label>
-                    <Select 
+                    <Select
                         value={formData?.specializedData?.consultationMode || ''}
                         onValueChange={(value) => handleSpecializedInputChange('consultationMode', value)}
                     >
@@ -304,8 +317,8 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
              <div className="space-y-4">
                 <div className="space-y-2">
                     <Label htmlFor="cuisineType" className="flex items-center gap-2"><Utensils className="w-4 h-4"/> Tipo de Cocina</Label>
-                    <Input 
-                        id="cuisineType" 
+                    <Input
+                        id="cuisineType"
                         placeholder="Ej: Venezolana, Italiana, Sushi"
                         value={formData?.specializedData?.cuisineType || ''}
                         onChange={(e) => handleSpecializedInputChange('cuisineType', e.target.value)}
@@ -322,8 +335,8 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="menuUrl" className="flex items-center gap-2"><LinkIcon className="w-4 h-4"/> Enlace al Menú</Label>
-                    <Input 
-                        id="menuUrl" 
+                    <Input
+                        id="menuUrl"
                         placeholder="https://ejemplo.com/menu.pdf"
                         value={formData?.specializedData?.menuUrl || ''}
                         onChange={(e) => handleSpecializedInputChange('menuUrl', e.target.value)}
@@ -331,8 +344,8 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="sanitaryPermitId" className="flex items-center gap-2"><BadgeCheck className="w-4 h-4"/> Permiso Sanitario (opcional)</Label>
-                    <Input 
-                        id="sanitaryPermitId" 
+                    <Input
+                        id="sanitaryPermitId"
                         placeholder="Nro. de permiso"
                         value={formData?.specializedData?.sanitaryPermitId || ''}
                         onChange={(e) => handleSpecializedInputChange('sanitaryPermitId', e.target.value)}
@@ -357,9 +370,9 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                 <div className="space-y-2">
                     <Label htmlFor="specificSkills">Habilidades Específicas (tags)</Label>
                     <div className="flex gap-2">
-                         <Input 
-                            id="specificSkills" 
-                            placeholder="Ej: Destape de cañerías" 
+                         <Input
+                            id="specificSkills"
+                            placeholder="Ej: Destape de cañerías"
                             value={currentSkill}
                             onChange={(e) => setCurrentSkill(e.target.value)}
                              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSkill('specificSkills', currentSkill, setCurrentSkill); }}}
@@ -402,22 +415,22 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
     <>
     <div className="space-y-8">
       <h2 className="text-xl font-semibold">Paso 5: Detalles Específicos del Proveedor</h2>
-      
+
       <div className="space-y-4">
         <Label htmlFor="specialty">Especialidad / Descripción corta</Label>
-        <Textarea 
-            id="specialty" 
-            placeholder="Ej: Expertos en cocina italiana." 
-            rows={2} 
+        <Textarea
+            id="specialty"
+            placeholder="Ej: Expertos en cocina italiana."
+            rows={2}
             maxLength={30}
             value={formData.specialty || ''}
             onChange={(e) => handleFormDataChange('specialty', e.target.value)}
         />
         <p className="text-xs text-muted-foreground text-right">{formData.specialty?.length || 0} / 30</p>
       </div>
-      
+
       {renderSpecializedFields()}
-       
+
        <div className="space-y-3 pt-6 border-t">
         <Label>Ofrezco principalmente</Label>
         <RadioGroup value={formData.offerType || 'service'} onValueChange={(value: 'product' | 'service') => handleFormDataChange('offerType', value)} className="flex gap-4">
@@ -451,7 +464,7 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
           </div>
         </div>
       )}
-      
+
       <div className="space-y-3">
           <Label>Opciones de Pago y Citas</Label>
            <div className="space-y-4 rounded-md border p-4">
@@ -462,8 +475,8 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                       Aceptar Pagos con Credicora
                   </Label>
                 </Link>
-                <Switch 
-                    id="accepts-credicora" 
+                <Switch
+                    id="accepts-credicora"
                     checked={formData.acceptsCredicora}
                     onCheckedChange={(checked) => handleFormDataChange('acceptsCredicora', checked)}
                 />
@@ -487,7 +500,7 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                   </Label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                    <Input 
+                    <Input
                         id="appointment-cost"
                         type="number"
                         className="w-28 pl-6"
@@ -509,8 +522,8 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                 <Building className="w-5 h-5"/>
                 Tengo un local físico
              </Label>
-             <Switch 
-                id="has-physical-location" 
+             <Switch
+                id="has-physical-location"
                 checked={formData.hasPhysicalLocation}
                 onCheckedChange={(checked) => handleFormDataChange('hasPhysicalLocation', checked)}
             />
@@ -520,9 +533,9 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                  <Button variant="ghost" size="icon" className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-primary" onClick={handleMapClick}>
                     <LocateFixed className="h-5 w-5" />
                  </Button>
-                <Input 
-                  id="location" 
-                  placeholder="Ubicación de tu negocio..." 
+                <Input
+                  id="location"
+                  placeholder="Ubicación de tu negocio..."
                   className="pl-12"
                   value={formData.location || ''}
                   onChange={(e) => handleFormDataChange('location', e.target.value)}
@@ -533,13 +546,13 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                  <Label htmlFor="show-exact-location" className="flex items-center gap-2 font-medium">
                     Mostrar ubicación exacta
                  </Label>
-                 <Switch 
-                    id="show-exact-location" 
+                 <Switch
+                    id="show-exact-location"
                     checked={formData.showExactLocation}
                     onCheckedChange={(checked) => handleFormDataChange('showExactLocation', checked)}
                 />
             </div>
-            
+
             {!formData.showExactLocation && (
                 <div className="space-y-3 pt-2">
                     <div className="flex justify-between items-center">
@@ -566,7 +579,7 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                             <Label htmlFor="only-delivery" className="flex items-center gap-2">
                                 Mi servicio es solo delivery
                             </Label>
-                            <Switch 
+                            <Switch
                                 id="only-delivery"
                                 checked={formData.isOnlyDelivery}
                                 onCheckedChange={(checked) => handleFormDataChange('isOnlyDelivery', checked)}
@@ -606,5 +619,3 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
     </>
   );
 }
-
-    
