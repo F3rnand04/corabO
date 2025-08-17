@@ -33,6 +33,7 @@ interface Step5_ProviderDetailsProps {
 }
 
 const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+const homeRepairTrades = ['Plomería', 'Electricidad', 'Albañilería', 'Pintura', 'Carpintería', 'Jardinería', 'Refrigeración'];
 
 // Helper function to render the common fields
 const renderGeneralProviderFields = (
@@ -70,6 +71,7 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
   const isOverFreeRadius = (formData.serviceRadius || 0) > MAX_RADIUS_FREE && !(currentUser?.isSubscribed);
   const isProfessional = formData.providerType === 'professional';
   const [currentSpecialty, setCurrentSpecialty] = useState('');
+  const [currentSkill, setCurrentSkill] = useState('');
 
   const companies = users.filter(u => u.profileSetupData?.providerType === 'company');
 
@@ -148,6 +150,27 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
         }
     });
   }
+
+  const handleTradeChange = (trade: string, checked: boolean) => {
+    const currentTrades = formData.specializedData?.mainTrades || [];
+    const newTrades = checked
+        ? [...currentTrades, trade]
+        : currentTrades.filter(t => t !== trade);
+    handleSpecializedInputChange('mainTrades', newTrades);
+  }
+
+  const handleAddSkill = () => {
+    if (currentSkill && !(formData.specializedData?.specificSkills || []).includes(currentSkill)) {
+        const newSkills = [...(formData.specializedData?.specificSkills || []), currentSkill];
+        handleSpecializedInputChange('specificSkills', newSkills);
+        setCurrentSkill('');
+    }
+  };
+
+  const handleRemoveSkill = (skillToRemove: string) => {
+    const newSkills = formData.specializedData?.specificSkills?.filter(skill => skill !== skillToRemove);
+    handleSpecializedInputChange('specificSkills', newSkills);
+  };
 
 
   const renderSpecializedFields = () => {
@@ -281,6 +304,55 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                         placeholder="Nro. de permiso"
                         value={formData?.specializedData?.sanitaryPermitId || ''}
                         onChange={(e) => handleSpecializedInputChange('sanitaryPermitId', e.target.value)}
+                    />
+                </div>
+            </div>
+        );
+      case 'Hogar y Reparaciones':
+        return (
+             <div className="space-y-4">
+                <div className="space-y-2">
+                    <Label>Oficios Principales</Label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-2 gap-x-4 p-3 border rounded-md">
+                        {homeRepairTrades.map(trade => (
+                             <div key={trade} className="flex items-center space-x-2">
+                                <Checkbox id={trade} checked={formData.specializedData?.mainTrades?.includes(trade)} onCheckedChange={(c) => handleTradeChange(trade, !!c)} />
+                                <Label htmlFor={trade}>{trade}</Label>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="specificSkills">Habilidades Específicas (tags)</Label>
+                    <div className="flex gap-2">
+                         <Input 
+                            id="specificSkills" 
+                            placeholder="Ej: Destape de cañerías" 
+                            value={currentSkill}
+                            onChange={(e) => setCurrentSkill(e.target.value)}
+                             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSkill(); }}}
+                        />
+                        <Button onClick={handleAddSkill} type="button">Añadir</Button>
+                    </div>
+                    <div className="flex flex-wrap gap-2 pt-2">
+                        {formData.specializedData?.specificSkills?.map(skill => (
+                            <Badge key={skill} variant="secondary">
+                                {skill}
+                                <button onClick={() => handleRemoveSkill(skill)} className="ml-2 rounded-full hover:bg-background/50">
+                                    <X className="h-3 w-3"/>
+                                </button>
+                            </Badge>
+                        ))}
+                    </div>
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="certifications" className="flex items-center gap-2"><BadgeCheck className="w-4 h-4"/> Certificaciones Relevantes (opcional)</Label>
+                    <Textarea
+                        id="certifications"
+                        placeholder="Ej: Certificado de Electricista SEC, Técnico en Refrigeración..."
+                        value={formData?.specializedData?.certifications || ''}
+                        onChange={(e) => handleSpecializedInputChange('certifications', e.target.value)}
+                        rows={2}
                     />
                 </div>
             </div>

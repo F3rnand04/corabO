@@ -7,7 +7,7 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, MessageCircle, CheckCircle, Flag, Package, Hand, ShoppingCart, Plus, Minus, X, Truck, AlertTriangle, Loader2, Search, Building, Users, BadgeCheck, Stethoscope, Utensils, Link as LinkIcon } from 'lucide-react';
+import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, MessageCircle, CheckCircle, Flag, Package, Hand, ShoppingCart, Plus, Minus, X, Truck, AlertTriangle, Loader2, Search, Building, Users, BadgeCheck, Stethoscope, Utensils, Link as LinkIcon, Home as HomeIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
@@ -169,6 +169,7 @@ export default function CompanyProfilePage() {
   const isProductProvider = provider.profileSetupData?.offerType === 'product';
   const isHealthProvider = provider.profileSetupData?.primaryCategory === 'Salud y Bienestar';
   const isFoodProvider = provider.profileSetupData?.primaryCategory === 'Alimentos y Restaurantes';
+  const isHomeRepairProvider = provider.profileSetupData?.primaryCategory === 'Hogar y Reparaciones';
   const isCurrentUserTransactionReady = currentUser?.isTransactionsActive;
   const isProviderTransactionReady = provider.isTransactionsActive;
 
@@ -545,11 +546,12 @@ export default function CompanyProfilePage() {
                 </Link>
             )}
             
-            {(isHealthProvider || isFoodProvider) && provider.profileSetupData?.specializedData && (
+            {(isHealthProvider || isFoodProvider || isHomeRepairProvider) && provider.profileSetupData?.specializedData && (
                  <div className="mt-2 mb-4 p-3 bg-muted/50 rounded-lg border space-y-2">
                     <p className="font-semibold flex items-center gap-2 text-sm">
                       {isHealthProvider && <Stethoscope className="w-4 h-4"/>}
                       {isFoodProvider && <Utensils className="w-4 h-4"/>}
+                      {isHomeRepairProvider && <HomeIcon className="w-4 h-4" />}
                       Detalles Especializados
                     </p>
                     {isHealthProvider && (<>
@@ -561,13 +563,26 @@ export default function CompanyProfilePage() {
                         )}
                     </>)}
                     {isFoodProvider && (<>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-2 items-center">
                            {provider.profileSetupData.specializedData.cuisineType && <Badge>{provider.profileSetupData.specializedData.cuisineType}</Badge>}
                            {provider.profileSetupData.specializedData.menuUrl && <Button variant="outline" size="sm" asChild className="h-auto py-0.5"><a href={provider.profileSetupData.specializedData.menuUrl} target="_blank" rel="noopener noreferrer"><LinkIcon className="w-3 h-3 mr-1"/> Ver Menú</a></Button>}
                         </div>
                          {provider.profileSetupData?.specializedData?.serviceOptions && Object.values(provider.profileSetupData.specializedData.serviceOptions).some(v => v) && (
                              <div className="text-xs text-muted-foreground pt-2 border-t mt-2">Opciones: {Object.entries(provider.profileSetupData.specializedData.serviceOptions).filter(([,v])=>v).map(([k])=>k).join(', ')}</div>
                          )}
+                    </>)}
+                     {isHomeRepairProvider && (<>
+                        {provider.profileSetupData.specializedData.certifications && <p className="text-xs"><strong>Certificaciones:</strong> {provider.profileSetupData.specializedData.certifications}</p>}
+                        {(provider.profileSetupData.specializedData.mainTrades?.length || 0) > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                                {provider.profileSetupData.specializedData.mainTrades?.map(trade => <Badge key={trade} variant="secondary">{trade}</Badge>)}
+                            </div>
+                        )}
+                         {(provider.profileSetupData.specializedData.specificSkills?.length || 0) > 0 && (
+                            <div className="flex flex-wrap gap-1 pt-2 border-t mt-2">
+                                {provider.profileSetupData.specializedData.specificSkills?.map(skill => <Badge key={skill} variant="outline">{skill}</Badge>)}
+                            </div>
+                        )}
                     </>)}
                 </div>
             )}

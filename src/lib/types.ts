@@ -201,6 +201,11 @@ export type SpecializedData = {
     };
     menuUrl?: string;
     sanitaryPermitId?: string;
+
+    // Hogar y Reparaciones
+    mainTrades?: string[];
+    specificSkills?: string[];
+    certifications?: string;
 };
 
 
