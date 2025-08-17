@@ -26,14 +26,16 @@ export function MapPageContent() {
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
   });
 
-  const { users, currentUser } = useCorabo();
+  const { users, currentUserLocation } = useCorabo();
   const router = useRouter();
   const [selectedProvider, setSelectedProvider] = useState<any>(null);
 
-  const center = useMemo(() => ({
-    lat: 10.4806, // Caracas center
-    lng: -66.9036,
-  }), []);
+  const center = useMemo(() => {
+    if (currentUserLocation) {
+        return { lat: currentUserLocation.latitude, lng: currentUserLocation.longitude };
+    }
+    return { lat: 10.4806, lng: -66.9036 }; // Fallback to Caracas
+  }, [currentUserLocation]);
 
   const providersWithLocation = useMemo(() => {
     return users.filter(

@@ -59,6 +59,7 @@ interface CoraboState {
   deliveryAddress: string;
   exchangeRate: number;
   qrSession: QrSession | null;
+  currentUserLocation: GeolocationCoords | null;
 }
 
 interface CoraboActions {
@@ -167,6 +168,24 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const cart: CartItem[] = useMemo(() => activeCartTx?.details.items || [], [activeCartTx]);
 
   useEffect(() => {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                setCurrentUserLocation({
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                });
+            },
+            (error) => {
+                console.error("Error getting geolocation: ", error);
+                // Optionally inform the user
+            }
+        );
+    }
+  }, []);
+
+
+  useEffect(() => {
     // Load contacts from local storage on initial mount
     try {
         const savedContacts = localStorage.getItem('coraboContacts');
@@ -230,14 +249,22 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const state = useMemo(() => ({
     currentUser, users, allPublications, transactions, conversations, cart, searchQuery,
     categoryFilter, contacts, isGpsActive, searchHistory, isLoadingAuth,
-    deliveryAddress, exchangeRate, qrSession,
+    deliveryAddress, exchangeRate, qrSession, currentUserLocation
   }), [
     currentUser, users, allPublications, transactions, conversations, cart, searchQuery,
     categoryFilter, contacts, isGpsActive, searchHistory, isLoadingAuth,
-    deliveryAddress, exchangeRate, qrSession,
+    deliveryAddress, exchangeRate, qrSession, currentUserLocation
   ]);
   
   const getCartTotal = useCallback(() => cart.reduce((total, item) => total + item.product.price * item.quantity, 0), [cart]);
+  
+  const getDistanceToProvider = useCallback((provider: User) => {
+    if (!currentUserLocation || !provider.profileSetupData?.location) return null;
+    const [lat2, lon2] = provider.profileSetupData.location.split(',').map(Number);
+    const distance = haversineDistance(currentUserLocation.latitude, currentUserLocation.longitude, lat2, lon2);
+    return distance < 1 ? `${(distance * 1000).toFixed(0)} m` : `${distance.toFixed(1)} km`;
+  }, [currentUserLocation]);
+  
   const getDeliveryCost = useCallback(() => ((Math.random() * 9) + 1) * 1.5, []);
   
   const updateCart = useCallback(async (newCart: CartItem[], currentUserId: string, currentTransactions: Transaction[]) => {
@@ -315,6 +342,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     clearSearchHistory: () => setSearchHistory([]),
     getCartTotal,
     getDeliveryCost,
+    getDistanceToProvider,
     addContact: (user: User) => {
         if (contacts.some(c => c.id === user.id)) return false;
         setContacts(prev => [...prev, user]);
@@ -479,7 +507,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     rejectUserId: (a:any)=>{},
     getUserMetrics: (a:any,b:any)=>{return {reputation: 0, effectiveness: 0, responseTime: 'Nuevo'}},
     acceptDelivery: (a:any)=>{},
-    getDistanceToProvider: (a:any) => null,
     startQrSession: async (a:any) => null,
     setQrSessionAmount: async(a:any,b:any)=>{return Promise.resolve();},
     approveQrSession: async(a:any)=>{return Promise.resolve();},
@@ -503,7 +530,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     },
   }), [
     searchHistory, contacts, cart, transactions, getCartTotal, 
-    getDeliveryCost, users, updateCart, router, currentUser, updateUser, updateFullProfile
+    getDeliveryCost, users, updateCart, router, currentUser, updateUser, updateFullProfile,
+    getDistanceToProvider
   ]);
   
   return (
