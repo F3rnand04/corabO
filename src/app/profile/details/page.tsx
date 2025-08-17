@@ -1,4 +1,3 @@
-
 'use client';
 
 import { ProfileDetailsTab } from '@/components/profile/ProfileDetailsTab';

@@ -81,18 +81,14 @@ export function ProfileDetailsTab() {
         );
     }
     
-    // @ts-ignore - We know the key exists
-    const SpecializedComponent = categoryComponentMap[category];
+    const SpecializedComponent = categoryComponentMap[category as keyof typeof categoryComponentMap];
     
     if (SpecializedComponent) {
         return <SpecializedComponent formData={formData} onSpecializedChange={handleSpecializedInputChange} />;
     }
 
-    return (
-        <div className="p-4 bg-muted rounded-md text-center text-sm text-muted-foreground">
-            No hay detalles especializados para la categoría seleccionada.
-        </div>
-    );
+    // Fallback for categories without a specific component yet
+    return <GeneralProviderFields formData={formData} onSpecializedChange={handleSpecializedInputChange} />;
   };
 
   if (!currentUser) {
