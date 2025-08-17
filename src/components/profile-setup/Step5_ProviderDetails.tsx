@@ -23,7 +23,6 @@ import { useToast } from '@/hooks/use-toast';
 import { X } from 'lucide-react';
 import { Checkbox } from '../ui/checkbox';
 
-
 interface Step5_ProviderDetailsProps {
   onBack: () => void;
   onNext: () => void;
@@ -36,7 +35,10 @@ const homeRepairTrades = ['Plomería', 'Electricidad', 'Albañilería', 'Pintura
 const beautyTrades = ['Manicure y Pedicure', 'Estilismo y Peluquería', 'Maquillaje Profesional', 'Masajes', 'Cuidado Facial', 'Depilación', 'Pestañas y Cejas'];
 
 // This is now a proper React component that can manage its own state.
-const GeneralProviderFields = ({ formData, handleSpecializedInputChange }: {
+const GeneralProviderFields = ({ 
+    formData, 
+    handleSpecializedInputChange 
+}: {
     formData: ProfileSetupData;
     handleSpecializedInputChange: (field: keyof NonNullable<ProfileSetupData['specializedData']>, value: any) => void;
 }) => {
@@ -98,7 +100,7 @@ const GeneralProviderFields = ({ formData, handleSpecializedInputChange }: {
                     type="number"
                     placeholder="Ej: 5"
                     value={formData.specializedData?.yearsOfExperience || ''}
-                    onChange={(e) => handleSpecializedInputChange('yearsOfExperience', parseInt(e.target.value, 10))}
+                    onChange={(e) => handleSpecializedInputChange('yearsOfExperience', parseInt(e.target.value, 10) || 0)}
                 />
             </div>
         </div>
@@ -430,6 +432,19 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
     <>
     <div className="space-y-8">
       <h2 className="text-xl font-semibold">Paso 5: Detalles Específicos del Proveedor</h2>
+      
+      <div className="space-y-4">
+        <Label htmlFor="specialty">Especialidad / Descripción corta</Label>
+        <Textarea 
+            id="specialty" 
+            placeholder="Ej: Expertos en cocina italiana." 
+            rows={2} 
+            maxLength={30}
+            value={formData.specialty || ''}
+            onChange={(e) => handleFormDataChange('specialty', e.target.value)}
+        />
+        <p className="text-xs text-muted-foreground text-right">{formData.specialty?.length || 0} / 30</p>
+      </div>
       
       {renderSpecializedFields()}
        
