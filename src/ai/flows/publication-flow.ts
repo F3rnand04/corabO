@@ -13,6 +13,7 @@ import { getFirestoreDb } from '@/lib/firebase-server';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import type { GalleryImage, User } from '@/lib/types';
 import { CreatePublicationInputSchema, CreateProductInputSchema } from '@/lib/types';
+import { sendNewPublicationNotification } from './notification-flow';
 
 // --- Create Publication Flow ---
 
@@ -30,6 +31,7 @@ export const createPublication = ai.defineFlow(
     if (!userSnap.exists()) {
       throw new Error('User not found. Cannot create publication for a non-existent user.');
     }
+    const user = userSnap.data() as User;
     
     const publicationId = `pub-${Date.now()}`;
 
@@ -44,12 +46,19 @@ export const createPublication = ai.defineFlow(
       comments: [],
       likes: 0,
       aspectRatio,
-      // The 'owner' field is deprecated to prevent stale data.
-      // It will be fetched on-demand by the client.
     };
     
     const publicationRef = doc(db, 'publications', publicationId);
     await setDoc(publicationRef, newPublication);
+    
+    // Notification Logic: Notify if the user is verified or has good reputation
+    if (user.verified || user.reputation > 4.0) {
+      await sendNewPublicationNotification({
+        providerId: userId,
+        publicationId: publicationId,
+        publicationDescription: description,
+      });
+    }
   }
 );
 
@@ -92,6 +101,15 @@ export const createProduct = ai.defineFlow(
         const productRef = doc(db, 'publications', productId);
         await setDoc(productRef, newProductPublication);
         
+        // Notification Logic for new products
+        if (user.verified || user.reputation > 4.0) {
+          await sendNewPublicationNotification({
+            providerId: userId,
+            publicationId: productId,
+            publicationDescription: `¡Nuevo producto disponible! ${name}`,
+          });
+        }
+
         return productId;
     }
 );

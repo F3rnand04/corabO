@@ -34,8 +34,8 @@ export function PaymentVerificationTab() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Verificación de Pagos de Campañas</CardTitle>
-        <CardDescription>Aprueba los pagos para activar las campañas de los proveedores y notificar a los usuarios.</CardDescription>
+        <CardTitle>Verificación de Pagos (Campañas y Suscripciones)</CardTitle>
+        <CardDescription>Aprueba los pagos para activar los beneficios de los usuarios y notificar cuando sea necesario.</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="border rounded-md">
@@ -54,6 +54,8 @@ export function PaymentVerificationTab() {
                 pendingPayments.map(tx => {
                   const user = users.find(u => u.id === tx.clientId);
                   const campaignId = tx.details.system?.match(/Pago de campaña publicitaria: (.*)/)?.[1];
+                  const isSubscription = tx.details.isSubscription;
+
                   return (
                     <TableRow key={tx.id}>
                       <TableCell>{user?.name || tx.clientId}</TableCell>
@@ -63,11 +65,19 @@ export function PaymentVerificationTab() {
                       <TableCell className="text-right">
                         <Button 
                           size="sm" 
-                          onClick={() => campaignId && handleVerifyAndNotify(tx.id, campaignId)}
-                          disabled={!campaignId}
+                          onClick={() => {
+                            if (campaignId) {
+                                handleVerifyAndNotify(tx.id, campaignId);
+                            } else if (isSubscription) {
+                                // Just verify the payment for subscriptions, no notification needed from here
+                                verifyCampaignPayment(tx.id, ''); // Pass empty campaignId
+                                toast({ title: "Suscripción Activada", description: "El pago del usuario ha sido verificado."});
+                            }
+                          }}
+                          disabled={!campaignId && !isSubscription}
                         >
                           <CheckCircle className="mr-2 h-4 w-4" />
-                          Verificar y Notificar
+                          Verificar y Activar
                         </Button>
                       </TableCell>
                     </TableRow>
