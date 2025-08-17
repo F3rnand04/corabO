@@ -21,7 +21,6 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { X } from 'lucide-react';
-import { Checkbox } from '../ui/checkbox';
 
 // --- Specialized Field Components ---
 
@@ -147,7 +146,6 @@ interface Step5_ProviderDetailsProps {
 const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
 export default function Step5_ProviderDetails({ onBack, onNext, formData, setFormData }: Step5_ProviderDetailsProps) {
-  const router = useRouter();
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
   const { currentUser, users, requestAffiliation } = useCorabo();
   const { toast } = useToast();
@@ -363,5 +361,3 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
     </>
   );
 }
-
-    

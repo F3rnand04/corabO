@@ -18,7 +18,6 @@ import { SubscriptionDialog } from '../SubscriptionDialog';
 import { Checkbox } from '../ui/checkbox';
 import Link from 'next/link';
 import type { ProfileSetupData } from '@/lib/types';
-import { ValidationItem } from '../ValidationItem';
 
 
 interface Step6_ReviewProps {
@@ -45,11 +44,10 @@ const MAX_RADIUS_FREE = 10;
 
 
 export default function Step6_Review({ onBack, formData, setFormData, profileType, goToStep }: Step6_ReviewProps) {
-  const { currentUser, updateFullProfile, validateEmail, sendPhoneVerification, verifyPhoneCode, updateUser } = useCorabo();
+  const { currentUser, updateFullProfile } = useCorabo();
   const router = useRouter();
   const { toast } = useToast();
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
-  const [hasAcceptedPolicies, setHasAcceptedPolicies] = useState(false);
 
   const isProvider = profileType === 'provider';
   
@@ -57,14 +55,6 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
 
   const handleFinish = async () => {
     if (!currentUser) return;
-    if (!hasAcceptedPolicies) {
-        toast({
-            variant: "destructive",
-            title: "Aceptación Requerida",
-            description: "Debes aceptar las políticas de servicio y privacidad para continuar."
-        });
-        return;
-    }
     
     await updateFullProfile(currentUser.id, formData, profileType);
     
@@ -145,14 +135,6 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
                         {currentUser.emailValidated ? <CheckCircle className="w-4 h-4 text-green-600"/> : <XCircle className="w-4 h-4 text-destructive"/>}
                         {currentUser.email}
                     </div>
-                     <ValidationItem
-                        label=""
-                        value={currentUser.phone || ''}
-                        initialStatus={currentUser.phoneValidated ? 'validated' : 'idle'}
-                        onValidate={() => sendPhoneVerification(currentUser.id, currentUser.phone || '')}
-                        onValueChange={(value) => updateUser(currentUser.id, { phone: value })}
-                        type="phone"
-                    />
                 </div>
               ), 4)}
 
@@ -208,26 +190,9 @@ export default function Step6_Review({ onBack, formData, setFormData, profileTyp
           </CardContent>
       </Card>
 
-      <div className="space-y-4 pt-4">
-        <div className="flex items-center space-x-2">
-            <Checkbox id="terms" checked={hasAcceptedPolicies} onCheckedChange={(checked) => setHasAcceptedPolicies(checked as boolean)}/>
-            <label
-            htmlFor="terms"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-            He leído y acepto las{' '}
-            <Link href="/policies" target="_blank" className="text-primary underline hover:no-underline">
-                Políticas de Servicio y Privacidad
-            </Link>
-            .
-            </label>
-        </div>
-      </div>
-
-
       <div className="flex justify-between">
         <Button variant="outline" onClick={onBack}>Atrás</Button>
-        <Button onClick={handleFinish} disabled={!hasAcceptedPolicies}>
+        <Button onClick={handleFinish}>
             {isProvider && !currentUser.isTransactionsActive ? 'Continuar a Activación' : 'Finalizar Configuración'}
         </Button>
       </div>
