@@ -1,12 +1,11 @@
 
-
 'use client';
 
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Loader2 } from 'lucide-react';
 import PublicationsPage from './publications/page';
 import CatalogPage from './catalog/page';
-import DetailsPage from './details/page'; // Import the new details page
+import DetailsPage from './details/page';
 import { usePathname } from 'next/navigation';
 
 export default function ProfilePage() {
@@ -21,25 +20,15 @@ export default function ProfilePage() {
         );
     }
     
-    if (currentUser.type !== 'provider') {
-        // For clients, or other types, maybe show a simplified view or redirect.
-        // For now, let's assume they shouldn't access this complex profile view.
-        return (
-            <div className="flex items-center justify-center pt-20">
-                <p>No tienes un perfil de proveedor para mostrar.</p>
-            </div>
-        );
-    }
-
-    // This component now acts as a router based on the URL.
-    // The active tab is controlled by the URL itself.
-    if (pathname.includes('/catalog')) {
+    // The '/profile/publications' route is now the default handled by '/profile'
+    // This logic correctly routes to the components based on the URL segment
+    if (pathname === '/profile/catalog') {
         return <CatalogPage />;
     }
-    if (pathname.includes('/details')) {
+    if (pathname === '/profile/details') {
         return <DetailsPage />;
     }
     
-    // Default to publications view
+    // Default to publications view if no other segment matches or if it's just '/profile'
     return <PublicationsPage />;
 }

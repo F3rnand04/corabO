@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useRef, ChangeEvent, useCallback } from 'react';
@@ -185,8 +184,8 @@ export function ProfileHeader() {
         </div>
         
         <div className="flex justify-around font-semibold text-center border-b mt-4">
-            <Button asChild variant="ghost" className="flex-1 p-3 rounded-none text-muted-foreground data-[active=true]:text-primary data-[active=true]:border-b-2 data-[active=true]:border-primary" data-active={pathname === '/profile/publications'}>
-               <Link href="/profile/publications">
+            <Button asChild variant="ghost" className="flex-1 p-3 rounded-none text-muted-foreground data-[active=true]:text-primary data-[active=true]:border-b-2 data-[active=true]:border-primary" data-active={pathname === '/profile'}>
+               <Link href="/profile">
                     Publicaciones <span className='font-mono ml-2 text-xs'>({galleryCount})</span>
                </Link>
             </Button>
