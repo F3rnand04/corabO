@@ -24,8 +24,8 @@ export default function ProfileLayout({
         );
     }
 
-    // Don't render the main profile layout for the details page
-    if (pathname === '/profile/details') {
+    // El layout de la ruta de detalles ahora se maneja en su propia carpeta.
+    if (pathname.startsWith('/profile/details')) {
         return <>{children}</>;
     }
     
