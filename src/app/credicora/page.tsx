@@ -108,8 +108,12 @@ export default function CredicoraPage() {
                 <div className="space-y-4 text-muted-foreground">
                     <p>Para mantener este ecosistema seguro y en crecimiento, Credicora opera con una pequeña comisión de servicio.</p>
                     <p>
-                        <span className="font-bold text-primary">Para Proveedores:</span> Se aplica una comisión del <span className="font-bold">4.99%</span> sobre el valor total de la venta (sin incluir delivery) al utilizar Credicora. Esta comisión nos permite cubrir los costos operativos, garantizar tu pago y seguir desarrollando herramientas para tu éxito. Piénsalo como una inversión mínima para asegurar una venta que de otra forma no se hubiera concretado.
+                        <span className="font-bold text-primary">Para Proveedores:</span> Se aplica una comisión de servicio sobre el valor total de la venta (sin incluir delivery) al utilizar Credicora. Esta comisión nos permite cubrir los costos operativos y seguir desarrollando herramientas para tu éxito.
                     </p>
+                     <ul className="list-disc pl-5 text-sm">
+                        <li><span className="font-bold">8%</span> de comisión para pagos con Credicora.</li>
+                        <li><span className="font-bold">5%</span> de comisión si el cliente que paga está suscrito (beneficio anula la tasa del 8%).</li>
+                    </ul>
                     <p>
                         <span className="font-bold text-primary">Para Clientes:</span> ¡Usar Credicora es <span className="font-bold">totalmente gratis!</span> No hay costos ocultos. Solo pagas el precio del producto o servicio.
                     </p>
@@ -120,7 +124,7 @@ export default function CredicoraPage() {
                     <CardTitle className="flex items-center gap-2"><Zap className="text-yellow-500 fill-yellow-500"/> Beneficios de Suscriptor</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                    <p className="flex items-center gap-2"><Percent className="w-4 h-4 text-primary"/> Comisión Reducida: <span className="line-through text-muted-foreground">4.99%</span> <span className="font-bold">¡Ahora 3.99%! (Ahorra 20%)</span></p>
+                    <p className="flex items-center gap-2"><Percent className="w-4 h-4 text-primary"/> Comisión de Credicora reducida al <span className="font-bold">5%</span>.</p>
                     <p className="flex items-center gap-2"><Award className="w-4 h-4 text-primary"/> Progresión de nivel <span className="font-bold">más rápida.</span></p>
                     <p className="flex items-center gap-2"><TrendingUp className="w-4 h-4 text-primary"/> Acceso a herramientas de promoción avanzadas.</p>
                      <Button className="w-full mt-4" onClick={() => router.push('/contacts')}>

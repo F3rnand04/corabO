@@ -337,10 +337,10 @@ export type Transaction = {
   type: 'Compra' | 'Servicio' | 'Sistema' | 'Compra Directa';
   status: TransactionStatus;
   date: string; // ISO 8601 string
-  amount: number;
+  amount: number; // Monto en moneda local
+  participantIds: string[];
   clientId: string;
   providerId: string;
-  participantIds: string[];
   details: {
     // For services
     serviceName?: string;
@@ -377,13 +377,14 @@ export type Transaction = {
     providerComment?: string;
 
     // For commission and taxes
+    amountUSD?: number; // Monto original en USD
     baseAmount?: number; // Base amount in local currency
     commissionRate?: number;
     commission?: number; // Commission amount in local currency
     taxRate?: number;
     tax?: number; // Tax amount in local currency
     total?: number; // Final total in local currency
-    exchangeRate?: number;
+    exchangeRate?: number; // Tasa de cambio al momento de la creación
   };
 };
 
