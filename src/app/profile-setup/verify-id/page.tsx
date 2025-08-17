@@ -13,6 +13,14 @@ import { Loader2, UploadCloud, X, CheckCircle, AlertTriangle, Sparkles } from 'l
 import { VerificationOutput } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
+const countriesInfo = [
+  { code: 'VE', name: 'Venezuela', idLabel: 'Cédula de Identidad', companyIdLabel: 'RIF' },
+  { code: 'CO', name: 'Colombia', idLabel: 'Cédula de Ciudadanía', companyIdLabel: 'NIT' },
+  { code: 'CL', name: 'Chile', idLabel: 'RUT / DNI', companyIdLabel: 'RUT' },
+  { code: 'ES', name: 'España', idLabel: 'DNI / NIE', companyIdLabel: 'NIF' },
+  { code: 'MX', name: 'México', idLabel: 'CURP', companyIdLabel: 'RFC' },
+];
+
 export default function VerifyIdPage() {
   const { currentUser, autoVerifyIdWithAI, updateUser } = useCorabo();
   const { toast } = useToast();
@@ -40,6 +48,9 @@ export default function VerifyIdPage() {
   }
 
   const isCompany = currentUser.profileSetupData?.providerType === 'company';
+  const countryInfo = countriesInfo.find(c => c.code === currentUser.country);
+  const docLabel = isCompany ? (countryInfo?.companyIdLabel || 'Documento Fiscal') : (countryInfo?.idLabel || 'Documento de Identidad');
+
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -113,14 +124,12 @@ export default function VerifyIdPage() {
         <CardHeader>
           <CardTitle>{isCompany ? 'Verificación de Empresa' : 'Verificación de Identidad'}</CardTitle>
           <CardDescription>
-            {isCompany 
-              ? 'Sube tu documento de registro fiscal (ej. RIF) para activar las funciones de pago.'
-              : 'Sube una foto clara de tu documento de identidad para activar las funciones de pago.'}
+            Sube una foto clara de tu <strong>{docLabel}</strong> para activar las funciones de pago.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="id-document">{isCompany ? 'Documento Fiscal (PDF o Imagen)' : 'Documento de Identidad'}</Label>
+            <Label htmlFor="id-document">{docLabel} (PDF o Imagen)</Label>
             <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*,application/pdf" />
             {imagePreview || currentUser.idDocumentUrl ? (
               <div className="relative group w-full aspect-[1.58] rounded-md overflow-hidden bg-black">
