@@ -17,6 +17,30 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Badge } from '../ui/badge';
 import { X } from 'lucide-react';
 
+const renderGeneralProviderFields = (
+    formData: ProfileSetupData,
+    handleInputChange: (field: keyof ProfileSetupData['specializedData'], value: any) => void
+) => (
+     <div className="space-y-4">
+        <div className="space-y-2">
+            <Label htmlFor="specialty">Especialidad / Descripción corta</Label>
+            <Textarea
+                id="specialty"
+                placeholder="Ej: Expertos en plomería y electricidad."
+                rows={2}
+                maxLength={30}
+                value={(formData as any).specialty || ''}
+                onChange={(e) => handleInputChange('specialty' as any, e.target.value)}
+            />
+             <p className="text-xs text-muted-foreground text-right">{((formData as any).specialty?.length || 0)} / 30</p>
+        </div>
+         <div className="space-y-2">
+            <Label htmlFor="website">Redes Sociales / Sitio Web (Opcional)</Label>
+            <Input id="website" placeholder="https://tu-sitio-web.com" value={(formData as any).website || ''} onChange={(e) => handleInputChange('website' as any, e.target.value)} />
+        </div>
+    </div>
+);
+
 
 export function ProfileDetailsTab() {
   const { currentUser, updateUser } = useCorabo();
@@ -169,13 +193,18 @@ export function ProfileDetailsTab() {
       case 'Salud y Bienestar':
         return renderHealthFields();
       default:
-        return (
-            <Alert>
-                <AlertTitle>Sección en Desarrollo</AlertTitle>
-                <AlertDescription>
-                    Próximamente añadiremos campos especializados para tu categoría. Por ahora, puedes usar tu descripción de perfil para detallar tus servicios.
-                </AlertDescription>
-            </Alert>
+        // Pass the full profileSetupData and a specialized handler to the general fields renderer
+        return renderGeneralProviderFields(
+            currentUser.profileSetupData || {}, 
+            (field, value) => {
+                const a = field as keyof ProfileSetupData;
+                updateUser(currentUser.id, {
+                    profileSetupData: {
+                        ...currentUser.profileSetupData,
+                        [a]: value
+                    }
+                })
+            }
         );
     }
   };

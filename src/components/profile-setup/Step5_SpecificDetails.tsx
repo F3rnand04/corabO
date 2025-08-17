@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from '../ui/textarea';
-import { MapPin, Building, AlertCircle, Package, Hand, Star, Info, LocateFixed, Handshake } from 'lucide-react';
+import { MapPin, Building, AlertCircle, Package, Hand, Star, Info, LocateFixed, Handshake, Wrench, Stethoscope, BadgeCheck } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '../ui/slider';
 import { Badge } from '../ui/badge';
@@ -20,6 +20,8 @@ import { useState } from 'react';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { X } from 'lucide-react';
+
 
 interface Step5_SpecificDetailsProps {
   onBack: () => void;
@@ -30,6 +32,32 @@ interface Step5_SpecificDetailsProps {
 
 const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
+// Helper function to render the common fields
+const renderGeneralProviderFields = (
+    formData: ProfileSetupData,
+    handleFormDataChange: (field: keyof ProfileSetupData, value: any) => void
+) => (
+     <div className="space-y-4">
+        <div className="space-y-2">
+            <Label htmlFor="specialty">Especialidad / Descripción corta</Label>
+            <Textarea
+                id="specialty"
+                placeholder="Ej: Expertos en plomería y electricidad."
+                rows={2}
+                maxLength={30}
+                value={formData.specialty || ''}
+                onChange={(e) => handleFormDataChange('specialty', e.target.value)}
+            />
+             <p className="text-xs text-muted-foreground text-right">{formData.specialty?.length || 0} / 30</p>
+        </div>
+         <div className="space-y-2">
+            <Label htmlFor="website">Redes Sociales / Sitio Web (Opcional)</Label>
+            <Input id="website" placeholder="https://tu-sitio-web.com" value={formData.website || ''} onChange={(e) => handleFormDataChange('website', e.target.value)} />
+        </div>
+    </div>
+);
+
+
 export default function Step5_SpecificDetails({ onBack, onNext, formData, setFormData }: Step5_SpecificDetailsProps) {
   const router = useRouter();
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
@@ -39,6 +67,7 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
   const MAX_RADIUS_FREE = 10;
   const isOverFreeRadius = (formData.serviceRadius || 0) > MAX_RADIUS_FREE && !(currentUser?.isSubscribed);
   const isProfessional = formData.providerType === 'professional';
+  const [currentSpecialty, setCurrentSpecialty] = useState('');
 
   const companies = users.filter(u => u.profileSetupData?.providerType === 'company');
 
@@ -47,7 +76,6 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
   };
   
   const handleMapClick = () => {
-    // **FIX:** Directly open Google Maps in a new tab instead of using a broken internal page.
     if (formData.location) {
         const [lat, lon] = formData.location.split(',');
         const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
@@ -82,26 +110,139 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
           })
       }
   };
+
+  const handleInputChange = (field: keyof NonNullable<ProfileSetupData['specializedData']>, value: any) => {
+    setFormData({ 
+        ...formData, 
+        specializedData: {
+            ...formData.specializedData,
+            [field]: value
+        } 
+    });
+  };
+
+  const handleAddSpecialty = () => {
+    if (currentSpecialty && !(formData.specializedData?.specialties || []).includes(currentSpecialty)) {
+        const newSpecialties = [...(formData.specializedData?.specialties || []), currentSpecialty];
+        handleInputChange('specialties', newSpecialties);
+        setCurrentSpecialty('');
+    }
+  };
+
+  const handleRemoveSpecialty = (specToRemove: string) => {
+    const newSpecialties = formData.specializedData?.specialties?.filter(spec => spec !== specToRemove);
+    handleInputChange('specialties', newSpecialties);
+  };
+  
+  const renderSpecializedFields = () => {
+    switch (formData.primaryCategory) {
+      case 'Transporte y Asistencia':
+         return (
+            <div className="space-y-4">
+               <div className="space-y-2">
+                    <Label htmlFor="vehicleType" className="flex items-center gap-2"><Truck className="w-4 h-4"/> Tipo de Vehículo</Label>
+                    <Input 
+                        id="vehicleType" 
+                        placeholder="Ej: Camión 350, Grúa de Plataforma" 
+                        value={formData?.specializedData?.vehicleType || ''}
+                        onChange={(e) => handleInputChange('vehicleType', e.target.value)}
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="capacity" className="flex items-center gap-2"><Package className="w-4 h-4"/> Capacidad de Carga</Label>
+                    <Input 
+                        id="capacity" 
+                        placeholder="Ej: 3,500 Kg, 2 vehículos" 
+                        value={formData?.specializedData?.capacity || ''}
+                        onChange={(e) => handleInputChange('capacity', e.target.value)}
+                    />
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="specialConditions" className="flex items-center gap-2"><Wrench className="w-4 h-4"/> Equipos o Condiciones Especiales</Label>
+                    <Textarea
+                        id="specialConditions"
+                        placeholder="Ej: Rampa hidráulica, GPS, Cava refrigerada..."
+                        value={formData?.specializedData?.specialConditions || ''}
+                        onChange={(e) => handleInputChange('specialConditions', e.target.value)}
+                        rows={3}
+                    />
+                </div>
+            </div>
+          );
+      case 'Salud y Bienestar':
+        return (
+             <div className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="licenseNumber" className="flex items-center gap-2"><BadgeCheck className="w-4 h-4"/> Nro. Licencia / Colegiatura</Label>
+                    <Input 
+                        id="licenseNumber" 
+                        placeholder="Ej: MPPS 12345"
+                        value={formData?.specializedData?.licenseNumber || ''}
+                        onChange={(e) => handleInputChange('licenseNumber', e.target.value)}
+                    />
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="specialties" className="flex items-center gap-2"><Stethoscope className="w-4 h-4"/> Especialidades</Label>
+                    <div className="flex gap-2">
+                        <Input 
+                            id="specialties" 
+                            placeholder="Ej: Terapia Manual" 
+                            value={currentSpecialty}
+                            onChange={(e) => setCurrentSpecialty(e.target.value)}
+                             onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleAddSpecialty();
+                                }
+                            }}
+                        />
+                        <Button onClick={handleAddSpecialty} type="button">Añadir</Button>
+                    </div>
+                    <div className="flex flex-wrap gap-2 pt-2">
+                        {formData.specializedData?.specialties?.map(spec => (
+                            <Badge key={spec} variant="secondary">
+                                {spec}
+                                <button onClick={() => handleRemoveSpecialty(spec)} className="ml-2 rounded-full hover:bg-background/50">
+                                    <X className="h-3 w-3"/>
+                                </button>
+                            </Badge>
+                        ))}
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="consultationMode" className="flex items-center gap-2"><Wrench className="w-4 h-4"/> Modalidad de Atención</Label>
+                    <Select 
+                        value={formData?.specializedData?.consultationMode || ''}
+                        onValueChange={(value) => handleInputChange('consultationMode', value)}
+                    >
+                        <SelectTrigger id="consultationMode">
+                            <SelectValue placeholder="Selecciona una modalidad" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="office">En Consultorio</SelectItem>
+                            <SelectItem value="home">A Domicilio</SelectItem>
+                            <SelectItem value="online">En Línea</SelectItem>
+                            <SelectItem value="hybrid">Híbrido (Online y Presencial)</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+          );
+      default:
+        // Render general fields for all other categories
+        return renderGeneralProviderFields(formData, handleFormDataChange);
+    }
+  };
+
   
   return (
     <>
     <div className="space-y-8">
       <h2 className="text-xl font-semibold">Paso 5: Detalles Específicos del Proveedor</h2>
       
-      <div className="space-y-2">
-        <Label htmlFor="specialty">Especialidad / Descripción corta</Label>
-        <Textarea 
-            id="specialty" 
-            placeholder="Ej: Expertos en cocina italiana." 
-            rows={2} 
-            maxLength={30}
-            value={formData.specialty || ''}
-            onChange={(e) => handleFormDataChange('specialty', e.target.value)}
-        />
-        <p className="text-xs text-muted-foreground text-right">{formData.specialty?.length || 0} / 30</p>
-      </div>
-
-       <div className="space-y-3">
+      {renderSpecializedFields()}
+       
+       <div className="space-y-3 pt-6 border-t">
         <Label>Ofrezco principalmente</Label>
         <RadioGroup value={formData.offerType || 'service'} onValueChange={(value: 'product' | 'service') => handleFormDataChange('offerType', value)} className="flex gap-4">
             <div className="flex items-center space-x-2"><RadioGroupItem value="service" id="service" /><Label htmlFor="service" className="flex items-center gap-2 font-normal cursor-pointer"><Hand className="w-4 h-4"/> Servicios</Label></div>
@@ -280,11 +421,6 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="website">Redes Sociales / Sitio Web (Opcional)</Label>
-        <Input id="website" placeholder="https://tu-sitio-web.com" value={formData.website || ''} onChange={(e) => handleFormDataChange('website', e.target.value)} />
-      </div>
-
       <div className="flex justify-between">
         <Button variant="outline" onClick={onBack}>Atrás</Button>
         <Button onClick={onNext} disabled={!formData.location?.trim()}>Siguiente</Button>
@@ -295,4 +431,3 @@ export default function Step5_SpecificDetails({ onBack, onNext, formData, setFor
   );
 }
 
-    
