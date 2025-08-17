@@ -1,88 +1,72 @@
 
-
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Package, Save, Truck, Wrench, Stethoscope, BadgeCheck } from 'lucide-react';
+import { Loader2, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { ProfileSetupData } from '@/lib/types';
-import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Badge } from '../ui/badge';
-import { X } from 'lucide-react';
 
-const renderGeneralProviderFields = (
-    formData: ProfileSetupData,
-    handleInputChange: (field: keyof ProfileSetupData['specializedData'], value: any) => void
-) => (
-     <div className="space-y-4">
-        <div className="space-y-2">
-            <Label htmlFor="specialty">Especialidad / Descripción corta</Label>
-            <Textarea
-                id="specialty"
-                placeholder="Ej: Expertos en plomería y electricidad."
-                rows={2}
-                maxLength={30}
-                value={(formData as any).specialty || ''}
-                onChange={(e) => handleInputChange('specialty' as any, e.target.value)}
-            />
-             <p className="text-xs text-muted-foreground text-right">{((formData as any).specialty?.length || 0)} / 30</p>
-        </div>
-         <div className="space-y-2">
-            <Label htmlFor="website">Redes Sociales / Sitio Web (Opcional)</Label>
-            <Input id="website" placeholder="https://tu-sitio-web.com" value={(formData as any).website || ''} onChange={(e) => handleInputChange('website' as any, e.target.value)} />
-        </div>
-    </div>
-);
+// Import specialized field components
+import { HealthFields } from './specialized-fields/HealthFields';
+import { TransportFields } from './specialized-fields/TransportFields';
+import { GeneralProviderFields } from './specialized-fields/GeneralProviderFields';
+import { HomeRepairFields } from './specialized-fields/HomeRepairFields';
+import { FoodAndRestaurantFields } from './specialized-fields/FoodAndRestaurantFields';
+import { BeautyFields } from './specialized-fields/BeautyFields';
+import { useRouter } from 'next/navigation';
+import { ChevronLeft } from 'lucide-react';
+
+
+function DetailsHeader() {
+    const router = useRouter();
+    return (
+        <header className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b">
+            <div className="container px-4 sm:px-6">
+                <div className="flex h-16 items-center">
+                    <Button variant="ghost" size="icon" onClick={() => router.push('/profile')}>
+                        <ChevronLeft className="h-6 w-6" />
+                    </Button>
+                    <h1 className="text-lg font-semibold ml-4">Editar Detalles del Perfil</h1>
+                </div>
+            </div>
+        </header>
+    );
+}
 
 
 export function ProfileDetailsTab() {
   const { currentUser, updateUser } = useCorabo();
   const { toast } = useToast();
-  const [formData, setFormData] = useState<ProfileSetupData['specializedData']>({});
+  const [formData, setFormData] = useState<ProfileSetupData>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [currentSpecialty, setCurrentSpecialty] = useState('');
 
   useEffect(() => {
-    if (currentUser?.profileSetupData?.specializedData) {
-      setFormData(currentUser.profileSetupData.specializedData);
+    if (currentUser?.profileSetupData) {
+      setFormData(currentUser.profileSetupData);
     }
   }, [currentUser]);
 
-  if (!currentUser) {
-    return <div className="flex items-center justify-center pt-10"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-  }
-
-  const handleInputChange = (field: keyof NonNullable<ProfileSetupData['specializedData']>, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleAddSpecialty = () => {
-    if (currentSpecialty && !formData?.specialties?.includes(currentSpecialty)) {
-        const newSpecialties = [...(formData.specialties || []), currentSpecialty];
-        handleInputChange('specialties', newSpecialties);
-        setCurrentSpecialty('');
-    }
-  };
-
-  const handleRemoveSpecialty = (specToRemove: string) => {
-    const newSpecialties = formData.specialties?.filter(spec => spec !== specToRemove);
-    handleInputChange('specialties', newSpecialties);
-  };
+  const handleSpecializedInputChange = useCallback((field: keyof NonNullable<ProfileSetupData['specializedData']>, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      specializedData: {
+        ...(prev.specializedData || {}),
+        [field]: value,
+      },
+    }));
+  }, []);
 
   const handleSave = async () => {
+    if (!currentUser) return;
     setIsLoading(true);
     try {
         await updateUser(currentUser.id, {
             profileSetupData: {
                 ...currentUser.profileSetupData,
-                specializedData: formData,
+                ...formData,
             }
         });
         toast({ title: "Detalles Guardados", description: "Tu información especializada ha sido actualizada." });
@@ -94,136 +78,59 @@ export function ProfileDetailsTab() {
     }
   };
 
-  const renderTransportFields = () => (
-    <div className="space-y-4">
-       <div className="space-y-2">
-            <Label htmlFor="vehicleType" className="flex items-center gap-2"><Truck className="w-4 h-4"/> Tipo de Vehículo</Label>
-            <Input 
-                id="vehicleType" 
-                placeholder="Ej: Camión 350, Grúa de Plataforma" 
-                value={formData?.vehicleType || ''}
-                onChange={(e) => handleInputChange('vehicleType', e.target.value)}
-            />
-        </div>
-        <div className="space-y-2">
-            <Label htmlFor="capacity" className="flex items-center gap-2"><Package className="w-4 h-4"/> Capacidad de Carga</Label>
-            <Input 
-                id="capacity" 
-                placeholder="Ej: 3,500 Kg, 2 vehículos" 
-                value={formData?.capacity || ''}
-                onChange={(e) => handleInputChange('capacity', e.target.value)}
-            />
-        </div>
-         <div className="space-y-2">
-            <Label htmlFor="specialConditions" className="flex items-center gap-2"><Wrench className="w-4 h-4"/> Equipos o Condiciones Especiales</Label>
-            <Textarea
-                id="specialConditions"
-                placeholder="Ej: Rampa hidráulica, GPS, Cava refrigerada..."
-                value={formData?.specialConditions || ''}
-                onChange={(e) => handleInputChange('specialConditions', e.target.value)}
-                rows={3}
-            />
-        </div>
-    </div>
-  );
+  const renderSpecializedFields = () => {
+    if (!currentUser) return null;
 
-  const renderHealthFields = () => (
-     <div className="space-y-4">
-        <div className="space-y-2">
-            <Label htmlFor="licenseNumber" className="flex items-center gap-2"><BadgeCheck className="w-4 h-4"/> Nro. Licencia / Colegiatura</Label>
-            <Input 
-                id="licenseNumber" 
-                placeholder="Ej: MPPS 12345"
-                value={formData?.licenseNumber || ''}
-                onChange={(e) => handleInputChange('licenseNumber', e.target.value)}
-            />
-        </div>
-         <div className="space-y-2">
-            <Label htmlFor="specialties" className="flex items-center gap-2"><Stethoscope className="w-4 h-4"/> Especialidades</Label>
-            <div className="flex gap-2">
-                <Input 
-                    id="specialties" 
-                    placeholder="Ej: Terapia Manual" 
-                    value={currentSpecialty}
-                    onChange={(e) => setCurrentSpecialty(e.target.value)}
-                     onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                            e.preventDefault();
-                            handleAddSpecialty();
-                        }
-                    }}
-                />
-                <Button onClick={handleAddSpecialty} type="button">Añadir</Button>
-            </div>
-            <div className="flex flex-wrap gap-2 pt-2">
-                {formData.specialties?.map(spec => (
-                    <Badge key={spec} variant="secondary">
-                        {spec}
-                        <button onClick={() => handleRemoveSpecialty(spec)} className="ml-2 rounded-full hover:bg-background/50">
-                            <X className="h-3 w-3"/>
-                        </button>
-                    </Badge>
-                ))}
-            </div>
-        </div>
-        <div className="space-y-2">
-            <Label htmlFor="consultationMode" className="flex items-center gap-2"><Wrench className="w-4 h-4"/> Modalidad de Atención</Label>
-            <Select 
-                value={formData?.consultationMode || ''}
-                onValueChange={(value) => handleInputChange('consultationMode', value)}
-            >
-                <SelectTrigger id="consultationMode">
-                    <SelectValue placeholder="Selecciona una modalidad" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="office">En Consultorio</SelectItem>
-                    <SelectItem value="home">A Domicilio</SelectItem>
-                    <SelectItem value="online">En Línea</SelectItem>
-                    <SelectItem value="hybrid">Híbrido (Online y Presencial)</SelectItem>
-                </SelectContent>
-            </Select>
-        </div>
-    </div>
-  );
+    const props = { formData, onSpecializedChange: handleSpecializedInputChange };
+    const professionalServicesCategories = ['Tecnología y Soporte', 'Educación', 'Eventos'];
 
-  const renderContent = () => {
-    switch (currentUser.profileSetupData?.primaryCategory) {
-      case 'Transporte y Asistencia':
-        return renderTransportFields();
-      case 'Salud y Bienestar':
-        return renderHealthFields();
+    if (professionalServicesCategories.includes(formData.primaryCategory || '')) {
+      return <GeneralProviderFields {...props} />;
+    }
+
+    switch (formData.primaryCategory) {
+      case 'Transporte y Asistencia': return <TransportFields {...props} />;
+      case 'Salud y Bienestar': return <HealthFields {...props} />;
+      case 'Hogar y Reparaciones': return <HomeRepairFields {...props} />;
+      case 'Alimentos y Restaurantes': return <FoodAndRestaurantFields {...props} />;
+      case 'Belleza': return <BeautyFields {...props} />;
       default:
-        // Pass the full profileSetupData and a specialized handler to the general fields renderer
-        return renderGeneralProviderFields(
-            currentUser.profileSetupData || {}, 
-            (field, value) => {
-                const a = field as keyof ProfileSetupData;
-                updateUser(currentUser.id, {
-                    profileSetupData: {
-                        ...currentUser.profileSetupData,
-                        [a]: value
-                    }
-                })
-            }
+        return (
+          <div className="p-4 bg-muted rounded-md text-center text-sm text-muted-foreground">
+            No hay detalles especializados para esta categoría aún.
+          </div>
         );
     }
   };
 
+  if (!currentUser) {
+    return (
+      <div className="flex items-center justify-center pt-10">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Detalles Especializados</CardTitle>
-        <CardDescription>
-          Añade información técnica sobre tus servicios. Estos datos opcionales ayudan a los clientes a entender mejor tu oferta y generan más confianza.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {renderContent()}
-        <Button onClick={handleSave} disabled={isLoading} className="w-full mt-6">
-            {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2"/> : <Save className="h-4 w-4 mr-2"/>}
-            Guardar Detalles
-        </Button>
-      </CardContent>
-    </Card>
+    <>
+      <DetailsHeader />
+      <main className="container max-w-2xl mx-auto py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Detalles Especializados</CardTitle>
+            <CardDescription>
+              Añade información técnica sobre tus servicios. Estos datos opcionales ayudan a los clientes a entender mejor tu oferta y generan más confianza.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {renderSpecializedFields()}
+            <Button onClick={handleSave} disabled={isLoading} className="w-full mt-6">
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2"/> : <Save className="h-4 w-4 mr-2"/>}
+              Guardar Detalles
+            </Button>
+          </CardContent>
+        </Card>
+      </main>
+    </>
   );
 }

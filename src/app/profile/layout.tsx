@@ -5,6 +5,7 @@ import { Footer } from "@/components/Footer";
 import { ProfileHeader } from "@/components/ProfileHeader";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { Loader2 } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 
 export default function ProfileLayout({
@@ -13,6 +14,7 @@ export default function ProfileLayout({
   children: React.ReactNode;
 }) {
     const { currentUser } = useCorabo();
+    const pathname = usePathname();
 
     if (!currentUser) {
         return (
@@ -20,6 +22,11 @@ export default function ProfileLayout({
               <Loader2 className="h-12 w-12 animate-spin text-primary" />
           </div>
         );
+    }
+
+    // Don't render the main profile layout for the details page
+    if (pathname === '/profile/details') {
+        return <>{children}</>;
     }
     
   return (
