@@ -56,6 +56,10 @@ El chat es la herramienta de negociación. Los proveedores pueden enviar "Propue
 -   **Activación Obligatoria:** Ningún proveedor puede ofertar si no ha completado la configuración y activación de transacciones.
 -   **Límite de Cotizaciones (No Suscritos):** Un usuario no suscrito puede cotizar el mismo producto/servicio a un máximo de 3 proveedores distintos por día.
 -   **Uso de Credicora:** Solo disponible para montos iguales o superiores a $20.
+-   **Sistema de Reputación Dinámico:**
+    -   **Efectividad:** Mide tu fiabilidad. Aumenta con cada transacción exitosa y disminuye con disputas.
+    -   **Agilidad de Pago:** Mide qué tan rápido pagas una vez que se te solicita. Pagar en menos de 15 minutos te da una insignia verde y mejora tu reputación.
+    -   **Inactividad:** Tu cuenta se pausará si no inicias sesión en 45 días para mantener la comunidad activa.
 
 ---
 
