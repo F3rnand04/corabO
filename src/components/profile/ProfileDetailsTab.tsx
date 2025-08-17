@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -18,7 +17,7 @@ import { FoodAndRestaurantFields } from './specialized-fields/FoodAndRestaurantF
 import { BeautyFields } from './specialized-fields/BeautyFields';
 
 // Mapa de componentes para un renderizado limpio y sin errores
-const categoryComponentMap = {
+const categoryComponentMap: { [key: string]: React.ElementType } = {
     'Transporte y Asistencia': TransportFields,
     'Salud y Bienestar': HealthFields,
     'Hogar y Reparaciones': HomeRepairFields,
@@ -81,7 +80,7 @@ export function ProfileDetailsTab() {
         );
     }
     
-    const SpecializedComponent = categoryComponentMap[category as keyof typeof categoryComponentMap];
+    const SpecializedComponent = categoryComponentMap[category];
     
     if (SpecializedComponent) {
         return <SpecializedComponent formData={formData} onSpecializedChange={handleSpecializedInputChange} />;
