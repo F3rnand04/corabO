@@ -6,7 +6,7 @@ import { useState, useEffect, useRef, ChangeEvent, useCallback } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Megaphone, Zap, Plus, Package, Wallet, MapPin, Calendar as CalendarIcon, TrendingUp, Timer } from 'lucide-react';
+import { Star, Megaphone, Zap, Plus, Package, Wallet, MapPin, Calendar as CalendarIcon, TrendingUp, Timer, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
@@ -194,6 +194,13 @@ export function ProfileHeader() {
                 <Button asChild variant="ghost" className="flex-1 p-3 rounded-none text-muted-foreground data-[active=true]:text-primary data-[active=true]:border-b-2 data-[active=true]:border-primary" data-active={pathname === '/profile/catalog'}>
                     <Link href="/profile/catalog">
                         Catálogo <span className='font-mono ml-2 text-xs'>({productCount})</span>
+                    </Link>
+                </Button>
+            )}
+             {isProvider && (
+                <Button asChild variant="ghost" className="flex-1 p-3 rounded-none text-muted-foreground data-[active=true]:text-primary data-[active=true]:border-b-2 data-[active=true]:border-primary" data-active={pathname === '/profile/details'}>
+                    <Link href="/profile/details">
+                        Detalles
                     </Link>
                 </Button>
             )}

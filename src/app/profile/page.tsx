@@ -1,13 +1,17 @@
 
+
 'use client';
 
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Loader2 } from 'lucide-react';
 import PublicationsPage from './publications/page';
 import CatalogPage from './catalog/page';
+import DetailsPage from './details/page'; // Import the new details page
+import { usePathname } from 'next/navigation';
 
 export default function ProfilePage() {
     const { currentUser } = useCorabo();
+    const pathname = usePathname();
 
     if (!currentUser) {
         return (
@@ -17,9 +21,9 @@ export default function ProfilePage() {
         );
     }
     
-    // Si no es un proveedor, no tiene una vista de perfil pública de este tipo.
-    // Aunque AppLayout debería prevenirlo, es una salvaguarda.
     if (currentUser.type !== 'provider') {
+        // For clients, or other types, maybe show a simplified view or redirect.
+        // For now, let's assume they shouldn't access this complex profile view.
         return (
             <div className="flex items-center justify-center pt-20">
                 <p>No tienes un perfil de proveedor para mostrar.</p>
@@ -27,13 +31,15 @@ export default function ProfilePage() {
         );
     }
 
-    // Determinar la vista por defecto y renderizarla directamente.
-    // Esto elimina la necesidad de una redirección que causaba bucles.
-    const isProductView = currentUser.profileSetupData?.offerType === 'product';
-
-    if (isProductView) {
+    // This component now acts as a router based on the URL.
+    // The active tab is controlled by the URL itself.
+    if (pathname.includes('/catalog')) {
         return <CatalogPage />;
-    } else {
-        return <PublicationsPage />;
     }
+    if (pathname.includes('/details')) {
+        return <DetailsPage />;
+    }
+    
+    // Default to publications view
+    return <PublicationsPage />;
 }

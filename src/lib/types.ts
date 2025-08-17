@@ -179,6 +179,15 @@ export const credicoraLevels: Record<string, CredicoraLevel> = {
     },
 };
 
+// New type for specialized data
+export type SpecializedData = {
+    vehicleType?: string;
+    capacity?: string;
+    specialConditions?: string;
+    // ... add more fields for other categories in the future
+};
+
+
 export type ProfileSetupData = {
   username?: string;
   useUsername?: boolean;
@@ -213,7 +222,8 @@ export type ProfileSetupData = {
         binanceEmail: string;
         validated: boolean;
     }
-  }
+  };
+  specializedData?: SpecializedData; // New field
 };
 
 
