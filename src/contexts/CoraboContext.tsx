@@ -90,7 +90,7 @@ interface CoraboActions {
   activateTransactions: (userId: string, paymentDetails: any) => Promise<void>;
   deactivateTransactions: (userId: string) => void;
   downloadTransactionsPDF: (transactions: Transaction[]) => void;
-  sendMessage: (options: { recipientId: string; text?: string; createOnly?: boolean; location?: { lat: number, lon: number } }) => string;
+  sendMessage: (options: { recipientId: string; text?: string; createOnly?: boolean; location?: { lat: number, lon: number } }) => void;
   sendProposalMessage: (conversationId: string, proposal: AgreementProposal) => void;
   acceptProposal: (conversationId: string, messageId: string) => void;
   createAppointmentRequest: (request: Omit<AppointmentRequest, 'clientId'>) => void;
@@ -121,7 +121,7 @@ interface CoraboActions {
   cancelQrSession: (sessionId: string, byProvider?: boolean) => Promise<void>;
   registerSystemPayment: (concept: string, amount: number, isSubscription: boolean) => Promise<void>;
   cancelSystemTransaction: (transactionId: string) => Promise<void>;
-  payCommitment: (transactionId: string, isSubscriptionPayment?: boolean) => Promise<void>;
+  payCommitment: (transactionId: string, paymentDetails: { paymentMethod: string; paymentReference?: string; paymentVoucherUrl?: string; }) => Promise<void>;
   updateUserProfileAndGallery: (userId: string, image: GalleryImage) => Promise<void>;
   requestAffiliation: (providerId: string, companyId: string) => Promise<void>;
   approveAffiliation: (affiliationId: string) => Promise<void>;
@@ -388,15 +388,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     },
     sendMessage: (options: any) => { 
         const user = currentUser;
-        if (!user) return ''; 
+        if (!user) return;
         const conversationId = [user.id, options.recipientId].sort().join('-'); 
         if (!options.createOnly) { sendMessageFlow({ conversationId, senderId: user.id, ...options }); } 
-        return conversationId; 
     },
-    payCommitment: async (transactionId: string) => { 
+    payCommitment: async (transactionId: string, paymentDetails: { paymentMethod: string; paymentReference?: string; paymentVoucherUrl?: string; }) => { 
         const user = currentUser;
         if(!user) return; 
-        await TransactionFlows.payCommitment({ transactionId, userId: user.id }); 
+        await TransactionFlows.payCommitment({ transactionId, userId: user.id, paymentDetails }); 
     },
     sendQuote: async (transactionId: string, quote: { breakdown: string; total: number }) => { 
         if(!currentUser) return;
@@ -526,5 +525,3 @@ export const useCorabo = (): CoraboState & CoraboActions => {
 };
 
 export type { Transaction };
-
-    

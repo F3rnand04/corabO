@@ -358,11 +358,12 @@ export type Transaction = {
     deliveryLocation?: { lat: number; lon: number; address: string };
 
     // For payments
-    paymentMethod?: 'direct' | 'credicora';
+    paymentMethod?: string;
     initialPayment?: number;
     financedAmount?: number;
     paymentConfirmationDate?: string;
     paymentVoucherUrl?: string;
+    paymentReference?: string;
     paymentFromThirdParty?: boolean;
 
     // For system

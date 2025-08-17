@@ -27,8 +27,11 @@ const ConfirmWorkReceivedSchema = BasicTransactionSchema.extend({
 });
 
 const PayCommitmentSchema = BasicTransactionSchema.extend({
-    rating: z.number().min(1).max(5).optional(),
-    comment: z.string().optional(),
+    paymentDetails: z.object({
+        paymentMethod: z.string(),
+        paymentReference: z.string().optional(),
+        paymentVoucherUrl: z.string().optional(),
+    }),
 });
 
 const SendQuoteSchema = BasicTransactionSchema.extend({
@@ -124,6 +127,7 @@ export const processDirectPayment = ai.defineFlow(
                 tax: taxAmountUSD * exchangeRate, // Store in local currency
                 total: finalAmountUSD * exchangeRate, // Store in local currency
                 exchangeRate,
+                amountUSD: totalAmountUSD,
             }
         };
         batch.set(doc(db, 'transactions', initialTxId), initialTransaction);
@@ -215,11 +219,15 @@ export const confirmWorkReceived = ai.defineFlow(
         if (transaction.status !== 'Pendiente de Confirmación del Cliente') {
             throw new Error("Invalid action. Work must be marked as complete by provider first.");
         }
+        
+        const { rate } = await getExchangeRate();
 
         await updateDoc(txRef, { 
             status: 'Finalizado - Pendiente de Pago',
             'details.clientRating': rating,
             'details.clientComment': comment || '',
+            'details.exchangeRate': rate,
+            'details.amountUSD': transaction.amount / rate
         });
     }
 );
@@ -228,10 +236,6 @@ export const confirmWorkReceived = ai.defineFlow(
 /**
  * Client registers their payment for a service.
  * The transaction status changes to 'Pago Enviado - Esperando Confirmación'.
- * This flow now handles two scenarios for flexibility:
- * 1. Paying a commitment that is 'Finalizado - Pendiente de Pago'.
- * 2. Paying a commitment that is still 'Acuerdo Aceptado - Pendiente de Ejecución',
- *    which implicitly confirms service reception.
  */
 export const payCommitment = ai.defineFlow(
     {
@@ -239,7 +243,7 @@ export const payCommitment = ai.defineFlow(
         inputSchema: PayCommitmentSchema,
         outputSchema: z.void(),
     },
-    async ({ transactionId, userId, rating, comment }) => {
+    async ({ transactionId, userId, paymentDetails }) => {
         const txRef = doc(getFirestoreDb(), 'transactions', transactionId);
         const txSnap = await getDoc(txRef);
         if (!txSnap.exists()) throw new Error("Transaction not found.");
@@ -250,23 +254,13 @@ export const payCommitment = ai.defineFlow(
         if (transaction.clientId !== userId) {
             throw new Error("Permission denied. User is not the client for this transaction.");
         }
-
-        // BUSINESS LOGIC CHECK: Allow payment from two states.
-        const isPendingPayment = transaction.status === 'Finalizado - Pendiente de Pago';
-        const isAcceptedAgreement = transaction.status === 'Acuerdo Aceptado - Pendiente de Ejecución';
-
-        if (!isPendingPayment && !isAcceptedAgreement) {
-            throw new Error("Invalid action. Payment can only be made for a pending or accepted agreement.");
-        }
         
-        // If client pays from an accepted agreement, a rating is required to confirm reception.
-        if (isAcceptedAgreement && !rating) {
-            throw new Error("A rating is required to confirm service reception and pay.");
-        }
-
-        const updateData: any = { status: 'Pago Enviado - Esperando Confirmación' };
-        if (rating) updateData['details.clientRating'] = rating;
-        if (comment) updateData['details.clientComment'] = comment;
+        const updateData: any = { 
+            status: 'Pago Enviado - Esperando Confirmación',
+            'details.paymentMethod': paymentDetails.paymentMethod,
+            'details.paymentReference': paymentDetails.paymentReference,
+            'details.paymentVoucherUrl': paymentDetails.paymentVoucherUrl,
+        };
 
         await updateDoc(txRef, updateData);
     }
@@ -435,4 +429,3 @@ export const startDispute = ai.defineFlow(
         await updateDoc(txRef, { status: 'En Disputa' });
     }
 );
-

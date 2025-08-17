@@ -29,6 +29,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Alert, AlertTitle, AlertDescription as AlertDialogAlertDescription } from './ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 
 
 interface TransactionDetailsDialogProps {
@@ -71,7 +72,7 @@ function ConfirmPaymentDialog({ onConfirm, onReportThirdParty, onCancel }: { onC
 
 
 export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: TransactionDetailsDialogProps) {
-  const { currentUser, fetchUser, sendQuote, acceptQuote, startDispute, completeWork, confirmWorkReceived, acceptAppointment, payCommitment, confirmPaymentReceived, sendMessage, cancelSystemTransaction, downloadTransactionsPDF } = useCorabo();
+  const { currentUser, fetchUser, sendQuote, acceptQuote, startDispute, completeWork, confirmWorkReceived, acceptAppointment, payCommitment, confirmPaymentReceived, sendMessage, cancelSystemTransaction, downloadTransactionsPDF, exchangeRate } = useCorabo();
   const router = useRouter();
   const { toast } = useToast();
   const [quoteBreakdown, setQuoteBreakdown] = useState('');
@@ -80,16 +81,15 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   const [comment, setComment] = useState("");
   const [showRatingScreen, setShowRatingScreen] = useState(false);
   const [showPaymentScreen, setShowPaymentScreen] = useState(false);
-  const [hasConfirmedReception, setHasConfirmedReception] = useState(false);
-  const [showConfirmPaymentDialog, setShowConfirmPaymentDialog] = useState(false);
   const [otherParty, setOtherParty] = useState<User | null>(null);
   const [deliveryProvider, setDeliveryProvider] = useState<User | null>(null);
   
   // State for payment form
-  const [paymentBank, setPaymentBank] = useState('');
-  const [paymentDate, setPaymentDate] = useState<Date | undefined>(new Date());
+  const [paymentMethod, setPaymentMethod] = useState<'Efectivo' | 'Transferencia' | 'Pago Móvil' | 'Binance'>('Transferencia');
   const [paymentReference, setPaymentReference] = useState('');
   const [paymentVoucher, setPaymentVoucher] = useState<File | null>(null);
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
+
 
   useEffect(() => {
     if (transaction && currentUser) {
@@ -111,14 +111,14 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   const isRenewableTx = isSystemTx && transaction.details.isRenewable;
   const isCrossBorder = currentUser.country !== otherParty?.country;
 
-
   const handleClose = () => {
     setShowRatingScreen(false);
     setShowPaymentScreen(false);
-    setHasConfirmedReception(false);
-    setShowConfirmPaymentDialog(false);
     setRating(0);
     setComment("");
+    setPaymentMethod('Transferencia');
+    setPaymentReference('');
+    setPaymentVoucher(null);
     onOpenChange(false);
   }
 
@@ -129,13 +129,29 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
       handleClose();
     }
   };
-
-  const handlePayCommitmentRedirect = () => {
-    // For regular commitments, go to the payment page.
-    // System transactions (like subscriptions) are handled differently now.
-    router.push(`/quotes/payment?commitmentId=${transaction.id}`);
+  
+  const handleProcessPayment = async () => {
+    if (paymentMethod !== 'Efectivo' && (!paymentReference || !paymentVoucher)) {
+      toast({ variant: 'destructive', title: 'Faltan datos', description: 'Para este método de pago, la referencia y el comprobante son obligatorios.' });
+      return;
+    }
+    setIsSubmittingPayment(true);
+    let voucherUrl = '';
+    if (paymentVoucher) {
+      // In a real app, this would upload to Firebase Storage and get a URL
+      voucherUrl = 'https://i.postimg.cc/L8y2zWc2/vzla-id.png'; // Placeholder
+    }
+    
+    await payCommitment(transaction.id, {
+      paymentMethod,
+      paymentReference,
+      paymentVoucherUrl: voucherUrl,
+    });
+    
+    toast({ title: 'Pago Registrado', description: 'Tu pago ha sido enviado al proveedor para su confirmación.' });
+    setIsSubmittingPayment(false);
     handleClose();
-  }
+  };
 
   const handleCompleteWork = () => {
       completeWork(transaction.id);
@@ -144,7 +160,10 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   }
 
   const handleConfirmWorkReceived = () => {
-      if (rating === 0) return;
+      if (rating === 0) {
+        toast({ variant: 'destructive', title: 'Calificación requerida', description: 'Por favor, selecciona una calificación de estrellas.' });
+        return;
+      }
       confirmWorkReceived(transaction.id, rating, comment);
       setShowRatingScreen(false);
       setShowPaymentScreen(true);
@@ -158,8 +177,8 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
 
   const handleContactToReschedule = () => {
      if(otherParty?.id) {
-       const conversationId = sendMessage({recipientId: otherParty.id, text: `Hola, vi tu solicitud de cita para el ${new Date(transaction.date).toLocaleDateString()}. Me gustaría discutir otra hora.`});
-       router.push(`/messages/${conversationId}`);
+       sendMessage({recipientId: otherParty.id, text: `Hola, vi tu solicitud de cita para el ${new Date(transaction.date).toLocaleDateString()}. Me gustaría discutir otra hora.`});
+       router.push(`/messages/${otherParty.id}`);
        handleClose();
      }
   }
@@ -176,12 +195,10 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
 
     const deliveryMessage = `Nuevo pedido para entregar a: ${location.address}. Detalles: ${transaction.details.items?.map(i => `${i.quantity}x ${i.product.name}`).join(', ')}. Ver en mapa: https://www.google.com/maps?q=${location.lat},${location.lon}`;
     
-    // For simplicity, we open the chat with the first contact. 
-    // A real implementation would show a contact picker.
     if(currentUser.contacts && currentUser.contacts.length > 0){
       const deliveryContactId = currentUser.contacts[0].id;
-      const conversationId = sendMessage({recipientId: deliveryContactId, text: deliveryMessage});
-      router.push(`/messages/${conversationId}`);
+      sendMessage({recipientId: deliveryContactId, text: deliveryMessage});
+      router.push(`/messages/${deliveryContactId}`);
       handleClose();
     } else {
         toast({ variant: 'destructive', title: 'Sin Repartidores', description: 'No tienes repartidores en tus contactos para enviar el pedido.'});
@@ -192,7 +209,6 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
     await cancelSystemTransaction(transaction.id);
     handleClose();
   }
-
 
   const statusInfo = {
     'Solicitud Pendiente': { icon: MessageSquare, color: 'bg-yellow-500' },
@@ -217,7 +233,10 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
 
   const showPayButton = isClient && ['Finalizado - Pendiente de Pago', 'Cotización Recibida', 'Cita Solicitada'].includes(transaction.status) && !isRenewableTx;
 
-
+  const originalAmountUSD = transaction.details.amountUSD || (transaction.amount / (transaction.details.exchangeRate || exchangeRate));
+  const adjustedAmountLocal = originalAmountUSD * exchangeRate;
+  const rateHasChanged = transaction.details.exchangeRate && Math.abs(transaction.details.exchangeRate - exchangeRate) > 0.01;
+  
   if (showPaymentScreen) {
     return (
         <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -228,72 +247,46 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
                         Realiza el pago al proveedor y luego registra los detalles aquí para confirmar.
                     </DialogDescription>
                 </DialogHeader>
-                 <div className="text-sm bg-muted p-4 rounded-lg border space-y-2">
-                    <p className="font-bold mb-2">Datos de Pago del Proveedor</p>
-                    
-                    {otherParty?.profileSetupData?.paymentDetails?.account?.active && !isCrossBorder && (
-                      <div className="p-2 border-b">
-                        <p className="font-semibold flex items-center gap-2"><Banknote className="w-4 h-4" /> Cuenta Bancaria</p>
-                        <div className="flex justify-between mt-1"><span>Banco:</span><span className="font-mono">{otherParty?.profileSetupData?.paymentDetails.account.bankName}</span></div>
-                        <div className="flex justify-between mt-1"><span>Cuenta:</span><span className="font-mono">{otherParty?.profileSetupData?.paymentDetails.account.accountNumber}</span></div>
-                      </div>
+                <div className="py-4 space-y-4">
+                    {rateHasChanged && (
+                      <Alert variant="warning">
+                          <AlertTriangle className="h-4 w-4" />
+                          <AlertTitle>Ajuste por Tasa de Cambio</AlertTitle>
+                          <AlertDialogAlertDescription>
+                              El monto a pagar se ha ajustado de ${transaction.amount.toFixed(2)} a ${adjustedAmountLocal.toFixed(2)} para reflejar la tasa de cambio actual.
+                          </AlertDialogAlertDescription>
+                      </Alert>
                     )}
-                    
-                    {otherParty?.profileSetupData?.paymentDetails?.mobile?.active && !isCrossBorder && (
-                       <div className="p-2 border-b">
-                        <p className="font-semibold flex items-center gap-2"><Smartphone className="w-4 h-4" /> Pago Móvil</p>
-                        <div className="flex justify-between mt-1"><span>Banco:</span><span className="font-mono">{otherParty?.profileSetupData?.paymentDetails.mobile.bankName}</span></div>
-                        <div className="flex justify-between mt-1"><span>Teléfono:</span><span className="font-mono">{otherParty?.profileSetupData?.paymentDetails.mobile.mobilePaymentPhone}</span></div>
-                        <div className="flex justify-between mt-1"><span>RIF/CI:</span><span className="font-mono">{otherParty.idNumber}</span></div>
-                      </div>
-                    )}
+                    <div className="text-center">
+                        <p className="text-sm text-muted-foreground">Monto Total a Pagar</p>
+                        <p className="text-4xl font-bold tracking-tighter">${adjustedAmountLocal.toFixed(2)}</p>
+                    </div>
 
-                    {otherParty?.profileSetupData?.paymentDetails?.crypto?.active && (
-                       <div className="p-2">
-                         <p className="font-semibold flex items-center gap-2"><KeyRound className="h-4 w-4" /> Binance Pay</p>
-                        <div className="flex justify-between items-center mt-1"><span>Correo (Pay ID):</span><span className="font-mono">{otherParty.profileSetupData.paymentDetails.crypto.binanceEmail}</span></div>
-                      </div>
-                    )}
+                    <div className="space-y-2">
+                        <Label>Método de Pago</Label>
+                        <Select onValueChange={(v) => setPaymentMethod(v as any)} defaultValue={paymentMethod}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                {otherParty?.profileSetupData?.paymentDetails?.account?.active && !isCrossBorder && <SelectItem value="Transferencia">Transferencia Bancaria</SelectItem>}
+                                {otherParty?.profileSetupData?.paymentDetails?.mobile?.active && !isCrossBorder && <SelectItem value="Pago Móvil">Pago Móvil</SelectItem>}
+                                {otherParty?.profileSetupData?.paymentDetails?.crypto?.active && <SelectItem value="Binance">Binance Pay</SelectItem>}
+                                <SelectItem value="Efectivo">Efectivo</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
 
-                    {isCrossBorder && (
-                         <Alert variant="destructive" className="mt-2">
-                            <AlertTriangle className="h-4 w-4" />
-                            <AlertTitle>Transacción Internacional</AlertTitle>
-                            <AlertDialogAlertDescription>
-                                Por seguridad, para transacciones entre países, solo se habilita Binance Pay.
-                            </AlertDialogAlertDescription>
-                        </Alert>
-                    )}
-                 </div>
-                 <div className="py-4 space-y-4">
-                     <div className="space-y-2">
-                         <Label htmlFor="payment-bank">Banco de Origen</Label>
-                         <Input id="payment-bank" placeholder="Ej: Banco Mercantil" value={paymentBank} onChange={(e) => setPaymentBank(e.target.value)} />
-                     </div>
-                     <div className="space-y-2">
-                         <Label>Fecha de Pago</Label>
-                         <Popover>
-                             <PopoverTrigger asChild>
-                                 <Button variant={"outline"} className={cn("w-full justify-start text-left font-normal", !paymentDate && "text-muted-foreground")}>
-                                     <CalendarIcon className="mr-2 h-4 w-4" />
-                                     {paymentDate ? format(paymentDate, "PPP") : <span>Elige una fecha</span>}
-                                 </Button>
-                             </PopoverTrigger>
-                             <PopoverContent className="w-auto p-0">
-                                 <Calendar mode="single" selected={paymentDate} onSelect={setPaymentDate} initialFocus />
-                             </PopoverContent>
-                         </Popover>
-                     </div>
-                     <div className="space-y-2">
+                    {paymentMethod !== 'Efectivo' && (
+                      <div className="space-y-2">
                         <Label htmlFor="ref">Número de Referencia</Label>
                         <Input id="ref" placeholder="Introduce el número de referencia aquí..." value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)}/>
-                    </div>
+                      </div>
+                    )}
                      <div className="space-y-2">
-                         <Label htmlFor="voucher-upload">Comprobante (Captura de pantalla)</Label>
+                         <Label htmlFor="voucher-upload">Comprobante (opcional para efectivo)</Label>
                          <div className="flex items-center gap-2">
                              <Label htmlFor="voucher-upload" className="cursor-pointer flex-shrink-0">
                                  <Button asChild variant="outline">
-                                     <span><Upload className="h-4 w-4 mr-2"/>Subir captura</span>
+                                     <span><Upload className="h-4 w-4 mr-2"/>Subir archivo</span>
                                  </Button>
                              </Label>
                              <Input 
@@ -304,14 +297,17 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
                                  onChange={(e) => setPaymentVoucher(e.target.files ? e.target.files[0] : null)}
                                  />
                              <span className={cn("text-sm text-muted-foreground truncate", paymentVoucher && "text-foreground font-medium")}>
-                                 {paymentVoucher ? paymentVoucher.name : 'Ningún archivo seleccionado...'}
+                                 {paymentVoucher ? paymentVoucher.name : 'Ningún archivo...'}
                              </span>
                          </div>
                      </div>
-                 </div>
-                 <DialogFooter>
+                </div>
+                <DialogFooter>
                     <Button variant="outline" onClick={() => setShowPaymentScreen(false)}>Atrás</Button>
-                    <Button onClick={() => payCommitment(transaction.id)} disabled={!paymentReference || !paymentVoucher}>Confirmar y Enviar Pago</Button>
+                    <Button onClick={handleProcessPayment} disabled={isSubmittingPayment}>
+                      {isSubmittingPayment && <span className="animate-spin mr-2">...</span>}
+                      Confirmar y Enviar Pago
+                    </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -345,19 +341,6 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
         </Dialog>
     );
   }
-  
-  if (showConfirmPaymentDialog) {
-    return (
-       <AlertDialog open={showConfirmPaymentDialog} onOpenChange={setShowConfirmPaymentDialog}>
-            <ConfirmPaymentDialog 
-                onConfirm={() => handleConfirmPayment(false)}
-                onReportThirdParty={() => handleConfirmPayment(true)}
-                onCancel={handleClose}
-            />
-       </AlertDialog>
-    )
-  }
-
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -498,9 +481,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
                 
                 {isProvider && transaction.status === 'Pago Enviado - Esperando Confirmación' && 
                     <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button>Confirmar Pago</Button>
-                        </AlertDialogTrigger>
+                        <AlertDialogTrigger asChild><Button>Confirmar Pago</Button></AlertDialogTrigger>
                         <ConfirmPaymentDialog 
                             onConfirm={() => handleConfirmPayment(false)}
                             onReportThirdParty={() => handleConfirmPayment(true)}
@@ -525,7 +506,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
                 {isClient && transaction.status === 'Pendiente de Confirmación del Cliente' && <Button onClick={() => setShowRatingScreen(true)}>Confirmar Recepción y Calificar</Button>}
                 
                 {showPayButton && (
-                  <Button onClick={handlePayCommitmentRedirect}>
+                  <Button onClick={() => setShowPaymentScreen(true)}>
                       <Banknote className="mr-2 h-4 w-4" />
                       Pagar Ahora
                   </Button>
