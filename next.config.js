@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   images: {
     remotePatterns: [
       {
@@ -27,8 +28,6 @@ const nextConfig = {
         "**/firebase-debug.log",
       ],
     };
-    // Necessary for some transitive dependencies of firebase to work.
-    config.externals.push('pino-pretty', 'lokijs', 'encoding');
     return config;
   },
 };
