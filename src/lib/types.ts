@@ -181,10 +181,15 @@ export const credicoraLevels: Record<string, CredicoraLevel> = {
 
 // New type for specialized data
 export type SpecializedData = {
+    // Transporte y Asistencia
     vehicleType?: string;
     capacity?: string;
     specialConditions?: string;
-    // ... add more fields for other categories in the future
+
+    // Salud y Bienestar
+    licenseNumber?: string;
+    specialties?: string[];
+    consultationMode?: 'office' | 'home' | 'online' | 'hybrid';
 };
 
 

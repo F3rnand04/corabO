@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8,16 +9,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Package, Save, Truck, Wrench } from 'lucide-react';
+import { Loader2, Package, Save, Truck, Wrench, Stethoscope, BadgeCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { ProfileSetupData } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Badge } from '../ui/badge';
+import { X } from 'lucide-react';
+
 
 export function ProfileDetailsTab() {
   const { currentUser, updateUser } = useCorabo();
   const { toast } = useToast();
   const [formData, setFormData] = useState<ProfileSetupData['specializedData']>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [currentSpecialty, setCurrentSpecialty] = useState('');
 
   useEffect(() => {
     if (currentUser?.profileSetupData?.specializedData) {
@@ -29,8 +35,21 @@ export function ProfileDetailsTab() {
     return <div className="flex items-center justify-center pt-10"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   }
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: keyof NonNullable<ProfileSetupData['specializedData']>, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleAddSpecialty = () => {
+    if (currentSpecialty && !formData?.specialties?.includes(currentSpecialty)) {
+        const newSpecialties = [...(formData.specialties || []), currentSpecialty];
+        handleInputChange('specialties', newSpecialties);
+        setCurrentSpecialty('');
+    }
+  };
+
+  const handleRemoveSpecialty = (specToRemove: string) => {
+    const newSpecialties = formData.specialties?.filter(spec => spec !== specToRemove);
+    handleInputChange('specialties', newSpecialties);
   };
 
   const handleSave = async () => {
@@ -84,10 +103,71 @@ export function ProfileDetailsTab() {
     </div>
   );
 
+  const renderHealthFields = () => (
+     <div className="space-y-4">
+        <div className="space-y-2">
+            <Label htmlFor="licenseNumber" className="flex items-center gap-2"><BadgeCheck className="w-4 h-4"/> Nro. Licencia / Colegiatura</Label>
+            <Input 
+                id="licenseNumber" 
+                placeholder="Ej: MPPS 12345"
+                value={formData?.licenseNumber || ''}
+                onChange={(e) => handleInputChange('licenseNumber', e.target.value)}
+            />
+        </div>
+         <div className="space-y-2">
+            <Label htmlFor="specialties" className="flex items-center gap-2"><Stethoscope className="w-4 h-4"/> Especialidades</Label>
+            <div className="flex gap-2">
+                <Input 
+                    id="specialties" 
+                    placeholder="Ej: Terapia Manual" 
+                    value={currentSpecialty}
+                    onChange={(e) => setCurrentSpecialty(e.target.value)}
+                     onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddSpecialty();
+                        }
+                    }}
+                />
+                <Button onClick={handleAddSpecialty} type="button">Añadir</Button>
+            </div>
+            <div className="flex flex-wrap gap-2 pt-2">
+                {formData.specialties?.map(spec => (
+                    <Badge key={spec} variant="secondary">
+                        {spec}
+                        <button onClick={() => handleRemoveSpecialty(spec)} className="ml-2 rounded-full hover:bg-background/50">
+                            <X className="h-3 w-3"/>
+                        </button>
+                    </Badge>
+                ))}
+            </div>
+        </div>
+        <div className="space-y-2">
+            <Label htmlFor="consultationMode" className="flex items-center gap-2"><Wrench className="w-4 h-4"/> Modalidad de Atención</Label>
+            <Select 
+                value={formData?.consultationMode || ''}
+                onValueChange={(value) => handleInputChange('consultationMode', value)}
+            >
+                <SelectTrigger id="consultationMode">
+                    <SelectValue placeholder="Selecciona una modalidad" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="office">En Consultorio</SelectItem>
+                    <SelectItem value="home">A Domicilio</SelectItem>
+                    <SelectItem value="online">En Línea</SelectItem>
+                    <SelectItem value="hybrid">Híbrido (Online y Presencial)</SelectItem>
+                </SelectContent>
+            </Select>
+        </div>
+    </div>
+  );
+
   const renderContent = () => {
     switch (currentUser.profileSetupData?.primaryCategory) {
       case 'Transporte y Asistencia':
         return renderTransportFields();
+      case 'Salud y Bienestar':
+        return renderHealthFields();
       default:
         return (
             <Alert>
@@ -105,7 +185,7 @@ export function ProfileDetailsTab() {
       <CardHeader>
         <CardTitle>Detalles Especializados</CardTitle>
         <CardDescription>
-          Añade información técnica sobre tus servicios. Esto ayuda a los clientes a entender mejor tu oferta.
+          Añade información técnica sobre tus servicios. Estos datos opcionales ayudan a los clientes a entender mejor tu oferta y generan más confianza.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">

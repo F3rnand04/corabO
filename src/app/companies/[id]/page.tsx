@@ -7,7 +7,7 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, MessageCircle, CheckCircle, Flag, Package, Hand, ShoppingCart, Plus, Minus, X, Truck, AlertTriangle, Loader2, Search, Building, Users } from 'lucide-react';
+import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, MessageCircle, CheckCircle, Flag, Package, Hand, ShoppingCart, Plus, Minus, X, Truck, AlertTriangle, Loader2, Search, Building, Users, BadgeCheck, Stethoscope } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
@@ -167,6 +167,7 @@ export default function CompanyProfilePage() {
   
   const isCompany = provider.profileSetupData?.providerType === 'company';
   const isProductProvider = provider.profileSetupData?.offerType === 'product';
+  const isHealthProvider = provider.profileSetupData?.primaryCategory === 'Salud y Bienestar';
   const isCurrentUserTransactionReady = currentUser?.isTransactionsActive;
   const isProviderTransactionReady = provider.isTransactionsActive;
 
@@ -542,6 +543,19 @@ export default function CompanyProfilePage() {
                     </div>
                 </Link>
             )}
+            
+            {isHealthProvider && provider.profileSetupData?.specializedData && (
+                 <div className="mt-2 mb-4 p-3 bg-muted/50 rounded-lg border space-y-2">
+                    <p className="font-semibold flex items-center gap-2 text-sm"><Stethoscope className="w-4 h-4"/> Detalles del Profesional</p>
+                    <p className="text-xs"><strong>Licencia/Colegiatura:</strong> {provider.profileSetupData.specializedData.licenseNumber || 'No especificado'}</p>
+                    {provider.profileSetupData.specializedData.specialties && provider.profileSetupData.specializedData.specialties.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                            {provider.profileSetupData.specializedData.specialties.map(spec => <Badge key={spec} variant="outline">{spec}</Badge>)}
+                        </div>
+                    )}
+                </div>
+            )}
+
 
           </div>
           
@@ -787,5 +801,3 @@ export default function CompanyProfilePage() {
     </>
   );
 }
-
-    
