@@ -4,7 +4,7 @@
 /**
  * @fileOverview A notification management flow.
  * - sendNotification: Creates a notification document in Firestore.
- * - checkOverduePayments: Scans for overdue payments and notifies admin.
+ * - checkPaymentDeadlines: Scans for overdue payments and sends reminders or alerts.
  * - sendNewCampaignNotifications: Notifies relevant users about a new campaign.
  */
 
@@ -13,14 +13,14 @@ import { z } from 'zod';
 import { getFirestoreDb } from '@/lib/firebase-server'; // Use server-side firebase
 import { collection, doc, setDoc, query, where, getDocs, getDoc, writeBatch } from 'firebase/firestore';
 import type { Notification, Transaction, User, Campaign } from '@/lib/types';
-import { differenceInHours } from 'date-fns';
+import { differenceInDays, isFuture, isPast } from 'date-fns';
 
 const SendNotificationInputSchema = z.object({
   userId: z.string(),
   title: z.string(),
   message: z.string(),
   link: z.string().optional(),
-  type: z.enum(['new_campaign', 'payment_reminder', 'admin_alert', 'welcome', 'affiliation_request']),
+  type: z.enum(['new_campaign', 'payment_reminder', 'admin_alert', 'welcome', 'affiliation_request', 'payment_warning', 'payment_due']),
 });
 
 /**
@@ -48,12 +48,12 @@ export const sendNotification = ai.defineFlow(
 
 
 /**
- * Scans for overdue payments and notifies the system administrator.
- * This flow would be triggered by a scheduled job (e.g., daily cron).
+ * Scans for upcoming and overdue payments and sends notifications accordingly.
+ * This flow is designed to be triggered by a scheduled job (e.g., daily cron).
  */
-export const checkOverduePayments = ai.defineFlow(
+export const checkPaymentDeadlines = ai.defineFlow(
     {
-        name: 'checkOverduePaymentsFlow',
+        name: 'checkPaymentDeadlinesFlow',
         inputSchema: z.void(),
         outputSchema: z.void(),
     },
@@ -64,25 +64,59 @@ export const checkOverduePayments = ai.defineFlow(
         );
 
         const querySnapshot = await getDocs(q);
-        const now = new Date();
-        const overduePayments: Transaction[] = [];
+        if (querySnapshot.empty) return;
 
-        querySnapshot.forEach(doc => {
-            const tx = doc.data() as Transaction;
-            const hoursSinceDue = differenceInHours(now, new Date(tx.date));
-            if (hoursSinceDue > 24) {
-                overduePayments.push(tx);
-            }
-        });
+        const now = new Date();
         
-        if(overduePayments.length > 0) {
-            await sendNotification({
-                userId: 'corabo-admin', // Special ID for the admin user
-                type: 'admin_alert',
-                title: 'Alerta de Pagos Atrasados',
-                message: `Existen ${overduePayments.length} pagos con más de 24 horas de retraso que requieren acción de cobro directo.`,
-                link: '/admin?tab=disputes'
-            })
+        for (const docSnap of querySnapshot.docs) {
+            const tx = docSnap.data() as Transaction;
+            const dueDate = new Date(tx.date);
+
+            if (isFuture(dueDate)) {
+                const daysUntilDue = differenceInDays(dueDate, now);
+                
+                // Proactive Reminders
+                if ([7, 2, 1].includes(daysUntilDue)) {
+                    await sendNotification({
+                        userId: tx.clientId,
+                        type: 'payment_reminder',
+                        title: 'Recordatorio de Pago Amistoso',
+                        message: `Tu pago de $${tx.amount.toFixed(2)} por "${tx.details.serviceName || tx.details.system}" vence en ${daysUntilDue} día(s).`,
+                        link: '/transactions'
+                    });
+                } else if (daysUntilDue === 0) {
+                     await sendNotification({
+                        userId: tx.clientId,
+                        type: 'payment_due',
+                        title: '¡Tu pago vence hoy!',
+                        message: `Recuerda realizar tu pago de $${tx.amount.toFixed(2)} hoy para mantener tu reputación.`,
+                        link: '/transactions'
+                    });
+                }
+
+            } else if (isPast(dueDate)) {
+                const daysOverdue = differenceInDays(now, dueDate);
+
+                if (daysOverdue >= 1 && daysOverdue <= 2) {
+                    // Warning Notifications
+                    await sendNotification({
+                        userId: tx.clientId,
+                        type: 'payment_warning',
+                        title: 'Advertencia: Pago Atrasado',
+                        message: `Tu pago de $${tx.amount.toFixed(2)} tiene ${daysOverdue} día(s) de retraso. Esto afectará negativamente tu efectividad.`,
+                        link: '/transactions'
+                    });
+                } else if (daysOverdue >= 3) {
+                    // Admin Alerts for direct action
+                     await sendNotification({
+                        userId: 'corabo-admin', // Special ID for the admin user
+                        type: 'admin_alert',
+                        title: 'Alerta de Morosidad Crítica',
+                        message: `El usuario ${tx.clientId} tiene un pago con ${daysOverdue} días de retraso (ID: ${tx.id}). Se requiere contacto directo.`,
+                        link: `/admin?tab=disputes&tx=${tx.id}`
+                    });
+                }
+            }
         }
     }
 );

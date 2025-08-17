@@ -30,7 +30,7 @@ export type QrSession = {
 export type Notification = {
   id: string;
   userId: string;
-  type: 'new_campaign' | 'payment_reminder' | 'admin_alert' | 'welcome' | 'affiliation_request';
+  type: 'new_campaign' | 'payment_reminder' | 'admin_alert' | 'welcome' | 'affiliation_request' | 'payment_warning' | 'payment_due';
   title: string;
   message: string;
   link?: string;

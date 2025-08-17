@@ -11,6 +11,7 @@ import type { User } from '@/lib/types';
 import { z } from 'zod';
 import { credicoraLevels } from '@/lib/types';
 import { differenceInDays } from 'date-fns';
+import { checkPaymentDeadlines } from './notification-flow';
 
 
 // Schema for the user object we expect from the client (FirebaseUser)
@@ -59,6 +60,8 @@ export const getOrCreateUser = ai.defineFlow(
       // Ensure the specified user always has the admin role.
       if (user.email === 'fernandopbt@gmail.com' && user.role !== 'admin') {
         updates.role = 'admin';
+        // Logic to simulate a daily cron job by running it when the admin logs in.
+        await checkPaymentDeadlines();
       }
       
       // Apply updates if there are any

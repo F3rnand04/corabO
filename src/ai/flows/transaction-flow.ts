@@ -8,7 +8,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestoreDb } from '@/lib/firebase-server'; // Use server-side firebase
-import { doc, getDoc, setDoc, updateDoc, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, writeBatch, increment } from 'firebase/firestore';
 import type { Transaction, User, AppointmentRequest, QrSession } from '@/lib/types';
 import { credicoraLevels } from '@/lib/types';
 import { addDays } from 'date-fns';
@@ -269,6 +269,7 @@ export const payCommitment = ai.defineFlow(
 /**
  * Provider confirms they have received the payment.
  * The transaction status changes to 'Pagado' or 'Resuelto'.
+ * Rewards the client with +2 effectiveness points.
  */
 export const confirmPaymentReceived = ai.defineFlow(
     {
@@ -277,7 +278,10 @@ export const confirmPaymentReceived = ai.defineFlow(
         outputSchema: z.void(),
     },
     async ({ transactionId, userId, fromThirdParty }) => {
-        const txRef = doc(getFirestoreDb(), 'transactions', transactionId);
+        const db = getFirestoreDb();
+        const batch = writeBatch(db);
+        
+        const txRef = doc(db, 'transactions', transactionId);
         const txSnap = await getDoc(txRef);
         if (!txSnap.exists()) throw new Error("Transaction not found.");
         
@@ -290,10 +294,18 @@ export const confirmPaymentReceived = ai.defineFlow(
         if (transaction.status !== 'Pago Enviado - Esperando Confirmación') {
             throw new Error("Invalid action. Client has not registered a payment yet.");
         }
-        await updateDoc(txRef, { 
+        
+        // Update transaction status
+        batch.update(txRef, { 
             status: 'Pagado',
             'details.paymentFromThirdParty': fromThirdParty,
         });
+
+        // Reward the client for paying on time
+        const clientRef = doc(db, 'users', transaction.clientId);
+        batch.update(clientRef, { effectiveness: increment(2) });
+
+        await batch.commit();
     }
 );
 
