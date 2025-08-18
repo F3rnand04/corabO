@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "./ui/badge";
 import type { Transaction, User } from "@/lib/types";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert, Truck, Banknote, ClipboardCheck, CalendarCheck, Contact, Star, Calendar as CalendarIcon, Upload, Smartphone, MapPin, XCircle, KeyRound, FileText } from "lucide-react";
+import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert, Truck, Banknote, ClipboardCheck, CalendarCheck, Contact, Star, Calendar as CalendarIcon, Upload, Smartphone, MapPin, XCircle, KeyRound, FileText, Repeat } from "lucide-react";
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
@@ -70,9 +70,30 @@ function ConfirmPaymentDialog({ onConfirm, onReportThirdParty, onCancel }: { onC
     );
 }
 
+function DeliveryFailedDialog({ onRetry, onSelfDelivery, onConvertToPickup }: { onRetry: () => void; onSelfDelivery: () => void; onConvertToPickup: () => void; }) {
+  return (
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>No se encontró un repartidor</AlertDialogTitle>
+        <AlertDialogDescription>
+          No pudimos encontrar un repartidor disponible cerca de ti en este momento. Por favor, elige una de las siguientes opciones para continuar con el pedido.
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <div className="flex flex-col gap-4 py-4">
+        <Button onClick={onRetry}><Repeat className="mr-2 h-4 w-4"/>Volver a Intentar Búsqueda</Button>
+        <Button onClick={onSelfDelivery} variant="outline"><Truck className="mr-2 h-4 w-4"/>Asignarme el Delivery</Button>
+        <Button onClick={onConvertToPickup} variant="secondary"><Handshake className="mr-2 h-4 w-4"/>Convertir a Retiro en Tienda</Button>
+      </div>
+      <AlertDialogFooter>
+        <AlertDialogCancel>Cerrar</AlertDialogCancel>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  );
+}
+
 
 export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: TransactionDetailsDialogProps) {
-  const { currentUser, fetchUser, sendQuote, acceptQuote, startDispute, completeWork, confirmWorkReceived, acceptAppointment, payCommitment, confirmPaymentReceived, sendMessage, cancelSystemTransaction, downloadTransactionsPDF, exchangeRate } = useCorabo();
+  const { currentUser, fetchUser, sendQuote, acceptQuote, startDispute, completeWork, confirmWorkReceived, acceptAppointment, payCommitment, confirmPaymentReceived, sendMessage, cancelSystemTransaction, downloadTransactionsPDF, exchangeRate, retryFindDelivery, assignOwnDelivery, resolveDeliveryAsPickup } = useCorabo();
   const router = useRouter();
   const { toast } = useToast();
   const [quoteBreakdown, setQuoteBreakdown] = useState('');
@@ -83,6 +104,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   const [showPaymentScreen, setShowPaymentScreen] = useState(false);
   const [otherParty, setOtherParty] = useState<User | null>(null);
   const [deliveryProvider, setDeliveryProvider] = useState<User | null>(null);
+  const [isDeliveryFailedDialogOpen, setIsDeliveryFailedDialogOpen] = useState(false);
   
   // State for payment form
   const [paymentMethod, setPaymentMethod] = useState<'Efectivo' | 'Transferencia' | 'Pago Móvil' | 'Binance'>('Transferencia');
@@ -100,6 +122,11 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
         if(transaction.details.deliveryProviderId) {
             fetchUser(transaction.details.deliveryProviderId).then(setDeliveryProvider);
         }
+        if (transaction.status === 'Error de Delivery - Acción Requerida') {
+          setIsDeliveryFailedDialogOpen(true);
+        }
+    } else {
+      setIsDeliveryFailedDialogOpen(false);
     }
   }, [transaction, currentUser, fetchUser]);
 
@@ -221,11 +248,12 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
     'Pre-factura Pendiente': { icon: AlertTriangle, color: 'bg-gray-500' },
     'Acuerdo Aceptado - Pendiente de Ejecución': { icon: Handshake, color: 'bg-cyan-500' },
     'Finalizado - Pendiente de Pago': { icon: ClipboardCheck, color: 'bg-orange-500' },
-    'Pendiente de Confirmación del Cliente': { icon: ClipboardCheck, color: 'bg-yellow-500' },
+    'Pendiente de Confirmación del Cliente': { icon: ClipboardCheck, color: 'bg-yellow-600' },
     'Pago Enviado - Esperando Confirmación': { icon: Banknote, color: 'bg-blue-500' },
     'Buscando Repartidor': { icon: Truck, color: 'bg-yellow-500' },
     'En Reparto': { icon: Truck, color: 'bg-blue-500' },
     'Resuelto': { icon: CheckCircle, color: 'bg-green-500' },
+    'Error de Delivery - Acción Requerida': { icon: AlertTriangle, color: 'bg-red-500' },
   };
 
   const CurrentIcon = statusInfo[transaction.status]?.icon || AlertTriangle;
@@ -343,181 +371,191 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-3">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${iconColor}`}>
-                <CurrentIcon className="w-5 h-5 text-white" />
-            </div>
-            Detalles de la Transacción
-          </DialogTitle>
-          <DialogDescription>ID: {transaction.id}</DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-4 py-4 text-sm">
-          {isCrossBorder && (
-              <Alert variant="destructive">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertTitle>¡Aviso de Comercio Internacional!</AlertTitle>
-                  <AlertDialogAlertDescription>
-                      Esta es una transacción entre usuarios de diferentes países. Se recomienda usar métodos de pago internacionales como Binance Pay y acordar claramente los términos de envío e impuestos.
-                  </AlertDialogAlertDescription>
-              </Alert>
-          )}
-          <div className="grid grid-cols-2 gap-2">
-            <div><span className="font-semibold">Estado:</span> <Badge variant="secondary">{transaction.status}</Badge></div>
-            <div><span className="font-semibold">Fecha:</span> {new Date(transaction.date).toLocaleDateString()}</div>
-            <div><span className="font-semibold">Tipo:</span> {transaction.type}</div>
-            {transaction.details.baseAmount ? (
-              <div className="col-span-2 space-y-1 mt-2 p-2 border-t">
-                <div className="flex justify-between"><span>Subtotal:</span> <span className="font-mono">Bs. {transaction.details.baseAmount.toFixed(2)}</span></div>
-                <div className="flex justify-between"><span>Comisión ({(transaction.details.commissionRate || 0) * 100}%):</span> <span className="font-mono">Bs. {transaction.details.commission?.toFixed(2) || '0.00'}</span></div>
-                <div className="flex justify-between"><span>IVA ({(transaction.details.taxRate || 0) * 100}%):</span> <span className="font-mono">Bs. {transaction.details.tax?.toFixed(2) || '0.00'}</span></div>
-                <div className="flex justify-between font-bold"><span>Total Factura:</span> <span className="font-mono">Bs. {transaction.details.total?.toFixed(2) || '0.00'}</span></div>
-                <div className="text-xs text-muted-foreground text-right">Tasa de cambio: Bs. {transaction.details.exchangeRate?.toFixed(2)} / USD</div>
+    <>
+      <AlertDialog open={isDeliveryFailedDialogOpen} onOpenChange={setIsDeliveryFailedDialogOpen}>
+        <DeliveryFailedDialog 
+          onRetry={() => { retryFindDelivery(transaction.id); handleClose(); }}
+          onSelfDelivery={() => { assignOwnDelivery(transaction.id); handleClose(); }}
+          onConvertToPickup={() => { resolveDeliveryAsPickup(transaction.id); handleClose(); }}
+        />
+      </AlertDialog>
+      <Dialog open={isOpen && !isDeliveryFailedDialogOpen} onOpenChange={handleClose}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${iconColor}`}>
+                  <CurrentIcon className="w-5 h-5 text-white" />
               </div>
-            ) : (
-                 <div><span className="font-semibold">Monto:</span> ${transaction.amount.toFixed(2)}</div>
+              Detalles de la Transacción
+            </DialogTitle>
+            <DialogDescription>ID: {transaction.id}</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4 text-sm">
+            {isCrossBorder && (
+                <Alert variant="destructive">
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>¡Aviso de Comercio Internacional!</AlertTitle>
+                    <AlertDialogAlertDescription>
+                        Esta es una transacción entre usuarios de diferentes países. Se recomienda usar métodos de pago internacionales como Binance Pay y acordar claramente los términos de envío e impuestos.
+                    </AlertDialogAlertDescription>
+                </Alert>
             )}
-             <div><span className="font-semibold">Cliente:</span> {isClient ? "Tú" : otherParty?.name}</div>
-             <div><span className="font-semibold">Proveedor:</span> {isProvider ? "Tú" : otherParty?.name || 'Sistema'}</div>
-             {transaction.details.paymentFromThirdParty && (
-                <div className="col-span-2">
-                    <Badge variant="destructive">
-                        <AlertTriangle className="mr-1 h-3 w-3" />
-                        Pago recibido de un tercero
-                    </Badge>
+            <div className="grid grid-cols-2 gap-2">
+              <div><span className="font-semibold">Estado:</span> <Badge variant="secondary">{transaction.status}</Badge></div>
+              <div><span className="font-semibold">Fecha:</span> {new Date(transaction.date).toLocaleDateString()}</div>
+              <div><span className="font-semibold">Tipo:</span> {transaction.type}</div>
+              {transaction.details.baseAmount ? (
+                <div className="col-span-2 space-y-1 mt-2 p-2 border-t">
+                  <div className="flex justify-between"><span>Subtotal:</span> <span className="font-mono">Bs. {transaction.details.baseAmount.toFixed(2)}</span></div>
+                  <div className="flex justify-between"><span>Comisión ({(transaction.details.commissionRate || 0) * 100}%):</span> <span className="font-mono">Bs. {transaction.details.commission?.toFixed(2) || '0.00'}</span></div>
+                  <div className="flex justify-between"><span>IVA ({(transaction.details.taxRate || 0) * 100}%):</span> <span className="font-mono">Bs. {transaction.details.tax?.toFixed(2) || '0.00'}</span></div>
+                  <div className="flex justify-between font-bold"><span>Total Factura:</span> <span className="font-mono">Bs. {transaction.details.total?.toFixed(2) || '0.00'}</span></div>
+                  <div className="text-xs text-muted-foreground text-right">Tasa de cambio: Bs. {transaction.details.exchangeRate?.toFixed(2)} / USD</div>
                 </div>
-            )}
-          </div>
-          <hr/>
-          {transaction.type === 'Compra' && transaction.details.items && (
-            <div>
-              <h4 className="font-semibold mb-2">Productos:</h4>
-              <ul className="space-y-1 list-disc list-inside text-muted-foreground">
-                {transaction.details.items.map(item => (
-                  <li key={item.product.id}>{item.quantity} x {item.product.name} (${item.product.price.toFixed(2)})</li>
-                ))}
-              </ul>
-              {transaction.details.delivery && (
-                <div className="p-3 bg-muted rounded-md mt-2">
-                    <p className="font-semibold flex items-center gap-2"><Truck className="h-4 w-4" /> Detalles de Envío</p>
-                    <p className="text-muted-foreground text-xs mt-1">Costo: ${transaction.details.deliveryCost?.toFixed(2) || '0.00'}</p>
-                    <p className="text-muted-foreground text-xs">Repartidor: {deliveryProvider?.name || 'Buscando...'}</p>
-                    {transaction.details.deliveryLocation && (
-                         <div className="mt-2 pt-2 border-t">
-                            <p className="text-xs font-semibold flex items-center gap-1"><MapPin className="h-3 w-3"/> Ubicación de Entrega:</p>
-                            <p className="text-xs">{transaction.details.deliveryLocation.address}</p>
-                             <a href={`https://www.google.com/maps?q=${transaction.details.deliveryLocation.lat},${transaction.details.deliveryLocation.lon}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline">
-                               Ver en mapa
-                             </a>
-                         </div>
-                    )}
-                </div>
+              ) : (
+                  <div><span className="font-semibold">Monto:</span> ${transaction.amount.toFixed(2)}</div>
+              )}
+              <div><span className="font-semibold">Cliente:</span> {isClient ? "Tú" : otherParty?.name}</div>
+              <div><span className="font-semibold">Proveedor:</span> {isProvider ? "Tú" : otherParty?.name || 'Sistema'}</div>
+              {transaction.details.paymentFromThirdParty && (
+                  <div className="col-span-2">
+                      <Badge variant="destructive">
+                          <AlertTriangle className="mr-1 h-3 w-3" />
+                          Pago recibido de un tercero
+                      </Badge>
+                  </div>
               )}
             </div>
-          )}
-           {transaction.type === 'Servicio' && (
-            <div>
-                <h4 className="font-semibold mb-2">Detalles:</h4>
-                 <div className="p-3 bg-muted rounded-md text-muted-foreground">
-                   {transaction.details.serviceName}
-                 </div>
-                {transaction.details.quote && (
-                    <div className="p-3 bg-muted rounded-md mt-2">
-                        <p className="font-semibold">Detalles de la cotización:</p>
-                        <p className="text-muted-foreground">{transaction.details.quote.breakdown}</p>
-                    </div>
+            <hr/>
+            {transaction.type === 'Compra' && transaction.details.items && (
+              <div>
+                <h4 className="font-semibold mb-2">Productos:</h4>
+                <ul className="space-y-1 list-disc list-inside text-muted-foreground">
+                  {transaction.details.items.map(item => (
+                    <li key={item.product.id}>{item.quantity} x {item.product.name} (${item.product.price.toFixed(2)})</li>
+                  ))}
+                </ul>
+                {transaction.details.delivery && (
+                  <div className="p-3 bg-muted rounded-md mt-2">
+                      <p className="font-semibold flex items-center gap-2"><Truck className="h-4 w-4" /> Detalles de Envío</p>
+                      <p className="text-muted-foreground text-xs mt-1">Costo: ${transaction.details.deliveryCost?.toFixed(2) || '0.00'}</p>
+                      <p className="text-muted-foreground text-xs">Repartidor: {deliveryProvider?.name || 'Buscando...'}</p>
+                      {transaction.details.deliveryLocation && (
+                          <div className="mt-2 pt-2 border-t">
+                              <p className="text-xs font-semibold flex items-center gap-1"><MapPin className="h-3 w-3"/> Ubicación de Entrega:</p>
+                              <p className="text-xs">{transaction.details.deliveryLocation.address}</p>
+                              <a href={`https://www.google.com/maps?q=${transaction.details.deliveryLocation.lat},${transaction.details.deliveryLocation.lon}`} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline">
+                                Ver en mapa
+                              </a>
+                          </div>
+                      )}
+                  </div>
                 )}
-            </div>
-          )}
-          {isSystemTx && (
-            <div>
-                <h4 className="font-semibold mb-2">Detalles:</h4>
-                 <div className="p-3 bg-muted rounded-md text-muted-foreground">
-                   {transaction.details.system}
-                 </div>
-            </div>
-          )}
-          
-          {transaction.type !== 'Compra Directa' && (
-            <p className='text-xs text-muted-foreground text-right italic'>Los montos no incluyen IVA (16%).</p>
-          )}
+              </div>
+            )}
+            {transaction.type === 'Servicio' && (
+              <div>
+                  <h4 className="font-semibold mb-2">Detalles:</h4>
+                  <div className="p-3 bg-muted rounded-md text-muted-foreground">
+                    {transaction.details.serviceName}
+                  </div>
+                  {transaction.details.quote && (
+                      <div className="p-3 bg-muted rounded-md mt-2">
+                          <p className="font-semibold">Detalles de la cotización:</p>
+                          <p className="text-muted-foreground">{transaction.details.quote.breakdown}</p>
+                      </div>
+                  )}
+              </div>
+            )}
+            {isSystemTx && (
+              <div>
+                  <h4 className="font-semibold mb-2">Detalles:</h4>
+                  <div className="p-3 bg-muted rounded-md text-muted-foreground">
+                    {transaction.details.system}
+                  </div>
+              </div>
+            )}
+            
+            {transaction.type !== 'Compra Directa' && (
+              <p className='text-xs text-muted-foreground text-right italic'>Los montos no incluyen IVA (16%).</p>
+            )}
 
 
-          {isProvider && transaction.status === 'Solicitud Pendiente' && (
-            <div className="space-y-2 pt-4 border-t">
-              <h4 className="font-semibold">Enviar Cotización</h4>
-              <Textarea placeholder="Desglose de costos y condiciones..." value={quoteBreakdown} onChange={e => setQuoteBreakdown(e.target.value)} />
-              <Input type="number" placeholder="Monto total" value={quoteTotal} onChange={e => setQuoteTotal(parseFloat(e.target.value))} />
-            </div>
-          )}
-        </div>
-        <DialogFooter className="flex-wrap sm:justify-between gap-2">
-            <div className="flex gap-2">
-                {!isSystemTx && (
-                    <Button variant="outline" onClick={() => startDispute(transaction.id)} disabled={transaction.status === 'En Disputa'}>
-                        <ShieldAlert className="mr-2 h-4 w-4" /> Iniciar Disputa
+            {isProvider && transaction.status === 'Solicitud Pendiente' && (
+              <div className="space-y-2 pt-4 border-t">
+                <h4 className="font-semibold">Enviar Cotización</h4>
+                <Textarea placeholder="Desglose de costos y condiciones..." value={quoteBreakdown} onChange={e => setQuoteBreakdown(e.target.value)} />
+                <Input type="number" placeholder="Monto total" value={quoteTotal} onChange={e => setQuoteTotal(parseFloat(e.target.value))} />
+              </div>
+            )}
+          </div>
+          <DialogFooter className="flex-wrap sm:justify-between gap-2">
+              <div className="flex gap-2">
+                  {!isSystemTx && (
+                      <Button variant="outline" onClick={() => startDispute(transaction.id)} disabled={transaction.status === 'En Disputa'}>
+                          <ShieldAlert className="mr-2 h-4 w-4" /> Iniciar Disputa
+                      </Button>
+                  )}
+                  {isRenewableTx && (
+                      <Button variant="destructive" onClick={handleCancelRenewal}>
+                          <XCircle className="mr-2 h-4 w-4" /> Cancelar Renovación
+                      </Button>
+                  )}
+                  {isProvider && transaction.type === "Compra" && transaction.details.deliveryLocation && transaction.status === 'Buscando Repartidor' && (
+                      <Button variant="outline" onClick={handleSendToDelivery} disabled>
+                          <Send className="mr-2 h-4 w-4"/> Notificar a Repartidor
+                      </Button>
+                  )}
+                  {transaction.status === 'Pagado' && (
+                    <Button variant="outline" onClick={() => downloadTransactionsPDF([transaction])}>
+                        <FileText className="mr-2 h-4 w-4" /> Descargar PDF
                     </Button>
-                )}
-                {isRenewableTx && (
-                     <Button variant="destructive" onClick={handleCancelRenewal}>
-                        <XCircle className="mr-2 h-4 w-4" /> Cancelar Renovación
-                    </Button>
-                )}
-                 {isProvider && transaction.type === "Compra" && transaction.details.deliveryLocation && transaction.status === 'Buscando Repartidor' && (
-                    <Button variant="outline" onClick={handleSendToDelivery} disabled>
-                        <Send className="mr-2 h-4 w-4"/> Notificar a Repartidor
-                    </Button>
-                 )}
-                 {transaction.status === 'Pagado' && (
-                  <Button variant="outline" onClick={() => downloadTransactionsPDF([transaction])}>
-                      <FileText className="mr-2 h-4 w-4" /> Descargar PDF
-                  </Button>
-                 )}
-            </div>
-            <div className="flex gap-2 justify-end flex-wrap">
-                {isProvider && transaction.status === 'Solicitud Pendiente' && <Button onClick={handleSendQuote}>Enviar Cotización</Button>}
-                
-                {isProvider && transaction.status === 'Pago Enviado - Esperando Confirmación' && 
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild><Button>Confirmar Pago</Button></AlertDialogTrigger>
-                        <ConfirmPaymentDialog 
-                            onConfirm={() => handleConfirmPayment(false)}
-                            onReportThirdParty={() => handleConfirmPayment(true)}
-                            onCancel={() => {}}
-                        />
-                    </AlertDialog>
-                }
+                  )}
+              </div>
+              <div className="flex gap-2 justify-end flex-wrap">
+                  {isProvider && transaction.status === 'Solicitud Pendiente' && <Button onClick={handleSendQuote}>Enviar Cotización</Button>}
+                  
+                  {isProvider && transaction.status === 'Pago Enviado - Esperando Confirmación' && 
+                      <AlertDialog>
+                          <AlertDialogTrigger asChild><Button>Confirmar Pago</Button></AlertDialogTrigger>
+                          <ConfirmPaymentDialog 
+                              onConfirm={() => handleConfirmPayment(false)}
+                              onReportThirdParty={() => handleConfirmPayment(true)}
+                              onCancel={() => {}}
+                          />
+                      </AlertDialog>
+                  }
 
-                {isProvider && transaction.status === 'Cita Solicitada' && (
-                  <>
-                    <Button onClick={handleAcceptAppointment}>
-                      <CalendarCheck className="mr-2 h-4 w-4" /> Aceptar y Crear Compromiso
+                  {isProvider && transaction.status === 'Cita Solicitada' && (
+                    <>
+                      <Button onClick={handleAcceptAppointment}>
+                        <CalendarCheck className="mr-2 h-4 w-4" /> Aceptar y Crear Compromiso
+                      </Button>
+                      <Button variant="secondary" onClick={handleContactToReschedule}>
+                        <Contact className="mr-2 h-4 w-4" /> Contactar para Reagendar
+                      </Button>
+                    </>
+                  )}
+                  
+                  {isProvider && transaction.status === 'Acuerdo Aceptado - Pendiente de Ejecución' && <Button onClick={handleCompleteWork}><ClipboardCheck className="mr-2 h-4 w-4" />Marcar como Finalizado</Button>}
+                  
+                  {isClient && transaction.status === 'Pendiente de Confirmación del Cliente' && <Button onClick={() => setShowRatingScreen(true)}>Confirmar Recepción y Calificar</Button>}
+                  
+                  {showPayButton && (
+                    <Button onClick={() => setShowPaymentScreen(true)}>
+                        <Banknote className="mr-2 h-4 w-4" />
+                        Pagar Ahora
                     </Button>
-                     <Button variant="secondary" onClick={handleContactToReschedule}>
-                       <Contact className="mr-2 h-4 w-4" /> Contactar para Reagendar
-                    </Button>
-                  </>
-                )}
-                
-                {isProvider && transaction.status === 'Acuerdo Aceptado - Pendiente de Ejecución' && <Button onClick={handleCompleteWork}><ClipboardCheck className="mr-2 h-4 w-4" />Marcar como Finalizado</Button>}
-                
-                {isClient && transaction.status === 'Pendiente de Confirmación del Cliente' && <Button onClick={() => setShowRatingScreen(true)}>Confirmar Recepción y Calificar</Button>}
-                
-                {showPayButton && (
-                  <Button onClick={() => setShowPaymentScreen(true)}>
-                      <Banknote className="mr-2 h-4 w-4" />
-                      Pagar Ahora
-                  </Button>
-                )}
-                
-                <DialogClose asChild>
-                    <Button variant="secondary">Cerrar</Button>
-                </DialogClose>
-            </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+                  )}
+                  
+                  <DialogClose asChild>
+                      <Button variant="secondary">Cerrar</Button>
+                  </DialogClose>
+              </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
+

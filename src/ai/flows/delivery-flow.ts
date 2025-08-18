@@ -7,10 +7,11 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestoreDb } from '@/lib/firebase-server';
-import { doc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import type { Transaction, User } from '@/lib/types';
 import { haversineDistance } from '@/lib/utils';
 import { sendMessage } from './message-flow';
+import { sendNotification } from './notification-flow';
 
 const FindDeliveryInputSchema = z.object({
   transactionId: z.string(),
@@ -89,6 +90,15 @@ export const findDeliveryProvider = ai.defineFlow(
 
     // If loop finishes without finding a provider
     await updateDoc(txRef, { status: 'Error de Delivery - Acción Requerida' });
+
+    // Send a notification to the provider about the failure
+    await sendNotification({
+        userId: transaction.providerId,
+        type: 'admin_alert', // Use a high-priority type
+        title: 'Error en Asignación de Delivery',
+        message: `No pudimos encontrar un repartidor para la orden ${transaction.id.slice(-6)}. Revisa la transacción para elegir una alternativa.`,
+        link: `/transactions?tx=${transaction.id}`
+    });
   }
 );
 
@@ -149,3 +159,4 @@ export const resolveDeliveryAsPickup = ai.defineFlow(
         await batch.commit();
     }
 );
+
