@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Loader2, X, CheckCircle, MapPin, LocateFixed } from 'lucide-react';
 import { Button } from './ui/button';
 import { useRouter } from 'next/navigation';
