@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -405,6 +404,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     signInWithGoogle: async () => {
         const auth = getAuthInstance();
         const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' }); // Fix for external domains
         try { await signInWithPopup(auth, provider); } catch (error: any) {
             if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user' || error.code === 'auth/popup-blocked') { return; }
             console.error("Error signing in with Google: ", error);
@@ -413,6 +413,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     logout: async () => {
         await signOut(getAuthInstance());
         setCurrentUser(null);
+        setTransactions([]); // Clear stale data on logout
+        setConversations([]); // Clear stale data on logout
         router.push('/login');
     },
     setCurrentUser,
@@ -438,7 +440,17 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     getCartItemQuantity: (productId: string) => cart.find(item => item.product.id === productId)?.quantity || 0,
     updateUser,
     updateFullProfile,
-    updateUserProfileImage,
+    updateUserProfileImage: async (userId: string, imageUrl: string) => {
+        if (imageUrl.length > 1048487) {
+            toast({
+                variant: "destructive",
+                title: "Imagen demasiado grande",
+                description: "Por favor, elige una imagen más pequeña (menor a 1MB)."
+            });
+            return;
+        }
+        await updateUser(userId, { profileImage: imageUrl });
+    },
     activateTransactions: async (userId: string, paymentDetails: any) => {
         const userToUpdate = users.find(u => u.id === userId);
         if (!userToUpdate) return;
@@ -731,7 +743,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }), [
     searchHistory, contacts, cart, transactions, getCartTotal, 
     getDeliveryCost, users, updateCart, router, currentUser, updateUser, updateFullProfile,
-    getDistanceToProvider, currentUserLocation, toast, updateUserProfileImage, setDeliveryAddress,
+    getDistanceToProvider, currentUserLocation, toast, setDeliveryAddress,
     deliveryAddress, setDeliveryAddressToCurrent, activeCartForCheckout
   ]);
   
@@ -755,5 +767,4 @@ export const useCorabo = (): CoraboState & CoraboActions => {
 
 export type { Transaction };
 
-
-
+    
