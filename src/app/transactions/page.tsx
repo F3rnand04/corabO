@@ -18,7 +18,7 @@ import { ActivationWarning } from "@/components/ActivationWarning";
 import { getFirestoreDb } from "@/lib/firebase";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
-import { credicoraLevels } from "@/lib/types";
+import { credicoraLevels, credicoraCompanyLevels } from "@/lib/types";
 import Link from "next/link";
 import { SubscriptionDialog } from "@/components/SubscriptionDialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -94,6 +94,9 @@ export default function TransactionsPage() {
         );
     }
     
+    const isCompany = currentUser.profileSetupData?.providerType === 'company';
+    const activeCredicoraLevels = isCompany ? credicoraCompanyLevels : credicoraLevels;
+
     const agendaEvents = useMemo(() => getAgendaEvents(transactions), [transactions, getAgendaEvents]);
     const paymentDates = useMemo(() => agendaEvents.filter(e => e.type === 'payment').map(e => e.date), [agendaEvents]);
     const totalCartItems = useMemo(() => cart.reduce((sum, item) => sum + item.quantity, 0), [cart]);
@@ -131,8 +134,8 @@ export default function TransactionsPage() {
     const historyTx = useMemo(() => transactions.filter(t => t.status === 'Pagado' || t.status === 'Resuelto'), [transactions]);
     const commitmentTx = useMemo(() => transactions.filter(t => t.status === 'Acuerdo Aceptado - Pendiente de Ejecución' || t.status === 'Finalizado - Pendiente de Pago'), [transactions]);
     
-    const credicoraLevelDetails = credicoraLevels[(currentUser.credicoraLevel || 1).toString()];
-    const nextCredicoraLevelDetails = credicoraLevels[((currentUser.credicoraLevel || 1) + 1).toString()];
+    const credicoraLevelDetails = activeCredicoraLevels[(currentUser.credicoraLevel || 1).toString()];
+    const nextCredicoraLevelDetails = activeCredicoraLevels[((currentUser.credicoraLevel || 1) + 1).toString()];
 
     const completedTransactionsCount = useMemo(() => transactions.filter(tx => tx.clientId === currentUser.id && (tx.status === 'Pagado' || tx.status === 'Resuelto')).length, [transactions, currentUser.id]);
     const transactionsNeeded = credicoraLevelDetails.transactionsForNextLevel;
@@ -187,7 +190,7 @@ export default function TransactionsPage() {
                                 <div className="space-y-1">
                                     <div className="flex justify-between text-xs font-medium">
                                         <span>Límite de Crédito</span>
-                                        <span>${(currentUser.credicoraLimit || 0).toFixed(2)} / ${credicoraLevelDetails.creditLimit.toFixed(2)}</span>
+                                        <span>${(currentUser.credicoraLimit || 0).toLocaleString()} / ${credicoraLevelDetails.creditLimit.toLocaleString()}</span>
                                     </div>
                                     <Progress value={((currentUser.credicoraLimit || 0) / credicoraLevelDetails.creditLimit) * 100} className="[&>div]:bg-blue-500" />
                                 </div>

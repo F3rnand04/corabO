@@ -19,7 +19,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { cn } from '@/lib/utils';
 import type { Transaction } from '@/lib/types';
-import { credicoraLevels } from '@/lib/types';
+import { credicoraLevels, credicoraCompanyLevels } from '@/lib/types';
 
 
 interface SubscriptionDialogProps {
@@ -78,8 +78,9 @@ export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogP
     return null;
   }
   
+  const isCompany = currentUser.profileSetupData?.providerType === 'company';
+  
   const getPlanKey = (): keyof typeof plans => {
-    const isCompany = currentUser.profileSetupData?.providerType === 'company';
     if (isCompany) {
         return 'company';
     }
@@ -112,7 +113,7 @@ export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogP
     
     // Set the user's credicora details upon subscribing
     const currentCredicoraLevel = currentUser.credicoraLevel || 1;
-    const credicoraDetails = credicoraLevels[currentCredicoraLevel.toString()];
+    const credicoraDetails = isCompany ? credicoraCompanyLevels[currentCredicoraLevel.toString()] : credicoraLevels[currentCredicoraLevel.toString()];
     await updateUser(currentUser.id, { credicoraDetails });
     
     subscribeUser(currentUser.id, `Plan ${currentPlan.title} (${paymentCycle === 'monthly' ? 'Mensual' : 'Anual'})`, amount);

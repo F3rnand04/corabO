@@ -9,7 +9,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { addDays, differenceInDays } from 'date-fns';
-import { credicoraLevels } from '@/lib/types';
+import { credicoraLevels, credicoraCompanyLevels } from '@/lib/types';
 import { getAuth, signInWithPopup, signOut, User as FirebaseUser, GoogleAuthProvider } from 'firebase/auth';
 import { getFirebaseApp, getFirestoreDb, getAuthInstance } from '@/lib/firebase';
 import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, arrayUnion, getDocs, deleteDoc, collectionGroup, Unsubscribe, orderBy, deleteField } from 'firebase/firestore';
@@ -754,5 +754,6 @@ export const useCorabo = (): CoraboState & CoraboActions => {
 };
 
 export type { Transaction };
+
 
 

@@ -4,8 +4,8 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, ShieldCheck, TrendingUp, Gem, Star, Award, Zap, Percent } from 'lucide-react';
-import { credicoraLevels } from '@/lib/types';
+import { ChevronLeft, ShieldCheck, TrendingUp, Gem, Star, Award, Zap, Percent, Building, User } from 'lucide-react';
+import { credicoraLevels, credicoraCompanyLevels } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
 
 function CredicoraHeader() {
@@ -46,12 +46,43 @@ const benefits = [
     }
 ];
 
+const LevelTable = ({ levels, title, icon }: { levels: any, title: string, icon: React.ElementType }) => {
+    const Icon = icon;
+    return (
+        <section>
+            <h2 className="text-2xl font-bold text-center mb-6 flex items-center justify-center gap-2">
+                <Icon className="w-6 h-6" />
+                {title}
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                {Object.values(levels).map((level: any) => (
+                     <Card key={level.level} className="flex flex-col">
+                        <CardHeader className="text-center">
+                            <CardTitle className="text-xl">{level.name}</CardTitle>
+                            <CardDescription>Nivel {level.level}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex-grow space-y-3 text-sm">
+                            <p>Límite de Crédito: <span className="font-bold">${level.creditLimit.toLocaleString()}</span></p>
+                            <p>Pago Inicial Mínimo: <span className="font-bold">{level.initialPaymentPercentage * 100}%</span></p>
+                            <p>Cuotas Flexibles: <span className="font-bold">{level.installments}</span></p>
+                        </CardContent>
+                        <div className="p-4 bg-muted/50 text-center text-xs font-semibold rounded-b-lg">
+                           Requiere {level.transactionsForNextLevel} transacciones
+                        </div>
+                    </Card>
+                ))}
+            </div>
+        </section>
+    );
+};
+
+
 export default function CredicoraPage() {
     const router = useRouter();
   return (
     <>
       <CredicoraHeader />
-      <main className="container max-w-4xl mx-auto py-8 space-y-8">
+      <main className="container max-w-7xl mx-auto py-8 space-y-12">
         <section className="text-center">
             <h2 className="text-3xl font-bold">El Motor de Crecimiento y Confianza de Corabo</h2>
             <p className="text-lg text-muted-foreground mt-2 max-w-2xl mx-auto">
@@ -76,29 +107,13 @@ export default function CredicoraPage() {
         </div>
 
         <Separator />
-
-        <section>
-            <h2 className="text-2xl font-bold text-center mb-6">Tu Camino de Crecimiento en Corabo</h2>
-            <p className="text-center text-muted-foreground mb-8">Avanza a través de nuestros niveles completando transacciones y construyendo una reputación sólida. Cada nivel desbloquea mayores beneficios.</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                {Object.values(credicoraLevels).map(level => (
-                     <Card key={level.level} className="flex flex-col">
-                        <CardHeader className="text-center">
-                            <CardTitle className="text-xl">{level.name}</CardTitle>
-                            <CardDescription>Nivel {level.level}</CardDescription>
-                        </CardHeader>
-                        <CardContent className="flex-grow space-y-3 text-sm">
-                            <p>Límite de Crédito: <span className="font-bold">${level.creditLimit}</span></p>
-                            <p>Pago Inicial Mínimo: <span className="font-bold">{level.initialPaymentPercentage * 100}%</span></p>
-                            <p>Cuotas Flexibles: <span className="font-bold">{level.installments}</span></p>
-                        </CardContent>
-                        <div className="p-4 bg-muted/50 text-center text-xs font-semibold rounded-b-lg">
-                           Requiere {level.transactionsForNextLevel} transacciones
-                        </div>
-                    </Card>
-                ))}
-            </div>
-        </section>
+        
+        <div className="space-y-10">
+            <LevelTable levels={credicoraLevels} title="Niveles para Personas y Profesionales" icon={User} />
+            <LevelTable levels={credicoraCompanyLevels} title="Niveles para Empresas" icon={Building} />
+        </div>
+        
+        <p className="text-center text-muted-foreground pt-4">Avanza a través de nuestros niveles completando transacciones y construyendo una reputación sólida. Cada nivel desbloquea mayores beneficios.</p>
 
         <Separator />
 

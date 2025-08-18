@@ -179,6 +179,55 @@ export const credicoraLevels: Record<string, CredicoraLevel> = {
     },
 };
 
+export const credicoraCompanyLevels: Record<string, CredicoraLevel> = {
+    '1': {
+        level: 1,
+        name: 'Bronce',
+        color: '27 54% 33%', // SaddleBrown
+        creditLimit: 500,
+        initialPaymentPercentage: 0.50,
+        installments: 4,
+        transactionsForNextLevel: 50,
+    },
+    '2': {
+        level: 2,
+        name: 'Plata',
+        color: '220 13% 69%', // Silver
+        creditLimit: 750,
+        initialPaymentPercentage: 0.45,
+        installments: 8,
+        transactionsForNextLevel: 75,
+    },
+     '3': {
+        level: 3,
+        name: 'Oro',
+        color: '45 93% 47%', // gold
+        creditLimit: 1000,
+        initialPaymentPercentage: 0.35,
+        installments: 12,
+        transactionsForNextLevel: 100,
+    },
+    '4': {
+        level: 4,
+        name: 'Platino',
+        color: '220 13% 91%', // LightGray for Platinum
+        creditLimit: 1500,
+        initialPaymentPercentage: 0.25,
+        installments: 18,
+        transactionsForNextLevel: 150,
+    },
+    '5': {
+        level: 5,
+        name: 'Diamante',
+        color: '207 90% 54%', // blue-500 for Diamond
+        creditLimit: 2000,
+        initialPaymentPercentage: 0.20,
+        installments: 24, // 12 months * 2 bi-weekly
+        transactionsForNextLevel: 250,
+    },
+};
+
+
 // New type for specialized data
 export type SpecializedData = {
     // Transporte y Asistencia
@@ -513,3 +562,8 @@ export const CreateProductInputSchema = z.object({
   imageDataUri: z.string(),
 });
 export type CreateProductInput = z.infer<typeof CreateProductInputSchema>;
+
+export type TempRecipientInfo = {
+    name: string;
+    phone: string;
+}
