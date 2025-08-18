@@ -35,7 +35,7 @@ const initialSchedule = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'].r
 
 
 export default function ProfileSetupPage() {
-  const { currentUser } = useCorabo();
+  const { currentUser, updateFullProfile } = useCorabo();
   const [currentStep, setCurrentStep] = useState(1);
   const [profileType, setProfileType] = useState<UserType['type'] | null>(null);
   const [formData, setFormData] = useState<ProfileSetupData>({});
@@ -103,7 +103,7 @@ export default function ProfileSetupPage() {
       case 4:
         return <Step4_GeneralDetails onBack={handleBack} onNext={handleNext} formData={formData} setFormData={setFormData} />;
       case 5:
-        return <Step5_ProviderDetails onBack={handleBack} onNext={handleNext} formData={formData} setFormData={setFormData} />;
+        return <Step5_ProviderDetails onBack={handleBack} onNext={handleNext} initialFormData={formData} onSave={(newData) => updateFullProfile(currentUser!.id, newData, profileType)} />;
       case 6:
         return <Step6_Review onBack={handleBack} formData={formData} setFormData={setFormData} profileType={profileType} goToStep={goToStep} />;
       default:

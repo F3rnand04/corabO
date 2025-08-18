@@ -44,13 +44,13 @@ interface Step5_ProviderDetailsProps {
   profileType?: UserType['type']; // Make profileType optional as it's only needed for step flow
 }
 
-export default function Step5_ProviderDetails({ onBack, onNext, initialFormData, isEditMode = false, onSave, profileType }: Step5_ProviderDetailsProps) {
+export default function Step5_ProviderDetails({ onBack, onNext, initialFormData, isEditMode = false, onSave }: Step5_ProviderDetailsProps) {
   const { toast } = useToast();
-  const [formData, setFormData] = useState<ProfileSetupData>(initialFormData);
+  const [formData, setFormData] = useState<ProfileSetupData>(initialFormData || {});
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    setFormData(initialFormData);
+    setFormData(initialFormData || {});
   }, [initialFormData]);
   
   const handleInputChange = (field: keyof ProfileSetupData, value: any) => {
