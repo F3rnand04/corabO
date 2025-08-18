@@ -78,11 +78,15 @@ const CompleteInitialSetupInputSchema = z.object({
   providerType: z.enum(['professional', 'company']),
 });
 
+// **FIX**: The output schema now returns the full user object to update the context immediately.
+const UserOutputSchema = z.any().nullable();
+
+
 export const completeInitialSetupFlow = ai.defineFlow(
   {
     name: 'completeInitialSetupFlow',
     inputSchema: CompleteInitialSetupInputSchema,
-    outputSchema: z.void(),
+    outputSchema: UserOutputSchema, // The flow now returns the updated user
   },
   async ({ userId, name, lastName, idNumber, birthDate, country, type, providerType }) => {
     const db = getFirestoreDb();
@@ -93,9 +97,9 @@ export const completeInitialSetupFlow = ai.defineFlow(
       throw new Error("User not found during setup completion.");
     }
     
-    const existingData = userSnap.data().profileSetupData || {};
+    const existingData = userSnap.data() as User;
 
-    const dataToSave: Partial<User> = {
+    const dataToUpdate: Partial<User> = {
       name,
       lastName,
       idNumber,
@@ -103,15 +107,17 @@ export const completeInitialSetupFlow = ai.defineFlow(
       country,
       isInitialSetupComplete: true,
       type,
-      // **FIX**: Merge existing profileSetupData with the new providerType
       profileSetupData: {
-        ...existingData,
+        ...(existingData.profileSetupData || {}),
         providerType: providerType,
       }
     };
 
-    // Using update to ensure we don't overwrite the whole user object
-    await updateDoc(userRef, dataToSave);
+    await updateDoc(userRef, dataToUpdate);
+
+    // Return the full, updated user object so the client can update its state
+    const updatedUser = { ...existingData, ...dataToUpdate };
+    return JSON.parse(JSON.stringify(updatedUser));
   }
 );
 
@@ -272,5 +278,3 @@ export const getProfileProducts = ai.defineFlow(
         };
     }
 );
-
-    

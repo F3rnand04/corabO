@@ -17,6 +17,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRouter } from 'next/navigation';
 import { checkIdUniquenessFlow, completeInitialSetupFlow } from '@/ai/flows/profile-flow';
+import type { User } from '@/lib/types';
 
 const countries = [
   { code: 'VE', name: 'Venezuela', idLabel: 'Cédula de Identidad', companyIdLabel: 'RIF' },
@@ -42,7 +43,7 @@ const CountrySelector = memo(function CountrySelector({ value, onValueChange }: 
 
 
 export default function InitialSetupPage() {
-  const { currentUser, sendMessage, logout } = useCorabo();
+  const { currentUser, setCurrentUser, sendMessage, logout } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -60,7 +61,6 @@ export default function InitialSetupPage() {
 
   useEffect(() => {
     if (currentUser) {
-      // **FIX**: Do not pre-fill the name field. Start it empty.
       setName(currentUser.name || '');
       setLastName(currentUser.lastName || '');
       setCountry(currentUser.country || '');
@@ -97,7 +97,7 @@ export default function InitialSetupPage() {
             return; // Stop submission
         }
         
-        await completeInitialSetupFlow({ 
+        const updatedUser = await completeInitialSetupFlow({ 
           userId: currentUser.id, 
           name, 
           lastName, 
@@ -108,10 +108,14 @@ export default function InitialSetupPage() {
           providerType: isCompany ? 'company' : 'professional'
         });
         
+        // **FIX**: Immediately update the context with the fresh user data from the backend.
+        setCurrentUser(updatedUser as User);
+
         toast({ title: "Perfil Guardado", description: "Tus datos han sido guardados correctamente."});
         
+        // The AppLayout will now handle the redirection correctly because the context is up-to-date.
+        // We can still push to trigger the check.
         router.push('/');
-        router.refresh();
 
     } catch (error: any) {
         console.error("Failed to complete setup:", error);
