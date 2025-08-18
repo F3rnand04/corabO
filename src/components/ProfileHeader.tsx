@@ -161,7 +161,7 @@ export function ProfileHeader() {
                         </Link>
                     </Button>
                     <Button asChild variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground">
-                        <Link href="/profile-setup">
+                        <Link href="/profile/details">
                             <UserRoundCog className="w-5 h-5"/>
                         </Link>
                     </Button>
@@ -194,13 +194,6 @@ export function ProfileHeader() {
                 <Button asChild variant="ghost" className="flex-1 p-3 rounded-none text-muted-foreground data-[active=true]:text-primary data-[active=true]:border-b-2 data-[active=true]:border-primary" data-active={pathname === '/profile/catalog'}>
                     <Link href="/profile/catalog">
                         Catálogo <span className='font-mono ml-2 text-xs'>({productCount})</span>
-                    </Link>
-                </Button>
-            )}
-             {isProvider && (
-                <Button asChild variant="ghost" className="flex-1 p-3 rounded-none text-muted-foreground data-[active=true]:text-primary data-[active=true]:border-b-2 data-[active=true]:border-primary" data-active={pathname.startsWith('/profile/details')}>
-                    <Link href="/profile/details">
-                        Detalles
                     </Link>
                 </Button>
             )}
