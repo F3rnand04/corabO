@@ -38,19 +38,24 @@ export async function autoVerifyIdWithAI(input: VerificationInput): Promise<Veri
   return autoVerifyIdWithAIFlow(input);
 }
 
-// Advanced name comparison logic as per documentation
+// Advanced name comparison logic
 function compareNamesFlexibly(nameA: string, nameB: string): boolean {
-    const normalize = (name: string) => 
-        name.toLowerCase().trim().replace(/\s+/g, ' ').split(' ').sort();
+    const normalize = (name: string) => {
+        if (!name) return '';
+        return name
+            .toLowerCase()
+            .trim()
+            // Remove common company suffixes like C.A., S.A., etc.
+            .replace(/\s*,?\s*(c\s*\.\s*a|s\s*\.\s*a|ca|sa)\s*\.?\s*$/i, '')
+            // Remove punctuation
+            .replace(/[.,]/g, '')
+            .replace(/\s+/g, ' ');
+    };
 
-    const partsA = normalize(nameA);
-    const partsB = normalize(nameB);
+    const normalizedA = normalize(nameA);
+    const normalizedB = normalize(nameB);
 
-    // Handles cases where one name is shorter (e.g., missing a middle name)
-    const [shorter, longer] = partsA.length < partsB.length ? [partsA, partsB] : [partsB, partsA];
-
-    // Check if every word in the shorter name exists in the longer name
-    return shorter.every(part => longer.includes(part));
+    return normalizedA === normalizedB;
 }
 
 // ID normalization logic as per documentation
