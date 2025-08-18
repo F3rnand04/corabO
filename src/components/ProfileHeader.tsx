@@ -198,7 +198,7 @@ export function ProfileHeader() {
                 </Button>
             )}
              {isProvider && (
-                <Button asChild variant="ghost" className="flex-1 p-3 rounded-none text-muted-foreground data-[active=true]:text-primary data-[active=true]:border-b-2 data-[active=true]:border-primary" data-active={pathname === '/profile/details'}>
+                <Button asChild variant="ghost" className="flex-1 p-3 rounded-none text-muted-foreground data-[active=true]:text-primary data-[active=true]:border-b-2 data-[active=true]:border-primary" data-active={pathname.startsWith('/profile/details')}>
                     <Link href="/profile/details">
                         Detalles
                     </Link>

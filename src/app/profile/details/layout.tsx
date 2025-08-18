@@ -1,6 +1,6 @@
 'use client';
 
-// Este layout asegura que la página de detalles no herede la cabecera/pie de página principal.
+// No longer needed as we use the Step5 component directly, but keeping it for structure
 export default function DetailsLayout({
   children,
 }: {

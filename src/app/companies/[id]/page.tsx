@@ -7,7 +7,7 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, MessageCircle, CheckCircle, Flag, Package, Hand, ShoppingCart, Plus, Minus, X, Truck, AlertTriangle, Loader2, Search, Building, Users, BadgeCheck, Stethoscope, Utensils, Link as LinkIcon, Home as HomeIcon, Briefcase, Scissors } from 'lucide-react';
+import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, MessageCircle, CheckCircle, Flag, Package, Hand, ShoppingCart, Plus, Minus, X, Truck, AlertTriangle, Loader2, Search, Building, Users, BadgeCheck, Stethoscope, Utensils, Link as LinkIcon, Home as HomeIcon, Briefcase, Scissors, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
@@ -168,11 +168,9 @@ export default function CompanyProfilePage() {
   const isCompany = provider.profileSetupData?.providerType === 'company';
   const isProductProvider = provider.profileSetupData?.offerType === 'product';
   
-  const isProfessionalServices = ['Tecnología y Soporte', 'Educación', 'Eventos'].includes(provider.profileSetupData?.primaryCategory || '');
-  const isBeautyProvider = provider.profileSetupData?.primaryCategory === 'Belleza';
   const isHealthProvider = provider.profileSetupData?.primaryCategory === 'Salud y Bienestar';
   const isFoodProvider = provider.profileSetupData?.primaryCategory === 'Alimentos y Restaurantes';
-  const isHomeRepairProvider = provider.profileSetupData?.primaryCategory === 'Hogar y Reparaciones';
+  
   const isCurrentUserTransactionReady = currentUser?.isTransactionsActive;
   const isProviderTransactionReady = provider.isTransactionsActive;
 
@@ -402,7 +400,7 @@ export default function CompanyProfilePage() {
     'Tecnología y Soporte': Briefcase,
     'Eventos': Briefcase,
     'Belleza': Scissors,
-    'Automotriz y Repuestos': Briefcase,
+    'Automotriz y Repuestos': Truck,
     'Transporte y Asistencia': Truck,
   };
   const DetailsIcon = categoryIcons[provider.profileSetupData?.primaryCategory || ''] || Briefcase;
@@ -520,39 +518,34 @@ export default function CompanyProfilePage() {
               </div>
             </div>
             
-             <div className="flex items-center gap-4 text-xs text-muted-foreground pt-4 pb-2">
-              {/* Stats Section */}
-              <div className="flex items-center gap-3">
-                {!isProductProvider && !isCompany && (
-                  <p><span className="font-bold text-foreground">{profileData.publications}</span> Publicaciones</p>
-                )}
-                {isProductProvider || isCompany ? (
-                  <p><span className="font-bold text-foreground">{providerProducts.length}</span> Productos</p>
-                ) : (
-                  <p><span className="font-bold text-foreground">{profileData.completedJobs}</span> Trab. Realizados</p>
-                )}
-                {isCompany && (
-                  <p><span className="font-bold text-foreground">{affiliatedProfessionals.length}</span> Afiliados</p>
-                )}
-              </div>
-              
-              <Separator orientation="vertical" className="h-4"/>
+            <div className="flex items-center gap-4 text-xs text-muted-foreground pt-4 pb-2">
+                <p><span className="font-bold text-foreground">{isProductProvider || isCompany ? providerProducts.length : profileData.publications}</span> {isProductProvider || isCompany ? "Productos" : "Publicaciones"}</p>
+                <Separator orientation="vertical" className="h-4"/>
+                <p><span className="font-bold text-foreground">{profileData.completedJobs}</span> Trab. Realizados</p>
+                <Separator orientation="vertical" className="h-4"/>
+                {isCompany && <p><span className="font-bold text-foreground">{affiliatedProfessionals.length}</span> Afiliados</p>}
 
-              {/* Specialized Details Section */}
-              {(isHealthProvider || isFoodProvider || isHomeRepairProvider || isProfessionalServices || isBeautyProvider) && provider.profileSetupData?.specializedData && (
-                <div className="flex items-center gap-1">
-                  <DetailsIcon className="w-4 h-4 text-primary"/>
-                  {isFoodProvider && provider.profileSetupData.specializedData.cuisineType && (
-                    <Badge variant="outline">{provider.profileSetupData.specializedData.cuisineType}</Badge>
-                  )}
-                  {isHealthProvider && (provider.profileSetupData.specializedData.specialties?.length || 0) > 0 && (
-                     <Badge variant="outline">{provider.profileSetupData.specializedData.specialties?.[0]}</Badge>
-                  )}
-                   {isHomeRepairProvider && (provider.profileSetupData.specializedData.mainTrades?.length || 0) > 0 && (
-                     <Badge variant="outline">{provider.profileSetupData.specializedData.mainTrades?.[0]}</Badge>
-                  )}
-                </div>
-              )}
+                {provider.profileSetupData?.specializedData && (
+                    <>
+                        <Separator orientation="vertical" className="h-4"/>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="ghost" className="flex items-center gap-1 text-xs p-1 h-auto">
+                                    <DetailsIcon className="w-4 h-4 text-primary"/>
+                                    Detalles
+                                    <MoreHorizontal className="w-3 h-3 ml-1" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent>
+                                <div className="space-y-2 text-sm">
+                                    <h4 className="font-bold mb-2">Detalles Especializados</h4>
+                                    {isFoodProvider && provider.profileSetupData.specializedData.cuisineType && <p><strong>Cocina:</strong> {provider.profileSetupData.specializedData.cuisineType}</p>}
+                                    {isHealthProvider && (provider.profileSetupData.specializedData.specialties?.length ?? 0) > 0 && <p><strong>Especialidades:</strong> {(provider.profileSetupData.specializedData.specialties ?? []).join(', ')}</p>}
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+                    </>
+                )}
             </div>
 
             {provider.activeAffiliation && (
@@ -816,4 +809,5 @@ export default function CompanyProfilePage() {
 }
 
     
+
 
