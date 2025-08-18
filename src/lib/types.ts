@@ -398,10 +398,16 @@ export type Transaction = {
 
     // For products
     items?: CartItem[];
-    delivery?: boolean;
+    delivery?: {
+      method: 'pickup' | 'home' | 'other_address';
+      address?: string;
+      recipientInfo?: {
+        name: string;
+        phone: string;
+      };
+    };
     deliveryCost?: number;
     deliveryProviderId?: string;
-    deliveryLocation?: { lat: number; lon: number; address: string };
 
     // For payments
     paymentMethod?: 'Efectivo' | 'Transferencia' | 'Pago Móvil' | 'Binance' | 'credicora' | 'direct';
@@ -412,7 +418,7 @@ export type Transaction = {
     paymentReference?: string;
     paymentFromThirdParty?: boolean;
     paymentRequestedAt?: string; // Timestamp for when payment was requested
-    paymentSentAt?: string; // Timestamp for when client sent payment
+    paymentSentAt?: string; // Timestamp for when client sends payment
 
     // For system
     system?: string;

@@ -77,7 +77,7 @@ interface CoraboActions {
   removeFromCart: (productId: string) => void;
   getCartTotal: () => number;
   getDeliveryCost: () => number;
-  checkout: (transactionId: string, withDelivery: boolean, useCredicora: boolean) => void;
+  checkout: (transactionId: string, deliveryMethod: 'pickup' | 'home' | 'other_address', useCredicora: boolean, recipientInfo?: { name: string; phone: string }) => void;
   addContact: (user: User) => boolean;
   removeContact: (userId: string) => void;
   isContact: (userId: string) => boolean;
@@ -438,20 +438,25 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         const newCart = cart.filter(item => item.product.id !== productId);
         updateCart(newCart, currentUser.id, transactions);
     },
-    checkout: async (transactionId: string, withDelivery: boolean, useCredicora: boolean) => {
+    checkout: async (transactionId: string, deliveryMethod: 'pickup' | 'home' | 'other_address', useCredicora: boolean, recipientInfo?: { name: string, phone: string }) => {
         if(!currentUser) return;
-        // This is a simplified checkout. A real one would involve a payment gateway.
         const db = getFirestoreDb();
         const txRef = doc(db, 'transactions', transactionId);
         
-        // Convert 'Carrito Activo' to 'Pre-factura Pendiente'
+        const deliveryDetails = {
+            delivery: deliveryMethod !== 'pickup',
+            deliveryMethod: deliveryMethod,
+            pickupInStore: deliveryMethod === 'pickup',
+            deliveryAddress: deliveryMethod !== 'pickup' ? deliveryAddress : '',
+            recipientInfo: recipientInfo,
+        };
+        
         await updateDoc(txRef, { 
             status: 'Pre-factura Pendiente',
-            'details.delivery': withDelivery,
+            'details.delivery': deliveryDetails,
             'details.paymentMethod': useCredicora ? 'credicora' : 'direct',
         });
-
-        // Redirect to the payment page. In a real app, this would be the gateway.
+        
         router.push(`/quotes/payment?commitmentId=${transactionId}`);
     },
     sendMessage: (options: any) => {
@@ -633,7 +638,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }), [
     searchHistory, contacts, cart, transactions, getCartTotal, 
     getDeliveryCost, users, updateCart, router, currentUser, updateUser, updateFullProfile,
-    getDistanceToProvider, currentUserLocation, toast, updateUserProfileImage, setDeliveryAddress
+    getDistanceToProvider, currentUserLocation, toast, updateUserProfileImage, setDeliveryAddress,
+    deliveryAddress // Added dependency
   ]);
   
   return (
