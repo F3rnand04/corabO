@@ -9,7 +9,7 @@ import { Loader2 } from 'lucide-react';
 // This is the server component wrapper for the map page.
 export default function MapPage() {
     return (
-        <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader2 className="h-12 w-12 animate-spin"/></div>}>
+        <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader2 className="h-12 w-12 animate-spin text-primary"/></div>}>
             <MapPageContent />
         </Suspense>
     )

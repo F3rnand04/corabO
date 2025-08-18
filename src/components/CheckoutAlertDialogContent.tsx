@@ -13,7 +13,7 @@ import { credicoraLevels } from "@/lib/types";
 import { useRouter } from "next/navigation";
 
 export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (open: boolean) => void }) {
-    const { currentUser, cart, getCartTotal, getDeliveryCost, checkout: performCheckout, transactions, users, deliveryAddress, setDeliveryAddress } = useCorabo();
+    const { currentUser, cart, getCartTotal, getDeliveryCost, checkout: performCheckout, transactions, users, deliveryAddress } = useCorabo();
     const router = useRouter();
     
     const [includeDelivery, setIncludeDelivery] = useState(false);
@@ -77,7 +77,7 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
                     <span>Dirección de Entrega:</span>
                     <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => router.push('/map')}>Cambiar</Button>
                 </div>
-                <p className="text-sm font-semibold p-2 bg-muted rounded-md truncate">{deliveryAddress || "No especificada"}</p>
+                <p className="text-sm font-semibold p-2 bg-muted rounded-md truncate">{deliveryAddress.split('|')[0] || "No especificada"}</p>
                 <div className="flex justify-between text-sm">
                     <span>Subtotal:</span>
                     <span className="font-semibold">${subtotal.toFixed(2)}</span>
@@ -127,7 +127,7 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
             </div>
             <AlertDialogFooter>
                 <AlertDialogCancel onClick={() => onOpenChange(false)}>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleCheckout} disabled={!cartTransaction}>Pagar Ahora</AlertDialogAction>
+                <AlertDialogAction onClick={handleCheckout} disabled={!cartTransaction || !deliveryAddress}>Pagar Ahora</AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
     );

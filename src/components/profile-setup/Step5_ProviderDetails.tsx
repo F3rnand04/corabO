@@ -16,7 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { ProfileSetupData } from '@/lib/types';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { useToast } from '@/hooks/use-toast';
@@ -58,7 +58,7 @@ const categoryComponentMap: { [key: string]: React.ElementType } = {
 
 export default function Step5_ProviderDetails({ onBack, onNext, formData, setFormData }: Step5_ProviderDetailsProps) {
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
-  const { currentUser, users, requestAffiliation } = useCorabo();
+  const { currentUser, users, requestAffiliation, deliveryAddress, setDeliveryAddress } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -105,19 +105,12 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
       }
   };
 
-  const handleMapClick = () => {
-    // For now, it opens Google Maps. In the future, it will open the in-app map.
-    const baseUrl = "https://www.google.com/maps/search/?api=1&query=";
-    if (formData.location) {
-        const query = encodeURIComponent(formData.location);
-        window.open(`${baseUrl}${query}`, '_blank');
-    } else {
-        toast({
-            title: "Ubicación no definida",
-            description: "Por favor, ingresa una ubicación en el campo de texto primero."
-        });
+  useEffect(() => {
+    if (deliveryAddress && deliveryAddress !== formData.location) {
+        handleFormDataChange('location', deliveryAddress);
+        setDeliveryAddress(''); // Clear the context address after using it
     }
-  };
+  }, [deliveryAddress, formData.location, handleFormDataChange, setDeliveryAddress]);
 
   const renderSpecializedFields = () => {
     const category = formData.primaryCategory;
@@ -206,8 +199,8 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                         <Switch id="has-physical-location" checked={formData.hasPhysicalLocation} onCheckedChange={(checked) => handleFormDataChange('hasPhysicalLocation', checked)}/>
                     </div>
                     <div className="relative">
-                        <Button variant="ghost" size="icon" className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-primary" onClick={handleMapClick}><LocateFixed className="h-5 w-5" /></Button>
-                        <Input id="location" placeholder="Pega las coordenadas o dirección aquí..." className="pl-12" value={formData.location || ''} onChange={(e) => handleFormDataChange('location', e.target.value)}/>
+                         <Button variant="ghost" size="icon" className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => router.push('/map')}><LocateFixed className="h-5 w-5" /></Button>
+                        <Input id="location" placeholder="Haz clic en el localizador para usar el mapa..." className="pl-12" value={formData.location?.split('|')[0] || ''} onChange={(e) => handleFormDataChange('location', e.target.value)}/>
                     </div>
                     <div className="flex items-center justify-between">
                         <Label htmlFor="show-exact-location" className="flex items-center gap-2 font-medium">Mostrar ubicación exacta</Label>

@@ -154,7 +154,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [contacts, setContacts] = useState<User[]>([]);
   const [isGpsActive, setIsGpsActive] = useState(true);
-  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [deliveryAddress, _setDeliveryAddress] = useState('');
   const [exchangeRate, setExchangeRate] = useState(36.54);
   const [currentUserLocation, setCurrentUserLocation] = useState<GeolocationCoords | null>(null);
   const [qrSession, setQrSession] = useState<QrSession | null>(null);
@@ -165,10 +165,19 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     _setCurrentUser(user);
   }, []);
   
+  const setDeliveryAddress = useCallback((address: string) => {
+    localStorage.setItem('coraboDeliveryAddress', address);
+    _setDeliveryAddress(address);
+  }, []);
+  
   const activeCartTx = useMemo(() => transactions.find(tx => tx.status === 'Carrito Activo'), [transactions]);
   const cart: CartItem[] = useMemo(() => activeCartTx?.details.items || [], [activeCartTx]);
 
   useEffect(() => {
+    const savedAddress = localStorage.getItem('coraboDeliveryAddress');
+    if (savedAddress) {
+        _setDeliveryAddress(savedAddress);
+    }
     // **FIX**: Handle geolocation permission gracefully.
     const checkGeolocation = () => {
       if (navigator.geolocation) {
@@ -570,7 +579,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     },
     createPublication: async(a:any)=>{return Promise.resolve();},
     createProduct: async(a:any)=>{return Promise.resolve();},
-    setDeliveryAddress: (a:any)=>{},
+    setDeliveryAddress,
     markConversationAsRead: async(a:any)=>{return Promise.resolve();},
     toggleUserPause: (a:any,b:any)=>{},
     deleteUser: async(a:any)=>{return Promise.resolve();},
@@ -602,7 +611,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }), [
     searchHistory, contacts, cart, transactions, getCartTotal, 
     getDeliveryCost, users, updateCart, router, currentUser, updateUser, updateFullProfile,
-    getDistanceToProvider, currentUserLocation, toast, updateUserProfileImage
+    getDistanceToProvider, currentUserLocation, toast, updateUserProfileImage, setDeliveryAddress
   ]);
   
   return (
