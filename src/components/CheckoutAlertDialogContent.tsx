@@ -129,10 +129,10 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
                             <RadioGroupItem value="other_address" id="delivery-other" />
                             <div className="flex-grow">
                                 <p className="font-semibold">Enviar a otra dirección</p>
-                                {deliveryMethod === 'other_address' && tempRecipientInfo && (
-                                    <div className="text-xs text-muted-foreground">
-                                        <p>Para: {tempRecipientInfo.name} ({tempRecipientInfo.phone})</p>
-                                        <p>En: {deliveryAddress}</p>
+                                {deliveryMethod === 'other_address' && tempRecipientInfo && deliveryAddress && (
+                                    <div className="text-xs text-muted-foreground mt-1 border-l-2 pl-2 border-primary">
+                                        <p>Para: <strong>{tempRecipientInfo.name}</strong> ({tempRecipientInfo.phone})</p>
+                                        <p>En: <span className="font-mono">{deliveryAddress}</span></p>
                                     </div>
                                 )}
                             </div>

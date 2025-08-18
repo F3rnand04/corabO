@@ -59,34 +59,49 @@ graph TD
 
 ---
 
-## 3. Flujo del Cliente (Comprador) con Backend
+## 3. Flujo del Cliente (Compra de Producto) con Backend
 
-Describe el viaje de un cliente en la nueva arquitectura.
+Describe el viaje de un cliente en la nueva arquitectura al comprar un producto.
 
 ```mermaid
 graph TD
-    A[Inicio: Cliente en el Feed Principal] --> B[Encuentra Proveedor y hace clic en Mensaje Directo];
-    B --> C[Se abre la pantalla de Chat /messages/[id]];
-    C --> D[Cliente y Proveedor negocian];
-    D --> E[**Proveedor** envía una 'Propuesta de Acuerdo' desde el chat];
+    A[Inicio: Cliente en Perfil de Proveedor] --> B[Añade productos al carrito];
+    B --> C[Abre el Carrito y hace clic en 'Ver Pre-factura'];
+    C --> D[Se abre el diálogo `CheckoutAlertDialogContent`];
     
-    subgraph "Lógica de Backend (Genkit)"
-        direction LR
-        E --> F_FE[El Frontend llama al flujo `sendMessageFlow` en Genkit];
-        F_FE --> G_BE[Genkit guarda la propuesta en el mensaje dentro de Firestore];
+    subgraph "Selección de Entrega"
+      direction TB
+      D --> E{Elige método de entrega};
+      E -- "Mi dirección" --> F[Usa dirección guardada];
+      E -- "Mi ubicación actual (GPS)" --> G[Usa GPS del teléfono];
+      E -- "Enviar a otra dirección" --> H[Pide datos de destinatario];
+      H --> I[Redirige a /map];
+      I --> J[Usuario selecciona ubicación y confirma];
+      J --> K[Vuelve al diálogo de pre-factura con datos y dirección actualizados];
+    end
+    
+    subgraph "Confirmación y Pago"
+      F --> L[Se actualiza el costo de envío];
+      G --> L;
+      K --> L;
+      L --> M{¿Usa Credicora?};
+      M -- Sí --> N[Calcula pago inicial y cuotas];
+      M -- No --> O[Muestra total a pagar];
+      N --> P[Cliente hace clic en 'Pagar Ahora'];
+      O --> P;
     end
 
-    G_BE --> H_CLIENT[El cliente ve la cápsula de propuesta en el chat];
-    H_CLIENT --> I_ACCEPT[Cliente hace clic en 'Revisar y Aceptar'];
-    
     subgraph "Lógica de Backend (Genkit)"
-        direction LR
-        I_ACCEPT --> J_FE[El Frontend llama al flujo `acceptProposalFlow` en Genkit];
-        J_FE --> K_BE[Genkit valida la acción y crea una nueva **Transacción** en Firestore];
+      direction LR
+      P --> Q_FE[Frontend llama al flujo `checkout`];
+      Q_FE --> R_BE[Genkit valida y crea la transacción final];
+      R_BE --> S_BE{¿Se requiere delivery?};
+      S_BE -- Sí --> T_BE[Backend llama al `findDeliveryProviderFlow` para buscar repartidor];
+      S_BE -- No --> U_BE[Transacción queda en estado 'Listo para Retirar'];
     end
 
-    K_BE --> L_FINAL[Se crea el Compromiso de Pago];
-    L_FINAL --> M_END[<B>Transacción Formalizada</B>];
+    T_BE --> V_FINAL[<B>Transacción Formalizada y en Búsqueda de Delivery</B>];
+    U_BE --> V_FINAL;
 ```
 
 ---
@@ -124,23 +139,23 @@ graph TD
     C --> D[Hace clic en 'Confirmar y Proceder al Pago'];
     
     subgraph "Lógica de Frontend/Backend"
-        direction LR
-        D --> E_FE[Frontend llama al flujo `createCampaignFlow` de Genkit];
-        E_FE --> F_BE[**Genkit (Backend)** recibe los datos];
-        F_BE --> G_BE[Calcula costos, aplica descuentos];
-        G_BE --> H_BE[Crea el documento de la Campaña en Firestore con estado 'pending_payment'];
-        H_BE --> I_BE[Crea una **Transacción de Sistema** en Firestore para el pago de la campaña];
+      direction LR
+      D --> E_FE[Frontend llama al flujo `createCampaignFlow` de Genkit];
+      E_FE --> F_BE[**Genkit (Backend)** recibe los datos];
+      F_BE --> G_BE[Calcula costos, aplica descuentos];
+      G_BE --> H_BE[Crea el documento de la Campaña en Firestore con estado 'pending_payment'];
+      H_BE --> I_BE[Crea una **Transacción de Sistema** en Firestore para el pago de la campaña];
     end
 
     I_BE --> J[Usuario es redirigido a la pantalla de pago de la transacción];
     J --> K[Usuario paga la transacción];
     
     subgraph "Lógica de Notificación del Backend"
-        direction LR
-        K --> L_VERIFY[Admin verifica el pago en el panel];
-        L_VERIFY --> M_UPDATE[Sistema actualiza campaña a 'active'];
-        M_UPDATE --> N_NOTIFY[Sistema llama al flujo `sendNewCampaignNotifications`];
-        N_NOTIFY --> O_END[Usuarios relevantes reciben la notificación];
+      direction LR
+      K --> L_VERIFY[Admin verifica el pago en el panel];
+      L_VERIFY --> M_UPDATE[Sistema actualiza campaña a 'active'];
+      M_UPDATE --> N_NOTIFY[Sistema llama al flujo `sendNewCampaignNotifications`];
+      N_NOTIFY --> O_END[Usuarios relevantes reciben la notificación];
     end
     
     O_END --> P_FINAL[<B>Campaña Publicitaria Activa y Notificada</B>];
