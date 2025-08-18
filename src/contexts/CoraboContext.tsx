@@ -178,7 +178,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     if (savedAddress) {
         _setDeliveryAddress(savedAddress);
     }
-    // **FIX**: Handle geolocation permission gracefully.
     const checkGeolocation = () => {
       if (navigator.geolocation) {
         navigator.permissions.query({ name: 'geolocation' }).then((result) => {
@@ -191,7 +190,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
               (error) => console.error("Error getting geolocation: ", error)
             );
           } else if (result.state === 'prompt') {
-            // It will ask the user, which is fine.
              navigator.geolocation.getCurrentPosition(
               (position) => setCurrentUserLocation({
                 latitude: position.coords.latitude,
@@ -200,12 +198,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
               (error) => console.error("Error getting geolocation: ", error)
             );
           } else if (result.state === 'denied') {
-            // **IMPROVEMENT**: Inform the user gracefully.
             toast({
               title: "Permiso de Ubicación Denegado",
               description: "Para ver distancias y usar el mapa, activa los permisos de ubicación en tu navegador.",
               variant: "destructive",
-              duration: 10000
+              duration: 5000
             });
           }
         });

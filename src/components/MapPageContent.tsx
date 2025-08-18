@@ -32,14 +32,12 @@ export function MapPageContent() {
       });
       return;
     }
-    // We now store coordinates and a simple label
     const addressString = `${selectedPosition.lat.toFixed(6)}, ${selectedPosition.lng.toFixed(6)}`;
     setDeliveryAddress(addressString);
     toast({ title: "Ubicación Confirmada", description: "La nueva ubicación ha sido guardada."});
     router.back();
   };
 
-  // Default to a central point in Caracas if no user location
   const mapCenter = useMemo(() => selectedPosition || { lat: 10.4806, lng: -66.9036 }, [selectedPosition]);
 
   return (
@@ -51,7 +49,7 @@ export function MapPageContent() {
                 center={mapCenter}
                 defaultZoom={15}
                 gestureHandling={'greedy'}
-                disableDefaultUI={true}
+                disableDefaultUI={false}
                 onClick={handleMapClick}
                 mapId="corabo_map"
             >
