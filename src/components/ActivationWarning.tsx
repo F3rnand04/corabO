@@ -62,7 +62,7 @@ export function ActivationWarning({ userType }: ActivationWarningProps) {
     }
   }
 
-  const { title, description, buttonText } = isPaused ? pausedMessages : (messages[userType] || messages.client);
+  const { title, description, buttonText } = isPaused ? pausedMessages : (defaultMessages[userType] || defaultMessages.client);
   const Icon = isPaused ? RotateCcw : AlertCircle;
 
 
