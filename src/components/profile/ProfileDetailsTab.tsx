@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -8,7 +9,7 @@ import { Loader2, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { ProfileSetupData } from '@/lib/types';
 
-// Import specialized field components
+// Import specialized field components from the correct path
 import { HealthFields } from './specialized-fields/HealthFields';
 import { TransportFields } from './specialized-fields/TransportFields';
 import { GeneralProviderFields } from './specialized-fields/GeneralProviderFields';
@@ -17,7 +18,7 @@ import { FoodAndRestaurantFields } from './specialized-fields/FoodAndRestaurantF
 import { BeautyFields } from './specialized-fields/BeautyFields';
 import { AutomotiveFields } from './specialized-fields/AutomotiveFields';
 
-// Mapa de componentes para un renderizado limpio y sin errores
+// Mapa de componentes para un renderizado limpio
 const categoryComponentMap: { [key: string]: React.ElementType } = {
     'Transporte y Asistencia': TransportFields,
     'Salud y Bienestar': HealthFields,
@@ -82,15 +83,9 @@ export function ProfileDetailsTab() {
         );
     }
     
-    const SpecializedComponent = categoryComponentMap[category];
-    
-    // **FIX**: If a component is mapped, render it. Otherwise, render the general one.
-    if (SpecializedComponent) {
-        return <SpecializedComponent formData={formData} onSpecializedChange={handleSpecializedInputChange} />;
-    }
-
-    // Fallback for categories without a specific component yet or general ones
-    return <GeneralProviderFields formData={formData} onSpecializedChange={handleSpecializedInputChange} />;
+    // **FIX**: The logic was flawed. Now it correctly checks the map.
+    const SpecializedComponent = categoryComponentMap[category] || GeneralProviderFields;
+    return <SpecializedComponent formData={formData} onSpecializedChange={handleSpecializedInputChange} />;
   };
 
   if (!currentUser) {
