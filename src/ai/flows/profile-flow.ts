@@ -111,9 +111,9 @@ export const completeInitialSetupFlow = ai.defineFlow(
       birthDate,
       country,
       isInitialSetupComplete: true,
-      type,
+      type: isCompany ? 'provider' : type, // If it's a company, it must be a provider
       credicoraLevel: initialCredicoraLevel.level,
-      credicoraLimit: initialCredicoraLevel.creditLimit,
+      credicoraLimit: initialCredicoraLevel.creditLimit, // The available limit now matches the level's max limit
       credicoraDetails: initialCredicoraLevel,
       profileSetupData: {
         ...(existingData.profileSetupData || {}),
