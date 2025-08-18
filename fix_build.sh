@@ -22,10 +22,10 @@ fi
 echo "  - ✅ Limpieza completada."
 echo "------------------------------------------------------------"
 
-# --- Paso 2: Reinstalación desde cero ---
-echo "  - Acción: Realizando una instalación limpia de todas las dependencias desde 'package.json'..."
+# --- Paso 2: Reinstalación desde cero (Solo Producción) ---
+echo "  - Acción: Realizando una instalación limpia de dependencias de producción..."
 
-npm install
+npm install --omit=dev
 
 if [ $? -ne 0 ]; then
     echo "❌ Error Crítico: 'npm install' falló. Revisa 'package.json' por posibles errores."
