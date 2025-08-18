@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { useCorabo } from '@/contexts/CoraboContext';
@@ -12,33 +12,22 @@ import { getProfileGallery } from '@/ai/flows/profile-flow';
 
 export default function PublicationsPage() {
   const router = useRouter();
-  const { currentUser } = useCorabo();
-  const { toast } = useToast();
-
-  const [gallery, setGallery] = useState<GalleryImage[]>([]);
+  const { currentUser, allPublications } = useCorabo();
   const [isLoading, setIsLoading] = useState(true);
 
+  // Filter publications for the current user from the global state
+  const gallery = useMemo(() => {
+    if (!currentUser) return [];
+    return allPublications.filter(p => p.providerId === currentUser.id && p.type !== 'product');
+  }, [currentUser, allPublications]);
+  
   useEffect(() => {
-    const fetchGallery = async () => {
-      if (!currentUser) return;
-      setIsLoading(true);
-      try {
-        const result = await getProfileGallery({ userId: currentUser.id });
-        setGallery(result.gallery || []);
-      } catch (error) {
-        console.error("Error fetching profile gallery:", error);
-        toast({
-          variant: "destructive",
-          title: "Error al cargar la galería",
-          description: "No se pudieron obtener las publicaciones. Inténtalo de nuevo.",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchGallery();
-  }, [currentUser, toast]);
+    // We are now depending on the context for data, so we can set loading to false
+    // once the currentUser is available, as the context listener will handle updates.
+    if (currentUser) {
+      setIsLoading(false);
+    }
+  }, [currentUser]);
 
 
   if (!currentUser) {

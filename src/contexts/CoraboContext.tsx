@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -103,7 +104,7 @@ interface CoraboActions {
   activatePromotion: (details: { imageId: string, promotionText: string, cost: number }) => Promise<void>;
   createCampaign: (data: Omit<CreateCampaignInput, 'userId'>) => Promise<void>;
   createPublication: (data: CreatePublicationInput) => Promise<void>;
-  createProduct: (data: CreateProductInput) => Promise<void>;
+  createProduct: (data: CreateProductInput) => Promise<string | void>;
   setDeliveryAddress: (address: string) => void;
   markConversationAsRead: (conversationId: string) => void;
   toggleUserPause: (userId: string, currentIsPaused: boolean) => void;
@@ -574,8 +575,22 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         await createCampaignFlow({userId: currentUser.id, ...data});
         router.push(`/quotes/payment?concept=${encodeURIComponent(`Activación de Campaña`)}&amount=${data.budget}`);
     },
-    createPublication: async(a:any)=>{return Promise.resolve();},
-    createProduct: async(a:any)=>{return Promise.resolve();},
+    createPublication: async (data: CreatePublicationInput) => {
+        await createPublicationFlow(data);
+        // This is a placeholder for forcing a re-fetch.
+        // In a real app with more complex state management, you might use a library like SWR or React Query
+        // to invalidate the publications query. Here, we'll manually trigger a state update.
+        const db = getFirestoreDb();
+        const snapshot = await getDocs(query(collection(db, 'publications'), orderBy('createdAt', 'desc')));
+        setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage));
+    },
+    createProduct: async(data: CreateProductInput) => {
+        const productId = await createProductFlow(data);
+        const db = getFirestoreDb();
+        const snapshot = await getDocs(query(collection(db, 'publications'), orderBy('createdAt', 'desc')));
+        setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage));
+        return productId;
+    },
     setDeliveryAddress,
     markConversationAsRead: async(a:any)=>{return Promise.resolve();},
     toggleUserPause: (a:any,b:any)=>{},
