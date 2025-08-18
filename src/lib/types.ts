@@ -192,7 +192,7 @@ export type SpecializedData = {
     consultationMode?: 'office' | 'home' | 'online' | 'hybrid';
     
     // Alimentos y Restaurantes
-    cuisineType?: string;
+    cuisineTypes?: string[];
     serviceOptions?: {
         local?: boolean;
         pickup?: boolean;
@@ -507,5 +507,3 @@ export const CreateProductInputSchema = z.object({
   imageDataUri: z.string(),
 });
 export type CreateProductInput = z.infer<typeof CreateProductInputSchema>;
-
-    

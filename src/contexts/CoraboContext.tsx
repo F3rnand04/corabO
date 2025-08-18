@@ -167,6 +167,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, []);
   
   const setDeliveryAddress = useCallback((address: string) => {
+    localStorage.setItem('coraboDeliveryAddress', address);
     _setDeliveryAddress(address);
     toast({ title: "Ubicación Confirmada", description: "La nueva ubicación ha sido guardada.", duration: 5000 });
   }, [toast]);
