@@ -45,27 +45,51 @@ export function ProfileHeader() {
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-        // Validation: Check file size before processing.
-        const MAX_SIZE_BYTES = 1048487; // Approx 1MB
-        if (file.size > MAX_SIZE_BYTES) {
-            toast({
-                variant: "destructive",
-                title: "Imagen Demasiado Grande",
-                description: `Por favor, elige una imagen de menos de 1MB.`,
-            });
-            return; // Stop the process
-        }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = document.createElement('img');
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 800;
+            const MAX_HEIGHT = 800;
+            let width = img.width;
+            let height = img.height;
 
-        const reader = new FileReader();
-        reader.onloadend = async () => {
-            const newImageUrl = reader.result as string;
-            await updateUserProfileImage(currentUser.id, newImageUrl);
-             toast({
-                title: "¡Foto de Perfil Actualizada!",
-                description: "Tu nueva foto de perfil está visible.",
+            if (width > height) {
+                if (width > MAX_WIDTH) {
+                    height *= MAX_WIDTH / width;
+                    width = MAX_WIDTH;
+                }
+            } else {
+                if (height > MAX_HEIGHT) {
+                    width *= MAX_HEIGHT / height;
+                    height = MAX_HEIGHT;
+                }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0, width, height);
+
+            // Get the resized image as a JPEG data URL with 80% quality
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            
+            updateUserProfileImage(currentUser.id, dataUrl).then(() => {
+                toast({
+                    title: "¡Foto de Perfil Actualizada!",
+                    description: "Tu nueva foto de perfil está visible.",
+                });
+            }).catch(err => {
+                 toast({
+                    variant: "destructive",
+                    title: "Error al subir la imagen",
+                    description: err.message,
+                });
             });
         };
-        reader.readAsDataURL(file);
+        img.src = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
     }
   };
   
