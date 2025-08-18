@@ -25,6 +25,7 @@ export default function Step2_Username({ onBack, onNext, formData, setFormData }
 
   const forbiddenWords = ['admin', 'root', 'support', 'terrorist', 'crime']; // Simplified list
 
+  // **FIX**: Initialize username from formData, which defaults to empty, not from the root user object.
   const username = formData.username || '';
   const useUsername = formData.useUsername || false;
 
