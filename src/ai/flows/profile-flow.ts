@@ -78,7 +78,7 @@ const CompleteInitialSetupInputSchema = z.object({
   providerType: z.enum(['professional', 'company']),
 });
 
-// **FIX**: The output schema now returns the full user object to update the context immediately.
+// The output schema now returns the full user object to update the context immediately.
 const UserOutputSchema = z.any().nullable();
 
 
@@ -143,6 +143,7 @@ const PublicUserOutputSchema = z.object({
   country: z.string().optional(),
   credicoraLevel: z.number().optional(),
   credicoraLimit: z.number().optional(),
+  activeAffiliation: z.any().optional(), // Pass affiliation data
 });
 
 export const getPublicProfileFlow = ai.defineFlow(
@@ -179,6 +180,7 @@ export const getPublicProfileFlow = ai.defineFlow(
       country: fullUser.country,
       credicoraLevel: fullUser.credicoraLevel,
       credicoraLimit: fullUser.credicoraLimit,
+      activeAffiliation: fullUser.activeAffiliation || null,
     };
   }
 );

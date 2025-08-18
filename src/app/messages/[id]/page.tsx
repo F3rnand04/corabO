@@ -261,18 +261,17 @@ export default function ChatPage() {
         return;
     }
 
-    const otherId = conversation.participantIds.find(pId => pId !== currentUser.id);
+    const otherId = conversation.participantIds?.find(pId => pId !== currentUser.id);
     
-    // **FIX:** Logic to correctly handle self-chats.
-    const selfChatDetected = !otherId || (conversation.participantIds[0] === conversation.participantIds[1]);
+    // Explicitly check for self-chat
+    const selfChatDetected = conversation.participantIds?.every(pId => pId === currentUser.id);
 
     if (selfChatDetected) {
         setIsSelfChat(true);
         setOtherParticipant(currentUser);
         setIsLoading(false);
-    } else {
+    } else if (otherId) {
         setIsSelfChat(false);
-        // Only fetch if the other participant is different from the one already loaded
         if (otherId !== otherParticipant?.id) {
             fetchUser(otherId).then(participantData => {
                 setOtherParticipant(participantData);
@@ -281,6 +280,10 @@ export default function ChatPage() {
         } else {
              setIsLoading(false);
         }
+    } else {
+        // Handle case where participantIds is corrupted but conversation exists
+        setIsLoading(false);
+        console.error("Conversation is missing a valid other participant.");
     }
     
     markConversationAsRead(conversationId);
@@ -380,7 +383,7 @@ export default function ChatPage() {
       
       <footer className="p-2 border-t bg-transparent">
         <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-           <Button type="button" variant="ghost" size="icon" className="bg-background rounded-full shadow-md" onClick={handleSendLocation}>
+           <Button type="button" variant="ghost" size="icon" className="bg-background rounded-full shadow-md" onClick={handleSendLocation} disabled={isSelfChat}>
                 <MapPin className="h-5 w-5 text-muted-foreground" />
             </Button>
             {isProvider && !isSelfChat && (

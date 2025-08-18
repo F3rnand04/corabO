@@ -77,7 +77,7 @@ export const processDirectPayment = ai.defineFlow(
         }
         const session = sessionSnap.data() as QrSession;
 
-        if (!session.amount || !session.initialPayment) {
+        if (!session.amount) {
             throw new Error("Invalid session data: amount is missing.");
         }
         
@@ -112,12 +112,14 @@ export const processDirectPayment = ai.defineFlow(
             type: 'Compra Directa',
             status: 'Pagado',
             date: new Date().toISOString(),
-            amount: session.initialPayment,
+            amount: session.amount, // The full amount, not just initial payment
             participantIds: [session.clientId, session.providerId],
             clientId: session.clientId,
             providerId: session.providerId,
             details: {
                 paymentMethod: session.financedAmount && session.financedAmount > 0 ? 'credicora' : 'direct',
+                initialPayment: session.initialPayment,
+                financedAmount: session.financedAmount,
                 paymentVoucherUrl: session.voucherUrl,
                 system: `Pago inicial de compra por $${session.amount.toFixed(2)}`,
                 baseAmount: session.amount,
