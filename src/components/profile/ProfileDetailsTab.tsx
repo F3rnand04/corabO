@@ -15,6 +15,7 @@ import { GeneralProviderFields } from './specialized-fields/GeneralProviderField
 import { HomeRepairFields } from './specialized-fields/HomeRepairFields';
 import { FoodAndRestaurantFields } from './specialized-fields/FoodAndRestaurantFields';
 import { BeautyFields } from './specialized-fields/BeautyFields';
+import { AutomotiveFields } from './specialized-fields/AutomotiveFields';
 
 // Mapa de componentes para un renderizado limpio y sin errores
 const categoryComponentMap: { [key: string]: React.ElementType } = {
@@ -23,6 +24,7 @@ const categoryComponentMap: { [key: string]: React.ElementType } = {
     'Hogar y Reparaciones': HomeRepairFields,
     'Alimentos y Restaurantes': FoodAndRestaurantFields,
     'Belleza': BeautyFields,
+    'Automotriz y Repuestos': AutomotiveFields,
     'Tecnología y Soporte': GeneralProviderFields,
     'Educación': GeneralProviderFields,
     'Eventos': GeneralProviderFields,

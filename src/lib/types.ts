@@ -205,6 +205,12 @@ export type SpecializedData = {
     // Hogar y Reparaciones
     mainTrades?: string[];
     specificSkills?: string[];
+    
+    // Automotriz y Repuestos
+    mainServices?: string[];
+    brandsServed?: string[];
+
+    // Common fields
     certifications?: string;
 
     // Belleza
