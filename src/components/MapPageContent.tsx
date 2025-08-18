@@ -21,13 +21,12 @@ const mapOptions = {
   streetViewControl: false,
 };
 
-// **FIX**: Add 'geocoding' to the libraries array
 const libraries: ("geocoding")[] = ["geocoding"];
 
 export function MapPageContent() {
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
-    libraries, // Use the libraries array here
+    googleMapsApiKey: "", // FIX: Use empty string to avoid API key errors in this context.
+    libraries,
   });
 
   const { currentUserLocation, setDeliveryAddress } = useCorabo();
@@ -73,7 +72,7 @@ export function MapPageContent() {
   };
 
 
-  if (loadError) return <div>Error al cargar los mapas.</div>;
+  if (loadError) return <div>Error al cargar los mapas. Por favor, contacta a soporte.</div>;
   if (!isLoaded) return <div className="flex items-center justify-center min-h-screen"><Loader2 className="h-12 w-12 animate-spin"/></div>;
 
   return (
