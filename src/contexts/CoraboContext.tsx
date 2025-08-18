@@ -26,6 +26,8 @@ import { haversineDistance } from '@/lib/utils';
 import { getOrCreateUser, type FirebaseUserInput } from '@/ai/flows/auth-flow';
 import { requestAffiliation as requestAffiliationFlow, approveAffiliation as approveAffiliationFlow, rejectAffiliation as rejectAffiliationFlow, revokeAffiliation as revokeAffiliationFlow } from '@/ai/flows/affiliation-flow';
 import { getEta } from '@/ai/flows/directions-flow';
+import { findDeliveryProvider as findDeliveryProviderFlow, resolveDeliveryAsPickup as resolveDeliveryAsPickupFlow } from '@/ai/flows/delivery-flow';
+
 
 interface DailyQuote {
     requestSignature: string;
@@ -134,6 +136,9 @@ interface CoraboActions {
   revokeAffiliation: (affiliationId: string) => Promise<void>;
   setTempRecipientInfo: (info: TempRecipientInfo | null) => void;
   setNeedsCheckoutDialog: (needs: boolean) => void;
+  retryFindDelivery: (transactionId: string) => Promise<void>;
+  resolveDeliveryAsPickup: (transactionId: string) => Promise<void>;
+  assignOwnDelivery: (transactionId: string) => Promise<void>;
 }
 
 const CoraboStateContext = createContext<CoraboState | undefined>(undefined);
@@ -167,6 +172,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   const setCurrentUser = useCallback((user: User | null) => {
     _setCurrentUser(user);
+    if(user?.deliveryAddress) {
+      _setDeliveryAddress(user.deliveryAddress);
+    }
   }, []);
   
   const setDeliveryAddress = useCallback((address: string) => {
@@ -299,7 +307,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       const [lat2, lon2] = provider.profileSetupData.location.split(',').map(Number);
       const distanceKm = haversineDistance(currentUserLocation.latitude, currentUserLocation.longitude, lat2, lon2);
       
-      // Corrected privacy logic
       if (provider.profileSetupData.showExactLocation === false) {
         return `${Math.max(1, Math.round(distanceKm))} km`;
       }
@@ -348,6 +355,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       const db = getFirestoreDb();
       await updateDoc(doc(db, 'users', userId), updates);
       setCurrentUser(prevUser => prevUser && prevUser.id === userId ? { ...prevUser, ...updates } : prevUser);
+      // Update local `users` state as well
+      setUsers(prevUsers => prevUsers.map(u => u.id === userId ? {...u, ...updates} : u));
   }, [setCurrentUser]);
 
   const updateFullProfile = useCallback(async (userId: string, data: ProfileSetupData, profileType: 'client' | 'provider' | 'repartidor') => {
@@ -480,17 +489,23 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             delivery: deliveryMethod !== 'pickup',
             deliveryMethod: deliveryMethod,
             pickupInStore: deliveryMethod === 'pickup',
-            deliveryLocation: deliveryAddress, // Always save the current delivery address
+            deliveryLocation: deliveryAddress,
             recipientInfo: recipientInfo,
         };
+
+        const deliveryCost = getDeliveryCost(deliveryMethod);
         
         await updateDoc(txRef, { 
-            status: 'Pre-factura Pendiente',
+            status: 'Buscando Repartidor',
             'details.delivery': deliveryDetails,
+            'details.deliveryCost': deliveryCost,
             'details.paymentMethod': useCredicora ? 'credicora' : 'direct',
         });
+
+        if (deliveryMethod !== 'pickup') {
+            await findDeliveryProviderFlow({ transactionId });
+        }
         
-        router.push(`/quotes/payment?commitmentId=${transactionId}`);
     },
     sendMessage: (options: any) => {
         const user = currentUser;
@@ -664,6 +679,19 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     },
     setTempRecipientInfo,
     setNeedsCheckoutDialog,
+    retryFindDelivery: async (transactionId: string) => {
+        await findDeliveryProviderFlow({ transactionId });
+    },
+    resolveDeliveryAsPickup: async (transactionId: string) => {
+        await resolveDeliveryAsPickupFlow({ transactionId });
+    },
+    assignOwnDelivery: async (transactionId: string) => {
+        if(!currentUser) return;
+        await updateDoc(doc(getFirestoreDb(), 'transactions', transactionId), {
+            'details.deliveryProviderId': currentUser.id,
+            status: 'En Reparto',
+        });
+    }
   }), [
     searchHistory, contacts, cart, transactions, getCartTotal, 
     getDeliveryCost, users, updateCart, router, currentUser, updateUser, updateFullProfile,
