@@ -15,7 +15,10 @@ export function MapPageContent() {
   const { toast } = useToast();
   const { setDeliveryAddress, currentUserLocation } = useCorabo();
   
-  const [selectedPosition, setSelectedPosition] = useState<google.maps.LatLngLiteral | null>(currentUserLocation ? { lat: currentUserLocation.latitude, lng: currentUserLocation.longitude } : null);
+  // Initialize with current user location, or a default if not available
+  const initialPosition = currentUserLocation ? { lat: currentUserLocation.latitude, lng: currentUserLocation.longitude } : { lat: 10.4806, lng: -66.9036 };
+  
+  const [selectedPosition, setSelectedPosition] = useState<google.maps.LatLngLiteral | null>(initialPosition);
 
   const handleMapClick = (event: google.maps.MapMouseEvent) => {
     if (event.latLng) {
@@ -34,21 +37,17 @@ export function MapPageContent() {
     }
     const addressString = `${selectedPosition.lat.toFixed(6)}, ${selectedPosition.lng.toFixed(6)}`;
     setDeliveryAddress(addressString);
-    toast({ title: "Ubicación Confirmada", description: "La nueva ubicación ha sido guardada."});
-    router.back();
+    router.back(); // Correctly returns to the previous page
   };
-
-  const mapCenter = useMemo(() => selectedPosition || { lat: 10.4806, lng: -66.9036 }, [selectedPosition]);
 
   return (
     <div className="relative h-screen w-screen bg-muted">
       <div className="absolute inset-0">
-        <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}>
+        <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''} libraries={['marker']}>
             <Map
-                defaultCenter={mapCenter}
-                center={mapCenter}
+                defaultCenter={initialPosition}
                 defaultZoom={15}
-                gestureHandling={'greedy'}
+                gestureHandling={'greedy'} // Allows dragging and zooming freely
                 disableDefaultUI={false}
                 onClick={handleMapClick}
                 mapId="corabo_map"
@@ -71,7 +70,7 @@ export function MapPageContent() {
                 <CardContent className="p-4 space-y-4">
                     <div>
                         <h3 className="font-semibold text-lg flex items-center gap-2"><MapPin className="w-5 h-5 text-primary"/> Define tu Ubicación</h3>
-                        <p className="text-sm text-muted-foreground mt-1">Haz clic en el mapa para colocar el marcador en la ubicación deseada.</p>
+                        <p className="text-sm text-muted-foreground mt-1">Arrastra el mapa y haz clic para colocar el marcador en la ubicación deseada.</p>
                     </div>
                      {selectedPosition && (
                          <div className="p-2 bg-muted text-center rounded-md text-xs font-mono">
