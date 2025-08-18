@@ -159,9 +159,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     '/community-guidelines',
     '/admin',
     '/initial-setup',
-    // '/profile/publications', // **FIX**: This was hiding the footer on profile pages.
-    // '/profile/catalog',
-    // '/profile/details',
+    '/profile/details', // Hides header/footer on the new details edit page
   ];
 
   const shouldHideAllLayout = noHeaderFooterRoutes.some(path => pathname.startsWith(path));
