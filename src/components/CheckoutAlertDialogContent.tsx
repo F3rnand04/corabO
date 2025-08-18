@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "./ui/input";
 
 export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (open: boolean) => void }) {
-    const { currentUser, cart, getCartTotal, getDeliveryCost, checkout: performCheckout, transactions, users, deliveryAddress, setDeliveryAddressToCurrent } = useCorabo();
+    const { currentUser, cart, getCartTotal, getDeliveryCost, checkout: performCheckout, transactions, users, deliveryAddress, setDeliveryAddress, setDeliveryAddressToCurrent } = useCorabo();
     const router = useRouter();
     
     const [deliveryMethod, setDeliveryMethod] = useState<'home' | 'pickup' | 'other_address' | 'current_location'>('home');
@@ -39,7 +39,8 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
     const handleContinueToMap = () => {
         if (recipientName && recipientPhone) {
             setIsRecipientDialogOpen(false);
-            router.push('/map');
+            onOpenChange(false); // Close the main dialog first
+            router.push('/map'); // Then navigate to the map
         }
     }
 
@@ -97,6 +98,9 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
                             if (value === 'current_location') {
                                 setDeliveryAddressToCurrent();
                             }
+                            if (value === 'other_address') {
+                                setIsRecipientDialogOpen(true);
+                            }
                             setDeliveryMethod(value as any)
                         }} 
                         className="space-y-2"
@@ -112,12 +116,10 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
                             <RadioGroupItem value="current_location" id="delivery-current" />
                             <p className="font-semibold flex-grow flex items-center gap-2"><LocateFixed className="w-4 h-4"/> Mi ubicación actual (GPS)</p>
                         </Label>
-                        <DialogTrigger asChild>
                          <Label htmlFor="delivery-other" className="flex items-center space-x-2 rounded-lg border p-3 cursor-pointer has-[:checked]:border-primary">
                             <RadioGroupItem value="other_address" id="delivery-other" />
                             <p className="font-semibold flex-grow">Enviar a otra dirección</p>
                         </Label>
-                        </DialogTrigger>
                         {providerHasLocation && (
                              <Label htmlFor="delivery-pickup" className="flex items-center space-x-2 rounded-lg border p-3 cursor-pointer has-[:checked]:border-primary">
                                 <RadioGroupItem value="pickup" id="delivery-pickup" />
