@@ -106,7 +106,7 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
     if (formData.location) {
         const [lat, lon] = formData.location.split(',').map(Number);
         if(!isNaN(lat) && !isNaN(lon)) {
-             const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
+             const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${'lat'},${'lon'}`;
              window.open(mapsUrl, '_blank');
         }
     } else {
