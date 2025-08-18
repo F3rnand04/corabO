@@ -257,14 +257,22 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (!currentUser || !conversation) {
-        setIsLoading(conversations.length === 0); // Still loading if no conversations yet
+        setIsLoading(conversations.length === 0);
         return;
-    };
+    }
 
     const otherId = conversation.participantIds.find(pId => pId !== currentUser.id);
     
-    if (otherId) {
+    // **FIX:** Logic to correctly handle self-chats.
+    const selfChatDetected = !otherId || (conversation.participantIds[0] === conversation.participantIds[1]);
+
+    if (selfChatDetected) {
+        setIsSelfChat(true);
+        setOtherParticipant(currentUser);
+        setIsLoading(false);
+    } else {
         setIsSelfChat(false);
+        // Only fetch if the other participant is different from the one already loaded
         if (otherId !== otherParticipant?.id) {
             fetchUser(otherId).then(participantData => {
                 setOtherParticipant(participantData);
@@ -273,11 +281,6 @@ export default function ChatPage() {
         } else {
              setIsLoading(false);
         }
-    } else {
-        // This is a self-chat
-        setIsSelfChat(true);
-        setOtherParticipant(currentUser);
-        setIsLoading(false);
     }
     
     markConversationAsRead(conversationId);
