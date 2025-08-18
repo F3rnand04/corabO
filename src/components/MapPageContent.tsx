@@ -9,6 +9,7 @@ import { Card, CardContent } from './ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { APIProvider, Map, useMap } from '@vis.gl/react-google-maps';
+import { cn } from '@/lib/utils';
 
 // Internal component to get map instance
 function MapHandler({ onCenterChanged, onIdle }: { onCenterChanged: (center: google.maps.LatLngLiteral) => void; onIdle: () => void }) {
