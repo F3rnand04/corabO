@@ -3,34 +3,46 @@
 # ===============================================================
 # =        CORABO - ENGRANAJE DE CORRECCIÓN DE COMPILACIÓN      =
 # ===============================================================
-# Este script diagnostica y corrige el error de compilación por la
-# falta de 'react-day-picker' y luego verifica que la compilación
-# sea exitosa.
+# Este script diagnostica y corrige errores de compilación
+# realizando una instalación limpia de las dependencias y luego
+# verificando que la compilación sea exitosa.
 
 echo "⚙️  INICIANDO ENGRANAJE: Corrección de compilación..."
 echo "------------------------------------------------------------"
 
-# --- Paso 1: Detección y corrección de la dependencia ---
-echo "  - Diagnóstico: Falta el módulo 'react-day-picker'."
-echo "  - Acción: Instalando el paquete faltante..."
+# --- Paso 1: Limpieza Profunda de Dependencias ---
+echo "  - Diagnóstico: Posible inconsistencia de dependencias."
+echo "  - Acción: Eliminando 'node_modules' y 'package-lock.json' para forzar una reinstalación limpia..."
 
-npm install react-day-picker
+rm -rf node_modules package-lock.json
 
 if [ $? -ne 0 ]; then
-    echo "❌ Error Crítico: No se pudo instalar 'react-day-picker'. Abortando."
-    exit 1
+    echo "⚠️  Advertencia: No se pudo eliminar 'node_modules' o 'package-lock.json'. Es posible que no existieran, continuando..."
 fi
-echo "  - ✅ Paquete 'react-day-picker' instalado con éxito."
+echo "  - ✅ Limpieza completada."
 echo "------------------------------------------------------------"
 
-# --- Paso 2: Verificación de la compilación post-corrección ---
+# --- Paso 2: Reinstalación desde cero ---
+echo "  - Acción: Realizando una instalación limpia de todas las dependencias desde 'package.json'..."
+
+npm install
+
+if [ $? -ne 0 ]; then
+    echo "❌ Error Crítico: 'npm install' falló. Revisa 'package.json' por posibles errores."
+    exit 1
+fi
+echo "  - ✅ Dependencias reinstaladas con éxito."
+echo "------------------------------------------------------------"
+
+
+# --- Paso 3: Verificación de la compilación post-corrección ---
 echo "  - Verificación: Reintentando la compilación de producción..."
 
 npm run build
 
 if [ $? -ne 0 ]; then
     echo "❌ Error Crítico: La compilación falló incluso después de la corrección."
-    echo "   Por favor, revisa los logs para identificar otros posibles errores."
+    echo "   Por favor, revisa los logs de 'npm run build' para identificar otros posibles errores."
     exit 1
 fi
 

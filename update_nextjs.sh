@@ -4,9 +4,10 @@
 # =        CORABO - ENGRANAJE DE ACTUALIZACIÓN DE NEXT.JS       =
 # ===============================================================
 # Este script asegura que la versión de Next.js y sus dependencias
-# clave estén correctamente instaladas y actualizadas.
+# clave estén correctamente instaladas y actualizadas, realizando
+# una instalación limpia para resolver problemas de dependencias.
 
-echo "⚙️  INICIANDO ENGRANAJE: Verificación de Next.js..."
+echo "⚙️  INICIANDO ENGRANAJE: Verificación y reinstalación de Next.js..."
 echo "------------------------------------------------------------"
 
 # Detectar el gestor de paquetes
@@ -18,16 +19,20 @@ else
     exit 1
 fi
 
-# Instalar/actualizar Next.js y dependencias relacionadas
-# Se añade react-day-picker como parte de la verificación de dependencias clave.
-echo "  - Alineando Next.js y dependencias críticas (react, react-dom)..."
-$INSTALL_CMD next@14.2.6 react@18.3.1 react-dom@18.3.1
+# **Paso Clave:** Limpiar instalaciones anteriores para evitar conflictos.
+echo "  - Limpiando dependencias anteriores (node_modules y package-lock.json)..."
+rm -rf node_modules package-lock.json
+echo "  - ✅ Limpieza completada."
+
+# Instalar todas las dependencias desde cero para asegurar consistencia.
+echo "  - Realizando una instalación limpia de todas las dependencias..."
+$INSTALL_CMD
 
 if [ $? -ne 0 ]; then
-    echo "❌ Error Crítico: La actualización de Next.js falló."
+    echo "❌ Error Crítico: La instalación limpia de dependencias falló."
     exit 1
 fi
 
-echo "✅ Engranaje de actualización de Next.js completado."
+echo "✅ Engranaje de actualización de Next.js completado. Las dependencias han sido reinstaladas."
 echo "------------------------------------------------------------"
 exit 0
