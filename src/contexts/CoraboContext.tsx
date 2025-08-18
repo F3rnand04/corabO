@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useRouter, useSearchParams } from "next/navigation";
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { addDays } from 'date-fns';
+import { addDays, differenceInDays } from 'date-fns';
 import { credicoraLevels } from '@/lib/types';
 import { getAuth, signInWithPopup, signOut, User as FirebaseUser, GoogleAuthProvider } from 'firebase/auth';
 import { getFirebaseApp, getFirestoreDb, getAuthInstance } from '@/lib/firebase';
@@ -65,6 +65,7 @@ interface CoraboState {
   currentUserLocation: GeolocationCoords | null;
   tempRecipientInfo: TempRecipientInfo | null;
   needsCheckoutDialog: boolean;
+  activeCartForCheckout: CartItem[] | null;
 }
 
 interface CoraboActions {
@@ -78,9 +79,9 @@ interface CoraboActions {
   addToCart: (product: Product, quantity: number) => void;
   updateCartQuantity: (productId: string, quantity: number) => void;
   removeFromCart: (productId: string) => void;
-  getCartTotal: () => number;
-  getDeliveryCost: (deliveryMethod: 'pickup' | 'home' | 'other_address' | 'current_location') => number;
-  checkout: (transactionId: string, deliveryMethod: 'pickup' | 'home' | 'other_address' | 'current_location', useCredicora: boolean, recipientInfo?: { name: string; phone: string }) => void;
+  getCartTotal: (cartItems?: CartItem[]) => number;
+  getDeliveryCost: (deliveryMethod: 'pickup' | 'home' | 'other_address' | 'current_location', providerId: string) => number;
+  checkout: (providerId: string, deliveryMethod: 'pickup' | 'home' | 'other_address' | 'current_location', useCredicora: boolean, recipientInfo?: { name: string; phone: string }) => void;
   addContact: (user: User) => boolean;
   removeContact: (userId: string) => void;
   isContact: (userId: string) => boolean;
@@ -139,6 +140,8 @@ interface CoraboActions {
   retryFindDelivery: (transactionId: string) => Promise<void>;
   resolveDeliveryAsPickup: (transactionId: string) => Promise<void>;
   assignOwnDelivery: (transactionId: string) => Promise<void>;
+  setActiveCartForCheckout: (cartItems: CartItem[] | null) => void;
+  clearExpiredCarts: () => Promise<void>;
 }
 
 const CoraboStateContext = createContext<CoraboState | undefined>(undefined);
@@ -167,6 +170,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [qrSession, setQrSession] = useState<QrSession | null>(null);
   const [tempRecipientInfo, setTempRecipientInfo] = useState<TempRecipientInfo | null>(null);
   const [needsCheckoutDialog, setNeedsCheckoutDialog] = useState(false);
+  const [activeCartForCheckout, setActiveCartForCheckout] = useState<CartItem[] | null>(null);
   
   const userCache = useRef<Map<string, User>>(new Map());
 
@@ -293,14 +297,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const state = useMemo(() => ({
     currentUser, users, allPublications, transactions, conversations, cart, searchQuery,
     categoryFilter, contacts, isGpsActive, searchHistory, isLoadingAuth,
-    deliveryAddress, exchangeRate, qrSession, currentUserLocation, tempRecipientInfo, needsCheckoutDialog,
+    deliveryAddress, exchangeRate, qrSession, currentUserLocation, tempRecipientInfo, needsCheckoutDialog, activeCartForCheckout
   }), [
     currentUser, users, allPublications, transactions, conversations, cart, searchQuery,
     categoryFilter, contacts, isGpsActive, searchHistory, isLoadingAuth,
-    deliveryAddress, exchangeRate, qrSession, currentUserLocation, tempRecipientInfo, needsCheckoutDialog
+    deliveryAddress, exchangeRate, qrSession, currentUserLocation, tempRecipientInfo, needsCheckoutDialog, activeCartForCheckout
   ]);
   
-  const getCartTotal = useCallback(() => cart.reduce((total, item) => total + item.product.price * item.quantity, 0), [cart]);
+  const getCartTotal = useCallback((cartItems: CartItem[] | undefined = cart) => cartItems.reduce((total, item) => total + item.product.price * item.quantity, 0), [cart]);
   
   const getDistanceToProvider = useCallback((provider: User) => {
       if (!currentUserLocation || !provider.profileSetupData?.location) return null;
@@ -314,10 +318,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       return `${Math.round(distanceKm)} km`;
   }, [currentUserLocation]);
   
-  const getDeliveryCost = useCallback((deliveryMethod: 'pickup' | 'home' | 'other_address' | 'current_location') => {
+  const getDeliveryCost = useCallback((deliveryMethod: 'pickup' | 'home' | 'other_address' | 'current_location', providerId: string) => {
       if (deliveryMethod === 'pickup') return 0;
 
-      const cartProvider = users.find(u => u.id === cart[0]?.product.providerId);
+      const cartProvider = users.find(u => u.id === providerId);
       if(!cartProvider || !deliveryAddress || !cartProvider.profileSetupData?.location) return 0;
       
       const [lat1, lon1] = deliveryAddress.split(',').map(Number);
@@ -325,7 +329,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       
       const distanceKm = haversineDistance(lat1, lon1, lat2, lon2);
       return distanceKm * 1.0;
-  }, [cart, users, deliveryAddress]);
+  }, [users, deliveryAddress]);
   
   const updateCart = useCallback(async (newCart: CartItem[], currentUserId: string, currentTransactions: Transaction[]) => {
       if (!currentUserId) return;
@@ -480,11 +484,26 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         const newCart = cart.filter(item => item.product.id !== productId);
         updateCart(newCart, currentUser.id, transactions);
     },
-    checkout: async (transactionId: string, deliveryMethod: 'pickup' | 'home' | 'other_address' | 'current_location', useCredicora: boolean, recipientInfo?: { name: string; phone: string }) => {
-        if(!currentUser) return;
+    checkout: async (providerId: string, deliveryMethod: 'pickup' | 'home' | 'other_address' | 'current_location', useCredicora: boolean, recipientInfo?: { name: string; phone: string }) => {
+        if(!currentUser || !activeCartForCheckout) return;
         const db = getFirestoreDb();
-        const txRef = doc(db, 'transactions', transactionId);
         
+        // Find an existing "Carrito Activo" transaction for this provider or create a new one
+        let cartTx = transactions.find(tx => tx.status === 'Carrito Activo' && tx.providerId === providerId);
+        let txId = cartTx?.id;
+
+        if (!cartTx) {
+            txId = `txn-chk-${currentUser.id.slice(0,5)}-${Date.now()}`;
+            const newCartTx: Transaction = {
+                id: txId, type: 'Compra', status: 'Buscando Repartidor', date: new Date().toISOString(), amount: getCartTotal(activeCartForCheckout),
+                clientId: currentUser.id, providerId: providerId, participantIds: [currentUser.id, providerId], 
+                details: { items: activeCartForCheckout }
+            };
+            await setDoc(doc(db, 'transactions', txId), newCartTx);
+        }
+
+        if (!txId) return;
+
         const deliveryDetails = {
             delivery: deliveryMethod !== 'pickup',
             deliveryMethod: deliveryMethod,
@@ -493,9 +512,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             recipientInfo: recipientInfo,
         };
 
-        const deliveryCost = getDeliveryCost(deliveryMethod);
+        const deliveryCost = getDeliveryCost(deliveryMethod, providerId);
         
-        await updateDoc(txRef, { 
+        await updateDoc(doc(db, 'transactions', txId), { 
             status: 'Buscando Repartidor',
             'details.delivery': deliveryDetails,
             'details.deliveryCost': deliveryCost,
@@ -503,9 +522,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         });
 
         if (deliveryMethod !== 'pickup') {
-            await findDeliveryProviderFlow({ transactionId });
+            await findDeliveryProviderFlow({ transactionId: txId });
         }
-        
     },
     sendMessage: (options: any) => {
         const user = currentUser;
@@ -691,12 +709,30 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             'details.deliveryProviderId': currentUser.id,
             status: 'En Reparto',
         });
+    },
+    setActiveCartForCheckout,
+    clearExpiredCarts: async () => {
+        const db = getFirestoreDb();
+        const oneWeekAgo = new Date();
+        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+        const q = query(collection(db, 'transactions'), 
+            where('status', '==', 'Carrito Activo'),
+            where('date', '<', oneWeekAgo.toISOString())
+        );
+        const querySnapshot = await getDocs(q);
+        const batch = writeBatch(db);
+        querySnapshot.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+        await batch.commit();
+        toast({ title: 'Carritos expirados limpiados' });
     }
   }), [
     searchHistory, contacts, cart, transactions, getCartTotal, 
     getDeliveryCost, users, updateCart, router, currentUser, updateUser, updateFullProfile,
     getDistanceToProvider, currentUserLocation, toast, updateUserProfileImage, setDeliveryAddress,
-    deliveryAddress, setDeliveryAddressToCurrent
+    deliveryAddress, setDeliveryAddressToCurrent, activeCartForCheckout
   ]);
   
   return (
@@ -718,3 +754,4 @@ export const useCorabo = (): CoraboState & CoraboActions => {
 };
 
 export type { Transaction };
+

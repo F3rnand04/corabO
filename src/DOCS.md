@@ -19,12 +19,12 @@ La aplicación ha evolucionado de un prototipo cliente-céntrico a una aplicaci�
 
 Para ofrecer una experiencia de usuario clara, Corabo implementa un sistema de **perfiles dinámicos** que se adaptan al tipo de negocio del proveedor.
 
--   **Campos Especializados:** Dependiendo de la categoría principal seleccionada por el proveedor, el formulario de configuración de perfil (`/profile/details`) muestra campos adicionales y opcionales para que puedan detallar sus servicios:
-    -   **Salud y Bienestar:** Nro. de Licencia, Especialidades, Modalidad de Atención.
-    -   **Hogar y Reparaciones:** Oficios Principales (Plomería, etc.), Habilidades Específicas (tags).
+-   **Campos Especializados:** Dependiendo de la categoría principal seleccionada por el proveedor (ej. "Salud y Bienestar", "Hogar y Reparaciones", "Belleza"), el formulario de configuración de perfil (`/profile/details`) muestra campos adicionales y opcionales para que puedan detallar sus servicios:
+    -   **Salud:** Nro. de Licencia, Especialidades, Modalidad de Atención.
+    -   **Hogar:** Oficios Principales (Plomería, etc.), Habilidades Específicas (tags).
     -   **Belleza:** Oficios Principales (Manicure, Estilismo, etc.), Habilidades Específicas.
-    -   **Transporte y Asistencia:** Tipo de Vehículo, Capacidad de Carga, Condiciones Especiales.
     -   **Alimentos y Restaurantes:** Tipo de Cocina, Opciones de Servicio (local, delivery, etc.), Enlace al Menú, Permiso Sanitario.
+    -   **Transporte y Asistencia:** Tipo de Vehículo, Capacidad de Carga, Condiciones Especiales.
     -   **Otros Servicios Profesionales:** Habilidades Clave (tags), Marcas y Herramientas, Años de Experiencia.
 -   **Visualización Pública:** La información especializada se muestra de forma clara en el perfil público del proveedor (`/companies/[id]`) mediante etiquetas (`Badge`) y secciones de detalles, ayudando a los clientes a tomar decisiones informadas.
 
@@ -44,7 +44,9 @@ La sección de transacciones ha sido transformada en un verdadero **panel de con
 -   **Publicación de Contenido:** El flujo `publication-flow` centraliza la creación de publicaciones e ítems de catálogo, validando la existencia del usuario para mantener la integridad de los datos.
 -   **Notificaciones:** El sistema de notificaciones (`notification-flow`) se utiliza para comunicar eventos importantes como solicitudes de afiliación, recordatorios de pago y la activación de nuevas campañas.
 -   **Verificación de Identidad con IA (`verification-flow`):** Un flujo multimodal utiliza la IA de Google para analizar documentos de identidad, extrayendo y comparando los datos con los registros del usuario para una verificación rápida y segura.
+-   **Carrito de Compras Multi-Proveedor:** El carrito ahora agrupa los productos por proveedor, permitiendo a los usuarios gestionar múltiples compras de diferentes locales de forma independiente antes de proceder al pago de cada una.
+-   **Gestión Inteligente de Delivery:** Se ha implementado un sistema robusto para la asignación de repartidores, con reintentos automáticos y planes de contingencia para notificar al proveedor y ofrecer soluciones alternativas en caso de no encontrar un repartidor disponible.
 
 ## 5. Conclusión
 
-El prototipo actual es una aplicación web funcional y robusta con una arquitectura bien definida. La separación clara entre el frontend y el backend (Genkit), el uso de una base de datos en tiempo real (Firestore) y la implementación de perfiles especializados y un panel de control avanzado sientan las bases para una plataforma escalable, segura y de alto valor para sus usuarios.
+El prototipo actual es una aplicación web funcional y robusta con una arquitectura bien definida. La separación clara entre el frontend y el backend (Genkit), el uso de una base de datos en tiempo real (Firestore) y la implementación de perfiles especializados, un panel de control avanzado y lógicas de negocio resilientes (como la gestión de delivery y carritos multi-proveedor) sientan las bases para una plataforma escalable, segura y de alto valor para sus usuarios.

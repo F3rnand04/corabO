@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "./ui/input";
 
 export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (open: boolean) => void }) {
-    const { currentUser, cart, getCartTotal, getDeliveryCost, checkout: performCheckout, transactions, users, deliveryAddress, setDeliveryAddress, setDeliveryAddressToCurrent, tempRecipientInfo, setTempRecipientInfo, needsCheckoutDialog, setNeedsCheckoutDialog } = useCorabo();
+    const { currentUser, getCartTotal, getDeliveryCost, checkout: performCheckout, users, deliveryAddress, setDeliveryAddressToCurrent, tempRecipientInfo, setTempRecipientInfo, needsCheckoutDialog, setNeedsCheckoutDialog, activeCartForCheckout, setActiveCartForCheckout } = useCorabo();
     const router = useRouter();
     
     // **FIX**: Initialize state based on whether we are returning from the map flow.
@@ -28,8 +28,6 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
     const [recipientName, setRecipientName] = useState('');
     const [recipientPhone, setRecipientPhone] = useState('');
     const [isRecipientDialogOpen, setIsRecipientDialogOpen] = useState(false);
-
-    const cartTransaction = cart.length > 0 ? transactions.find(tx => tx.status === 'Carrito Activo') : undefined;
 
     useEffect(() => {
         if(needsCheckoutDialog) {
@@ -42,13 +40,32 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
         }
     }, [needsCheckoutDialog, onOpenChange, setNeedsCheckoutDialog, tempRecipientInfo]);
 
+    if (!currentUser || !activeCartForCheckout) {
+        return (
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Error</AlertDialogTitle>
+                    <AlertDialogDescription>No se pudo encontrar el carrito. Por favor, intenta de nuevo.</AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => { onOpenChange(false); setActiveCartForCheckout(null); }}>Cerrar</AlertDialogCancel>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        );
+    }
+    
+    const providerId = activeCartForCheckout[0]?.product.providerId;
+    if (!providerId) return null; // Should not happen
+
+    const provider = users.find(u => u.id === providerId);
+    if (!provider) return null;
+    
     const handleCheckout = () => {
-        if (cartTransaction) {
-            performCheckout(cartTransaction.id, deliveryMethod, useCredicora, tempRecipientInfo || undefined);
-            onOpenChange(false);
-            setUseCredicora(false);
-            setTempRecipientInfo(null);
-        }
+        performCheckout(providerId, deliveryMethod, useCredicora, tempRecipientInfo || undefined);
+        onOpenChange(false);
+        setUseCredicora(false);
+        setTempRecipientInfo(null);
+        setActiveCartForCheckout(null);
     };
     
     const handleContinueToMap = () => {
@@ -59,29 +76,12 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
             router.push('/map?fromMap=true');
         }
     }
-
-    if (!currentUser || !cartTransaction) {
-        return (
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Error</AlertDialogTitle>
-                    <AlertDialogDescription>No se pudo encontrar el carrito. Por favor, intenta de nuevo.</AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel onClick={() => onOpenChange(false)}>Cerrar</AlertDialogCancel>
-                </AlertDialogFooter>
-            </AlertDialogContent>
-        );
-    }
     
-    const provider = users.find(u => u.id === cart[0]?.product.providerId);
-    if (!provider) return null;
-
     const providerAcceptsCredicora = provider.profileSetupData?.acceptsCredicora || false;
     const providerHasLocation = provider.profileSetupData?.hasPhysicalLocation || false;
 
-    const subtotal = getCartTotal();
-    const deliveryCost = getDeliveryCost(deliveryMethod);
+    const subtotal = getCartTotal(activeCartForCheckout);
+    const deliveryCost = getDeliveryCost(deliveryMethod, providerId);
     
     const userCredicoraLevel = currentUser.credicoraLevel || 1;
     const credicoraDetails = credicoraLevels[userCredicoraLevel.toString()];
@@ -100,9 +100,9 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
       <Dialog open={isRecipientDialogOpen} onOpenChange={setIsRecipientDialogOpen}>
         <AlertDialogContent>
             <AlertDialogHeader>
-                <AlertDialogTitle>Confirmar Compra</AlertDialogTitle>
+                <AlertDialogTitle>Confirmar Compra ({provider.name})</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Selecciona el método de entrega y confirma tu pedido.
+                    Selecciona el método de entrega y confirma tu pedido para este proveedor.
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <div className="py-4 space-y-4">
@@ -121,7 +121,6 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
                         }} 
                         className="space-y-2"
                     >
-                        {/* READ-ONLY: This address comes from the user's profile and cannot be changed here. */}
                         <Label htmlFor="delivery-home" className="flex items-center space-x-2 rounded-lg border p-3 cursor-pointer has-[:checked]:border-primary">
                             <RadioGroupItem value="home" id="delivery-home" />
                             <div className="flex-grow">
@@ -186,7 +185,7 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
                 )}
             </div>
             <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => onOpenChange(false)}>Cancelar</AlertDialogCancel>
+                <AlertDialogCancel onClick={() => { onOpenChange(false); setActiveCartForCheckout(null); }}>Cancelar</AlertDialogCancel>
                 <AlertDialogAction onClick={handleCheckout} disabled={isCheckoutDisabled}>
                     Pagar Ahora
                 </AlertDialogAction>

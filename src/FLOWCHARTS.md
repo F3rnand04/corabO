@@ -59,30 +59,32 @@ graph TD
 
 ---
 
-## 3. Flujo del Cliente (Compra de Producto) con Backend
+## 3. Flujo del Cliente (Compra de Producto) con Backend y Carrito Multi-Proveedor
 
 Describe el viaje de un cliente en la nueva arquitectura al comprar un producto.
 
 ```mermaid
 graph TD
     A[Inicio: Cliente en Perfil de Proveedor] --> B[Añade productos al carrito];
-    B --> C[Abre el Carrito y hace clic en 'Ver Pre-factura'];
-    C --> D[Se abre el diálogo `CheckoutAlertDialogContent`];
+    B --> C[Abre el Carrito (Popover)];
+    C --> D[Renderiza `MultiProviderCart` agrupando por proveedor];
+    D --> D1[Cliente hace clic en 'Ver Prefactura' para Proveedor A];
+    D1 --> E[Se abre `CheckoutAlertDialogContent` con productos de Proveedor A];
     
     subgraph "Selección de Entrega"
       direction TB
-      D --> E{Elige método de entrega};
-      E -- "Mi dirección" --> F[Usa dirección guardada];
-      E -- "Mi ubicación actual (GPS)" --> G[Usa GPS del teléfono];
-      E -- "Enviar a otra dirección" --> H[Pide datos de destinatario];
-      H --> I[Redirige a /map];
-      I --> J[Usuario selecciona ubicación y confirma];
-      J --> K[Vuelve al diálogo de pre-factura con datos y dirección actualizados];
+      E --> F{Elige método de entrega};
+      F -- "Mi dirección" --> G[Usa dirección guardada];
+      F -- "Mi ubicación actual (GPS)" --> H[Usa GPS del teléfono];
+      F -- "Enviar a otra dirección" --> I[Pide datos de destinatario];
+      I --> J[Redirige a /map];
+      J --> K[Usuario selecciona ubicación y confirma];
+      K --> E[Vuelve al diálogo de pre-factura con dirección y datos de 3ro actualizados];
     end
     
     subgraph "Confirmación y Pago"
-      F --> L[Se actualiza el costo de envío];
-      G --> L;
+      G --> L[Se actualiza el costo de envío];
+      H --> L;
       K --> L;
       L --> M{¿Usa Credicora?};
       M -- Sí --> N[Calcula pago inicial y cuotas];
@@ -93,15 +95,22 @@ graph TD
 
     subgraph "Lógica de Backend (Genkit)"
       direction LR
-      P --> Q_FE[Frontend llama al flujo `checkout`];
+      P --> Q_FE[Frontend llama al flujo `checkout` para Proveedor A];
       Q_FE --> R_BE[Genkit valida y crea la transacción final];
       R_BE --> S_BE{¿Se requiere delivery?};
       S_BE -- Sí --> T_BE[Backend llama al `findDeliveryProviderFlow` para buscar repartidor];
       S_BE -- No --> U_BE[Transacción queda en estado 'Listo para Retirar'];
     end
-
-    T_BE --> V_FINAL[<B>Transacción Formalizada y en Búsqueda de Delivery</B>];
+    
+    subgraph "Lógica de Falla de Delivery"
+        T_BE -- Falla --> W[Backend actualiza tx a 'Error de Delivery'];
+        W --> X[Backend envía notificación a Proveedor A];
+        X --> Y[Proveedor A ve opciones: Reintentar, Asignar propio, Convertir a Retiro];
+    end
+    
+    T_BE -- Éxito --> V_FINAL[<B>Transacción Formalizada</B>];
     U_BE --> V_FINAL;
+
 ```
 
 ---
