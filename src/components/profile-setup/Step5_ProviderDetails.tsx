@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -230,6 +231,10 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                                     <Button size="sm" className="h-7 text-xs" variant="destructive" onClick={() => setIsSubscriptionDialogOpen(true)}>Suscribir</Button>
                                 </div>
                             )}
+                            <div className="flex items-center justify-between pt-2">
+                                <Label htmlFor="only-delivery" className="flex items-center gap-2">Mi servicio es solo delivery</Label>
+                                <Switch id="only-delivery" checked={formData.isOnlyDelivery} onCheckedChange={(checked) => handleFormDataChange('isOnlyDelivery', checked)}/>
+                            </div>
                         </div>
                     )}
                 </div>
