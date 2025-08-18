@@ -9,7 +9,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "jest"
+    "test": "jest --config=./tests/jest.config.js"
   },
   "engines": {
     "node": "18"
