@@ -56,26 +56,18 @@ export function MultiProviderCart({ onCheckoutClick }: MultiProviderCartProps) {
             <div className="max-h-60 overflow-y-auto space-y-3 pr-2">
                 {Object.values(groupedCart).map(({ provider, items, subtotal, itemCount }) => (
                     <Card key={provider?.id} className="p-3 relative group/provider-cart">
-                         <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="absolute top-1 right-1 h-6 w-6 text-muted-foreground hover:text-destructive opacity-0 group-hover/provider-cart:opacity-100"
-                            onClick={() => handleRemoveProviderFromCart(items)}
-                        >
-                            <X className="h-4 w-4" />
-                        </Button>
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-between pr-8">
+                            <div className="flex items-center gap-2 overflow-hidden">
                                 <Avatar className="h-8 w-8">
                                     <AvatarImage src={provider?.profileImage} />
                                     <AvatarFallback>{provider?.name?.charAt(0)}</AvatarFallback>
                                 </Avatar>
-                                <div>
-                                    <p className="font-semibold text-sm truncate max-w-[120px]">{provider?.name}</p>
+                                <div className="overflow-hidden">
+                                    <p className="font-semibold text-sm truncate">{provider?.name}</p>
                                     <Badge variant="secondary" className="text-xs">{itemCount} producto(s)</Badge>
                                 </div>
                             </div>
-                            <div className="text-right">
+                            <div className="text-right flex-shrink-0">
                                 <p className="font-bold text-sm">${subtotal.toFixed(2)}</p>
                                 <Button
                                     variant="link"
@@ -86,6 +78,14 @@ export function MultiProviderCart({ onCheckoutClick }: MultiProviderCartProps) {
                                 </Button>
                             </div>
                         </div>
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="absolute top-1/2 -translate-y-1/2 right-1 h-7 w-7 text-muted-foreground hover:text-destructive opacity-0 group-hover/provider-cart:opacity-100"
+                            onClick={() => handleRemoveProviderFromCart(items)}
+                        >
+                            <X className="h-4 w-4" />
+                        </Button>
                     </Card>
                 ))}
             </div>
@@ -97,4 +97,3 @@ export function MultiProviderCart({ onCheckoutClick }: MultiProviderCartProps) {
         </div>
     );
 }
-
