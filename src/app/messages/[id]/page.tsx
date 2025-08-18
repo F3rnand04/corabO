@@ -27,9 +27,11 @@ import Image from 'next/image';
 
 function ChatHeader({ 
     participant, 
+    isSelfChat,
     onDateSelect
 }: { 
     participant: User, 
+    isSelfChat: boolean,
     onDateSelect: (date: Date) => void
 }) {
   const router = useRouter();
@@ -58,49 +60,51 @@ function ChatHeader({
             <AvatarImage src={participant.profileImage} alt={participant.name} />
             <AvatarFallback>{participant.name.charAt(0)}</AvatarFallback>
           </Avatar>
-          <h2 className="font-semibold group-hover:underline">{participant.name}</h2>
+          <h2 className="font-semibold group-hover:underline">{isSelfChat ? 'Tú (Notas)' : participant.name}</h2>
         </Link>
       </div>
-      <div className="flex items-center gap-1">
-        <Button 
-            variant="ghost" 
-            size="icon" 
-            disabled={!participant.profileSetupData?.hasPhysicalLocation}
-            onClick={() => router.push('/map')}
-        >
-            <MapPin className={cn("h-5 w-5", participant.isGpsActive && participant.profileSetupData?.hasPhysicalLocation ? "text-green-500" : "text-muted-foreground")} />
-        </Button>
-         <Popover>
-            <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon">
-                    <Calendar className={cn("h-5 w-5", {
-                        "text-green-500": businessStatus === 'open',
-                        "text-red-500": businessStatus === 'closed'
-                    })} />
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-                <div className="p-3 flex items-center justify-between">
-                    <BusinessHoursStatus schedule={participant.profileSetupData?.schedule} onStatusChange={setBusinessStatus} />
-                </div>
-                <Separator />
-                <CalendarComponent
-                    mode="single"
-                    onSelect={(date) => {
-                        if (date) onDateSelect(date);
-                    }}
-                    disabled={[
-                        { dayOfWeek: disabledDays },
-                        { before: new Date() }
-                    ]}
-                    initialFocus
-                />
-                <div className="p-2 border-t text-center text-xs text-muted-foreground">
-                    Días no laborales desactivados.
-                </div>
-            </PopoverContent>
-        </Popover>
-      </div>
+      {!isSelfChat && (
+        <div className="flex items-center gap-1">
+            <Button 
+                variant="ghost" 
+                size="icon" 
+                disabled={!participant.profileSetupData?.hasPhysicalLocation}
+                onClick={() => router.push('/map')}
+            >
+                <MapPin className={cn("h-5 w-5", participant.isGpsActive && participant.profileSetupData?.hasPhysicalLocation ? "text-green-500" : "text-muted-foreground")} />
+            </Button>
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                        <Calendar className={cn("h-5 w-5", {
+                            "text-green-500": businessStatus === 'open',
+                            "text-red-500": businessStatus === 'closed'
+                        })} />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                    <div className="p-3 flex items-center justify-between">
+                        <BusinessHoursStatus schedule={participant.profileSetupData?.schedule} onStatusChange={setBusinessStatus} />
+                    </div>
+                    <Separator />
+                    <CalendarComponent
+                        mode="single"
+                        onSelect={(date) => {
+                            if (date) onDateSelect(date);
+                        }}
+                        disabled={[
+                            { dayOfWeek: disabledDays },
+                            { before: new Date() }
+                        ]}
+                        initialFocus
+                    />
+                    <div className="p-2 border-t text-center text-xs text-muted-foreground">
+                        Días no laborales desactivados.
+                    </div>
+                </PopoverContent>
+            </Popover>
+        </div>
+      )}
     </header>
   );
 }
@@ -241,6 +245,7 @@ export default function ChatPage() {
   const [otherParticipant, setOtherParticipant] = useState<User | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isSelfChat, setIsSelfChat] = useState(false);
 
   const [isProposalDialogOpen, setIsProposalDialogOpen] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -257,7 +262,9 @@ export default function ChatPage() {
     };
 
     const otherId = conversation.participantIds.find(pId => pId !== currentUser.id);
+    
     if (otherId) {
+        setIsSelfChat(false);
         if (otherId !== otherParticipant?.id) {
             fetchUser(otherId).then(participantData => {
                 setOtherParticipant(participantData);
@@ -266,6 +273,11 @@ export default function ChatPage() {
         } else {
              setIsLoading(false);
         }
+    } else {
+        // This is a self-chat
+        setIsSelfChat(true);
+        setOtherParticipant(currentUser);
+        setIsLoading(false);
     }
     
     markConversationAsRead(conversationId);
@@ -294,7 +306,7 @@ export default function ChatPage() {
 
   const isProvider = currentUser?.type === 'provider';
   const canAcceptProposal = currentUser?.isTransactionsActive ?? false;
-  const showProviderWarning = isProvider && (!otherParticipant?.isTransactionsActive);
+  const showProviderWarning = isProvider && !isSelfChat && (!otherParticipant?.isTransactionsActive);
 
 
   const handleSendMessage = (e: React.FormEvent) => {
@@ -336,6 +348,7 @@ export default function ChatPage() {
     <div className="flex flex-col h-screen bg-muted/30">
       <ChatHeader 
         participant={otherParticipant} 
+        isSelfChat={isSelfChat}
         onDateSelect={handleDateSelect}
       />
       
@@ -367,7 +380,7 @@ export default function ChatPage() {
            <Button type="button" variant="ghost" size="icon" className="bg-background rounded-full shadow-md" onClick={handleSendLocation}>
                 <MapPin className="h-5 w-5 text-muted-foreground" />
             </Button>
-            {isProvider && (
+            {isProvider && !isSelfChat && (
               <Button type="button" variant="ghost" size="icon" className="bg-background rounded-full shadow-md" onClick={() => setIsProposalDialogOpen(true)}>
                   <PlusCircle className="h-5 w-5 text-muted-foreground" />
               </Button>
