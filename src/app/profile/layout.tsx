@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useCorabo } from "@/contexts/CoraboContext";
@@ -11,6 +12,7 @@ export default function ProfileLayout({
   children: React.ReactNode;
 }) {
     const { currentUser } = useCorabo();
+    const pathname = usePathname();
 
     if (!currentUser) {
         return (
@@ -20,10 +22,13 @@ export default function ProfileLayout({
         );
     }
     
+    // Do not show the profile header on the dedicated details edit page
+    const showHeader = pathname !== '/profile/details';
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
        <div className="container mx-auto px-0 md:px-2 max-w-2xl pb-24">
-          <ProfileHeader />
+          {showHeader && <ProfileHeader />}
           <main className="flex-grow py-4 px-2">
             {children}
           </main>
