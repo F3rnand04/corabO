@@ -22,119 +22,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { useToast } from '@/hooks/use-toast';
 import { X } from 'lucide-react';
 
-// --- Specialized Field Components ---
-
-interface SpecializedFieldProps {
-    formData: ProfileSetupData;
-    onSpecializedChange: (field: keyof NonNullable<ProfileSetupData['specializedData']>, value: any) => void;
-}
-
-const GeneralProviderFields = ({ formData, onSpecializedChange }: SpecializedFieldProps) => {
-    const [currentSkill, setCurrentSkill] = useState('');
-
-    const handleAddSkill = (field: 'keySkills') => {
-        const fieldData = formData.specializedData?.[field] || [];
-        if (currentSkill && !fieldData.includes(currentSkill)) {
-            onSpecializedChange(field, [...fieldData, currentSkill]);
-            setCurrentSkill('');
-        }
-    };
-    const handleRemoveSkill = (skillToRemove: string) => {
-        const newSkills = (formData.specializedData?.keySkills || []).filter(s => s !== skillToRemove);
-        onSpecializedChange('keySkills', newSkills);
-    };
-
-    return (
-        <div className="space-y-4">
-            <div className="space-y-2">
-                <Label htmlFor="keySkills" className="flex items-center gap-2"><Briefcase className="w-4 h-4"/> Habilidades Clave</Label>
-                <div className="flex gap-2">
-                    <Input id="keySkills" placeholder="Ej: Desarrollo Web, Figma" value={currentSkill} onChange={(e) => setCurrentSkill(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSkill('keySkills'); }}}/>
-                    <Button onClick={() => handleAddSkill('keySkills')} type="button">Añadir</Button>
-                </div>
-                <div className="flex flex-wrap gap-2 pt-2">
-                    {formData.specializedData?.keySkills?.map(skill => (
-                        <Badge key={skill} variant="secondary">{skill}<button onClick={() => handleRemoveSkill(skill)} className="ml-2 rounded-full hover:bg-background/50"><X className="h-3 w-3"/></button></Badge>
-                    ))}
-                </div>
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="toolsAndBrands" className="flex items-center gap-2"><BrainCircuit className="w-4 h-4"/> Herramientas y Marcas</Label>
-                <Textarea id="toolsAndBrands" placeholder="Ej: Adobe Photoshop, Wella, OPI" value={formData.specializedData?.toolsAndBrands || ''} onChange={(e) => onSpecializedChange('toolsAndBrands', e.target.value)} rows={2}/>
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="yearsOfExperience" className="flex items-center gap-2"><Wrench className="w-4 h-4"/> Años de Experiencia</Label>
-                <Input id="yearsOfExperience" type="number" placeholder="Ej: 5" value={formData.specializedData?.yearsOfExperience || ''} onChange={(e) => onSpecializedChange('yearsOfExperience', parseInt(e.target.value, 10) || 0)}/>
-            </div>
-        </div>
-    );
-};
-
-const TransportFields = ({ formData, onSpecializedChange }: SpecializedFieldProps) => (
-    <div className="space-y-4">
-        <div className="space-y-2">
-            <Label htmlFor="vehicleType" className="flex items-center gap-2"><Truck className="w-4 h-4"/> Tipo de Vehículo</Label>
-            <Input id="vehicleType" placeholder="Ej: Camión 350, Grúa de Plataforma" value={formData?.specializedData?.vehicleType || ''} onChange={(e) => onSpecializedChange('vehicleType', e.target.value)}/>
-        </div>
-        <div className="space-y-2">
-            <Label htmlFor="capacity" className="flex items-center gap-2"><Package className="w-4 h-4"/> Capacidad de Carga</Label>
-            <Input id="capacity" placeholder="Ej: 3,500 Kg, 2 vehículos" value={formData?.specializedData?.capacity || ''} onChange={(e) => onSpecializedChange('capacity', e.target.value)}/>
-        </div>
-        <div className="space-y-2">
-            <Label htmlFor="specialConditions" className="flex items-center gap-2"><Wrench className="w-4 h-4"/> Equipos o Condiciones Especiales</Label>
-            <Textarea id="specialConditions" placeholder="Ej: Rampa hidráulica, GPS, Cava refrigerada..." value={formData?.specializedData?.specialConditions || ''} onChange={(e) => onSpecializedChange('specialConditions', e.target.value)} rows={3}/>
-        </div>
-    </div>
-);
-
-const HealthFields = ({ formData, onSpecializedChange }: SpecializedFieldProps) => {
-    const [currentSpecialty, setCurrentSpecialty] = useState('');
-    const handleAddSpecialty = () => {
-        const specialties = formData.specializedData?.specialties || [];
-        if (currentSpecialty && !specialties.includes(currentSpecialty)) {
-            onSpecializedChange('specialties', [...specialties, currentSpecialty]);
-            setCurrentSpecialty('');
-        }
-    };
-    const handleRemoveSpecialty = (specToRemove: string) => {
-        const newSpecialties = (formData.specializedData?.specialties || []).filter(spec => spec !== specToRemove);
-        onSpecializedChange('specialties', newSpecialties);
-    };
-
-    return (
-        <div className="space-y-4">
-            <div className="space-y-2">
-                <Label htmlFor="licenseNumber" className="flex items-center gap-2"><BadgeCheck className="w-4 h-4"/> Nro. Licencia / Colegiatura</Label>
-                <Input id="licenseNumber" placeholder="Ej: MPPS 12345" value={formData?.specializedData?.licenseNumber || ''} onChange={(e) => onSpecializedChange('licenseNumber', e.target.value)}/>
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="specialties" className="flex items-center gap-2"><Stethoscope className="w-4 h-4"/> Especialidades</Label>
-                <div className="flex gap-2">
-                    <Input id="specialties" placeholder="Ej: Terapia Manual" value={currentSpecialty} onChange={(e) => setCurrentSpecialty(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSpecialty(); }}}/>
-                    <Button onClick={handleAddSpecialty} type="button">Añadir</Button>
-                </div>
-                <div className="flex flex-wrap gap-2 pt-2">
-                    {formData.specializedData?.specialties?.map(spec => (
-                        <Badge key={spec} variant="secondary">{spec}<button onClick={() => handleRemoveSpecialty(spec)} className="ml-2 rounded-full hover:bg-background/50"><X className="h-3 w-3"/></button></Badge>
-                    ))}
-                </div>
-            </div>
-            <div className="space-y-2">
-                <Label htmlFor="consultationMode" className="flex items-center gap-2"><Wrench className="w-4 h-4"/> Modalidad de Atención</Label>
-                <Select value={formData?.specializedData?.consultationMode || ''} onValueChange={(value) => onSpecializedChange('consultationMode', value)}>
-                    <SelectTrigger id="consultationMode"><SelectValue placeholder="Selecciona una modalidad" /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="office">En Consultorio</SelectItem>
-                        <SelectItem value="home">A Domicilio</SelectItem>
-                        <SelectItem value="online">En Línea</SelectItem>
-                        <SelectItem value="hybrid">Híbrido (Online y Presencial)</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-        </div>
-    );
-};
-
+// Specialized Field Components
+import { HealthFields } from '@/components/profile/specialized-fields/HealthFields';
+import { TransportFields } from '@/components/profile/specialized-fields/TransportFields';
+import { GeneralProviderFields } from '@/components/profile/specialized-fields/GeneralProviderFields';
+import { HomeRepairFields } from '@/components/profile/specialized-fields/HomeRepairFields';
+import { FoodAndRestaurantFields } from '@/components/profile/specialized-fields/FoodAndRestaurantFields';
+import { BeautyFields } from '@/components/profile/specialized-fields/BeautyFields';
+import { AutomotiveFields } from '@/components/profile/specialized-fields/AutomotiveFields';
 
 interface Step5_ProviderDetailsProps {
   onBack: () => void;
@@ -144,6 +39,20 @@ interface Step5_ProviderDetailsProps {
 }
 
 const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+
+// Component map for specialized fields
+const categoryComponentMap: { [key: string]: React.ElementType } = {
+    'Transporte y Asistencia': TransportFields,
+    'Salud y Bienestar': HealthFields,
+    'Hogar y Reparaciones': HomeRepairFields,
+    'Alimentos y Restaurantes': FoodAndRestaurantFields,
+    'Belleza': BeautyFields,
+    'Automotriz y Repuestos': AutomotiveFields,
+    'Tecnología y Soporte': GeneralProviderFields,
+    'Educación': GeneralProviderFields,
+    'Eventos': GeneralProviderFields,
+};
+
 
 export default function Step5_ProviderDetails({ onBack, onNext, formData, setFormData }: Step5_ProviderDetailsProps) {
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
@@ -209,19 +118,23 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
   };
 
   const renderSpecializedFields = () => {
-    const professionalServicesCategories = ['Tecnología y Soporte', 'Educación', 'Eventos'];
-    if (professionalServicesCategories.includes(formData.primaryCategory || '') || formData.primaryCategory === 'Belleza') {
-      return <GeneralProviderFields formData={formData} onSpecializedChange={handleSpecializedInputChange} />;
+    const category = formData.primaryCategory;
+    if (!category) {
+        return (
+             <div className="p-4 bg-muted rounded-md text-center text-sm text-muted-foreground">
+                Selecciona una categoría principal para ver los campos especializados.
+            </div>
+        );
+    }
+    
+    const SpecializedComponent = categoryComponentMap[category];
+    
+    if (SpecializedComponent) {
+        return <SpecializedComponent formData={formData} onSpecializedChange={handleSpecializedInputChange} />;
     }
 
-    switch (formData.primaryCategory) {
-      case 'Transporte y Asistencia':
-        return <TransportFields formData={formData} onSpecializedChange={handleSpecializedInputChange} />;
-      case 'Salud y Bienestar':
-        return <HealthFields formData={formData} onSpecializedChange={handleSpecializedInputChange} />;
-      default:
-        return <div className="p-4 bg-muted rounded-md text-center text-sm text-muted-foreground">No hay detalles especializados para esta categoría aún.</div>;
-    }
+    // Fallback for categories without a specific component yet or general ones
+    return <GeneralProviderFields formData={formData} onSpecializedChange={handleSpecializedInputChange} />;
   };
 
 
@@ -259,7 +172,9 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                 <Alert className="bg-green-50 border-green-200 text-green-800">
                     <Handshake className="h-4 w-4 !text-current" />
                     <AlertTitle className="font-bold">¡Ya estás afiliado!</AlertTitle>
-                    <AlertDescription>Actualmente estas verificado por: <strong>{currentUser.activeAffiliation.companyName}</strong>.</AlertDescription>
+                    <AlertDescription>
+                        Actualmente estas verificado por: <strong>{currentUser.activeAffiliation.companyName}</strong>.
+                    </AlertDescription>
                 </Alert>
             )}
           </div>
@@ -361,3 +276,5 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
     </>
   );
 }
+
+    
