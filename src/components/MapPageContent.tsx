@@ -33,7 +33,7 @@ export function MapPageContent() {
       return;
     }
     // We now store coordinates and a simple label
-    const addressString = `Coords: ${selectedPosition.lat.toFixed(6)}, ${selectedPosition.lng.toFixed(6)}`;
+    const addressString = `${selectedPosition.lat.toFixed(6)}, ${selectedPosition.lng.toFixed(6)}`;
     setDeliveryAddress(addressString);
     toast({ title: "Ubicación Confirmada", description: "La nueva ubicación ha sido guardada."});
     router.back();

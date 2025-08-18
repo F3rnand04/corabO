@@ -200,7 +200,7 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                     </div>
                     <div className="relative">
                          <Button variant="ghost" size="icon" className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => router.push('/map')}><LocateFixed className="h-5 w-5" /></Button>
-                        <Input id="location" placeholder="Haz clic en el localizador para usar el mapa..." className="pl-12" value={formData.location?.split('|')[0] || ''} onChange={(e) => handleFormDataChange('location', e.target.value)}/>
+                        <Input id="location" placeholder="Haz clic en el localizador para usar el mapa..." className="pl-12" value={formData.location || ''} readOnly/>
                     </div>
                     <div className="flex items-center justify-between">
                         <Label htmlFor="show-exact-location" className="flex items-center gap-2 font-medium">Mostrar ubicación exacta</Label>

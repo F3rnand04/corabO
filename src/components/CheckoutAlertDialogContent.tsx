@@ -77,7 +77,7 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
                     <span>Dirección de Entrega:</span>
                     <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => router.push('/map')}>Cambiar</Button>
                 </div>
-                <p className="text-sm font-semibold p-2 bg-muted rounded-md truncate">{deliveryAddress.split('|')[0] || "No especificada"}</p>
+                <p className="text-sm font-semibold p-2 bg-muted rounded-md truncate">{deliveryAddress || "No especificada"}</p>
                 <div className="flex justify-between text-sm">
                     <span>Subtotal:</span>
                     <span className="font-semibold">${subtotal.toFixed(2)}</span>
