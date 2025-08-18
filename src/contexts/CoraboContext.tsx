@@ -116,7 +116,7 @@ interface CoraboActions {
   getUserMetrics: (userId: string, transactions: Transaction[]) => UserMetrics;
   fetchUser: (userId: string) => Promise<User | null>;
   acceptDelivery: (transactionId: string) => void;
-  getDistanceToProvider: (provider: User) => string | null;
+  getDistanceToProvider: (provider: User) => number | null;
   startQrSession: (providerId: string) => Promise<string | null>;
   setQrSessionAmount: (sessionId: string, amount: number) => Promise<void>;
   approveQrSession: (sessionId: string) => Promise<void>;
@@ -290,11 +290,16 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const getDistanceToProvider = useCallback((provider: User) => {
     if (!currentUserLocation || !provider.profileSetupData?.location) return null;
     const [lat2, lon2] = provider.profileSetupData.location.split(',').map(Number);
-    const distance = haversineDistance(currentUserLocation.latitude, currentUserLocation.longitude, lat2, lon2);
-    return distance < 1 ? `${(distance * 1000).toFixed(0)} m` : `${distance.toFixed(1)} km`;
+    return haversineDistance(currentUserLocation.latitude, currentUserLocation.longitude, lat2, lon2);
   }, [currentUserLocation]);
   
-  const getDeliveryCost = useCallback(() => ((Math.random() * 9) + 1) * 1.5, []);
+  const getDeliveryCost = useCallback(() => {
+      const cartProvider = users.find(u => u.id === cart[0]?.product.providerId);
+      if(!cartProvider) return 0;
+      const distance = getDistanceToProvider(cartProvider);
+      if(distance === null) return 0;
+      return distance * 1.5; // $1.5 per km
+  }, [cart, users, getDistanceToProvider]);
   
   const updateCart = useCallback(async (newCart: CartItem[], currentUserId: string, currentTransactions: Transaction[]) => {
       if (!currentUserId) return;
@@ -464,7 +469,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     },
     sendQuote: async (transactionId: string, quote: { breakdown: string; total: number }) => { 
         if(!currentUser) return;
-        await TransactionFlows.sendQuote({ transactionId, userId: currentUser.id, breakdown: quote.breakdown, total: quote.total });
+        await TransactionFlows.sendQuote({ transactionId, userId: currentUser.id, breakdown: quote.breakdown, total: quote.total }); 
     },
     acceptQuote: async (transactionId: string) => { 
         if(!currentUser) return; 

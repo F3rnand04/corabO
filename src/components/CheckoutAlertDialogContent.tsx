@@ -8,7 +8,7 @@ import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 import { Switch } from "./ui/switch";
 import { Label } from "./ui/label";
-import { Star, Truck } from "lucide-react";
+import { Star, Truck, MapPin } from "lucide-react";
 import { credicoraLevels } from "@/lib/types";
 import { useRouter } from "next/navigation";
 
@@ -73,8 +73,8 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <div className="py-4 space-y-4">
-                <div className="flex justify-between text-sm">
-                    <span>Dirección de Entrega:</span>
+                <div className="flex justify-between items-center text-sm">
+                    <Label className="flex items-center gap-2"><MapPin className="h-4 w-4 text-muted-foreground"/> Dirección de Entrega:</Label>
                     <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => router.push('/map')}>Cambiar</Button>
                 </div>
                 <p className="text-sm font-semibold p-2 bg-muted rounded-md truncate">{deliveryAddress || "No especificada"}</p>
