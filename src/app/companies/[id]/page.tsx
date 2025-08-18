@@ -256,14 +256,14 @@ export default function CompanyProfilePage() {
     };
 
   const handleMapPinClick = () => {
-    if (provider.profileSetupData?.hasPhysicalLocation && provider.profileSetupData?.showExactLocation && provider.profileSetupData?.location) {
+    if (provider.profileSetupData?.showExactLocation && provider.profileSetupData?.location) {
         const [lat, lon] = provider.profileSetupData.location.split(',').map(Number);
         const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lon}`;
         window.open(mapsUrl, '_blank');
     } else {
         toast({
             title: "Ubicación Privada",
-            description: "Este proveedor ha decidido no mostrar su ubicación exacta.",
+            description: "Este proveedor ha decidido no mostrar su ubicación exacta para proteger su privacidad.",
         });
     }
   };
@@ -533,7 +533,9 @@ export default function CompanyProfilePage() {
                   
                    <div className="flex flex-col items-center cursor-pointer" onClick={handleMapPinClick}>
                       <MapPin className={cn("w-5 h-5", provider.isGpsActive ? "text-green-500" : "text-muted-foreground")} />
-                      <span className="text-xs text-muted-foreground">{distance}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {provider.profileSetupData?.showExactLocation ? 'Cómo llegar' : distance}
+                      </span>
                    </div>
               </div>
             </div>

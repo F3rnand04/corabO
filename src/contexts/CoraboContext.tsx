@@ -291,6 +291,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     if (!currentUserLocation || !provider.profileSetupData?.location) return null;
     const [lat2, lon2] = provider.profileSetupData.location.split(',').map(Number);
     const distanceKm = haversineDistance(currentUserLocation.latitude, currentUserLocation.longitude, lat2, lon2);
+    
+    // Privacy Logic: If location is not exact, the minimum distance shown is 1km.
+    if (!provider.profileSetupData.showExactLocation) {
+        return `${Math.max(1, Math.round(distanceKm))} km`;
+    }
+
     return `${Math.round(distanceKm)} km`;
   }, [currentUserLocation]);
   
