@@ -107,7 +107,6 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
                                 <p className="font-semibold">Enviar a mi dirección guardada</p>
                                 <p className="text-xs text-muted-foreground truncate">{deliveryAddress || "Añade una dirección"}</p>
                             </div>
-                            <Button variant="ghost" size="sm" className="text-xs" onClick={(e) => { e.preventDefault(); router.push('/map'); }}>Cambiar</Button>
                         </Label>
                          <Label htmlFor="delivery-current" className="flex items-center space-x-2 rounded-lg border p-3 cursor-pointer has-[:checked]:border-primary">
                             <RadioGroupItem value="current_location" id="delivery-current" />
