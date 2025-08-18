@@ -540,7 +540,7 @@ export default function CompanyProfilePage() {
             
             <div className="flex items-center gap-4 text-xs text-muted-foreground pt-4 pb-2">
                 <p><span className="font-bold text-foreground">{isProductProvider || isCompany ? `${providerProducts.length} Productos` : `${profileData.publications} Publicaciones`}</span></p>
-                {isProviderTransactionReady && !isProductProvider && <><Separator orientation="vertical" className="h-4"/><p><span className="font-bold text-foreground">{profileData.completedJobs}</span> Trab. Realizados</p></>}
+                {isProviderTransactionReady && !isProductProvider && <><Separator orientation="vertical" className="h-4"/><p><span className="font-bold text-foreground">{profileData.completedJobs}</span> Trabajos</p></>}
                 {isCompany && <><Separator orientation="vertical" className="h-4"/><p><span className="font-bold text-foreground">{affiliatedProfessionals.length}</span> Afiliados</p></>}
                 {specializedData && (
                     <>
@@ -831,6 +831,7 @@ export default function CompanyProfilePage() {
 }
 
     
+
 
 
 

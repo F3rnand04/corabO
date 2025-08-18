@@ -116,7 +116,7 @@ interface CoraboActions {
   getUserMetrics: (userId: string, transactions: Transaction[]) => UserMetrics;
   fetchUser: (userId: string) => Promise<User | null>;
   acceptDelivery: (transactionId: string) => void;
-  getDistanceToProvider: (provider: User) => number | null;
+  getDistanceToProvider: (provider: User) => string | null;
   startQrSession: (providerId: string) => Promise<string | null>;
   setQrSessionAmount: (sessionId: string, amount: number) => Promise<void>;
   approveQrSession: (sessionId: string) => Promise<void>;
@@ -290,16 +290,17 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const getDistanceToProvider = useCallback((provider: User) => {
     if (!currentUserLocation || !provider.profileSetupData?.location) return null;
     const [lat2, lon2] = provider.profileSetupData.location.split(',').map(Number);
-    return haversineDistance(currentUserLocation.latitude, currentUserLocation.longitude, lat2, lon2);
+    const distanceKm = haversineDistance(currentUserLocation.latitude, currentUserLocation.longitude, lat2, lon2);
+    return `${Math.round(distanceKm)} km`;
   }, [currentUserLocation]);
   
   const getDeliveryCost = useCallback(() => {
       const cartProvider = users.find(u => u.id === cart[0]?.product.providerId);
-      if(!cartProvider) return 0;
-      const distance = getDistanceToProvider(cartProvider);
-      if(distance === null) return 0;
-      return distance * 1.5; // $1.5 per km
-  }, [cart, users, getDistanceToProvider]);
+      if(!cartProvider || !currentUserLocation || !cartProvider.profileSetupData?.location) return 0;
+      const [lat2, lon2] = cartProvider.profileSetupData.location.split(',').map(Number);
+      const distanceKm = haversineDistance(currentUserLocation.latitude, currentUserLocation.longitude, lat2, lon2);
+      return distanceKm * 1.5; // $1.5 per km
+  }, [cart, users, currentUserLocation]);
   
   const updateCart = useCallback(async (newCart: CartItem[], currentUserId: string, currentTransactions: Transaction[]) => {
       if (!currentUserId) return;
