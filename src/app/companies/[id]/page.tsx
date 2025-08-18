@@ -7,13 +7,13 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, MessageCircle, CheckCircle, Flag, Package, Hand, ShoppingCart, Plus, Minus, X, Truck, AlertTriangle, Loader2, Search, Building, Users, BadgeCheck, Stethoscope, Utensils, Link as LinkIcon, Home as HomeIcon, Briefcase, Scissors, MoreHorizontal } from 'lucide-react';
+import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, MessageCircle, CheckCircle, Flag, Package, Hand, ShoppingCart, Plus, Minus, X, Truck, AlertTriangle, Loader2, Search, Building, Users, BadgeCheck, Stethoscope, Utensils, Link as LinkIcon, Home as HomeIcon, Briefcase, Scissors, MoreHorizontal, Wrench, Car, BrainCircuit } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { useState, TouchEvent, useEffect, useCallback, useMemo } from 'react';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
-import type { User, GalleryImage, Product, Transaction, AppointmentRequest, Affiliation } from '@/lib/types';
+import type { User, GalleryImage, Product, Transaction, AppointmentRequest, Affiliation, SpecializedData } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { ReportDialog } from '@/components/ReportDialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -35,6 +35,25 @@ import { CheckoutAlertDialogContent } from '@/components/CheckoutAlertDialogCont
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { getFirestore, collection, query, where, onSnapshot } from 'firebase/firestore';
+
+const DetailItem = ({ icon: Icon, label, value }: { icon?: React.ElementType, label: string, value: string | string[] | undefined | null }) => {
+    if (!value || (Array.isArray(value) && value.length === 0)) return null;
+    return (
+        <div>
+            <h5 className="text-sm font-semibold mb-1 flex items-center gap-2">
+                {Icon && <Icon className="w-4 h-4 text-muted-foreground" />}
+                {label}
+            </h5>
+            {Array.isArray(value) ? (
+                <div className="flex flex-wrap gap-1">
+                    {value.map(v => <Badge key={v} variant="secondary">{v}</Badge>)}
+                </div>
+            ) : (
+                <p className="text-sm text-muted-foreground">{value}</p>
+            )}
+        </div>
+    );
+};
 
 export default function CompanyProfilePage() {
   const params = useParams();
@@ -167,6 +186,7 @@ export default function CompanyProfilePage() {
   
   const isCompany = provider.profileSetupData?.providerType === 'company';
   const isProductProvider = provider.profileSetupData?.offerType === 'product';
+  const specializedData = provider.profileSetupData?.specializedData;
   
   const isHealthProvider = provider.profileSetupData?.primaryCategory === 'Salud y Bienestar';
   const isFoodProvider = provider.profileSetupData?.primaryCategory === 'Alimentos y Restaurantes';
@@ -400,7 +420,7 @@ export default function CompanyProfilePage() {
     'Tecnología y Soporte': Briefcase,
     'Eventos': Briefcase,
     'Belleza': Scissors,
-    'Automotriz y Repuestos': Truck,
+    'Automotriz y Repuestos': Car,
     'Transporte y Asistencia': Truck,
   };
   const DetailsIcon = categoryIcons[provider.profileSetupData?.primaryCategory || ''] || Briefcase;
@@ -520,15 +540,9 @@ export default function CompanyProfilePage() {
             
             <div className="flex items-center gap-4 text-xs text-muted-foreground pt-4 pb-2">
                 <p><span className="font-bold text-foreground">{isProductProvider || isCompany ? `${providerProducts.length} Productos` : `${profileData.publications} Publicaciones`}</span></p>
-                {!isProductProvider && (
-                    <>
-                        <Separator orientation="vertical" className="h-4"/>
-                        <p><span className="font-bold text-foreground">{profileData.completedJobs}</span> Trab. Realizados</p>
-                    </>
-                )}
+                {isProviderTransactionReady && !isProductProvider && <><Separator orientation="vertical" className="h-4"/><p><span className="font-bold text-foreground">{profileData.completedJobs}</span> Trab. Realizados</p></>}
                 {isCompany && <><Separator orientation="vertical" className="h-4"/><p><span className="font-bold text-foreground">{affiliatedProfessionals.length}</span> Afiliados</p></>}
-
-                {provider.profileSetupData?.specializedData && (
+                {specializedData && (
                     <>
                         <Separator orientation="vertical" className="h-4"/>
                         <Popover>
@@ -539,11 +553,16 @@ export default function CompanyProfilePage() {
                                     <MoreHorizontal className="w-3 h-3 ml-1" />
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent>
-                                <div className="space-y-2 text-sm">
+                             <PopoverContent className="w-72">
+                                <div className="space-y-4 text-sm">
                                     <h4 className="font-bold mb-2">Detalles Especializados</h4>
-                                    {isFoodProvider && provider.profileSetupData.specializedData.cuisineType && <p><strong>Cocina:</strong> {provider.profileSetupData.specializedData.cuisineType}</p>}
-                                    {isHealthProvider && (provider.profileSetupData.specializedData.specialties?.length ?? 0) > 0 && <p><strong>Especialidades:</strong> {(provider.profileSetupData.specializedData.specialties ?? []).join(', ')}</p>}
+                                    <DetailItem icon={Wrench} label="Oficios/Servicios" value={specializedData.mainTrades || specializedData.mainServices || specializedData.beautyTrades} />
+                                    <DetailItem icon={Briefcase} label="Habilidades Clave" value={specializedData.specificSkills || specializedData.keySkills} />
+                                    <DetailItem icon={Utensils} label="Tipos de Cocina" value={specializedData.cuisineTypes} />
+                                    <DetailItem icon={BadgeCheck} label="Especialidades Médicas" value={specializedData.specialties} />
+                                    <DetailItem icon={Car} label="Marcas Atendidas" value={specializedData.brandsServed} />
+                                    <DetailItem icon={BrainCircuit} label="Herramientas y Marcas" value={specializedData.toolsAndBrands} />
+                                    {specializedData.menuUrl && <a href={specializedData.menuUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-blue-600 hover:underline"><LinkIcon className="w-4 h-4"/> Ver Menú</a>}
                                 </div>
                             </PopoverContent>
                         </Popover>
@@ -812,6 +831,7 @@ export default function CompanyProfilePage() {
 }
 
     
+
 
 
 

@@ -1,10 +1,14 @@
+
 'use client';
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Link as LinkIcon, Utensils, FileText } from 'lucide-react';
+import { Link as LinkIcon, Utensils, FileText, X } from 'lucide-react';
 import type { ProfileSetupData } from '@/lib/types';
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
 
 interface SpecializedFieldProps {
     formData: ProfileSetupData;
@@ -12,6 +16,7 @@ interface SpecializedFieldProps {
 }
 
 export const FoodAndRestaurantFields = ({ formData, onSpecializedChange }: SpecializedFieldProps) => {
+    const [currentCuisine, setCurrentCuisine] = useState('');
 
     const handleServiceOptionChange = (option: 'local' | 'pickup' | 'delivery' | 'catering', checked: boolean) => {
         onSpecializedChange('serviceOptions', {
@@ -19,17 +24,39 @@ export const FoodAndRestaurantFields = ({ formData, onSpecializedChange }: Speci
             [option]: checked
         });
     };
+    
+    const handleAddCuisine = () => {
+        const currentCuisines = formData.specializedData?.cuisineTypes || [];
+        if (currentCuisine && !currentCuisines.includes(currentCuisine)) {
+            onSpecializedChange('cuisineTypes', [...currentCuisines, currentCuisine]);
+            setCurrentCuisine('');
+        }
+    };
+    
+    const handleRemoveCuisine = (cuisineToRemove: string) => {
+        const newCuisines = (formData.specializedData?.cuisineTypes || []).filter(c => c !== cuisineToRemove);
+        onSpecializedChange('cuisineTypes', newCuisines);
+    }
 
     return (
         <div className="space-y-4">
             <div className="space-y-2">
-                <Label htmlFor="cuisineType" className="flex items-center gap-2"><Utensils className="w-4 h-4"/> Tipo de Cocina</Label>
-                <Input
-                    id="cuisineType"
-                    placeholder="Ej: Venezolana, Italiana, Postres"
-                    value={formData.specializedData?.cuisineType || ''}
-                    onChange={(e) => onSpecializedChange('cuisineType', e.target.value)}
-                />
+                <Label htmlFor="cuisineType" className="flex items-center gap-2"><Utensils className="w-4 h-4"/> Tipos de Cocina</Label>
+                <div className="flex gap-2">
+                    <Input
+                        id="cuisineType"
+                        placeholder="Ej: Japonesa, Fusión..."
+                        value={currentCuisine}
+                        onChange={(e) => setCurrentCuisine(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddCuisine(); }}}
+                    />
+                    <Button onClick={handleAddCuisine} type="button">Añadir</Button>
+                </div>
+                <div className="flex flex-wrap gap-2 pt-2">
+                    {(formData.specializedData?.cuisineTypes || []).map(cuisine => (
+                        <Badge key={cuisine} variant="secondary">{cuisine}<button onClick={() => handleRemoveCuisine(cuisine)} className="ml-2 rounded-full hover:bg-background/50"><X className="h-3 w-3"/></button></Badge>
+                    ))}
+                </div>
             </div>
             <div className="space-y-3">
                 <Label>Opciones de Servicio</Label>
