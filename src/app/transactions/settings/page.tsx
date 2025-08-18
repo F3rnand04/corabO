@@ -147,9 +147,7 @@ export default function TransactionsSettingsPage() {
                 : "Ahora puedes recibir pagos y gestionar transacciones."
         });
         
-        if (!wasActive) {
-            router.push('/transactions');
-        }
+        router.push('/transactions');
     }
 
     const handleContactSupportForEmailChange = () => {
