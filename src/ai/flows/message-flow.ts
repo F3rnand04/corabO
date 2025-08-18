@@ -76,18 +76,26 @@ export const sendMessage = ai.defineFlow(
 
 
     if (convoSnap.exists()) {
-      // SECURITY CHECK: Ensure the sender is a participant of the conversation
       const conversation = convoSnap.data() as Conversation;
+      
+      // **FIX:** If the conversation document is corrupt (missing participantIds), repair it.
       if (!conversation.participantIds || !Array.isArray(conversation.participantIds)) {
-        throw new Error("Conversación inválida: faltan los identificadores de los participantes.");
+          const recipientId = input.recipientId || input.senderId;
+          await updateDoc(convoRef, {
+            participantIds: [input.senderId, recipientId].sort(),
+            messages: arrayUnion(newMessage),
+            lastUpdated: new Date().toISOString(),
+          });
+      } else {
+        // SECURITY CHECK: Ensure the sender is a participant of the conversation
+        if (!conversation.participantIds.includes(input.senderId)) {
+            throw new Error("Sender is not a participant of this conversation.");
+        }
+        await updateDoc(convoRef, {
+            messages: arrayUnion(newMessage),
+            lastUpdated: new Date().toISOString(),
+        });
       }
-      if (!conversation.participantIds.includes(input.senderId)) {
-        throw new Error("Sender is not a participant of this conversation.");
-      }
-      await updateDoc(convoRef, {
-        messages: arrayUnion(newMessage),
-        lastUpdated: new Date().toISOString(),
-      });
     } else {
       // Creating a new conversation
       const recipient = input.recipientId || input.senderId; // Fallback to self for self-chats
