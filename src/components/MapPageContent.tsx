@@ -2,48 +2,66 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { Loader2, X, CheckCircle, Map as MapIcon } from 'lucide-react';
+import { Loader2, X, CheckCircle, MapPin } from 'lucide-react';
 import { Button } from './ui/button';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from './ui/card';
 import { useToast } from '@/hooks/use-toast';
-import Image from 'next/image';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
 import { useCorabo } from '@/contexts/CoraboContext';
+import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
 
 export function MapPageContent() {
   const router = useRouter();
   const { toast } = useToast();
-  const { setDeliveryAddress } = useCorabo();
-  const [manualAddress, setManualAddress] = useState('');
+  const { setDeliveryAddress, currentUserLocation } = useCorabo();
+  
+  const [selectedPosition, setSelectedPosition] = useState<google.maps.LatLngLiteral | null>(currentUserLocation ? { lat: currentUserLocation.latitude, lng: currentUserLocation.longitude } : null);
+
+  const handleMapClick = (event: google.maps.MapMouseEvent) => {
+    if (event.latLng) {
+      setSelectedPosition(event.latLng.toJSON());
+    }
+  };
 
   const handleConfirmLocation = () => {
-    if (!manualAddress.trim()) {
+    if (!selectedPosition) {
       toast({
         variant: 'destructive',
-        title: "Dirección Vacía",
-        description: "Por favor, pega o escribe una dirección.",
+        title: "Ubicación no seleccionada",
+        description: "Por favor, haz clic en el mapa para seleccionar una ubicación.",
       });
       return;
     }
-    // For simplicity, we are not storing lat/lon anymore, just the address string.
-    setDeliveryAddress(manualAddress);
-    toast({ title: "Ubicación Confirmada", description: "La dirección ha sido guardada."});
+    // We now store coordinates and a simple label
+    const addressString = `Coords: ${selectedPosition.lat.toFixed(6)}, ${selectedPosition.lng.toFixed(6)}`;
+    setDeliveryAddress(addressString);
+    toast({ title: "Ubicación Confirmada", description: "La nueva ubicación ha sido guardada."});
     router.back();
   };
+
+  // Default to a central point in Caracas if no user location
+  const mapCenter = useMemo(() => selectedPosition || { lat: 10.4806, lng: -66.9036 }, [selectedPosition]);
 
   return (
     <div className="relative h-screen w-screen bg-muted">
       <div className="absolute inset-0">
-         <Image
-            src="https://i.postimg.cc/PqM6bY7W/static-map.png"
-            alt="Mapa estático de una ciudad"
-            layout="fill"
-            objectFit="cover"
-            className="opacity-50"
-            data-ai-hint="map background"
-        />
+        <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}>
+            <Map
+                defaultCenter={mapCenter}
+                center={mapCenter}
+                defaultZoom={15}
+                gestureHandling={'greedy'}
+                disableDefaultUI={true}
+                onClick={handleMapClick}
+                mapId="corabo_map"
+            >
+                {selectedPosition && (
+                    <AdvancedMarker position={selectedPosition}>
+                        <Pin />
+                    </AdvancedMarker>
+                )}
+            </Map>
+        </APIProvider>
       </div>
 
        <Button variant="ghost" size="icon" onClick={() => router.back()} className="absolute top-4 left-4 bg-background/80 hover:bg-background rounded-full shadow-md z-10">
@@ -54,25 +72,15 @@ export function MapPageContent() {
             <Card className="shadow-2xl animate-in fade-in-0 slide-in-from-bottom-5">
                 <CardContent className="p-4 space-y-4">
                     <div>
-                    <h3 className="font-semibold text-lg">Define tu Ubicación</h3>
-                    <p className="text-sm text-muted-foreground mt-1">Usa Google Maps para encontrar tu dirección y luego pégala aquí.</p>
+                        <h3 className="font-semibold text-lg flex items-center gap-2"><MapPin className="w-5 h-5 text-primary"/> Define tu Ubicación</h3>
+                        <p className="text-sm text-muted-foreground mt-1">Haz clic en el mapa para colocar el marcador en la ubicación deseada.</p>
                     </div>
-                    <Button className="w-full" asChild>
-                        <a href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer">
-                            <MapIcon className="mr-2 h-4 w-4"/>
-                            Abrir Google Maps
-                        </a>
-                    </Button>
-                    <div className="space-y-2">
-                        <Label htmlFor="manual-address">Dirección Manual</Label>
-                        <Input 
-                            id="manual-address" 
-                            placeholder="Pega la dirección aquí..."
-                            value={manualAddress}
-                            onChange={(e) => setManualAddress(e.target.value)}
-                        />
-                    </div>
-                    <Button className="w-full" onClick={handleConfirmLocation} disabled={!manualAddress.trim()}>
+                     {selectedPosition && (
+                         <div className="p-2 bg-muted text-center rounded-md text-xs font-mono">
+                           {selectedPosition.lat.toFixed(4)}, {selectedPosition.lng.toFixed(4)}
+                         </div>
+                     )}
+                    <Button className="w-full" onClick={handleConfirmLocation} disabled={!selectedPosition}>
                         <CheckCircle className="mr-2 h-4 w-4"/>
                         Confirmar Ubicación
                     </Button>
