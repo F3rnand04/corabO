@@ -1,11 +1,9 @@
 'use client';
 
-import { Footer } from "@/components/Footer";
-import { ProfileHeader } from "@/components/ProfileHeader";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { Loader2 } from "lucide-react";
+import { ProfileHeader } from "@/components/ProfileHeader";
 import { usePathname } from "next/navigation";
-
 
 export default function ProfileLayout({
   children,
@@ -13,7 +11,6 @@ export default function ProfileLayout({
   children: React.ReactNode;
 }) {
     const { currentUser } = useCorabo();
-    const pathname = usePathname();
 
     if (!currentUser) {
         return (
@@ -21,11 +18,6 @@ export default function ProfileLayout({
               <Loader2 className="h-12 w-12 animate-spin text-primary" />
           </div>
         );
-    }
-
-    // El layout de la ruta de detalles ahora se maneja en su propia carpeta.
-    if (pathname.startsWith('/profile/details')) {
-        return <>{children}</>;
     }
     
   return (
@@ -36,7 +28,7 @@ export default function ProfileLayout({
             {children}
           </main>
         </div>
-      <Footer />
+      {/* Footer is now handled by the root AppLayout, this keeps it consistent */}
     </div>
   );
 }

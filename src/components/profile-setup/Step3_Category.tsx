@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -48,7 +47,9 @@ export default function Step3_Category({ onBack, onNext, formData, setFormData }
     };
 
     const handlePrimaryCategorySelect = (categoryId: string) => {
-        setFormData({ ...formData, primaryCategory: categoryId });
+        // When primary category changes, clear specialized data to avoid inconsistencies
+        const { specializedData, ...restOfData } = formData;
+        setFormData({ ...restOfData, primaryCategory: categoryId });
     }
     
 
@@ -88,7 +89,7 @@ export default function Step3_Category({ onBack, onNext, formData, setFormData }
       
        {selectedCategories.length > 1 && (
         <div className="space-y-3">
-          <Label>Indica tu categoría principal</Label>
+          <Label>Indica tu categoría principal (esto definirá los campos especializados)</Label>
           <div className="flex flex-wrap gap-2">
             {selectedCategories.map((catId) => {
               const category = allCategories.find(c => c.id === catId);

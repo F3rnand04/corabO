@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useState, useEffect, useRef, ChangeEvent, useCallback } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Megaphone, Zap, Plus, Package, Wallet, MapPin, Calendar as CalendarIcon, TrendingUp, Timer, FileText } from 'lucide-react';
+import { Star, Megaphone, Zap, Plus, Package, Wallet, MapPin, Calendar as CalendarIcon, TrendingUp, Timer, FileText, Settings2, UserRoundCog } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
@@ -161,8 +160,10 @@ export function ProfileHeader() {
                             <Wallet className="w-5 h-5"/>
                         </Link>
                     </Button>
-                    <Button variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground" onClick={() => toggleGps(currentUser.id)}>
-                        <MapPin className={cn("w-5 h-5", currentUser.isGpsActive ? "text-green-500" : "text-muted-foreground")}/>
+                    <Button asChild variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground">
+                        <Link href="/profile-setup">
+                            <UserRoundCog className="w-5 h-5"/>
+                        </Link>
                     </Button>
                  </div>
             </div>
@@ -184,8 +185,8 @@ export function ProfileHeader() {
         </div>
         
         <div className="flex justify-around font-semibold text-center border-b mt-4">
-            <Button asChild variant="ghost" className="flex-1 p-3 rounded-none text-muted-foreground data-[active=true]:text-primary data-[active=true]:border-b-2 data-[active=true]:border-primary" data-active={pathname === '/profile'}>
-               <Link href="/profile">
+            <Button asChild variant="ghost" className="flex-1 p-3 rounded-none text-muted-foreground data-[active=true]:text-primary data-[active=true]:border-b-2 data-[active=true]:border-primary" data-active={pathname === '/profile/publications'}>
+               <Link href="/profile/publications">
                     Publicaciones <span className='font-mono ml-2 text-xs'>({galleryCount})</span>
                </Link>
             </Button>
