@@ -3,7 +3,7 @@
   "name": "corabo.app",
   "private": true,
   "scripts": {
-    "dev": "bash ./update_nextjs.sh && next dev",
+    "dev": "next dev",
     "genkit:dev": "genkit start",
     "genkit:watch": "genkit start --watch",
     "build": "next build",
