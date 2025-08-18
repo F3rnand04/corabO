@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Info, MessageSquare, User, ScanLine, Cake, Contact } from "lucide-react";
@@ -32,6 +32,8 @@ export default function Step4_GeneralDetails({ onBack, onNext, formData, setForm
     router.push(`/messages/${conversationId}`);
   };
 
+  if (!currentUser) return null;
+
   return (
     <div className="space-y-6">
         <h2 className="text-xl font-semibold">Paso 4: Datos Personales</h2>
@@ -40,19 +42,19 @@ export default function Step4_GeneralDetails({ onBack, onNext, formData, setForm
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                     <Label htmlFor="name">Nombre</Label>
-                    <Input id="name" value={currentUser?.name || ''} readOnly disabled />
+                    <Input id="name" value={currentUser.name || ''} readOnly disabled />
                 </div>
                  <div className="space-y-1.5">
                     <Label htmlFor="lastName">Apellido</Label>
-                    <Input id="lastName" value={currentUser?.lastName || ''} readOnly disabled />
+                    <Input id="lastName" value={currentUser.lastName || ''} readOnly disabled />
                 </div>
                  <div className="space-y-1.5">
                     <Label htmlFor="idNumber">Documento de Identidad</Label>
-                    <Input id="idNumber" value={currentUser?.idNumber || ''} readOnly disabled />
+                    <Input id="idNumber" value={currentUser.idNumber || ''} readOnly disabled />
                 </div>
                  <div className="space-y-1.5">
                     <Label htmlFor="birthDate">Fecha de Nacimiento</Label>
-                    <Input id="birthDate" type="date" value={currentUser?.birthDate || ''} readOnly disabled />
+                    <Input id="birthDate" type="date" value={currentUser.birthDate || ''} readOnly disabled />
                 </div>
             </div>
 
@@ -71,17 +73,17 @@ export default function Step4_GeneralDetails({ onBack, onNext, formData, setForm
 
             <ValidationItem
                 label="Correo Electrónico:"
-                value={currentUser?.email || ''}
-                initialStatus={currentUser?.emailValidated ? 'validated' : 'idle'}
-                onValidate={() => validateEmail(currentUser!.id, currentUser?.email || '')}
-                onValueChange={(value) => updateUser(currentUser!.id, { email: value })}
+                value={currentUser.email || ''}
+                initialStatus={currentUser.emailValidated ? 'validated' : 'idle'}
+                onValidate={() => validateEmail(currentUser.id, currentUser.email || '')}
+                onValueChange={(value) => updateUser(currentUser.id, { email: value })}
                 type="email"
             />
              <ValidationItem
                 label="Teléfono:"
-                value={currentUser?.phone || ''}
-                initialStatus={currentUser?.phoneValidated ? 'validated' : 'idle'}
-                onValueChange={(value) => updateUser(currentUser!.id, { phone: value })}
+                value={currentUser.phone || ''}
+                initialStatus={currentUser.phoneValidated ? 'validated' : 'idle'}
+                onValueChange={(value) => updateUser(currentUser.id, { phone: value })}
                 type="phone"
             />
         </div>

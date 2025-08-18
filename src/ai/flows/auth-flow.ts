@@ -66,7 +66,7 @@ export const getOrCreateUser = ai.defineFlow(
       
       // Apply updates if there are any
       if (Object.keys(updates).length > 0) {
- await updateDoc(userDocRef, updates);
+        await updateDoc(userDocRef, updates);
         user = { ...user, ...updates }; // Update local user object
       }
 
@@ -77,8 +77,8 @@ export const getOrCreateUser = ai.defineFlow(
       const initialCredicoraLevel = credicoraLevels['1'];
       const newUser: User = {
         id: firebaseUser.uid,
-        coraboId: `${firebaseUser.displayName?.split(' ')[0].toLowerCase() || 'user'}${Math.floor(1000 + Math.random() * 9000)}`,
-        name: '', // **FIX**: Initialize name as empty instead of using displayName
+        coraboId: `${firebaseUser.displayName?.split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '') || 'user'}${Math.floor(1000 + Math.random() * 9000)}`,
+        name: firebaseUser.displayName || '', // Initialize with displayName
         email: firebaseUser.email || '',
         profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
         createdAt: now.toISOString(),

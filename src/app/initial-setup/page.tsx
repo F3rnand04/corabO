@@ -108,13 +108,11 @@ export default function InitialSetupPage() {
           providerType: isCompany ? 'company' : 'professional'
         });
         
-        // **FIX**: Immediately update the context with the fresh user data from the backend.
         setCurrentUser(updatedUser as User);
 
         toast({ title: "Perfil Guardado", description: "Tus datos han sido guardados correctamente."});
         
         // The AppLayout will now handle the redirection correctly because the context is up-to-date.
-        // We can still push to trigger the check.
         router.push('/');
 
     } catch (error: any) {
