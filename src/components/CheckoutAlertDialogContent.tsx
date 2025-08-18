@@ -20,7 +20,10 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
     const { currentUser, cart, getCartTotal, getDeliveryCost, checkout: performCheckout, transactions, users, deliveryAddress, setDeliveryAddress, setDeliveryAddressToCurrent, tempRecipientInfo, setTempRecipientInfo, needsCheckoutDialog, setNeedsCheckoutDialog } = useCorabo();
     const router = useRouter();
     
-    const [deliveryMethod, setDeliveryMethod] = useState<'home' | 'pickup' | 'other_address' | 'current_location'>('home');
+    // **FIX**: Initialize state based on whether we are returning from the map flow.
+    const [deliveryMethod, setDeliveryMethod] = useState<'home' | 'pickup' | 'other_address' | 'current_location'>(
+        () => tempRecipientInfo ? 'other_address' : 'home'
+    );
     const [useCredicora, setUseCredicora] = useState(false);
     const [recipientName, setRecipientName] = useState('');
     const [recipientPhone, setRecipientPhone] = useState('');
@@ -32,8 +35,12 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
         if(needsCheckoutDialog) {
             onOpenChange(true);
             setNeedsCheckoutDialog(false);
+             // **FIX**: Ensure delivery method is correctly set when dialog re-opens.
+            if(tempRecipientInfo){
+                setDeliveryMethod('other_address');
+            }
         }
-    }, [needsCheckoutDialog, onOpenChange, setNeedsCheckoutDialog]);
+    }, [needsCheckoutDialog, onOpenChange, setNeedsCheckoutDialog, tempRecipientInfo]);
 
     const handleCheckout = () => {
         if (cartTransaction) {
