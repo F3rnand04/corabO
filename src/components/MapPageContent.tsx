@@ -48,25 +48,18 @@ export function MapPageContent() {
       if (e.latLng) {
           const newPos = { lat: e.latLng.lat(), lng: e.latLng.lng() };
           setMarkerPosition(newPos);
-          setIsGeocoding(true);
-          const geocoder = new window.google.maps.Geocoder();
-          geocoder.geocode({ location: newPos }, (results, status) => {
-              setIsGeocoding(false);
-              if (status === 'OK' && results && results[0]) {
-                  setSelectedAddress(results[0].formatted_address);
-              } else {
-                  toast({ variant: "destructive", title: "Error de Geocodificación", description: "No se pudo obtener la dirección para esta ubicación."});
-              }
-          });
+          // **FIX**: Instead of geocoding, just use the coordinates directly.
+          setSelectedAddress(`Lat: ${newPos.lat.toFixed(6)}, Lon: ${newPos.lng.toFixed(6)}`);
       }
-  }, [toast]);
+  }, []);
   
   const handleConfirmLocation = () => {
     if (selectedAddress && markerPosition) {
         // We store the address and coordinates for future use
+        // The address is now the coordinates string.
         const locationString = `${selectedAddress}|${markerPosition.lat},${markerPosition.lng}`;
         setDeliveryAddress(locationString);
-        toast({ title: "Ubicación Confirmada", description: "La dirección ha sido guardada."});
+        toast({ title: "Ubicación Confirmada", description: "Las coordenadas han sido guardadas."});
         router.back();
     }
   };
@@ -96,9 +89,9 @@ export function MapPageContent() {
             <CardContent className="p-4 space-y-3">
                 <div>
                   <h3 className="font-semibold">Ubicación Seleccionada</h3>
-                   <p className="text-sm text-muted-foreground">{isGeocoding ? "Obteniendo dirección..." : selectedAddress}</p>
+                   <p className="text-sm text-muted-foreground">{selectedAddress}</p>
                 </div>
-                 <Button className="w-full" onClick={handleConfirmLocation} disabled={isGeocoding}>
+                 <Button className="w-full" onClick={handleConfirmLocation}>
                      <CheckCircle className="mr-2 h-4 w-4"/>
                     Confirmar Ubicación
                 </Button>
