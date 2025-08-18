@@ -143,29 +143,33 @@ export default function DetailsPage() {
             </CardContent>
         </Card>
         
-         <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Clock className="w-5 h-5"/>Horarios de Atención</CardTitle>
-                <CardDescription>Define tu horario laboral para que los clientes sepan cuándo estás disponible.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-3">
-                    {daysOfWeek.map(day => (
-                        <div key={day} className="flex flex-col sm:flex-row sm:items-center justify-between">
-                            <div className="flex items-center gap-3 mb-2 sm:mb-0">
-                                <Switch id={`switch-${day}`} checked={formData.schedule?.[day]?.active ?? false} onCheckedChange={(checked) => handleScheduleChange(day, 'active', checked)} />
-                                <Label htmlFor={`switch-${day}`} className="w-24">{day}</Label>
+         <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="item-1" className="border rounded-lg">
+                <AccordionTrigger className="px-4 py-3 hover:no-underline">
+                   <CardHeader className="p-0 text-left">
+                       <CardTitle className="flex items-center gap-2"><Clock className="w-5 h-5"/>Horarios de Atención</CardTitle>
+                       <CardDescription>Define tu horario laboral para que los clientes sepan cuándo estás disponible.</CardDescription>
+                   </CardHeader>
+                </AccordionTrigger>
+                <AccordionContent className="px-4">
+                    <div className="space-y-3 pt-4 border-t">
+                        {daysOfWeek.map(day => (
+                            <div key={day} className="flex flex-col sm:flex-row sm:items-center justify-between">
+                                <div className="flex items-center gap-3 mb-2 sm:mb-0">
+                                    <Switch id={`switch-${day}`} checked={formData.schedule?.[day]?.active ?? false} onCheckedChange={(checked) => handleScheduleChange(day, 'active', checked)} />
+                                    <Label htmlFor={`switch-${day}`} className="w-24">{day}</Label>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <Input type="time" value={formData.schedule?.[day]?.from || '09:00'} onChange={(e) => handleScheduleChange(day, 'from', e.target.value)} className="w-full sm:w-auto"/>
+                                    <span>-</span>
+                                    <Input type="time" value={formData.schedule?.[day]?.to || '17:00'} onChange={(e) => handleScheduleChange(day, 'to', e.target.value)} className="w-full sm:w-auto"/>
+                                </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <Input type="time" value={formData.schedule?.[day]?.from || '09:00'} onChange={(e) => handleScheduleChange(day, 'from', e.target.value)} className="w-full sm:w-auto"/>
-                                <span>-</span>
-                                <Input type="time" value={formData.schedule?.[day]?.to || '17:00'} onChange={(e) => handleScheduleChange(day, 'to', e.target.value)} className="w-full sm:w-auto"/>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </CardContent>
-        </Card>
+                        ))}
+                    </div>
+                </AccordionContent>
+            </AccordionItem>
+        </Accordion>
 
         <Button onClick={handleSave} disabled={isSaving} className="w-full" size="lg">
           {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2"/> : <Save className="h-4 w-4 mr-2"/>}
