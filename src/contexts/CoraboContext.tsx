@@ -3,7 +3,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef, useMemo } from 'react';
-import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest, PublicationOwner, CreatePublicationInput, CreateProductInput, QrSession } from '@/lib/types';
+import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest, PublicationOwner, CreatePublicationInput, CreateProductInput, QrSession, TempRecipientInfo } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast"
 import { useRouter, useSearchParams } from "next/navigation";
 import jsPDF from 'jspdf';
@@ -44,13 +44,6 @@ interface GeolocationCoords {
     longitude: number;
 }
 
-// New type for temporary recipient data
-type TempRecipientInfo = {
-    name: string;
-    phone: string;
-};
-
-
 interface CoraboState {
   currentUser: User | null;
   users: User[];
@@ -68,8 +61,8 @@ interface CoraboState {
   exchangeRate: number;
   qrSession: QrSession | null;
   currentUserLocation: GeolocationCoords | null;
-  tempRecipientInfo: TempRecipientInfo | null; // State for third-party delivery
-  needsCheckoutDialog: boolean; // Flag to reopen checkout dialog
+  tempRecipientInfo: TempRecipientInfo | null;
+  needsCheckoutDialog: boolean;
 }
 
 interface CoraboActions {
@@ -139,14 +132,11 @@ interface CoraboActions {
   approveAffiliation: (affiliationId: string) => Promise<void>;
   rejectAffiliation: (affiliationId: string) => Promise<void>;
   revokeAffiliation: (affiliationId: string) => Promise<void>;
-  setTempRecipientInfo: (info: TempRecipientInfo | null) => void; // New action
-  setNeedsCheckoutDialog: (needs: boolean) => void; // New action
+  setTempRecipientInfo: (info: TempRecipientInfo | null) => void;
+  setNeedsCheckoutDialog: (needs: boolean) => void;
 }
 
-// **DEFINITIVE FIX:** Separating State from Actions to prevent circular references.
-// The State context holds only data.
 const CoraboStateContext = createContext<CoraboState | undefined>(undefined);
-// The Actions context holds only functions.
 const CoraboActionsContext = createContext<CoraboActions | undefined>(undefined);
 
 
@@ -155,7 +145,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  // All state variables are managed here.
   const [currentUser, _setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [allPublications, setAllPublications] = useState<GalleryImage[]>([]);
@@ -186,14 +175,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-     // Check if we need to reopen the dialog after returning from the map
     const fromMap = searchParams.get('fromMap');
-    if (fromMap) {
+    if (fromMap === 'true') {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('fromMap');
+        window.history.replaceState({}, '', url);
         setNeedsCheckoutDialog(true);
-        // Clean the URL
-        router.replace(window.location.pathname, undefined);
     }
-  }, [searchParams, router]);
+  }, [searchParams]);
   
   const activeCartTx = useMemo(() => transactions.find(tx => tx.status === 'Carrito Activo'), [transactions]);
   const cart: CartItem[] = useMemo(() => activeCartTx?.details.items || [], [activeCartTx]);
@@ -238,7 +227,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
 
   useEffect(() => {
-    // Load contacts from local storage on initial mount
     try {
         const savedContacts = localStorage.getItem('coraboContacts');
         if (savedContacts) {
@@ -251,15 +239,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    // Save contacts to local storage whenever they change
     localStorage.setItem('coraboContacts', JSON.stringify(contacts));
   }, [contacts]);
 
-  // **STABILIZED DATA LISTENERS EFFECT**
   useEffect(() => {
     const db = getFirestoreDb();
     
-    // These listeners are for general data and don't depend on the current user
     const unsubscribeUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
         setUsers(snapshot.docs.map(doc => doc.data() as User));
     });
@@ -285,7 +270,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             unsubscribeQrSession();
         };
     } else {
-        // Clear user-specific data if no user is logged in
         setTransactions([]); 
         setConversations([]); 
     }
@@ -295,7 +279,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         unsubscribePublications();
         unsubscribeUserSpecificData();
     };
-}, [currentUser?.id]); // Effect runs only when user ID changes.
+}, [currentUser?.id]);
 
 
   const state = useMemo(() => ({
@@ -315,6 +299,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       const [lat2, lon2] = provider.profileSetupData.location.split(',').map(Number);
       const distanceKm = haversineDistance(currentUserLocation.latitude, currentUserLocation.longitude, lat2, lon2);
       
+      // Corrected privacy logic
       if (provider.profileSetupData.showExactLocation === false) {
         return `${Math.max(1, Math.round(distanceKm))} km`;
       }
@@ -332,7 +317,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       const [lat2, lon2] = cartProvider.profileSetupData.location.split(',').map(Number);
       
       const distanceKm = haversineDistance(lat1, lon1, lat2, lon2);
-      return distanceKm * 1.0; // $1.0 per km
+      return distanceKm * 1.0;
   }, [cart, users, deliveryAddress]);
   
   const updateCart = useCallback(async (newCart: CartItem[], currentUserId: string, currentTransactions: Transaction[]) => {
@@ -362,7 +347,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const updateUser = useCallback(async (userId: string, updates: Partial<User>) => {
       const db = getFirestoreDb();
       await updateDoc(doc(db, 'users', userId), updates);
-      // **FIX**: Proactively update the local state to avoid race conditions
       setCurrentUser(prevUser => prevUser && prevUser.id === userId ? { ...prevUser, ...updates } : prevUser);
   }, [setCurrentUser]);
 
@@ -370,7 +354,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         const existingUser = users.find(u => u.id === userId);
         if (!existingUser) return;
 
-        // **FIX:** Correctly merge new profileSetupData with existing data
         const newProfileSetupData = {
             ...existingUser.profileSetupData,
             ...data
@@ -497,7 +480,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             delivery: deliveryMethod !== 'pickup',
             deliveryMethod: deliveryMethod,
             pickupInStore: deliveryMethod === 'pickup',
-            deliveryAddress: deliveryMethod !== 'pickup' ? deliveryAddress : '',
+            deliveryLocation: deliveryAddress, // Always save the current delivery address
             recipientInfo: recipientInfo,
         };
         
@@ -595,16 +578,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             'details.deliveryProviderId': currentUser.id,
         });
 
-        // Notify customer
         await NotificationFlows.sendNotification({
             userId: tx.clientId,
-            type: 'new_publication', // Re-using for general purpose alert
+            type: 'new_publication',
             title: '¡Tu pedido está en camino!',
             message: `El repartidor ${currentUser.name} ha recogido tu pedido. Tiempo de entrega estimado: ${etaResult.durationMinutes} minutos.`,
             link: `/transactions`,
         });
 
-        // Notify delivery person with link
          await NotificationFlows.sendNotification({
             userId: currentUser.id,
             type: 'new_publication',
@@ -617,8 +598,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     removeGalleryImage: async (userId: string, imageId: string) => {
         const db = getFirestoreDb();
         await deleteDoc(doc(db, 'publications', imageId));
-        // Note: In a real app, we'd also delete the image from storage.
-        // For the UI to update, we rely on the onSnapshot listener.
     },
     validateEmail: (a:any,b:any)=>{return Promise.resolve(true)},
     sendPhoneVerification: (a:any,b:any)=>{return Promise.resolve();},
@@ -642,9 +621,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     },
     createPublication: async (data: CreatePublicationInput) => {
         await createPublicationFlow(data);
-        // This is a placeholder for forcing a re-fetch.
-        // In a real app with more complex state management, you might use a library like SWR or React Query
-        // to invalidate the publications query. Here, we'll manually trigger a state update.
         const db = getFirestoreDb();
         const snapshot = await getDocs(query(collection(db, 'publications'), orderBy('createdAt', 'desc')));
         setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage));

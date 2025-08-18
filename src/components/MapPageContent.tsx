@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -41,9 +42,8 @@ export function MapPageContent() {
   const [isMapIdle, setIsMapIdle] = useState(true);
 
   const handleConfirmLocation = () => {
-    const addressString = `${mapCenter.lat.toFixed(6)},${mapCenter.lng.toFixed(6)}`;
+    const addressString = `${mapCenter.lat},${mapCenter.lng}`;
     setDeliveryAddress(addressString);
-    setNeedsCheckoutDialog(true); // Signal to reopen the dialog
     router.back();
   };
   
