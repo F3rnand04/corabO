@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Loader2, X, CheckCircle, MapPin, LocateFixed } from 'lucide-react';
 import { Button } from './ui/button';
 import { useRouter } from 'next/navigation';
@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 function MapHandler({ onCenterChanged, onIdle }: { onCenterChanged: (center: google.maps.LatLngLiteral) => void; onIdle: () => void }) {
   const map = useMap();
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!map) return;
     const idleListener = map.addListener('idle', () => {
         onIdle();
