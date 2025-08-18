@@ -187,6 +187,7 @@ export default function CompanyProfilePage() {
   const isCompany = provider.profileSetupData?.providerType === 'company';
   const isProductProvider = provider.profileSetupData?.offerType === 'product';
   const specializedData = provider.profileSetupData?.specializedData;
+  const isSelfProfile = currentUser?.id === provider.id;
   
   const isHealthProvider = provider.profileSetupData?.primaryCategory === 'Salud y Bienestar';
   const isFoodProvider = provider.profileSetupData?.primaryCategory === 'Alimentos y Restaurantes';
@@ -195,6 +196,7 @@ export default function CompanyProfilePage() {
   const isProviderTransactionReady = provider.isTransactionsActive;
 
   const handleDirectMessage = () => {
+    if(isSelfProfile) return;
     const conversationId = sendMessage({recipientId: provider.id, text: `¡Hola! Me interesa tu publicación.`});
     router.push(`/messages/${conversationId}`);
   };
@@ -592,7 +594,7 @@ export default function CompanyProfilePage() {
           <main className="px-2">
             <Card className="rounded-2xl overflow-hidden shadow-lg relative">
               <div className="absolute top-2 right-2 z-10 flex items-center gap-1">
-                <Button variant="ghost" size="icon" className="text-muted-foreground bg-white/50 rounded-full" onClick={handleDirectMessage}>
+                <Button variant="ghost" size="icon" className="text-muted-foreground bg-white/50 rounded-full" onClick={handleDirectMessage} disabled={isSelfProfile}>
                     <Send className="w-5 h-5" />
                 </Button>
                 <Button variant="ghost" size="icon" className="text-muted-foreground bg-white/50 rounded-full" onClick={handleSaveContact}>
@@ -838,3 +840,6 @@ export default function CompanyProfilePage() {
 
 
 
+
+
+    
