@@ -59,10 +59,10 @@ function compareNamesFlexibly(nameA: string, nameB: string): boolean {
         return name
             .toLowerCase()
             .trim()
-            // Remove common company suffixes like C.A., S.A., etc., globally
-            .replace(/\s*c\s*\.\s*a\s*\.?|\s*s\s*\.\s*a\s*\.?|\s*ca\s*|\s*sa\s*/g, '')
-            // Remove all punctuation (dots, commas) and spaces
-            .replace(/[.,\s]/g, '');
+            // Remove common company suffixes like C.A., S.A., etc., at the end of the string
+            .replace(/(,)?\s*(c\s*\.\s*a|s\s*\.\s*a|ca|sa)\s*\.?$/g, '')
+            // Remove all non-alphanumeric characters (dots, commas, spaces)
+            .replace(/[\W_]/g, '');
     };
 
     const normalizedA = normalize(nameA);
