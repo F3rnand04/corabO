@@ -289,20 +289,21 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const getCartTotal = useCallback(() => cart.reduce((total, item) => total + item.product.price * item.quantity, 0), [cart]);
   
   const getDistanceToProvider = useCallback((provider: User) => {
-    if (!currentUserLocation || !provider.profileSetupData?.location) return null;
-    const [lat2, lon2] = provider.profileSetupData.location.split(',').map(Number);
-    const distanceKm = haversineDistance(currentUserLocation.latitude, currentUserLocation.longitude, lat2, lon2);
-    
-    if (provider.profileSetupData.showExactLocation === false) {
-      // If location is private, the minimum distance shown is 1 km.
-      return `${Math.max(1, Math.round(distanceKm))} km`;
-    }
+      if (!currentUserLocation || !provider.profileSetupData?.location) return null;
+      const [lat2, lon2] = provider.profileSetupData.location.split(',').map(Number);
+      const distanceKm = haversineDistance(currentUserLocation.latitude, currentUserLocation.longitude, lat2, lon2);
+      
+      if (provider.profileSetupData.showExactLocation === false) {
+          // If location is private, the minimum distance shown is 1 km.
+          return `${Math.max(1, Math.round(distanceKm))} km`;
+      }
 
-    return `${Math.round(distanceKm)} km`;
+      return `${Math.round(distanceKm)} km`;
   }, [currentUserLocation]);
   
   const getDeliveryCost = useCallback((deliveryMethod: 'pickup' | 'home' | 'other_address' | 'current_location') => {
       if (deliveryMethod === 'pickup') return 0;
+
       const cartProvider = users.find(u => u.id === cart[0]?.product.providerId);
       if(!cartProvider || !deliveryAddress || !cartProvider.profileSetupData?.location) return 0;
       
@@ -310,7 +311,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       const [lat2, lon2] = cartProvider.profileSetupData.location.split(',').map(Number);
       
       const distanceKm = haversineDistance(lat1, lon1, lat2, lon2);
-      return distanceKm * 1.5; // $1.5 per km
+      return distanceKm * 1.0; // $1.0 per km
   }, [cart, users, deliveryAddress]);
   
   const updateCart = useCallback(async (newCart: CartItem[], currentUserId: string, currentTransactions: Transaction[]) => {
