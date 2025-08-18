@@ -276,5 +276,3 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
     </>
   );
 }
-
-    
