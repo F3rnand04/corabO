@@ -9,13 +9,15 @@ import { Separator } from "./ui/separator";
 import { Card, CardContent } from "./ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
+import { X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface MultiProviderCartProps {
     onCheckoutClick: () => void;
 }
 
 export function MultiProviderCart({ onCheckoutClick }: MultiProviderCartProps) {
-    const { cart, users, getCartTotal, setActiveCartForCheckout } = useCorabo();
+    const { cart, users, getCartTotal, setActiveCartForCheckout, updateCartQuantity } = useCorabo();
 
     const groupedCart = useMemo(() => {
         return cart.reduce((acc, item) => {
@@ -42,11 +44,26 @@ export function MultiProviderCart({ onCheckoutClick }: MultiProviderCartProps) {
         onCheckoutClick();
     };
 
+    const handleRemoveProviderFromCart = (items: any[]) => {
+        items.forEach(item => {
+            updateCartQuantity(item.product.id, 0);
+        });
+    };
+
+
     return (
         <div className="space-y-4">
             <div className="max-h-60 overflow-y-auto space-y-3 pr-2">
                 {Object.values(groupedCart).map(({ provider, items, subtotal, itemCount }) => (
-                    <Card key={provider?.id} className="p-3">
+                    <Card key={provider?.id} className="p-3 relative group/provider-cart">
+                         <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="absolute top-1 right-1 h-6 w-6 text-muted-foreground hover:text-destructive opacity-0 group-hover/provider-cart:opacity-100"
+                            onClick={() => handleRemoveProviderFromCart(items)}
+                        >
+                            <X className="h-4 w-4" />
+                        </Button>
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <Avatar className="h-8 w-8">
