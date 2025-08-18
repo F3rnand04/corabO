@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, ChangeEvent, useCallback } from 'react';
@@ -44,6 +45,17 @@ export function ProfileHeader() {
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+        // Validation: Check file size before processing.
+        const MAX_SIZE_BYTES = 1048487; // Approx 1MB
+        if (file.size > MAX_SIZE_BYTES) {
+            toast({
+                variant: "destructive",
+                title: "Imagen Demasiado Grande",
+                description: `Por favor, elige una imagen de menos de 1MB.`,
+            });
+            return; // Stop the process
+        }
+
         const reader = new FileReader();
         reader.onloadend = async () => {
             const newImageUrl = reader.result as string;
