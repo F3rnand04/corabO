@@ -183,7 +183,7 @@ function useToast() {
         listeners.splice(index, 1)
       }
     }
-  }, []) // Empty dependency array ensures this runs only once
+  }, [state])
 
   return {
     ...state,

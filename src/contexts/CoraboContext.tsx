@@ -336,6 +336,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
         await updateUser(userId, dataToSave);
   }, [users, updateUser]);
+
+  const updateUserProfileImage = useCallback(async (userId: string, imageUrl: string) => {
+    await updateUser(userId, { profileImage: imageUrl });
+  }, [updateUser]);
       
   const actions = useMemo(() => ({
     signInWithGoogle: async () => {
@@ -374,6 +378,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     getCartItemQuantity: (productId: string) => cart.find(item => item.product.id === productId)?.quantity || 0,
     updateUser,
     updateFullProfile,
+    updateUserProfileImage,
     activateTransactions: async (userId: string, paymentDetails: any) => {
         const userToUpdate = users.find(u => u.id === userId);
         if (!userToUpdate) return;
@@ -537,8 +542,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         });
 
     },
-    updateUserProfileImage: (a:any,b:any)=>{return Promise.resolve();},
-    removeGalleryImage: (a:any,b:any)=>{return Promise.resolve();},
+    removeGalleryImage: async (userId: string, imageId: string) => {
+        const db = getFirestoreDb();
+        await deleteDoc(doc(db, 'publications', imageId));
+        // Note: In a real app, we'd also delete the image from storage.
+        // For the UI to update, we rely on the onSnapshot listener.
+    },
     validateEmail: (a:any,b:any)=>{return Promise.resolve(true)},
     sendPhoneVerification: (a:any,b:any)=>{return Promise.resolve();},
     verifyPhoneCode: (a:any,b:any)=>{return Promise.resolve(true)},
@@ -593,7 +602,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }), [
     searchHistory, contacts, cart, transactions, getCartTotal, 
     getDeliveryCost, users, updateCart, router, currentUser, updateUser, updateFullProfile,
-    getDistanceToProvider, currentUserLocation, toast
+    getDistanceToProvider, currentUserLocation, toast, updateUserProfileImage
   ]);
   
   return (
