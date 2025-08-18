@@ -9,18 +9,19 @@ import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 import { Switch } from "./ui/switch";
 import { Label } from "./ui/label";
-import { Star, Truck, MapPin, Building, User, Phone, LocateFixed } from "lucide-react";
+import { Star, Truck, MapPin, Building, User, Phone, LocateFixed, Minus, Plus, Trash2 } from "lucide-react";
 import { credicoraLevels } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { Input } from "./ui/input";
+import Image from "next/image";
+import { ScrollArea } from "./ui/scroll-area";
 
 export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (open: boolean) => void }) {
-    const { currentUser, getCartTotal, getDeliveryCost, checkout: performCheckout, users, deliveryAddress, setDeliveryAddressToCurrent, tempRecipientInfo, setTempRecipientInfo, needsCheckoutDialog, setNeedsCheckoutDialog, activeCartForCheckout, setActiveCartForCheckout } = useCorabo();
+    const { currentUser, getCartTotal, getDeliveryCost, checkout: performCheckout, users, deliveryAddress, setDeliveryAddressToCurrent, tempRecipientInfo, setTempRecipientInfo, needsCheckoutDialog, setNeedsCheckoutDialog, activeCartForCheckout, setActiveCartForCheckout, updateCartQuantity } = useCorabo();
     const router = useRouter();
     
-    // **FIX**: Initialize state based on whether we are returning from the map flow.
     const [deliveryMethod, setDeliveryMethod] = useState<'home' | 'pickup' | 'other_address' | 'current_location'>(
         () => tempRecipientInfo ? 'other_address' : 'home'
     );
@@ -33,7 +34,6 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
         if(needsCheckoutDialog) {
             onOpenChange(true);
             setNeedsCheckoutDialog(false);
-             // **FIX**: Ensure delivery method is correctly set when dialog re-opens.
             if(tempRecipientInfo){
                 setDeliveryMethod('other_address');
             }
@@ -55,7 +55,7 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
     }
     
     const providerId = activeCartForCheckout[0]?.product.providerId;
-    if (!providerId) return null; // Should not happen
+    if (!providerId) return null;
 
     const provider = users.find(u => u.id === providerId);
     if (!provider) return null;
@@ -77,6 +77,14 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
         }
     }
     
+    const handleRemoveProviderCart = () => {
+        activeCartForCheckout.forEach(item => {
+            updateCartQuantity(item.product.id, 0);
+        });
+        onOpenChange(false);
+        setActiveCartForCheckout(null);
+    };
+
     const providerAcceptsCredicora = provider.profileSetupData?.acceptsCredicora || false;
     const providerHasLocation = provider.profileSetupData?.hasPhysicalLocation || false;
 
@@ -98,13 +106,37 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
 
     return (
       <Dialog open={isRecipientDialogOpen} onOpenChange={setIsRecipientDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="sm:max-w-md">
             <AlertDialogHeader>
                 <AlertDialogTitle>Confirmar Compra ({provider.name})</AlertDialogTitle>
-                <AlertDialogDescription>
-                    Selecciona el método de entrega y confirma tu pedido para este proveedor.
-                </AlertDialogDescription>
             </AlertDialogHeader>
+            <div className="space-y-4 -mx-6 px-2">
+              <ScrollArea className="max-h-48 px-4">
+                  <div className="space-y-3">
+                    {activeCartForCheckout.map(item => (
+                        <div key={item.product.id} className="flex items-center gap-3">
+                            <div className="relative w-16 h-16 rounded-md overflow-hidden bg-muted flex-shrink-0">
+                                <Image src={item.product.imageUrl} alt={item.product.name} fill style={{objectFit: 'cover'}}/>
+                            </div>
+                            <div className="flex-grow">
+                                <p className="text-sm font-semibold line-clamp-1">{item.product.name}</p>
+                                <p className="text-sm text-muted-foreground">${item.product.price.toFixed(2)}</p>
+                            </div>
+                             <div className="flex items-center gap-1">
+                                <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateCartQuantity(item.product.id, item.quantity - 1)}><Minus className="h-3 w-3"/></Button>
+                                <span className="font-bold text-sm w-4 text-center">{item.quantity}</span>
+                                <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateCartQuantity(item.product.id, item.quantity + 1)}><Plus className="h-3 w-3"/></Button>
+                            </div>
+                        </div>
+                    ))}
+                  </div>
+              </ScrollArea>
+               <div className="px-4">
+                 <Button variant="link" size="sm" className="text-destructive p-0 h-auto" onClick={handleRemoveProviderCart}>
+                    <Trash2 className="w-3 h-3 mr-1"/> Eliminar todos los productos de este proveedor
+                 </Button>
+               </div>
+            </div>
             <div className="py-4 space-y-4">
                 <div className="space-y-3">
                     <Label>Método de Entrega</Label>
