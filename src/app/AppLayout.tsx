@@ -159,9 +159,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     '/community-guidelines',
     '/admin',
     '/initial-setup',
-    '/profile/publications',
-    '/profile/catalog',
-    '/profile/details', // **FIX** Add details route here
+    // '/profile/publications', // **FIX**: This was hiding the footer on profile pages.
+    // '/profile/catalog',
+    // '/profile/details',
   ];
 
   const shouldHideAllLayout = noHeaderFooterRoutes.some(path => pathname.startsWith(path));
@@ -183,7 +183,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     '/messages',
     '/videos',
     '/emprende',
-  ].includes(pathname) && !/^\/messages\/.+/.test(pathname) && !/^\/companies\/.+/.test(pathname);
+  ].includes(pathname) && !/^\/messages\/.+/.test(pathname) && !/^\/companies\/.+/.test(pathname) && !/^\/profile\/.+/.test(pathname);
   
   const shouldShowFooter = !/^\/messages\/.+/.test(pathname);
   
