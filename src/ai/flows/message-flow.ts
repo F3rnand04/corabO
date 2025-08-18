@@ -78,6 +78,9 @@ export const sendMessage = ai.defineFlow(
     if (convoSnap.exists()) {
       // SECURITY CHECK: Ensure the sender is a participant of the conversation
       const conversation = convoSnap.data() as Conversation;
+      if (!conversation.participantIds || !Array.isArray(conversation.participantIds)) {
+        throw new Error("Conversación inválida: faltan los identificadores de los participantes.");
+      }
       if (!conversation.participantIds.includes(input.senderId)) {
         throw new Error("Sender is not a participant of this conversation.");
       }
