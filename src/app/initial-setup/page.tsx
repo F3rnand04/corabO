@@ -230,7 +230,13 @@ export default function InitialSetupPage() {
                 <AlertDialogHeader>
                 <AlertDialogTitle>¿Estás seguro que los datos son correctos?</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Recuerda que tu {isCompany ? 'Razón Social y ID Fiscal' : 'nombre y documento de identidad'} no podrán ser modificados una vez guardados.
+                    <div className="my-4 p-3 border rounded-md bg-muted/50 text-left text-sm space-y-1">
+                        <p><strong>{isCompany ? 'Razón Social' : 'Nombre Completo'}:</strong> {name} {lastName}</p>
+                        <p><strong>{idLabel}:</strong> {idNumber}</p>
+                        {!isCompany && <p><strong>Fecha de Nacimiento:</strong> {birthDate}</p>}
+                        <p><strong>País:</strong> {countries.find(c => c.code === country)?.name}</p>
+                    </div>
+                    Recuerda que esta información no podrá ser modificada una vez guardada.
                 </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
