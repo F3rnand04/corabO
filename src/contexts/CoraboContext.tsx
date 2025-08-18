@@ -77,7 +77,7 @@ interface CoraboActions {
   removeFromCart: (productId: string) => void;
   getCartTotal: () => number;
   getDeliveryCost: () => number;
-  checkout: (transactionId: string, deliveryMethod: 'pickup' | 'home' | 'other_address', useCredicora: boolean, recipientInfo?: { name: string; phone: string }) => void;
+  checkout: (transactionId: string, deliveryMethod: 'pickup' | 'home' | 'other_address' | 'current_location', useCredicora: boolean, recipientInfo?: { name: string; phone: string }) => void;
   addContact: (user: User) => boolean;
   removeContact: (userId: string) => void;
   isContact: (userId: string) => boolean;
@@ -106,6 +106,7 @@ interface CoraboActions {
   createPublication: (data: CreatePublicationInput) => Promise<void>;
   createProduct: (data: CreateProductInput) => Promise<string | void>;
   setDeliveryAddress: (address: string) => void;
+  setDeliveryAddressToCurrent: () => void;
   markConversationAsRead: (conversationId: string) => void;
   toggleUserPause: (userId: string, currentIsPaused: boolean) => void;
   deleteUser: (userId: string) => Promise<void>;
@@ -292,9 +293,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const [lat2, lon2] = provider.profileSetupData.location.split(',').map(Number);
     const distanceKm = haversineDistance(currentUserLocation.latitude, currentUserLocation.longitude, lat2, lon2);
     
-    // Privacy Logic: If location is not exact, the minimum distance shown is 1km.
-    if (!provider.profileSetupData.showExactLocation) {
-        return `${Math.max(1, Math.round(distanceKm))} km`;
+    if (provider.profileSetupData.showExactLocation === false) {
+      return `${Math.max(1, Math.round(distanceKm))} km`;
     }
 
     return `${Math.round(distanceKm)} km`;
@@ -302,11 +302,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const getDeliveryCost = useCallback(() => {
       const cartProvider = users.find(u => u.id === cart[0]?.product.providerId);
-      if(!cartProvider || !currentUserLocation || !cartProvider.profileSetupData?.location) return 0;
+      if(!cartProvider || !deliveryAddress || !cartProvider.profileSetupData?.location) return 0;
+      
+      const [lat1, lon1] = deliveryAddress.split(',').map(Number);
       const [lat2, lon2] = cartProvider.profileSetupData.location.split(',').map(Number);
-      const distanceKm = haversineDistance(currentUserLocation.latitude, currentUserLocation.longitude, lat2, lon2);
+      
+      const distanceKm = haversineDistance(lat1, lon1, lat2, lon2);
       return distanceKm * 1.5; // $1.5 per km
-  }, [cart, users, currentUserLocation]);
+  }, [cart, users, deliveryAddress]);
   
   const updateCart = useCallback(async (newCart: CartItem[], currentUserId: string, currentTransactions: Transaction[]) => {
       if (!currentUserId) return;
@@ -360,6 +363,23 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const updateUserProfileImage = useCallback(async (userId: string, imageUrl: string) => {
     await updateUser(userId, { profileImage: imageUrl });
   }, [updateUser]);
+
+  const setDeliveryAddressToCurrent = useCallback(() => {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                setDeliveryAddress(`${latitude},${longitude}`);
+                toast({ title: 'Ubicación Actual Establecida' });
+            },
+            (error) => {
+                toast({ variant: 'destructive', title: 'Error de Ubicación', description: error.message });
+            }
+        );
+    } else {
+        toast({ variant: 'destructive', title: 'GPS no Soportado', description: 'Tu navegador no soporta geolocalización.' });
+    }
+  }, [setDeliveryAddress, toast]);
       
   const actions = useMemo(() => ({
     signInWithGoogle: async () => {
@@ -444,7 +464,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         const newCart = cart.filter(item => item.product.id !== productId);
         updateCart(newCart, currentUser.id, transactions);
     },
-    checkout: async (transactionId: string, deliveryMethod: 'pickup' | 'home' | 'other_address', useCredicora: boolean, recipientInfo?: { name: string, phone: string }) => {
+    checkout: async (transactionId: string, deliveryMethod: 'pickup' | 'home' | 'other_address' | 'current_location', useCredicora: boolean, recipientInfo?: { name: string; phone: string }) => {
         if(!currentUser) return;
         const db = getFirestoreDb();
         const txRef = doc(db, 'transactions', transactionId);
@@ -613,6 +633,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         return productId;
     },
     setDeliveryAddress,
+    setDeliveryAddressToCurrent,
     markConversationAsRead: async(a:any)=>{return Promise.resolve();},
     toggleUserPause: (a:any,b:any)=>{},
     deleteUser: async(a:any)=>{return Promise.resolve();},
@@ -645,7 +666,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     searchHistory, contacts, cart, transactions, getCartTotal, 
     getDeliveryCost, users, updateCart, router, currentUser, updateUser, updateFullProfile,
     getDistanceToProvider, currentUserLocation, toast, updateUserProfileImage, setDeliveryAddress,
-    deliveryAddress // Added dependency
+    deliveryAddress, setDeliveryAddressToCurrent // Added dependency
   ]);
   
   return (

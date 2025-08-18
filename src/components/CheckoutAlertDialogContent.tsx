@@ -8,7 +8,7 @@ import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 import { Switch } from "./ui/switch";
 import { Label } from "./ui/label";
-import { Star, Truck, MapPin, Building, User, Phone } from "lucide-react";
+import { Star, Truck, MapPin, Building, User, Phone, LocateFixed } from "lucide-react";
 import { credicoraLevels } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
@@ -16,10 +16,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "./ui/input";
 
 export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (open: boolean) => void }) {
-    const { currentUser, cart, getCartTotal, getDeliveryCost, checkout: performCheckout, transactions, users, deliveryAddress } = useCorabo();
+    const { currentUser, cart, getCartTotal, getDeliveryCost, checkout: performCheckout, transactions, users, deliveryAddress, setDeliveryAddressToCurrent } = useCorabo();
     const router = useRouter();
     
-    const [deliveryMethod, setDeliveryMethod] = useState<'home' | 'pickup' | 'other_address'>('home');
+    const [deliveryMethod, setDeliveryMethod] = useState<'home' | 'pickup' | 'other_address' | 'current_location'>('home');
     const [useCredicora, setUseCredicora] = useState(false);
     const [recipientName, setRecipientName] = useState('');
     const [recipientPhone, setRecipientPhone] = useState('');
@@ -91,14 +91,27 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
             <div className="py-4 space-y-4">
                 <div className="space-y-3">
                     <Label>Método de Entrega</Label>
-                    <RadioGroup value={deliveryMethod} onValueChange={(value) => setDeliveryMethod(value as any)} className="space-y-2">
+                    <RadioGroup 
+                        value={deliveryMethod} 
+                        onValueChange={(value) => {
+                            if (value === 'current_location') {
+                                setDeliveryAddressToCurrent();
+                            }
+                            setDeliveryMethod(value as any)
+                        }} 
+                        className="space-y-2"
+                    >
                         <Label htmlFor="delivery-home" className="flex items-center space-x-2 rounded-lg border p-3 cursor-pointer has-[:checked]:border-primary">
                             <RadioGroupItem value="home" id="delivery-home" />
                             <div className="flex-grow">
-                                <p className="font-semibold">Enviar a mi dirección</p>
+                                <p className="font-semibold">Enviar a mi dirección guardada</p>
                                 <p className="text-xs text-muted-foreground truncate">{deliveryAddress || "Añade una dirección"}</p>
                             </div>
-                            <Button variant="ghost" size="sm" className="text-xs" onClick={() => router.push('/map')}>Cambiar</Button>
+                            <Button variant="ghost" size="sm" className="text-xs" onClick={(e) => { e.preventDefault(); router.push('/map'); }}>Cambiar</Button>
+                        </Label>
+                         <Label htmlFor="delivery-current" className="flex items-center space-x-2 rounded-lg border p-3 cursor-pointer has-[:checked]:border-primary">
+                            <RadioGroupItem value="current_location" id="delivery-current" />
+                            <p className="font-semibold flex-grow flex items-center gap-2"><LocateFixed className="w-4 h-4"/> Mi ubicación actual (GPS)</p>
                         </Label>
                         <DialogTrigger asChild>
                          <Label htmlFor="delivery-other" className="flex items-center space-x-2 rounded-lg border p-3 cursor-pointer has-[:checked]:border-primary">
