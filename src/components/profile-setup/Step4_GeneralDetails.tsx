@@ -1,16 +1,16 @@
-
 'use client';
 
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Info, MessageSquare, User, ScanLine, Cake, Contact } from "lucide-react";
+import { Info, MessageSquare, User, ScanLine, Cake, Contact, Building, Briefcase } from "lucide-react";
 import { ValidationItem } from "@/components/ValidationItem";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { useRouter } from 'next/navigation';
 import type { ProfileSetupData } from '@/lib/types';
+import { Separator } from '../ui/separator';
 
 
 interface Step4_GeneralDetailsProps {
@@ -24,6 +24,9 @@ export default function Step4_GeneralDetails({ onBack, onNext, formData, setForm
   const { currentUser, validateEmail, updateUser, sendMessage } = useCorabo();
   const router = useRouter();
   
+  if (!currentUser) return null;
+
+  const isCompany = currentUser.profileSetupData?.providerType === 'company';
   const isIdentityComplete = currentUser?.lastName && currentUser?.idNumber && currentUser?.birthDate;
 
   const handleContactSupport = () => {
@@ -32,44 +35,95 @@ export default function Step4_GeneralDetails({ onBack, onNext, formData, setForm
     router.push(`/messages/${conversationId}`);
   };
 
-  if (!currentUser) return null;
+  const handleRepInputChange = (field: 'name' | 'idNumber' | 'phone', value: string) => {
+    setFormData({
+        ...formData,
+        legalRepresentative: {
+            ...(formData.legalRepresentative || {}),
+            [field]: value
+        }
+    });
+  };
+  
+
+  const renderPersonalFields = () => (
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+              <Label htmlFor="name">Nombre</Label>
+              <Input id="name" value={currentUser.name || ''} readOnly disabled />
+          </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="lastName">Apellido</Label>
+              <Input id="lastName" value={currentUser.lastName || ''} readOnly disabled />
+          </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="idNumber">Documento de Identidad</Label>
+              <Input id="idNumber" value={currentUser.idNumber || ''} readOnly disabled />
+          </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="birthDate">Fecha de Nacimiento</Label>
+              <Input id="birthDate" type="date" value={currentUser.birthDate || ''} readOnly disabled />
+          </div>
+      </div>
+
+      {isIdentityComplete && (
+            <Alert variant="warning">
+              <Info className="h-4 w-4" />
+              <AlertTitle>Información de Identidad Protegida</AlertTitle>
+              <AlertDescription>
+                  Por seguridad, estos datos no se pueden modificar. Si necesitas corregirlos, por favor
+                  <Button variant="link" className="p-1 h-auto text-current underline" onClick={handleContactSupport}>contacta a soporte</Button>.
+              </AlertDescription>
+          </Alert>
+      )}
+       <p className="text-sm text-muted-foreground pt-2">Esta información es privada y se utilizará para verificar tu identidad al activar funciones de pago. No será visible para otros usuarios.</p>
+    </>
+  );
+
+  const renderCompanyFields = () => (
+    <>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+             <div className="space-y-1.5">
+                <Label htmlFor="companyName">Razón Social</Label>
+                <Input id="companyName" value={currentUser.name || ''} readOnly disabled />
+            </div>
+             <div className="space-y-1.5">
+                <Label htmlFor="companyId">Documento Fiscal (RIF)</Label>
+                <Input id="companyId" value={currentUser.idNumber || ''} readOnly disabled />
+            </div>
+        </div>
+        <Separator className="my-6" />
+        <div>
+            <h3 className="font-semibold text-lg mb-4 flex items-center gap-2"><Briefcase /> Datos del Representante Legal</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 <div className="space-y-1.5">
+                    <Label htmlFor="repName">Nombre Completo</Label>
+                    <Input id="repName" placeholder="Nombre y Apellido" value={formData.legalRepresentative?.name || ''} onChange={(e) => handleRepInputChange('name', e.target.value)} />
+                </div>
+                 <div className="space-y-1.5">
+                    <Label htmlFor="repId">Documento de Identidad</Label>
+                    <Input id="repId" placeholder="Cédula de Identidad" value={formData.legalRepresentative?.idNumber || ''} onChange={(e) => handleRepInputChange('idNumber', e.target.value)} />
+                </div>
+                 <div className="space-y-1.5 md:col-span-2">
+                    <Label htmlFor="repPhone">Teléfono de Contacto</Label>
+                    <Input id="repPhone" placeholder="0412-1234567" value={formData.legalRepresentative?.phone || ''} onChange={(e) => handleRepInputChange('phone', e.target.value)} />
+                </div>
+            </div>
+        </div>
+    </>
+  );
 
   return (
     <div className="space-y-6">
         <h2 className="text-xl font-semibold">Paso 4: Datos Personales</h2>
         
         <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                    <Label htmlFor="name">Nombre</Label>
-                    <Input id="name" value={currentUser.name || ''} readOnly disabled />
-                </div>
-                 <div className="space-y-1.5">
-                    <Label htmlFor="lastName">Apellido</Label>
-                    <Input id="lastName" value={currentUser.lastName || ''} readOnly disabled />
-                </div>
-                 <div className="space-y-1.5">
-                    <Label htmlFor="idNumber">Documento de Identidad</Label>
-                    <Input id="idNumber" value={currentUser.idNumber || ''} readOnly disabled />
-                </div>
-                 <div className="space-y-1.5">
-                    <Label htmlFor="birthDate">Fecha de Nacimiento</Label>
-                    <Input id="birthDate" type="date" value={currentUser.birthDate || ''} readOnly disabled />
-                </div>
-            </div>
+            {isCompany ? renderCompanyFields() : renderPersonalFields()}
 
-            {isIdentityComplete && (
-                 <Alert variant="warning">
-                    <Info className="h-4 w-4" />
-                    <AlertTitle>Información de Identidad Protegida</AlertTitle>
-                    <AlertDescription>
-                        Por seguridad, estos datos no se pueden modificar. Si necesitas corregirlos, por favor
-                        <Button variant="link" className="p-1 h-auto text-current underline" onClick={handleContactSupport}>contacta a soporte</Button>.
-                    </AlertDescription>
-                </Alert>
-            )}
+            <Separator className="my-6" />
 
-            <p className="text-sm text-muted-foreground pt-2">Esta información es privada y se utilizará para verificar tu identidad al activar funciones de pago. No será visible para otros usuarios.</p>
+             <h3 className="font-semibold text-lg mb-4">Datos de Contacto y Verificación</h3>
 
             <ValidationItem
                 label="Correo Electrónico:"

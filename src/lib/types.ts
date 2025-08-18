@@ -308,6 +308,11 @@ export type ProfileSetupData = {
     }
   };
   specializedData?: SpecializedData; // New field
+  legalRepresentative?: {
+    name: string;
+    idNumber: string;
+    phone: string;
+  };
 };
 
 
