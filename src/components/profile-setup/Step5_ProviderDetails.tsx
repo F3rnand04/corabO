@@ -8,29 +8,24 @@ import type { ProfileSetupData, User as UserType } from '@/lib/types';
 import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
-// Specialized Field Components
-import { HealthFields } from '@/components/profile/specialized-fields/HealthFields';
-import { TransportFields } from '@/components/profile/specialized-fields/TransportFields';
-import { GeneralProviderFields } from '@/components/profile/specialized-fields/GeneralProviderFields';
-import { HomeRepairFields } from '@/components/profile/specialized-fields/HomeRepairFields';
-import { FoodAndRestaurantFields } from '@/components/profile/specialized-fields/FoodAndRestaurantFields';
-import { BeautyFields } from '@/components/profile/specialized-fields/BeautyFields';
-import { AutomotiveFields } from '@/components/profile/specialized-fields/AutomotiveFields';
+// Import all specialized fields from the new index file
+import * as SpecializedFields from '@/components/profile/specialized-fields';
+
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Textarea } from "../ui/textarea";
 
-// Component map for specialized fields
+// Component map using the imported object
 const categoryComponentMap: { [key: string]: React.ElementType } = {
-    'Transporte y Asistencia': TransportFields,
-    'Salud y Bienestar': HealthFields,
-    'Hogar y Reparaciones': HomeRepairFields,
-    'Alimentos y Restaurantes': FoodAndRestaurantFields,
-    'Belleza': BeautyFields,
-    'Automotriz y Repuestos': AutomotiveFields,
-    'Tecnología y Soporte': GeneralProviderFields,
-    'Educación': GeneralProviderFields,
-    'Eventos': GeneralProviderFields,
+    'Transporte y Asistencia': SpecializedFields.TransportFields,
+    'Salud y Bienestar': SpecializedFields.HealthFields,
+    'Hogar y Reparaciones': SpecializedFields.HomeRepairFields,
+    'Alimentos y Restaurantes': SpecializedFields.FoodAndRestaurantFields,
+    'Belleza': SpecializedFields.BeautyFields,
+    'Automotriz y Repuestos': SpecializedFields.AutomotiveFields,
+    'Tecnología y Soporte': SpecializedFields.GeneralProviderFields,
+    'Educación': SpecializedFields.GeneralProviderFields,
+    'Eventos': SpecializedFields.GeneralProviderFields,
 };
 
 const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
@@ -99,7 +94,7 @@ export default function Step5_ProviderDetails({ onBack, onNext, initialFormData,
             </div>
         );
     }
-    const SpecializedComponent = categoryComponentMap[category] || GeneralProviderFields;
+    const SpecializedComponent = categoryComponentMap[category] || SpecializedFields.GeneralProviderFields;
     return <SpecializedComponent formData={formData} onSpecializedChange={handleSpecializedInputChange} />;
   };
 
