@@ -520,30 +520,39 @@ export default function CompanyProfilePage() {
               </div>
             </div>
             
-            <div className="flex justify-around text-center text-xs text-muted-foreground pt-4 pb-4">
-              {!isProductProvider && !isCompany && (
-                <div>
-                  <p className="font-semibold text-foreground">{profileData.publications}</p>
-                  <p>Publicaciones</p>
+             <div className="flex items-center gap-4 text-xs text-muted-foreground pt-4 pb-2">
+              {/* Stats Section */}
+              <div className="flex items-center gap-3">
+                {!isProductProvider && !isCompany && (
+                  <p><span className="font-bold text-foreground">{profileData.publications}</span> Publicaciones</p>
+                )}
+                {isProductProvider || isCompany ? (
+                  <p><span className="font-bold text-foreground">{providerProducts.length}</span> Productos</p>
+                ) : (
+                  <p><span className="font-bold text-foreground">{profileData.completedJobs}</span> Trab. Realizados</p>
+                )}
+                {isCompany && (
+                  <p><span className="font-bold text-foreground">{affiliatedProfessionals.length}</span> Afiliados</p>
+                )}
+              </div>
+              
+              <Separator orientation="vertical" className="h-4"/>
+
+              {/* Specialized Details Section */}
+              {(isHealthProvider || isFoodProvider || isHomeRepairProvider || isProfessionalServices || isBeautyProvider) && provider.profileSetupData?.specializedData && (
+                <div className="flex items-center gap-1">
+                  <DetailsIcon className="w-4 h-4 text-primary"/>
+                  {isFoodProvider && provider.profileSetupData.specializedData.cuisineType && (
+                    <Badge variant="outline">{provider.profileSetupData.specializedData.cuisineType}</Badge>
+                  )}
+                  {isHealthProvider && (provider.profileSetupData.specializedData.specialties?.length || 0) > 0 && (
+                     <Badge variant="outline">{provider.profileSetupData.specializedData.specialties?.[0]}</Badge>
+                  )}
+                   {isHomeRepairProvider && (provider.profileSetupData.specializedData.mainTrades?.length || 0) > 0 && (
+                     <Badge variant="outline">{provider.profileSetupData.specializedData.mainTrades?.[0]}</Badge>
+                  )}
                 </div>
               )}
-              {isProductProvider || isCompany ? (
-                 <div>
-                    <p className="font-semibold text-foreground">{providerProducts.length}</p>
-                    <p>Productos</p>
-                </div>
-               ) : (
-                 <div>
-                    <p className="font-semibold text-foreground">{profileData.completedJobs}</p>
-                    <p>Trab. Realizados</p>
-                </div>
-               )}
-                {isCompany && (
-                     <div>
-                        <p className="font-semibold text-foreground">{affiliatedProfessionals.length}</p>
-                        <p>Afiliados</p>
-                    </div>
-                )}
             </div>
 
             {provider.activeAffiliation && (
@@ -561,62 +570,6 @@ export default function CompanyProfilePage() {
                 </Link>
             )}
             
-            {(isHealthProvider || isFoodProvider || isHomeRepairProvider || isProfessionalServices || isBeautyProvider) && provider.profileSetupData?.specializedData && (
-                 <div className="my-4 space-y-3">
-                    <h3 className="font-semibold flex items-center gap-2 text-md text-foreground">
-                      <DetailsIcon className="w-5 h-5 text-primary"/>
-                      Detalles Especializados
-                    </h3>
-                    <div className="space-y-2 text-sm text-muted-foreground pl-7">
-                        {isHealthProvider && (<>
-                            <p><strong>Licencia/Colegiatura:</strong> {provider.profileSetupData.specializedData.licenseNumber || 'No especificado'}</p>
-                            {provider.profileSetupData.specializedData.specialties && provider.profileSetupData.specializedData.specialties.length > 0 && (
-                                <div className="flex flex-wrap gap-1 pt-1">
-                                    {provider.profileSetupData.specializedData.specialties.map(spec => <Badge key={spec} variant="outline">{spec}</Badge>)}
-                                </div>
-                            )}
-                        </>)}
-                        {isFoodProvider && (<>
-                            <div className="flex flex-wrap gap-2 items-center">
-                               {provider.profileSetupData.specializedData.cuisineType && <Badge>{provider.profileSetupData.specializedData.cuisineType}</Badge>}
-                               {provider.profileSetupData.specializedData.menuUrl && <Button variant="outline" size="sm" asChild className="h-auto py-0.5"><a href={provider.profileSetupData.specializedData.menuUrl} target="_blank" rel="noopener noreferrer"><LinkIcon className="w-3 h-3 mr-1"/> Ver Menú</a></Button>}
-                            </div>
-                             {provider.profileSetupData?.specializedData?.serviceOptions && Object.values(provider.profileSetupData.specializedData.serviceOptions).some(v => v) && (
-                                 <p className="pt-2 text-xs">Opciones: {Object.entries(provider.profileSetupData.specializedData.serviceOptions).filter(([,v])=>v).map(([k])=>k).join(', ')}</p>
-                             )}
-                        </>)}
-                         {isHomeRepairProvider && (<>
-                            {(provider.profileSetupData.specializedData.mainTrades?.length || 0) > 0 && (
-                                <div className="flex flex-wrap gap-1">
-                                    {provider.profileSetupData.specializedData.mainTrades?.map(trade => <Badge key={trade} variant="secondary">{trade}</Badge>)}
-                                </div>
-                            )}
-                             {(provider.profileSetupData.specializedData.specificSkills?.length || 0) > 0 && (
-                                <div className="flex flex-wrap gap-1 pt-2">
-                                    {provider.profileSetupData.specializedData.specificSkills?.map(skill => <Badge key={skill} variant="outline">{skill}</Badge>)}
-                                </div>
-                            )}
-                             {provider.profileSetupData.specializedData.certifications && <p className="text-xs pt-2"><strong>Certificaciones:</strong> {provider.profileSetupData.specializedData.certifications}</p>}
-                        </>)}
-                        {(isProfessionalServices || isBeautyProvider) && (<>
-                            {provider.profileSetupData.specializedData.yearsOfExperience && <p><strong>Años de Experiencia:</strong> {provider.profileSetupData.specializedData.yearsOfExperience}</p>}
-                            {provider.profileSetupData.specializedData.toolsAndBrands && <p><strong>Herramientas y Marcas:</strong> {provider.profileSetupData.specializedData.toolsAndBrands}</p>}
-                            {(provider.profileSetupData.specializedData.keySkills?.length || 0) > 0 && (
-                               <div className="flex flex-wrap gap-1 pt-2">
-                                    {provider.profileSetupData.specializedData.keySkills?.map(skill => <Badge key={skill} variant="secondary">{skill}</Badge>)}
-                                </div>
-                            )}
-                            {(provider.profileSetupData.specializedData.beautyTrades?.length || 0) > 0 && (
-                               <div className="flex flex-wrap gap-1 pt-2">
-                                    {provider.profileSetupData.specializedData.beautyTrades?.map(trade => <Badge key={trade} variant="secondary">{trade}</Badge>)}
-                                </div>
-                            )}
-                        </>)}
-                    </div>
-                </div>
-            )}
-
-
           </div>
           
           <main className="px-2">
@@ -863,3 +816,4 @@ export default function CompanyProfilePage() {
 }
 
     
+
