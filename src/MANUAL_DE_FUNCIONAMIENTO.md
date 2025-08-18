@@ -13,8 +13,9 @@ El acceso y la personalización son claves en Corabo.
 -   **Página de `/login`:** Al abrir la aplicación, serás dirigido a la página de inicio de sesión para acceder con tu cuenta de Google.
 -   **Configuración Inicial (`/initial-setup`):** Tras iniciar sesión por primera vez, serás guiado a un formulario para completar tu perfil.
     -   **Selección de País:** Como primer paso, deberás seleccionar tu país. Esto adaptará los campos siguientes.
-    -   **Nombre y Apellido:** Deberás ingresar tu nombre y apellido manualmente.
-    -   **Documento de Identidad:** Se te solicitará tu número de documento de identidad, crucial para la verificación.
+    -   **Nombre y Apellido:** Deberás ingresar tu nombre y apellido manualmente. El sistema ya no autocompleta esta información para evitar errores.
+    -   **Documento de Identidad:** Se te solicitará tu número de documento de identidad, crucial para la verificación. El sistema validará que no esté en uso.
+    -   **Botón de Salida:** Si te equivocaste de cuenta, ahora tienes un botón para **"Volver a la página de inicio"**, que cerrará tu sesión para que puedas ingresar con la cuenta correcta.
 -   **Activación de Transacciones:** Para los proveedores, es **obligatorio** completar este registro. El banner "¡Activa tu registro!" te redirige a los pasos necesarios (`/initial-setup`, `/profile-setup/verify-id`, `/transactions/settings`) para que puedas completar tus datos y empezar a vender.
 
 ---
@@ -31,14 +32,14 @@ La barra de navegación inferior es el centro de control y su comportamiento es 
     -   **Para Clientes y en la mayoría de las páginas:** Es un icono de **Código QR** (`/show-qr`) para iniciar pagos rápidos.
     -   **Para Proveedores en su propio perfil (`/profile`):** Se convierte en un icono de **Subir (+)**. Al hacer clic, se abrirá un diálogo para que elijas si quieres añadir una **publicación a la galería** o un **nuevo producto** a tu catálogo.
 -   **Botón Derecho (Dinámico):**
-    -   **En la mayoría de las páginas:** Es tu **avatar de perfil** (`/profile`).
+    -   **En la mayoría de las páginas:** Es tu **avatar de perfil** que te lleva a la ruta `/profile`, la cual redirige a `/profile/publications`.
     -   **En tu propio perfil (`/profile`):** Se transforma en un **engranaje de Ajustes** (`/profile-setup`).
 
 ### 3.3. Configuración de Perfil (`/profile` y `/profile/details`)
-El perfil de un proveedor ahora tiene pestañas para una mejor organización.
+El perfil de un proveedor ahora tiene pestañas para una mejor organización. La navegación ha sido mejorada para ser más intuitiva.
 
--   **Pestañas del Perfil:** "Publicaciones", "Catálogo" (si aplica) y "Detalles".
--   **Pestaña de Detalles:** Desde aquí, los proveedores pueden editar sus datos de contacto y, más importante, añadir **información especializada** según su categoría principal (ej. "Alimentos y Bebidas", "Hogar y Reparaciones", "Belleza"). El sistema muestra campos opcionales para que detallen sus habilidades, experiencia, certificaciones, menús, etc., enriqueciendo su perfil.
+-   **Pestañas del Perfil:** "Publicaciones", "Catálogo" y "Detalles", cada una en su propia ruta (`/profile/publications`, `/profile/catalog`, `/profile/details`).
+-   **Pestaña de Detalles:** Desde aquí, los proveedores pueden editar sus datos de contacto y, más importante, añadir **información especializada** según su categoría principal (ej. "Alimentos y Bebidas", "Hogar y Reparaciones", "Belleza"). El sistema muestra formularios coherentes y específicos para cada categoría para enriquecer su perfil.
 
 ### 3.4. Perfil Público de un Proveedor (`/companies/[id]/page.tsx`)
 La vista pública de un proveedor es dinámica y se adapta a su oferta.

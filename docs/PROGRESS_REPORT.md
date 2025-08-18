@@ -26,8 +26,9 @@ El enrutamiento está centralizado y controlado lógicamente por el componente `
 2.  **Redirección Post-Login:**
     -   Si un usuario es **nuevo** y su perfil no está completo (`isInitialSetupComplete` es `false`), es redirigido forzosamente a `/initial-setup`.
     -   Si un usuario ya tiene su perfil completo, es dirigido a la página principal (`/`).
-3.  **Configuración Inicial (`/initial-setup`):** Un flujo obligatorio para nuevos usuarios donde deben proporcionar sus datos de identidad básicos.
-4.  **Rutas Protegidas:** El `AppLayout` asegura que solo los usuarios autenticados y con la configuración inicial completa puedan acceder al resto de la aplicación.
+3.  **Configuración Inicial (`/initial-setup`):** Un flujo obligatorio para nuevos usuarios donde deben proporcionar sus datos de identidad básicos. Ahora incluye una opción para volver al login si se equivocaron de cuenta.
+4.  **Rutas de Perfil (`/profile/*`):** La navegación del perfil ha sido reestructurada. Ahora utiliza rutas explícitas (`/profile/publications`, `/profile/catalog`, `/profile/details`) controladas por un layout principal, lo que garantiza una navegación coherente y sin errores.
+5.  **Rutas Protegidas:** El `AppLayout` asegura que solo los usuarios autenticados y con la configuración inicial completa puedan acceder al resto de la aplicación.
 
 ---
 
@@ -35,10 +36,10 @@ El enrutamiento está centralizado y controlado lógicamente por el componente `
 
 ### 3.1. Sistema de Reputación y Perfiles Especializados
 -   **Reputación Dinámica:** La calificación por estrellas, el índice de efectividad y la agilidad de pago se calculan y muestran en tiempo real.
--   **Perfiles Especializados:** Dependiendo de la categoría del proveedor (Salud, Hogar, Alimentos y Bebidas, etc.), se muestran campos y detalles específicos en la configuración y en la vista pública, mejorando la calidad de la información para los clientes.
+-   **Perfiles Especializados:** La lógica de los formularios de detalles (`/profile/details`) ha sido corregida y ahora es totalmente coherente. El sistema muestra los campos correctos (Salud, Hogar, Alimentos, etc.) basándose en la categoría principal del proveedor, sin errores.
 
 ### 3.2. Panel de Control del Proveedor (`/transactions`)
--   **Dashboard Financiero:** Los proveedores ahora tienen un panel de control con gráficos de líneas y de torta que muestran la evolución de sus ingresos/egresos y la distribución de sus finanzas.
+-   **Dashboard Financiero:** Los proveedores tienen un panel de control con gráficos de líneas y de torta que muestran la evolución de sus ingresos/egresos y la distribución de sus finanzas.
 -   **Incentivo a la Suscripción:** Se ha integrado una tarjeta persuasiva que muestra los beneficios de suscribirse para mejorar la monetización.
 
 ### 3.3. Interacción y Transacciones
@@ -50,5 +51,5 @@ El enrutamiento está centralizado y controlado lógicamente por el componente `
 -   **Marketing Dirigido:** Se envían notificaciones de campañas a usuarios segmentados por intereses.
 
 ### 3.5. Estabilidad y Pruebas
--   **Pipeline de Integración Actualizado:** Todos los tests de integración (`login`, `activación`, `paginación`, `publicación`) han sido actualizados para reflejar la arquitectura y lógica actual, asegurando la estabilidad de las funcionalidades clave.
--   **Estructura de Proyecto Limpia:** Se han eliminado rutas y componentes redundantes, y la configuración de Jest se ha estandarizado.
+-   **Configuración de Compilación Robusta:** Los problemas de compilación recurrentes han sido resueltos aislando las configuraciones de prueba y optimizando el `package.json` para entornos de producción.
+-   **Estructura de Proyecto Limpia:** Se han optimizado las rutas y componentes, y la configuración de Jest se ha estandarizado para un mantenimiento más sencillo.

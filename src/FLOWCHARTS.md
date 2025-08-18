@@ -30,30 +30,29 @@ Describe cómo un proveedor configura su perfil y cómo se muestran detalles esp
 
 ```mermaid
 graph TD
-    A[Nuevo Proveedor Completa Registro Inicial] --> B[Accede a Configuración de Perfil /profile-setup];
-    B --> C{Paso 3: Elige Categoría Principal};
+    A[Proveedor accede a Configuración /profile-setup] --> B[Accede a la pestaña 'Detalles'];
+    B --> C{Lee Categoría Principal del Perfil};
     
     subgraph "Lógica de Formulario Dinámico (/profile/details)"
-      C -- "Salud y Bienestar" --> E_Health[Muestra campos de Licencia, Especialidades, etc.];
-      C -- "Hogar y Reparaciones" --> E_Home[Muestra campos de Oficios, Habilidades, etc.];
-      C -- "Alimentos y Restaurantes" --> E_Food[Muestra campos de Tipo de Cocina, Menú, etc.];
-      C -- "Transporte y Asistencia" --> E_Transport[Muestra campos de Vehículo, Capacidad, etc.];
-      C -- "Belleza" --> E_Beauty[Muestra campos de Oficios, Habilidades, etc.];
-      C -- "Otros" --> E_General[Muestra campos generales de Habilidades, Experiencia, etc.];
+      direction LR
+      C -- "Salud y Bienestar" --> D_Health[Renderiza <HealthFields />];
+      C -- "Hogar y Reparaciones" --> D_Home[Renderiza <HomeRepairFields />];
+      C -- "Alimentos y Restaurantes" --> D_Food[Renderiza <FoodAndRestaurantFields />];
+      C -- "Transporte y Asistencia" --> D_Transport[Renderiza <TransportFields />];
+      C -- "Belleza" --> D_Beauty[Renderiza <BeautyFields />];
+      C -- "Otros" --> D_General[Renderiza <GeneralProviderFields />];
     end
     
-    subgraph "Renderizado de Perfil Público (/companies/[id])"
-        direction LR
-        E_Health --> G{Leer datos del Proveedor};
-        E_Home --> G;
-        E_Food --> G;
-        E_Transport --> G;
-        E_Beauty --> G;
-        E_General --> G;
-        G --> H[Mostrar información general];
-        G --> I{¿Tiene datos especializados?};
-        I -- Sí --> J[Renderizar sección de Detalles Especializados (Badges, etc.)];
-        I -- No --> K[Ocultar sección de Detalles];
+    subgraph "Guardado de Datos"
+      D_Health --> E[Usuario llena el formulario y guarda];
+      D_Home --> E;
+      D_Food --> E;
+      D_Transport --> E;
+      D_Beauty --> E;
+      D_General --> E;
+      E --> F_FE[Frontend llama al flujo `updateUser`];
+      F_FE --> G_BE[Backend actualiza el documento del usuario en Firestore];
+      G_BE --> H[Datos especializados persisten en `profileSetupData.specializedData`];
     end
 ```
 

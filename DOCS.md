@@ -19,10 +19,12 @@ La aplicación ha evolucionado de un prototipo cliente-céntrico a una aplicaci�
 
 Para ofrecer una experiencia de usuario clara, Corabo implementa un sistema de **perfiles dinámicos** que se adaptan al tipo de negocio del proveedor.
 
--   **Campos Especializados:** Dependiendo de la categoría principal seleccionada por el proveedor (ej. "Salud y Bienestar", "Hogar y Reparaciones", "Belleza"), el formulario de configuración de perfil (`Step5_ProviderDetails`) muestra campos adicionales y opcionales para que puedan detallar sus servicios:
+-   **Campos Especializados:** Dependiendo de la categoría principal seleccionada por el proveedor (ej. "Salud y Bienestar", "Hogar y Reparaciones", "Belleza"), el formulario de configuración de perfil (`/profile/details`) muestra campos adicionales y opcionales para que puedan detallar sus servicios:
     -   **Salud:** Nro. de Licencia, Especialidades, Modalidad de Atención.
     -   **Hogar:** Oficios Principales (Plomería, etc.), Habilidades Específicas (tags).
     -   **Belleza:** Oficios Principales (Manicure, Estilismo, etc.), Habilidades Específicas.
+    -   **Alimentos y Restaurantes:** Tipo de Cocina, Opciones de Servicio (local, delivery, etc.), Enlace al Menú, Permiso Sanitario.
+    -   **Transporte y Asistencia:** Tipo de Vehículo, Capacidad de Carga, Condiciones Especiales.
     -   **Otros Servicios Profesionales:** Habilidades Clave (tags), Marcas y Herramientas, Años de Experiencia.
 -   **Visualización Pública:** La información especializada se muestra de forma clara en el perfil público del proveedor (`/companies/[id]`) mediante etiquetas (`Badge`) y secciones de detalles, ayudando a los clientes a tomar decisiones informadas.
 
@@ -38,7 +40,7 @@ La sección de transacciones ha sido transformada en un verdadero **panel de con
 
 ## 4. Flujos Clave de la Aplicación
 
--   **Autenticación y Configuración Inicial:** Un flujo seguro y guiado asegura que todos los usuarios, especialmente los proveedores, completen su información básica y de identidad antes de poder transaccionar.
+-   **Autenticación y Configuración Inicial:** Un flujo seguro y guiado asegura que todos los usuarios, especialmente los proveedores, completen su información básica y de identidad antes de poder transaccionar. La lógica ahora incluye validación de ID único y una opción para volver al login si el usuario se equivocó de cuenta.
 -   **Publicación de Contenido:** El flujo `publication-flow` centraliza la creación de publicaciones e ítems de catálogo, validando la existencia del usuario para mantener la integridad de los datos.
 -   **Notificaciones:** El sistema de notificaciones (`notification-flow`) se utiliza para comunicar eventos importantes como solicitudes de afiliación, recordatorios de pago y la activación de nuevas campañas.
 -   **Verificación de Identidad con IA (`verification-flow`):** Un flujo multimodal utiliza la IA de Google para analizar documentos de identidad, extrayendo y comparando los datos con los registros del usuario para una verificación rápida y segura.
