@@ -8,8 +8,8 @@ import * as path from 'path';
 import type { User } from '@/lib/types';
 import { render, fireEvent, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { ActivationWarning } from '@/components/ActivationWarning';
 import React from 'react'; // Import React for JSX
+import { ActivationWarning } from '@/components/ActivationWarning';
 
 // This test simulates the user activation flow to ensure correct redirection logic.
 
@@ -71,7 +71,7 @@ describe('Activation Flow - Integration Test', () => {
       isInitialSetupComplete: false,
     } as User;
 
-    render(<ActivationWarning userType="provider" />);
+    render(<><ActivationWarning userType="provider" /></>);
     const activationButton = screen.getByText('Activar ahora →');
     fireEvent.click(activationButton);
 
@@ -86,7 +86,7 @@ describe('Activation Flow - Integration Test', () => {
       idVerificationStatus: 'pending', 
     } as User;
 
-    render(<ActivationWarning userType="provider" />);
+    render(<><ActivationWarning userType="provider" /></>);
     const activationButton = screen.getByText('Activar ahora →');
     fireEvent.click(activationButton);
 
@@ -102,7 +102,7 @@ describe('Activation Flow - Integration Test', () => {
       isTransactionsActive: false,
     } as User;
 
-    render(<ActivationWarning userType="provider" />);
+    render(<><ActivationWarning userType="provider" /></>);
     const activationButton = screen.getByText('Activar ahora →');
     fireEvent.click(activationButton);
 

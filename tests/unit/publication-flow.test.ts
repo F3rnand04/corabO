@@ -60,6 +60,7 @@ describe('Publication and Product Flow - Unit Tests', () => {
     const userDataInput: User = {
         id: 'user_valid', name: 'Valid User', profileImage: 'valid.png', type: 'provider',
         email: 'valid@test.com', phone: '', emailValidated: true, phoneValidated: false, isGpsActive: false, reputation: 0,
+ effectiveness: 0,
         profileSetupData: {},
     };
     mockedGetDoc.mockResolvedValue({ exists: () => true, data: () => userDataInput });

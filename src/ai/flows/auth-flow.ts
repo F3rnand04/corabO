@@ -6,7 +6,7 @@
 
 import { ai } from '@/ai/genkit';
 import { getFirestoreDb } from '@/lib/firebase-server';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, type DocumentReference } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 import { z } from 'zod';
 import { credicoraLevels } from '@/lib/types';
@@ -37,7 +37,7 @@ export const getOrCreateUser = ai.defineFlow(
   },
   async (firebaseUser) => {
     const db = getFirestoreDb();
-    const userDocRef = doc(db, 'users', firebaseUser.uid);
+    const userDocRef: DocumentReference<User> = doc(db, 'users', firebaseUser.uid) as DocumentReference<User>;
     const userDocSnap = await getDoc(userDocRef);
     const now = new Date();
 
@@ -66,7 +66,7 @@ export const getOrCreateUser = ai.defineFlow(
       
       // Apply updates if there are any
       if (Object.keys(updates).length > 0) {
-        await updateDoc(userDocRef, updates, { merge: true });
+ await updateDoc(userDocRef, updates);
         user = { ...user, ...updates }; // Update local user object
       }
 

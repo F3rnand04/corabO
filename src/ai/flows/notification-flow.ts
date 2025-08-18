@@ -13,7 +13,7 @@ import { z } from 'zod';
 import { getFirestoreDb } from '@/lib/firebase-server'; // Use server-side firebase
 import { collection, doc, setDoc, query, where, getDocs, getDoc, writeBatch } from 'firebase/firestore';
 import type { Notification, Transaction, User, Campaign } from '@/lib/types';
-import { differenceInDays, isFuture, isPast } from 'date-fns';
+import { addDays, differenceInDays, isFuture, isPast } from 'date-fns';
 
 const SendNotificationInputSchema = z.object({
   userId: z.string(),
