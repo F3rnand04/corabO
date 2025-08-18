@@ -38,26 +38,6 @@ export async function autoVerifyIdWithAI(input: VerificationInput): Promise<Veri
   return autoVerifyIdWithAIFlow(input);
 }
 
-// Advanced name comparison logic
-function compareNamesFlexibly(nameA: string, nameB: string): boolean {
-    const normalize = (name: string) => {
-        if (!name) return '';
-        return name
-            .toLowerCase()
-            .trim()
-            // Remove common company suffixes like C.A., S.A., etc.
-            .replace(/\s*,?\s*(c\s*\.\s*a|s\s*\.\s*a|ca|sa)\s*\.?\s*$/i, '')
-            // Remove punctuation
-            .replace(/[.,]/g, '')
-            .replace(/\s+/g, ' ');
-    };
-
-    const normalizedA = normalize(nameA);
-    const normalizedB = normalize(nameB);
-
-    return normalizedA === normalizedB;
-}
-
 // ID normalization logic as per documentation
 const normalizeId = (id: string): string => {
     if (!id) return '';
@@ -71,6 +51,25 @@ const normalizeId = (id: string): string => {
         // Remove all non-digit characters (dots, dashes, spaces)
         .replace(/\D/g, ''); 
 };
+
+// **FIX**: Enhanced name comparison to be more flexible, similar to ID normalization.
+function compareNamesFlexibly(nameA: string, nameB: string): boolean {
+    const normalize = (name: string) => {
+        if (!name) return '';
+        return name
+            .toLowerCase()
+            .trim()
+            // Remove common company suffixes like C.A., S.A., etc., globally
+            .replace(/\s*c\s*\.\s*a\s*\.?|\s*s\s*\.\s*a\s*\.?|\s*ca\s*|\s*sa\s*/g, '')
+            // Remove all punctuation (dots, commas) and spaces
+            .replace(/[.,\s]/g, '');
+    };
+
+    const normalizedA = normalize(nameA);
+    const normalizedB = normalize(nameB);
+
+    return normalizedA === normalizedB;
+}
 
 
 const autoVerifyIdWithAIFlow = ai.defineFlow(
