@@ -21,9 +21,13 @@ const mapOptions = {
   streetViewControl: false,
 };
 
+// **FIX**: Add 'geocoding' to the libraries array
+const libraries: ("geocoding")[] = ["geocoding"];
+
 export function MapPageContent() {
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+    libraries, // Use the libraries array here
   });
 
   const { currentUserLocation, setDeliveryAddress } = useCorabo();
@@ -61,7 +65,7 @@ export function MapPageContent() {
   const handleConfirmLocation = () => {
     if (selectedAddress && markerPosition) {
         // We store the address and coordinates for future use
-        const locationString = `${selectedAddress} | ${markerPosition.lat},${markerPosition.lng}`;
+        const locationString = `${selectedAddress}|${markerPosition.lat},${markerPosition.lng}`;
         setDeliveryAddress(locationString);
         toast({ title: "Ubicación Confirmada", description: "La dirección ha sido guardada."});
         router.back();
