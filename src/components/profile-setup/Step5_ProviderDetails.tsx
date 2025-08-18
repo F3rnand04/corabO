@@ -2,29 +2,12 @@
 'use client';
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from '../ui/textarea';
-import { MapPin, Building, AlertCircle, Package, Hand, Star, Info, LocateFixed, Handshake, Wrench, Stethoscope, BadgeCheck, Truck, Utensils, Link as LinkIcon, Briefcase, BrainCircuit, Scissors, Clock, Settings, Map } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
-import { Slider } from '../ui/slider';
-import { Badge } from '../ui/badge';
-import { cn } from '@/lib/utils';
-import { SubscriptionDialog } from '../SubscriptionDialog';
-import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
-import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import type { ProfileSetupData } from '@/lib/types';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
+import { Settings, Wrench, Clock, Save, Loader2 } from 'lucide-react';
+import type { ProfileSetupData, User as UserType } from '@/lib/types';
 import { useState, useCallback, useEffect } from 'react';
 import { useCorabo } from '@/contexts/CoraboContext';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { X } from 'lucide-react';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
-import { Dialog, DialogContent, DialogTrigger } from "../ui/dialog";
-import { MapPageContent } from "../MapPageContent";
-
 
 // Specialized Field Components
 import { HealthFields } from '@/components/profile/specialized-fields/HealthFields';
@@ -34,15 +17,10 @@ import { HomeRepairFields } from '@/components/profile/specialized-fields/HomeRe
 import { FoodAndRestaurantFields } from '@/components/profile/specialized-fields/FoodAndRestaurantFields';
 import { BeautyFields } from '@/components/profile/specialized-fields/BeautyFields';
 import { AutomotiveFields } from '@/components/profile/specialized-fields/AutomotiveFields';
-
-interface Step5_ProviderDetailsProps {
-  onBack: () => void;
-  onNext: () => void;
-  formData: ProfileSetupData;
-  setFormData: (data: ProfileSetupData) => void;
-}
-
-const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { Switch } from "../ui/switch";
+import { Textarea } from "../ui/textarea";
 
 // Component map for specialized fields
 const categoryComponentMap: { [key: string]: React.ElementType } = {
@@ -57,30 +35,26 @@ const categoryComponentMap: { [key: string]: React.ElementType } = {
     'Eventos': GeneralProviderFields,
 };
 
+const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
-export default function Step5_ProviderDetails({ onBack, onNext, formData, setFormData }: Step5_ProviderDetailsProps) {
-  const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
-  const [isMapDialogOpen, setIsMapDialogOpen] = useState(false);
-  const { currentUser, users, requestAffiliation, deliveryAddress, setDeliveryAddress } = useCorabo();
+interface Step5_ProviderDetailsProps {
+  onBack?: () => void;
+  onNext?: () => void;
+  initialFormData: ProfileSetupData;
+  profileType: UserType['type'];
+  isEditMode?: boolean; // New prop to indicate edit mode
+  onSave?: (formData: ProfileSetupData) => Promise<void>;
+}
+
+export default function Step5_ProviderDetails({ onBack, onNext, initialFormData, isEditMode = false, onSave }: Step5_ProviderDetailsProps) {
   const { toast } = useToast();
-  const router = useRouter();
+  const [formData, setFormData] = useState<ProfileSetupData>(initialFormData);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const MAX_RADIUS_FREE = 10;
-  const isOverFreeRadius = (formData.serviceRadius || 0) > MAX_RADIUS_FREE && !(currentUser?.isSubscribed);
-  const isProfessional = formData.providerType === 'professional';
+  useEffect(() => {
+    setFormData(initialFormData);
+  }, [initialFormData]);
 
-  const companies = users.filter(u => u.profileSetupData?.providerType === 'company');
-
-  const handleFormDataChange = useCallback((field: keyof ProfileSetupData, value: any) => {
-    setFormData({ ...formData, [field]: value });
-  }, [formData, setFormData]);
-
-  const handleScheduleChange = useCallback((day: string, field: 'from' | 'to' | 'active', value: string | boolean) => {
-    const currentSchedule = formData.schedule || {};
-    const newSchedule = { ...currentSchedule, [day]: { ...(currentSchedule[day] || {}), [field]: value } };
-    handleFormDataChange('schedule', newSchedule);
-  }, [formData, handleFormDataChange]);
-  
   const handleSpecializedInputChange = useCallback((field: keyof NonNullable<ProfileSetupData['specializedData']>, value: any) => {
       setFormData(prev => ({
           ...prev,
@@ -89,65 +63,57 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
               [field]: value
           }
       }));
-  }, [setFormData]);
+  }, []);
+  
+  const handleScheduleChange = useCallback((day: string, field: 'from' | 'to' | 'active', value: string | boolean) => {
+    const currentSchedule = formData.schedule || {};
+    const newSchedule = { ...currentSchedule, [day]: { ...(currentSchedule[day] || {}), [field]: value } };
+    setFormData(prev => ({ ...prev, schedule: newSchedule }));
+  }, [formData]);
 
-  const handleRequestAffiliation = async (companyId: string) => {
-      if (!currentUser || !companyId) return;
-      try {
-          await requestAffiliation(currentUser.id, companyId);
-          toast({
-              title: "Solicitud Enviada",
-              description: "Tu solicitud de afiliación ha sido enviada a la empresa."
-          })
-      } catch (error: any) {
-          toast({
-              variant: "destructive",
-              title: "Error al solicitar",
-              description: error.message || "No se pudo enviar la solicitud."
-          })
-      }
-  };
 
-  useEffect(() => {
-    if (deliveryAddress && deliveryAddress !== formData.location) {
-        handleFormDataChange('location', deliveryAddress);
-        setDeliveryAddress(''); // Clear the context address after using it
-        setIsMapDialogOpen(false); // Close the map dialog after selection
+  const handleSaveChanges = async () => {
+    if (onSave) {
+        setIsSaving(true);
+        try {
+            await onSave(formData);
+            toast({ title: "Cambios Guardados", description: "Tu perfil ha sido actualizado." });
+        } catch (error) {
+            toast({ variant: 'destructive', title: "Error", description: "No se pudieron guardar los cambios." });
+        } finally {
+            setIsSaving(false);
+        }
     }
-  }, [deliveryAddress, formData.location, handleFormDataChange, setDeliveryAddress]);
+  };
 
   const renderSpecializedFields = () => {
     const category = formData.primaryCategory;
     if (!category) {
         return (
              <div className="p-4 bg-muted rounded-md text-center text-sm text-muted-foreground">
-                Selecciona una categoría principal para ver los campos especializados.
+                Para añadir detalles, primero selecciona una categoría principal.
             </div>
         );
     }
-    
-    const SpecializedComponent = categoryComponentMap[category];
-    
-    if (SpecializedComponent) {
-        return <SpecializedComponent formData={formData} onSpecializedChange={handleSpecializedInputChange} />;
-    }
-
-    // Fallback for categories without a specific component yet or general ones
-    return <GeneralProviderFields formData={formData} onSpecializedChange={handleSpecializedInputChange} />;
+    const SpecializedComponent = categoryComponentMap[category] || GeneralProviderFields;
+    return <SpecializedComponent formData={formData} onSpecializedChange={handleSpecializedInputChange} />;
   };
 
-
   return (
-    <>
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold">Paso 5: Detalles del Proveedor</h2>
-      <p className="text-sm text-muted-foreground">
-        Completa tu perfil para que los clientes puedan encontrarte y entender mejor lo que ofreces.
-      </p>
+      {!isEditMode && (
+        <>
+            <h2 className="text-xl font-semibold">Paso 5: Detalles del Proveedor</h2>
+            <p className="text-sm text-muted-foreground">
+                Completa tu perfil para que los clientes puedan encontrarte y entender mejor lo que ofreces.
+            </p>
+        </>
+      )}
 
-      <Accordion type="multiple" className="w-full space-y-4">
+      <Accordion type="multiple" defaultValue={['general-details', 'specialized-fields', 'schedule']} className="w-full space-y-4">
         
-        {/* General Details */}
+        {/* General Details - Only for setup */}
+        {!isEditMode && (
         <AccordionItem value="general-details" className="border rounded-lg">
             <AccordionTrigger className="px-4 hover:no-underline">
                 <div className="flex items-center gap-3">
@@ -158,20 +124,13 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
             <AccordionContent className="p-4 pt-0">
                  <div className="space-y-4 pt-4 border-t">
                     <div className="space-y-2">
-                        <Label htmlFor="specialty">Especialidad / Descripción corta</Label>
-                        <Textarea id="specialty" placeholder="Ej: Expertos en cocina italiana." rows={2} maxLength={30} value={formData.specialty || ''} onChange={(e) => handleFormDataChange('specialty', e.target.value)}/>
-                        <p className="text-xs text-muted-foreground text-right">{formData.specialty?.length || 0} / 30</p>
-                    </div>
-                     <div className="space-y-3">
-                        <Label>Ofrezco principalmente</Label>
-                        <RadioGroup value={formData.offerType || 'service'} onValueChange={(value: 'product' | 'service') => handleFormDataChange('offerType', value)} className="flex gap-4">
-                            <div className="flex items-center space-x-2"><RadioGroupItem value="service" id="service" /><Label htmlFor="service" className="flex items-center gap-2 font-normal cursor-pointer"><Hand className="w-4 h-4"/> Servicios</Label></div>
-                            <div className="flex items-center space-x-2"><RadioGroupItem value="product" id="product" /><Label htmlFor="product" className="flex items-center gap-2 font-normal cursor-pointer"><Package className="w-4 h-4"/> Productos</Label></div>
-                        </RadioGroup>
+                        <Label htmlFor="specialty">Especialidad / Descripción corta (máx. 30 caracteres)</Label>
+                        <Textarea id="specialty" placeholder="Ej: Expertos en cocina italiana." rows={2} maxLength={30} value={formData.specialty || ''} onChange={(e) => setFormData({...formData, specialty: e.target.value})}/>
                     </div>
                 </div>
             </AccordionContent>
         </AccordionItem>
+        )}
 
         {/* Specialized Fields */}
         <AccordionItem value="specialized-fields" className="border rounded-lg">
@@ -188,59 +147,6 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
             </AccordionContent>
         </AccordionItem>
         
-        {/* Location */}
-        <AccordionItem value="location" className="border rounded-lg">
-            <AccordionTrigger className="px-4 hover:no-underline">
-                 <div className="flex items-center gap-3">
-                    <Map className="w-5 h-5 text-primary"/>
-                    <span className="font-semibold">Ubicación y Cobertura</span>
-                </div>
-            </AccordionTrigger>
-             <AccordionContent className="p-4 pt-0">
-                <div className="space-y-4 pt-4 border-t">
-                    <div className="flex items-center justify-between">
-                        <Label htmlFor="has-physical-location" className="flex items-center gap-2 font-medium"><Building className="w-5 h-5"/>Tengo un local físico</Label>
-                        <Switch id="has-physical-location" checked={formData.hasPhysicalLocation} onCheckedChange={(checked) => handleFormDataChange('hasPhysicalLocation', checked)}/>
-                    </div>
-                    <Dialog open={isMapDialogOpen} onOpenChange={setIsMapDialogOpen}>
-                        <DialogTrigger asChild>
-                            <div className="relative">
-                                <Button variant="ghost" size="icon" className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-primary z-10"><LocateFixed className="h-5 w-5" /></Button>
-                                <Input id="location" placeholder="Haz clic en el localizador para usar el mapa..." className="pl-12 cursor-pointer" value={formData.location || ''} readOnly/>
-                            </div>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-[90vw] max-h-[90vh] h-[90vh] w-[90vw] p-0">
-                            <MapPageContent onLocationConfirm={() => setIsMapDialogOpen(false)} />
-                        </DialogContent>
-                    </Dialog>
-                    <div className="flex items-center justify-between">
-                        <Label htmlFor="show-exact-location" className="flex items-center gap-2 font-medium">Mostrar ubicación exacta</Label>
-                        <Switch id="show-exact-location" checked={formData.showExactLocation} onCheckedChange={(checked) => handleFormDataChange('showExactLocation', checked)}/>
-                    </div>
-                    {!formData.showExactLocation && (
-                        <div className="space-y-3 pt-2">
-                            <div className="flex justify-between items-center">
-                                <Label htmlFor="service-radius">Radio de acción</Label>
-                                <Badge variant={isOverFreeRadius ? "destructive" : "secondary"} className="font-mono">{formData.serviceRadius} km</Badge>
-                            </div>
-                            <Slider id="service-radius" min={5} max={100} step={5} value={[formData.serviceRadius || 5]} onValueChange={(value) => handleFormDataChange('serviceRadius', value[0])} className={cn(isOverFreeRadius && '[&_.bg-primary]:bg-destructive')}/>
-                            {isOverFreeRadius && (
-                                <div className="flex items-center justify-center gap-2 text-destructive text-xs p-2 bg-destructive/10 rounded-md">
-                                    <AlertCircle className="h-4 w-4" />
-                                    <span className="flex-grow">¡Activa un plan para ampliar tu alcance!</span>
-                                    <Button size="sm" className="h-7 text-xs" variant="destructive" onClick={() => setIsSubscriptionDialogOpen(true)}>Suscribir</Button>
-                                </div>
-                            )}
-                            <div className="flex items-center justify-between pt-2">
-                                <Label htmlFor="only-delivery" className="flex items-center gap-2">Mi servicio es solo delivery</Label>
-                                <Switch id="only-delivery" checked={formData.isOnlyDelivery} onCheckedChange={(checked) => handleFormDataChange('isOnlyDelivery', checked)}/>
-                            </div>
-                        </div>
-                    )}
-                </div>
-             </AccordionContent>
-        </AccordionItem>
-
          {/* Schedule */}
         <AccordionItem value="schedule" className="border rounded-lg">
             <AccordionTrigger className="px-4 hover:no-underline">
@@ -270,12 +176,17 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
 
       </Accordion>
 
-      <div className="flex justify-between pt-6">
-        <Button variant="outline" onClick={onBack}>Atrás</Button>
-        <Button onClick={onNext} disabled={!formData.location?.trim()}>Siguiente</Button>
-      </div>
+        {isEditMode ? (
+             <Button onClick={handleSaveChanges} disabled={isSaving} className="w-full" size="lg">
+                {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2"/> : <Save className="h-4 w-4 mr-2"/>}
+                Guardar Cambios
+             </Button>
+        ) : (
+            <div className="flex justify-between pt-6">
+                <Button variant="outline" onClick={onBack}>Atrás</Button>
+                <Button onClick={onNext}>Siguiente</Button>
+            </div>
+        )}
     </div>
-    <SubscriptionDialog isOpen={isSubscriptionDialogOpen} onOpenChange={setIsSubscriptionDialogOpen} />
-    </>
   );
 }

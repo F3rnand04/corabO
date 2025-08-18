@@ -38,10 +38,12 @@ export default function VerifyIdPage() {
   useEffect(() => {
     if (currentUser && currentUser.name && currentUser.idNumber) {
       setIsLoading(false);
-    } else {
-      setIsLoading(true);
+    } else if (currentUser) {
+        // If user exists but data is missing, redirect to setup
+        toast({ variant: 'destructive', title: 'Faltan Datos', description: "Completa tu registro inicial antes de verificar." });
+        router.push('/initial-setup');
     }
-  }, [currentUser]);
+  }, [currentUser, router, toast]);
 
   if (isLoading || !currentUser) {
     return <div className="flex items-center justify-center min-h-screen"><Loader2 className="h-12 w-12 animate-spin"/></div>;
@@ -57,11 +59,11 @@ export default function VerifyIdPage() {
     if (file) {
       setImageFile(file);
       const reader = new FileReader();
-      reader.onloadend = () => {
+      reader.onloadend = async () => {
         const dataUrl = reader.result as string;
         setImagePreview(dataUrl);
         // Also update the document URL in the user's profile immediately
-        updateUser(currentUser.id, { idDocumentUrl: dataUrl });
+        await updateUser(currentUser.id, { idDocumentUrl: dataUrl });
       };
       reader.readAsDataURL(file);
       setVerificationResult(null); // Reset previous results
