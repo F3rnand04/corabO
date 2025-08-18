@@ -2,42 +2,47 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { Loader2, X, CheckCircle, MapPin } from 'lucide-react';
+import { Loader2, X, CheckCircle, MapPin, LocateFixed } from 'lucide-react';
 import { Button } from './ui/button';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from './ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useCorabo } from '@/contexts/CoraboContext';
-import { APIProvider, Map, AdvancedMarker, Pin } from '@vis.gl/react-google-maps';
+import { APIProvider, Map, useMap } from '@vis.gl/react-google-maps';
+
+// Internal component to get map instance
+function MapHandler({ onCenterChanged, onIdle }: { onCenterChanged: (center: google.maps.LatLngLiteral) => void; onIdle: () => void }) {
+  const map = useMap();
+
+  React.useEffect(() => {
+    if (!map) return;
+    const idleListener = map.addListener('idle', () => {
+        onIdle();
+        const center = map.getCenter();
+        if (center) {
+            onCenterChanged(center.toJSON());
+        }
+    });
+    return () => idleListener.remove();
+  }, [map, onCenterChanged, onIdle]);
+
+  return null;
+}
+
 
 export function MapPageContent() {
   const router = useRouter();
-  const { toast } = useToast();
   const { setDeliveryAddress, currentUserLocation } = useCorabo();
   
-  // Initialize with current user location, or a default if not available
   const initialPosition = currentUserLocation ? { lat: currentUserLocation.latitude, lng: currentUserLocation.longitude } : { lat: 10.4806, lng: -66.9036 };
   
-  const [selectedPosition, setSelectedPosition] = useState<google.maps.LatLngLiteral | null>(initialPosition);
-
-  const handleMapClick = (event: google.maps.MapMouseEvent) => {
-    if (event.latLng) {
-      setSelectedPosition(event.latLng.toJSON());
-    }
-  };
+  const [mapCenter, setMapCenter] = useState<google.maps.LatLngLiteral>(initialPosition);
+  const [isMapIdle, setIsMapIdle] = useState(true);
 
   const handleConfirmLocation = () => {
-    if (!selectedPosition) {
-      toast({
-        variant: 'destructive',
-        title: "Ubicación no seleccionada",
-        description: "Por favor, haz clic en el mapa para seleccionar una ubicación.",
-      });
-      return;
-    }
-    const addressString = `${selectedPosition.lat.toFixed(6)}, ${selectedPosition.lng.toFixed(6)}`;
+    const addressString = `${mapCenter.lat.toFixed(6)}, ${mapCenter.lng.toFixed(6)}`;
     setDeliveryAddress(addressString);
-    router.back(); // Correctly returns to the previous page
+    router.back();
   };
 
   return (
@@ -47,19 +52,19 @@ export function MapPageContent() {
             <Map
                 defaultCenter={initialPosition}
                 defaultZoom={15}
-                gestureHandling={'greedy'} // Allows dragging and zooming freely
-                disableDefaultUI={false}
-                onClick={handleMapClick}
+                gestureHandling={'greedy'}
+                disableDefaultUI={true}
                 mapId="corabo_map"
+                onDrag={() => setIsMapIdle(false)}
             >
-                {selectedPosition && (
-                    <AdvancedMarker position={selectedPosition}>
-                        <Pin />
-                    </AdvancedMarker>
-                )}
+               <MapHandler onCenterChanged={setMapCenter} onIdle={() => setIsMapIdle(true)} />
             </Map>
         </APIProvider>
       </div>
+
+       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none">
+            <LocateFixed className={cn("h-8 w-8 text-primary transition-transform duration-200", !isMapIdle && "scale-125 text-red-500")} />
+       </div>
 
        <Button variant="ghost" size="icon" onClick={() => router.back()} className="absolute top-4 left-4 bg-background/80 hover:bg-background rounded-full shadow-md z-10">
             <X className="h-5 w-5"/>
@@ -70,16 +75,14 @@ export function MapPageContent() {
                 <CardContent className="p-4 space-y-4">
                     <div>
                         <h3 className="font-semibold text-lg flex items-center gap-2"><MapPin className="w-5 h-5 text-primary"/> Define tu Ubicación</h3>
-                        <p className="text-sm text-muted-foreground mt-1">Arrastra el mapa y haz clic para colocar el marcador en la ubicación deseada.</p>
+                        <p className="text-sm text-muted-foreground mt-1">Arrastra el mapa para que el marcador central apunte a la ubicación deseada.</p>
                     </div>
-                     {selectedPosition && (
-                         <div className="p-2 bg-muted text-center rounded-md text-xs font-mono">
-                           {selectedPosition.lat.toFixed(4)}, {selectedPosition.lng.toFixed(4)}
-                         </div>
-                     )}
-                    <Button className="w-full" onClick={handleConfirmLocation} disabled={!selectedPosition}>
+                     <div className="p-2 bg-muted text-center rounded-md text-xs font-mono">
+                           {mapCenter.lat.toFixed(4)}, {mapCenter.lng.toFixed(4)}
+                     </div>
+                    <Button className="w-full" onClick={handleConfirmLocation}>
                         <CheckCircle className="mr-2 h-4 w-4"/>
-                        Confirmar Ubicación
+                        Confirmar esta Ubicación
                     </Button>
                 </CardContent>
             </Card>
