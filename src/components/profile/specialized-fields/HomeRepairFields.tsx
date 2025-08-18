@@ -8,13 +8,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from "@/components/ui/badge";
 import { Home, Wrench, X } from 'lucide-react';
 import type { ProfileSetupData } from '@/lib/types';
+import { homeRepairTradesOptions } from '@/lib/data/options';
 
 interface SpecializedFieldProps {
     formData: ProfileSetupData;
     onSpecializedChange: (field: keyof NonNullable<ProfileSetupData['specializedData']>, value: any) => void;
 }
-
-const mainTradesOptions = ["Plomería", "Electricidad", "Albañilería", "Carpintería", "Jardinería", "Pintura"];
 
 export const HomeRepairFields = ({ formData, onSpecializedChange }: SpecializedFieldProps) => {
     const [currentSkill, setCurrentSkill] = useState('');
@@ -45,7 +44,7 @@ export const HomeRepairFields = ({ formData, onSpecializedChange }: SpecializedF
             <div className="space-y-3">
                 <Label className="flex items-center gap-2"><Home className="w-4 h-4"/> Oficios Principales</Label>
                 <div className="flex flex-wrap gap-2">
-                    {mainTradesOptions.map(trade => (
+                    {homeRepairTradesOptions.map(trade => (
                         <Button
                             key={trade}
                             variant={(formData.specializedData?.mainTrades || []).includes(trade) ? 'default' : 'outline'}

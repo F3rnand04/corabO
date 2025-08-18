@@ -8,13 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from '@/components/ui/textarea';
 import { Car, Wrench, X } from 'lucide-react';
 import type { ProfileSetupData } from '@/lib/types';
+import { automotiveServicesOptions } from '@/lib/data/options';
 
 interface SpecializedFieldProps {
     formData: ProfileSetupData;
     onSpecializedChange: (field: keyof NonNullable<ProfileSetupData['specializedData']>, value: any) => void;
 }
-
-const mainServicesOptions = ["Mecánica General", "Latonería y Pintura", "Cauchera", "Electroauto", "Venta de Repuestos", "Aire Acondicionado"];
 
 export const AutomotiveFields = ({ formData, onSpecializedChange }: SpecializedFieldProps) => {
     const [currentBrand, setCurrentBrand] = useState('');
@@ -45,7 +44,7 @@ export const AutomotiveFields = ({ formData, onSpecializedChange }: SpecializedF
             <div className="space-y-3">
                 <Label className="flex items-center gap-2"><Wrench className="w-4 h-4"/> Servicios Principales</Label>
                 <div className="flex flex-wrap gap-2">
-                    {mainServicesOptions.map(service => (
+                    {automotiveServicesOptions.map(service => (
                         <Button
                             key={service}
                             variant={(formData.specializedData?.mainServices || []).includes(service) ? 'default' : 'outline'}

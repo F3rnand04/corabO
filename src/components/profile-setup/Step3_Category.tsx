@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { Info } from 'lucide-react';
 import type { ProfileSetupData } from '@/lib/types';
+import { allCategories } from '@/lib/data/options';
 
 
 interface Step3_CategoryProps {
@@ -14,18 +15,6 @@ interface Step3_CategoryProps {
   formData: ProfileSetupData;
   setFormData: (data: ProfileSetupData) => void;
 }
-
-const allCategories = [
-  { id: 'Hogar y Reparaciones', name: 'Hogar y Reparaciones', description: 'Plomería, electricidad, jardinería...' },
-  { id: 'Tecnología y Soporte', name: 'Tecnología y Soporte', description: 'Reparación de PC, redes, diseño...' },
-  { id: 'Automotriz y Repuestos', name: 'Automotriz y Repuestos', description: 'Mecánica, repuestos, latonería...' },
-  { id: 'Alimentos y Restaurantes', name: 'Alimentos y Restaurantes', description: 'Restaurantes, catering, mercados...' },
-  { id: 'Transporte y Asistencia', name: 'Transporte y Asistencia', description: 'Grúas, ambulancias, fletes, mudanzas...' },
-  { id: 'Salud y Bienestar', name: 'Salud y Bienestar', description: 'Fisioterapia, nutrición, entrenadores...' },
-  { id: 'Educación', name: 'Educación', description: 'Tutorías, clases, cursos...' },
-  { id: 'Eventos', name: 'Eventos', description: 'Fotografía, catering, música...' },
-  { id: 'Belleza', name: 'Belleza', description: 'Peluquería, maquillaje, spa...' },
-];
 
 export default function Step3_Category({ onBack, onNext, formData, setFormData }: Step3_CategoryProps) {
     const selectedCategories = formData.categories || [];

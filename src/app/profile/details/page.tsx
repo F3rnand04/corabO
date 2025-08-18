@@ -1,4 +1,3 @@
-
 'use client';
 
 import Step5_ProviderDetails from '@/components/profile-setup/Step5_ProviderDetails';
@@ -51,8 +50,6 @@ export default function DetailsPage() {
             isEditMode={true}
             // Pass the existing form data
             initialFormData={currentUser.profileSetupData}
-            // Pass the user type
-            profileType={currentUser.type}
             // The onSave prop will be called by the component's save button
             onSave={async (formData) => {
                 await updateFullProfile(currentUser.id, formData, currentUser.type);

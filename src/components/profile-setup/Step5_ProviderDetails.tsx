@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -41,9 +40,10 @@ interface Step5_ProviderDetailsProps {
   initialFormData: ProfileSetupData;
   isEditMode?: boolean;
   onSave?: (formData: ProfileSetupData) => Promise<void>;
+  profileType?: UserType['type']; // Make profileType optional as it's only needed for step flow
 }
 
-export default function Step5_ProviderDetails({ onBack, onNext, initialFormData, isEditMode = false, onSave }: Step5_ProviderDetailsProps) {
+export default function Step5_ProviderDetails({ onBack, onNext, initialFormData, isEditMode = false, onSave, profileType }: Step5_ProviderDetailsProps) {
   const { toast } = useToast();
   const [formData, setFormData] = useState<ProfileSetupData>(initialFormData);
   const [isSaving, setIsSaving] = useState(false);
@@ -74,11 +74,14 @@ export default function Step5_ProviderDetails({ onBack, onNext, initialFormData,
         setIsSaving(true);
         try {
             await onSave(formData);
+            toast({ title: "Perfil Actualizado", description: "Tus detalles han sido guardados." });
         } catch (error) {
             toast({ variant: 'destructive', title: "Error", description: "No se pudieron guardar los cambios." });
         } finally {
             setIsSaving(false);
         }
+    } else if (onNext) {
+        onNext(); // This path is for the multi-step setup
     }
   };
 
@@ -180,5 +183,3 @@ export default function Step5_ProviderDetails({ onBack, onNext, initialFormData,
     </div>
   );
 }
-
-    

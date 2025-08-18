@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState } from 'react';
@@ -18,6 +16,7 @@ import { SubscriptionDialog } from '../SubscriptionDialog';
 import { Checkbox } from '../ui/checkbox';
 import Link from 'next/link';
 import type { ProfileSetupData } from '@/lib/types';
+import { allCategories } from '@/lib/data/options';
 
 
 interface Step6_ReviewProps {
@@ -28,17 +27,6 @@ interface Step6_ReviewProps {
   goToStep: (step: number) => void;
 }
 
-const allCategories = [
-    { name: 'Hogar y Reparaciones', id: 'Hogar y Reparaciones' },
-    { name: 'Tecnología y Soporte', id: 'Tecnología y Soporte' },
-    { name: 'Automotriz y Repuestos', id: 'Automotriz y Repuestos' },
-    { name: 'Alimentos y Restaurantes', id: 'Alimentos y Restaurantes' },
-    { name: 'Salud y Bienestar', id: 'Salud y Bienestar' },
-    { name: 'Educación', id: 'Educación' },
-    { name: 'Eventos', id: 'Eventos' },
-    { name: 'Belleza', id: 'Belleza' },
-    { name: 'Fletes y Delivery', id: 'Fletes y Delivery' },
-];
 
 const MAX_RADIUS_FREE = 10;
 

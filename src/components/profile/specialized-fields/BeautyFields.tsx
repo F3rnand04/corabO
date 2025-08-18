@@ -7,13 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Scissors, X } from 'lucide-react';
 import type { ProfileSetupData } from '@/lib/types';
+import { beautyTradesOptions } from '@/lib/data/options';
 
 interface SpecializedFieldProps {
     formData: ProfileSetupData;
     onSpecializedChange: (field: keyof NonNullable<ProfileSetupData['specializedData']>, value: any) => void;
 }
 
-const beautyTradesOptions = ["Manicure", "Pedicure", "Estilismo", "Maquillaje", "Depilación", "Masajes"];
 
 export const BeautyFields = ({ formData, onSpecializedChange }: SpecializedFieldProps) => {
     const [currentSkill, setCurrentSkill] = useState('');
