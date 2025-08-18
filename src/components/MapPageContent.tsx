@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { useCorabo } from '@/contexts/CoraboContext';
 
 export function MapPageContent() {
   const router = useRouter();
