@@ -93,7 +93,7 @@ interface CoraboActions {
   activateTransactions: (userId: string, paymentDetails: any) => Promise<void>;
   deactivateTransactions: (userId: string) => void;
   downloadTransactionsPDF: (transactions: Transaction[]) => void;
-  sendMessage: (options: { recipientId: string; text?: string; createOnly?: boolean; location?: { lat: number, lon: number } }) => void;
+  sendMessage: (options: { recipientId: string; text?: string; createOnly?: boolean; location?: { lat: number, lon: number } }) => string | undefined;
   sendProposalMessage: (conversationId: string, proposal: AgreementProposal) => void;
   acceptProposal: (conversationId: string, messageId: string) => void;
   createAppointmentRequest: (request: Omit<AppointmentRequest, 'clientId'>) => void;
@@ -168,7 +168,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const setDeliveryAddress = useCallback((address: string) => {
     _setDeliveryAddress(address);
-    toast({ title: "Ubicación Confirmada", description: "La nueva ubicación ha sido guardada.", duration: 3000 });
+    toast({ title: "Ubicación Confirmada", description: "La nueva ubicación ha sido guardada.", duration: 5000 });
   }, [toast]);
   
   const activeCartTx = useMemo(() => transactions.find(tx => tx.status === 'Carrito Activo'), [transactions]);
@@ -447,11 +447,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         // Redirect to the payment page. In a real app, this would be the gateway.
         router.push(`/quotes/payment?commitmentId=${transactionId}`);
     },
-    sendMessage: (options: any) => { 
+    sendMessage: (options: any) => {
         const user = currentUser;
         if (!user) return;
-        const conversationId = [user.id, options.recipientId].sort().join('-'); 
-        if (!options.createOnly) { sendMessageFlow({ conversationId, senderId: user.id, ...options }); } 
+        const conversationId = [user.id, options.recipientId].sort().join('-');
+        if (!options.createOnly) {
+            sendMessageFlow({ conversationId, senderId: user.id, ...options });
+        }
+        return conversationId;
     },
     payCommitment: async (transactionId: string, paymentDetails: { paymentMethod: string; paymentReference?: string; paymentVoucherUrl?: string; }) => { 
         const user = currentUser;

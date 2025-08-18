@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import Image from "next/image";
@@ -146,7 +147,9 @@ export function PublicationCard({ publication, className }: PublicationCardProps
     
     const handleContact = () => {
       const conversationId = sendMessage({ recipientId: owner.id, text: `¡Hola! Me interesa tu publicación.` });
-      router.push(`/messages/${conversationId}`);
+      if (conversationId) {
+        router.push(`/messages/${conversationId}`);
+      }
     };
     
     return (
@@ -156,16 +159,20 @@ export function PublicationCard({ publication, className }: PublicationCardProps
             <div className="flex items-start p-3 container">
                 
                  <div className="relative flex-shrink-0 cursor-pointer" onClick={() => affiliation && setIsAvatarExpanded(!isAvatarExpanded)}>
-                    <Avatar className="w-12 h-12 transition-transform duration-300 ease-in-out" style={{ transform: isAvatarExpanded ? 'translateX(-16px)' : 'translateX(0)' }}>
-                        <AvatarImage src={owner.profileImage} alt={owner.name} />
-                        <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
-                    </Avatar>
+                    <Link href={profileLink} passHref>
+                        <Avatar className="w-12 h-12 transition-transform duration-300 ease-in-out" style={{ transform: isAvatarExpanded ? 'translateX(-16px)' : 'translateX(0)' }}>
+                            <AvatarImage src={owner.profileImage} alt={owner.name} />
+                            <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                    </Link>
                     {affiliation && (
                         <>
-                        <Avatar className="w-12 h-12 border-2 border-background absolute top-0 left-0 transition-transform duration-300 ease-in-out" style={{ transform: isAvatarExpanded ? 'translateX(16px)' : 'translateX(0)', zIndex: isAvatarExpanded ? 10 : -1, opacity: isAvatarExpanded ? 1 : 0 }}>
-                            <AvatarImage src={affiliation.companyProfileImage} alt={affiliation.companyName} />
-                            <AvatarFallback>{affiliation.companyName.charAt(0)}</AvatarFallback>
-                        </Avatar>
+                        <Link href={`/companies/${affiliation.companyId}`} passHref>
+                            <Avatar className="w-12 h-12 border-2 border-background absolute top-0 left-0 transition-transform duration-300 ease-in-out" style={{ transform: isAvatarExpanded ? 'translateX(16px)' : 'translateX(0)', zIndex: isAvatarExpanded ? 10 : -1, opacity: isAvatarExpanded ? 1 : 0 }}>
+                                <AvatarImage src={affiliation.companyProfileImage} alt={affiliation.companyName} />
+                                <AvatarFallback>{affiliation.companyName.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                        </Link>
                         <div className={cn("w-5 h-5 bg-background rounded-full absolute -bottom-1 -right-1 flex items-center justify-center transition-opacity duration-200", isAvatarExpanded && "opacity-0")}>
                              <Image src={affiliation.companyProfileImage} alt={affiliation.companyName} width={18} height={18} className="rounded-full object-cover" />
                         </div>
@@ -176,23 +183,23 @@ export function PublicationCard({ publication, className }: PublicationCardProps
                 <div className="flex-grow ml-3">
                     <div
                         className={cn("transition-transform duration-300 ease-in-out", isAvatarExpanded && "translate-y-2")}
-                        onClick={() => isAvatarExpanded ? router.push(`/companies/${owner.id}`) : {}}
                     >
-                        <p className={cn("font-semibold text-sm hover:underline flex items-center gap-1.5", isAvatarExpanded && "cursor-pointer")}>
-                            {displayName}
-                            {(owner as User).isSubscribed && <CheckCircle className="w-4 h-4 text-blue-500" />}
-                        </p>
+                        <Link href={profileLink} passHref>
+                            <p className="font-semibold text-sm hover:underline flex items-center gap-1.5">
+                                {displayName}
+                                {(owner as User).isSubscribed && <CheckCircle className="w-4 h-4 text-blue-500" />}
+                            </p>
+                        </Link>
                         <p className="text-xs text-muted-foreground">{specialty}</p>
                     </div>
 
                     {isAvatarExpanded && affiliation && (
-                         <div
-                            className="transition-transform duration-300 ease-in-out -translate-y-2 cursor-pointer"
-                            onClick={() => router.push(`/companies/${affiliation.companyId}`)}
-                        >
-                            <p className="text-xs text-muted-foreground">Verificado por:</p>
-                            <p className="font-semibold text-sm hover:underline">{affiliation.companyName}</p>
-                        </div>
+                         <Link href={`/companies/${affiliation.companyId}`} passHref>
+                            <div className="transition-transform duration-300 ease-in-out -translate-y-2 cursor-pointer">
+                                <p className="text-xs text-muted-foreground">Verificado por:</p>
+                                <p className="font-semibold text-sm hover:underline">{affiliation.companyName}</p>
+                            </div>
+                         </Link>
                     )}
 
 
