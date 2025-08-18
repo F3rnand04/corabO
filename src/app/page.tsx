@@ -7,9 +7,6 @@ import { useMemo, useEffect, useState, useCallback, useRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { ActivationWarning } from "@/components/ActivationWarning";
-import { Button } from "@/components/ui/button";
-import { Loader2, Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
 
 export default function HomePage() {
   const { currentUser, searchQuery, categoryFilter, allPublications, isLoadingAuth } = useCorabo();
@@ -31,9 +28,6 @@ export default function HomePage() {
           (p.type === 'product' && p.productDetails?.name.toLowerCase().includes(searchQuery.toLowerCase()))
       );
     }
-    // --- INICIO DE DEPURACIÓN ---
-    console.log(`[HomePage] Recalculando filtro. Query: "${searchQuery}", Category: "${categoryFilter}". Publicaciones totales: ${allPublications.length}, Filtradas: ${results.length}`);
-    // --- FIN DE DEPURACIÓN ---
     return results;
   }, [allPublications, searchQuery, categoryFilter]);
 
@@ -70,3 +64,5 @@ export default function HomePage() {
     </main>
   );
 }
+
+    

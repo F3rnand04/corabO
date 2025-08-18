@@ -6,7 +6,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '..
 import { Settings, Wrench, Clock, Save, Loader2 } from 'lucide-react';
 import type { ProfileSetupData, User as UserType } from '@/lib/types';
 import { useState, useCallback, useEffect } from 'react';
-import { useCorabo } from '@/contexts/CoraboContext';
 import { useToast } from '@/hooks/use-toast';
 
 // Specialized Field Components
@@ -19,7 +18,6 @@ import { BeautyFields } from '@/components/profile/specialized-fields/BeautyFiel
 import { AutomotiveFields } from '@/components/profile/specialized-fields/AutomotiveFields';
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { Switch } from "../ui/switch";
 import { Textarea } from "../ui/textarea";
 
 // Component map for specialized fields
@@ -41,8 +39,7 @@ interface Step5_ProviderDetailsProps {
   onBack?: () => void;
   onNext?: () => void;
   initialFormData: ProfileSetupData;
-  profileType: UserType['type'];
-  isEditMode?: boolean; // New prop to indicate edit mode
+  isEditMode?: boolean;
   onSave?: (formData: ProfileSetupData) => Promise<void>;
 }
 
@@ -77,7 +74,6 @@ export default function Step5_ProviderDetails({ onBack, onNext, initialFormData,
         setIsSaving(true);
         try {
             await onSave(formData);
-            toast({ title: "Cambios Guardados", description: "Tu perfil ha sido actualizado." });
         } catch (error) {
             toast({ variant: 'destructive', title: "Error", description: "No se pudieron guardar los cambios." });
         } finally {
@@ -112,8 +108,6 @@ export default function Step5_ProviderDetails({ onBack, onNext, initialFormData,
 
       <Accordion type="multiple" defaultValue={['general-details', 'specialized-fields', 'schedule']} className="w-full space-y-4">
         
-        {/* General Details - Only for setup */}
-        {!isEditMode && (
         <AccordionItem value="general-details" className="border rounded-lg">
             <AccordionTrigger className="px-4 hover:no-underline">
                 <div className="flex items-center gap-3">
@@ -130,9 +124,7 @@ export default function Step5_ProviderDetails({ onBack, onNext, initialFormData,
                 </div>
             </AccordionContent>
         </AccordionItem>
-        )}
 
-        {/* Specialized Fields */}
         <AccordionItem value="specialized-fields" className="border rounded-lg">
             <AccordionTrigger className="px-4 hover:no-underline">
                 <div className="flex items-center gap-3">
@@ -147,7 +139,6 @@ export default function Step5_ProviderDetails({ onBack, onNext, initialFormData,
             </AccordionContent>
         </AccordionItem>
         
-         {/* Schedule */}
         <AccordionItem value="schedule" className="border rounded-lg">
             <AccordionTrigger className="px-4 hover:no-underline">
                  <div className="flex items-center gap-3">
@@ -160,7 +151,6 @@ export default function Step5_ProviderDetails({ onBack, onNext, initialFormData,
                     {daysOfWeek.map(day => (
                         <div key={day} className="flex flex-col sm:flex-row sm:items-center justify-between">
                             <div className="flex items-center gap-3 mb-2 sm:mb-0">
-                                <Switch id={`switch-${day}`} checked={formData?.schedule?.[day]?.active ?? false} onCheckedChange={(checked) => handleScheduleChange(day, 'active', checked)} />
                                 <Label htmlFor={`switch-${day}`} className="w-24">{day}</Label>
                             </div>
                             <div className="flex items-center gap-2">
@@ -190,3 +180,5 @@ export default function Step5_ProviderDetails({ onBack, onNext, initialFormData,
     </div>
   );
 }
+
+    
