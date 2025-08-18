@@ -60,6 +60,7 @@ export default function InitialSetupPage() {
 
   useEffect(() => {
     if (currentUser) {
+      // **FIX**: Do not pre-fill the name field. Start it empty.
       setName(currentUser.name || '');
       setLastName(currentUser.lastName || '');
       setCountry(currentUser.country || '');
@@ -125,9 +126,8 @@ export default function InitialSetupPage() {
   };
 
   const handleContactSupport = () => {
-    const supportMessage = "Hola, mi número de documento de identidad ya está en uso y necesito ayuda para verificar mi cuenta.";
-    sendMessage({ recipientId: 'corabo-admin', text: supportMessage });
-    router.push(`/messages/corabo-admin`);
+    const conversationId = sendMessage({ recipientId: 'corabo-admin', text: "Hola, mi número de documento de identidad ya está en uso y necesito ayuda para verificar mi cuenta." });
+    router.push(`/messages/${conversationId}`);
   };
 
   if (!currentUser) {

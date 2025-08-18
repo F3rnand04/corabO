@@ -78,7 +78,7 @@ export const getOrCreateUser = ai.defineFlow(
       const newUser: User = {
         id: firebaseUser.uid,
         coraboId: `${firebaseUser.displayName?.split(' ')[0].toLowerCase() || 'user'}${Math.floor(1000 + Math.random() * 9000)}`,
-        name: firebaseUser.displayName || 'Nuevo Usuario',
+        name: '', // **FIX**: Initialize name as empty instead of using displayName
         email: firebaseUser.email || '',
         profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
         createdAt: now.toISOString(),
