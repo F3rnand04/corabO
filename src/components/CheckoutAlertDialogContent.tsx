@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "./ui/alert-dialog";
 import { Button } from "./ui/button";
@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "./ui/input";
 
 export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (open: boolean) => void }) {
-    const { currentUser, cart, getCartTotal, getDeliveryCost, checkout: performCheckout, transactions, users, deliveryAddress, setDeliveryAddress, setDeliveryAddressToCurrent } = useCorabo();
+    const { currentUser, cart, getCartTotal, getDeliveryCost, checkout: performCheckout, transactions, users, deliveryAddress, setDeliveryAddress, setDeliveryAddressToCurrent, tempRecipientInfo, setTempRecipientInfo, needsCheckoutDialog, setNeedsCheckoutDialog } = useCorabo();
     const router = useRouter();
     
     const [deliveryMethod, setDeliveryMethod] = useState<'home' | 'pickup' | 'other_address' | 'current_location'>('home');
@@ -27,20 +27,28 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
 
     const cartTransaction = cart.length > 0 ? transactions.find(tx => tx.status === 'Carrito Activo') : undefined;
 
+    useEffect(() => {
+        if(needsCheckoutDialog) {
+            onOpenChange(true);
+            setNeedsCheckoutDialog(false);
+        }
+    }, [needsCheckoutDialog, onOpenChange, setNeedsCheckoutDialog]);
+
     const handleCheckout = () => {
         if (cartTransaction) {
-            const recipientInfo = deliveryMethod === 'other_address' ? { name: recipientName, phone: recipientPhone } : undefined;
-            performCheckout(cartTransaction.id, deliveryMethod, useCredicora, recipientInfo);
+            performCheckout(cartTransaction.id, deliveryMethod, useCredicora, tempRecipientInfo || undefined);
             onOpenChange(false);
             setUseCredicora(false);
+            setTempRecipientInfo(null);
         }
     };
     
     const handleContinueToMap = () => {
         if (recipientName && recipientPhone) {
+            setTempRecipientInfo({ name: recipientName, phone: recipientPhone });
             setIsRecipientDialogOpen(false);
-            onOpenChange(false); // Close the main dialog first
-            router.push('/map'); // Then navigate to the map
+            onOpenChange(false);
+            router.push('/map?fromMap=true');
         }
     }
 
@@ -108,8 +116,8 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
                         <Label htmlFor="delivery-home" className="flex items-center space-x-2 rounded-lg border p-3 cursor-pointer has-[:checked]:border-primary">
                             <RadioGroupItem value="home" id="delivery-home" />
                             <div className="flex-grow">
-                                <p className="font-semibold">Enviar a mi dirección guardada</p>
-                                <p className="text-xs text-muted-foreground truncate">{deliveryAddress || "Añade una dirección"}</p>
+                                <p className="font-semibold">Mi dirección guardada</p>
+                                <p className="text-xs text-muted-foreground truncate">{currentUser.profileSetupData?.location || "Sin dirección guardada"}</p>
                             </div>
                         </Label>
                          <Label htmlFor="delivery-current" className="flex items-center space-x-2 rounded-lg border p-3 cursor-pointer has-[:checked]:border-primary">
@@ -118,7 +126,15 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
                         </Label>
                          <Label htmlFor="delivery-other" className="flex items-center space-x-2 rounded-lg border p-3 cursor-pointer has-[:checked]:border-primary">
                             <RadioGroupItem value="other_address" id="delivery-other" />
-                            <p className="font-semibold flex-grow">Enviar a otra dirección</p>
+                            <div className="flex-grow">
+                                <p className="font-semibold">Enviar a otra dirección</p>
+                                {deliveryMethod === 'other_address' && tempRecipientInfo && (
+                                    <div className="text-xs text-muted-foreground">
+                                        <p>Para: {tempRecipientInfo.name} ({tempRecipientInfo.phone})</p>
+                                        <p>En: {deliveryAddress}</p>
+                                    </div>
+                                )}
+                            </div>
                         </Label>
                         {providerHasLocation && (
                              <Label htmlFor="delivery-pickup" className="flex items-center space-x-2 rounded-lg border p-3 cursor-pointer has-[:checked]:border-primary">

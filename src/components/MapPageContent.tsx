@@ -30,10 +30,10 @@ function MapHandler({ onCenterChanged, onIdle }: { onCenterChanged: (center: goo
 }
 
 
-export function MapPageContent({ onLocationConfirm }: { onLocationConfirm?: () => void }) {
+export function MapPageContent() {
   const router = useRouter();
   const { toast } = useToast();
-  const { setDeliveryAddress, currentUserLocation } = useCorabo();
+  const { setDeliveryAddress, currentUserLocation, setNeedsCheckoutDialog } = useCorabo();
   
   const initialPosition = currentUserLocation ? { lat: currentUserLocation.latitude, lng: currentUserLocation.longitude } : { lat: 10.4806, lng: -66.9036 };
   
@@ -43,20 +43,12 @@ export function MapPageContent({ onLocationConfirm }: { onLocationConfirm?: () =
   const handleConfirmLocation = () => {
     const addressString = `${mapCenter.lat.toFixed(6)},${mapCenter.lng.toFixed(6)}`;
     setDeliveryAddress(addressString);
-    toast({ title: "Ubicación Confirmada", description: "La nueva dirección de entrega ha sido guardada." });
-    if(onLocationConfirm) {
-        onLocationConfirm();
-    } else {
-        router.back();
-    }
+    setNeedsCheckoutDialog(true); // Signal to reopen the dialog
+    router.back();
   };
   
   const handleClose = () => {
-      if(onLocationConfirm) {
-          onLocationConfirm();
-      } else {
-          router.back();
-      }
+      router.back();
   }
 
 

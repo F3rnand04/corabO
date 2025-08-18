@@ -5,7 +5,7 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest, PublicationOwner, CreatePublicationInput, CreateProductInput, QrSession } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast"
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { addDays } from 'date-fns';
@@ -44,6 +44,12 @@ interface GeolocationCoords {
     longitude: number;
 }
 
+// New type for temporary recipient data
+type TempRecipientInfo = {
+    name: string;
+    phone: string;
+};
+
 
 interface CoraboState {
   currentUser: User | null;
@@ -62,6 +68,8 @@ interface CoraboState {
   exchangeRate: number;
   qrSession: QrSession | null;
   currentUserLocation: GeolocationCoords | null;
+  tempRecipientInfo: TempRecipientInfo | null; // State for third-party delivery
+  needsCheckoutDialog: boolean; // Flag to reopen checkout dialog
 }
 
 interface CoraboActions {
@@ -131,6 +139,8 @@ interface CoraboActions {
   approveAffiliation: (affiliationId: string) => Promise<void>;
   rejectAffiliation: (affiliationId: string) => Promise<void>;
   revokeAffiliation: (affiliationId: string) => Promise<void>;
+  setTempRecipientInfo: (info: TempRecipientInfo | null) => void; // New action
+  setNeedsCheckoutDialog: (needs: boolean) => void; // New action
 }
 
 // **DEFINITIVE FIX:** Separating State from Actions to prevent circular references.
@@ -143,6 +153,7 @@ const CoraboActionsContext = createContext<CoraboActions | undefined>(undefined)
 export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
   
   // All state variables are managed here.
   const [currentUser, _setCurrentUser] = useState<User | null>(null);
@@ -160,6 +171,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const [exchangeRate, setExchangeRate] = useState(36.54);
   const [currentUserLocation, setCurrentUserLocation] = useState<GeolocationCoords | null>(null);
   const [qrSession, setQrSession] = useState<QrSession | null>(null);
+  const [tempRecipientInfo, setTempRecipientInfo] = useState<TempRecipientInfo | null>(null);
+  const [needsCheckoutDialog, setNeedsCheckoutDialog] = useState(false);
   
   const userCache = useRef<Map<string, User>>(new Map());
 
@@ -168,16 +181,25 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, []);
   
   const setDeliveryAddress = useCallback((address: string) => {
-    localStorage.setItem('coraboDeliveryAddress', address);
+    sessionStorage.setItem('coraboDeliveryAddress', address);
     _setDeliveryAddress(address);
-    toast({ title: "Ubicación Confirmada", description: "La nueva ubicación ha sido guardada.", duration: 5000 });
-  }, [toast]);
+  }, []);
+
+  useEffect(() => {
+     // Check if we need to reopen the dialog after returning from the map
+    const fromMap = searchParams.get('fromMap');
+    if (fromMap) {
+        setNeedsCheckoutDialog(true);
+        // Clean the URL
+        router.replace(window.location.pathname, undefined);
+    }
+  }, [searchParams, router]);
   
   const activeCartTx = useMemo(() => transactions.find(tx => tx.status === 'Carrito Activo'), [transactions]);
   const cart: CartItem[] = useMemo(() => activeCartTx?.details.items || [], [activeCartTx]);
 
   useEffect(() => {
-    const savedAddress = localStorage.getItem('coraboDeliveryAddress');
+    const savedAddress = sessionStorage.getItem('coraboDeliveryAddress');
     if (savedAddress) {
         _setDeliveryAddress(savedAddress);
     }
@@ -279,11 +301,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const state = useMemo(() => ({
     currentUser, users, allPublications, transactions, conversations, cart, searchQuery,
     categoryFilter, contacts, isGpsActive, searchHistory, isLoadingAuth,
-    deliveryAddress, exchangeRate, qrSession, currentUserLocation
+    deliveryAddress, exchangeRate, qrSession, currentUserLocation, tempRecipientInfo, needsCheckoutDialog,
   }), [
     currentUser, users, allPublications, transactions, conversations, cart, searchQuery,
     categoryFilter, contacts, isGpsActive, searchHistory, isLoadingAuth,
-    deliveryAddress, exchangeRate, qrSession, currentUserLocation
+    deliveryAddress, exchangeRate, qrSession, currentUserLocation, tempRecipientInfo, needsCheckoutDialog
   ]);
   
   const getCartTotal = useCallback(() => cart.reduce((total, item) => total + item.product.price * item.quantity, 0), [cart]);
@@ -294,8 +316,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       const distanceKm = haversineDistance(currentUserLocation.latitude, currentUserLocation.longitude, lat2, lon2);
       
       if (provider.profileSetupData.showExactLocation === false) {
-          // If location is private, the minimum distance shown is 1 km.
-          return `${Math.max(1, Math.round(distanceKm))} km`;
+        return `${Math.max(1, Math.round(distanceKm))} km`;
       }
 
       return `${Math.round(distanceKm)} km`;
@@ -665,11 +686,13 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         if(!currentUser) return;
         await revokeAffiliationFlow({ affiliationId, actorId: currentUser.id });
     },
+    setTempRecipientInfo,
+    setNeedsCheckoutDialog,
   }), [
     searchHistory, contacts, cart, transactions, getCartTotal, 
     getDeliveryCost, users, updateCart, router, currentUser, updateUser, updateFullProfile,
     getDistanceToProvider, currentUserLocation, toast, updateUserProfileImage, setDeliveryAddress,
-    deliveryAddress, setDeliveryAddressToCurrent // Added dependency
+    deliveryAddress, setDeliveryAddressToCurrent
   ]);
   
   return (
