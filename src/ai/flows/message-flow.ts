@@ -90,12 +90,11 @@ export const sendMessage = ai.defineFlow(
       });
     } else {
       // Creating a new conversation
-      if (!input.recipientId) {
-        throw new Error("Recipient ID is required for new conversations.");
-      }
+      const recipient = input.recipientId || input.senderId; // Fallback to self for self-chats
+      
       await setDoc(convoRef, {
         id: input.conversationId,
-        participantIds: [input.senderId, input.recipientId].sort(),
+        participantIds: [input.senderId, recipient].sort(),
         messages: [newMessage],
         lastUpdated: new Date().toISOString(),
       });
