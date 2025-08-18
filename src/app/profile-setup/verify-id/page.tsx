@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UploadCloud, X, CheckCircle, AlertTriangle, Sparkles } from 'lucide-react';
+import { Loader2, UploadCloud, X, CheckCircle, AlertTriangle, Sparkles, FileText } from 'lucide-react';
 import { VerificationOutput } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -28,6 +28,7 @@ export default function VerifyIdPage() {
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isPdf, setIsPdf] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationResult, setVerificationResult] = useState<VerificationOutput | { error: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -38,6 +39,11 @@ export default function VerifyIdPage() {
   useEffect(() => {
     if (currentUser && currentUser.name && currentUser.idNumber) {
       setIsLoading(false);
+      // Check if existing document is a PDF
+      if (currentUser.idDocumentUrl && currentUser.idDocumentUrl.startsWith('data:application/pdf')) {
+          setIsPdf(true);
+          setImagePreview(currentUser.idDocumentUrl);
+      }
     } else if (currentUser) {
         // If user exists but data is missing, redirect to setup
         toast({ variant: 'destructive', title: 'Faltan Datos', description: "Completa tu registro inicial antes de verificar." });
@@ -58,6 +64,9 @@ export default function VerifyIdPage() {
     const file = e.target.files?.[0];
     if (file) {
       setImageFile(file);
+      const isPdfFile = file.type === 'application/pdf';
+      setIsPdf(isPdfFile);
+
       const reader = new FileReader();
       reader.onloadend = async () => {
         const dataUrl = reader.result as string;
@@ -69,6 +78,16 @@ export default function VerifyIdPage() {
       setVerificationResult(null); // Reset previous results
     }
   };
+
+  const handleClearFile = () => {
+    setImagePreview(null); 
+    setImageFile(null); 
+    setVerificationResult(null);
+    setIsPdf(false);
+    if(currentUser) {
+        updateUser(currentUser.id, { idDocumentUrl: deleteField() as any });
+    }
+  }
 
   const handleAutoVerify = async () => {
     // Re-check for required data right before calling the AI flow
@@ -134,17 +153,24 @@ export default function VerifyIdPage() {
             <Label htmlFor="id-document">{docLabel} (PDF o Imagen)</Label>
             <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*,application/pdf" />
             {imagePreview || currentUser.idDocumentUrl ? (
-              <div className="relative group w-full aspect-[1.58] rounded-md overflow-hidden bg-black">
-                <Image src={imagePreview || currentUser.idDocumentUrl!} alt="Vista previa del documento" fill style={{ objectFit: 'contain' }} sizes="400px"/>
-                <Button 
-                  variant="destructive" 
-                  size="icon" 
-                  className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={() => { setImagePreview(null); setImageFile(null); setVerificationResult(null); }}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
+                <div className="relative group w-full aspect-[1.58] rounded-md overflow-hidden bg-black flex items-center justify-center">
+                    {isPdf ? (
+                        <div className="text-center text-white p-4">
+                            <FileText className="w-20 h-20 mx-auto" />
+                            <p className="font-semibold mt-2">Documento PDF Cargado</p>
+                        </div>
+                    ) : (
+                         <Image src={imagePreview || currentUser.idDocumentUrl!} alt="Vista previa del documento" fill style={{ objectFit: 'contain' }} sizes="400px"/>
+                    )}
+                    <Button 
+                      variant="destructive" 
+                      size="icon" 
+                      className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={handleClearFile}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                </div>
             ) : (
               <div 
                 className="w-full aspect-video border-2 border-dashed border-muted-foreground rounded-md flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/50 cursor-pointer transition-colors"

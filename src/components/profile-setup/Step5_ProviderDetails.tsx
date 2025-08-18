@@ -1,8 +1,9 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
-import { Settings, Wrench, Clock, Save, Loader2 } from 'lucide-react';
+import { Settings, Wrench, Clock, Save, Loader2, DollarSign, Checkbox } from 'lucide-react';
 import type { ProfileSetupData, User as UserType } from '@/lib/types';
 import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -51,6 +52,10 @@ export default function Step5_ProviderDetails({ onBack, onNext, initialFormData,
   useEffect(() => {
     setFormData(initialFormData);
   }, [initialFormData]);
+  
+  const handleInputChange = (field: keyof ProfileSetupData, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
   const handleSpecializedInputChange = useCallback((field: keyof NonNullable<ProfileSetupData['specializedData']>, value: any) => {
       setFormData(prev => ({
@@ -109,7 +114,7 @@ export default function Step5_ProviderDetails({ onBack, onNext, initialFormData,
         </>
       )}
 
-      <Accordion type="multiple" defaultValue={['general-details', 'specialized-fields', 'schedule']} className="w-full space-y-4">
+      <Accordion type="multiple" defaultValue={['general-details', 'specialized-fields', 'schedule', 'payment-details']} className="w-full space-y-4">
         
         <AccordionItem value="general-details" className="border rounded-lg">
             <AccordionTrigger className="px-4 hover:no-underline">
@@ -122,7 +127,7 @@ export default function Step5_ProviderDetails({ onBack, onNext, initialFormData,
                  <div className="space-y-4 pt-4 border-t">
                     <div className="space-y-2">
                         <Label htmlFor="specialty">Especialidad / Descripción corta (máx. 30 caracteres)</Label>
-                        <Textarea id="specialty" placeholder="Ej: Expertos en cocina italiana." rows={2} maxLength={30} value={formData.specialty || ''} onChange={(e) => setFormData({...formData, specialty: e.target.value})}/>
+                        <Textarea id="specialty" placeholder="Ej: Expertos en cocina italiana." rows={2} maxLength={30} value={formData.specialty || ''} onChange={(e) => handleInputChange('specialty', e.target.value)}/>
                     </div>
                 </div>
             </AccordionContent>
@@ -163,6 +168,28 @@ export default function Step5_ProviderDetails({ onBack, onNext, initialFormData,
                             </div>
                         </div>
                     ))}
+                </div>
+             </AccordionContent>
+        </AccordionItem>
+
+         <AccordionItem value="payment-details" className="border rounded-lg">
+            <AccordionTrigger className="px-4 hover:no-underline">
+                 <div className="flex items-center gap-3">
+                    <DollarSign className="w-5 h-5 text-primary"/>
+                    <span className="font-semibold">Configuración Adicional</span>
+                </div>
+            </AccordionTrigger>
+             <AccordionContent className="p-4 pt-0">
+                <div className="space-y-4 pt-4 border-t">
+                     <div className="space-y-2">
+                        <Label htmlFor="appointmentCost">Costo de Consulta / Presupuesto (USD)</Label>
+                        <Input id="appointmentCost" type="number" placeholder="Ej: 20" value={formData.appointmentCost || ''} onChange={(e) => handleInputChange('appointmentCost', e.target.value ? parseFloat(e.target.value) : undefined)}/>
+                        <p className="text-xs text-muted-foreground">Déjalo en blanco si no aplica o es gratuito.</p>
+                    </div>
+                     <div className="flex items-center space-x-2">
+                        <Checkbox id="accepts-credicora" checked={formData.acceptsCredicora} onCheckedChange={(checked) => handleInputChange('acceptsCredicora', !!checked)} />
+                        <Label htmlFor="accepts-credicora" className="font-medium">Acepto Credicora en mis ventas</Label>
+                    </div>
                 </div>
              </AccordionContent>
         </AccordionItem>
