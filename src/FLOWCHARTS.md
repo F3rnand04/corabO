@@ -30,17 +30,17 @@ Describe cómo un proveedor configura su perfil y cómo se muestran detalles esp
 
 ```mermaid
 graph TD
-    A[Proveedor accede a Configuración /profile-setup] --> B[Accede a la pestaña 'Detalles'];
-    B --> C{Lee Categoría Principal del Perfil};
+    A[Proveedor accede a Configuración /profile/details] --> B{Lee Categoría Principal del Perfil};
     
     subgraph "Lógica de Formulario Dinámico (/profile/details)"
       direction LR
-      C -- "Salud y Bienestar" --> D_Health[Renderiza <HealthFields />];
-      C -- "Hogar y Reparaciones" --> D_Home[Renderiza <HomeRepairFields />];
-      C -- "Alimentos y Restaurantes" --> D_Food[Renderiza <FoodAndRestaurantFields />];
-      C -- "Transporte y Asistencia" --> D_Transport[Renderiza <TransportFields />];
-      C -- "Belleza" --> D_Beauty[Renderiza <BeautyFields />];
-      C -- "Otros" --> D_General[Renderiza <GeneralProviderFields />];
+      B -- "Salud y Bienestar" --> D_Health[Renderiza <HealthFields />];
+      B -- "Hogar y Reparaciones" --> D_Home[Renderiza <HomeRepairFields />];
+      B -- "Alimentos y Restaurantes" --> D_Food[Renderiza <FoodAndRestaurantFields />];
+      B -- "Transporte y Asistencia" --> D_Transport[Renderiza <TransportFields />];
+      B -- "Belleza" --> D_Beauty[Renderiza <BeautyFields />];
+      B -- "Automotriz y Repuestos" --> D_Auto[Renderiza <AutomotiveFields />];
+      B -- "Otros" --> D_General[Renderiza <GeneralProviderFields />];
     end
     
     subgraph "Guardado de Datos"
@@ -49,8 +49,9 @@ graph TD
       D_Food --> E;
       D_Transport --> E;
       D_Beauty --> E;
+      D_Auto --> E;
       D_General --> E;
-      E --> F_FE[Frontend llama al flujo `updateUser`];
+      E --> F_FE[Frontend llama al flujo `updateFullProfile`];
       F_FE --> G_BE[Backend actualiza el documento del usuario en Firestore];
       G_BE --> H[Datos especializados persisten en `profileSetupData.specializedData`];
     end
@@ -87,7 +88,7 @@ graph TD
       H --> L;
       K --> L;
       L --> M{¿Usa Credicora?};
-      M -- Sí --> N[Calcula pago inicial y cuotas];
+      M -- Sí --> N[Calcula pago inicial y cuotas según nivel de Credicora];
       M -- No --> O[Muestra total a pagar];
       N --> P[Cliente hace clic en 'Pagar Ahora'];
       O --> P;
@@ -115,25 +116,32 @@ graph TD
 
 ---
 
-## 4. Flujo de Panel de Control del Proveedor
+## 4. Flujo de Afiliación (Empresa - Profesional)
 
-Describe cómo un proveedor interactúa con su nuevo dashboard financiero.
+Describe cómo un profesional se afilia a una empresa.
 
 ```mermaid
 graph TD
-    A[Proveedor accede a /transactions] --> B[Se renderiza el Panel de Control];
-    subgraph "Panel de Control"
-      B --> C[Componente `TransactionsLineChart` muestra ingresos/egresos históricos y pendientes];
-      B --> D[Componente `TransactionsPieChart` muestra distribución financiera actual];
-      B --> E[Botones de acción: 'Pendientes', 'Historial', 'Compromisos'];
-      B --> F{¿Usuario suscrito?};
-      F -- No --> G[Muestra tarjeta de invitación a suscribirse];
-      F -- Sí --> H[Oculta tarjeta de invitación];
-    end
-    E --> I[Usuario hace clic en 'Ver Historial'];
-    I --> J[Se renderiza el componente `TransactionList` con las transacciones filtradas por estado 'Pagado'/'Resuelto'];
-```
+    A[Profesional visita perfil de Empresa] --> B[Hace clic en 'Solicitar Afiliación'];
+    B --> C_FE[Frontend llama a `requestAffiliation`];
+    C_FE --> D_BE[Genkit Flow crea documento de afiliación con estado 'pending'];
+    D_BE --> E_NOTIFY[Flow envía notificación a la Empresa];
 
+    subgraph Panel de Admin de la Empresa
+        F[Empresa accede a /admin] --> G[Ve la solicitud en la pestaña 'Afiliaciones'];
+        G --> H{¿Aprobar?};
+        H -- Sí --> I_APPROVE[Llama a `approveAffiliation`];
+        H -- No --> J_REJECT[Llama a `rejectAffiliation`];
+    end
+    
+    subgraph Lógica de Backend (Aprobación)
+      I_APPROVE --> K_BE[Flow actualiza estado a 'approved'];
+      K_BE --> L_BE[Flow actualiza el perfil del Profesional con datos de la Empresa];
+    end
+    
+    L_BE --> M[Profesional ahora muestra "Verificado por [Empresa]"];
+    
+```
 
 ---
 

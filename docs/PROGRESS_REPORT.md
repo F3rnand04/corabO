@@ -37,6 +37,7 @@ El enrutamiento está centralizado y controlado lógicamente por el componente `
 ### 3.1. Sistema de Reputación y Perfiles Especializados
 -   **Reputación Dinámica:** La calificación por estrellas, el índice de efectividad y la agilidad de pago se calculan y muestran en tiempo real.
 -   **Perfiles Especializados:** La lógica de los formularios de detalles (`/profile/details`) ha sido corregida y ahora es totalmente coherente. El sistema muestra los campos correctos (Salud, Hogar, Alimentos, etc.) basándose en la categoría principal del proveedor, sin errores.
+-   **Credicora para Empresas:** Se ha implementado un sistema de crédito diferenciado y más potente para usuarios de tipo "Empresa", con mayores límites y mejores condiciones de pago.
 
 ### 3.2. Panel de Control del Proveedor (`/transactions`)
 -   **Dashboard Financiero:** Los proveedores tienen un panel de control con gráficos de líneas y de torta que muestran la evolución de sus ingresos/egresos y la distribución de sus finanzas.
@@ -45,11 +46,17 @@ El enrutamiento está centralizado y controlado lógicamente por el componente `
 ### 3.3. Interacción y Transacciones
 -   **Chat y Propuestas:** La mensajería entre usuarios está operativa, con la capacidad de enviar "Propuestas de Acuerdo" formales desde el chat.
 -   **Ciclo de Vida de Transacciones:** El flujo completo (finalización, calificación, pago, confirmación) está implementado y es gestionado de forma segura por el backend.
+-   **Carrito Multi-Proveedor:** El carrito de compras ahora agrupa los productos por proveedor, permitiendo gestionar pre-facturas individuales para cada uno.
 
 ### 3.4. Sistema de Notificaciones Inteligente
 -   **Gestión de Cobranza:** El sistema envía recordatorios de pago automáticos y alertas de morosidad.
 -   **Marketing Dirigido:** Se envían notificaciones de campañas a usuarios segmentados por intereses.
+-   **Alertas de Delivery:** Los proveedores reciben notificaciones instantáneas si el sistema no logra encontrar un repartidor para un pedido.
 
-### 3.5. Estabilidad y Pruebas
+### 3.5. Verificación y Afiliaciones
+-   **Verificación con IA:** El sistema utiliza un modelo multimodal para analizar documentos de identidad (imágenes o PDF) y verificar la información del usuario de forma automática, usando un algoritmo de similitud para nombres.
+-   **Afiliaciones:** Las empresas pueden gestionar las solicitudes de afiliación de profesionales desde un panel de administración dedicado.
+
+### 3.6. Estabilidad y Pruebas
 -   **Configuración de Compilación Robusta:** Los problemas de compilación recurrentes han sido resueltos aislando las configuraciones de prueba y optimizando el `package.json` para entornos de producción.
 -   **Estructura de Proyecto Limpia:** Se han optimizado las rutas y componentes, y la configuración de Jest se ha estandarizado para un mantenimiento más sencillo.

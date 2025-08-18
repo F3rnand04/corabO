@@ -15,6 +15,7 @@ El acceso y la personalización son claves en Corabo.
     -   **Selección de País:** Como primer paso, deberás seleccionar tu país. Esto adaptará los campos siguientes.
     -   **Nombre y Apellido:** Deberás ingresar tu nombre y apellido manualmente. El sistema ya no autocompleta esta información para evitar errores.
     -   **Documento de Identidad:** Se te solicitará tu número de documento de identidad, crucial para la verificación. El sistema validará que no esté en uso.
+    -   **Tipo de Proveedor:** Si te registras como "Proveedor", podrás elegir entre "Profesional Independiente" o "Empresa". Esta elección es importante, ya que determina los beneficios y niveles de `Credicora` a los que podrás acceder.
     -   **Botón de Salida:** Si te equivocaste de cuenta, ahora tienes un botón para **"Volver a la página de inicio"**, que cerrará tu sesión para que puedas ingresar con la cuenta correcta.
 -   **Activación de Transacciones:** Para los proveedores, es **obligatorio** completar este registro. El banner "¡Activa tu registro!" te redirige a los pasos necesarios (`/initial-setup`, `/profile-setup/verify-id`, `/transactions/settings`) para que puedas completar tus datos y empezar a vender.
 
@@ -33,12 +34,12 @@ La barra de navegación inferior es el centro de control y su comportamiento es 
     -   **Para Proveedores en su propio perfil (`/profile`):** Se convierte en un icono de **Subir (+)**. Al hacer clic, se abrirá un diálogo para que elijas si quieres añadir una **publicación a la galería** o un **nuevo producto** a tu catálogo.
 -   **Botón Derecho (Dinámico):**
     -   **En la mayoría de las páginas:** Es tu **avatar de perfil** que te lleva a la ruta `/profile`, la cual redirige a `/profile/publications`.
-    -   **En tu propio perfil (`/profile`):** Se transforma en un **engranaje de Ajustes** (`/profile-setup`).
+    -   **En tu propio perfil (`/profile`):** Se transforma en un **engranaje de Ajustes** (`/profile/details`).
 
 ### 3.3. Configuración de Perfil (`/profile` y `/profile/details`)
 El perfil de un proveedor ahora tiene pestañas para una mejor organización. La navegación ha sido mejorada para ser más intuitiva.
 
--   **Pestañas del Perfil:** "Publicaciones", "Catálogo" y "Detalles", cada una en su propia ruta (`/profile/publications`, `/profile/catalog`, `/profile/details`).
+-   **Pestañas del Perfil:** "Publicaciones", "Catálogo" (si aplica) y "Detalles", cada una en su propia ruta (`/profile/publications`, `/profile/catalog`, `/profile/details`).
 -   **Pestaña de Detalles:** Desde aquí, los proveedores pueden editar sus datos de contacto y, más importante, añadir **información especializada** según su categoría principal (ej. "Alimentos y Bebidas", "Hogar y Reparaciones", "Belleza"). El sistema muestra formularios coherentes y específicos para cada categoría para enriquecer su perfil.
 
 ### 3.4. Perfil Público de un Proveedor (`/companies/[id]/page.tsx`)
@@ -47,14 +48,23 @@ La vista pública de un proveedor es dinámica y se adapta a su oferta.
 -   **Vista de Servicios:** Muestra una galería de trabajos visual, con sus habilidades y oficios destacados como etiquetas para una fácil identificación.
 -   **Vista de Catálogo:** Si ofrece productos, el perfil se transforma en una tienda con una cuadrícula de productos, precios y carrito de compras.
 -   **Detalles Especializados:** Toda la información técnica o específica de la categoría (licencias, tipo de cocina, etc.) se muestra de forma clara para dar más confianza a los clientes.
+-   **Afiliaciones:** Si un profesional está verificado por una empresa, el logo y nombre de la empresa aparecerán en su perfil, añadiendo una capa extra de confianza.
 
 ### 3.5. Registro de Transacciones (`/transactions`) - ¡Nuevo Dashboard!
 Esta sección es ahora el **Panel de Control Financiero** del proveedor.
 -   **Gráficos Interactivos:** Muestra gráficos de líneas y de torta con tus ingresos, egresos y montos pendientes, permitiéndote tener una visión clara del rendimiento de tu negocio.
 -   **Navegación Simplificada:** Accede rápidamente a tus listas de transacciones pendientes e historial completo.
+-   **Progreso de Credicora:** Visualiza tu nivel actual y tu progreso para alcanzar el siguiente.
 -   **Incentivos a la Suscripción:** Incluye una tarjeta que destaca los beneficios de suscribirse para potenciar tu perfil.
 
-### 3.6. Chat y Propuestas de Acuerdo (`/messages/[id]/page.tsx`)
+### 3.6. Panel de Administración (`/admin`)
+Para usuarios con rol de "admin", esta sección permite gestionar la plataforma.
+-   **Gestión de Usuarios:** Ver, activar o desactivar usuarios.
+-   **Verificación de Documentos:** Revisar y aprobar manualmente las verificaciones de identidad.
+-   **Verificación de Pagos:** Confirmar los pagos de campañas y suscripciones para activarlos.
+-   **Gestión de Afiliaciones (para Empresas):** Si el admin es una empresa, puede gestionar las solicitudes de afiliación de profesionales.
+
+### 3.7. Chat y Propuestas de Acuerdo (`/messages/[id]/page.tsx`)
 El chat es la herramienta de negociación. Los proveedores pueden enviar "Propuestas de Acuerdo" que los clientes pueden aceptar para formalizar una transacción de forma segura.
 
 ---
@@ -63,7 +73,7 @@ El chat es la herramienta de negociación. Los proveedores pueden enviar "Propue
 
 -   **Activación Obligatoria:** Ningún proveedor puede ofertar si no ha completado la configuración y activación de transacciones.
 -   **Límite de Cotizaciones (No Suscritos):** Un usuario no suscrito puede cotizar el mismo producto/servicio a un máximo de 3 proveedores distintos por día.
--   **Uso de Credicora:** Solo disponible para montos iguales o superiores a $20.
+-   **Credicora para Empresas:** Existen niveles de Credicora separados y con mayores beneficios para usuarios de tipo "Empresa".
 -   **Sistema de Reputación Dinámico:**
     -   **Efectividad:** Mide tu fiabilidad. Aumenta con cada transacción exitosa y disminuye con disputas.
     -   **Agilidad de Pago:** Mide qué tan rápido pagas una vez que se te solicita. Pagar en menos de 15 minutos te da una insignia verde y mejora tu reputación.
