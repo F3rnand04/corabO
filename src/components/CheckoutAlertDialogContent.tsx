@@ -64,7 +64,7 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
     const providerHasLocation = provider.profileSetupData?.hasPhysicalLocation || false;
 
     const subtotal = getCartTotal();
-    const deliveryCost = getDeliveryCost();
+    const deliveryCost = getDeliveryCost(deliveryMethod);
     
     const userCredicoraLevel = currentUser.credicoraLevel || 1;
     const credicoraDetails = credicoraLevels[userCredicoraLevel.toString()];
@@ -74,7 +74,7 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
     const potentialFinancing = subtotal * financingPercentage;
     const financedAmount = useCredicora ? Math.min(potentialFinancing, creditLimit) : 0;
     const productInitialPayment = subtotal - financedAmount;
-    const totalToPayToday = productInitialPayment + (deliveryMethod !== 'pickup' ? deliveryCost : 0);
+    const totalToPayToday = productInitialPayment + deliveryCost;
     const installmentAmount = financedAmount > 0 ? financedAmount / credicoraDetails.installments : 0;
     
     const isCheckoutDisabled = deliveryMethod !== 'pickup' && !deliveryAddress;
@@ -134,7 +134,7 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
                 </div>
                 <div className="flex justify-between text-sm">
                     <span>Costo de envío (aprox):</span>
-                    <span className="font-semibold">${deliveryMethod !== 'pickup' ? deliveryCost.toFixed(2) : '0.00'}</span>
+                    <span className="font-semibold">${deliveryCost.toFixed(2)}</span>
                 </div>
 
                 {providerAcceptsCredicora && (
@@ -150,7 +150,7 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
                 <Separator />
                 <div className="flex justify-between text-lg font-bold">
                     <span>Total a Pagar Hoy:</span>
-                    <span>${useCredicora ? totalToPayToday.toFixed(2) : (subtotal + (deliveryMethod !== 'pickup' ? deliveryCost : 0)).toFixed(2)}</span>
+                    <span>${useCredicora ? totalToPayToday.toFixed(2) : (subtotal + deliveryCost).toFixed(2)}</span>
                 </div>
                 {useCredicora && financedAmount > 0 && (
                     <p className="text-xs text-muted-foreground -mt-2 text-right">

@@ -76,7 +76,7 @@ interface CoraboActions {
   updateCartQuantity: (productId: string, quantity: number) => void;
   removeFromCart: (productId: string) => void;
   getCartTotal: () => number;
-  getDeliveryCost: () => number;
+  getDeliveryCost: (deliveryMethod: 'pickup' | 'home' | 'other_address' | 'current_location') => number;
   checkout: (transactionId: string, deliveryMethod: 'pickup' | 'home' | 'other_address' | 'current_location', useCredicora: boolean, recipientInfo?: { name: string; phone: string }) => void;
   addContact: (user: User) => boolean;
   removeContact: (userId: string) => void;
@@ -294,13 +294,15 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const distanceKm = haversineDistance(currentUserLocation.latitude, currentUserLocation.longitude, lat2, lon2);
     
     if (provider.profileSetupData.showExactLocation === false) {
+      // If location is private, the minimum distance shown is 1 km.
       return `${Math.max(1, Math.round(distanceKm))} km`;
     }
 
     return `${Math.round(distanceKm)} km`;
   }, [currentUserLocation]);
   
-  const getDeliveryCost = useCallback(() => {
+  const getDeliveryCost = useCallback((deliveryMethod: 'pickup' | 'home' | 'other_address' | 'current_location') => {
+      if (deliveryMethod === 'pickup') return 0;
       const cartProvider = users.find(u => u.id === cart[0]?.product.providerId);
       if(!cartProvider || !deliveryAddress || !cartProvider.profileSetupData?.location) return 0;
       
