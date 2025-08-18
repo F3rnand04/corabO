@@ -166,10 +166,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, []);
   
   const setDeliveryAddress = useCallback((address: string) => {
-    localStorage.setItem('coraboDeliveryAddress', address);
     _setDeliveryAddress(address);
-    // **FIX:** Add duration to the toast message
-    toast({ title: "Ubicación Confirmada", description: "La nueva ubicación ha sido guardada.", duration: 5000 });
+    toast({ title: "Ubicación Confirmada", description: "La nueva ubicación ha sido guardada.", duration: 3000 });
   }, [toast]);
   
   const activeCartTx = useMemo(() => transactions.find(tx => tx.status === 'Carrito Activo'), [transactions]);

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -22,6 +21,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { useToast } from '@/hooks/use-toast';
 import { X } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
+import { Dialog, DialogContent, DialogTrigger } from "../ui/dialog";
+import { MapPageContent } from "../MapPageContent";
 
 
 // Specialized Field Components
@@ -58,6 +59,7 @@ const categoryComponentMap: { [key: string]: React.ElementType } = {
 
 export default function Step5_ProviderDetails({ onBack, onNext, formData, setFormData }: Step5_ProviderDetailsProps) {
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
+  const [isMapDialogOpen, setIsMapDialogOpen] = useState(false);
   const { currentUser, users, requestAffiliation, deliveryAddress, setDeliveryAddress } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
@@ -109,6 +111,7 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
     if (deliveryAddress && deliveryAddress !== formData.location) {
         handleFormDataChange('location', deliveryAddress);
         setDeliveryAddress(''); // Clear the context address after using it
+        setIsMapDialogOpen(false); // Close the map dialog after selection
     }
   }, [deliveryAddress, formData.location, handleFormDataChange, setDeliveryAddress]);
 
@@ -198,10 +201,17 @@ export default function Step5_ProviderDetails({ onBack, onNext, formData, setFor
                         <Label htmlFor="has-physical-location" className="flex items-center gap-2 font-medium"><Building className="w-5 h-5"/>Tengo un local físico</Label>
                         <Switch id="has-physical-location" checked={formData.hasPhysicalLocation} onCheckedChange={(checked) => handleFormDataChange('hasPhysicalLocation', checked)}/>
                     </div>
-                    <div className="relative">
-                         <Button variant="ghost" size="icon" className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => router.push('/map')}><LocateFixed className="h-5 w-5" /></Button>
-                        <Input id="location" placeholder="Haz clic en el localizador para usar el mapa..." className="pl-12" value={formData.location || ''} readOnly/>
-                    </div>
+                    <Dialog open={isMapDialogOpen} onOpenChange={setIsMapDialogOpen}>
+                        <DialogTrigger asChild>
+                            <div className="relative">
+                                <Button variant="ghost" size="icon" className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-primary z-10"><LocateFixed className="h-5 w-5" /></Button>
+                                <Input id="location" placeholder="Haz clic en el localizador para usar el mapa..." className="pl-12 cursor-pointer" value={formData.location || ''} readOnly/>
+                            </div>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-[90vw] max-h-[90vh] h-[90vh] w-[90vw] p-0">
+                            <MapPageContent onLocationConfirm={() => setIsMapDialogOpen(false)} />
+                        </DialogContent>
+                    </Dialog>
                     <div className="flex items-center justify-between">
                         <Label htmlFor="show-exact-location" className="flex items-center gap-2 font-medium">Mostrar ubicación exacta</Label>
                         <Switch id="show-exact-location" checked={formData.showExactLocation} onCheckedChange={(checked) => handleFormDataChange('showExactLocation', checked)}/>

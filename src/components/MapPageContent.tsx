@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -6,7 +5,6 @@ import { Loader2, X, CheckCircle, MapPin, LocateFixed } from 'lucide-react';
 import { Button } from './ui/button';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from './ui/card';
-import { useToast } from '@/hooks/use-toast';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { APIProvider, Map, useMap } from '@vis.gl/react-google-maps';
 import { cn } from '@/lib/utils';
@@ -31,7 +29,7 @@ function MapHandler({ onCenterChanged, onIdle }: { onCenterChanged: (center: goo
 }
 
 
-export function MapPageContent() {
+export function MapPageContent({ onLocationConfirm }: { onLocationConfirm?: () => void }) {
   const router = useRouter();
   const { setDeliveryAddress, currentUserLocation } = useCorabo();
   
@@ -41,13 +39,26 @@ export function MapPageContent() {
   const [isMapIdle, setIsMapIdle] = useState(true);
 
   const handleConfirmLocation = () => {
-    const addressString = `${mapCenter.lat.toFixed(6)}, ${mapCenter.lng.toFixed(6)}`;
+    const addressString = `${mapCenter.lat.toFixed(6)},${mapCenter.lng.toFixed(6)}`;
     setDeliveryAddress(addressString);
-    router.back();
+    if(onLocationConfirm) {
+        onLocationConfirm();
+    } else {
+        router.back();
+    }
   };
+  
+  const handleClose = () => {
+      if(onLocationConfirm) {
+          onLocationConfirm();
+      } else {
+          router.back();
+      }
+  }
+
 
   return (
-    <div className="relative h-screen w-screen bg-muted">
+    <div className="relative h-full w-full bg-muted">
       <div className="absolute inset-0">
         <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''} libraries={['marker']}>
             <Map
@@ -67,7 +78,7 @@ export function MapPageContent() {
             <LocateFixed className={cn("h-8 w-8 text-primary transition-transform duration-200", !isMapIdle && "scale-125 text-red-500")} />
        </div>
 
-       <Button variant="ghost" size="icon" onClick={() => router.back()} className="absolute top-4 left-4 bg-background/80 hover:bg-background rounded-full shadow-md z-10">
+       <Button variant="ghost" size="icon" onClick={handleClose} className="absolute top-4 left-4 bg-background/80 hover:bg-background rounded-full shadow-md z-10">
             <X className="h-5 w-5"/>
         </Button>
       
