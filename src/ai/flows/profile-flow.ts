@@ -7,7 +7,7 @@
 import { ai } from '@/ai/genkit';
 import { getFirestoreDb } from '@/lib/firebase-server';
 import { collection, getDocs, query, where, limit, startAfter, doc, getDoc, orderBy, updateDoc, deleteDoc, setDoc } from 'firebase/firestore';
-import { GetProfileGalleryInputSchema, GetProfileGalleryOutputSchema, GetProfileProductsInputSchema, GetProfileProductsOutputSchema } from '@/lib/types';
+import { GetProfileGalleryInputSchema, GetProfileGalleryOutputSchema, GetProfileProductsInputSchema, GetProfileProductsOutputSchema, credicoraCompanyLevels, credicoraLevels } from '@/lib/types';
 import type { GalleryImage, Product, User, ProfileSetupData } from '@/lib/types';
 import { z } from 'zod';
 
@@ -98,6 +98,11 @@ export const completeInitialSetupFlow = ai.defineFlow(
     }
     
     const existingData = userSnap.data() as User;
+    
+    // Determine which credicora levels to use
+    const isCompany = providerType === 'company';
+    const activeCredicoraLevels = isCompany ? credicoraCompanyLevels : credicoraLevels;
+    const initialCredicoraLevel = activeCredicoraLevels['1'];
 
     const dataToUpdate: Partial<User> = {
       name,
@@ -107,6 +112,9 @@ export const completeInitialSetupFlow = ai.defineFlow(
       country,
       isInitialSetupComplete: true,
       type,
+      credicoraLevel: initialCredicoraLevel.level,
+      credicoraLimit: initialCredicoraLevel.creditLimit,
+      credicoraDetails: initialCredicoraLevel,
       profileSetupData: {
         ...(existingData.profileSetupData || {}),
         providerType: providerType,
