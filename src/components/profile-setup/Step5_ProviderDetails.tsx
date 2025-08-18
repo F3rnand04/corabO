@@ -1,10 +1,9 @@
-
 'use client';
 
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { Settings, Wrench, Clock, Save, Loader2, DollarSign, Checkbox } from 'lucide-react';
-import type { ProfileSetupData, User as UserType } from '@/lib/types';
+import type { ProfileSetupData } from '@/lib/types';
 import { useState, useCallback, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -35,15 +34,16 @@ interface Step5_ProviderDetailsProps {
   onNext?: () => void;
   initialFormData: ProfileSetupData;
   isEditMode?: boolean;
-  onSave?: (formData: ProfileSetupData) => Promise<void>;
-  profileType?: UserType['type']; // Make profileType optional as it's only needed for step flow
+  onSave: (formData: ProfileSetupData) => Promise<void>;
 }
 
 export default function Step5_ProviderDetails({ onBack, onNext, initialFormData, isEditMode = false, onSave }: Step5_ProviderDetailsProps) {
   const { toast } = useToast();
+  // The component's state is now exclusively managed through props and its own state.
   const [formData, setFormData] = useState<ProfileSetupData>(initialFormData || {});
   const [isSaving, setIsSaving] = useState(false);
 
+  // When the initial form data from props changes, update the component's state.
   useEffect(() => {
     setFormData(initialFormData || {});
   }, [initialFormData]);
@@ -66,24 +66,27 @@ export default function Step5_ProviderDetails({ onBack, onNext, initialFormData,
     const currentSchedule = formData.schedule || {};
     const newSchedule = { ...currentSchedule, [day]: { ...(currentSchedule[day] || {}), [field]: value } };
     setFormData(prev => ({ ...prev, schedule: newSchedule }));
-  }, [formData]);
+  }, [formData.schedule]);
 
 
   const handleSaveChanges = async () => {
-    if (onSave) {
-        setIsSaving(true);
-        try {
-            await onSave(formData);
+    setIsSaving(true);
+    try {
+        await onSave(formData);
+        if (isEditMode) {
             toast({ title: "Perfil Actualizado", description: "Tus detalles han sido guardados." });
-        } catch (error) {
-            toast({ variant: 'destructive', title: "Error", description: "No se pudieron guardar los cambios." });
-        } finally {
-            setIsSaving(false);
         }
-    } else if (onNext) {
-        onNext(); // This path is for the multi-step setup
+    } catch (error) {
+        toast({ variant: 'destructive', title: "Error", description: "No se pudieron guardar los cambios." });
+    } finally {
+        setIsSaving(false);
     }
   };
+  
+  const handleNextWithSave = async () => {
+    await onSave(formData);
+    if(onNext) onNext();
+  }
 
   const renderSpecializedFields = () => {
     const category = formData.primaryCategory;
@@ -199,7 +202,7 @@ export default function Step5_ProviderDetails({ onBack, onNext, initialFormData,
         ) : (
             <div className="flex justify-between pt-6">
                 <Button variant="outline" onClick={onBack}>Atrás</Button>
-                <Button onClick={onNext}>Siguiente</Button>
+                <Button onClick={handleNextWithSave}>Siguiente</Button>
             </div>
         )}
     </div>
