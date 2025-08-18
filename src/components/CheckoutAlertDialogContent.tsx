@@ -114,11 +114,12 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
                         }} 
                         className="space-y-2"
                     >
+                        {/* READ-ONLY: This address comes from the user's profile and cannot be changed here. */}
                         <Label htmlFor="delivery-home" className="flex items-center space-x-2 rounded-lg border p-3 cursor-pointer has-[:checked]:border-primary">
                             <RadioGroupItem value="home" id="delivery-home" />
                             <div className="flex-grow">
                                 <p className="font-semibold">Mi dirección guardada</p>
-                                <p className="text-xs text-muted-foreground truncate">{currentUser.profileSetupData?.location || "Sin dirección guardada"}</p>
+                                <p className="text-xs text-muted-foreground font-mono truncate">{currentUser.profileSetupData?.location || "Sin dirección guardada"}</p>
                             </div>
                         </Label>
                          <Label htmlFor="delivery-current" className="flex items-center space-x-2 rounded-lg border p-3 cursor-pointer has-[:checked]:border-primary">
