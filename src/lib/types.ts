@@ -463,7 +463,7 @@ const ProductSchema = z.any();
 
 export const GetProfileGalleryInputSchema = z.object({
     userId: z.string(),
-    limitNum: z.number().optional().default(9),
+    limitNum: z.number().optional(),
     startAfterDocId: z.string().optional(),
 });
 
@@ -474,7 +474,7 @@ export const GetProfileGalleryOutputSchema = z.object({
 
 export const GetProfileProductsInputSchema = z.object({
     userId: z.string(),
-    limitNum: z.number().optional().default(10),
+    limitNum: z.number().optional(),
     startAfterDocId: z.string().optional(),
 });
 
@@ -501,3 +501,5 @@ export const CreateProductInputSchema = z.object({
   imageDataUri: z.string(),
 });
 export type CreateProductInput = z.infer<typeof CreateProductInputSchema>;
+
+    

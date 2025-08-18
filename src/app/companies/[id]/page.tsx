@@ -65,10 +65,10 @@ export default function CompanyProfilePage() {
 
             if (fetchedProvider) {
               if (fetchedProvider.profileSetupData?.offerType === 'product' || fetchedProvider.profileSetupData?.providerType === 'company') {
-                  const productsResult = await getProfileProducts({ userId: providerId });
+                  const productsResult = await getProfileProducts({ userId: providerId, limitNum: 50 });
                   setProviderProducts(productsResult.products || []);
               } else {
-                  const galleryResult = await getProfileGallery({ userId: providerId });
+                  const galleryResult = await getProfileGallery({ userId: providerId, limitNum: 50 });
                   setProviderGallery(galleryResult.gallery || []);
               }
             }
@@ -850,3 +850,5 @@ export default function CompanyProfilePage() {
     </>
   );
 }
+
+    
