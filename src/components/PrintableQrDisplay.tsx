@@ -39,17 +39,12 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
                 
                 const pngFile = canvas.toDataURL("image/png");
                 
-                // This is the most robust download method
                 const downloadLink = document.createElement("a");
                 downloadLink.href = pngFile;
                 downloadLink.download = `QR-Caja-${boxName.replace(/\s+/g, '-')}.png`;
-                
-                // Append to body, click, and then remove
-                document.body.appendChild(downloadLink);
                 downloadLink.click();
-                document.body.removeChild(downloadLink);
                 
-                onClose(); // Auto-close after successful download trigger
+                onClose();
             }
         } catch (error) {
             console.error("Error downloading QR:", error);
@@ -71,7 +66,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
                 <div className="absolute -bottom-16 -left-8 w-40 h-40 bg-white/20 dark:bg-blue-800/20 rounded-full"></div>
 
                 <div className="relative z-10">
-                     <Image src="https://i.postimg.cc/8zWvkhxS/Sin-t-tulo-3.png" alt="Corabo Logo" width={120} height={50} className="mx-auto h-12 w-auto mb-2" />
+                     <Image src="https://i.postimg.cc/Wz1MTvWK/lg.png" alt="Corabo Logo" width={120} height={50} className="mx-auto h-12 w-auto mb-2" />
                      <h2 className="text-xl font-bold text-blue-900 dark:text-blue-200 mb-4" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.1)' }}>
                         Paga a tu Ritmo con Corabo
                     </h2>
