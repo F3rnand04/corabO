@@ -157,6 +157,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
                                     <QRComponent value={qrValue} />
                                 </div>
                             </div>
+                             <p className="text-xl font-bold text-[#1E3A8A] mt-2">Paga a tu Ritmo con Corabo</p>
                              <p className="text-xs text-[#1E3A8A] mt-1">Descarga la App Corabo y únete a la comunidad de Óbiamigos</p>
                              <div className="mt-4 pt-2 border-t border-blue-200 text-xs font-semibold text-[#1E3A8A]">
                                  <p>Caja: {boxName}</p>
