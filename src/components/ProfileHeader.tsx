@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, ChangeEvent, useCallback } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Megaphone, Zap, Plus, Package, Wallet, MapPin, Calendar as CalendarIcon, TrendingUp, Timer, FileText, Settings2, UserRoundCog, Handshake } from 'lucide-react';
+import { Star, Megaphone, Zap, Plus, Package, Wallet, MapPin, Calendar as CalendarIcon, TrendingUp, Timer, FileText, Settings2, UserRoundCog, Handshake, Stethoscope, Utensils, Home as HomeIcon, Briefcase, Scissors, Car } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
@@ -18,9 +18,61 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { format } from 'date-fns';
 import { TransactionDetailsDialog } from './TransactionDetailsDialog';
-import type { Transaction } from '@/lib/types';
+import type { Transaction, SpecializedData } from '@/lib/types';
 import { SubscriptionDialog } from './SubscriptionDialog';
 import { Progress } from './ui/progress';
+
+const categoryIcons: { [key: string]: React.ElementType } = {
+  'Salud y Bienestar': Stethoscope,
+  'Alimentos y Restaurantes': Utensils,
+  'Hogar y Reparaciones': HomeIcon,
+  'Tecnología y Soporte': Briefcase,
+  'Eventos': Briefcase,
+  'Belleza': Scissors,
+  'Automotriz y Repuestos': Car,
+};
+
+const DetailBadge = ({ value, icon }: { value: string; icon?: React.ElementType }) => {
+    const Icon = icon;
+    return (
+        <Badge variant="secondary" className="font-normal">
+            {Icon && <Icon className="w-3 h-3 mr-1.5" />}
+            {value}
+        </Badge>
+    );
+};
+
+const renderSpecializedBadges = (specializedData?: SpecializedData) => {
+    if (!specializedData) return null;
+    
+    const badges = [];
+
+    const mainCategory = specializedData?.mainTrades || specializedData?.mainServices || specializedData?.beautyTrades;
+    if (mainCategory && mainCategory.length > 0) {
+        badges.push(<DetailBadge key="main" value={mainCategory[0]} />);
+    }
+
+    if (specializedData.specialties && specializedData.specialties.length > 0) {
+        badges.push(<DetailBadge key="spec" value={specializedData.specialties[0]} icon={Stethoscope} />);
+    }
+
+    if (specializedData.vehicleType) {
+        badges.push(<DetailBadge key="vehicle" value={specializedData.vehicleType} icon={Car} />);
+    }
+    
+    const otherSkills = specializedData.specificSkills || specializedData.keySkills || [];
+    if (otherSkills.length > 0) {
+         badges.push(<DetailBadge key="skill" value={otherSkills[0]} />);
+    }
+    
+    // Add more logic here for other specialized fields if needed
+
+    return (
+        <div className="flex flex-wrap items-center gap-1.5 pt-3">
+            {badges}
+        </div>
+    );
+};
 
 
 export function ProfileHeader() {
@@ -72,7 +124,6 @@ export function ProfileHeader() {
             const ctx = canvas.getContext('2d');
             ctx?.drawImage(img, 0, 0, width, height);
 
-            // Get the resized image as a JPEG data URL with 80% quality
             const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
             
             updateUserProfileImage(currentUser.id, dataUrl).then(() => {
@@ -175,7 +226,7 @@ export function ProfileHeader() {
                     </Button>
                 )}
                  <div className="flex items-center gap-3">
-                    <Button variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground" onClick={() => toggleGps(currentUser.id)}>
+                     <Button variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground" onClick={() => toggleGps(currentUser.id)}>
                         <MapPin className={cn("h-5 w-5", currentUser.isGpsActive ? "text-green-500" : "text-muted-foreground")} />
                     </Button>
                     <Popover>
@@ -205,6 +256,8 @@ export function ProfileHeader() {
                  </div>
             </div>
         </div>
+        
+        {renderSpecializedBadges(currentUser.profileSetupData?.specializedData)}
 
         <div className="flex items-center gap-2 mt-4">
             {isProvider && !isCompany && (
@@ -245,11 +298,6 @@ export function ProfileHeader() {
                     </Link>
                 </Button>
             )}
-            <Button asChild variant="ghost" className="flex-1 p-3 rounded-none text-muted-foreground data-[active=true]:text-primary data-[active=true]:border-b-2 data-[active=true]:border-primary" data-active={pathname === '/profile/details'}>
-               <Link href="/profile/details">
-                   Detalles
-               </Link>
-            </Button>
         </div>
       </header>
       {isProvider && <CampaignDialog isOpen={isCampaignDialogOpen} onOpenChange={setIsCampaignDialogOpen} />}
