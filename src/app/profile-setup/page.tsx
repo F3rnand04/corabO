@@ -48,10 +48,11 @@ export default function ProfileSetupPage() {
       // When returning from map, we should be on the logistics step
       setStep(2); 
       // Clean up the URL query parameter
-      const url = new URL(window.location.href);
-      url.searchParams.delete('fromMap');
-      window.history.replaceState({}, '', url);
+      const currentUrl = new URL(window.location.href);
+      currentUrl.searchParams.delete('fromMap');
+      router.replace(currentUrl.toString(), { scroll: false });
     }
+   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   if (!currentUser) {
