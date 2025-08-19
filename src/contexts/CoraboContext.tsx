@@ -126,7 +126,6 @@ interface CoraboActions {
   setQrSessionAmount: (sessionId: string, amount: number) => Promise<void>;
   handleClientCopyAndPay: (sessionId: string) => Promise<void>;
   confirmMobilePayment: (sessionId: string) => Promise<void>;
-  finalizeQrSession: (sessionId: string, voucherUrl: string) => Promise<void>;
   cancelQrSession: (sessionId: string, byProvider?: boolean) => Promise<void>;
   registerSystemPayment: (concept: string, amount: number, isSubscription: boolean) => Promise<void>;
   cancelSystemTransaction: (transactionId: string) => Promise<void>;
@@ -717,8 +716,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       // Placeholder for future invoice generation logic
       console.log(`Placeholder: Invoice should be generated for transaction ${transactionId}`);
     },
-    approveQrSession: async(a:any)=>{return Promise.resolve();},
-    finalizeQrSession: async(a:any,b:any)=>{return Promise.resolve();},
     cancelQrSession: async(a:any,b:any)=>{return Promise.resolve();},
     registerSystemPayment: async(a:any,b:any,c:any)=>{return Promise.resolve();},
     cancelSystemTransaction: async(a:any)=>{return Promise.resolve();},
@@ -890,3 +887,5 @@ export const useCorabo = (): CoraboState & CoraboActions => {
 };
 
 export type { Transaction };
+
+    

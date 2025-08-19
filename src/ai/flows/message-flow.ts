@@ -17,7 +17,7 @@ import type { Conversation, Message, Transaction, AgreementProposal, User } from
 const SendMessageInputSchema = z.object({
   conversationId: z.string(),
   senderId: z.string(),
-  recipientId: z.string().optional(), // Make recipientId optional
+  recipientId: z.string(), // Make recipientId mandatory for reliable conversation creation
   text: z.string().optional(),
   location: z.object({
       lat: z.number(),
@@ -78,11 +78,10 @@ export const sendMessage = ai.defineFlow(
     if (convoSnap.exists()) {
       const conversation = convoSnap.data() as Conversation;
       
-      // **FIX:** If the conversation document is corrupt (missing participantIds), repair it.
-      if (!conversation.participantIds || !Array.isArray(conversation.participantIds)) {
-          const recipientId = input.recipientId || input.senderId;
+      // Repair logic for existing but potentially corrupted conversations.
+      if (!conversation.participantIds || !Array.isArray(conversation.participantIds) || conversation.participantIds.length < 2) {
           await updateDoc(convoRef, {
-            participantIds: [input.senderId, recipientId].sort(),
+            participantIds: [input.senderId, input.recipientId].sort(),
             messages: arrayUnion(newMessage),
             lastUpdated: new Date().toISOString(),
           });
@@ -97,12 +96,10 @@ export const sendMessage = ai.defineFlow(
         });
       }
     } else {
-      // Creating a new conversation
-      const recipient = input.recipientId || input.senderId; // Fallback to self for self-chats
-      
+      // Creating a new conversation requires both participants.
       await setDoc(convoRef, {
         id: input.conversationId,
-        participantIds: [input.senderId, recipient].sort(),
+        participantIds: [input.senderId, input.recipientId].sort(),
         messages: [newMessage],
         lastUpdated: new Date().toISOString(),
       });

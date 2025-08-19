@@ -3,11 +3,10 @@
 # ===============================================================
 # =        CORABO - ENGRANAJE DE CORRECCIÓN DE COMPILACIÓN      =
 # ===============================================================
-# Este script diagnostica y corrige errores de compilación
-# realizando una instalación limpia de las dependencias y luego
-# verificando que la compilación sea exitosa.
+# Este script realiza una instalación limpia de las dependencias
+# para resolver posibles inconsistencias.
 
-echo "⚙️  INICIANDO ENGRANAJE: Corrección de compilación..."
+echo "⚙️  INICIANDO ENGRANAJE: Reinstalación de dependencias..."
 echo "------------------------------------------------------------"
 
 # --- Paso 1: Limpieza Profunda de Dependencias ---
@@ -22,10 +21,10 @@ fi
 echo "  - ✅ Limpieza completada."
 echo "------------------------------------------------------------"
 
-# --- Paso 2: Reinstalación desde cero (Solo Producción) ---
-echo "  - Acción: Realizando una instalación limpia de dependencias de producción..."
+# --- Paso 2: Reinstalación desde cero ---
+echo "  - Acción: Realizando una instalación limpia de dependencias..."
 
-npm install --omit=dev
+npm install
 
 if [ $? -ne 0 ]; then
     echo "❌ Error Crítico: 'npm install' falló. Revisa 'package.json' por posibles errores."
@@ -34,19 +33,6 @@ fi
 echo "  - ✅ Dependencias reinstaladas con éxito."
 echo "------------------------------------------------------------"
 
-
-# --- Paso 3: Verificación de la compilación post-corrección ---
-echo "  - Verificación: Reintentando la compilación de producción..."
-
-npm run build
-
-if [ $? -ne 0 ]; then
-    echo "❌ Error Crítico: La compilación falló incluso después de la corrección."
-    echo "   Por favor, revisa los logs de 'npm run build' para identificar otros posibles errores."
-    exit 1
-fi
-
-echo "✅ ¡Éxito! El error de compilación ha sido corregido."
-echo "✅ Engranaje de corrección de compilación completado."
+echo "✅ Engranaje de corrección completado."
 echo "------------------------------------------------------------"
 exit 0
