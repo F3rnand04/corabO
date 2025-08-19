@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -16,12 +15,6 @@ const QRComponent = ({ value }: QRComponentProps) => {
         size={256}
         level={"H"}
         includeMargin={true}
-        imageSettings={{
-            src: "https://i.postimg.cc/Wz1MTvWK/lg.png",
-            height: 40,
-            width: 40,
-            excavate: true,
-        }}
       />
     </div>
   );
