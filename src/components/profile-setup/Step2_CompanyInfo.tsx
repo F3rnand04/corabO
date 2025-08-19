@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -24,15 +23,16 @@ export default function Step2_CompanyInfo({ formData, onUpdate, onNext }: Step2_
     <div className="space-y-6">
       <h2 className="text-xl font-semibold">Paso 1: Detalles del Negocio</h2>
       <div className="space-y-2">
-        <Label htmlFor="username">Nombre Comercial / de Fantasía</Label>
+        <Label htmlFor="username">Nombre Comercial</Label>
         <Input 
           id="username"
+          placeholder="Ej: Soluciones Globales"
           value={formData.username || ''}
           onChange={(e) => onUpdate({ username: e.target.value })}
         />
       </div>
       <div className="space-y-2">
-        <Label>¿Qué nombre mostrar en tu perfil público?</Label>
+        <Label>Nombre a mostrar en el perfil público:</Label>
         <RadioGroup
           value={formData.useUsername ? 'username' : 'legal_name'}
           onValueChange={(value) => onUpdate({ useUsername: value === 'username' })}
@@ -44,7 +44,7 @@ export default function Step2_CompanyInfo({ formData, onUpdate, onNext }: Step2_
             </div>
              <div className="flex items-center space-x-2">
                 <RadioGroupItem value="legal_name" id="use_legal_name" />
-                <Label htmlFor="use_legal_name" className="font-normal">Razón Social</Label>
+                <Label htmlFor="use_legal_name" className="font-normal">Razón Social (Ej: SOLUCIONES GLOBALES, C.A.)</Label>
             </div>
         </RadioGroup>
       </div>
