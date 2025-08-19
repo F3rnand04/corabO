@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "./ui/button";
@@ -54,7 +55,6 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
                     <div className="relative w-48 mx-auto aspect-[3/1]">
                          <Image src="https://i.postimg.cc/Wz1MTvWK/lg.png" alt="Corabo Logo" fill style={{objectFit: "contain"}} />
                     </div>
-                    <h2 className="text-2xl font-bold text-[#1E3A8A] mt-4">Paga a tu Ritmo con Corabo</h2>
                 </div>
                 
                 <div className="flex justify-center items-center my-4 flex-grow">
@@ -64,6 +64,8 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
                 </div>
                 
                 <div className="flex-shrink-0">
+                     <h2 className="text-2xl font-bold text-[#1E3A8A] mt-4 mb-6">Paga a tu Ritmo con Corabo</h2>
+
                     <div className="flex justify-around items-center text-[#1E3A8A] mb-4">
                         <div className="flex flex-col items-center gap-1">
                             <QrCode className="w-8 h-8" />
