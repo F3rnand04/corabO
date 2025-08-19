@@ -16,8 +16,8 @@ export type QrSession = {
   id: string;
   providerId: string;
   clientId: string;
-  cashierBoxId?: string; // NEW: To identify which box initiated the session
-  status: 'pendingAmount' | 'pendingClientApproval' | 'pendingVoucherUpload' | 'completed' | 'cancelled';
+  cashierBoxId?: string; 
+  status: 'pendingAmount' | 'pendingClientApproval' | 'awaitingPayment' | 'pendingVoucherUpload' | 'completed' | 'cancelled';
   amount?: number;
   initialPayment?: number;
   financedAmount?: number;
@@ -37,7 +37,7 @@ export type Notification = {
   link?: string;
   isRead: boolean;
   timestamp: string;
-  metadata?: { // NEW: To hold context for cashier requests
+  metadata?: { 
     requestId?: string;
   }
 }
@@ -417,7 +417,8 @@ export type TransactionStatus =
   | 'Pendiente de Confirmación del Cliente'
   | 'Pago Enviado - Esperando Confirmación'
   | 'Buscando Repartidor'
-  | 'En Reparto';
+  | 'En Reparto'
+  | 'Error de Delivery - Acción Requerida';
 
 export type AgreementProposal = {
     title: string;

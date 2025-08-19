@@ -6,14 +6,16 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, CheckCircle, Handshake, AlertTriangle } from 'lucide-react';
+import { Loader2, CheckCircle, Handshake, AlertTriangle, Smartphone, Copy, Banknote } from 'lucide-react';
 import { User, credicoraLevels } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useToast } from '@/hooks/use-toast';
 
 function ApprovalContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { qrSession, fetchUser, approveQrSession, cancelQrSession, currentUser } = useCorabo();
+  const { qrSession, fetchUser, approveQrSession, cancelQrSession, currentUser, handleClientCopyAndPay } = useCorabo();
+  const { toast } = useToast();
   
   const [provider, setProvider] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -25,22 +27,29 @@ function ApprovalContent() {
       fetchUser(qrSession.providerId).then(p => {
         setProvider(p);
         if (qrSession.status !== 'pendingClientApproval') {
-          setIsLoading(true); // Keep loading while waiting for amount
+          setIsLoading(true);
         } else {
           setIsLoading(false);
         }
       });
     } else {
-        // If there's no session, stop loading
         setIsLoading(false);
     }
   }, [qrSession, fetchUser]);
 
-  const handleApprove = () => {
-    if(sessionId) {
-      approveQrSession(sessionId);
-    }
-  }
+  const handleCopyAndPay = () => {
+    if (!sessionId || !provider || !provider.profileSetupData?.paymentDetails?.mobile) return;
+    
+    const { bankName, mobilePaymentPhone } = provider.profileSetupData.paymentDetails.mobile;
+    const idNumber = provider.idNumber;
+    const textToCopy = `Pago Móvil\nBanco: ${bankName}\nTeléfono: ${mobilePaymentPhone}\nCédula/RIF: ${idNumber}`;
+    
+    navigator.clipboard.writeText(textToCopy);
+    toast({ title: 'Datos de Pago Copiados', description: 'Realiza el pago desde tu app bancaria.' });
+    
+    handleClientCopyAndPay(sessionId);
+  };
+
 
   const handleCancel = () => {
     if(sessionId) {
@@ -60,6 +69,17 @@ function ApprovalContent() {
         )
     }
 
+    if (qrSession.status === 'awaitingPayment') {
+        return (
+            <div className="text-center space-y-4">
+                <Banknote className="h-12 w-12 mx-auto text-blue-500" />
+                <p className="font-semibold">Esperando Confirmación del Pago</p>
+                <p className="text-sm text-muted-foreground">Ya puedes cerrar esta pantalla. Recibirás una notificación cuando el proveedor confirme la transacción.</p>
+                <Button onClick={() => router.push('/')}>Volver al Inicio</Button>
+            </div>
+        );
+    }
+    
     if(qrSession.status === 'pendingVoucherUpload') {
        return (
          <div className="text-center space-y-4">
@@ -83,6 +103,8 @@ function ApprovalContent() {
     
     if(qrSession.status === 'pendingClientApproval') {
         const { amount = 0, initialPayment = 0, financedAmount = 0, installments = 0 } = qrSession;
+        const mobilePaymentInfo = provider.profileSetupData?.paymentDetails?.mobile;
+
         return (
              <>
                 <CardHeader>
@@ -92,7 +114,7 @@ function ApprovalContent() {
                     </Avatar>
                     <CardTitle className="text-center">Confirmar Pago a {provider.name}</CardTitle>
                     <CardDescription className="text-center">
-                        Revisa los detalles de la compra. Al aceptar, se generarán los compromisos de pago.
+                        Realiza el pago y espera la confirmación del proveedor.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -100,15 +122,19 @@ function ApprovalContent() {
                         <p className="text-sm text-muted-foreground">Monto Total de la Compra</p>
                         <p className="text-5xl font-bold tracking-tighter">${amount.toFixed(2)}</p>
                     </div>
-                    <div className="p-4 bg-muted rounded-lg border text-center space-y-2">
-                         <p className="text-sm font-semibold text-blue-600">Detalles de Credicora</p>
-                         <p className="text-lg">Pagas hoy en persona: <span className="font-bold">${initialPayment.toFixed(2)}</span></p>
-                         <p className="text-sm text-muted-foreground">Se crearán {installments} compromisos de <span className="font-semibold">${(financedAmount / installments).toFixed(2)}</span></p>
-                    </div>
+                     {mobilePaymentInfo?.active && (
+                        <div className="p-4 bg-muted rounded-lg border text-sm space-y-1">
+                             <p className="font-semibold flex items-center gap-2 mb-2"><Smartphone className="w-4 h-4"/> Realiza un Pago Móvil a:</p>
+                             <p><strong>Banco:</strong> {mobilePaymentInfo.bankName}</p>
+                             <p><strong>Teléfono:</strong> {mobilePaymentInfo.mobilePaymentPhone}</p>
+                             <p><strong>Cédula/RIF:</strong> {provider.idNumber}</p>
+                             <p><strong>Monto:</strong> <span className="font-mono">BS. {(amount * exchangeRate).toFixed(2)}</span></p>
+                        </div>
+                     )}
                 </CardContent>
                 <div className="p-6 pt-0 grid grid-cols-2 gap-4">
                      <Button variant="outline" onClick={handleCancel}>Cancelar</Button>
-                     <Button onClick={handleApprove}><Handshake className="mr-2 h-4 w-4" />Aceptar y Pagar</Button>
+                     <Button onClick={handleCopyAndPay} disabled={!mobilePaymentInfo?.active}><Copy className="mr-2 h-4 w-4" />Copiar Datos y Pagar</Button>
                 </div>
             </>
         )
@@ -128,7 +154,7 @@ function ApprovalContent() {
 
 export default function ApprovalPage() {
     return (
-        <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader2 className="h-12 w-12 animate-spin"/></div>}>
+        <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader2 className="w-8 h-8 animate-spin"/></div>}>
             <ApprovalContent />
         </Suspense>
     )

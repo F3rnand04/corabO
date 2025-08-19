@@ -3,7 +3,7 @@
 
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Info, Copy, Loader2, QrCode, UploadCloud, CheckCircle } from 'lucide-react';
+import { ChevronLeft, Info, Copy, Loader2, QrCode, UploadCloud, CheckCircle, Smartphone, Banknote, Hourglass } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { QRCodeSVG } from 'qrcode.react';
@@ -16,7 +16,7 @@ import Image from 'next/image';
 export default function ShowQrPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { currentUser, qrSession, setQrSessionAmount, finalizeQrSession, cancelQrSession } = useCorabo();
+  const { currentUser, qrSession, setQrSessionAmount, finalizeQrSession, cancelQrSession, confirmMobilePayment } = useCorabo();
 
   const [amount, setAmount] = useState('');
   const [voucherFile, setVoucherFile] = useState<File | null>(null);
@@ -51,11 +51,9 @@ export default function ShowQrPage() {
     }
   };
 
-  const handleFinalize = () => {
-    if (qrSession && voucherPreview) {
-      finalizeQrSession(qrSession.id, voucherPreview);
-    } else {
-      toast({ variant: 'destructive', title: 'Falta el comprobante', description: 'Por favor, carga la imagen de la factura o comprobante.' });
+  const handleConfirmMobilePayment = () => {
+    if (qrSession) {
+      confirmMobilePayment(qrSession.id);
     }
   };
 
@@ -110,34 +108,24 @@ export default function ShowQrPage() {
             </div>
           </div>
         );
+      case 'awaitingPayment':
+        return (
+          <div className="text-center space-y-6 w-full max-w-sm">
+            <Hourglass className="h-16 w-16 text-blue-500 mx-auto animate-pulse" />
+            <h2 className="text-xl font-semibold">Esperando Pago Móvil</h2>
+            <p className="text-muted-foreground text-sm">El cliente ha copiado tus datos de Pago Móvil. Confirma cuando recibas la transferencia por <span className="font-bold">${qrSession.amount?.toFixed(2)}</span>.</p>
+            <Button className="w-full" onClick={handleConfirmMobilePayment}>
+              <CheckCircle className="mr-2 h-4 w-4" />
+              He Recibido el Pago
+            </Button>
+          </div>
+        );
       case 'pendingClientApproval':
         return (
           <div className="text-center space-y-6">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
             <h2 className="text-xl font-semibold">Esperando Aprobación</h2>
             <p className="text-muted-foreground text-sm">El cliente está revisando el monto de <span className="font-bold">${qrSession.amount?.toFixed(2)}</span>.</p>
-          </div>
-        );
-      case 'pendingVoucherUpload':
-        return (
-          <div className="text-center space-y-6 w-full max-w-sm">
-            <h2 className="text-xl font-semibold">Pago Aprobado por el Cliente</h2>
-            <p className="text-muted-foreground text-sm">El cliente ha realizado el pago de <span className="font-bold">${qrSession.initialPayment?.toFixed(2)}</span>. Por favor, carga la factura o comprobante para finalizar.</p>
-            <div 
-                className="w-full aspect-video border-2 border-dashed border-muted-foreground rounded-md flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/50 cursor-pointer transition-colors relative"
-                onClick={() => fileInputRef.current?.click()}
-              >
-              {voucherPreview ? (
-                  <Image src={voucherPreview} alt="Vista previa" fill style={{objectFit: 'contain'}} sizes="400px"/>
-              ) : (
-                <>
-                  <UploadCloud className="w-10 h-10 mb-2" />
-                  <p className="text-sm font-semibold">Cargar Factura</p>
-                </>
-              )}
-                <Input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
-            </div>
-            <Button className="w-full" onClick={handleFinalize} disabled={!voucherFile}>Finalizar Transacción</Button>
           </div>
         );
       case 'completed':
@@ -150,7 +138,7 @@ export default function ShowQrPage() {
             </div>
           )
       default:
-        return <p>Estado desconocido.</p>;
+        return <p>Estado desconocido: {qrSession.status}</p>;
     }
   }
 
