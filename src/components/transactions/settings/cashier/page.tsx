@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronLeft, KeyRound, QrCode, Trash2, Eye, EyeOff, RefreshCw, FileText } from "lucide-react";
+import { ChevronLeft, KeyRound, QrCode, Trash2, Eye, EyeOff, RefreshCw, FileText, Home } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCorabo } from '@/contexts/CoraboContext';
 import { useToast } from '@/hooks/use-toast';
@@ -11,6 +12,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Input } from '@/components/ui/input';
 import { PrintableQrDisplay } from '@/components/PrintableQrDisplay';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 
 function CashierSettingsHeader() {
@@ -23,7 +26,11 @@ function CashierSettingsHeader() {
                         <ChevronLeft className="h-6 w-6" />
                     </Button>
                     <h1 className="text-lg font-semibold flex items-center gap-2"><KeyRound className="w-5 h-5"/> Gestión de Cajas</h1>
-                    <div className="w-8"></div>
+                    <Button asChild variant="ghost" size="icon">
+                        <Link href="/">
+                            <Home className="h-5 w-5" />
+                        </Link>
+                    </Button>
                 </div>
             </div>
         </header>
@@ -31,7 +38,7 @@ function CashierSettingsHeader() {
 }
 
 function CashierManagementCard() {
-    const { currentUser, addCashierBox, removeCashierBox, updateCashierBox, regenerateCashierBoxQr } = useCorabo();
+    const { currentUser, addCashierBox, removeCashierBox, updateCashierBox, regenerateCashierBoxQr, qrSession } = useCorabo();
     const [newBoxName, setNewBoxName] = useState('');
     const [newBoxPassword, setNewBoxPassword] = useState('');
     const [selectedBox, setSelectedBox] = useState<{id: string, name: string, businessId: string, qrDataURL: string | undefined} | null>(null);
@@ -110,10 +117,15 @@ function CashierManagementCard() {
                     <h4 className="text-sm font-semibold">Cajas Activas</h4>
                     {cashierBoxes.length > 0 ? (
                         <div className="space-y-2">
-                            {cashierBoxes.map(box => (
-                                <div key={box.id} className="flex flex-col gap-3 p-3 bg-background rounded-md border">
+                            {cashierBoxes.map(box => {
+                                const isActive = qrSession?.cashierBoxId === box.id;
+                                return (
+                                <div key={box.id} className={cn("flex flex-col gap-3 p-3 bg-background rounded-md border", isActive && "border-green-500 ring-1 ring-green-500")}>
                                     <div className="flex items-center justify-between">
-                                        <p className="font-medium flex-shrink-0">{box.name}</p>
+                                        <div className="flex items-center gap-2">
+                                            <p className="font-medium flex-shrink-0">{box.name}</p>
+                                            {isActive && <Badge variant="default" className="bg-green-500 hover:bg-green-600">Activa</Badge>}
+                                        </div>
                                          <AlertDialog>
                                             <AlertDialogTrigger asChild>
                                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" disabled={isProcessing === box.id}><Trash2 className="w-4 h-4"/></Button>
@@ -146,7 +158,7 @@ function CashierManagementCard() {
                                         </div>
                                          <Button size="sm" onClick={() => handleUpdatePassword(box.id)} disabled={!editingPasswords[box.id] || isProcessing === box.id}>Guardar</Button>
                                     </div>
-                                    <div className="flex items-center gap-2 justify-end flex-wrap">
+                                    <div className="flex items-center gap-1 justify-end flex-wrap">
                                         <Button asChild variant="outline" size="sm">
                                             <Link href={`/transactions/settings/cashier/${box.id}`}><FileText className="w-4 h-4 mr-2"/>Detalles</Link>
                                         </Button>
@@ -167,12 +179,12 @@ function CashierManagementCard() {
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
-                                        <Button variant="outline" size="sm" onClick={() => setSelectedBox({id: box.id, name: box.name, businessId: currentUser.coraboId || currentUser.id, qrDataURL: box.qrDataURL})}>
+                                         <Button variant="outline" size="sm" onClick={() => setSelectedBox({id: box.id, name: box.name, businessId: currentUser.coraboId || currentUser.id, qrDataURL: box.qrDataURL})}>
                                             <QrCode className="w-4 h-4 mr-2"/>Ver QR
                                         </Button>
                                     </div>
                                 </div>
-                            ))}
+                            )})}
                         </div>
                     ) : (
                         <p className="text-xs text-muted-foreground text-center py-4">Aún no has creado ninguna caja.</p>
@@ -180,7 +192,7 @@ function CashierManagementCard() {
                 </div>
             </CardContent>
              <AlertDialog open={!!selectedBox} onOpenChange={(open) => !open && setSelectedBox(null)}>
-                <AlertDialogContent className="max-w-min p-0 bg-transparent border-none">
+                <AlertDialogContent className="max-w-md p-0 bg-transparent border-none shadow-none">
                     {selectedBox && (
                         <PrintableQrDisplay 
                             boxName={selectedBox.name}
