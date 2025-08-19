@@ -288,7 +288,7 @@ export function ProfileHeader() {
                 <Button asChild variant="outline" className="flex-1">
                     <Link href="/admin">
                         <Handshake className="w-4 h-4 mr-2"/>
-                        Gestión de Afiliaciones
+                        Gestión de Talento Asociado
                     </Link>
                 </Button>
               </>
