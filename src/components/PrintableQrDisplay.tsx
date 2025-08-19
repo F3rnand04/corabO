@@ -42,8 +42,11 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue }: PrintableQr
                 <div className="absolute -bottom-16 -left-8 w-40 h-40 bg-white/20 dark:bg-blue-800/20 rounded-full"></div>
 
                 <div className="relative z-10">
-                    <h2 className="text-2xl font-bold text-blue-900 dark:text-blue-200 mb-2" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.1)' }}>
-                        Compra ahora, paga después
+                    <div className="flex justify-center mb-2">
+                        <Image src="https://i.postimg.cc/Wz1MTvWK/lg.png" alt="Corabo Logo" width={140} height={40} />
+                    </div>
+                    <h2 className="text-xl font-bold text-blue-900 dark:text-blue-200 mb-4" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.1)' }}>
+                        Paga a tu Ritmo con Corabo
                     </h2>
 
                     <div className="bg-white p-4 rounded-xl shadow-md inline-block my-4">
@@ -54,28 +57,18 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue }: PrintableQr
                             fgColor={"#000000"}
                             level={"H"}
                             includeMargin={false}
-                            imageSettings={{
-                                src: "https://i.postimg.cc/8zWvkhxS/Sin-t-tulo-3.png",
-                                height: 35,
-                                width: 90,
-                                excavate: true,
-                            }}
                         />
                     </div>
                     
-                    <div className="flex justify-center my-4">
-                        <Image src="https://i.postimg.cc/Wz1MTvWK/lg.png" alt="Corabo Logo" width={140} height={40} />
-                    </div>
-
                     <div className="flex justify-around items-center text-slate-700 dark:text-slate-300 my-4">
                         <div className="flex flex-col items-center gap-1">
                             <ShoppingCart className="w-7 h-7" />
-                            <p className="text-xs font-semibold">Carrito</p>
+                            <p className="text-xs font-semibold">Escanea</p>
                         </div>
                         <div className="text-2xl font-light text-slate-400 dark:text-slate-600">&rarr;</div>
                         <div className="flex flex-col items-center gap-1">
                             <RefreshCw className="w-7 h-7" />
-                            <p className="text-xs font-semibold">Corabo</p>
+                            <p className="text-xs font-semibold">Autoriza</p>
                         </div>
                         <div className="text-2xl font-light text-slate-400 dark:text-slate-600">&rarr;</div>
                         <div className="flex flex-col items-center gap-1">
