@@ -25,7 +25,7 @@ const ReviewItem = ({ label, value }: { label: string, value?: string | number |
 export default function Step5_Review({ formData, onSubmit, isSubmitting }: Step5_ReviewProps) {
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold">Paso 5: Resumen y Confirmación</h2>
+      <h2 className="text-xl font-semibold">Paso 4: Resumen y Confirmación</h2>
       <p className="text-sm text-muted-foreground">
         Por favor, revisa que toda la información sea correcta antes de guardar.
       </p>

@@ -27,7 +27,7 @@ export default function Step4_LegalInfo({ formData, onUpdate, onNext }: Step4_Le
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold">Paso 4: Información Legal</h2>
+      <h2 className="text-xl font-semibold">Paso 3: Información Legal</h2>
       <p className="text-sm text-muted-foreground">
         Introduce los datos de la persona que representa legalmente a la empresa. Esta información es confidencial.
       </p>

@@ -28,7 +28,7 @@ export default function Step3_Logistics({ formData, onUpdate, onNext }: Step3_Lo
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold">Paso 3: Logística y Operaciones</h2>
+      <h2 className="text-xl font-semibold">Paso 2: Logística y Operaciones</h2>
       
       <div className="space-y-2">
         <Label>¿Qué ofreces?</Label>
