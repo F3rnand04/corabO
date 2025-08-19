@@ -6,9 +6,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { MapPin, Truck } from 'lucide-react';
-import type { ProfileSetupData } from '@/lib/types';
+import { MapPin, Truck, Star } from 'lucide-react';
+import type { ProfileSetupData, User } from '@/lib/types';
 import { useRouter } from "next/navigation";
+import { useCorabo } from "@/contexts/CoraboContext";
 
 interface Step3_LogisticsProps {
   formData: ProfileSetupData;
@@ -18,6 +19,7 @@ interface Step3_LogisticsProps {
 
 export default function Step3_Logistics({ formData, onUpdate, onNext }: Step3_LogisticsProps) {
   const router = useRouter();
+  const { currentUser } = useCorabo();
 
   const handleSetLocationFromMap = () => {
     // In a real app, we might store the current form state before navigating
@@ -25,6 +27,15 @@ export default function Step3_Logistics({ formData, onUpdate, onNext }: Step3_Lo
   };
   
   const canContinue = formData.offerType;
+
+  const handleDeliveryToggle = (checked: boolean) => {
+    onUpdate({ isOnlyDelivery: checked });
+    if (checked && !formData.serviceRadius) {
+        onUpdate({ serviceRadius: 10 }); // Set default radius
+    }
+  }
+
+  const showSubscriptionIncentive = (formData.serviceRadius || 0) > 10 && !currentUser?.isSubscribed;
 
   return (
     <div className="space-y-6">
@@ -69,13 +80,18 @@ export default function Step3_Logistics({ formData, onUpdate, onNext }: Step3_Lo
 
       <div className="p-4 border rounded-lg space-y-4">
           <div className="flex items-center space-x-2">
-              <Checkbox id="has_delivery" checked={formData.isOnlyDelivery} onCheckedChange={(checked) => onUpdate({ isOnlyDelivery: !!checked })} />
+              <Checkbox id="has_delivery" checked={formData.isOnlyDelivery} onCheckedChange={handleDeliveryToggle} />
               <Label htmlFor="has_delivery" className="flex items-center gap-2"><Truck className="w-4 h-4"/> Ofrecemos Delivery / Servicio a Domicilio</Label>
           </div>
           {formData.isOnlyDelivery && (
              <div className="space-y-2 pl-6 border-l-2 ml-3">
                 <Label htmlFor="radius">Radio de cobertura (en kilómetros)</Label>
                 <Input id="radius" type="number" value={formData.serviceRadius || ''} onChange={(e) => onUpdate({ serviceRadius: Number(e.target.value) })} />
+                {showSubscriptionIncentive && (
+                  <p className="text-xs text-amber-600 flex items-center gap-1 mt-1">
+                    <Star className="w-3 h-3"/> Para un radio mayor a 10km, suscríbete y obtén alcance ilimitado.
+                  </p>
+                )}
              </div>
           )}
       </div>
