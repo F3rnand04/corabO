@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCorabo } from '@/contexts/CoraboContext';
-import { Loader2, Settings, ChevronLeft, Save, Wrench, Clock, DollarSign, AlertCircle } from 'lucide-react';
+import { Loader2, Settings, ChevronLeft, Save, Wrench, Clock, DollarSign, AlertCircle, Building, User, BadgeInfo } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,7 @@ import type { ProfileSetupData } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { allCategories } from '@/lib/data/options';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const categoryComponentMap: { [key: string]: React.ElementType } = {
     'Transporte y Asistencia': SpecializedFields.TransportFields,
@@ -65,6 +67,16 @@ export default function DetailsPage() {
 
   const handleInputChange = (field: keyof ProfileSetupData, value: any) => {
     setFormData(prev => prev ? ({ ...prev, [field]: value }) : null);
+  };
+  
+  const handleLegalRepChange = (field: keyof NonNullable<ProfileSetupData['legalRepresentative']>, value: any) => {
+      setFormData(prev => prev ? ({
+          ...prev,
+          legalRepresentative: {
+              ...(prev.legalRepresentative || { name: '', idNumber: '', phone: '' }),
+              [field]: value
+          }
+      }) : null);
   };
 
   const handleSpecializedInputChange = useCallback((field: keyof NonNullable<ProfileSetupData['specializedData']>, value: any) => {
@@ -121,22 +133,40 @@ export default function DetailsPage() {
        </div>
     );
   }
+  
+  const isCompany = currentUser.profileSetupData?.providerType === 'company';
 
   return (
      <>
       <DetailsHeader />
       <main className="container max-w-4xl mx-auto py-8">
          <div className="space-y-6">
-            <Accordion type="multiple" defaultValue={['general-details', 'specialized-fields', 'schedule', 'payment-details']} className="w-full space-y-4">
+            <Accordion type="multiple" defaultValue={['general-details', 'specialized-fields', 'legal-info']} className="w-full space-y-4">
               <AccordionItem value="general-details" className="border rounded-lg">
                   <AccordionTrigger className="px-4 hover:no-underline">
                       <div className="flex items-center gap-3">
                           <Settings className="w-5 h-5 text-primary"/>
-                          <span className="font-semibold">Detalles Generales</span>
+                          <span className="font-semibold">Detalles del Perfil Público</span>
                       </div>
                   </AccordionTrigger>
                   <AccordionContent className="p-4 pt-0">
                       <div className="space-y-4 pt-4 border-t">
+                          {isCompany && (
+                            <>
+                              <div className="space-y-2">
+                                <Label htmlFor="username">Nombre Comercial (Opcional)</Label>
+                                <Input id="username" placeholder="Ej: Super Pollo" value={formData.username || ''} onChange={(e) => handleInputChange('username', e.target.value)} />
+                              </div>
+                              <RadioGroup
+                                  value={formData.useUsername ? 'username' : 'legal_name'}
+                                  onValueChange={(value) => handleInputChange('useUsername', value === 'username')}
+                                >
+                                  <div className="flex items-center space-x-2"><RadioGroupItem value="legal_name" id="r1" /><Label htmlFor="r1">Mostrar Razón Social ({currentUser.name})</Label></div>
+                                  <div className="flex items-center space-x-2"><RadioGroupItem value="username" id="r2" disabled={!formData.username} /><Label htmlFor="r2">Mostrar Nombre Comercial</Label></div>
+                                </RadioGroup>
+                                <hr/>
+                            </>
+                          )}
                           <div className="space-y-2">
                               <Label htmlFor="primaryCategory">Categoría Principal</Label>
                               <select
@@ -158,6 +188,33 @@ export default function DetailsPage() {
                       </div>
                   </AccordionContent>
               </AccordionItem>
+              
+              {isCompany && (
+                  <AccordionItem value="legal-info" className="border rounded-lg">
+                      <AccordionTrigger className="px-4 hover:no-underline">
+                          <div className="flex items-center gap-3">
+                              <Building className="w-5 h-5 text-primary"/>
+                              <span className="font-semibold">Información Legal</span>
+                          </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="p-4 pt-0">
+                           <div className="space-y-4 pt-4 border-t">
+                                <div className="space-y-2">
+                                  <Label htmlFor="legalRepName">Nombre del Representante Legal</Label>
+                                  <Input id="legalRepName" placeholder="Nombre completo" value={formData.legalRepresentative?.name || ''} onChange={(e) => handleLegalRepChange('name', e.target.value)}/>
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor="legalRepId">Cédula/ID del Representante</Label>
+                                  <Input id="legalRepId" placeholder="V-12345678" value={formData.legalRepresentative?.idNumber || ''} onChange={(e) => handleLegalRepChange('idNumber', e.target.value)}/>
+                                </div>
+                                <div className="space-y-2">
+                                  <Label htmlFor="legalRepPhone">Teléfono del Representante</Label>
+                                  <Input id="legalRepPhone" type="tel" placeholder="0412-1234567" value={formData.legalRepresentative?.phone || ''} onChange={(e) => handleLegalRepChange('phone', e.target.value)}/>
+                                </div>
+                           </div>
+                      </AccordionContent>
+                  </AccordionItem>
+              )}
 
               <AccordionItem value="specialized-fields" className="border rounded-lg">
                   <AccordionTrigger className="px-4 hover:no-underline">
