@@ -547,7 +547,7 @@ export default function CompanyProfilePage() {
              <div className="flex items-center justify-around gap-4 text-xs text-muted-foreground pt-4 pb-2">
                 <p><span className="font-bold text-foreground">{showCatalogView ? `${providerProducts.length} Productos` : `${profileData.publications} Publicaciones`}</span></p>
                 {!isCompany && <p><span className="font-bold text-foreground">{profileData.completedJobs}</span> Trabajos</p>}
-                {isCompany && <p><span className="font-bold text-foreground">{affiliatedProfessionals.length}</span> Afiliados</p>}
+                {isCompany && <p><span className="font-bold text-foreground">{affiliatedProfessionals.length}</span> Talentos Asociados</p>}
                 {specializedData && (
                     <Popover>
                         <PopoverTrigger asChild>
@@ -752,7 +752,7 @@ export default function CompanyProfilePage() {
              {isCompany && affiliatedProfessionals.length > 0 && (
               <Card className="mt-4">
                   <CardContent className="p-4">
-                      <h3 className="font-bold text-lg mb-2 flex items-center gap-2"><Users className="w-5 h-5"/> Profesionales Afiliados</h3>
+                      <h3 className="font-bold text-lg mb-2 flex items-center gap-2"><Users className="w-5 h-5"/> Talentos Asociados</h3>
                        <div className="space-y-2">
                           {affiliatedProfessionals.map(prof => (
                             <Link key={prof.id} href={`/companies/${prof.id}`} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted">

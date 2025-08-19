@@ -64,8 +64,8 @@ export const requestAffiliation = ai.defineFlow(
     await sendNotification({
         userId: companyId,
         type: 'affiliation_request',
-        title: 'Nueva Solicitud de Afiliación',
-        message: `El proveedor con ID ${providerId} desea afiliarse a tu empresa.`,
+        title: 'Nueva Solicitud de Asociación',
+        message: `El proveedor con ID ${providerId} desea asociarse como talento a tu empresa.`,
         link: `/admin` // Link to the management panel
     });
   }

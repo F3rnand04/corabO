@@ -2,20 +2,22 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Check, X, Trash2 } from 'lucide-react';
+import { Check, X, Trash2, MessageSquare } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Affiliation, User } from '@/lib/types';
 import { getFirestore, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 
 export function AffiliationManagementTab() {
-  const { currentUser, users, approveAffiliation, rejectAffiliation, revokeAffiliation } = useCorabo();
+  const { currentUser, users, approveAffiliation, rejectAffiliation, revokeAffiliation, sendMessage } = useCorabo();
   const [affiliations, setAffiliations] = useState<Affiliation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     if (!currentUser) return;
@@ -34,6 +36,15 @@ export function AffiliationManagementTab() {
 
   const getProfessionalById = (id: string) => users.find(u => u.id === id);
 
+  const handleContactProfessional = (professionalId: string) => {
+    if (!currentUser) return;
+    const conversationId = sendMessage({ 
+      recipientId: professionalId, 
+      text: `Hola, me gustaría conversar sobre nuestra colaboración a través de ${currentUser.name}.` 
+    });
+    router.push(`/messages/${conversationId}`);
+  };
+
   const pendingAffiliations = affiliations.filter(a => a.status === 'pending');
   const approvedAffiliations = affiliations.filter(a => a.status === 'approved');
 
@@ -41,8 +52,8 @@ export function AffiliationManagementTab() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Solicitudes de Afiliación Pendientes</CardTitle>
-          <CardDescription>Aprueba o rechaza las solicitudes de los profesionales para unirse a tu empresa.</CardDescription>
+          <CardTitle>Solicitudes de Asociación Pendientes</CardTitle>
+          <CardDescription>Aprueba o rechaza las solicitudes de los profesionales para unirse a tu red de talento.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -96,7 +107,7 @@ export function AffiliationManagementTab() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Profesionales Afiliados</CardTitle>
+          <CardTitle>Talento Asociado</CardTitle>
           <CardDescription>Esta es la lista de profesionales actualmente verificados por tu empresa.</CardDescription>
         </CardHeader>
         <CardContent>
@@ -130,7 +141,11 @@ export function AffiliationManagementTab() {
                                 </div>
                              </TableCell>
                              <TableCell>{new Date(aff.updatedAt).toLocaleDateString()}</TableCell>
-                              <TableCell className="text-right">
+                              <TableCell className="text-right space-x-2">
+                                <Button variant="outline" size="sm" onClick={() => handleContactProfessional(professional.id)}>
+                                    <MessageSquare className="h-4 w-4 mr-2" />
+                                    Contactar
+                                </Button>
                                 <AlertDialog>
                                   <AlertDialogTrigger asChild>
                                     <Button variant="destructive" size="sm">
@@ -140,7 +155,7 @@ export function AffiliationManagementTab() {
                                   </AlertDialogTrigger>
                                   <AlertDialogContent>
                                     <AlertDialogHeader>
-                                      <AlertDialogTitle>¿Revocar Afiliación?</AlertDialogTitle>
+                                      <AlertDialogTitle>¿Revocar Asociación?</AlertDialogTitle>
                                       <AlertDialogDescription>
                                         Esta acción desvinculará al profesional de tu empresa y eliminará la verificación. ¿Estás seguro?
                                       </AlertDialogDescription>
@@ -158,7 +173,7 @@ export function AffiliationManagementTab() {
                      )
                 })
               ) : (
-                 <TableRow><TableCell colSpan={3} className="text-center">Aún no tienes profesionales afiliados.</TableCell></TableRow>
+                 <TableRow><TableCell colSpan={3} className="text-center">Aún no tienes talento asociado.</TableCell></TableRow>
               )}
             </TableBody>
            </Table>

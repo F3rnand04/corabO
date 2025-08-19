@@ -57,7 +57,7 @@ export default function AdminPage() {
             <TabsTrigger value="user-management"><Users className="w-4 h-4 mr-2" />Usuarios</TabsTrigger>
             <TabsTrigger value="payment-verification"><Banknote className="w-4 h-4 mr-2" />Pagos</TabsTrigger>
             <TabsTrigger value="document-verification"><BadgeInfo className="w-4 h-4 mr-2" />Documentos</TabsTrigger>
-            {isCompany && <TabsTrigger value="affiliations"><Handshake className="w-4 h-4 mr-2" />Afiliaciones</TabsTrigger>}
+            {isCompany && <TabsTrigger value="affiliations"><Handshake className="w-4 h-4 mr-2" />Talento Asociado</TabsTrigger>}
             <TabsTrigger value="disputes" disabled><ShieldAlert className="w-4 h-4 mr-2" />Disputas</TabsTrigger>
           </TabsList>
           
