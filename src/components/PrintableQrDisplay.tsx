@@ -92,9 +92,9 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
                     className="bg-[#E3F2FD] p-12 rounded-2xl text-center flex flex-col justify-between" 
                     style={{ width: '825px', height: '1275px' }}
                 >
-                    <div className="flex-shrink-0">
-                        <div className="relative w-72 aspect-[3/1] mx-auto">
-                            {logoBase64 && <img src={logoBase64} alt="Corabo Logo" style={{objectFit: "contain", width: '100%', height: '100%'}} />}
+                    <div className="flex-shrink-0 flex justify-center">
+                        <div className="relative w-72">
+                            {logoBase64 && <img src={logoBase64} alt="Corabo Logo" style={{objectFit: "contain", width: '100%', height: 'auto'}} />}
                         </div>
                     </div>
                     
@@ -147,8 +147,8 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
                     <>
                         <h3 className="font-bold text-lg text-center">Vista Previa de Impresión</h3>
                         <div className="bg-[#E3F2FD] p-4 rounded-lg text-center w-full max-w-sm">
-                             <div className="relative w-3/4 aspect-[3/1] mx-auto mb-2">
-                                {logoBase64 && <img src={logoBase64} alt="Corabo Logo" style={{objectFit: "contain", width: '100%', height: '100%'}} />}
+                             <div className="relative w-3/4 mx-auto mb-2">
+                                {logoBase64 && <img src={logoBase64} alt="Corabo Logo" style={{objectFit: "contain", width: '100%', height: 'auto'}} />}
                             </div>
                             <div className="flex justify-center items-center my-4">
                                 <div className="bg-white p-2 rounded-md shadow-sm">

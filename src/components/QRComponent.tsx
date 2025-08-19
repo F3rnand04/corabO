@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -11,7 +12,7 @@ const QRComponent = ({ value }: QRComponentProps) => {
   return (
     <QRCodeSVG
       value={value}
-      size={200}
+      size={256}
       bgColor={"#ffffff"}
       fgColor={"#000000"}
       level={"L"}
