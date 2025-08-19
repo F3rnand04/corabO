@@ -93,8 +93,8 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
                     style={{ width: '825px', height: '1275px' }}
                 >
                     <div className="flex-shrink-0 flex flex-col items-center justify-center pt-8">
-                        <h2 className="text-3xl text-[#1E3A8A] mb-4">Bienvenido, haz tu compra con</h2>
-                        <div className="relative w-80 aspect-[3/1]">
+                        <h2 className="text-3xl text-[#1E3A8A] mb-4">Escanea y paga a tu ritmo con</h2>
+                        <div className="relative w-72 aspect-[3/1]">
                             {logoBase64 && <img src={logoBase64} alt="Corabo Logo" style={{objectFit: "contain", width: '100%', height: 'auto'}} />}
                         </div>
                     </div>
@@ -148,6 +148,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
                     <>
                         <h3 className="font-bold text-lg text-center">Vista Previa de Impresión</h3>
                         <div className="bg-[#E3F2FD] p-4 rounded-lg text-center w-full max-w-sm">
+                             <h2 className="text-md font-semibold text-[#1E3A8A] mb-2">Escanea y paga a tu ritmo con</h2>
                              <div className="relative w-3/4 mx-auto mb-2 aspect-[3/1]">
                                 {logoBase64 && <img src={logoBase64} alt="Corabo Logo" style={{objectFit: "contain", width: '100%', height: 'auto'}} />}
                             </div>
@@ -156,7 +157,6 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
                                     <QRComponent value={qrValue} />
                                 </div>
                             </div>
-                             <h2 className="text-md font-bold text-[#1E3A8A]">Paga a tu Ritmo con Corabo</h2>
                              <p className="text-xs text-[#1E3A8A] mt-1">Descarga la App Corabo y únete a la comunidad de Óbiamigos</p>
                              <div className="mt-4 pt-2 border-t border-blue-200 text-xs font-semibold text-[#1E3A8A]">
                                  <p>Caja: {boxName}</p>
