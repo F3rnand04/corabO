@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, ChangeEvent, useCallback } from 'react';
@@ -167,30 +168,18 @@ export function ProfileHeader() {
                     )}
                 </div>
             </div>
-            <div className="flex flex-col items-end gap-2 shrink-0">
+             <div className="flex flex-col items-end gap-2 shrink-0">
                 {!currentUser.isSubscribed && (
                      <Button variant="link" size="sm" className="p-0 h-auto text-red-500 hover:text-red-600 font-semibold text-xs" onClick={() => setIsSubscriptionDialogOpen(true)}>
                         Suscribir
                     </Button>
                 )}
                  <div className="flex items-center gap-3">
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground">
-                                <CalendarIcon className="w-5 h-5"/>
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                            <Calendar
-                                mode="multiple"
-                                selected={eventDates}
-                                onDayClick={handleDayClick}
-                            />
-                            <div className="p-2 border-t text-center text-xs text-muted-foreground">
-                                Días con eventos están resaltados.
-                            </div>
-                        </PopoverContent>
-                    </Popover>
+                    <Button asChild variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground">
+                        <Link href="/profile/details">
+                            <Settings2 className="w-5 h-5"/>
+                        </Link>
+                    </Button>
                     <Button asChild variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground">
                         <Link href="/transactions">
                             <Wallet className="w-5 h-5"/>
@@ -223,12 +212,6 @@ export function ProfileHeader() {
                     </Link>
                 </Button>
             )}
-
-            <Button asChild variant="ghost" size="icon">
-                <Link href="/profile/details">
-                    <Settings2 className="w-5 h-5"/>
-                </Link>
-            </Button>
         </div>
         
         <div className="flex justify-around font-semibold text-center border-b mt-4">
@@ -244,6 +227,11 @@ export function ProfileHeader() {
                     </Link>
                 </Button>
             )}
+            <Button asChild variant="ghost" className="flex-1 p-3 rounded-none text-muted-foreground data-[active=true]:text-primary data-[active=true]:border-b-2 data-[active=true]:border-primary" data-active={pathname === '/profile/details'}>
+               <Link href="/profile/details">
+                   Detalles
+               </Link>
+            </Button>
         </div>
       </header>
       {isProvider && <CampaignDialog isOpen={isCampaignDialogOpen} onOpenChange={setIsCampaignDialogOpen} />}

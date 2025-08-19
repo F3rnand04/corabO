@@ -29,25 +29,6 @@ const categoryComponentMap: { [key: string]: React.ElementType } = {
 
 const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
-function DetailsHeader() {
-    const router = useRouter();
-    return (
-        <header className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b">
-            <div className="container px-4 sm:px-6">
-                <div className="flex h-16 items-center">
-                    <Button variant="ghost" size="icon" onClick={() => router.push('/profile')}>
-                        <ChevronLeft className="h-6 w-6" />
-                    </Button>
-                    <h1 className="text-lg font-semibold ml-4 flex items-center gap-2">
-                        <Settings className="w-5 h-5"/>
-                        Editar Detalles Rápidos
-                    </h1>
-                </div>
-            </div>
-        </header>
-    );
-}
-
 export default function DetailsPage() {
   const { currentUser, updateFullProfile } = useCorabo();
   const { toast } = useToast();
@@ -91,7 +72,7 @@ export default function DetailsPage() {
     try {
         await updateFullProfile(currentUser.id, formData, currentUser.type);
         toast({ title: "Perfil Actualizado", description: "Tus detalles han sido guardados." });
-        router.push('/profile');
+        router.push('/profile/publications');
     } catch (error) {
         toast({ variant: 'destructive', title: "Error", description: "No se pudieron guardar los cambios." });
     } finally {
@@ -123,7 +104,6 @@ export default function DetailsPage() {
 
   return (
      <>
-      <DetailsHeader />
       <main className="container max-w-4xl mx-auto py-8">
          <div className="space-y-6">
             <Accordion type="multiple" defaultValue={['specialized-fields', 'schedule', 'payment-details']} className="w-full space-y-4">
