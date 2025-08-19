@@ -3,7 +3,7 @@
 import { Button } from "./ui/button";
 import { QRCodeSVG } from "qrcode.react";
 import Image from "next/image";
-import { QrCode, Handshake, Wallet, Download } from "lucide-react";
+import { QrCode, Handshake, Wallet, Download, Loader2 } from "lucide-react";
 import { AlertDialogFooter, AlertDialogCancel } from "./ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect, useRef, useState } from "react";
@@ -29,6 +29,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
         const svgElement = document.getElementById('qr-code-for-conversion');
         if (svgElement) {
             const svgString = new XMLSerializer().serializeToString(svgElement);
+            // Use window.btoa for Base64 encoding, works in browsers
             const dataUrl = `data:image/svg+xml;base64,${window.btoa(svgString)}`;
             setQrDataUrl(dataUrl);
         }
@@ -48,18 +49,22 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
         try {
             const html2canvas = (await import('html2canvas')).default;
             const canvas = await html2canvas(element, {
-                scale: 3,
+                scale: 3, // Higher scale for better resolution
+                useCORS: true, // Important for external images if any, though we avoid it now
                 backgroundColor: null,
             });
 
-            // This is the simplest and most reliable download method when the canvas is clean
+            // This is the most reliable cross-browser download method
             const dataUrl = canvas.toDataURL('image/png');
             const downloadLink = document.createElement("a");
             
             downloadLink.href = dataUrl;
             downloadLink.download = `QR-Caja-${boxName.replace(/\s+/g, '-')}.png`;
             
+            document.body.appendChild(downloadLink);
             downloadLink.click();
+            document.body.removeChild(downloadLink);
+
             onClose();
 
         } catch (error) {
@@ -96,15 +101,17 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
                 <div className="absolute -bottom-16 -left-8 w-40 h-40 bg-white/20 dark:bg-blue-800/20 rounded-full"></div>
 
                 <div className="relative z-10">
-                     <Image src="https://i.postimg.cc/Wz1MTvWK/lg.png" alt="Corabo Logo" width={200} height={75} className="mx-auto h-20 w-auto mb-2" />
+                     <Image src="https://i.postimg.cc/Wz1MTvWK/lg.png" alt="Corabo Logo" width={240} height={90} className="mx-auto h-24 w-auto mb-2" />
                      <h2 className="text-xl font-bold text-blue-900 dark:text-blue-200 mb-4" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.1)' }}>
                         Paga a tu Ritmo con Corabo
                     </h2>
 
                     <div className="bg-white p-4 rounded-xl shadow-md inline-block my-4">
                         {/* Now we render the QR as a standard image using the data URL */}
-                        {qrDataUrl && (
+                        {qrDataUrl ? (
                            <Image src={qrDataUrl} alt="Código QR" width={180} height={180} />
+                        ) : (
+                           <div className="w-[180px] h-[180px] flex items-center justify-center bg-gray-200"><Loader2 className="animate-spin"/></div>
                         )}
                     </div>
                     
