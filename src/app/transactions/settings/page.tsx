@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronLeft, Banknote, Smartphone, ShieldCheck, FileText, AlertTriangle, User, KeyRound, Link as LinkIcon, Trash2 } from "lucide-react";
+import { ChevronLeft, Banknote, Smartphone, ShieldCheck, FileText, AlertTriangle, User, KeyRound, Link as LinkIcon, Trash2, Box, QrCode } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCorabo } from '@/contexts/CoraboContext';
 import { useToast } from '@/hooks/use-toast';
@@ -15,6 +15,7 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ValidationItem } from '@/components/ValidationItem';
+import { QRCodeSVG } from 'qrcode.react';
 
 import {
   AlertDialog,
@@ -87,6 +88,106 @@ function PaymentMethodCard({
             </div>
             {isActive && <div className="space-y-4 pt-4 border-t">{children}</div>}
         </div>
+    )
+}
+
+function CashierManagementCard() {
+    const { currentUser } = useCorabo();
+    const [newBoxName, setNewBoxName] = useState('');
+    const [newBoxPassword, setNewBoxPassword] = useState('');
+    const [selectedBoxQr, setSelectedBoxQr] = useState<{name: string, value: string} | null>(null);
+    
+    // Placeholder for add cashier box function
+    const handleAddBox = () => {
+        console.log("Adding new box:", { name: newBoxName, password: newBoxPassword });
+        // In real implementation, this would call a context function:
+        // addCashierBox(newBoxName, newBoxPassword);
+        setNewBoxName('');
+        setNewBoxPassword('');
+    };
+
+    const downloadQR = () => {
+        if (!selectedBoxQr) return;
+        const svg = document.getElementById('qr-code-svg');
+        if (svg) {
+            const svgData = new XMLSerializer().serializeToString(svg);
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+            if (!ctx) return;
+            const img = new Image();
+            img.onload = () => {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                const pngFile = canvas.toDataURL("image/png");
+                const downloadLink = document.createElement("a");
+                downloadLink.download = `QR-Caja-${selectedBoxQr.name}.png`;
+                downloadLink.href = pngFile;
+                downloadLink.click();
+            };
+            img.src = "data:image/svg+xml;base64," + btoa(svgData);
+        }
+    };
+    
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Box className="w-5 h-5"/>Gestión de Cajas</CardTitle>
+                <CardDescription>Crea y gestiona los puntos de venta para tu negocio. Cada caja tendrá su propio QR de pago.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                 <div className="space-y-2 p-3 border rounded-lg">
+                    <h4 className="text-sm font-semibold">Añadir Nueva Caja</h4>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                        <Input placeholder="Nombre de la caja (ej: Barra)" value={newBoxName} onChange={(e) => setNewBoxName(e.target.value)} />
+                        <Input type="password" placeholder="Contraseña numérica (4-6 dígitos)" value={newBoxPassword} onChange={(e) => setNewBoxPassword(e.target.value)} />
+                        <Button onClick={handleAddBox} disabled={!newBoxName || !newBoxPassword}>Añadir</Button>
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <h4 className="text-sm font-semibold">Cajas Activas</h4>
+                    {currentUser?.profileSetupData?.cashierBoxes && currentUser.profileSetupData.cashierBoxes.length > 0 ? (
+                        <div className="space-y-2">
+                            {currentUser.profileSetupData.cashierBoxes.map(box => (
+                                <div key={box.id} className="flex items-center justify-between p-2 bg-muted rounded-md">
+                                    <p className="font-medium">{box.name}</p>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                           <Button variant="outline" size="sm" onClick={() => setSelectedBoxQr({name: box.name, value: box.qrValue})}>
+                                                <QrCode className="w-4 h-4 mr-2"/>Ver QR
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                             {selectedBoxQr && (
+                                                <>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>QR para {selectedBoxQr.name}</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Descarga y imprime este QR para que tus clientes puedan escanearlo y pagar.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <div className="py-4 flex items-center justify-center">
+                                                    <div className="p-4 bg-white rounded-lg">
+                                                        <QRCodeSVG id="qr-code-svg" value={selectedBoxQr.value} size={256} />
+                                                    </div>
+                                                </div>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cerrar</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={downloadQR}>Descargar PNG</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                                </>
+                                            )}
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-xs text-muted-foreground text-center py-4">Aún no has creado ninguna caja.</p>
+                    )}
+                </div>
+            </CardContent>
+        </Card>
     )
 }
 
@@ -169,6 +270,9 @@ export default function TransactionsSettingsPage() {
                         </AlertDescription>
                     </Alert>
                 )}
+
+                {isCompany && <CashierManagementCard />}
+
                 <Card>
                     <CardHeader>
                         <CardTitle>Métodos de Pago</CardTitle>
