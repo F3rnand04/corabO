@@ -426,7 +426,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         });
     } catch (err) {
         console.error("Failed to generate QR Data URL", err);
-        return ''; // Return an empty string or a placeholder data URL
+        return '';
     }
   }, []);
       
@@ -792,7 +792,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         
         const boxId = `caja-${Date.now()}`;
         const qrValue = JSON.stringify({ providerId: currentUser.id, cashierBoxId: boxId });
-        const qrDataURL = await generateQrDataURL(qrValue); // Await the generation
+        const qrDataURL = await generateQrDataURL(qrValue);
 
         if (!qrDataURL) {
             toast({ variant: "destructive", title: "Error", description: "No se pudo generar el código QR." });
@@ -850,7 +850,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         if (boxIndex === -1) return;
         
         const newQrValue = JSON.stringify({ providerId: currentUser.id, cashierBoxId: boxId, timestamp: Date.now() });
-        const newQrDataURL = await generateQrDataURL(newQrValue); // Await the generation
+        const newQrDataURL = await generateQrDataURL(newQrValue);
         
         if (!newQrDataURL) {
             toast({ variant: "destructive", title: "Error", description: "No se pudo regenerar el código QR." });
