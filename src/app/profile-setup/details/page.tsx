@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
+import { Slider } from '@/components/ui/slider';
 
 // New dedicated header for the focused editing view
 function EditDetailsHeader({ onSave, isSaving }: { onSave: () => void; isSaving: boolean }) {
@@ -84,20 +85,22 @@ export default function DetailsPage() {
       }) : null);
   }, []);
   
-  const handleScheduleChange = useCallback((day: string, field: 'from' | 'to' | 'active', value: string | boolean) => {
-    setFormData(prev => {
-        if (!prev) return null;
-        // Ensure schedule object exists
-        const currentSchedule = prev.schedule || {};
-        // Ensure the day object exists with default values
-        const daySchedule = currentSchedule[day] || { from: '09:00', to: '17:00', active: false };
-        
-        const newSchedule = { 
-            ...currentSchedule, 
-            [day]: { ...daySchedule, [field]: value } 
-        };
-        return { ...prev, schedule: newSchedule };
-    });
+  const handleScheduleChange = useCallback((day: string, field: 'active' | 'hours', value: boolean | number[]) => {
+      setFormData(prev => {
+          if (!prev) return null;
+          const currentSchedule = prev.schedule || {};
+          const daySchedule = currentSchedule[day] || { from: '09:00', to: '17:00', active: false };
+
+          let newDaySchedule;
+          if (field === 'active') {
+              newDaySchedule = { ...daySchedule, active: value as boolean };
+          } else { // field === 'hours'
+              const [fromHour, toHour] = value as number[];
+              newDaySchedule = { ...daySchedule, from: `${String(fromHour).padStart(2, '0')}:00`, to: `${String(toHour).padStart(2, '0')}:00` };
+          }
+          
+          return { ...prev, schedule: { ...currentSchedule, [day]: newDaySchedule } };
+      });
   }, []);
 
   const handleSaveChanges = async () => {
@@ -165,12 +168,15 @@ export default function DetailsPage() {
                       </div>
                   </AccordionTrigger>
                   <AccordionContent className="p-4 pt-0">
-                      <div className="space-y-3 pt-4 border-t">
+                      <div className="space-y-4 pt-4 border-t">
                           {daysOfWeek.map(day => {
-                              const daySchedule = formData?.schedule?.[day];
-                              const isActive = daySchedule?.active ?? false;
+                              const daySchedule = formData?.schedule?.[day] || { from: '09:00', to: '17:00', active: false };
+                              const isActive = daySchedule.active;
+                              const fromHour = parseInt(daySchedule.from.split(':')[0], 10);
+                              const toHour = parseInt(daySchedule.to.split(':')[0], 10);
+
                               return (
-                                  <div key={day} className="space-y-2">
+                                  <div key={day} className="space-y-3">
                                       <div className="flex items-center justify-between">
                                           <Label htmlFor={`switch-${day}`} className="font-medium">{day}</Label>
                                            <Switch 
@@ -180,10 +186,17 @@ export default function DetailsPage() {
                                           />
                                       </div>
                                       {isActive && (
-                                          <div className="flex items-center gap-2 pl-4">
-                                              <Input type="time" defaultValue={daySchedule?.from || '09:00'} onChange={(e) => handleScheduleChange(day, 'from', e.target.value)} className="w-full"/>
-                                              <span className="text-muted-foreground">-</span>
-                                              <Input type="time" defaultValue={daySchedule?.to || '17:00'} onChange={(e) => handleScheduleChange(day, 'to', e.target.value)} className="w-full"/>
+                                          <div className="pl-4 space-y-2">
+                                              <Slider
+                                                  defaultValue={[fromHour, toHour]}
+                                                  min={0}
+                                                  max={24}
+                                                  step={1}
+                                                  onValueChange={(value) => handleScheduleChange(day, 'hours', value)}
+                                              />
+                                              <p className="text-right text-xs font-mono text-muted-foreground">
+                                                {`${String(fromHour).padStart(2, '0')}:00 - ${String(toHour).padStart(2, '0')}:00`}
+                                              </p>
                                           </div>
                                       )}
                                       <Separator className="pt-2"/>
