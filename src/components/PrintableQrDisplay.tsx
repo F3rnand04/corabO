@@ -6,6 +6,10 @@ import { Card, CardContent } from "./ui/card";
 import { QRCodeSVG } from "qrcode.react";
 import Image from "next/image";
 import { ShoppingCart, RefreshCw, HandCoins, Download } from "lucide-react";
+import dynamic from 'next/dynamic';
+
+// Dynamically import html2canvas only on the client side
+const html2canvas = dynamic(() => import('html2canvas'), { ssr: false });
 
 interface PrintableQrDisplayProps {
     boxName: string;
@@ -15,24 +19,23 @@ interface PrintableQrDisplayProps {
 
 export const PrintableQrDisplay = ({ boxName, businessId, qrValue }: PrintableQrDisplayProps) => {
 
-    const downloadQR = () => {
+    const downloadQR = async () => {
         const printableArea = document.getElementById('printable-qr-area');
         if (printableArea) {
             // Temporarily disable shadows for cleaner image
             printableArea.style.boxShadow = 'none';
 
-            import('html2canvas').then(html2canvas => {
-                html2canvas(printableArea, { scale: 3 }).then(canvas => {
-                    const pngFile = canvas.toDataURL("image/png");
-                    const downloadLink = document.createElement("a");
-                    downloadLink.download = `QR-Caja-${boxName.replace(/\s+/g, '-')}.png`;
-                    downloadLink.href = pngFile;
-                    downloadLink.click();
-                    
-                    // Restore shadow after capture
-                    printableArea.style.boxShadow = '';
-                });
-            });
+            // Ensure html2canvas is loaded before using it
+            const canvas = await (await import('html2canvas')).default(printableArea, { scale: 3 });
+
+            const pngFile = canvas.toDataURL("image/png");
+            const downloadLink = document.createElement("a");
+            downloadLink.download = `QR-Caja-${boxName.replace(/\s+/g, '-')}.png`;
+            downloadLink.href = pngFile;
+            downloadLink.click();
+            
+            // Restore shadow after capture
+            printableArea.style.boxShadow = '';
         }
     };
 
