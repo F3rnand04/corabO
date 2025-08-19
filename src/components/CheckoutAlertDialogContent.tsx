@@ -33,7 +33,7 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
 
     useEffect(() => {
         const fromMap = searchParams.get('fromMap');
-        if (fromMap) {
+        if (fromMap && activeCartForCheckout) {
             onOpenChange(true);
             if(tempRecipientInfo){
                 setDeliveryMethod('other_address');
@@ -43,7 +43,7 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
             currentUrl.searchParams.delete('fromMap');
             router.replace(currentUrl.toString(), { scroll: false });
         }
-    }, [searchParams, onOpenChange, tempRecipientInfo, router]);
+    }, [searchParams, onOpenChange, tempRecipientInfo, router, activeCartForCheckout]);
 
     if (!currentUser || !activeCartForCheckout) {
         return (
