@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from "./ui/button";
@@ -52,7 +51,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
             {/* This is the div that will be "photographed" */}
             <div ref={printRef} className="bg-[#E3F2FD] p-6 rounded-2xl text-center flex flex-col justify-between" style={{ width: '384px', height: '640px' }}>
                 <div className="flex-shrink-0">
-                    <div className="relative w-40 h-16 mx-auto">
+                    <div className="relative w-48 mx-auto aspect-[3/1]">
                          <Image src="https://i.postimg.cc/Wz1MTvWK/lg.png" alt="Corabo Logo" fill style={{objectFit: "contain"}} />
                     </div>
                     <h2 className="text-2xl font-bold text-[#1E3A8A] mt-4">Paga a tu Ritmo con Corabo</h2>
