@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronLeft, KeyRound, QrCode, Trash2, Eye, EyeOff } from "lucide-react";
+import { ChevronLeft, KeyRound, QrCode, Trash2, Eye, EyeOff, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCorabo } from '@/contexts/CoraboContext';
 import { useToast } from '@/hooks/use-toast';
@@ -124,7 +123,23 @@ function CashierManagementCard() {
                                         </div>
                                          <Button size="sm" onClick={() => handleUpdatePassword(box.id)} disabled={!editingPasswords[box.id] || editingPasswords[box.id] === box.passwordHash}>Guardar</Button>
                                     </div>
-                                    <div className="flex items-center gap-1 justify-end">
+                                    <div className="flex items-center gap-1 justify-end flex-wrap">
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="outline" size="sm"><FileText className="w-4 h-4 mr-2"/>Ver Detalles</Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Próximamente</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                      Aquí podrás ver el historial detallado de transacciones para esta caja.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cerrar</AlertDialogCancel>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
                                             <Button variant="outline" size="sm" onClick={() => setSelectedBoxQr({name: box.name, value: box.qrValue})}>

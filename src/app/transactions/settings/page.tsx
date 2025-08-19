@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -6,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ChevronLeft, Banknote, ShieldCheck, FileText, AlertTriangle, KeyRound, Link as LinkIcon, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCorabo } from '@/contexts/CoraboContext';
-import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import Link from 'next/link';
 
@@ -56,7 +54,7 @@ function SettingsLinkCard({
 }
 
 export default function TransactionsSettingsPage() {
-    const { currentUser, deactivateTransactions, activateTransactions } = useCorabo();
+    const { currentUser, deactivateTransactions } = useCorabo();
     const router = useRouter();
 
     if (!currentUser) {
@@ -68,23 +66,13 @@ export default function TransactionsSettingsPage() {
     return (
         <>
             <SettingsHeader />
-            <main className="container py-8 max-w-2xl mx-auto space-y-8">
-                {/* This card remains here as it's the primary settings function */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Banknote className="w-5 h-5"/>Métodos de Pago</CardTitle>
-                        <CardDescription>
-                            Gestiona cómo recibirás los pagos. Los métodos activos serán visibles para tus clientes.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {/* The actual payment methods form can be here or moved to its own component */}
-                        <p className="text-sm text-muted-foreground mb-4">La configuración de tus métodos de pago (cuenta, pago móvil, etc.) se gestiona aquí. Esta es la configuración principal de tu registro.</p>
-                         <Button className="w-full" onClick={() => router.push('/transactions/settings/payment-methods')}>
-                            Configurar Métodos de Pago
-                        </Button>
-                    </CardContent>
-                </Card>
+            <main className="container py-8 max-w-2xl mx-auto space-y-4">
+                 <SettingsLinkCard
+                    icon={Banknote}
+                    title="Métodos de Pago"
+                    description="Gestiona cómo recibirás los pagos (cuentas, pago móvil, etc.)."
+                    href="/transactions/settings/payment-methods"
+                />
 
                 {isCompany && (
                      <SettingsLinkCard
@@ -102,7 +90,7 @@ export default function TransactionsSettingsPage() {
                     href="/policies"
                 />
 
-                <Card className="border-destructive">
+                <Card className="border-destructive mt-8">
                     <CardHeader>
                         <CardTitle className="text-destructive flex items-center gap-2">
                         <AlertTriangle className="w-5 h-5"/>

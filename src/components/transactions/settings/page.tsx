@@ -249,58 +249,6 @@ export default function TransactionsSettingsPage() {
                     </CardContent>
                 </Card>
                 
-                {currentUser.isTransactionsActive && (
-                    <>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                <FileText className="w-5 h-5"/>
-                                Políticas y Documentación
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <Button variant="outline" className="w-full" asChild>
-                                    <Link href="/policies">
-                                        <LinkIcon className="mr-2 h-4 w-4"/>
-                                        Ver Políticas del Registro de Transacciones
-                                    </Link>
-                                </Button>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="border-destructive">
-                            <CardHeader>
-                                <CardTitle className="text-destructive flex items-center gap-2">
-                                <AlertTriangle className="w-5 h-5"/>
-                                Zona de Peligro
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="destructive" className="w-full">
-                                            <Trash2 className="mr-2 h-4 w-4"/>
-                                            Desactivar Registro de Transacciones
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                Al desactivar el registro, no podrás recibir pagos ni gestionar transacciones a través de Corabo.
-                                                Tu cuenta no será eliminada, pero esta funcionalidad quedará inactiva hasta que la vuelvas a configurar.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                            <AlertDialogAction onClick={() => deactivateTransactions(currentUser.id)}>Sí, desactivar</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                            </CardContent>
-                        </Card>
-                    </>
-                )}
             </main>
         </>
     );
