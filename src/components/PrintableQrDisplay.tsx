@@ -34,11 +34,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
                 const downloadLink = document.createElement("a");
                 downloadLink.download = `QR-Caja-${boxName.replace(/\s+/g, '-')}.png`;
                 downloadLink.href = pngFile;
-                
-                // Append to body, click, and remove for maximum browser compatibility
-                document.body.appendChild(downloadLink);
-                downloadLink.click();
-                document.body.removeChild(downloadLink);
+                downloadLink.click(); // Direct click simulation
 
                 toast({
                   title: "Descarga Iniciada",
@@ -66,10 +62,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
                 <div className="absolute -bottom-16 -left-8 w-40 h-40 bg-white/20 dark:bg-blue-800/20 rounded-full"></div>
 
                 <div className="relative z-10">
-                     <div className="flex justify-center mb-4 items-center gap-2">
-                        <Image src="https://i.postimg.cc/Wz1MTvWK/lg.png" alt="Corabo Logo" width={100} height={40} className="h-10 w-auto" />
-                    </div>
-                     <h2 className="text-2xl font-bold text-blue-900 dark:text-blue-200" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.1)' }}>
+                     <h2 className="text-2xl font-bold text-blue-900 dark:text-blue-200 mb-4" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.1)' }}>
                         Paga a tu Ritmo con Corabo
                     </h2>
 
