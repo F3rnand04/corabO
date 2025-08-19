@@ -22,7 +22,7 @@ export default function Step2_CompanyInfo({ formData, onUpdate, onNext }: Step2_
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold">Paso 2: Detalles del Negocio</h2>
+      <h2 className="text-xl font-semibold">Paso 1: Detalles del Negocio</h2>
       <div className="space-y-2">
         <Label htmlFor="username">Nombre Comercial / de Fantasía</Label>
         <Input 
