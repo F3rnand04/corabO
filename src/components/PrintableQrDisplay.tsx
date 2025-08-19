@@ -97,20 +97,19 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
             {/* This is the div that will be "photographed" */}
             <div ref={printRef} className="bg-[#E3F2FD] p-6 rounded-2xl text-center flex flex-col justify-between" style={{ width: '384px', height: '640px' }}>
                 <div className="flex-shrink-0">
-                    <div className="relative w-40 h-16 mx-auto">
+                    <div className="relative w-48 aspect-[3/1] mx-auto">
                         {logoBase64 && <img src={logoBase64} alt="Corabo Logo" style={{objectFit: "contain", width: '100%', height: '100%'}} />}
                     </div>
                 </div>
                 
                 <div className="flex justify-center items-center my-4 flex-grow">
-                    <div className="bg-white p-4 rounded-xl shadow-md">
+                     <div className="bg-white p-4 rounded-xl shadow-md">
                         <QRComponent value={qrValue} />
                     </div>
                 </div>
                 
                 <div className="flex-shrink-0">
-                     <h2 className="text-2xl font-bold text-[#1E3A8A] mt-4 mb-6">Paga a tu Ritmo con Corabo</h2>
-
+                    <h2 className="text-2xl font-bold text-[#1E3A8A] mt-4 mb-6">Paga a tu Ritmo con Corabo</h2>
                     <div className="flex justify-around items-center text-[#1E3A8A] mb-4">
                         <div className="flex flex-col items-center gap-1">
                             <QrCode className="w-8 h-8" />
