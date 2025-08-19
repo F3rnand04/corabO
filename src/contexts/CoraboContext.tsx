@@ -1,5 +1,6 @@
 
 
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -572,7 +573,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         await TransactionFlows.payCommitment({ transactionId, userId: user.id, paymentDetails }); 
     },
     sendQuote: async (transactionId: string, quote: { breakdown: string; total: number }) => { 
-        if(!currentUser) return; 
+        if(!currentUser) return;
         await TransactionFlows.sendQuote({ transactionId, userId: currentUser.id, breakdown: quote.breakdown, total: quote.total }); 
     },
     acceptQuote: async (transactionId: string) => { 
@@ -795,9 +796,18 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         const qrDataURL = await generateQrDataURL(qrValue);
 
         const newBox: CashierBox = { id: boxId, name, passwordHash: password, qrValue, qrDataURL };
-        const newBoxes = [...(currentUser.profileSetupData?.cashierBoxes || []), newBox];
         
-        await updateUser(currentUser.id, { profileSetupData: { ...currentUser.profileSetupData, cashierBoxes: newBoxes } });
+        const updatedUser = {
+            ...currentUser,
+            profileSetupData: {
+                ...currentUser.profileSetupData,
+                cashierBoxes: [...(currentUser.profileSetupData?.cashierBoxes || []), newBox]
+            }
+        };
+
+        await updateUser(currentUser.id, { 
+            profileSetupData: updatedUser.profileSetupData 
+        });
 
         toast({ title: "Caja Añadida", description: `La caja "${name}" ha sido creada.` });
     },
@@ -806,7 +816,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         
         const newBoxes = currentUser.profileSetupData.cashierBoxes.filter(b => b.id !== boxId);
         
-        await updateUser(currentUser.id, { profileSetupData: { ...currentUser.profileSetupData, cashierBoxes: newBoxes } });
+        await updateUser(currentUser.id, { 
+            profileSetupData: { ...currentUser.profileSetupData, cashierBoxes: newBoxes } 
+        });
 
         toast({ title: "Caja Eliminada", description: `La caja ha sido eliminada correctamente.` });
     },
@@ -821,7 +833,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         const newBoxes = [...currentBoxes];
         newBoxes[boxIndex] = updatedBox;
         
-        await updateUser(currentUser.id, { profileSetupData: { ...currentUser.profileSetupData, cashierBoxes: newBoxes } });
+        await updateUser(currentUser.id, { 
+            profileSetupData: { ...currentUser.profileSetupData, cashierBoxes: newBoxes } 
+        });
         toast({ title: "Caja Actualizada", description: `La contraseña de la caja ha sido cambiada.` });
     },
     regenerateCashierBoxQr: async (boxId: string) => {
@@ -838,7 +852,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         const newBoxes = [...currentBoxes];
         newBoxes[boxIndex] = updatedBox;
         
-        await updateUser(currentUser.id, { profileSetupData: { ...currentUser.profileSetupData, cashierBoxes: newBoxes } });
+        await updateUser(currentUser.id, { 
+            profileSetupData: { ...currentUser.profileSetupData, cashierBoxes: newBoxes } 
+        });
         toast({ title: "QR Regenerado", description: `Se ha creado un nuevo código QR para la caja.` });
     },
   }), [
