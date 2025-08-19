@@ -175,11 +175,6 @@ export function ProfileHeader() {
                     </Button>
                 )}
                  <div className="flex items-center gap-3">
-                    <Button asChild variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground">
-                        <Link href="/transactions">
-                            <Wallet className="w-5 h-5"/>
-                        </Link>
-                    </Button>
                     <Button variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground" onClick={() => toggleGps(currentUser.id)}>
                         <MapPin className={cn("h-5 w-5", currentUser.isGpsActive ? "text-green-500" : "text-muted-foreground")} />
                     </Button>
@@ -197,6 +192,11 @@ export function ProfileHeader() {
                             />
                         </PopoverContent>
                     </Popover>
+                    <Button asChild variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground">
+                        <Link href="/transactions">
+                            <Wallet className="w-5 h-5"/>
+                        </Link>
+                    </Button>
                     <Button asChild variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground">
                        <Link href="/profile/details">
                           <UserRoundCog className="w-5 h-5" />
