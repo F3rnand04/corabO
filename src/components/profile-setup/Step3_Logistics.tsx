@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { MapPin, Truck, Star } from 'lucide-react';
-import type { ProfileSetupData, User } from '@/lib/types';
+import type { ProfileSetupData } from '@/lib/types';
 import { useRouter } from "next/navigation";
 import { useCorabo } from "@/contexts/CoraboContext";
 
@@ -22,16 +22,16 @@ export default function Step3_Logistics({ formData, onUpdate, onNext }: Step3_Lo
   const { currentUser } = useCorabo();
 
   const handleSetLocationFromMap = () => {
-    // In a real app, we might store the current form state before navigating
     router.push('/map?fromMap=true'); 
   };
   
-  const canContinue = formData.offerType;
+  const canContinue = formData.offerType && (formData.hasPhysicalLocation ? formData.location : true);
 
   const handleDeliveryToggle = (checked: boolean) => {
     onUpdate({ isOnlyDelivery: checked });
+    // Set default radius only if it's being turned on and wasn't set before
     if (checked && !formData.serviceRadius) {
-        onUpdate({ serviceRadius: 10 }); // Set default radius
+        onUpdate({ serviceRadius: 10 });
     }
   }
 
@@ -42,15 +42,15 @@ export default function Step3_Logistics({ formData, onUpdate, onNext }: Step3_Lo
       <h2 className="text-xl font-semibold">Paso 2: Logística y Operaciones</h2>
       
       <div className="space-y-2">
-        <Label>¿Qué ofreces?</Label>
+        <Label>¿Qué ofreces principalmente?</Label>
         <div className="flex gap-4">
            <div className="flex items-center space-x-2">
              <Checkbox id="offer_product" checked={formData.offerType === 'product' || formData.offerType === 'both'} onCheckedChange={(checked) => onUpdate({ offerType: checked ? (formData.offerType === 'service' ? 'both' : 'product') : (formData.offerType === 'both' ? 'service' : undefined) })} />
-             <Label htmlFor="offer_product">Productos</Label>
+             <Label htmlFor="offer_product" className="font-normal">Productos</Label>
            </div>
            <div className="flex items-center space-x-2">
              <Checkbox id="offer_service" checked={formData.offerType === 'service' || formData.offerType === 'both'} onCheckedChange={(checked) => onUpdate({ offerType: checked ? (formData.offerType === 'product' ? 'both' : 'service') : (formData.offerType === 'both' ? 'product' : undefined) })} />
-             <Label htmlFor="offer_service">Servicios</Label>
+             <Label htmlFor="offer_service" className="font-normal">Servicios</Label>
            </div>
         </div>
       </div>
@@ -87,6 +87,7 @@ export default function Step3_Logistics({ formData, onUpdate, onNext }: Step3_Lo
              <div className="space-y-2 pl-6 border-l-2 ml-3">
                 <Label htmlFor="radius">Radio de cobertura (en kilómetros)</Label>
                 <Input id="radius" type="number" value={formData.serviceRadius || ''} onChange={(e) => onUpdate({ serviceRadius: Number(e.target.value) })} />
+                <p className="text-xs text-muted-foreground">La distancia en la que se mostrarán tus servicios.</p>
                 {showSubscriptionIncentive && (
                   <p className="text-xs text-amber-600 flex items-center gap-1 mt-1">
                     <Star className="w-3 h-3"/> Para un radio mayor a 10km, suscríbete y obtén alcance ilimitado.
