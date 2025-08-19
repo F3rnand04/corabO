@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import * as SpecializedFields from '@/components/profile/specialized-fields';
 import { useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Separator } from "../ui/separator";
+import SetLocationButton from "./SetLocationButton";
 
 interface Step3_LogisticsProps {
   formData: ProfileSetupData;
@@ -33,12 +35,7 @@ const categoryComponentMap: { [key: string]: React.ElementType } = {
 };
 
 export default function Step3_Logistics({ formData, onUpdate, onNext }: Step3_LogisticsProps) {
-  const router = useRouter();
   const { currentUser } = useCorabo();
-
-  const handleSetLocationFromMap = () => {
-    router.push('/map?fromMap=true'); 
-  };
   
   const canContinue = formData.offerType && (formData.hasPhysicalLocation ? formData.location : true);
 
@@ -112,7 +109,7 @@ export default function Step3_Logistics({ formData, onUpdate, onNext }: Step3_Lo
                             <Label htmlFor="location">Ubicación del Negocio</Label>
                             <div className="flex items-center gap-2">
                                 <Input id="location" value={formData.location || ''} placeholder="Establece tu ubicación en el mapa" readOnly />
-                                <Button variant="outline" size="icon" onClick={handleSetLocationFromMap}><MapPin className="w-4 h-4"/></Button>
+                                <SetLocationButton />
                             </div>
                         </div>
                         <div className="flex items-center justify-between">
