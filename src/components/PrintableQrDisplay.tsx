@@ -34,7 +34,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
                 const downloadLink = document.createElement("a");
                 downloadLink.download = `QR-Caja-${boxName.replace(/\s+/g, '-')}.png`;
                 downloadLink.href = pngFile;
-                downloadLink.click(); // Direct click simulation
+                downloadLink.click();
 
                 toast({
                   title: "Descarga Iniciada",
