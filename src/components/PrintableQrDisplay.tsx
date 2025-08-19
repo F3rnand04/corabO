@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from "./ui/button";
@@ -106,7 +105,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
                     </div>
                     
                     <div className="flex-shrink-0 pb-8">
-                         <h2 className="text-5xl font-bold text-[#1E3A8A] mt-4">Compra lo que amas,<br/>paga a tu ritmo.</h2>
+                         <h2 className="text-5xl font-bold text-[#1E3A8A] mt-4">Compra lo que amas.</h2>
                         <div className="flex justify-around items-center text-[#1E3A8A] my-12">
                             <div className="flex flex-col items-center gap-2">
                                 <QrCode className="w-12 h-12" />
@@ -156,7 +155,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
                                     <QRComponent value={qrValue} />
                                 </div>
                             </div>
-                             <p className="text-xl font-bold text-[#1E3A8A] mt-2">Compra lo que amas,<br/>paga a tu ritmo.</p>
+                             <p className="text-xl font-bold text-[#1E3A8A] mt-2">Compra lo que amas.</p>
                              <div className="mt-4 pt-2 border-t border-blue-200 text-xs font-semibold text-[#1E3A8A]">
                                  <p>Caja: {boxName}</p>
                                  <p>ID Negocio: {businessId}</p>
