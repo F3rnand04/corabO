@@ -19,20 +19,22 @@ export function ActivationWarning({ userType }: ActivationWarningProps) {
   if (!currentUser) return null;
 
   const handleActivationClick = () => {
-    // If paused due to inactivity, the first step is to reactivate transactions
-    if (currentUser?.isPaused) {
+    if (currentUser.isPaused) {
         router.push('/transactions/settings');
         return;
     }
     
+    // For companies, the first step after initial setup is the multi-step profile setup.
+    if (currentUser.profileSetupData?.providerType === 'company' && !currentUser.profileSetupData?.specialty) {
+        router.push('/profile-setup');
+        return;
+    }
+    
     if (!currentUser.isInitialSetupComplete) {
-      // Step 1: Complete identity setup
       router.push('/initial-setup');
     } else if (currentUser.idVerificationStatus !== 'verified') {
-      // Step 2: Verify identity document
       router.push('/profile-setup/verify-id');
     } else {
-      // Step 3: Configure payment methods
       router.push('/transactions/settings');
     }
   };

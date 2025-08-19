@@ -65,7 +65,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     const isLoginPage = pathname === '/login';
     const isSetupPage = pathname === '/initial-setup';
-    const isProfileSetupPage = pathname.startsWith('/profile-setup');
 
     if (!currentUser) {
         if (!isLoginPage) {
@@ -76,13 +75,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             if (!isSetupPage) {
                 router.replace('/initial-setup');
             }
-        // NEW LOGIC: If user is a company and hasn't completed the specific company profile setup, redirect them.
-        } else if (currentUser.profileSetupData?.providerType === 'company' && !currentUser.profileSetupData?.specialty) {
-            if (!isProfileSetupPage) {
-                router.replace('/profile-setup');
-            }
         } else {
-            if (isLoginPage || isSetupPage || isProfileSetupPage) {
+            if (isLoginPage || isSetupPage) {
                 router.replace('/');
             }
         }
@@ -144,12 +138,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   // If user is a company but profile is not fully setup
-  if (currentUser.profileSetupData?.providerType === 'company' && !currentUser.profileSetupData?.specialty) {
-     return pathname.startsWith('/profile-setup') ? <main>{children}</main> : (
-        <div className="flex items-center justify-center min-h-screen">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
-    );
+  if (currentUser.profileSetupData?.providerType === 'company' && !currentUser.profileSetupData?.specialty && pathname.startsWith('/profile-setup')) {
+     return <main>{children}</main>;
   }
   
   // Admin role check
