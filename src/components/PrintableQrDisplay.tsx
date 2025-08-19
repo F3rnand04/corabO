@@ -5,30 +5,43 @@ import { Button } from "./ui/button";
 import { QRCodeSVG } from "qrcode.react";
 import Image from "next/image";
 import { QrCode, Handshake, Wallet, Download } from "lucide-react";
-import dynamic from 'next/dynamic';
+import { AlertDialogFooter, AlertDialogCancel } from "./ui/alert-dialog";
+import { toast } from "@/hooks/use-toast";
 
-// Dynamically import html2canvas only on the client side
-const html2canvas = dynamic(() => import('html2canvas'), { ssr: false });
 
 interface PrintableQrDisplayProps {
     boxName: string;
     businessId: string;
     qrValue: string;
+    onClose: () => void;
 }
 
-export const PrintableQrDisplay = ({ boxName, businessId, qrValue }: PrintableQrDisplayProps) => {
+export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: PrintableQrDisplayProps) => {
 
     const downloadQR = async () => {
-        const printableArea = document.getElementById('printable-qr-area');
-        if (printableArea) {
-            // Ensure html2canvas is loaded before using it
-            const canvas = await (await import('html2canvas')).default(printableArea, { scale: 3, backgroundColor: null });
-
-            const pngFile = canvas.toDataURL("image/png");
-            const downloadLink = document.createElement("a");
-            downloadLink.download = `QR-Caja-${boxName.replace(/\s+/g, '-')}.png`;
-            downloadLink.href = pngFile;
-            downloadLink.click();
+        try {
+            const html2canvas = (await import('html2canvas')).default;
+            const printableArea = document.getElementById('printable-qr-area');
+            if (printableArea) {
+                const canvas = await html2canvas(printableArea, { scale: 3, backgroundColor: null });
+                const pngFile = canvas.toDataURL("image/png");
+                const downloadLink = document.createElement("a");
+                downloadLink.download = `QR-Caja-${boxName.replace(/\s+/g, '-')}.png`;
+                downloadLink.href = pngFile;
+                downloadLink.click();
+                toast({
+                  title: "Descarga Iniciada",
+                  description: "Tu imagen del código QR se está descargando."
+                });
+                onClose(); // Auto-close the dialog after download starts
+            }
+        } catch (error) {
+            console.error("Error downloading QR:", error);
+            toast({
+                variant: "destructive",
+                title: "Error de Descarga",
+                description: "No se pudo generar la imagen para descargar."
+            });
         }
     };
 
@@ -42,12 +55,11 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue }: PrintableQr
                 <div className="absolute -bottom-16 -left-8 w-40 h-40 bg-white/20 dark:bg-blue-800/20 rounded-full"></div>
 
                 <div className="relative z-10">
-                    <div className="flex justify-center mb-2">
-                        <Image src="https://i.postimg.cc/Wz1MTvWK/lg.png" alt="Corabo Logo" width={140} height={40} />
+                    <div className="flex justify-center mb-4">
+                       <h2 className="text-2xl font-bold text-blue-900 dark:text-blue-200" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.1)' }}>
+                            Paga a tu Ritmo con Corabo
+                        </h2>
                     </div>
-                    <h2 className="text-xl font-bold text-blue-900 dark:text-blue-200 mb-4" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.1)' }}>
-                        Paga a tu Ritmo con Corabo
-                    </h2>
 
                     <div className="bg-white p-4 rounded-xl shadow-md inline-block my-4">
                         <QRCodeSVG
@@ -83,10 +95,13 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue }: PrintableQr
                     </div>
                 </div>
             </div>
-            <Button onClick={downloadQR}>
-                <Download className="mr-2 h-4 w-4"/>
-                Descargar PNG
-            </Button>
+            <AlertDialogFooter className="sm:justify-between w-full px-6 pb-2">
+                 <AlertDialogCancel onClick={onClose}>Cerrar</AlertDialogCancel>
+                 <Button onClick={downloadQR}>
+                    <Download className="mr-2 h-4 w-4"/>
+                    Descargar PNG
+                </Button>
+            </AlertDialogFooter>
         </div>
     );
 };

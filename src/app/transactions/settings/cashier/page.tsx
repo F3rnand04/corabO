@@ -33,7 +33,7 @@ function CashierManagementCard() {
     const { currentUser, addCashierBox, removeCashierBox, updateCashierBox } = useCorabo();
     const [newBoxName, setNewBoxName] = useState('');
     const [newBoxPassword, setNewBoxPassword] = useState('');
-    const [selectedBoxQr, setSelectedBoxQr] = useState<{name: string, value: string, businessId: string} | null>(null);
+    const [selectedBox, setSelectedBox] = useState<{id: string, name: string, value: string, businessId: string} | null>(null);
     const [passwordVisibility, setPasswordVisibility] = useState<Record<string, boolean>>({});
     const [editingPasswords, setEditingPasswords] = useState<Record<string, string>>({});
     
@@ -124,22 +124,9 @@ function CashierManagementCard() {
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                            <Button variant="outline" size="sm" onClick={() => setSelectedBoxQr({name: box.name, value: box.qrValue, businessId: currentUser.coraboId || currentUser.id})}>
-                                                    <QrCode className="w-4 h-4 mr-2"/>Ver QR
-                                                </Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                {selectedBoxQr && (
-                                                   <PrintableQrDisplay 
-                                                        boxName={selectedBoxQr.name}
-                                                        businessId={selectedBoxQr.businessId}
-                                                        qrValue={selectedBoxQr.value}
-                                                    />
-                                                )}
-                                            </AlertDialogContent>
-                                        </AlertDialog>
+                                        <Button variant="outline" size="sm" onClick={() => setSelectedBox({id: box.id, name: box.name, value: box.qrValue, businessId: currentUser.coraboId || currentUser.id})}>
+                                            <QrCode className="w-4 h-4 mr-2"/>Ver QR
+                                        </Button>
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
                                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"><Trash2 className="w-4 h-4"/></Button>
@@ -166,6 +153,18 @@ function CashierManagementCard() {
                     )}
                 </div>
             </CardContent>
+             <AlertDialog open={!!selectedBox} onOpenChange={(open) => !open && setSelectedBox(null)}>
+                <AlertDialogContent className="max-w-min p-0 bg-transparent border-none">
+                    {selectedBox && (
+                        <PrintableQrDisplay 
+                            boxName={selectedBox.name}
+                            businessId={selectedBox.businessId}
+                            qrValue={selectedBox.value}
+                            onClose={() => setSelectedBox(null)}
+                        />
+                    )}
+                </AlertDialogContent>
+             </AlertDialog>
         </Card>
     )
 }
