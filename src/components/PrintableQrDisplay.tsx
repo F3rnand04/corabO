@@ -3,10 +3,11 @@
 
 import { Button } from "./ui/button";
 import Image from "next/image";
-import { Download, Loader2 } from "lucide-react";
+import { Download, Loader2, X } from "lucide-react";
 import { AlertDialogFooter, AlertDialogCancel } from "./ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useCallback, useState } from "react";
+import { useCallback, useState, useRef, useEffect } from "react";
+import html2canvas from 'html2canvas';
 
 interface PrintableQrDisplayProps {
     boxName: string;
@@ -18,69 +19,80 @@ interface PrintableQrDisplayProps {
 export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: PrintableQrDisplayProps) => {
     const { toast } = useToast();
     const [isDownloading, setIsDownloading] = useState(false);
+    const printRef = useRef<HTMLDivElement>(null);
 
-    const downloadQR = useCallback(() => {
-        if (!qrDataURL) {
+    const downloadQR = useCallback(async () => {
+        if (!printRef.current) {
             toast({
                 variant: "destructive",
-                title: "Error de QR",
-                description: "El código QR aún no está disponible para descargar."
+                title: "Error de Renderizado",
+                description: "No se pudo encontrar el elemento para descargar. Inténtalo de nuevo."
             });
             return;
         }
 
         setIsDownloading(true);
+
         try {
-            // Create a temporary link element
-            const link = document.createElement('a');
-            link.href = qrDataURL;
-            link.download = `QR-Caja-${boxName.replace(/\s+/g, '-')}.png`;
+            const canvas = await html2canvas(printRef.current, {
+                useCORS: true, // Crucial for external images if any were used
+                backgroundColor: null, // For transparent background if needed
+                scale: 2 // Increase resolution
+            });
             
-            // Append to the document, click, and then remove
+            const image = canvas.toDataURL("image/png", 1.0);
+            const link = document.createElement('a');
+            link.href = image;
+            link.download = `QR-Caja-${boxName.replace(/\s+/g, '-')}.png`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            
+
             toast({
-                title: "Descarga Iniciada",
-                description: "Tu código QR se está descargando."
+                title: "Descarga Exitosa",
+                description: "Tu código QR se ha descargado."
             });
-            onClose(); // Close the dialog after initiating download
+            onClose();
+
         } catch (error) {
-            console.error('Error al descargar el QR:', error);
+            console.error('Error al generar la imagen del QR:', error);
             toast({
                 variant: "destructive",
                 title: "Error de Descarga",
-                description: "No se pudo iniciar la descarga. Inténtalo de nuevo."
+                description: "No se pudo generar la imagen para descargar. Por favor, reporta este error."
             });
         } finally {
             setIsDownloading(false);
         }
-    }, [qrDataURL, boxName, toast, onClose]);
-
+    }, [boxName, onClose, toast]);
+    
     return (
         <div className="flex flex-col items-center gap-4 bg-background p-6 rounded-lg shadow-lg">
-            <div className="text-center">
-                <h3 className="font-bold text-lg">QR para Caja: {boxName}</h3>
-                <p className="text-sm text-muted-foreground">ID Negocio: {businessId}</p>
-            </div>
-            
-            <div className="bg-white p-4 rounded-xl shadow-md inline-block">
-                {qrDataURL ? (
-                    <Image src={qrDataURL} alt={`Código QR para ${boxName}`} width={220} height={220} />
-                ) : (
-                    <div className="w-[220px] h-[220px] flex flex-col items-center justify-center bg-gray-200 rounded-lg text-xs text-gray-500">
-                        <Loader2 className="animate-spin h-8 w-8 mb-2" />
-                        <p>Generando QR...</p>
+            {/* The printable area */}
+            <div ref={printRef} className="bg-white p-4">
+                <div className="text-center bg-white">
+                     <h3 className="font-bold text-lg text-black">Paga a tu Ritmo</h3>
+                    <p className="text-sm text-gray-600">Escanea para iniciar con Credicora</p>
+                    <div className="my-3">
+                         {qrDataURL ? (
+                            <Image src={qrDataURL} alt={`Código QR para ${boxName}`} width={220} height={220} />
+                        ) : (
+                            <div className="w-[220px] h-[220px] flex flex-col items-center justify-center bg-gray-200 rounded-lg text-xs text-gray-500">
+                                <Loader2 className="animate-spin h-8 w-8 mb-2" />
+                                <p>Cargando QR...</p>
+                            </div>
+                        )}
                     </div>
-                )}
+                    <p className="font-semibold text-base text-black">Caja: {boxName}</p>
+                    <p className="text-xs text-gray-500">ID Negocio: {businessId}</p>
+                </div>
             </div>
             
             <AlertDialogFooter className="sm:justify-between w-full">
                  <AlertDialogCancel onClick={onClose}>Cerrar</AlertDialogCancel>
                  <Button onClick={downloadQR} disabled={isDownloading || !qrDataURL}>
                     {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                    {isDownloading ? 'Descargando...' : 'Descargar PNG'}
+                    {isDownloading ? 'Generando...' : 'Descargar PNG'}
                 </Button>
             </AlertDialogFooter>
         </div>

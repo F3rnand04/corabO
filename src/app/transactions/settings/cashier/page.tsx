@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -191,7 +192,7 @@ function CashierManagementCard() {
                 </div>
             </CardContent>
              <AlertDialog open={!!selectedBox} onOpenChange={(open) => !open && setSelectedBox(null)}>
-                <AlertDialogContent className="max-w-min p-0 bg-transparent border-none">
+                <AlertDialogContent className="max-w-md p-0 bg-transparent border-none shadow-none">
                     {selectedBox && (
                         <PrintableQrDisplay 
                             boxName={selectedBox.name}

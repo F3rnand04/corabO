@@ -806,18 +806,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         
         const newBoxes = currentUser.profileSetupData.cashierBoxes.filter(b => b.id !== boxId);
         
-        // Optimistic UI Update
-        const oldUser = currentUser;
-        setCurrentUser({ ...currentUser, profileSetupData: { ...currentUser.profileSetupData, cashierBoxes: newBoxes } });
+        await updateUser(currentUser.id, { profileSetupData: { ...currentUser.profileSetupData, cashierBoxes: newBoxes } });
 
-        try {
-            await updateUser(currentUser.id, { profileSetupData: { ...currentUser.profileSetupData, cashierBoxes: newBoxes } });
-            toast({ title: "Caja Eliminada", description: `La caja ha sido eliminada correctamente.` });
-        } catch(error) {
-            // Revert on failure
-            setCurrentUser(oldUser);
-            toast({ variant: 'destructive', title: "Error", description: `No se pudo eliminar la caja.` });
-        }
+        toast({ title: "Caja Eliminada", description: `La caja ha sido eliminada correctamente.` });
     },
     updateCashierBox: async (boxId: string, updates: Partial<Pick<CashierBox, 'name' | 'passwordHash'>>) => {
         if (!currentUser || !currentUser.profileSetupData?.cashierBoxes) return;
