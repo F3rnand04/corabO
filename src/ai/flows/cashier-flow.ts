@@ -26,7 +26,7 @@ const CashierBoxSchema = z.object({
     name: z.string(),
     passwordHash: z.string(),
     qrValue: z.string(),
-    qrDataURL: z.string().optional(),
+    qrDataURL: z.string(), // Now mandatory
 });
 
 /**
@@ -94,5 +94,3 @@ export const regenerateCashierQr = ai.defineFlow(
     }
   }
 );
-
-    

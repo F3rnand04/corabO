@@ -777,6 +777,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         if (!currentUser || currentUser.profileSetupData?.providerType !== 'company') return;
 
         try {
+            // The flow now handles QR generation before returning the box data
             const newBox = await createCashierBoxFlow({
                 userId: currentUser.id,
                 name,
@@ -784,6 +785,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             });
 
             if (newBox) {
+                // The returned newBox now includes the qrDataURL
                 const updatedUser = {
                     ...currentUser,
                     profileSetupData: {
@@ -882,3 +884,4 @@ export type { Transaction };
     
 
     
+
