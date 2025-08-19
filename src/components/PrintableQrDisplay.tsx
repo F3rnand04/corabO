@@ -6,7 +6,6 @@ import { Download, Loader2, QrCode, Handshake, Wallet, ArrowRight } from "lucide
 import { AlertDialogFooter, AlertDialogCancel } from "./ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useCallback, useState, useRef, useEffect } from "react";
-import Image from "next/image";
 import html2canvas from 'html2canvas';
 import QRComponent from "./QRComponent"; 
 
@@ -53,7 +52,6 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
     const [isDownloading, setIsDownloading] = useState(false);
     const printRef = useRef<HTMLDivElement>(null);
     
-    // Pre-load the logo as a base64 image
     const { base64: logoBase64, isLoading: isLogoLoading } = useBase64Image("https://i.postimg.cc/Wz1MTvWK/lg.png");
 
     const downloadQR = useCallback(() => {
@@ -66,7 +64,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
         html2canvas(printRef.current, {
             useCORS: true,
             backgroundColor: null,
-            logging: false, // Turn off extensive logging
+            logging: false,
         }).then(canvas => {
             const link = document.createElement('a');
             link.download = `QR-Caja-${boxName.replace(/\s+/g, '-')}.png`;
@@ -82,10 +80,9 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
         });
     }, [boxName, onClose, toast]);
     
-    // Show a loading state until all assets are ready
     if(isLogoLoading) {
         return (
-             <div className="flex flex-col items-center justify-center gap-4 bg-background p-6 rounded-lg shadow-lg h-[640px] w-[384px]">
+             <div className="flex flex-col items-center justify-center gap-4 bg-background p-6 rounded-lg shadow-lg" style={{ width: '825px', height: '1275px' }}>
                 <Loader2 className="w-12 h-12 animate-spin text-primary" />
                 <p>Cargando diseño...</p>
              </div>
@@ -94,48 +91,47 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
 
     return (
         <div className="flex flex-col items-center gap-4 bg-background p-6 rounded-lg shadow-lg">
-            {/* This is the div that will be "photographed" */}
-            <div ref={printRef} className="bg-[#E3F2FD] p-6 rounded-2xl text-center flex flex-col justify-between" style={{ width: '384px', height: '640px' }}>
+            <div 
+              ref={printRef} 
+              className="bg-[#E3F2FD] p-12 rounded-2xl text-center flex flex-col justify-between" 
+              style={{ width: '825px', height: '1275px' }}
+            >
                 <div className="flex-shrink-0">
-                    <div className="relative w-48 aspect-[3/1] mx-auto">
+                     <div className="relative w-72 aspect-[3/1] mx-auto">
                         {logoBase64 && <img src={logoBase64} alt="Corabo Logo" style={{objectFit: "contain", width: '100%', height: '100%'}} />}
                     </div>
                 </div>
                 
-                <div className="flex justify-center items-center my-4 flex-grow">
-                     <div className="bg-white p-4 rounded-xl shadow-md">
+                <div className="flex justify-center items-center my-8 flex-grow">
+                     <div className="bg-white p-6 rounded-xl shadow-md">
                         <QRComponent value={qrValue} />
                     </div>
                 </div>
                 
                 <div className="flex-shrink-0">
-                    <h2 className="text-2xl font-bold text-[#1E3A8A] mt-4 mb-6">Paga a tu Ritmo con Corabo</h2>
-                    <div className="flex justify-around items-center text-[#1E3A8A] mb-4">
-                        <div className="flex flex-col items-center gap-1">
-                            <QrCode className="w-8 h-8" />
-                            <span className="text-sm font-semibold">Escanea</span>
+                    <h2 className="text-4xl font-bold text-[#1E3A8A] mt-4 mb-10">Paga a tu Ritmo con Corabo</h2>
+                    <div className="flex justify-around items-center text-[#1E3A8A] mb-8">
+                        <div className="flex flex-col items-center gap-2">
+                            <QrCode className="w-12 h-12" />
+                            <span className="text-xl font-semibold">Escanea</span>
                         </div>
-                        <ArrowRight className="w-6 h-6 text-gray-400" />
-                        <div className="flex flex-col items-center gap-1">
-                            <Handshake className="w-8 h-8" />
-                            <span className="text-sm font-semibold">Autoriza</span>
+                        <ArrowRight className="w-10 h-10 text-gray-400" />
+                        <div className="flex flex-col items-center gap-2">
+                            <Handshake className="w-12 h-12" />
+                            <span className="text-xl font-semibold">Autoriza</span>
                         </div>
-                        <ArrowRight className="w-6 h-6 text-gray-400" />
-                        <div className="flex flex-col items-center gap-1">
-                            <Wallet className="w-8 h-8" />
-                            <span className="text-sm font-semibold">Paga</span>
+                        <ArrowRight className="w-10 h-10 text-gray-400" />
+                        <div className="flex flex-col items-center gap-2">
+                            <Wallet className="w-12 h-12" />
+                            <span className="text-xl font-semibold">Paga</span>
                         </div>
                     </div>
 
                      <div 
-                        className="w-full border-b border-dashed border-gray-400 mb-4" 
-                        style={{
-                            borderStyle: 'dashed',
-                            borderWidth: '0 0 2px 0',
-                        }}
+                        className="w-full border-b-4 border-dashed border-gray-400 my-8"
                      />
                     
-                    <div className="text-lg font-semibold text-[#1E3A8A]">
+                    <div className="text-2xl font-semibold text-[#1E3A8A]">
                         <p>Caja: {boxName}</p>
                         <p>ID Negocio: {businessId}</p>
                     </div>
