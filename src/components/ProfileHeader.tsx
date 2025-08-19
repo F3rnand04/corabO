@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, ChangeEvent, useCallback } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Megaphone, Zap, Plus, Package, Wallet, MapPin, Calendar as CalendarIcon, TrendingUp, Timer, FileText, Settings2, UserRoundCog, Handshake, Stethoscope, Utensils, Home as HomeIcon, Briefcase, Scissors, Car } from 'lucide-react';
+import { Star, Megaphone, Zap, Plus, Package, Wallet, MapPin, Calendar as CalendarIcon, TrendingUp, Timer, FileText, Settings2, UserRoundCog, Handshake, Stethoscope, Utensils, Home as HomeIcon, Briefcase, Scissors, Car, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
@@ -46,26 +46,22 @@ const renderSpecializedBadges = (specializedData?: SpecializedData) => {
     if (!specializedData) return null;
     
     const badges = [];
+    const allSkills = [
+        ...(specializedData.mainTrades || []),
+        ...(specializedData.mainServices || []),
+        ...(specializedData.beautyTrades || []),
+        ...(specializedData.specialties || []),
+        ...(specializedData.specificSkills || []),
+        ...(specializedData.keySkills || []),
+    ];
 
-    const mainCategory = specializedData?.mainTrades || specializedData?.mainServices || specializedData?.beautyTrades;
-    if (mainCategory && mainCategory.length > 0) {
-        badges.push(<DetailBadge key="main" value={mainCategory[0]} />);
+    if (allSkills.length > 0) {
+        // Show the first 2-3 skills directly
+        const visibleSkills = allSkills.slice(0, 2);
+        visibleSkills.forEach(skill => {
+            badges.push(<DetailBadge key={skill} value={skill} />);
+        });
     }
-
-    if (specializedData.specialties && specializedData.specialties.length > 0) {
-        badges.push(<DetailBadge key="spec" value={specializedData.specialties[0]} icon={Stethoscope} />);
-    }
-
-    if (specializedData.vehicleType) {
-        badges.push(<DetailBadge key="vehicle" value={specializedData.vehicleType} icon={Car} />);
-    }
-    
-    const otherSkills = specializedData.specificSkills || specializedData.keySkills || [];
-    if (otherSkills.length > 0) {
-         badges.push(<DetailBadge key="skill" value={otherSkills[0]} />);
-    }
-    
-    // Add more logic here for other specialized fields if needed
 
     return (
         <div className="flex flex-wrap items-center gap-1.5 pt-3">
@@ -178,6 +174,16 @@ export function ProfileHeader() {
     return 'text-green-500';
   };
 
+  const DetailsIcon = categoryIcons[currentUser.profileSetupData?.primaryCategory || ''] || Briefcase;
+  const allSpecializedSkills = [
+      ...(currentUser.profileSetupData?.specializedData?.mainTrades || []),
+      ...(currentUser.profileSetupData?.specializedData?.mainServices || []),
+      ...(currentUser.profileSetupData?.specializedData?.beautyTrades || []),
+      ...(currentUser.profileSetupData?.specializedData?.specialties || []),
+      ...(currentUser.profileSetupData?.specializedData?.specificSkills || []),
+      ...(currentUser.profileSetupData?.specializedData?.keySkills || []),
+  ];
+
 
   return (
     <>
@@ -193,10 +199,10 @@ export function ProfileHeader() {
                     <Plus className="w-4 h-4" />
                 </Button>
             </div>
-            <div className="flex-grow">
-                <h1 className="text-lg font-bold text-foreground">{displayName}</h1>
+            <div className="flex-grow min-w-0">
+                <h1 className="text-lg font-bold text-foreground truncate">{displayName}</h1>
                 <p className="text-sm text-muted-foreground">{specialty}</p>
-                 <div className="flex items-center gap-2 text-xs mt-1 text-muted-foreground">
+                 <div className="flex items-center flex-wrap gap-x-2 gap-y-1 text-xs mt-1 text-muted-foreground">
                     <div className="flex items-center gap-1">
                         <Star className="w-4 h-4 text-yellow-400 fill-yellow-400"/>
                         <span className="font-semibold text-foreground">{reputation.toFixed(1)}</span>
@@ -226,38 +232,35 @@ export function ProfileHeader() {
                     </Button>
                 )}
                  <div className="flex items-center gap-3">
-                     <Button variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground" onClick={() => toggleGps(currentUser.id)}>
-                        <MapPin className={cn("h-5 w-5", currentUser.isGpsActive ? "text-green-500" : "text-muted-foreground")} />
-                    </Button>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground">
-                                <CalendarIcon className="w-5 h-5" />
-                            </Button>
-                        </PopoverTrigger>
-                         <PopoverContent className="w-auto p-0">
-                            <Calendar
-                                mode="multiple"
-                                selected={eventDates}
-                                onDayClick={handleDayClick}
-                            />
-                        </PopoverContent>
-                    </Popover>
-                    <Button asChild variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground">
-                        <Link href="/transactions">
-                            <Wallet className="w-5 h-5"/>
-                        </Link>
-                    </Button>
-                    <Button asChild variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground">
-                       <Link href="/profile-setup/details">
-                          <UserRoundCog className="w-5 h-5" />
-                       </Link>
-                    </Button>
+                    <Button asChild variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground"><Link href="/transactions/settings"><Settings2 className="w-5 h-5"/></Link></Button>
+                    <Button asChild variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground"><Link href="/profile-setup/details"><UserRoundCog className="w-5 h-5"/></Link></Button>
                  </div>
             </div>
         </div>
         
-        {renderSpecializedBadges(currentUser.profileSetupData?.specializedData)}
+         <div className="flex flex-wrap items-center gap-2 pt-3">
+            {renderSpecializedBadges(currentUser.profileSetupData?.specializedData)}
+            {allSpecializedSkills.length > 2 && (
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="ghost" className="flex items-center gap-1 text-xs p-1 h-auto text-muted-foreground">
+                            <DetailsIcon className="w-4 h-4 text-primary"/>
+                            Ver más
+                            <MoreHorizontal className="w-3 h-3 ml-1" />
+                        </Button>
+                    </PopoverTrigger>
+                     <PopoverContent className="w-72">
+                        <div className="space-y-2 text-sm">
+                            <h4 className="font-bold mb-2">Todas las Habilidades</h4>
+                            <div className="flex flex-wrap gap-1">
+                                {allSpecializedSkills.map(skill => <Badge key={skill} variant="secondary">{skill}</Badge>)}
+                            </div>
+                        </div>
+                    </PopoverContent>
+                </Popover>
+            )}
+        </div>
+
 
         <div className="flex items-center gap-2 mt-4">
             {isProvider && !isCompany && (

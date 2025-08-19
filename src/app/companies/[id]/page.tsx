@@ -454,9 +454,9 @@ export default function CompanyProfilePage() {
                 <AvatarImage src={profileData.profileImage} alt={profileData.name} data-ai-hint="company logo"/>
                 <AvatarFallback>{profileData.name.charAt(0)}</AvatarFallback>
               </Avatar>
-              <div className="flex-grow">
+              <div className="flex-grow min-w-0">
                 <div className="flex items-center gap-2">
-                  <h1 className="text-lg font-bold text-foreground">{profileData.name}</h1>
+                  <h1 className="text-lg font-bold text-foreground truncate">{profileData.name}</h1>
                   {provider.isSubscribed && <CheckCircle className="w-5 h-5 text-blue-500" />}
                   {isCompany && <Building className="w-4 h-4 text-muted-foreground" />}
                 </div>
@@ -542,37 +542,35 @@ export default function CompanyProfilePage() {
               </div>
             </div>
             
-            <div className="flex items-center gap-4 text-xs text-muted-foreground pt-4 pb-2">
+             <div className="flex items-center justify-between gap-4 text-xs text-muted-foreground pt-4 pb-2">
                 <p><span className="font-bold text-foreground">{isProductProvider || isCompany ? `${providerProducts.length} Productos` : `${profileData.publications} Publicaciones`}</span></p>
                 {isProviderTransactionReady && !isProductProvider && <><Separator orientation="vertical" className="h-4"/><p><span className="font-bold text-foreground">{profileData.completedJobs}</span> Trabajos</p></>}
                 {isCompany && <><Separator orientation="vertical" className="h-4"/><p><span className="font-bold text-foreground">{affiliatedProfessionals.length}</span> Afiliados</p></>}
                 {specializedData && (
-                    <>
-                        <Separator orientation="vertical" className="h-4"/>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button variant="ghost" className="flex items-center gap-1 text-xs p-1 h-auto">
-                                    <DetailsIcon className="w-4 h-4 text-primary"/>
-                                    Detalles
-                                    <MoreHorizontal className="w-3 h-3 ml-1" />
-                                </Button>
-                            </PopoverTrigger>
-                             <PopoverContent className="w-72">
-                                <div className="space-y-4 text-sm">
-                                    <h4 className="font-bold mb-2">Detalles Especializados</h4>
-                                    <DetailItem icon={Wrench} label="Oficios/Servicios" value={specializedData.mainTrades || specializedData.mainServices || specializedData.beautyTrades} />
-                                    <DetailItem icon={Briefcase} label="Habilidades Clave" value={specializedData.specificSkills || specializedData.keySkills} />
-                                    <DetailItem icon={Utensils} label="Tipos de Cocina" value={specializedData.cuisineTypes} />
-                                    <DetailItem icon={BadgeCheck} label="Especialidades Médicas" value={specializedData.specialties} />
-                                    <DetailItem icon={Car} label="Marcas Atendidas" value={specializedData.brandsServed} />
-                                    <DetailItem icon={BrainCircuit} label="Herramientas y Marcas" value={specializedData.toolsAndBrands} />
-                                    {specializedData.menuUrl && <a href={specializedData.menuUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-blue-600 hover:underline"><LinkIcon className="w-4 h-4"/> Ver Menú</a>}
-                                </div>
-                            </PopoverContent>
-                        </Popover>
-                    </>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant="ghost" className="flex items-center gap-1 text-xs p-1 h-auto">
+                                <DetailsIcon className="w-4 h-4 text-primary"/>
+                                Detalles
+                                <MoreHorizontal className="w-3 h-3 ml-1" />
+                            </Button>
+                        </PopoverTrigger>
+                         <PopoverContent className="w-72">
+                            <div className="space-y-4 text-sm">
+                                <h4 className="font-bold mb-2">Detalles Especializados</h4>
+                                <DetailItem icon={Wrench} label="Oficios/Servicios" value={specializedData.mainTrades || specializedData.mainServices || specializedData.beautyTrades} />
+                                <DetailItem icon={Briefcase} label="Habilidades Clave" value={specializedData.specificSkills || specializedData.keySkills} />
+                                <DetailItem icon={Utensils} label="Tipos de Cocina" value={specializedData.cuisineTypes} />
+                                <DetailItem icon={BadgeCheck} label="Especialidades Médicas" value={specializedData.specialties} />
+                                <DetailItem icon={Car} label="Marcas Atendidas" value={specializedData.brandsServed} />
+                                <DetailItem icon={BrainCircuit} label="Herramientas y Marcas" value={specializedData.toolsAndBrands} />
+                                {specializedData.menuUrl && <a href={specializedData.menuUrl} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-blue-600 hover:underline"><LinkIcon className="w-4 h-4"/> Ver Menú</a>}
+                            </div>
+                        </PopoverContent>
+                    </Popover>
                 )}
             </div>
+
 
             {provider.activeAffiliation && (
                 <Link href={`/companies/${provider.activeAffiliation.companyId}`} className="group">
@@ -833,13 +831,3 @@ export default function CompanyProfilePage() {
     </>
   );
 }
-
-    
-
-
-
-
-
-
-
-    
