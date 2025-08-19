@@ -2,7 +2,7 @@
 'use client';
 
 import { Button } from "./ui/button";
-import { Download, Loader2, AlertTriangle } from "lucide-react";
+import { Download, Loader2, AlertTriangle, QrCodeIcon, Handshake, Wallet } from "lucide-react";
 import { AlertDialogFooter, AlertDialogCancel } from "./ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useCallback, useState, useRef, useEffect } from "react";
@@ -16,7 +16,7 @@ interface PrintableQrDisplayProps {
 }
 
 // Hardcoded base64 logo to prevent CORS issues and ensure availability.
-const coraboLogoBase64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAA8CAMAAAB1a982AAAAbFBMVEUAAAAA//8AnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwdouwAnuwAnuwAnuwAm+oAm+oAnuwAnuwAnuwAnuwAnuwAl+sAnuwAm+oAnuwAnuwAnuwAnuwAnuxKq/H///8i2fa2AAAAI3RSTlMAwEC/f3+AIGAwv78Q75AgYFC/QKAwUP+AYI/vP0DfcM+fVfHlAAAAA1hJREFUeNrt2kGOwkAQRFGICYgi4g7u/w7HCXSBgY5Tqa2t1V4n9g7A9wzDfnsCslxw4qLliIuWIy5ajrhocR8XLYdcNB1x0XTERctRlzIuWou4aLbiwMUl4sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFp3DhL3BxcYg4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4acHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4c-gVwAAAABJRU5ErkJggg==";
+const coraboLogoBase64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAA8CAMAAAB1a982AAAAbFBMVEUAAAAA//8AnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwdouwAnuwAnuwAnuwAm+oAm+oAnuwAnuwAnuwAnuwAnuwAl+sAnuwAm+oAnuwAnuwAnuwAnuwAnuxKq/H///8i2fa2AAAAI3RSTlMAwEC/f3+AIGAwv78Q75AgYFC/QKAwUP+AYI/vP0DfcM+fVfHlAAAAA1hJREFUeNrt2kGOwkAQRFGICYgi4g7u/w7HCXSBgY5Tqa2t1V4n9g7A9wzDfnsCslxw4qLliIuWIy5ajrhocR8XLYdcNB1x0XTERctRlzIuWou4aLbiwMUl4sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFp3DhL3BxcYg4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4acHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4c-gVwAAAABJRU5ErkJggg==";
 
 export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: PrintableQrDisplayProps) => {
     const { toast } = useToast();
@@ -42,11 +42,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
 
         const loadImage = (src: string): Promise<HTMLImageElement> => {
             return new Promise((resolve, reject) => {
-                if (!src || typeof src !== 'string') {
-                    return reject(new Error('Fuente de imagen inválida.'));
-                }
                 const img = new Image();
-                img.crossOrigin = "anonymous"; // Important for preventing canvas tainting
                 img.onload = () => resolve(img);
                 img.onerror = (err) => reject(new Error(`Fallo al cargar la imagen: ${err.toString()}`));
                 img.src = src;
@@ -54,39 +50,86 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
         };
 
         try {
-            // Promise.all ensures both images are fully loaded before we proceed.
-            const [qrImg] = await Promise.all([
-                loadImage(qrDataURL)
+            const [qrImg, logoImg] = await Promise.all([
+                loadImage(qrDataURL),
+                loadImage(coraboLogoBase64),
             ]);
-
+            
             const width = 400;
             const height = 550; 
             canvas.width = width;
             canvas.height = height;
 
-            // Draw background
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(0, 0, width, height);
-
-            // Draw header blue box
+            // Draw rounded rectangle background
             ctx.fillStyle = '#E3F2FD'; // Light blue
-            ctx.fillRect(0, 0, width, 150);
+            ctx.beginPath();
+            ctx.moveTo(0, 20);
+            ctx.arcTo(0, 0, 20, 0, 20);
+            ctx.lineTo(width - 20, 0);
+            ctx.arcTo(width, 0, width, 20, 20);
+            ctx.lineTo(width, height);
+            ctx.lineTo(0, height);
+            ctx.closePath();
+            ctx.fill();
+
+            // Draw Logo
+            const logoAspectRatio = logoImg.width / logoImg.height;
+            const logoWidth = 150;
+            const logoHeight = logoWidth / logoAspectRatio;
+            ctx.drawImage(logoImg, (width - logoWidth) / 2, 30, logoWidth, logoHeight);
             
-            // Draw Texts
+            // Draw Headline
             ctx.fillStyle = '#1E3A8A'; // Dark blue text
             ctx.font = 'bold 24px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText('Paga a tu Ritmo con Corabo', width / 2, 80);
+            ctx.fillText('Paga a tu Ritmo con Corabo', width / 2, 140);
+            
+            // Draw white container for QR
+            ctx.fillStyle = '#FFFFFF';
+            const qrContainerX = (width - 240) / 2;
+            const qrContainerY = 170;
+            const qrContainerWidth = 240;
+            const qrContainerHeight = 240;
+            ctx.beginPath();
+            ctx.moveTo(qrContainerX + 20, qrContainerY);
+            ctx.lineTo(qrContainerX + qrContainerWidth - 20, qrContainerY);
+            ctx.arcTo(qrContainerX + qrContainerWidth, qrContainerY, qrContainerX + qrContainerWidth, qrContainerY + 20, 20);
+            ctx.lineTo(qrContainerX + qrContainerWidth, qrContainerY + qrContainerHeight - 20);
+            ctx.arcTo(qrContainerX + qrContainerWidth, qrContainerY + qrContainerHeight, qrContainerX + qrContainerWidth - 20, qrContainerY + qrContainerHeight, 20);
+            ctx.lineTo(qrContainerX + 20, qrContainerY + qrContainerHeight);
+            ctx.arcTo(qrContainerX, qrContainerY + qrContainerHeight, qrContainerX, qrContainerY + qrContainerHeight - 20, 20);
+            ctx.lineTo(qrContainerX, qrContainerY + 20);
+            ctx.arcTo(qrContainerX, qrContainerY, qrContainerX + 20, qrContainerY, 20);
+            ctx.closePath();
+            ctx.fill();
 
             // Draw QR Code
-            ctx.drawImage(qrImg, (width - 220) / 2, 180, 220, 220);
+            ctx.drawImage(qrImg, (width - 200) / 2, 190, 200, 200);
+
+            // Draw instructional flow (This is a simplified version)
+            ctx.fillStyle = '#1E3A8A';
+            ctx.font = '14px Arial';
+            const flowY = 450;
+            ctx.fillText('Escanea', 80, flowY + 25);
+            ctx.fillText('Autoriza', 200, flowY + 25);
+            ctx.fillText('Paga', 320, flowY + 25);
+            
+            // Dashed line
+            ctx.beginPath();
+            ctx.setLineDash([5, 5]);
+            ctx.moveTo(120, flowY);
+            ctx.lineTo(160, flowY);
+            ctx.moveTo(240, flowY);
+            ctx.lineTo(280, flowY);
+            ctx.stroke();
+            ctx.setLineDash([]);
             
             // Draw Footer Texts
             ctx.fillStyle = '#1E3A8A';
-            ctx.font = 'bold 20px Arial';
-            ctx.fillText(`Caja: ${boxName}`, width / 2, height - 80);
-            ctx.font = '16px Arial';
-            ctx.fillText(`ID Negocio: ${businessId}`, width / 2, height - 50);
+            ctx.font = 'bold 16px Arial';
+            ctx.fillText(`Caja: ${boxName}`, width / 2, height - 50);
+            ctx.font = '14px Arial';
+            ctx.fillText(`ID Negocio: ${businessId}`, width / 2, height - 30);
             
             setIsCanvasReady(true);
         } catch (e: any) {
@@ -138,7 +181,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
                 <canvas ref={canvasRef} className={cn("w-full max-w-[300px] border rounded-md", !isCanvasReady && 'hidden')} />
             )}
              {!isCanvasReady && !error && (
-                 <div className="w-full h-[300px] flex flex-col items-center justify-center bg-muted/50 rounded-md">
+                 <div className="w-full h-[412px] flex flex-col items-center justify-center bg-muted/50 rounded-md">
                      <Loader2 className="w-12 h-12 animate-spin text-primary"/>
                      <p className="mt-4 text-sm text-muted-foreground">Generando previsualización...</p>
                  </div>
