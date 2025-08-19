@@ -542,10 +542,10 @@ export default function CompanyProfilePage() {
               </div>
             </div>
             
-             <div className="flex items-center justify-between gap-4 text-xs text-muted-foreground pt-4 pb-2">
+             <div className="flex items-center justify-around gap-4 text-xs text-muted-foreground pt-4 pb-2">
                 <p><span className="font-bold text-foreground">{isProductProvider || isCompany ? `${providerProducts.length} Productos` : `${profileData.publications} Publicaciones`}</span></p>
-                {isProviderTransactionReady && !isProductProvider && <><Separator orientation="vertical" className="h-4"/><p><span className="font-bold text-foreground">{profileData.completedJobs}</span> Trabajos</p></>}
-                {isCompany && <><Separator orientation="vertical" className="h-4"/><p><span className="font-bold text-foreground">{affiliatedProfessionals.length}</span> Afiliados</p></>}
+                {!isCompany && <p><span className="font-bold text-foreground">{profileData.completedJobs}</span> Trabajos</p>}
+                {isCompany && <p><span className="font-bold text-foreground">{affiliatedProfessionals.length}</span> Afiliados</p>}
                 {specializedData && (
                     <Popover>
                         <PopoverTrigger asChild>
