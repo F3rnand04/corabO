@@ -841,6 +841,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         
         try {
             const newQrData = await regenerateCashierQrFlow({ boxId, userId: currentUser.id });
+            
             const currentBoxes = currentUser.profileSetupData.cashierBoxes;
             const boxIndex = currentBoxes.findIndex(b => b.id === boxId);
             if (boxIndex === -1) return;
@@ -849,9 +850,22 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             const newBoxes = [...currentBoxes];
             newBoxes[boxIndex] = updatedBox;
             
-            await updateUser(currentUser.id, { 
-                profileSetupData: { ...currentUser.profileSetupData, cashierBoxes: newBoxes } 
+            const updatedUser = {
+                ...currentUser,
+                profileSetupData: {
+                    ...currentUser.profileSetupData,
+                    cashierBoxes: newBoxes,
+                },
+            };
+
+            // Update Firestore
+            await updateDoc(doc(getFirestoreDb(), 'users', currentUser.id), {
+                profileSetupData: updatedUser.profileSetupData,
             });
+
+            // Update local state
+            _setCurrentUser(updatedUser);
+            
             toast({ title: "QR Regenerado", description: `Se ha creado un nuevo código QR para la caja.` });
 
         } catch(error) {
@@ -889,5 +903,6 @@ export type { Transaction };
     
 
     
+
 
 
