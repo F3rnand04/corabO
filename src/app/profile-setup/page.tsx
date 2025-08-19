@@ -27,33 +27,28 @@ export default function ProfileSetupPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    // This effect ensures the form data is initialized or updated if the currentUser object changes.
     if (currentUser?.profileSetupData) {
       setFormData(prev => ({ ...prev, ...currentUser.profileSetupData }));
     }
   }, [currentUser]);
 
   useEffect(() => {
-    // When returning from map, update the location in the form state
-    if (deliveryAddress && deliveryAddress !== formData.location) {
-      setFormData(prev => ({ ...prev, location: deliveryAddress }));
-      // Clear the address from context so it doesn't persist incorrectly
-      setDeliveryAddress(''); 
-    }
-  }, [deliveryAddress, formData.location, setDeliveryAddress]);
-  
-   useEffect(() => {
-    // This effect handles returning from the map view
+    // This effect specifically handles the return from the map page.
     const fromMap = searchParams.get('fromMap');
-    if (fromMap) {
-      // When returning from map, we should be on the logistics step
-      setStep(2); 
-      // Clean up the URL query parameter
-      const currentUrl = new URL(window.location.href);
-      currentUrl.searchParams.delete('fromMap');
-      router.replace(currentUrl.toString(), { scroll: false });
+    if (fromMap === 'true' && deliveryAddress) {
+        // Update the form data with the new address from context
+        setFormData(prev => ({ ...prev, location: deliveryAddress }));
+        // Ensure we are on the correct step to see the change
+        setStep(2); 
+        // Clean the address from context to prevent re-triggering
+        setDeliveryAddress('');
+        // Clean up the URL query parameter to prevent loops on refresh
+        const currentUrl = new URL(window.location.href);
+        currentUrl.searchParams.delete('fromMap');
+        router.replace(currentUrl.toString(), { scroll: false });
     }
-   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
+  }, [deliveryAddress, searchParams, setDeliveryAddress, router]);
 
   if (!currentUser) {
     return (
