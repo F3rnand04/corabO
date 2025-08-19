@@ -794,7 +794,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         const qrValue = JSON.stringify({ providerId: currentUser.id, cashierBoxId: boxId });
         const qrDataURL = await generateQrDataURL(qrValue);
 
-        const newBox: CashierBox = { id: boxId, name, passwordHash: password, qrValue, qrDataURL, isActive: false };
+        const newBox: CashierBox = { id: boxId, name, passwordHash: password, qrValue, qrDataURL };
         const newBoxes = [...(currentUser.profileSetupData?.cashierBoxes || []), newBox];
         
         await updateUser(currentUser.id, { profileSetupData: { ...currentUser.profileSetupData, cashierBoxes: newBoxes } });

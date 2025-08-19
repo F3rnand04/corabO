@@ -2,10 +2,11 @@
 'use client';
 
 import { Button } from "./ui/button";
-import { Download, Loader2 } from "lucide-react";
+import { Download, Loader2, AlertTriangle } from "lucide-react";
 import { AlertDialogFooter, AlertDialogCancel } from "./ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useCallback, useState, useRef, useEffect } from "react";
+import { cn } from "@/lib/utils";
 
 interface PrintableQrDisplayProps {
     boxName: string;
@@ -14,97 +15,94 @@ interface PrintableQrDisplayProps {
     onClose: () => void;
 }
 
-// Hardcoded base64 logo to prevent any CORS issues forever.
-const coraboLogoBase64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAA8CAMAAAB1a982AAAAbFBMVEUAAAAA//8AnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwdouwAnuwAnuwAnuwAm+oAm+oAnuwAnuwAnuwAnuwAnuwAl+sAnuwAm+oAnuwAnuwAnuwAnuwAnuxKq/H///8i2fa2AAAAI3RSTlMAwEC/f3+AIGAwv78Q75AgYFC/QKAwUP+AYI/vP0DfcM+fVfHlAAAAA1hJREFUeNrt2kGOwkAQRFGICYgi4g7u/w7HCXSBgY5Tqa2t1V4n9g7A9wzDfnsCslxw4qLliIuWIy5ajrhocR8XLYdcNB1x0XTERctRlzIuWou4aLbiwMUl4sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFp3DhL3BxcYg4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4c-gVwAAAABJRU5ErkJggg==";
+// Hardcoded base64 logo to prevent CORS issues.
+const coraboLogoBase64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAA8CAMAAAB1a982AAAAbFBMVEUAAAAA//8AnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwdouwAnuwAnuwAnuwAm+oAm+oAnuwAnuwAnuwAnuwAnuwAl+sAnuwAm+oAnuwAnuwAnuwAnuwAnuxKq/H///8i2fa2AAAAI3RSTlMAwEC/f3+AIGAwv78Q75AgYFC/QKAwUP+AYI/vP0DfcM+fVfHlAAAAA1hJREFUeNrt2kGOwkAQRFGICYgi4g7u/w7HCXSBgY5Tqa2t1V4n9g7A9wzDfnsCslxw4qLliIuWIy5ajrhocR8XLYdcNB1x0XTERctRlzIuWou4aLbiwMUl4sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFp3DhL3BxcYg4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4c-gVwAAAABJRU5ErkJggg==";
 
 export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: PrintableQrDisplayProps) => {
     const { toast } = useToast();
     const [isDownloading, setIsDownloading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
-    const drawCanvasContent = useCallback(() => {
+    const drawCanvasContent = useCallback(async () => {
+        if (!qrDataURL) {
+            setError("El código QR no está disponible.");
+            return;
+        }
+
         const canvas = canvasRef.current;
-        if (!canvas || !qrDataURL) return;
+        if (!canvas) return;
 
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
-        
-        const width = 400;
-        const height = 635;
-        canvas.width = width;
-        canvas.height = height;
 
-        // Create a new promise for each image to ensure it's loaded before drawing
         const loadImage = (src: string): Promise<HTMLImageElement> => {
             return new Promise((resolve, reject) => {
+                if (!src || typeof src !== 'string') {
+                    return reject(new Error('Invalid image source.'));
+                }
                 const img = new Image();
                 img.crossOrigin = "anonymous";
                 img.onload = () => resolve(img);
-                img.onerror = (err) => reject(new Error(`Failed to load image: ${src.substring(0, 50)}...`));
+                img.onerror = () => reject(new Error('Failed to load image.'));
                 img.src = src;
             });
         };
 
-        // Chain all image loading promises
-        Promise.all([
-            loadImage(coraboLogoBase64),
-            loadImage(qrDataURL)
-        ]).then(([logoImg, qrImg]) => {
-            // Draw background
-            ctx.fillStyle = '#E3F2FD'; // Light blue background
-            ctx.beginPath();
-            ctx.moveTo(20, 0);
-            ctx.lineTo(width - 20, 0);
-            ctx.quadraticCurveTo(width, 0, width, 20);
-            ctx.lineTo(width, height - 20);
-            ctx.quadraticCurveTo(width, height, width - 20, height);
-            ctx.lineTo(20, height);
-            ctx.quadraticCurveTo(0, height, 0, height - 20);
-            ctx.lineTo(0, 20);
-            ctx.quadraticCurveTo(0, 0, 20, 0);
-            ctx.closePath();
-            ctx.fill();
-            
-            // Draw Corabo Logo
-            ctx.drawImage(logoImg, (width - 256) / 2, 40, 256, 40);
+        try {
+            const [logoImg, qrImg] = await Promise.all([
+                loadImage(coraboLogoBase64),
+                loadImage(qrDataURL)
+            ]);
 
-            // Draw Texts
-            ctx.fillStyle = '#1E3A8A'; // Dark blue text
-            ctx.font = 'bold 28px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('Paga a tu Ritmo con Corabo', width / 2, 140);
+            const width = 400;
+            const height = 600; // Adjusted height for better layout
+            canvas.width = width;
+            canvas.height = height;
 
-            // Draw White Box for QR
             ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect((width - 220) / 2, 170, 220, 220);
+            ctx.fillRect(0, 0, width, height);
 
-            // Draw QR Code
-            ctx.drawImage(qrImg, (width - 200) / 2, 180, 200, 200);
+            ctx.fillStyle = '#E3F2FD'; // Light blue background
+            const padding = 20;
+            const contentWidth = width - (padding * 2);
+            const contentHeight = height - (padding * 2);
+            ctx.fillRect(padding, padding, contentWidth, contentHeight);
 
-            // Draw Bottom Text
+            ctx.drawImage(logoImg, (width - 256) / 2, padding + 30, 256, 40);
+
+            ctx.fillStyle = '#1E3A8A'; // Dark blue text
+            ctx.font = 'bold 24px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Paga a tu Ritmo con Corabo', width / 2, padding + 130);
+
+            ctx.drawImage(qrImg, (width - 220) / 2, padding + 160, 220, 220);
+            
             ctx.fillStyle = '#1E3A8A';
             ctx.font = 'bold 20px Arial';
-            ctx.fillText(`Caja: ${boxName}`, width / 2, 560);
+            ctx.fillText(`Caja: ${boxName}`, width / 2, height - padding - 60);
             ctx.font = '16px Arial';
-            ctx.fillText(`ID Negocio: ${businessId}`, width / 2, 590);
-
-        }).catch(err => {
-            console.error("Error loading images for canvas: ", err);
-            toast({ variant: 'destructive', title: 'Error de imagen', description: 'No se pudieron cargar las imágenes para el QR.' });
-        });
-    }, [qrDataURL, boxName, businessId, toast]);
+            ctx.fillText(`ID Negocio: ${businessId}`, width / 2, height - padding - 30);
+            
+            setError(null); // Clear previous errors
+        } catch (e) {
+            console.error("Error drawing canvas:", e);
+            setError("No se pudieron cargar las imágenes para el QR.");
+        }
+    }, [qrDataURL, boxName, businessId]);
 
     useEffect(() => {
-        // Draw the canvas as soon as the component is ready and qrDataURL is available
         drawCanvasContent();
     }, [drawCanvasContent]);
     
     const downloadQR = useCallback(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) {
-            toast({ variant: "destructive", title: "Error", description: "No se pudo encontrar el canvas." });
+        if (error) {
+            toast({ variant: "destructive", title: "Error", description: "No se puede descargar porque hay un error en la imagen." });
             return;
         }
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
         setIsDownloading(true);
         try {
             const image = canvas.toDataURL("image/png", 1.0);
@@ -114,24 +112,30 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            toast({ title: "Descarga Exitosa", description: "Tu código QR se ha descargado." });
-            onClose();
-        } catch (error) {
-            console.error("Error downloading canvas:", error);
+        } catch (e) {
+            console.error("Error downloading canvas:", e);
             toast({ variant: "destructive", title: "Error de Descarga", description: "No se pudo generar el PNG." });
         } finally {
             setIsDownloading(false);
+            onClose();
         }
-    }, [boxName, onClose, toast]);
+    }, [boxName, onClose, toast, error]);
 
     return (
         <div className="flex flex-col items-center gap-4 bg-background p-6 rounded-lg shadow-lg">
-            {/* The canvas for display and download */}
-            <canvas ref={canvasRef} style={{ maxWidth: '300px' }}/>
+            {error ? (
+                <div className="w-full h-[300px] flex flex-col items-center justify-center bg-red-50 text-destructive border border-destructive rounded-md">
+                    <AlertTriangle className="w-12 h-12 mb-4" />
+                    <h3 className="font-bold">Error de imagen</h3>
+                    <p className="text-sm">{error}</p>
+                </div>
+            ) : (
+                <canvas ref={canvasRef} className="w-full max-w-[300px] border rounded-md" />
+            )}
 
-            <AlertDialogFooter className="sm:justify-between w-full">
+            <AlertDialogFooter className="sm:justify-between w-full mt-4">
                 <AlertDialogCancel onClick={onClose}>Cerrar</AlertDialogCancel>
-                <Button onClick={downloadQR} disabled={isDownloading || !qrDataURL}>
+                <Button onClick={downloadQR} disabled={isDownloading || !!error}>
                     {isDownloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
                     {isDownloading ? 'Generando...' : 'Descargar PNG'}
                 </Button>
