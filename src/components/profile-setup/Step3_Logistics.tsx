@@ -23,7 +23,7 @@ export default function Step3_Logistics({ formData, onUpdate, onNext }: Step3_Lo
 
   const handleSetLocationFromMap = () => {
     // In a real app, we might store the current form state before navigating
-    router.push('/map'); 
+    router.push('/map?fromSetup=true'); 
   };
   
   const canContinue = formData.offerType;
@@ -79,9 +79,9 @@ export default function Step3_Logistics({ formData, onUpdate, onNext }: Step3_Lo
       </div>
 
       <div className="p-4 border rounded-lg space-y-4">
-          <div className="flex items-center space-x-2">
-              <Checkbox id="has_delivery" checked={formData.isOnlyDelivery} onCheckedChange={handleDeliveryToggle} />
+          <div className="flex items-center justify-between">
               <Label htmlFor="has_delivery" className="flex items-center gap-2"><Truck className="w-4 h-4"/> Ofrecemos Delivery / Servicio a Domicilio</Label>
+              <Switch id="has_delivery" checked={formData.isOnlyDelivery} onCheckedChange={handleDeliveryToggle} />
           </div>
           {formData.isOnlyDelivery && (
              <div className="space-y-2 pl-6 border-l-2 ml-3">
