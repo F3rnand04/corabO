@@ -92,19 +92,20 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
                     className="bg-[#E3F2FD] p-12 rounded-2xl text-center flex flex-col justify-between" 
                     style={{ width: '825px', height: '1275px' }}
                 >
-                    <div className="flex-shrink-0 flex justify-center">
-                        <div className="relative w-72">
+                    <div className="flex-shrink-0 flex flex-col items-center justify-center pt-8">
+                        <h2 className="text-3xl text-[#1E3A8A] mb-4">Bienvenido, haz tu compra con</h2>
+                        <div className="relative w-80 aspect-[3/1]">
                             {logoBase64 && <img src={logoBase64} alt="Corabo Logo" style={{objectFit: "contain", width: '100%', height: 'auto'}} />}
                         </div>
                     </div>
                     
                     <div className="flex justify-center items-center my-8 flex-grow">
                         <div className="bg-white p-6 rounded-xl shadow-md">
-                            <QRComponent value={qrValue} />
+                            <QRComponent value={qrValue} size={300} />
                         </div>
                     </div>
                     
-                    <div className="flex-shrink-0">
+                    <div className="flex-shrink-0 pb-8">
                          <h2 className="text-4xl font-bold text-[#1E3A8A] mt-4">Paga a tu Ritmo con Corabo</h2>
                          <p className="text-xl text-[#1E3A8A] mt-4">Descarga la App Corabo y únete a la comunidad de Óbiamigos</p>
                         <div className="flex justify-around items-center text-[#1E3A8A] my-12">
@@ -147,7 +148,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
                     <>
                         <h3 className="font-bold text-lg text-center">Vista Previa de Impresión</h3>
                         <div className="bg-[#E3F2FD] p-4 rounded-lg text-center w-full max-w-sm">
-                             <div className="relative w-3/4 mx-auto mb-2">
+                             <div className="relative w-3/4 mx-auto mb-2 aspect-[3/1]">
                                 {logoBase64 && <img src={logoBase64} alt="Corabo Logo" style={{objectFit: "contain", width: '100%', height: 'auto'}} />}
                             </div>
                             <div className="flex justify-center items-center my-4">

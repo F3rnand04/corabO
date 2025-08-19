@@ -6,13 +6,14 @@ import { QRCodeSVG } from 'qrcode.react';
 
 interface QRComponentProps {
   value: string;
+  size?: number;
 }
 
-const QRComponent = ({ value }: QRComponentProps) => {
+const QRComponent = ({ value, size = 128 }: QRComponentProps) => {
   return (
     <QRCodeSVG
       value={value}
-      size={256}
+      size={size}
       bgColor={"#ffffff"}
       fgColor={"#000000"}
       level={"L"}
