@@ -25,21 +25,24 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
             const html2canvas = (await import('html2canvas')).default;
             const printableArea = document.getElementById('printable-qr-area');
             if (printableArea) {
+                toast({
+                  title: "Descarga Iniciada",
+                  description: "Tu imagen del código QR se está descargando."
+                });
+
                 const canvas = await html2canvas(printableArea, { 
                   scale: 3, 
                   backgroundColor: null,
                   useCORS: true
                 });
                 const pngFile = canvas.toDataURL("image/png");
+                
+                // Direct and reliable download method
                 const downloadLink = document.createElement("a");
                 downloadLink.download = `QR-Caja-${boxName.replace(/\s+/g, '-')}.png`;
                 downloadLink.href = pngFile;
                 downloadLink.click();
 
-                toast({
-                  title: "Descarga Iniciada",
-                  description: "Tu imagen del código QR se está descargando."
-                });
                 onClose();
             }
         } catch (error) {
@@ -62,7 +65,8 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
                 <div className="absolute -bottom-16 -left-8 w-40 h-40 bg-white/20 dark:bg-blue-800/20 rounded-full"></div>
 
                 <div className="relative z-10">
-                     <h2 className="text-2xl font-bold text-blue-900 dark:text-blue-200 mb-4" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.1)' }}>
+                     <Image src="https://i.postimg.cc/8zWvkhxS/Sin-t-tulo-3.png" alt="Corabo Logo" width={120} height={50} className="mx-auto h-12 w-auto mb-2" />
+                     <h2 className="text-xl font-bold text-blue-900 dark:text-blue-200 mb-4" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.1)' }}>
                         Paga a tu Ritmo con Corabo
                     </h2>
 
