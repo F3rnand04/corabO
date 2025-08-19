@@ -27,7 +27,7 @@ import { getOrCreateUser, type FirebaseUserInput } from '@/ai/flows/auth-flow';
 import { requestAffiliation as requestAffiliationFlow, approveAffiliation as approveAffiliationFlow, rejectAffiliation as rejectAffiliationFlow, revokeAffiliation as revokeAffiliationFlow } from '@/ai/flows/affiliation-flow';
 import { getEta } from '@/ai/flows/directions-flow';
 import { findDeliveryProvider as findDeliveryProviderFlow, resolveDeliveryAsPickup as resolveDeliveryAsPickupFlow } from '@/ai/flows/delivery-flow';
-import QRCode from 'qrcode';
+import { createCashierBox as createCashierBoxFlow, regenerateCashierQr as regenerateCashierQrFlow } from '@/ai/flows/cashier-flow';
 
 
 interface DailyQuote {
@@ -415,20 +415,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         toast({ variant: 'destructive', title: 'GPS no Soportado', description: 'Tu navegador no soporta geolocalización.' });
     }
   }, [setDeliveryAddress, toast]);
-
-  const generateQrDataURL = useCallback(async (qrValue: string): Promise<string> => {
-    try {
-        return await QRCode.toDataURL(qrValue, {
-            errorCorrectionLevel: 'H',
-            type: 'image/png',
-            quality: 0.92,
-            margin: 1,
-        });
-    } catch (err) {
-        console.error("Failed to generate QR Data URL", err);
-        return '';
-    }
-  }, []);
       
   const actions = useMemo(() => ({
     signInWithGoogle: async () => {
@@ -789,31 +775,32 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     },
     addCashierBox: async (name: string, password: string) => {
         if (!currentUser || currentUser.profileSetupData?.providerType !== 'company') return;
-        
-        const boxId = `caja-${Date.now()}`;
-        const qrValue = JSON.stringify({ providerId: currentUser.id, cashierBoxId: boxId });
-        const qrDataURL = await generateQrDataURL(qrValue);
 
-        if (!qrDataURL) {
-            toast({ variant: "destructive", title: "Error", description: "No se pudo generar el código QR." });
-            return;
-        }
+        try {
+            const newBox = await createCashierBoxFlow({
+                userId: currentUser.id,
+                name,
+                password,
+            });
 
-        const newBox: CashierBox = { id: boxId, name, passwordHash: password, qrValue, qrDataURL };
-        
-        const updatedUser = {
-            ...currentUser,
-            profileSetupData: {
-                ...currentUser.profileSetupData,
-                cashierBoxes: [...(currentUser.profileSetupData?.cashierBoxes || []), newBox]
+            if (newBox) {
+                const updatedUser = {
+                    ...currentUser,
+                    profileSetupData: {
+                        ...currentUser.profileSetupData,
+                        cashierBoxes: [...(currentUser.profileSetupData?.cashierBoxes || []), newBox]
+                    }
+                };
+
+                await updateUser(currentUser.id, { 
+                    profileSetupData: updatedUser.profileSetupData 
+                });
+                toast({ title: "Caja Añadida", description: `La caja "${name}" ha sido creada.` });
             }
-        };
-
-        await updateUser(currentUser.id, { 
-            profileSetupData: updatedUser.profileSetupData 
-        });
-
-        toast({ title: "Caja Añadida", description: `La caja "${name}" ha sido creada.` });
+        } catch (error) {
+            console.error("Error creating cashier box:", error);
+            toast({ variant: "destructive", title: "Error", description: "No se pudo crear la caja." });
+        }
     },
     removeCashierBox: async (boxId: string) => {
         if (!currentUser || !currentUser.profileSetupData?.cashierBoxes) return;
@@ -845,32 +832,31 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     regenerateCashierBoxQr: async (boxId: string) => {
         if (!currentUser || !currentUser.profileSetupData?.cashierBoxes) return;
         
-        const currentBoxes = currentUser.profileSetupData.cashierBoxes;
-        const boxIndex = currentBoxes.findIndex(b => b.id === boxId);
-        if (boxIndex === -1) return;
-        
-        const newQrValue = JSON.stringify({ providerId: currentUser.id, cashierBoxId: boxId, timestamp: Date.now() });
-        const newQrDataURL = await generateQrDataURL(newQrValue);
-        
-        if (!newQrDataURL) {
-            toast({ variant: "destructive", title: "Error", description: "No se pudo regenerar el código QR." });
-            return;
-        }
+        try {
+            const newQrData = await regenerateCashierQrFlow({ boxId, userId: currentUser.id });
+            const currentBoxes = currentUser.profileSetupData.cashierBoxes;
+            const boxIndex = currentBoxes.findIndex(b => b.id === boxId);
+            if (boxIndex === -1) return;
 
-        const updatedBox = { ...currentBoxes[boxIndex], qrValue: newQrValue, qrDataURL: newQrDataURL };
-        const newBoxes = [...currentBoxes];
-        newBoxes[boxIndex] = updatedBox;
-        
-        await updateUser(currentUser.id, { 
-            profileSetupData: { ...currentUser.profileSetupData, cashierBoxes: newBoxes } 
-        });
-        toast({ title: "QR Regenerado", description: `Se ha creado un nuevo código QR para la caja.` });
+            const updatedBox = { ...currentBoxes[boxIndex], ...newQrData };
+            const newBoxes = [...currentBoxes];
+            newBoxes[boxIndex] = updatedBox;
+            
+            await updateUser(currentUser.id, { 
+                profileSetupData: { ...currentUser.profileSetupData, cashierBoxes: newBoxes } 
+            });
+            toast({ title: "QR Regenerado", description: `Se ha creado un nuevo código QR para la caja.` });
+
+        } catch(error) {
+            console.error("Error regenerating QR:", error);
+            toast({ variant: "destructive", title: "Error", description: "No se pudo regenerar el QR." });
+        }
     },
   }), [
     searchHistory, contacts, cart, transactions, getCartTotal, 
     getDeliveryCost, users, updateCart, router, currentUser, updateUser, updateFullProfile,
     getDistanceToProvider, currentUserLocation, toast, setDeliveryAddress,
-    deliveryAddress, setDeliveryAddressToCurrent, activeCartForCheckout, generateQrDataURL, setCurrentUser
+    deliveryAddress, setDeliveryAddressToCurrent, activeCartForCheckout, setCurrentUser
   ]);
   
   return (
@@ -892,5 +878,7 @@ export const useCorabo = (): CoraboState & CoraboActions => {
 };
 
 export type { Transaction };
+
+    
 
     
