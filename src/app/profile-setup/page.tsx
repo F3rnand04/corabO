@@ -17,19 +17,31 @@ import Step4_LegalInfo from '@/components/profile-setup/Step4_LegalInfo';
 import Step5_Review from '@/components/profile-setup/Step5_Review';
 
 export default function ProfileSetupPage() {
-  const { currentUser, updateFullProfile } = useCorabo();
+  const { currentUser, updateFullProfile, deliveryAddress, setDeliveryAddress } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
   
   const [step, setStep] = useState(1);
+  // Initialize formData from currentUser but allow it to be updated locally
   const [formData, setFormData] = useState<ProfileSetupData>(() => currentUser?.profileSetupData || {});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    // Sync formData with currentUser's data only on initial load or if user changes
     if (currentUser?.profileSetupData) {
-      setFormData(currentUser.profileSetupData);
+      setFormData(prev => ({ ...prev, ...currentUser.profileSetupData }));
     }
   }, [currentUser]);
+
+  // **FIX**: This effect listens for changes in the deliveryAddress from the context
+  // (which is updated when returning from the map) and syncs it with the local form state.
+  useEffect(() => {
+    if (deliveryAddress && deliveryAddress !== formData.location) {
+      setFormData(prev => ({ ...prev, location: deliveryAddress }));
+      // Optional: Clear the address from context after using it to prevent re-triggering
+      setDeliveryAddress(''); 
+    }
+  }, [deliveryAddress, formData.location, setDeliveryAddress]);
 
   if (!currentUser) {
     return (
