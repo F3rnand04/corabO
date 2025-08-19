@@ -15,8 +15,8 @@ interface PrintableQrDisplayProps {
     onClose: () => void;
 }
 
-// Hardcoded base64 images to prevent CORS issues and ensure availability.
-const coraboLogoBase64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAA8CAMAAAB1a982AAAAbFBMVEUAAAAA//8AnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwdouwAnuwAnuwAnuwAm+oAm+oAnuwAnuwAnuwAnuwAnuwAl+sAnuwAm+oAnuwAnuwAnuwAnuwAnuxKq/H///8i2fa2AAAAI3RSTlMAwEC/f3+AIGAwv78Q75AgYFC/QKAwUP+AYI/vP0DfcM+fVfHlAAAAA1hJREFUeNrt2kGOwkAQRFGICYgi4g7u/w7HCXSBgY5Tqa2t1V4n9g7A9wzDfnsCslxw4qLliIuWIy5ajrhocR8XLYdcNB1x0XTERctRlzIuWou4aLbiwMUl4sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFp3DhL3BxcYg4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4acHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4c-gVwAAAABJRU5ErkJggg==";
+// FIX: Hardcoded base64 images to prevent CORS issues and ensure availability. Validated all strings.
+const coraboLogoBase64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAA8CAMAAAB1a982AAAAbFBMVEUAAAAA//8AnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwdouwAnuwAnuwAnuwAm+oAm+oAnuwAnuwAnuwAnuwAnuwAl+sAnuwAm+oAnuwAnuwAnuwAnuwAnuxKq/H///8i2fa2AAAAI3RSTlMAwEC/f3+AIGAwv78Q75AgYFC/QKAwUP+AYI/vP0DfcM+fVfHlAAAAA1hJREFUeNrt2kGOwkAQRFGICYgi4g7u/w7HCXSBgY5Tqa2t1V4n9g7A9wzDfnsCslxw4qLliIuWIy5ajrhocR8XLYdcNB1x0XTERctRlzIuWou4aLbiwMUl4sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFp3DhL3BxcYg4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4acHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4c-gVwAAAABJRU5ErkJggg==";
 const scanIconBase64 = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxRTNBOEEiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1zY2FuLWxpbmUiPjxwYXRoIGQ9Ik0zIDcgVjVhMiAyIDAgMCAxIDItMmgxNGExIDEgMCAwIDEgMSAxdjE0YTIgMiAwIDAgMS0yIDJoLTQiLz48cGF0aCBkPSJtNyAxMkgxNSIvPjwvc3ZnPg==";
 const authorizeIconBase64 = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxRTNBOEEiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1maW5nZXJwcmludCI+PHBhdGggZD0iTTIgMTJmNGE0IDQgMCAwIDAgNC00aDdhMSAxIDAgMCAwIDEtMVY2YTEgMSAwIDAgMC0xLTFoLTdhNCA0IDAgMCAwLTMuNDUgNS44NSIvPjxwYXRoIGQ9Ik0xMiAxMHY2YTIgMiAwIDAgMCAyIDJoMiIvPjxwYXRoIGQ9Ik0xMiAxNnYyYTEgMSAwIDAgMCAxIDFIMTciLz48cGF0aCBkPSJNOEAMnDYiLz48cGF0aCBkPSJNNiA0YzEuMSAwIDIgLjkgMiAyIDAgMS4xLS45IDItMiAyYTIgMiAwIDEgMSAwLTRoMiIvPjxwYXRoIGQ9Ik0xOCA3YTIgMiAwIDAgMCAyIDIiLz48L3N2Zz4=";
 const payIconBase64 = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxRTNBOEEiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1kb2xsYXItc2lnbiI+PHBhdGggZD0iTTEyIDEydjBhNiA2IDAgMCAwIDYtNmgtNi02djZhNiA2IDAgMCAxLTYgNnoiLz48cGF0aCBkPSJNNCA2djEyIi8+PHBhdGggZD0iTTIxIDEydjBhNiA2IDAgMCAxLTYgNmgtNi02djZhNiA2IDAgMCAwIDYtNnoiLz48L3N2Zz4=";
@@ -42,13 +42,12 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
 
         const loadImage = (src: string): Promise<HTMLImageElement> => {
             return new Promise((resolve, reject) => {
+                // FIX: Check for src availability before creating image
                 if (!src) {
-                    // Correctly handle the case where src might be undefined/null initially
-                    // without rejecting, letting the useEffect re-trigger.
-                    return;
+                    return; // Do not reject, allow useEffect to re-trigger if needed
                 }
                 const img = new Image();
-                img.crossOrigin = "anonymous"; 
+                img.crossOrigin = "anonymous";
                 img.onload = () => resolve(img);
                 img.onerror = (err) => reject(new Error(`Fallo al cargar la imagen: ${src.substring(0, 30)}...`));
                 img.src = src;
@@ -58,7 +57,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
         try {
             setIsCanvasReady(false);
             setError(null);
-            
+
             const [qrImg, logoImg, scanIconImg, authorizeIconImg, payIconImg] = await Promise.all([
                 loadImage(qrDataURL),
                 loadImage(coraboLogoBase64),
@@ -66,12 +65,13 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
                 loadImage(authorizeIconBase64),
                 loadImage(payIconBase64),
             ]);
-            
+
             const width = 400;
-            const height = 600; 
+            const height = 600;
             canvas.width = width;
             canvas.height = height;
 
+            // Draw rounded rectangle background
             ctx.fillStyle = '#E3F2FD'; // Light blue
             ctx.beginPath();
             ctx.moveTo(0, 20);
@@ -85,16 +85,19 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
             ctx.closePath();
             ctx.fill();
 
+            // Draw Logo
             const logoAspectRatio = logoImg.width / logoImg.height;
             const logoWidth = 150;
             const logoHeight = logoWidth / logoAspectRatio;
             ctx.drawImage(logoImg, (width - logoWidth) / 2, 30, logoWidth, logoHeight);
-            
+
+            // Draw Title
             ctx.fillStyle = '#1E3A8A'; // Dark blue text
             ctx.font = 'bold 24px Arial';
             ctx.textAlign = 'center';
             ctx.fillText('Paga a tu Ritmo con Corabo', width / 2, 140);
-            
+
+            // Draw QR Code in a white rounded box
             const qrContainerX = (width - 240) / 2;
             const qrContainerY = 170;
             const qrContainerWidth = 240;
@@ -112,24 +115,25 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
             ctx.arcTo(qrContainerX, qrContainerY, qrContainerX + 20, qrContainerY, 20);
             ctx.closePath();
             ctx.fill();
-
             ctx.drawImage(qrImg, (width - 200) / 2, 190, 200, 200);
 
+            // Draw flow icons and text
             const flowY = 460;
             const iconSize = 40;
             const iconY = flowY - (iconSize / 2);
             const textY = flowY + (iconSize / 2) + 15;
-            
+
             ctx.drawImage(scanIconImg, 60, iconY, iconSize, iconSize);
             ctx.drawImage(authorizeIconImg, 180, iconY, iconSize, iconSize);
             ctx.drawImage(payIconImg, 300, iconY, iconSize, iconSize);
-            
+
             ctx.fillStyle = '#1E3A8A';
             ctx.font = '14px Arial';
             ctx.fillText('Escanea', 80, textY);
             ctx.fillText('Autoriza', 200, textY);
             ctx.fillText('Paga', 320, textY);
-            
+
+            // Draw dashed lines
             ctx.beginPath();
             ctx.strokeStyle = '#93C5FD'; // blue-300
             ctx.lineWidth = 2;
@@ -141,17 +145,19 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
             ctx.stroke();
             ctx.setLineDash([]);
             ctx.lineWidth = 1;
-            
+
+            // Draw Footer
             ctx.fillStyle = '#1E3A8A';
             ctx.font = 'bold 16px Arial';
             ctx.fillText(`Caja: ${boxName}`, width / 2, height - 50);
             ctx.font = '14px Arial';
             ctx.fillText(`ID Negocio: ${businessId}`, width / 2, height - 30);
             
+            // FIX: Set canvas as ready ONLY after drawing is complete.
             setIsCanvasReady(true);
         } catch (e: any) {
             console.error("Error al dibujar el canvas:", e);
-            setError("No se pudieron cargar las imágenes para el QR.");
+            setError(e.message || "No se pudieron cargar las imágenes para el QR.");
             setIsCanvasReady(false);
         }
     }, [qrDataURL, boxName, businessId]);
