@@ -1,7 +1,6 @@
 'use client';
 
 import { Button } from "./ui/button";
-import { QRCodeSVG } from "qrcode.react";
 import Image from "next/image";
 import { QrCode, Handshake, Wallet, Download, Loader2 } from "lucide-react";
 import { AlertDialogFooter, AlertDialogCancel } from "./ui/alert-dialog";
@@ -12,29 +11,14 @@ import { useEffect, useRef, useState } from "react";
 interface PrintableQrDisplayProps {
     boxName: string;
     businessId: string;
-    qrValue: string;
+    qrDataURL: string; // Receive the pre-generated data URL
     onClose: () => void;
 }
 
-export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: PrintableQrDisplayProps) => {
+export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: PrintableQrDisplayProps) => {
     const { toast } = useToast();
     const printableRef = useRef<HTMLDivElement>(null);
     const [isGenerating, setIsGenerating] = useState(false);
-    
-    // State to hold the QR code as a data URL
-    const [qrDataUrl, setQrDataUrl] = useState('');
-
-    // Effect to generate the QR code data URL once, when the component mounts
-    useEffect(() => {
-        const svgElement = document.getElementById('qr-code-for-conversion');
-        if (svgElement) {
-            const svgString = new XMLSerializer().serializeToString(svgElement);
-            // Use window.btoa for Base64 encoding, works in browsers
-            const dataUrl = `data:image/svg+xml;base64,${window.btoa(svgString)}`;
-            setQrDataUrl(dataUrl);
-        }
-    }, [qrValue]);
-
 
     const downloadQR = async () => {
         const element = printableRef.current;
@@ -49,8 +33,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
         try {
             const html2canvas = (await import('html2canvas')).default;
             const canvas = await html2canvas(element, {
-                scale: 3, // Higher scale for better resolution
-                useCORS: true, // Important for external images if any, though we avoid it now
+                scale: 3, 
                 backgroundColor: null,
             });
 
@@ -81,18 +64,6 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
 
     return (
         <div className="flex flex-col items-center gap-4">
-             {/* Hidden SVG element used only to generate the data URL */}
-            <div style={{ position: 'absolute', left: '-9999px' }}>
-                <QRCodeSVG
-                    id="qr-code-for-conversion"
-                    value={qrValue}
-                    size={180}
-                    bgColor={"#ffffff"}
-                    fgColor={"#000000"}
-                    level={"H"}
-                    includeMargin={false}
-                />
-            </div>
             <div 
                 ref={printableRef}
                 className="w-[320px] p-6 bg-blue-100 dark:bg-blue-900/30 rounded-3xl shadow-lg font-sans text-center relative overflow-hidden"
@@ -107,9 +78,8 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
                     </h2>
 
                     <div className="bg-white p-4 rounded-xl shadow-md inline-block my-4">
-                        {/* Now we render the QR as a standard image using the data URL */}
-                        {qrDataUrl ? (
-                           <Image src={qrDataUrl} alt="Código QR" width={180} height={180} />
+                        {qrDataURL ? (
+                           <Image src={qrDataURL} alt="Código QR" width={180} height={180} />
                         ) : (
                            <div className="w-[180px] h-[180px] flex items-center justify-center bg-gray-200"><Loader2 className="animate-spin"/></div>
                         )}
@@ -140,7 +110,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
             </div>
             <AlertDialogFooter className="sm:justify-between w-full px-6 pb-2">
                  <AlertDialogCancel onClick={onClose}>Cerrar</AlertDialogCancel>
-                 <Button onClick={downloadQR} disabled={isGenerating || !qrDataUrl}>
+                 <Button onClick={downloadQR} disabled={isGenerating || !qrDataURL}>
                     <Download className="mr-2 h-4 w-4"/>
                     {isGenerating ? 'Generando...' : 'Descargar PNG'}
                 </Button>

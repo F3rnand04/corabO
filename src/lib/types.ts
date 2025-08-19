@@ -280,7 +280,8 @@ export type CashierBox = {
     id: string;
     name: string;
     passwordHash: string; // In a real app, this should be a secure hash
-    qrValue: string; // Static value for the QR code
+    qrValue: string; // The JSON string value for the QR
+    qrDataURL: string; // The generated image data URL for the QR
 };
 
 export type ProfileSetupData = {

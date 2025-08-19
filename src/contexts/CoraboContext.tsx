@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -26,6 +27,7 @@ import { getOrCreateUser, type FirebaseUserInput } from '@/ai/flows/auth-flow';
 import { requestAffiliation as requestAffiliationFlow, approveAffiliation as approveAffiliationFlow, rejectAffiliation as rejectAffiliationFlow, revokeAffiliation as revokeAffiliationFlow } from '@/ai/flows/affiliation-flow';
 import { getEta } from '@/ai/flows/directions-flow';
 import { findDeliveryProvider as findDeliveryProviderFlow, resolveDeliveryAsPickup as resolveDeliveryAsPickupFlow } from '@/ai/flows/delivery-flow';
+import QRCode from 'qrcode';
 
 
 interface DailyQuote {
@@ -144,6 +146,7 @@ interface CoraboActions {
   addCashierBox: (name: string, password: string) => Promise<void>;
   removeCashierBox: (boxId: string) => Promise<void>;
   updateCashierBox: (boxId: string, updates: Partial<Pick<CashierBox, 'name' | 'passwordHash'>>) => Promise<void>;
+  regenerateCashierBoxQr: (boxId: string) => Promise<void>;
 }
 
 const CoraboStateContext = createContext<CoraboState | undefined>(undefined);
@@ -410,6 +413,20 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         toast({ variant: 'destructive', title: 'GPS no Soportado', description: 'Tu navegador no soporta geolocalización.' });
     }
   }, [setDeliveryAddress, toast]);
+
+  const generateQrDataURL = useCallback(async (qrValue: string): Promise<string> => {
+    try {
+        return await QRCode.toDataURL(qrValue, {
+            errorCorrectionLevel: 'H',
+            type: 'image/png',
+            quality: 0.92,
+            margin: 1,
+        });
+    } catch (err) {
+        console.error("Failed to generate QR Data URL", err);
+        return ''; // Return an empty string or a placeholder data URL
+    }
+  }, []);
       
   const actions = useMemo(() => ({
     signInWithGoogle: async () => {
@@ -771,11 +788,15 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         if (!currentUser || currentUser.profileSetupData?.providerType !== 'company') return;
         
         const boxId = `caja-${Date.now()}`;
+        const qrValue = JSON.stringify({ providerId: currentUser.id, cashierBoxId: boxId });
+        const qrDataURL = await generateQrDataURL(qrValue);
+
         const newBox: CashierBox = {
             id: boxId,
             name,
             passwordHash: password, // In a real app, this would be a secure hash
-            qrValue: JSON.stringify({ providerId: currentUser.id, cashierBoxId: boxId }),
+            qrValue: qrValue,
+            qrDataURL: qrDataURL
         };
 
         const userRef = doc(getFirestoreDb(), 'users', currentUser.id);
@@ -817,11 +838,35 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         });
         toast({ title: "Caja Actualizada", description: `La contraseña de la caja ha sido cambiada.` });
     },
+    regenerateCashierBoxQr: async (boxId: string) => {
+        if (!currentUser || !currentUser.profileSetupData?.cashierBoxes) return;
+        
+        const currentBoxes = currentUser.profileSetupData.cashierBoxes;
+        const boxIndex = currentBoxes.findIndex(b => b.id === boxId);
+        
+        if (boxIndex === -1) {
+            toast({ variant: 'destructive', title: "Error", description: "No se encontró la caja para regenerar el QR."});
+            return;
+        }
+        
+        const newQrValue = JSON.stringify({ providerId: currentUser.id, cashierBoxId: boxId, timestamp: Date.now() });
+        const newQrDataURL = await generateQrDataURL(newQrValue);
+
+        const updatedBox = { ...currentBoxes[boxIndex], qrValue: newQrValue, qrDataURL: newQrDataURL };
+        const newBoxes = [...currentBoxes];
+        newBoxes[boxIndex] = updatedBox;
+        
+        const userRef = doc(getFirestoreDb(), 'users', currentUser.id);
+        await updateDoc(userRef, {
+            'profileSetupData.cashierBoxes': newBoxes
+        });
+        toast({ title: "QR Regenerado", description: `Se ha creado un nuevo código QR para la caja.` });
+    },
   }), [
     searchHistory, contacts, cart, transactions, getCartTotal, 
     getDeliveryCost, users, updateCart, router, currentUser, updateUser, updateFullProfile,
     getDistanceToProvider, currentUserLocation, toast, setDeliveryAddress,
-    deliveryAddress, setDeliveryAddressToCurrent, activeCartForCheckout
+    deliveryAddress, setDeliveryAddressToCurrent, activeCartForCheckout, generateQrDataURL
   ]);
   
   return (
