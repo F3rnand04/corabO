@@ -30,7 +30,6 @@ export default function ProfileLayout({
             {children}
           </main>
         </div>
-      {/* Footer is now handled by the root AppLayout, this keeps it consistent */}
     </div>
   );
 }

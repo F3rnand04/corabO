@@ -176,11 +176,6 @@ export function ProfileHeader() {
                 )}
                  <div className="flex items-center gap-3">
                     <Button asChild variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground">
-                        <Link href="/profile/details">
-                            <Settings2 className="w-5 h-5"/>
-                        </Link>
-                    </Button>
-                    <Button asChild variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground">
                         <Link href="/transactions">
                             <Wallet className="w-5 h-5"/>
                         </Link>

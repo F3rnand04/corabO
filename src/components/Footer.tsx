@@ -77,9 +77,20 @@ export function Footer() {
   
   const renderRightmostButton = () => {
     const isProfileContext = pathname.startsWith('/profile');
-    const Icon = isProfileContext ? Settings : Avatar;
-    const href = isProfileContext ? '/transactions/settings' : '/profile/publications';
+    
+    // The key logic change is here
+    let href = '/profile/publications';
+    if (isProfileContext) {
+        const isCompany = currentUser.profileSetupData?.providerType === 'company';
+        const isCompanySetupComplete = !!currentUser.profileSetupData?.specialty;
 
+        if (isCompany && !isCompanySetupComplete) {
+            href = '/profile-setup'; // Unconfigured company goes to the 4-step setup
+        } else {
+            href = '/profile/details'; // Everyone else (and configured companies) go to details
+        }
+    }
+    
     return (
       <Link href={href} passHref>
         <Button variant="ghost" className={cn("flex-col h-auto p-1 text-muted-foreground hover:text-primary", pathname.startsWith('/profile') && "text-primary")}>

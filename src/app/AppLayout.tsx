@@ -163,7 +163,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
   
   const noHeaderFooterRoutes = [
-    '/profile-setup',
     '/login',
     '/map',
     '/credicora',
@@ -174,7 +173,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     '/community-guidelines',
     '/admin',
     '/initial-setup',
-    '/profile/details', // Hides header/footer on the new details edit page
+    '/profile-setup', // The entire profile setup flow is immersive
     '/transactions/settings/cashier', // Hides for the dedicated cashier management page
     '/scan-qr', // Hide on QR scan page for immersive experience
   ];
