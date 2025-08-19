@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
@@ -89,7 +88,7 @@ function ApprovalContent() {
          <div className="text-center space-y-4">
             <CheckCircle className="h-12 w-12 mx-auto text-green-500" />
             <p className="font-semibold">Pago Aprobado</p>
-            <p className="text-sm text-muted-foreground">Esperando que {provider.name} confirme la transacción y cargue la factura.</p>
+            <p className="text-sm text-muted-foreground">Esperando que ${provider.name} confirme la transacción y cargue la factura.</p>
          </div>
        )
     }
@@ -118,39 +117,39 @@ function ApprovalContent() {
                         <AvatarImage src={provider.profileImage} />
                         <AvatarFallback>{provider.name.charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <CardTitle className="text-center">Confirmar Pago a {provider.name}</CardTitle>
+                    <CardTitle className="text-center">Confirmar Pago a ${provider.name}</CardTitle>
                     <CardDescription className="text-center">
-                        {isFinanced ? "Tu compra será financiada con Credicora." : "Realiza el pago y espera la confirmación del proveedor."}
+                        ${isFinanced ? "Tu compra será financiada con Credicora." : "Realiza el pago y espera la confirmación del proveedor."}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="text-center">
                         <p className="text-sm text-muted-foreground">Total de la Compra</p>
-                        <p className="text-5xl font-bold tracking-tighter">${amount.toFixed(2)}</p>
+                        <p className="text-5xl font-bold tracking-tighter">$${amount.toFixed(2)}</p>
                     </div>
 
-                    {isFinanced && (
-                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-900 space-y-2">
+                    ${isFinanced && (
+                      `<div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-900 space-y-2">
                         <div className="font-bold text-center flex items-center justify-center gap-2"><Star className="w-5 h-5 fill-current"/> Desglose Credicora</div>
-                        <div className="flex justify-between"><span>Pagas hoy (Inicial):</span> <span className="font-bold">${initialPayment.toFixed(2)}</span></div>
-                        <div className="flex justify-between"><span>Monto financiado:</span> <span className="font-bold">${financedAmount.toFixed(2)}</span></div>
-                        <div className="flex justify-between"><span>Próximos pagos:</span> <span className="font-bold">{installments} cuotas</span></div>
-                      </div>
+                        <div className="flex justify-between"><span>Pagas hoy (Inicial):</span> <span className="font-bold">$${initialPayment.toFixed(2)}</span></div>
+                        <div className="flex justify-between"><span>Monto financiado:</span> <span className="font-bold">$${financedAmount.toFixed(2)}</span></div>
+                        <div className="flex justify-between"><span>Próximos pagos:</span> <span className="font-bold">${installments} cuotas</span></div>
+                      </div>`
                     )}
 
-                     {mobilePaymentInfo?.active && (
-                        <div className="p-4 bg-muted rounded-lg border text-sm space-y-1">
+                     ${mobilePaymentInfo?.active && (
+                        `<div className="p-4 bg-muted rounded-lg border text-sm space-y-1">
                              <p className="font-semibold flex items-center gap-2 mb-2"><Smartphone className="w-4 h-4"/> Realiza un Pago Móvil por la inicial:</p>
-                             <div className="flex justify-between mt-1"><span>Banco:</span><span className="font-mono">{mobilePaymentInfo.bankName}</span></div>
-                             <div className="flex justify-between mt-1"><span>Teléfono:</span><span className="font-mono">{mobilePaymentInfo.mobilePaymentPhone}</span></div>
-                             <div className="flex justify-between mt-1"><span>Cédula/RIF:</span><span className="font-mono">{provider.idNumber}</span></div>
-                             <div className="flex justify-between mt-1 font-bold"><span>Monto:</span><span className="font-mono">BS. {(amountToPayToday * exchangeRate).toFixed(2)}</span></div>
-                        </div>
+                             <div className="flex justify-between mt-1"><span>Banco:</span><span className="font-mono">${mobilePaymentInfo.bankName}</span></div>
+                             <div className="flex justify-between mt-1"><span>Teléfono:</span><span className="font-mono">${mobilePaymentInfo.mobilePaymentPhone}</span></div>
+                             <div className="flex justify-between mt-1"><span>Cédula/RIF:</span><span className="font-mono">${provider.idNumber}</span></div>
+                             <div className="flex justify-between mt-1 font-bold"><span>Monto:</span><span className="font-mono">BS. ${(amountToPayToday * exchangeRate).toFixed(2)}</span></div>
+                        </div>`
                      )}
                 </CardContent>
                 <div className="p-6 pt-0 grid grid-cols-2 gap-4">
-                     <Button variant="outline" onClick={handleCancel}>Cancelar</Button>
-                     <Button onClick={handleCopyAndPay} disabled={!mobilePaymentInfo?.active}><Copy className="mr-2 h-4 w-4" />Copiar y Pagar</Button>
+                     <Button variant="outline" onClick=${handleCancel}>Cancelar</Button>
+                     <Button onClick=${handleCopyAndPay} disabled=${!mobilePaymentInfo?.active}><Copy className="mr-2 h-4 w-4" />Copiar y Pagar</Button>
                 </div>
             </>
         )
@@ -160,7 +159,7 @@ function ApprovalContent() {
   return (
     <div className="min-h-screen bg-muted/40 flex items-center justify-center p-4">
       <Card className="w-full max-w-sm shadow-2xl">
-        {renderContentByStatus()}
+        ${renderContentByStatus()}
       </Card>
     </div>
   );
@@ -169,7 +168,7 @@ function ApprovalContent() {
 
 export default function ApprovalPage() {
     return (
-        <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader2 className="w-8 h-8 animate-spin"/></div>}>
+        <Suspense>
             <ApprovalContent />
         </Suspense>
     )
