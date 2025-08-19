@@ -144,6 +144,7 @@ interface CoraboActions {
   updateCashierBox: (boxId: string, updates: Partial<Pick<CashierBox, 'name' | 'passwordHash'>>) => Promise<void>;
   regenerateCashierBoxQr: (boxId: string) => Promise<void>;
   handleGenerateInvoice: (transactionId: string) => void;
+  updateGalleryImage: (ownerId: string, imageId: string, updates: Partial<{ description: string; imageDataUri: string }>) => Promise<void>;
 }
 
 const CoraboStateContext = createContext<CoraboState | undefined>(undefined);
@@ -707,7 +708,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     },
     confirmMobilePayment: async (sessionId: string) => {
         const { transactionId } = await TransactionFlows.processDirectPayment({ sessionId });
-        await handleGenerateInvoice(transactionId);
+        await actions.handleGenerateInvoice(transactionId);
         const db = getFirestoreDb();
         const sessionRef = doc(db, 'qr_sessions', sessionId);
         await updateDoc(sessionRef, { status: 'completed', updatedAt: new Date().toISOString() });
@@ -848,6 +849,20 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             console.error("Error regenerating QR:", error);
             toast({ variant: "destructive", title: "Error", description: "No se pudo regenerar el QR." });
         }
+    },
+    updateGalleryImage: async (ownerId: string, imageId: string, updates: Partial<{ description: string; imageDataUri: string; }>) => {
+        const db = getFirestoreDb();
+        const pubRef = doc(db, 'publications', imageId);
+        const updatesToApply: any = {};
+        if (updates.description) {
+            updatesToApply.description = updates.description;
+            updatesToApply.alt = updates.description.slice(0, 50);
+        }
+        if (updates.imageDataUri) {
+            updatesToApply.src = updates.imageDataUri;
+        }
+        await updateDoc(pubRef, updatesToApply);
+        toast({ title: 'Publicación Actualizada' });
     },
   }), [
     searchHistory, contacts, cart, transactions, getCartTotal, 

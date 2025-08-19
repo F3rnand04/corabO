@@ -1,4 +1,3 @@
-
 "use client";
 
 import Image from 'next/image';
@@ -10,15 +9,16 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from './ui/scroll-area';
-import { Trash2, MessageSquare, ThumbsUp, ThumbsDown, X, Send } from 'lucide-react';
+import { Trash2, MessageSquare, ThumbsUp, ThumbsDown, X, Send, Edit, ImageUp, Check } from 'lucide-react';
 import { Input } from './ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Separator } from './ui/separator';
 import type { GalleryImage, GalleryImageComment, User } from '@/lib/types';
 import { useCorabo } from '@/contexts/CoraboContext';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, ChangeEvent } from 'react';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 import { cn } from '@/lib/utils';
+import { Textarea } from './ui/textarea';
 
 
 interface ImageDetailsDialogProps {
@@ -30,18 +30,32 @@ interface ImageDetailsDialogProps {
 }
 
 export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex = 0, owner }: ImageDetailsDialogProps) {
-  const { currentUser, addCommentToImage, removeCommentFromImage, removeGalleryImage } = useCorabo();
+  const { currentUser, addCommentToImage, removeCommentFromImage, removeGalleryImage, updateGalleryImage } = useCorabo();
   const [api, setApi] = useState<CarouselApi>();
   const [currentImageIndex, setCurrentImageIndex] = useState(startIndex);
   const [newComment, setNewComment] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Editing State
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedDescription, setEditedDescription] = useState("");
+  const [newImageFile, setNewImageFile] = useState<File | null>(null);
+  const [newImagePreview, setNewImagePreview] = useState<string | null>(null);
 
   const isOwnerView = currentUser.id === owner?.id;
   
+  const currentImage = gallery[currentImageIndex];
+
   useEffect(() => {
     if (!isOpen) {
       setCurrentImageIndex(startIndex); // Reset index when dialog closes
+      setIsEditing(false); // Reset editing state
+    } else {
+      setEditedDescription(currentImage?.description || '');
+      setNewImagePreview(null);
+      setNewImageFile(null);
     }
-  }, [isOpen, startIndex]);
+  }, [isOpen, startIndex, currentImage]);
 
   useEffect(() => {
     if (!api) return;
@@ -53,6 +67,7 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex =
 
     const onSelect = () => {
       setCurrentImageIndex(api.selectedScrollSnap());
+      setIsEditing(false); // Exit edit mode when sliding to another image
     };
     
     api.on("select", onSelect);
@@ -63,7 +78,6 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex =
 
   }, [api, currentImageIndex]);
 
-  const currentImage = gallery[currentImageIndex];
   
   const handlePostComment = () => {
     if (newComment.trim() && currentImage && owner) {
@@ -84,6 +98,26 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex =
       onOpenChange(false);
     }
   }
+
+  const handleEditFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setNewImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setNewImagePreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveChanges = () => {
+    if (!currentImage || !owner) return;
+    
+    updateGalleryImage(owner.id, currentImage.id, {
+        description: editedDescription,
+        imageDataUri: newImagePreview || currentImage.src,
+    });
+    setIsEditing(false);
+  };
 
 
   if (!gallery || gallery.length === 0 || !currentUser) return null;
@@ -108,7 +142,7 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex =
                               <video src={media.src} className="w-full h-full object-contain" controls autoPlay loop />
                           ) : (
                               <Image
-                                  src={media.src}
+                                  src={newImagePreview || media.src}
                                   alt={media.alt}
                                   fill
                                   className="object-contain"
@@ -134,15 +168,41 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex =
                             Publicado por <span className="font-semibold text-foreground">{owner?.name}</span>
                         </p>
                     </div>
-                    {isOwnerView && (
-                        <Button variant="destructive" size="sm" onClick={() => handleDeletePublication(currentImage.id)}>
-                            <Trash2 className="h-4 w-4 mr-2"/>
-                            Eliminar Publicación
-                        </Button>
+                    {isOwnerView && !isEditing && (
+                        <div className="flex gap-2">
+                             <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                                <Edit className="h-4 w-4 mr-2"/>
+                                Editar
+                            </Button>
+                            <Button variant="destructive" size="sm" onClick={() => handleDeletePublication(currentImage.id)}>
+                                <Trash2 className="h-4 w-4 mr-2"/>
+                                Eliminar
+                            </Button>
+                        </div>
                     )}
                 </div>
                 
-                <p className="text-sm text-foreground my-4">{currentImage.description}</p>
+                {isEditing ? (
+                    <div className='my-4 space-y-4'>
+                         <input type="file" ref={fileInputRef} onChange={handleEditFileChange} className="hidden" accept="image/*,video/*" />
+                         <Button variant="outline" className='w-full' onClick={() => fileInputRef.current?.click()}>
+                            <ImageUp className="mr-2 h-4 w-4"/>
+                            Cambiar Imagen o Video
+                         </Button>
+                         <Textarea 
+                            value={editedDescription}
+                            onChange={(e) => setEditedDescription(e.target.value)}
+                            rows={4}
+                            placeholder="Edita la descripción..."
+                         />
+                         <div className="flex justify-end gap-2">
+                            <Button variant="ghost" onClick={() => setIsEditing(false)}>Cancelar</Button>
+                            <Button onClick={handleSaveChanges}><Check className="mr-2 h-4 w-4"/>Guardar Cambios</Button>
+                         </div>
+                    </div>
+                ) : (
+                    <p className="text-sm text-foreground my-4">{currentImage.description}</p>
+                )}
                 
                 <Separator />
 
