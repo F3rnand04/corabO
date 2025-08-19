@@ -283,6 +283,7 @@ export type CashierBox = {
     passwordHash: string; // In a real app, this should be a secure hash
     qrValue: string; // The JSON string value for the QR
     qrDataURL?: string; // The generated image data URL for the QR
+    isActive?: boolean;
 };
 
 export type ProfileSetupData = {
@@ -293,7 +294,7 @@ export type ProfileSetupData = {
   specialty?: string;
   country?: string;
   providerType?: 'professional' | 'company';
-  offerType?: 'product' | 'service';
+  offerType?: 'product' | 'service' | 'both';
   hasPhysicalLocation?: boolean;
   location?: string;
   showExactLocation?: boolean;

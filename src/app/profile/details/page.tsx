@@ -4,7 +4,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCorabo } from '@/contexts/CoraboContext';
-import { Loader2, Settings, ChevronLeft, Save, Wrench, Clock, DollarSign, AlertCircle, Building, User, BadgeInfo } from 'lucide-react';
+import { Loader2, Settings, ChevronLeft, Save, Wrench, Clock, DollarSign, AlertCircle, Building, User, BadgeInfo, MapPin, Truck, Box } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Input } from '@/components/ui/input';
@@ -141,7 +141,7 @@ export default function DetailsPage() {
       <DetailsHeader />
       <main className="container max-w-4xl mx-auto py-8">
          <div className="space-y-6">
-            <Accordion type="multiple" defaultValue={['general-details', 'specialized-fields', 'legal-info']} className="w-full space-y-4">
+            <Accordion type="multiple" defaultValue={['general-details', 'offer-and-logistics', 'specialized-fields', 'legal-info']} className="w-full space-y-4">
               <AccordionItem value="general-details" className="border rounded-lg">
                   <AccordionTrigger className="px-4 hover:no-underline">
                       <div className="flex items-center gap-3">
@@ -215,6 +215,44 @@ export default function DetailsPage() {
                       </AccordionContent>
                   </AccordionItem>
               )}
+
+              <AccordionItem value="offer-and-logistics" className="border rounded-lg">
+                  <AccordionTrigger className="px-4 hover:no-underline">
+                      <div className="flex items-center gap-3">
+                          <Truck className="w-5 h-5 text-primary"/>
+                          <span className="font-semibold">Tipo de Oferta y Logística</span>
+                      </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="p-4 pt-0">
+                       <div className="space-y-4 pt-4 border-t">
+                            <div className="space-y-2">
+                                <Label>¿Qué ofreces principalmente?</Label>
+                                <RadioGroup
+                                    value={formData.offerType || ''}
+                                    onValueChange={(value) => handleInputChange('offerType', value)}
+                                    className="flex flex-wrap gap-4"
+                                >
+                                    <div className="flex items-center space-x-2"><RadioGroupItem value="product" id="type_product" /><Label htmlFor="type_product" className="flex items-center gap-2"><Box className="w-4 h-4"/>Productos</Label></div>
+                                    <div className="flex items-center space-x-2"><RadioGroupItem value="service" id="type_service" /><Label htmlFor="type_service" className="flex items-center gap-2"><Wrench className="w-4 h-4"/>Servicios</Label></div>
+                                     <div className="flex items-center space-x-2"><RadioGroupItem value="both" id="type_both" /><Label htmlFor="type_both" className="flex items-center gap-2">Ambos</Label></div>
+                                </RadioGroup>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="location" className="flex items-center gap-2"><MapPin className="w-4 h-4"/> Ubicación del Negocio</Label>
+                                <Input id="location" placeholder="Pega la dirección o coordenadas de Google Maps" value={formData.location || ''} onChange={(e) => handleInputChange('location', e.target.value)}/>
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox id="showExactLocation" checked={formData.showExactLocation} onCheckedChange={(checked) => handleInputChange('showExactLocation', !!checked)} />
+                                    <Label htmlFor="showExactLocation">Mostrar ubicación exacta a los clientes</Label>
+                                </div>
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="serviceRadius" className="flex items-center gap-2"><Truck className="w-4 h-4"/> Radio de Cobertura (Delivery/A Domicilio)</Label>
+                                <Input id="serviceRadius" type="number" placeholder="Ej: 5" value={formData.serviceRadius || ''} onChange={(e) => handleInputChange('serviceRadius', e.target.value ? parseFloat(e.target.value) : undefined)} />
+                                <p className="text-xs text-muted-foreground">Déjalo en blanco si no ofreces delivery o servicio a domicilio.</p>
+                            </div>
+                       </div>
+                  </AccordionContent>
+              </AccordionItem>
 
               <AccordionItem value="specialized-fields" className="border rounded-lg">
                   <AccordionTrigger className="px-4 hover:no-underline">
