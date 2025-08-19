@@ -7,7 +7,9 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, Zap, CameraOff, Loader2, Edit, QrCode } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCorabo } from '@/contexts/CoraboContext';
-import { Input } from '../components/ui/input';
+import { Input } from '@/components/ui/input';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+
 
 // --- Placeholder for QR Scanner Library ---
 const QrScannerPlaceholder = ({ onScan, onScanError }: { onScan: (data: string) => void, onScanError: (error: Error) => void }) => {
@@ -131,21 +133,28 @@ function ScanQrContent() {
     // Fallback for Desktop
     return (
       <div className="w-full max-w-sm text-center">
-        <div className="p-8 bg-background rounded-lg text-foreground shadow-lg border">
-          <Edit className="w-12 h-12 mx-auto text-primary mb-4" />
-          <h2 className="text-xl font-bold mb-2">Entrada Manual</h2>
-          <p className="text-muted-foreground text-sm mb-4">
-            Parece que estás en una PC. Introduce el Corabo ID del proveedor para iniciar el pago.
-          </p>
-          <form onSubmit={handleManualSubmit}>
-            <Input 
-                placeholder="Ej: corabo1234"
-                value={manualCode}
-                onChange={(e) => setManualCode(e.target.value)}
-            />
-            <Button type="submit" className="w-full mt-4">Continuar</Button>
-          </form>
-        </div>
+        <Card className="text-foreground shadow-2xl border-border">
+          <CardHeader>
+             <div className="mx-auto bg-primary/10 text-primary w-16 h-16 rounded-full flex items-center justify-center mb-4">
+                <Edit className="w-8 h-8"/>
+             </div>
+            <CardTitle>Entrada Manual</CardTitle>
+            <CardDescription>
+              Parece que estás en una PC. Introduce el Corabo ID del proveedor para iniciar el pago.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleManualSubmit}>
+              <Input 
+                  placeholder="Ej: corabo1234"
+                  value={manualCode}
+                  onChange={(e) => setManualCode(e.target.value)}
+                  className="text-center text-lg"
+              />
+              <Button type="submit" className="w-full mt-4">Continuar</Button>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     );
   };
