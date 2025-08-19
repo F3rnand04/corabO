@@ -1,10 +1,10 @@
 
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCorabo } from '@/contexts/CoraboContext';
-import { Loader2, Settings, ChevronLeft, Save, Wrench, Clock, DollarSign, AlertCircle } from 'lucide-react';
+import { Loader2, Settings, ChevronLeft, Save, Wrench, Clock, DollarSign, AlertCircle, Home, Briefcase, Car, Scissors, Stethoscope, Utensils } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Input } from '@/components/ui/input';
@@ -38,6 +38,21 @@ function EditDetailsHeader({ onSave, isSaving }: { onSave: () => void; isSaving:
     );
 }
 
+// Mapa para renderizar el componente de campos especializados correcto
+const categoryComponentMap: { [key: string]: React.ElementType } = {
+    'Salud y Bienestar': SpecializedFields.HealthFields,
+    'Hogar y Reparaciones': SpecializedFields.HomeRepairFields,
+    'Alimentos y Restaurantes': SpecializedFields.FoodAndRestaurantFields,
+    'Transporte y Asistencia': SpecializedFields.TransportFields,
+    'Belleza': SpecializedFields.BeautyFields,
+    'Automotriz y Repuestos': SpecializedFields.AutomotiveFields,
+    'Tecnología y Soporte': SpecializedFields.GeneralProviderFields,
+    'Educación': SpecializedFields.GeneralProviderFields,
+    'Eventos': SpecializedFields.GeneralProviderFields,
+    'Otros': SpecializedFields.GeneralProviderFields
+};
+
+const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
 export default function DetailsPage() {
   const { currentUser, updateFullProfile } = useCorabo();
