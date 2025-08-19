@@ -37,7 +37,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
         });
 
         html2canvas(printableRef.current, {
-            useCORS: true,
+            useCORS: true, // Crucial for allowing the canvas to read the QR image data
             backgroundColor: null, // Use transparent background
         }).then(canvas => {
             const dataUrl = canvas.toDataURL('image/png');
