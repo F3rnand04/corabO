@@ -1,6 +1,5 @@
 
 
-
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -793,7 +792,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         
         const boxId = `caja-${Date.now()}`;
         const qrValue = JSON.stringify({ providerId: currentUser.id, cashierBoxId: boxId });
-        const qrDataURL = await generateQrDataURL(qrValue);
+        const qrDataURL = await generateQrDataURL(qrValue); // Await the generation
+
+        if (!qrDataURL) {
+            toast({ variant: "destructive", title: "Error", description: "No se pudo generar el código QR." });
+            return;
+        }
 
         const newBox: CashierBox = { id: boxId, name, passwordHash: password, qrValue, qrDataURL };
         
@@ -846,7 +850,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         if (boxIndex === -1) return;
         
         const newQrValue = JSON.stringify({ providerId: currentUser.id, cashierBoxId: boxId, timestamp: Date.now() });
-        const newQrDataURL = await generateQrDataURL(newQrValue);
+        const newQrDataURL = await generateQrDataURL(newQrValue); // Await the generation
+        
+        if (!newQrDataURL) {
+            toast({ variant: "destructive", title: "Error", description: "No se pudo regenerar el código QR." });
+            return;
+        }
 
         const updatedBox = { ...currentBoxes[boxIndex], qrValue: newQrValue, qrDataURL: newQrDataURL };
         const newBoxes = [...currentBoxes];
