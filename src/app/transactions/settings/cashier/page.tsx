@@ -9,7 +9,8 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Input } from '@/components/ui/input';
-import { QRCodeSVG } from 'qrcode.react';
+import { PrintableQrDisplay } from '@/components/PrintableQrDisplay';
+
 
 function CashierSettingsHeader() {
     const router = useRouter();
@@ -32,7 +33,7 @@ function CashierManagementCard() {
     const { currentUser, addCashierBox, removeCashierBox, updateCashierBox } = useCorabo();
     const [newBoxName, setNewBoxName] = useState('');
     const [newBoxPassword, setNewBoxPassword] = useState('');
-    const [selectedBoxQr, setSelectedBoxQr] = useState<{name: string, value: string} | null>(null);
+    const [selectedBoxQr, setSelectedBoxQr] = useState<{name: string, value: string, businessId: string} | null>(null);
     const [passwordVisibility, setPasswordVisibility] = useState<Record<string, boolean>>({});
     const [editingPasswords, setEditingPasswords] = useState<Record<string, string>>({});
     
@@ -62,29 +63,6 @@ function CashierManagementCard() {
 
     const togglePasswordVisibility = (boxId: string) => {
         setPasswordVisibility(prev => ({ ...prev, [boxId]: !prev[boxId] }));
-    };
-
-    const downloadQR = () => {
-        if (!selectedBoxQr) return;
-        const svg = document.getElementById('qr-code-svg');
-        if (svg) {
-            const svgData = new XMLSerializer().serializeToString(svg);
-            const canvas = document.createElement("canvas");
-            const ctx = canvas.getContext("2d");
-            if (!ctx) return;
-            const img = new Image();
-            img.onload = () => {
-                canvas.width = img.width;
-                canvas.height = img.height;
-                ctx.drawImage(img, 0, 0);
-                const pngFile = canvas.toDataURL("image/png");
-                const downloadLink = document.createElement("a");
-                downloadLink.download = `QR-Caja-${selectedBoxQr.name.replace(/\s+/g, '-')}.png`;
-                downloadLink.href = pngFile;
-                downloadLink.click();
-            };
-            img.src = "data:image/svg+xml;base64," + btoa(svgData);
-        }
     };
     
     if (!currentUser || currentUser.profileSetupData?.providerType !== 'company') {
@@ -148,29 +126,17 @@ function CashierManagementCard() {
                                         </AlertDialog>
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
-                                            <Button variant="outline" size="sm" onClick={() => setSelectedBoxQr({name: box.name, value: box.qrValue})}>
+                                            <Button variant="outline" size="sm" onClick={() => setSelectedBoxQr({name: box.name, value: box.qrValue, businessId: currentUser.coraboId || currentUser.id})}>
                                                     <QrCode className="w-4 h-4 mr-2"/>Ver QR
                                                 </Button>
                                             </AlertDialogTrigger>
                                             <AlertDialogContent>
                                                 {selectedBoxQr && (
-                                                    <>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>QR para {selectedBoxQr.name}</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            Descarga y imprime este QR para que tus clientes puedan escanearlo y pagar.
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <div className="py-4 flex items-center justify-center">
-                                                        <div className="p-4 bg-white rounded-lg">
-                                                            <QRCodeSVG id="qr-code-svg" value={selectedBoxQr.value} size={256} />
-                                                        </div>
-                                                    </div>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cerrar</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={downloadQR}>Descargar PNG</AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                    </>
+                                                   <PrintableQrDisplay 
+                                                        boxName={selectedBoxQr.name}
+                                                        businessId={selectedBoxQr.businessId}
+                                                        qrValue={selectedBoxQr.value}
+                                                    />
                                                 )}
                                             </AlertDialogContent>
                                         </AlertDialog>
