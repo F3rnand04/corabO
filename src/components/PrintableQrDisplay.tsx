@@ -5,7 +5,7 @@ import { Button } from "./ui/button";
 import { Download, Loader2, QrCode, Handshake, Wallet, ArrowRight } from "lucide-react";
 import { AlertDialogFooter, AlertDialogCancel } from "./ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useCallback, useState, useRef } from "react";
+import { useCallback, useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import html2canvas from 'html2canvas';
 import QRComponent from "./QRComponent"; 
@@ -17,10 +17,44 @@ interface PrintableQrDisplayProps {
     onClose: () => void;
 }
 
+// Custom hook to load an image as a base64 string
+const useBase64Image = (src: string) => {
+    const [base64, setBase64] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        setIsLoading(true);
+        const img = new window.Image();
+        img.crossOrigin = "anonymous";
+        img.src = src;
+        img.onload = () => {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext("2d");
+            ctx?.drawImage(img, 0, 0);
+            const dataURL = canvas.toDataURL("image/png");
+            setBase64(dataURL);
+            setIsLoading(false);
+        };
+        img.onerror = () => {
+            setError("Failed to load image");
+            setIsLoading(false);
+        };
+    }, [src]);
+
+    return { base64, isLoading, error };
+};
+
+
 export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: PrintableQrDisplayProps) => {
     const { toast } = useToast();
     const [isDownloading, setIsDownloading] = useState(false);
     const printRef = useRef<HTMLDivElement>(null);
+    
+    // Pre-load the logo as a base64 image
+    const { base64: logoBase64, isLoading: isLogoLoading } = useBase64Image("https://i.postimg.cc/Wz1MTvWK/lg.png");
 
     const downloadQR = useCallback(() => {
         if (!printRef.current) {
@@ -32,6 +66,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
         html2canvas(printRef.current, {
             useCORS: true,
             backgroundColor: null,
+            logging: false, // Turn off extensive logging
         }).then(canvas => {
             const link = document.createElement('a');
             link.download = `QR-Caja-${boxName.replace(/\s+/g, '-')}.png`;
@@ -46,14 +81,24 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
             onClose();
         });
     }, [boxName, onClose, toast]);
+    
+    // Show a loading state until all assets are ready
+    if(isLogoLoading) {
+        return (
+             <div className="flex flex-col items-center justify-center gap-4 bg-background p-6 rounded-lg shadow-lg h-[640px] w-[384px]">
+                <Loader2 className="w-12 h-12 animate-spin text-primary" />
+                <p>Cargando diseño...</p>
+             </div>
+        )
+    }
 
     return (
         <div className="flex flex-col items-center gap-4 bg-background p-6 rounded-lg shadow-lg">
             {/* This is the div that will be "photographed" */}
             <div ref={printRef} className="bg-[#E3F2FD] p-6 rounded-2xl text-center flex flex-col justify-between" style={{ width: '384px', height: '640px' }}>
                 <div className="flex-shrink-0">
-                    <div className="relative w-48 mx-auto aspect-[3/1]">
-                         <Image src="https://i.postimg.cc/Wz1MTvWK/lg.png" alt="Corabo Logo" fill style={{objectFit: "contain"}} />
+                    <div className="relative w-40 h-16 mx-auto">
+                        {logoBase64 && <img src={logoBase64} alt="Corabo Logo" style={{objectFit: "contain", width: '100%', height: '100%'}} />}
                     </div>
                 </div>
                 
