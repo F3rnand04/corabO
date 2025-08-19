@@ -15,19 +15,29 @@ import type { ProfileSetupData } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-const categoryComponentMap: { [key: string]: React.ElementType } = {
-    'Transporte y Asistencia': SpecializedFields.TransportFields,
-    'Salud y Bienestar': SpecializedFields.HealthFields,
-    'Hogar y Reparaciones': SpecializedFields.HomeRepairFields,
-    'Alimentos y Restaurantes': SpecializedFields.FoodAndRestaurantFields,
-    'Belleza': SpecializedFields.BeautyFields,
-    'Automotriz y Repuestos': SpecializedFields.AutomotiveFields,
-    'Tecnología y Soporte': SpecializedFields.GeneralProviderFields,
-    'Educación': SpecializedFields.GeneralProviderFields,
-    'Eventos': SpecializedFields.GeneralProviderFields,
-};
+// New dedicated header for the focused editing view
+function EditDetailsHeader({ onSave, isSaving }: { onSave: () => void; isSaving: boolean }) {
+    const router = useRouter();
+    return (
+        <header className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b">
+            <div className="container px-4 sm:px-6">
+                <div className="flex h-16 items-center justify-between">
+                    <Button variant="ghost" size="icon" onClick={() => router.back()}>
+                        <ChevronLeft className="h-6 w-6" />
+                    </Button>
+                    <h1 className="text-lg font-semibold flex items-center gap-2">
+                        <Settings className="w-5 h-5"/>
+                        Editar Detalles del Perfil
+                    </h1>
+                    <Button variant="ghost" size="icon" onClick={onSave} disabled={isSaving}>
+                       {isSaving ? <Loader2 className="h-5 w-5 animate-spin"/> : <Save className="h-5 w-5" />}
+                    </Button>
+                </div>
+            </div>
+        </header>
+    );
+}
 
-const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
 export default function DetailsPage() {
   const { currentUser, updateFullProfile } = useCorabo();
@@ -104,6 +114,7 @@ export default function DetailsPage() {
 
   return (
      <>
+      <EditDetailsHeader onSave={handleSaveChanges} isSaving={isSaving}/>
       <main className="container max-w-4xl mx-auto py-8">
          <div className="space-y-6">
             <Accordion type="multiple" defaultValue={['specialized-fields', 'schedule', 'payment-details']} className="w-full space-y-4">
@@ -165,17 +176,13 @@ export default function DetailsPage() {
                   </AccordionContent>
               </AccordionItem>
             </Accordion>
-             <Alert>
+            <Alert>
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>¡Asegúrate de guardar!</AlertTitle>
                   <AlertDescription>
-                   Cualquier cambio que realices en estos formularios no se aplicará hasta que hagas clic en el botón "Guardar Cambios".
+                   Cualquier cambio que realices en estos formularios no se aplicará hasta que hagas clic en el botón de guardar en la parte superior derecha.
                   </AlertDescription>
               </Alert>
-            <Button onClick={handleSaveChanges} disabled={isSaving} className="w-full mt-6" size="lg">
-                {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2"/> : <Save className="h-4 w-4 mr-2"/>}
-                Guardar Cambios
-            </Button>
           </div>
       </main>
     </>
