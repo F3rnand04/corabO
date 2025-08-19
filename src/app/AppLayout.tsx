@@ -161,6 +161,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     '/initial-setup',
     '/profile/details', // Hides header/footer on the new details edit page
     '/transactions/settings/cashier', // Hides for the dedicated cashier management page
+    '/scan-qr', // Hide on QR scan page for immersive experience
   ];
 
   const shouldHideAllLayout = noHeaderFooterRoutes.some(path => pathname.startsWith(path));

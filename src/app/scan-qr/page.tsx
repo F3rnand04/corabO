@@ -4,7 +4,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Zap, CameraOff, Loader2, Edit, QrCode } from 'lucide-react';
+import { ChevronLeft, Zap, CameraOff, Loader2, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Input } from '@/components/ui/input';
@@ -162,7 +162,7 @@ function ScanQrContent() {
 
   return (
     <div className="relative h-screen w-screen bg-muted/40">
-      <header className="absolute top-0 left-0 z-20 p-4 w-full flex items-center justify-between">
+      <header className="absolute top-0 left-0 z-20 p-4">
         <Button variant="ghost" size="icon" onClick={() => router.back()} className="bg-background/80 rounded-full shadow-md hover:bg-background">
           <ChevronLeft className="h-6 w-6" />
         </Button>
