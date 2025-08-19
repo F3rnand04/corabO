@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -24,11 +23,12 @@ export default function ProfileSetupPage() {
   const searchParams = useSearchParams();
   
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState<ProfileSetupData>(() => currentUser?.profileSetupData || {});
+  const [formData, setFormData] = useState<ProfileSetupData>(currentUser?.profileSetupData || {});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    // This effect ensures the form data is initialized or updated if the currentUser object changes.
+    // This effect ONLY runs when the component mounts or the user changes.
+    // It prevents re-initializing the form data unnecessarily.
     if (currentUser?.profileSetupData) {
       setFormData(prev => ({ ...prev, ...currentUser.profileSetupData }));
     }
