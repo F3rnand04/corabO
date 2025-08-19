@@ -1,5 +1,4 @@
 
-
 {
   "name": "corabo.app",
   "private": true,
@@ -94,6 +93,3 @@
     "typescript": "5.5.4"
   }
 }
-
-
-    
