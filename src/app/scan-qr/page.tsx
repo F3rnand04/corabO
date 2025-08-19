@@ -1,18 +1,18 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Zap, CameraOff, Loader2 } from 'lucide-react';
+import { ChevronLeft, Zap, CameraOff, Loader2, Edit, QrCode } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useCorabo } from '@/contexts/CoraboContext';
+import { Input } from '../components/ui/input';
 
 // --- Placeholder for QR Scanner Library ---
-const QrScannerPlaceholder = ({ onScan }: { onScan: (data: string) => void }) => {
-  // Simulate a scan after 2 seconds
+const QrScannerPlaceholder = ({ onScan, onScanError }: { onScan: (data: string) => void, onScanError: (error: Error) => void }) => {
+  // In a real app, this would use a library like 'react-qr-scanner'
+  // For this prototype, we'll simulate a scan.
   useEffect(() => {
     const timer = setTimeout(() => {
       // Simulate scanning a provider's QR for a specific box
@@ -37,27 +37,25 @@ const QrScannerPlaceholder = ({ onScan }: { onScan: (data: string) => void }) =>
 };
 // --- End Placeholder ---
 
-export default function ScanQrPage() {
+function ScanQrContent() {
   const router = useRouter();
   const { toast } = useToast();
-  const { startQrSession, currentUser } = useCorabo();
+  const { startQrSession, currentUser, users } = useCorabo();
   
-  const [hasCameraPermission, setHasCameraPermission] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
-  const searchParams = useSearchParams();
-
-  const isRedirected = searchParams.get('redirected');
+  const [manualCode, setManualCode] = useState('');
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    if (currentUser?.type === 'provider' && !isRedirected) {
-      toast({
-        variant: 'destructive',
-        title: 'Acción no permitida',
-        description: 'Los proveedores no pueden escanear códigos para pagar, pero puedes usar esta vista para probar.',
-      });
-    }
-  }, [currentUser, toast, isRedirected]);
+    // Check if running on a client-side environment
+    setIsClient(true);
+  }, []);
 
+  const isMobileDevice = () => {
+    if (!isClient) return false;
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  };
+  
   const handleScan = async (data: string | null) => {
     if (data && !isProcessing) {
       setIsProcessing(true);
@@ -68,7 +66,6 @@ export default function ScanQrPage() {
             title: "¡QR Escaneado!",
             description: `Conectando con el proveedor...`,
           });
-          // Pass the cashierBoxId if it exists in the QR
           const sessionId = await startQrSession(qrData.providerId, qrData.cashierBoxId);
           if (sessionId) {
             router.push(`/payment/approval?sessionId=${sessionId}`);
@@ -87,6 +84,22 @@ export default function ScanQrPage() {
       }
     }
   };
+  
+  const handleManualSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (manualCode.trim() && !isProcessing) {
+        const provider = users.find(u => u.coraboId === manualCode.trim());
+        if(provider) {
+            handleScan(JSON.stringify({providerId: provider.id}));
+        } else {
+             toast({
+                variant: 'destructive',
+                title: 'Código Inválido',
+                description: 'No se encontró ningún proveedor con ese Corabo ID.',
+            });
+        }
+    }
+  }
 
   const handleError = (err: any) => {
     console.error(err);
@@ -97,6 +110,47 @@ export default function ScanQrPage() {
     });
   };
 
+  const renderContent = () => {
+    if (isProcessing) {
+        return (
+            <div className="flex flex-col items-center gap-4 text-center">
+              <Loader2 className="w-16 h-16 animate-spin text-primary" />
+              <h2 className="text-xl font-bold">Iniciando Sesión Segura...</h2>
+            </div>
+        );
+    }
+    
+    if (isMobileDevice()) {
+        return (
+             <div className="w-full max-w-sm">
+                <QrScannerPlaceholder onScan={handleScan} onScanError={handleError} />
+             </div>
+        )
+    }
+
+    // Fallback for Desktop
+    return (
+      <div className="w-full max-w-sm text-center">
+        <div className="p-8 bg-background rounded-lg text-foreground shadow-lg border">
+          <Edit className="w-12 h-12 mx-auto text-primary mb-4" />
+          <h2 className="text-xl font-bold mb-2">Entrada Manual</h2>
+          <p className="text-muted-foreground text-sm mb-4">
+            Parece que estás en una PC. Introduce el Corabo ID del proveedor para iniciar el pago.
+          </p>
+          <form onSubmit={handleManualSubmit}>
+            <Input 
+                placeholder="Ej: corabo1234"
+                value={manualCode}
+                onChange={(e) => setManualCode(e.target.value)}
+            />
+            <Button type="submit" className="w-full mt-4">Continuar</Button>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
+
   return (
     <div className="relative h-screen w-screen bg-black text-white">
       <header className="absolute top-0 left-0 z-20 p-4 w-full flex items-center justify-between bg-gradient-to-b from-black/70 to-transparent">
@@ -106,29 +160,24 @@ export default function ScanQrPage() {
          <h1 className="text-lg font-bold drop-shadow-md">Pagar con Credicora</h1>
         <div className="w-10"></div>
       </header>
-
-      <main className="h-full w-full flex items-center justify-center p-8">
-        {isProcessing ? (
-            <div className="flex flex-col items-center gap-4 text-center">
-              <Loader2 className="w-16 h-16 animate-spin text-primary" />
-              <h2 className="text-xl font-bold">Iniciando Sesión Segura...</h2>
-            </div>
-        ) : hasCameraPermission ? (
-          <div className="w-full max-w-sm">
-            <QrScannerPlaceholder onScan={handleScan} />
-          </div>
-        ) : (
-          <div className="text-center">
-            <CameraOff className="w-16 h-16 mx-auto text-red-500 mb-4" />
-            <h2 className="text-xl font-bold">Acceso a la Cámara Denegado</h2>
-            <p className="text-muted-foreground mt-2">Por favor, habilita el permiso de la cámara en tu navegador para continuar.</p>
-          </div>
-        )}
+       <main className="h-full w-full flex items-center justify-center p-8">
+        {renderContent()}
       </main>
-
        <footer className="absolute bottom-0 left-0 z-20 p-6 w-full text-center bg-gradient-to-t from-black/70 to-transparent">
-         <p className="text-sm">Apunta la cámara al código QR de la tienda para iniciar el pago.</p>
+         <p className="text-sm">
+           {isMobileDevice() 
+                ? "Apunta la cámara al código QR de la tienda para iniciar el pago." 
+                : "Pídele al proveedor su Corabo ID para continuar."}
+        </p>
        </footer>
     </div>
   );
+}
+
+export default function ScanQrPage() {
+    return (
+        <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader2 className="w-8 h-8 animate-spin"/></div>}>
+            <ScanQrContent />
+        </Suspense>
+    )
 }
