@@ -2,7 +2,7 @@
 'use client';
 
 import { Button } from "./ui/button";
-import { Download, Loader2, AlertTriangle, ScanLine, CreditCard, ShieldCheck } from "lucide-react";
+import { Download, Loader2, AlertTriangle } from "lucide-react";
 import { AlertDialogFooter, AlertDialogCancel } from "./ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useCallback, useState, useRef, useEffect } from "react";
@@ -15,7 +15,7 @@ interface PrintableQrDisplayProps {
     onClose: () => void;
 }
 
-const coraboLogoBase64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAA8CAMAAAB1a982AAAAbFBMVEUAAAAA//8AnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwdouwAnuwAnuwAnuwAm+oAm+oAnuwAnuwAnuwAnuwAnuwAl+sAnuwAm+oAnuwAnuwAnuwAnuwAnuwAnuwAnuxKq/H///8i2fa2AAAAI3RSTlMAwEC/f3+AIGAwv78Q75AgYFC/QKAwUP+AYI/vP0DfcM+fVfHlAAAAA1hJREFUeNrt2kGOwkAQRFGICYgi4g7u/w7HCXSBgY5Tqa2t1V4n9g7A9wzDfnsCslxw4qLliIuWIy5ajrhocR8XLYdcNB1x0XTERctRlzIuWou4aLbiwMUl4sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFp3DhL3BxcYg4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4-gVwAAAABJRU5ErkJggg==";
+const coraboLogoBase64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAA8CAMAAAB1a982AAAAbFBMVEUAAAAA//8AnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwdouwAnuwAnuwAnuwAm+oAm+oAnuwAnuwAnuwAnuwAnuwAl+sAnuwAm+oAnuwAnuwAnuwAnuwAnuwAnuwAnuxKq/H///8i2fa2AAAAI3RSTlMAwEC/f3+AIGAwv78Q75AgYFC/QKAwUP+AYI/vP0DfcM+fVfHlAAAAA1hJREFUeNrt2kGOwkAQRFGICYgi4g7u/w7HCXSBgY5Tqa2t1V4n9g7A9wzDfnsCslxw4qLliIuWIy5ajrhocR8XLYdcNB1x0XTERctRlzIuWou4aLbiwMUl4sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFp3DhL3BxcYg4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4-gVwAAAABJRU5ErkJggg==";
 
 export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: PrintableQrDisplayProps) => {
     const { toast } = useToast();
@@ -25,6 +25,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
     const [isCanvasReady, setIsCanvasReady] = useState(false);
 
     const drawCanvasContent = useCallback(async () => {
+        // **FIX**: Do not proceed if qrDataURL is not available.
         if (!qrDataURL) {
             setError("El código QR para esta caja no está disponible.");
             return;
@@ -38,10 +39,6 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
 
         const loadImage = (src: string): Promise<HTMLImageElement> => {
             return new Promise((resolve, reject) => {
-                if (!src) {
-                    // This check is important to prevent Promise.all from failing instantly
-                    return reject(new Error("Image source is missing."));
-                }
                 const img = new Image();
                 img.crossOrigin = "anonymous";
                 img.onload = () => resolve(img);
@@ -51,8 +48,8 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
         };
 
         try {
-            setIsCanvasReady(false);
             setError(null);
+            setIsCanvasReady(false);
 
             const [qrImg, logoImg] = await Promise.all([
                 loadImage(qrDataURL),
@@ -60,51 +57,33 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
             ]);
 
             const width = 400;
-            const height = 550;
+            const height = 500;
             canvas.width = width;
             canvas.height = height;
 
-            // Draw rounded rectangle background
-            ctx.fillStyle = '#E3F2FD'; // Light blue
-            ctx.beginPath();
-            ctx.moveTo(0, 20);
-            ctx.arcTo(0, 0, 20, 0, 20);
-            ctx.lineTo(width - 20, 0);
-            ctx.arcTo(width, 0, width, 20, 20);
-            ctx.lineTo(width, height);
-            ctx.lineTo(0, height);
-            ctx.closePath();
-            ctx.fill();
+            ctx.fillStyle = '#E3F2FD'; // Light blue background
+            ctx.fillRect(0, 0, width, height);
 
-            // Draw Logo
             const logoAspectRatio = logoImg.width / logoImg.height;
             const logoWidth = 150;
             const logoHeight = logoWidth / logoAspectRatio;
             ctx.drawImage(logoImg, (width - logoWidth) / 2, 30, logoWidth, logoHeight);
 
-            // Draw Title
             ctx.fillStyle = '#1E3A8A'; // Dark blue text
             ctx.font = 'bold 24px Arial';
             ctx.textAlign = 'center';
             ctx.fillText('Paga a tu Ritmo con Corabo', width / 2, 140);
-
-            // Draw QR Code in a white rounded box
-            const qrSize = 240;
-            const qrContainerX = (width - qrSize) / 2;
-            const qrContainerY = 170;
-            ctx.fillStyle = '#FFFFFF';
-            ctx.beginPath();
-            ctx.roundRect(qrContainerX, qrContainerY, qrSize, qrSize, 20);
-            ctx.fill();
-            ctx.drawImage(qrImg, qrContainerX + 20, qrContainerY + 20, qrSize - 40, qrSize - 40);
             
-            // Draw Footer
+            const qrSize = 240;
+            ctx.drawImage(qrImg, (width - qrSize) / 2, 170, qrSize, qrSize);
+            
             ctx.fillStyle = '#1E3A8A';
             ctx.font = 'bold 18px Arial';
             ctx.fillText(`${boxName}`, width / 2, height - 60);
             ctx.font = '14px Arial';
             ctx.fillText(`ID Negocio: ${businessId}`, width / 2, height - 35);
             
+            // **FIX**: Set canvas to ready only after successful drawing
             setIsCanvasReady(true);
         } catch (e: any) {
             console.error("Error al dibujar el canvas:", e);
@@ -114,15 +93,12 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
     }, [qrDataURL, boxName, businessId]);
 
     useEffect(() => {
-        // Only attempt to draw if we have a qrDataURL to prevent initial error
-        if (qrDataURL) {
-            drawCanvasContent();
-        }
-    }, [drawCanvasContent, qrDataURL]);
+        drawCanvasContent();
+    }, [drawCanvasContent]);
     
     const downloadQR = useCallback(() => {
         if (!isCanvasReady || error) {
-            toast({ variant: "destructive", title: "Error", description: "El canvas no está listo o contiene errores." });
+            toast({ variant: "destructive", title: "Error", description: "La imagen no está lista o contiene errores." });
             return;
         }
         const canvas = canvasRef.current;
