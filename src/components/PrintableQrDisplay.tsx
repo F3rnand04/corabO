@@ -105,8 +105,8 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
                     </div>
                     
                     <div className="flex-shrink-0">
-                        <h2 className="text-4xl font-bold text-[#1E3A8A] mt-4">Paga a tu Ritmo con Corabo</h2>
-                        <p className="text-xl text-[#1E3A8A] mt-4">Descarga la App Corabo y únete a la comunidad de Óbiamigos</p>
+                         <h2 className="text-4xl font-bold text-[#1E3A8A] mt-4">Paga a tu Ritmo con Corabo</h2>
+                         <p className="text-xl text-[#1E3A8A] mt-4">Descarga la App Corabo y únete a la comunidad de Óbiamigos</p>
                         <div className="flex justify-around items-center text-[#1E3A8A] my-12">
                             <div className="flex flex-col items-center gap-2">
                                 <QrCode className="w-12 h-12" />
