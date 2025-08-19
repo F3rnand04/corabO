@@ -794,7 +794,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         const qrValue = JSON.stringify({ providerId: currentUser.id, cashierBoxId: boxId });
         const qrDataURL = await generateQrDataURL(qrValue);
 
-        const newBox: CashierBox = { id: boxId, name, passwordHash: password, qrValue, qrDataURL };
+        const newBox: CashierBox = { id: boxId, name, passwordHash: password, qrValue, qrDataURL, isActive: false };
         const newBoxes = [...(currentUser.profileSetupData?.cashierBoxes || []), newBox];
         
         await updateUser(currentUser.id, { profileSetupData: { ...currentUser.profileSetupData, cashierBoxes: newBoxes } });
@@ -805,9 +805,19 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         if (!currentUser || !currentUser.profileSetupData?.cashierBoxes) return;
         
         const newBoxes = currentUser.profileSetupData.cashierBoxes.filter(b => b.id !== boxId);
-        await updateUser(currentUser.id, { profileSetupData: { ...currentUser.profileSetupData, cashierBoxes: newBoxes } });
+        
+        // Optimistic UI Update
+        const oldUser = currentUser;
+        setCurrentUser({ ...currentUser, profileSetupData: { ...currentUser.profileSetupData, cashierBoxes: newBoxes } });
 
-        toast({ title: "Caja Eliminada", description: `La caja ha sido eliminada correctamente.` });
+        try {
+            await updateUser(currentUser.id, { profileSetupData: { ...currentUser.profileSetupData, cashierBoxes: newBoxes } });
+            toast({ title: "Caja Eliminada", description: `La caja ha sido eliminada correctamente.` });
+        } catch(error) {
+            // Revert on failure
+            setCurrentUser(oldUser);
+            toast({ variant: 'destructive', title: "Error", description: `No se pudo eliminar la caja.` });
+        }
     },
     updateCashierBox: async (boxId: string, updates: Partial<Pick<CashierBox, 'name' | 'passwordHash'>>) => {
         if (!currentUser || !currentUser.profileSetupData?.cashierBoxes) return;
@@ -844,7 +854,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     searchHistory, contacts, cart, transactions, getCartTotal, 
     getDeliveryCost, users, updateCart, router, currentUser, updateUser, updateFullProfile,
     getDistanceToProvider, currentUserLocation, toast, setDeliveryAddress,
-    deliveryAddress, setDeliveryAddressToCurrent, activeCartForCheckout, generateQrDataURL
+    deliveryAddress, setDeliveryAddressToCurrent, activeCartForCheckout, generateQrDataURL, setCurrentUser
   ]);
   
   return (

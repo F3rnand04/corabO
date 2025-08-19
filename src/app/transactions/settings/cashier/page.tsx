@@ -12,6 +12,8 @@ import { Input } from '@/components/ui/input';
 import { PrintableQrDisplay } from '@/components/PrintableQrDisplay';
 import Link from 'next/link';
 import { toBlob } from 'html-to-image';
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 
 function CashierSettingsHeader() {
@@ -34,7 +36,7 @@ function CashierSettingsHeader() {
 }
 
 function CashierManagementCard() {
-    const { currentUser, addCashierBox, removeCashierBox, updateCashierBox, regenerateCashierBoxQr } = useCorabo();
+    const { currentUser, addCashierBox, removeCashierBox, updateCashierBox, regenerateCashierBoxQr, qrSession } = useCorabo();
     const [newBoxName, setNewBoxName] = useState('');
     const [newBoxPassword, setNewBoxPassword] = useState('');
     const [selectedBox, setSelectedBox] = useState<{id: string, name: string, businessId: string, qrDataURL: string | undefined} | null>(null);
@@ -113,10 +115,15 @@ function CashierManagementCard() {
                     <h4 className="text-sm font-semibold">Cajas Activas</h4>
                     {cashierBoxes.length > 0 ? (
                         <div className="space-y-2">
-                            {cashierBoxes.map(box => (
-                                <div key={box.id} className="flex flex-col gap-3 p-3 bg-background rounded-md border">
+                            {cashierBoxes.map(box => {
+                                const isActive = qrSession?.cashierBoxId === box.id;
+                                return (
+                                <div key={box.id} className={cn("flex flex-col gap-3 p-3 bg-background rounded-md border", isActive && "border-green-500 ring-1 ring-green-500")}>
                                     <div className="flex items-center justify-between">
-                                        <p className="font-medium flex-shrink-0">{box.name}</p>
+                                        <div className="flex items-center gap-2">
+                                            <p className="font-medium flex-shrink-0">{box.name}</p>
+                                            {isActive && <Badge variant="default" className="bg-green-500 hover:bg-green-600">Activa</Badge>}
+                                        </div>
                                          <AlertDialog>
                                             <AlertDialogTrigger asChild>
                                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" disabled={isProcessing === box.id}><Trash2 className="w-4 h-4"/></Button>
@@ -175,7 +182,7 @@ function CashierManagementCard() {
                                         </Button>
                                     </div>
                                 </div>
-                            ))}
+                            )})}
                         </div>
                     ) : (
                         <p className="text-xs text-muted-foreground text-center py-4">Aún no has creado ninguna caja.</p>
