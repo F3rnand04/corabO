@@ -249,7 +249,7 @@ export function ProfileHeader() {
                         </Link>
                     </Button>
                     <Button asChild variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground">
-                       <Link href="/profile/details">
+                       <Link href="/profile-setup/details">
                           <UserRoundCog className="w-5 h-5" />
                        </Link>
                     </Button>

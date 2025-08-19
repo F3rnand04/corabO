@@ -23,7 +23,6 @@ export function Footer() {
   }
 
   const isProvider = currentUser.type === 'provider';
-  const isCompany = isProvider && currentUser.profileSetupData?.providerType === 'company';
   const isProfilePage = pathname.startsWith('/profile');
 
   const handleCentralButtonClick = () => {
@@ -87,7 +86,7 @@ export function Footer() {
 
     if (isProfilePage) {
         Icon = <Settings className="w-6 h-6" />;
-        href = '/profile-setup'; // Always go to the setup flow start
+        href = '/transactions/settings'; // Go to transaction settings
     }
     
     return (
