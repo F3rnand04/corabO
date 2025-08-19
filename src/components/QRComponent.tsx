@@ -11,7 +11,7 @@ const QRComponent = ({ value }: QRComponentProps) => {
   return (
     <QRCodeSVG
       value={value}
-      size={256}
+      size={200}
       bgColor={"#ffffff"}
       fgColor={"#000000"}
       level={"L"}

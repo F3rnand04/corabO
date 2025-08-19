@@ -1,7 +1,7 @@
 'use client';
 
 import { Button } from "./ui/button";
-import { Download, Loader2 } from "lucide-react";
+import { Download, Loader2, QrCode, Handshake, Wallet, ArrowRight } from "lucide-react";
 import { AlertDialogFooter, AlertDialogCancel } from "./ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useCallback, useState, useRef } from "react";
@@ -30,7 +30,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
         setIsDownloading(true);
         html2canvas(printRef.current, {
             useCORS: true,
-            backgroundColor: null, // Use transparent background for canvas
+            backgroundColor: null,
         }).then(canvas => {
             const link = document.createElement('a');
             link.download = `QR-Caja-${boxName.replace(/\s+/g, '-')}.png`;
@@ -49,19 +49,50 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
     return (
         <div className="flex flex-col items-center gap-4 bg-background p-6 rounded-lg shadow-lg">
             {/* This is the div that will be "photographed" */}
-            <div ref={printRef} className="bg-[#E3F2FD] p-6 rounded-lg text-center" style={{ width: '400px' }}>
-                <div className="relative w-48 h-20 mx-auto mb-4">
-                     <Image src="https://i.postimg.cc/Wz1MTvWK/lg.png" alt="Corabo Logo" fill style={{objectFit: "contain"}} />
-                </div>
-                <h3 className="text-xl font-bold text-[#1E3A8A] mb-4">Paga a tu Ritmo con Corabo</h3>
-                
-                <div className="flex justify-center mb-4 p-4">
-                     <QRComponent value={qrValue} />
+            <div ref={printRef} className="bg-[#E3F2FD] p-6 rounded-2xl text-center flex flex-col justify-between" style={{ width: '384px', height: '640px' }}>
+                <div className="flex-shrink-0">
+                    <div className="relative w-48 h-20 mx-auto">
+                         <Image src="https://i.postimg.cc/Wz1MTvWK/lg.png" alt="Corabo Logo" fill style={{objectFit: "contain"}} />
+                    </div>
+                    <h2 className="text-2xl font-bold text-[#1E3A8A] mt-4">Paga a tu Ritmo con Corabo</h2>
                 </div>
                 
-                <div className="mt-6 border-t border-dashed border-gray-400 pt-4">
-                    <p className="font-bold text-lg text-[#1E3A8A]">Caja: {boxName}</p>
-                    <p className="text-sm text-gray-600">ID Negocio: {businessId}</p>
+                <div className="flex justify-center items-center my-4 flex-grow">
+                    <div className="bg-white p-4 rounded-xl shadow-md">
+                        <QRComponent value={qrValue} />
+                    </div>
+                </div>
+                
+                <div className="flex-shrink-0">
+                    <div className="flex justify-around items-center text-[#1E3A8A] mb-4">
+                        <div className="flex flex-col items-center gap-1">
+                            <QrCode className="w-8 h-8" />
+                            <span className="text-sm font-semibold">Escanea</span>
+                        </div>
+                        <ArrowRight className="w-6 h-6 text-gray-400" />
+                        <div className="flex flex-col items-center gap-1">
+                            <Handshake className="w-8 h-8" />
+                            <span className="text-sm font-semibold">Autoriza</span>
+                        </div>
+                        <ArrowRight className="w-6 h-6 text-gray-400" />
+                        <div className="flex flex-col items-center gap-1">
+                            <Wallet className="w-8 h-8" />
+                            <span className="text-sm font-semibold">Paga</span>
+                        </div>
+                    </div>
+
+                     <div 
+                        className="w-full border-b border-dashed border-gray-400 mb-4" 
+                        style={{
+                            borderStyle: 'dashed',
+                            borderWidth: '0 0 2px 0',
+                        }}
+                     />
+                    
+                    <div className="text-lg font-semibold text-[#1E3A8A]">
+                        <p>Caja: {boxName}</p>
+                        <p>ID Negocio: {businessId}</p>
+                    </div>
                 </div>
             </div>
 
