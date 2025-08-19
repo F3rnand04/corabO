@@ -78,31 +78,23 @@ export function Footer() {
   const renderRightmostButton = () => {
     const isProfileContext = pathname.startsWith('/profile');
     
-    // The key logic change is here
-    let href = '/profile/publications'; // Default profile link
-    if (isProfileContext) {
-        const isCompany = currentUser.profileSetupData?.providerType === 'company';
-        const isCompanySetupComplete = !!currentUser.profileSetupData?.specialty;
+    let href = '/profile/publications';
+    let Icon = (
+        <Avatar className={cn("w-7 h-7", pathname.startsWith('/profile') && "border-2 border-primary")}>
+            <AvatarImage src={currentUser.profileImage} alt={currentUser.name} />
+            <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+        </Avatar>
+    );
 
-        if (isCompany && !isCompanySetupComplete) {
-            href = '/profile-setup'; // Unconfigured company goes to the 4-step setup
-        } else {
-            // For everyone else (professionals, clients, and CONFIGURED companies), the gear links to /transactions/settings
-            href = '/transactions/settings';
-        }
+    if (isProfileContext) {
+        Icon = <Settings className="w-6 h-6" />;
+        href = '/transactions/settings';
     }
     
     return (
       <Link href={href} passHref>
         <Button variant="ghost" className={cn("flex-col h-auto p-1 text-muted-foreground hover:text-primary", pathname.startsWith('/profile') && "text-primary")}>
-          {isProfileContext ? (
-            <Settings className="w-6 h-6" />
-          ) : (
-            <Avatar className={cn("w-7 h-7", pathname.startsWith('/profile') && "border-2 border-primary")}>
-              <AvatarImage src={currentUser.profileImage} alt={currentUser.name} />
-              <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
-            </Avatar>
-          )}
+          {Icon}
         </Button>
       </Link>
     );

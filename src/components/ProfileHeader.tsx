@@ -180,6 +180,28 @@ export function ProfileHeader() {
                             <Wallet className="w-5 h-5"/>
                         </Link>
                     </Button>
+                    <Button variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground" onClick={() => toggleGps(currentUser.id)}>
+                        <MapPin className={cn("h-5 w-5", currentUser.isGpsActive ? "text-green-500" : "text-muted-foreground")} />
+                    </Button>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground">
+                                <CalendarIcon className="w-5 h-5" />
+                            </Button>
+                        </PopoverTrigger>
+                         <PopoverContent className="w-auto p-0">
+                            <Calendar
+                                mode="multiple"
+                                selected={eventDates}
+                                onDayClick={handleDayClick}
+                            />
+                        </PopoverContent>
+                    </Popover>
+                    <Button asChild variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground">
+                       <Link href="/profile/details">
+                          <UserRoundCog className="w-5 h-5" />
+                       </Link>
+                    </Button>
                  </div>
             </div>
         </div>
