@@ -41,7 +41,7 @@ function CashierManagementCard() {
     const { currentUser, addCashierBox, removeCashierBox, updateCashierBox, regenerateCashierBoxQr, qrSession } = useCorabo();
     const [newBoxName, setNewBoxName] = useState('');
     const [newBoxPassword, setNewBoxPassword] = useState('');
-    const [selectedBox, setSelectedBox] = useState<{id: string, name: string, businessId: string, qrDataURL: string | undefined} | null>(null);
+    const [selectedBox, setSelectedBox] = useState<{id: string, name: string, businessId: string, qrValue: string} | null>(null);
     const [passwordVisibility, setPasswordVisibility] = useState<Record<string, boolean>>({});
     const [editingPasswords, setEditingPasswords] = useState<Record<string, string>>({});
     const [isProcessing, setIsProcessing] = useState<string | null>(null); // To track which box is being processed
@@ -179,7 +179,7 @@ function CashierManagementCard() {
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
-                                         <Button variant="outline" size="sm" onClick={() => setSelectedBox({id: box.id, name: box.name, businessId: currentUser.coraboId || currentUser.id, qrDataURL: box.qrDataURL})}>
+                                         <Button variant="outline" size="sm" onClick={() => setSelectedBox({id: box.id, name: box.name, businessId: currentUser.coraboId || currentUser.id, qrValue: box.qrValue})}>
                                             <QrCode className="w-4 h-4 mr-2"/>Ver QR
                                         </Button>
                                     </div>
@@ -197,7 +197,7 @@ function CashierManagementCard() {
                         <PrintableQrDisplay 
                             boxName={selectedBox.name}
                             businessId={selectedBox.businessId}
-                            qrDataURL={selectedBox.qrDataURL}
+                            qrValue={selectedBox.qrValue}
                             onClose={() => setSelectedBox(null)}
                         />
                     )}

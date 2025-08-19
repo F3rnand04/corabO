@@ -13,11 +13,11 @@ import QRComponent from "./QRComponent"; // Import the isolated QR component
 interface PrintableQrDisplayProps {
     boxName: string;
     businessId: string;
-    qrDataURL: string | undefined; // This is now just the value for the QR code
+    qrValue: string; // **FIX**: This prop should be the raw value to encode, not a pre-rendered data URL.
     onClose: () => void;
 }
 
-export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: PrintableQrDisplayProps) => {
+export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: PrintableQrDisplayProps) => {
     const { toast } = useToast();
     const [isDownloading, setIsDownloading] = useState(false);
     const printRef = useRef<HTMLDivElement>(null);
@@ -54,9 +54,10 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
                 <Image src="https://i.postimg.cc/Wz1MTvWK/lg.png" alt="Corabo Logo" width={150} height={50} className="mx-auto mb-4" />
                 <h3 className="text-xl font-bold text-[#1E3A8A] mb-4">Paga a tu Ritmo con Corabo</h3>
                 
-                {qrDataURL ? (
+                {qrValue ? (
                     <div className="flex justify-center mb-4">
-                        <QRComponent value={qrDataURL} />
+                        {/* **FIX**: Pass the raw qrValue to the component for encoding */}
+                        <QRComponent value={qrValue} />
                     </div>
                 ) : (
                     <div className="w-64 h-64 bg-gray-200 flex items-center justify-center rounded-lg mx-auto mb-4">
