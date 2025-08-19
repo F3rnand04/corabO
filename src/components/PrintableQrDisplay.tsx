@@ -15,10 +15,7 @@ interface PrintableQrDisplayProps {
     onClose: () => void;
 }
 
-const coraboLogoBase64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAA8CAMAAAB1a982AAAAbFBMVEUAAAAA//8AnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwdouwAnuwAnuwAnuwAm+oAm+oAnuwAnuwAnuwAnuwAnuwAl+sAnuwAm+oAnuwAnuwAnuwAnuwAnuxKq/H///8i2fa2AAAAI3RSTlMAwEC/f3+AIGAwv78Q75AgYFC/QKAwUP+AYI/vP0DfcM+fVfHlAAAAA1hJREFUeNrt2kGOwkAQRFGICYgi4g7u/w7HCXSBgY5Tqa2t1V4n9g7A9wzDfnsCslxw4qLliIuWIy5ajrhocR8XLYdcNB1x0XTERctRlzIuWou4aLbiwMUl4sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFp3DhL3BxcYg4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4acHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4c-gVwAAAABJRU5ErkJggg==";
-const scanIconBase64 = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxRTNBOEEiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1zY2FuLWxpbmUiPjxwYXRoIGQ9Ik0zIDcgVjVhMiAyIDAgMCAxIDItMmgxNGExIDEgMCAwIDEgMSAxdjE0YTIgMiAwIDAgMS0yIDJoLTQiLz48cGF0aCBkPSJtNyAxMkgxNSIvPjwvc3ZnPg==";
-const authorizeIconBase64 = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxRTNBOEEiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1maW5nZXJwcmludCI+PHBhdGggZD0iTTIgMTJmNGE0IDQgMCAwIDAgNC00aDdhMSAxIDAgMCAwIDEtMVY2YTEgMSAwIDAgMC0xLTFoLTdhNCA0IDAgMCAwLTMuNDUgNS44NSIvPjxwYXRoIGQ9Ik0xMiAxMHY2YTIgMiAwIDAgMCAyIDJoMiIvPjxwYXRoIGQ9Ik0xMiAxNnYyYTEgMSAwIDAgMCAxIDFIMTciLz48cGF0aCBkPSJNOEAMnDYiLz48cGF0aCBkPSJNNiA0YzEuMSAwIDIgLjkgMiAyIDAgMS4xLS45IDItMiAyYTIgMiAwIDEgMSAwLTRoMiIvPjxwYXRoIGQ9Ik0xOCA3YTIgMiAwIDAgMCAyIDIiLz48L3N2Zz4=";
-const payIconBase64 = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxRTNBOEEiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1kb2xsYXItc2lnbiI+PHBhdGggZD0iTTEyIDEydjBhNiA2IDAgMCAwIDYtNmgtNi02djZhNiA2IDAgMCAxLTYgNnoiLz48cGF0aCBkPSJNNCA2djEyIi8+PHBhdGggZD0iTTIxIDEydjBhNiA2IDAgMCAxLTYgNmgtNi02djZhNiA2IDAgMCAwIDYtNnoiLz48L3N2Zz4=";
+const coraboLogoBase64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAA8CAMAAAB1a982AAAAbFBMVEUAAAAA//8AnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwdouwAnuwAnuwAnuwAm+oAm+oAnuwAnuwAnuwAnuwAnuwAl+sAnuwAm+oAnuwAnuwAnuwAnuwAnuxKq/H///8i2fa2AAAAI3RSTlMAwEC/f3+AIGAwv78Q75AgYFC/QKAwUP+AYI/vP0DfcM+fVfHlAAAAA1hJREFUeNrt2kGOwkAQRFGICYgi4g7u/w7HCXSBgY5Tqa2t1V4n9g7A9wzDfnsCslxw4qLliIuWIy5ajrhocR8XLYdcNB1x0XTERctRlzIuWou4aLbiwMUl4sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFp3DhL3BxcYg4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4c-gVwAAAABJRU5ErkJggg==";
 
 export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: PrintableQrDisplayProps) => {
     const { toast } = useToast();
@@ -42,13 +39,13 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
         const loadImage = (src: string): Promise<HTMLImageElement> => {
             return new Promise((resolve, reject) => {
                 if (!src) {
-                    // Do not reject, allow the useEffect check to handle missing qrDataURL
-                    return; 
+                    reject(new Error("Image source is missing."));
+                    return;
                 }
                 const img = new Image();
                 img.crossOrigin = "anonymous";
                 img.onload = () => resolve(img);
-                img.onerror = (err) => reject(new Error(`Fallo al cargar la imagen: ${src.substring(0, 30)}...`));
+                img.onerror = () => reject(new Error(`Fallo al cargar la imagen: ${src.substring(0, 30)}...`));
                 img.src = src;
             });
         };
@@ -57,17 +54,13 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
             setIsCanvasReady(false);
             setError(null);
 
-            // Wait for all images to be loaded before drawing
-            const [qrImg, logoImg, scanIconImg, authorizeIconImg, payIconImg] = await Promise.all([
+            const [qrImg, logoImg] = await Promise.all([
                 loadImage(qrDataURL),
                 loadImage(coraboLogoBase64),
-                loadImage(scanIconBase64),
-                loadImage(authorizeIconBase64),
-                loadImage(payIconBase64),
             ]);
 
             const width = 400;
-            const height = 600;
+            const height = 550; // Reduced height as we remove the icons
             canvas.width = width;
             canvas.height = height;
 
@@ -98,60 +91,21 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
             ctx.fillText('Paga a tu Ritmo con Corabo', width / 2, 140);
 
             // Draw QR Code in a white rounded box
-            const qrContainerX = (width - 240) / 2;
+            const qrSize = 240;
+            const qrContainerX = (width - qrSize) / 2;
             const qrContainerY = 170;
-            const qrContainerWidth = 240;
-            const qrContainerHeight = 240;
             ctx.fillStyle = '#FFFFFF';
             ctx.beginPath();
-            ctx.moveTo(qrContainerX + 20, qrContainerY);
-            ctx.lineTo(qrContainerX + qrContainerWidth - 20, qrContainerY);
-            ctx.arcTo(qrContainerX + qrContainerWidth, qrContainerY, qrContainerX + qrContainerWidth, qrContainerY + 20, 20);
-            ctx.lineTo(qrContainerX + qrContainerWidth, qrContainerY + qrContainerHeight - 20);
-            ctx.arcTo(qrContainerX + qrContainerWidth, qrContainerY + qrContainerHeight, qrContainerX + qrContainerWidth - 20, qrContainerY + qrContainerHeight, 20);
-            ctx.lineTo(qrContainerX + 20, qrContainerY + qrContainerHeight);
-            ctx.arcTo(qrContainerX, qrContainerY + qrContainerHeight, qrContainerX, qrContainerY + qrContainerHeight - 20, 20);
-            ctx.lineTo(qrContainerX, qrContainerY + 20);
-            ctx.arcTo(qrContainerX, qrContainerY, qrContainerX + 20, qrContainerY, 20);
-            ctx.closePath();
+            ctx.roundRect(qrContainerX, qrContainerY, qrSize, qrSize, 20);
             ctx.fill();
-            ctx.drawImage(qrImg, (width - 200) / 2, 190, 200, 200);
-
-            // Draw flow icons and text
-            const flowY = 460;
-            const iconSize = 40;
-            const iconY = flowY - (iconSize / 2);
-            const textY = flowY + (iconSize / 2) + 15;
-
-            ctx.drawImage(scanIconImg, 60, iconY, iconSize, iconSize);
-            ctx.drawImage(authorizeIconImg, 180, iconY, iconSize, iconSize);
-            ctx.drawImage(payIconImg, 300, iconY, iconSize, iconSize);
-
-            ctx.fillStyle = '#1E3A8A';
-            ctx.font = '14px Arial';
-            ctx.fillText('Escanea', 80, textY);
-            ctx.fillText('Autoriza', 200, textY);
-            ctx.fillText('Paga', 320, textY);
-
-            // Draw dashed lines
-            ctx.beginPath();
-            ctx.strokeStyle = '#93C5FD'; // blue-300
-            ctx.lineWidth = 2;
-            ctx.setLineDash([5, 5]);
-            ctx.moveTo(110, flowY);
-            ctx.lineTo(170, flowY);
-            ctx.moveTo(230, flowY);
-            ctx.lineTo(290, flowY);
-            ctx.stroke();
-            ctx.setLineDash([]);
-            ctx.lineWidth = 1;
-
+            ctx.drawImage(qrImg, qrContainerX + 20, qrContainerY + 20, qrSize - 40, qrSize - 40);
+            
             // Draw Footer
             ctx.fillStyle = '#1E3A8A';
-            ctx.font = 'bold 16px Arial';
-            ctx.fillText(`Caja: ${boxName}`, width / 2, height - 50);
+            ctx.font = 'bold 18px Arial';
+            ctx.fillText(`Caja: ${boxName}`, width / 2, height - 60);
             ctx.font = '14px Arial';
-            ctx.fillText(`ID Negocio: ${businessId}`, width / 2, height - 30);
+            ctx.fillText(`ID Negocio: ${businessId}`, width / 2, height - 35);
             
             setIsCanvasReady(true);
         } catch (e: any) {
@@ -162,7 +116,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
     }, [qrDataURL, boxName, businessId]);
 
     useEffect(() => {
-        if(qrDataURL) {
+        if (qrDataURL) {
             drawCanvasContent();
         }
     }, [qrDataURL, drawCanvasContent]);
