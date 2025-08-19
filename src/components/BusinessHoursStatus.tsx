@@ -42,9 +42,16 @@ export function BusinessHoursStatus({ schedule, onStatusChange }: BusinessHoursS
       const todaySchedule = schedule[currentDayName];
 
       if (todaySchedule && todaySchedule.active) {
-        // We must parse the times in the context of the *current* date to handle intervals correctly.
         const fromTime = parse(todaySchedule.from, 'HH:mm', new Date());
         const toTime = parse(todaySchedule.to, 'HH:mm', new Date());
+
+        // **FIX**: Handle 24-hour case (00:00 to 24:00)
+        if (todaySchedule.from === '00:00' && todaySchedule.to === '24:00') {
+             setStatus('open');
+             setMessage('Abierto 24 horas');
+             onStatusChange?.('open');
+             return;
+        }
 
         if (isWithinInterval(now, { start: fromTime, end: toTime })) {
           setStatus('open');
@@ -73,7 +80,6 @@ export function BusinessHoursStatus({ schedule, onStatusChange }: BusinessHoursS
           const nextOpeningDate = parse(nextDaySchedule.from, 'HH:mm', nextDayDate);
           
           setStatus('closed');
-          const timeToOpen = formatDistanceToNowStrict(nextOpeningDate, { locale: es, unit: 'hour' });
           const dayName = i === 1 ? 'mañana' : format(nextOpeningDate, 'eeee', { locale: es });
           const timeFormatted = format(nextOpeningDate, 'p', { locale: es });
 
