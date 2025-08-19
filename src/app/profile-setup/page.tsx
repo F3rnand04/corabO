@@ -8,7 +8,7 @@ import { ChevronLeft, Loader2 } from 'lucide-react';
 import type { ProfileSetupData } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { ProgressBar } from '@/components/ui/progress-bar';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 // Import Step Components
 import Step2_CompanyInfo from '@/components/profile-setup/Step2_CompanyInfo';
@@ -20,28 +20,35 @@ export default function ProfileSetupPage() {
   const { currentUser, updateFullProfile, deliveryAddress, setDeliveryAddress } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
   
   const [step, setStep] = useState(1);
-  // Initialize formData from currentUser but allow it to be updated locally
   const [formData, setFormData] = useState<ProfileSetupData>(() => currentUser?.profileSetupData || {});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    // Sync formData with currentUser's data only on initial load or if user changes
     if (currentUser?.profileSetupData) {
       setFormData(prev => ({ ...prev, ...currentUser.profileSetupData }));
     }
   }, [currentUser]);
 
-  // **FIX**: This effect listens for changes in the deliveryAddress from the context
-  // (which is updated when returning from the map) and syncs it with the local form state.
   useEffect(() => {
     if (deliveryAddress && deliveryAddress !== formData.location) {
       setFormData(prev => ({ ...prev, location: deliveryAddress }));
-      // Optional: Clear the address from context after using it to prevent re-triggering
       setDeliveryAddress(''); 
     }
   }, [deliveryAddress, formData.location, setDeliveryAddress]);
+  
+   useEffect(() => {
+    const fromMap = searchParams.get('fromMap');
+    if (fromMap) {
+      // When returning from map, we should be on the logistics step
+      setStep(2); 
+      const url = new URL(window.location.href);
+      url.searchParams.delete('fromMap');
+      window.history.replaceState({}, '', url);
+    }
+  }, [searchParams]);
 
   if (!currentUser) {
     return (
@@ -63,10 +70,9 @@ export default function ProfileSetupPage() {
   const handleFinalSubmit = async () => {
     setIsSubmitting(true);
     try {
-        // We pass 'provider' because a company is always a provider
         await updateFullProfile(currentUser.id, formData, 'provider');
         toast({ title: "¡Perfil de Empresa Configurado!", description: "Tus datos han sido guardados."});
-        router.push('/profile'); // Redirect after successful setup
+        router.push('/profile');
     } catch(error) {
         console.error("Error submitting profile data:", error);
         toast({ variant: 'destructive', title: "Error", description: "No se pudo guardar la información."});
