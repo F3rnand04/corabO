@@ -4,7 +4,7 @@
 import { Button } from "./ui/button";
 import { QRCodeSVG } from "qrcode.react";
 import Image from "next/image";
-import { ShoppingCart, RefreshCw, HandCoins, Download } from "lucide-react";
+import { QrCode, Handshake, Wallet, Download } from "lucide-react";
 import dynamic from 'next/dynamic';
 
 // Dynamically import html2canvas only on the client side
@@ -62,17 +62,17 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue }: PrintableQr
                     
                     <div className="flex justify-around items-center text-slate-700 dark:text-slate-300 my-4">
                         <div className="flex flex-col items-center gap-1">
-                            <ShoppingCart className="w-7 h-7" />
+                            <QrCode className="w-7 h-7" />
                             <p className="text-xs font-semibold">Escanea</p>
                         </div>
                         <div className="text-2xl font-light text-slate-400 dark:text-slate-600">&rarr;</div>
                         <div className="flex flex-col items-center gap-1">
-                            <RefreshCw className="w-7 h-7" />
+                            <Handshake className="w-7 h-7" />
                             <p className="text-xs font-semibold">Autoriza</p>
                         </div>
                         <div className="text-2xl font-light text-slate-400 dark:text-slate-600">&rarr;</div>
                         <div className="flex flex-col items-center gap-1">
-                            <HandCoins className="w-7 h-7" />
+                            <Wallet className="w-7 h-7" />
                              <p className="text-xs font-semibold">Paga</p>
                         </div>
                     </div>
