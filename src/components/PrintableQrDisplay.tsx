@@ -24,26 +24,32 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
         try {
             const html2canvas = (await import('html2canvas')).default;
             const printableArea = document.getElementById('printable-qr-area');
+            
             if (printableArea) {
                 toast({
-                  title: "Descarga Iniciada",
-                  description: "Tu imagen del código QR se está descargando."
+                  title: "Generando Imagen...",
+                  description: "Preparando tu código QR para la descarga."
                 });
 
                 const canvas = await html2canvas(printableArea, { 
                   scale: 3, 
                   backgroundColor: null,
-                  useCORS: true
+                  useCORS: true,
                 });
+                
                 const pngFile = canvas.toDataURL("image/png");
                 
-                // Direct and reliable download method
+                // This is the most robust download method
                 const downloadLink = document.createElement("a");
-                downloadLink.download = `QR-Caja-${boxName.replace(/\s+/g, '-')}.png`;
                 downloadLink.href = pngFile;
+                downloadLink.download = `QR-Caja-${boxName.replace(/\s+/g, '-')}.png`;
+                
+                // Append to body, click, and then remove
+                document.body.appendChild(downloadLink);
                 downloadLink.click();
-
-                onClose();
+                document.body.removeChild(downloadLink);
+                
+                onClose(); // Auto-close after successful download trigger
             }
         } catch (error) {
             console.error("Error downloading QR:", error);
