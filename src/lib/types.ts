@@ -279,7 +279,7 @@ export type SpecializedData = {
 export type CashierBox = {
     id: string;
     name: string;
-    passwordHash: string; // Only store the hash
+    passwordHash: string; // In a real app, this should be a secure hash
     qrValue: string; // Static value for the QR code
 };
 

@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef, useMemo } from 'react';
-import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest, PublicationOwner, CreatePublicationInput, CreateProductInput, QrSession, TempRecipientInfo } from '@/lib/types';
+import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest, PublicationOwner, CreatePublicationInput, CreateProductInput, QrSession, TempRecipientInfo, CashierBox } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast"
 import { useRouter, useSearchParams } from "next/navigation";
 import jsPDF from 'jspdf';
@@ -11,7 +11,7 @@ import { addDays, differenceInDays } from 'date-fns';
 import { credicoraLevels, credicoraCompanyLevels } from '@/lib/types';
 import { getAuth, signInWithPopup, signOut, User as FirebaseUser, GoogleAuthProvider } from 'firebase/auth';
 import { getFirebaseApp, getFirestoreDb, getAuthInstance } from '@/lib/firebase';
-import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, arrayUnion, getDocs, deleteDoc, collectionGroup, Unsubscribe, orderBy, deleteField } from 'firebase/firestore';
+import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, arrayUnion, getDocs, deleteDoc, collectionGroup, Unsubscribe, orderBy, deleteField, arrayRemove } from 'firebase/firestore';
 import { createCampaign as createCampaignFlow, type CreateCampaignInput } from '@/ai/flows/campaign-flow';
 import { sendMessage as sendMessageFlow, acceptProposal as acceptProposalFlow } from '@/ai/flows/message-flow';
 import * as TransactionFlows from '@/ai/flows/transaction-flow';
@@ -121,7 +121,7 @@ interface CoraboActions {
   fetchUser: (userId: string) => Promise<User | null>;
   acceptDelivery: (transactionId: string) => void;
   getDistanceToProvider: (provider: User) => string | null;
-  startQrSession: (providerId: string) => Promise<string | null>;
+  startQrSession: (providerId: string, cashierBoxId?: string) => Promise<string | null>;
   setQrSessionAmount: (sessionId: string, amount: number) => Promise<void>;
   approveQrSession: (sessionId: string) => Promise<void>;
   finalizeQrSession: (sessionId: string, voucherUrl: string) => Promise<void>;
@@ -141,6 +141,8 @@ interface CoraboActions {
   assignOwnDelivery: (transactionId: string) => Promise<void>;
   setActiveCartForCheckout: (cartItems: CartItem[] | null) => void;
   clearExpiredCarts: () => Promise<void>;
+  addCashierBox: (name: string, password: string) => Promise<void>;
+  removeCashierBox: (boxId: string) => Promise<void>;
 }
 
 const CoraboStateContext = createContext<CoraboState | undefined>(undefined);
@@ -380,8 +382,16 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, [users, updateUser]);
 
   const updateUserProfileImage = useCallback(async (userId: string, imageUrl: string) => {
+    if (imageUrl.length > 1048487) { // Firestore document limit is 1MB, give some buffer
+        toast({
+            variant: "destructive",
+            title: "Imagen demasiado grande",
+            description: "La imagen es muy grande. Por favor, utiliza una imagen más pequeña (menor a 1MB)."
+        });
+        return;
+    }
     await updateUser(userId, { profileImage: imageUrl });
-  }, [updateUser]);
+  }, [updateUser, toast]);
 
   const setDeliveryAddressToCurrent = useCallback(() => {
     if (navigator.geolocation) {
@@ -686,7 +696,23 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     verifyUserId: (a:any)=>{},
     rejectUserId: (a:any)=>{},
     getUserMetrics: (a:any,b:any)=>{return {reputation: 0, effectiveness: 0, responseTime: 'Nuevo', paymentSpeed: 'N/A'}},
-    startQrSession: async (a:any) => null,
+    startQrSession: async (providerId: string, cashierBoxId?: string) => {
+      if(!currentUser) return null;
+      const db = getFirestoreDb();
+      const sessionId = `qrs-${currentUser.id.slice(-5)}-${Date.now()}`;
+      const sessionData: QrSession = {
+        id: sessionId,
+        providerId,
+        clientId: currentUser.id,
+        cashierBoxId,
+        status: 'pendingAmount',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        participantIds: [currentUser.id, providerId],
+      };
+      await setDoc(doc(db, 'qr_sessions', sessionId), sessionData);
+      return sessionId;
+    },
     setQrSessionAmount: async(a:any,b:any)=>{return Promise.resolve();},
     approveQrSession: async(a:any)=>{return Promise.resolve();},
     finalizeQrSession: async(a:any,b:any)=>{return Promise.resolve();},
@@ -739,7 +765,35 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         });
         await batch.commit();
         toast({ title: 'Carritos expirados limpiados' });
-    }
+    },
+    addCashierBox: async (name: string, password: string) => {
+        if (!currentUser || currentUser.profileSetupData?.providerType !== 'company') return;
+        
+        const newBox: CashierBox = {
+            id: `caja-${Date.now()}`,
+            name,
+            passwordHash: password, // In a real app, this would be a hash
+            qrValue: JSON.stringify({ providerId: currentUser.id, cashierBoxId: `caja-${Date.now()}` }),
+        };
+
+        const userRef = doc(getFirestoreDb(), 'users', currentUser.id);
+        await updateDoc(userRef, {
+            'profileSetupData.cashierBoxes': arrayUnion(newBox)
+        });
+        toast({ title: "Caja Añadida", description: `La caja "${name}" ha sido creada.` });
+    },
+    removeCashierBox: async (boxId: string) => {
+        if (!currentUser || !currentUser.profileSetupData?.cashierBoxes) return;
+        
+        const boxToRemove = currentUser.profileSetupData.cashierBoxes.find(b => b.id === boxId);
+        if (!boxToRemove) return;
+
+        const userRef = doc(getFirestoreDb(), 'users', currentUser.id);
+        await updateDoc(userRef, {
+            'profileSetupData.cashierBoxes': arrayRemove(boxToRemove)
+        });
+        toast({ title: "Caja Eliminada", description: `La caja ha sido eliminada correctamente.` });
+    },
   }), [
     searchHistory, contacts, cart, transactions, getCartTotal, 
     getDeliveryCost, users, updateCart, router, currentUser, updateUser, updateFullProfile,
