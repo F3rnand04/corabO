@@ -2,7 +2,6 @@
 'use client';
 
 import { Button } from "./ui/button";
-import { Card, CardContent } from "./ui/card";
 import { QRCodeSVG } from "qrcode.react";
 import Image from "next/image";
 import { ShoppingCart, RefreshCw, HandCoins, Download } from "lucide-react";
@@ -22,20 +21,14 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue }: PrintableQr
     const downloadQR = async () => {
         const printableArea = document.getElementById('printable-qr-area');
         if (printableArea) {
-            // Temporarily disable shadows for cleaner image
-            printableArea.style.boxShadow = 'none';
-
             // Ensure html2canvas is loaded before using it
-            const canvas = await (await import('html2canvas')).default(printableArea, { scale: 3 });
+            const canvas = await (await import('html2canvas')).default(printableArea, { scale: 3, backgroundColor: null });
 
             const pngFile = canvas.toDataURL("image/png");
             const downloadLink = document.createElement("a");
             downloadLink.download = `QR-Caja-${boxName.replace(/\s+/g, '-')}.png`;
             downloadLink.href = pngFile;
             downloadLink.click();
-            
-            // Restore shadow after capture
-            printableArea.style.boxShadow = '';
         }
     };
 
@@ -43,13 +36,13 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue }: PrintableQr
         <div className="flex flex-col items-center gap-4">
             <div 
                 id="printable-qr-area"
-                className="w-[320px] p-6 bg-yellow-400 rounded-3xl shadow-lg font-sans text-center relative overflow-hidden"
+                className="w-[320px] p-6 bg-blue-100 dark:bg-blue-900/30 rounded-3xl shadow-lg font-sans text-center relative overflow-hidden"
             >
-                <div className="absolute -top-12 -right-12 w-32 h-32 bg-white/20 rounded-full"></div>
-                <div className="absolute -bottom-16 -left-8 w-40 h-40 bg-white/20 rounded-full"></div>
+                 <div className="absolute -top-12 -right-12 w-32 h-32 bg-white/20 dark:bg-blue-800/20 rounded-full"></div>
+                <div className="absolute -bottom-16 -left-8 w-40 h-40 bg-white/20 dark:bg-blue-800/20 rounded-full"></div>
 
                 <div className="relative z-10">
-                    <h2 className="text-2xl font-bold text-black mb-2" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.1)' }}>
+                    <h2 className="text-2xl font-bold text-blue-900 dark:text-blue-200 mb-2" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.1)' }}>
                         Compra ahora, paga después
                     </h2>
 
@@ -63,8 +56,8 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue }: PrintableQr
                             includeMargin={false}
                             imageSettings={{
                                 src: "https://i.postimg.cc/8zWvkhxS/Sin-t-tulo-3.png",
-                                height: 40,
-                                width: 60,
+                                height: 35,
+                                width: 90,
                                 excavate: true,
                             }}
                         />
@@ -74,24 +67,24 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue }: PrintableQr
                         <Image src="https://i.postimg.cc/Wz1MTvWK/lg.png" alt="Corabo Logo" width={140} height={40} />
                     </div>
 
-                    <div className="flex justify-around items-center text-black/80 my-4">
+                    <div className="flex justify-around items-center text-slate-700 dark:text-slate-300 my-4">
                         <div className="flex flex-col items-center gap-1">
                             <ShoppingCart className="w-7 h-7" />
                             <p className="text-xs font-semibold">Carrito</p>
                         </div>
-                        <div className="text-2xl font-light text-black/50">&rarr;</div>
+                        <div className="text-2xl font-light text-slate-400 dark:text-slate-600">&rarr;</div>
                         <div className="flex flex-col items-center gap-1">
                             <RefreshCw className="w-7 h-7" />
                             <p className="text-xs font-semibold">Corabo</p>
                         </div>
-                        <div className="text-2xl font-light text-black/50">&rarr;</div>
+                        <div className="text-2xl font-light text-slate-400 dark:text-slate-600">&rarr;</div>
                         <div className="flex flex-col items-center gap-1">
                             <HandCoins className="w-7 h-7" />
                              <p className="text-xs font-semibold">Paga</p>
                         </div>
                     </div>
                     
-                    <div className="mt-4 pt-4 border-t-2 border-dashed border-black/20 text-black font-medium text-sm">
+                    <div className="mt-4 pt-4 border-t-2 border-dashed border-black/20 dark:border-white/20 text-slate-800 dark:text-slate-200 font-medium text-sm">
                         <p>Caja: {boxName}</p>
                         <p>ID Negocio: {businessId}</p>
                     </div>
