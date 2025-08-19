@@ -362,13 +362,18 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, []);
   
   const updateUser = useCallback(async (userId: string, updates: Partial<User>) => {
-      const db = getFirestoreDb();
-      await updateDoc(doc(db, 'users', userId), updates);
-      if (currentUser?.id === userId) {
-        setCurrentUser(prevUser => prevUser ? { ...prevUser, ...updates } : null);
-      }
-      setUsers(prevUsers => prevUsers.map(u => u.id === userId ? {...u, ...updates} : u));
-  }, [setCurrentUser, currentUser?.id]);
+    const db = getFirestoreDb();
+    const userRef = doc(db, 'users', userId);
+
+    // Perform the update in Firestore
+    await updateDoc(userRef, updates);
+
+    // Optimistically update the local state for better responsiveness
+    if (currentUser?.id === userId) {
+        _setCurrentUser(prevUser => (prevUser ? { ...prevUser, ...updates } : null));
+    }
+    setUsers(prevUsers => prevUsers.map(u => (u.id === userId ? { ...u, ...updates } : u)));
+  }, [currentUser?.id]);
 
   const updateFullProfile = useCallback(async (userId: string, data: ProfileSetupData, profileType: 'client' | 'provider' | 'repartidor') => {
         const existingUser = users.find(u => u.id === userId);
@@ -884,4 +889,5 @@ export type { Transaction };
     
 
     
+
 
