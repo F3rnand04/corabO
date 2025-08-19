@@ -42,14 +42,12 @@ export default function LoginPage() {
             <p className="mt-2">Encuentra y contrata a los mejores profesionales verificados cerca de ti. Gestiona tus proyectos y pagos de forma segura, todo en un mismo lugar.</p>
         </div>
         <p className="text-muted-foreground mb-8">Conectando tus necesidades con las mejores soluciones.</p>
-        <div className="space-y-3">
+        <div className="space-y-4">
             <Button onClick={signInWithGoogle} size="lg" className="w-full">
-              <LogIn className="w-4 h-4 mr-2" />
-              Iniciar Sesión con Google
+              Ingresa o Regístrate con Google
             </Button>
-             <Button variant="outline" size="lg" className="w-full" asChild>
+            <Button variant="link" asChild>
                 <Link href="/cashier-login">
-                    <Box className="w-4 h-4 mr-2" />
                     Acceder a Caja
                 </Link>
             </Button>
