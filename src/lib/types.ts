@@ -17,6 +17,7 @@ export type QrSession = {
   providerId: string;
   clientId: string;
   cashierBoxId?: string; 
+  cashierName?: string; // NEW: To store the name of the cashier
   status: 'pendingAmount' | 'pendingClientApproval' | 'awaitingPayment' | 'pendingVoucherUpload' | 'completed' | 'cancelled';
   amount?: number;
   initialPayment?: number;
@@ -510,7 +511,7 @@ export type Transaction = {
     total?: number; // Final total in local currency
     exchangeRate?: number; // Tasa de cambio al momento de la creación
     
-    // NEW: For cashier payments
+    // For cashier payments
     cashierBoxId?: string;
     cashierName?: string;
   };
@@ -585,9 +586,11 @@ export const CreateProductInputSchema = z.object({
   price: z.number(),
   imageDataUri: z.string(),
 });
-export type CreateProductInput = z.infer<typeof CreateProductInputSchema>;
+export type CreateProductInput = z.infer<typeof CreatePublicationInputSchema>;
 
 export type TempRecipientInfo = {
     name: string;
     phone: string;
 }
+
+    

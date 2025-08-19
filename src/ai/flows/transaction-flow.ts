@@ -1,5 +1,4 @@
 
-
 'use server';
 /**
  * @fileOverview Transaction management flows.
@@ -63,7 +62,7 @@ export const processDirectPayment = ai.defineFlow(
     {
         name: 'processDirectPaymentFlow',
         inputSchema: ProcessDirectPaymentSchema,
-        outputSchema: z.void(),
+        outputSchema: z.object({ transactionId: z.string() }),
     },
     async ({ sessionId }) => {
         const db = getFirestoreDb();
@@ -85,24 +84,35 @@ export const processDirectPayment = ai.defineFlow(
         const clientSnap = await getDoc(clientRef);
         if (!clientSnap.exists()) throw new Error("Client not found for commission calculation");
         const client = clientSnap.data() as User;
+
+        const providerRef = doc(db, 'users', session.providerId);
+        const providerSnap = await getDoc(providerRef);
+        if (!providerSnap.exists()) throw new Error("Provider not found");
+        const provider = providerSnap.data() as User;
         
-        // --- Commission Calculation Logic ---
+        // --- Commission and Tax Calculation Logic ---
         const { rate: exchangeRate } = await getExchangeRate();
-        const totalAmountUSD = session.amount / exchangeRate;
+        const isCompany = provider.profileSetupData?.providerType === 'company';
+        
+        let commissionRate = 0;
+        // Only apply commission logic for companies
+        if(isCompany) {
+            commissionRate = 0.08; // 8% default for companies
+            if(client.isSubscribed) { // Subscription overrides Credicora commission
+                 commissionRate = 0.05; // 5% if client is subscribed
+            }
+        }
+        
+        const baseAmount = session.amount; // Base amount in local currency from the session
+        const baseAmountUSD = baseAmount / exchangeRate;
         const taxRate = 0.16; // 16% IVA for Venezuela
 
-        let commissionRate = 0;
-        if(session.financedAmount && session.financedAmount > 0) { // Payment with Credicora
-            commissionRate = 0.08; // 8%
-        }
-        if(client.isSubscribed) { // Subscription overrides Credicora commission
-             commissionRate = 0.05; // 5%
-        }
-
-        const commissionAmountUSD = totalAmountUSD * commissionRate;
-        const taxAmountUSD = (totalAmountUSD + commissionAmountUSD) * taxRate;
-        const finalAmountUSD = totalAmountUSD + commissionAmountUSD + taxAmountUSD;
-        // --- End of Commission Logic ---
+        const commissionAmount = baseAmount * commissionRate;
+        // **CORRECTION:** IVA is calculated ONLY on the commission, not the base amount.
+        const taxAmount = commissionAmount * taxRate;
+        // The final amount is the base sale + Corabo's commission + Corabo's IVA on that commission.
+        const finalAmount = baseAmount + commissionAmount + taxAmount;
+        // --- End of Corrected Logic ---
 
 
         // 1. Create the main transaction for the initial payment
@@ -112,7 +122,7 @@ export const processDirectPayment = ai.defineFlow(
             type: 'Compra Directa',
             status: 'Pagado',
             date: new Date().toISOString(),
-            amount: session.amount, // The full amount, not just initial payment
+            amount: finalAmount, // The final amount including Corabo's commission and its respective tax
             participantIds: [session.clientId, session.providerId],
             clientId: session.clientId,
             providerId: session.providerId,
@@ -121,17 +131,17 @@ export const processDirectPayment = ai.defineFlow(
                 initialPayment: session.initialPayment,
                 financedAmount: session.financedAmount,
                 paymentVoucherUrl: session.voucherUrl,
-                system: `Pago inicial de compra por $${session.amount.toFixed(2)}`,
-                baseAmount: session.amount,
+                system: `Pago inicial de compra por ${baseAmount.toFixed(2)}`,
+                baseAmount: baseAmount,
                 commissionRate,
-                commission: commissionAmountUSD * exchangeRate, // Store in local currency
+                commission: commissionAmount,
                 taxRate,
-                tax: taxAmountUSD * exchangeRate, // Store in local currency
-                total: finalAmountUSD * exchangeRate, // Store in local currency
+                tax: taxAmount,
+                total: finalAmount,
                 exchangeRate,
-                amountUSD: totalAmountUSD,
-                cashierBoxId: session.cashierBoxId, // Store cashier box ID
-                cashierName: session.cashierName, // Store cashier name
+                amountUSD: finalAmount / exchangeRate,
+                cashierBoxId: session.cashierBoxId,
+                cashierName: session.cashierName,
             }
         };
         batch.set(doc(db, 'transactions', initialTxId), initialTransaction);
@@ -163,10 +173,12 @@ export const processDirectPayment = ai.defineFlow(
             batch.update(clientRef, { credicoraLimit: newCredicoraLimit });
         }
         
-        // 4. Mark session as completed
-        batch.update(sessionRef, { status: 'completed' });
+        // 4. Mark session as completed (This is now handled by the context to allow for invoice generation first)
+        // batch.update(sessionRef, { status: 'completed' });
         
         await batch.commit();
+        
+        return { transactionId: initialTxId };
     }
 );
 
@@ -447,3 +459,5 @@ export const startDispute = ai.defineFlow(
         await updateDoc(txRef, { status: 'En Disputa' });
     }
 );
+
+    

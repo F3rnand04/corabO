@@ -123,7 +123,7 @@ interface CoraboActions {
   fetchUser: (userId: string) => Promise<User | null>;
   acceptDelivery: (transactionId: string) => void;
   getDistanceToProvider: (provider: User) => string | null;
-  startQrSession: (providerId: string, cashierBoxId?: string) => Promise<string | null>;
+  startQrSession: (providerId: string, cashierBoxId?: string, cashierName?: string) => Promise<string | null>;
   setQrSessionAmount: (sessionId: string, amount: number) => Promise<void>;
   handleClientCopyAndPay: (sessionId: string) => Promise<void>;
   confirmMobilePayment: (sessionId: string) => Promise<void>;
@@ -148,6 +148,7 @@ interface CoraboActions {
   removeCashierBox: (boxId: string) => Promise<void>;
   updateCashierBox: (boxId: string, updates: Partial<Pick<CashierBox, 'name' | 'passwordHash'>>) => Promise<void>;
   regenerateCashierBoxQr: (boxId: string) => Promise<void>;
+  handleGenerateInvoice: (transactionId: string) => void;
 }
 
 const CoraboStateContext = createContext<CoraboState | undefined>(undefined);
@@ -697,7 +698,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     verifyUserId: (a:any)=>{},
     rejectUserId: (a:any)=>{},
     getUserMetrics: (a:any,b:any)=>{return {reputation: 0, effectiveness: 0, responseTime: 'Nuevo', paymentSpeed: 'N/A'}},
-    startQrSession: async (providerId: string, cashierBoxId?: string) => {
+    startQrSession: async (providerId: string, cashierBoxId?: string, cashierName?: string) => {
       if(!currentUser) return null;
       const db = getFirestoreDb();
       const sessionId = `qrs-${currentUser.id.slice(-5)}-${Date.now()}`;
@@ -706,6 +707,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         providerId,
         clientId: currentUser.id,
         cashierBoxId,
+        cashierName,
         status: 'pendingAmount',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -721,10 +723,15 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         await updateDoc(sessionRef, { status: 'awaitingPayment', updatedAt: new Date().toISOString() });
     },
     confirmMobilePayment: async (sessionId: string) => {
+        const { transactionId } = await TransactionFlows.processDirectPayment({ sessionId });
+        await handleGenerateInvoice(transactionId);
         const db = getFirestoreDb();
         const sessionRef = doc(db, 'qr_sessions', sessionId);
-        await TransactionFlows.processDirectPayment({ sessionId });
         await updateDoc(sessionRef, { status: 'completed', updatedAt: new Date().toISOString() });
+    },
+    handleGenerateInvoice: (transactionId: string) => {
+      // Placeholder for future invoice generation logic
+      console.log(`Placeholder: Invoice should be generated for transaction ${transactionId}`);
     },
     approveQrSession: async(a:any)=>{return Promise.resolve();},
     finalizeQrSession: async(a:any,b:any)=>{return Promise.resolve();},
@@ -901,8 +908,3 @@ export const useCorabo = (): CoraboState & CoraboActions => {
 export type { Transaction };
 
     
-
-    
-
-
-
