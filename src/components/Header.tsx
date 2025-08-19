@@ -1,11 +1,10 @@
 
-
 "use client";
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MapPin, FileText, Menu, Search, LogOut, User, Wallet, History as HistoryIcon, Shield, HelpCircle, Contact, ShoppingCart, ChevronDown } from "lucide-react";
+import { MapPin, FileText, Menu, Search, LogOut, User, Wallet, History as HistoryIcon, Shield, HelpCircle, Contact, ShoppingCart, ChevronDown, Box } from "lucide-react";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -53,6 +52,9 @@ export function Header() {
     return null;
   }
   
+  const isCompany = currentUser.profileSetupData?.providerType === 'company';
+  const isTransactionsActive = currentUser.isTransactionsActive === true;
+  
   const totalCartItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const selectedCategoryName = serviceGroups.find(g => g.id === categoryFilter)?.name || "Todos";
@@ -78,6 +80,12 @@ export function Header() {
             <Button variant="ghost" size="icon" onClick={() => router.push('/transactions')}>
               <Wallet className="h-5 w-5 text-muted-foreground" />
             </Button>
+            
+            {isCompany && isTransactionsActive && (
+              <Button variant="ghost" size="icon" onClick={() => router.push('/transactions/settings')}>
+                <Box className="h-5 w-5 text-muted-foreground" />
+              </Button>
+            )}
             
              <DropdownMenu>
                 <DropdownMenuTrigger asChild>
