@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronLeft, KeyRound, QrCode, Trash2, Eye, EyeOff, RefreshCw, FileText } from "lucide-react";
+import { ChevronLeft, KeyRound, QrCode, Trash2, Eye, EyeOff, RefreshCw, FileText, Home } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCorabo } from '@/contexts/CoraboContext';
 import { useToast } from '@/hooks/use-toast';
@@ -11,6 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Input } from '@/components/ui/input';
 import { PrintableQrDisplay } from '@/components/PrintableQrDisplay';
 import Link from 'next/link';
+import { toBlob } from 'html-to-image';
 
 
 function CashierSettingsHeader() {
@@ -23,7 +24,9 @@ function CashierSettingsHeader() {
                         <ChevronLeft className="h-6 w-6" />
                     </Button>
                     <h1 className="text-lg font-semibold flex items-center gap-2"><KeyRound className="w-5 h-5"/> Gestión de Cajas</h1>
-                    <div className="w-8"></div>
+                    <Button variant="ghost" size="icon" onClick={() => router.push('/')}>
+                        <Home className="h-5 w-5" />
+                    </Button>
                 </div>
             </div>
         </header>
@@ -111,8 +114,27 @@ function CashierManagementCard() {
                     {cashierBoxes.length > 0 ? (
                         <div className="space-y-2">
                             {cashierBoxes.map(box => (
-                                <div key={box.id} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-background rounded-md border">
-                                    <p className="font-medium flex-shrink-0">{box.name}</p>
+                                <div key={box.id} className="flex flex-col gap-3 p-3 bg-background rounded-md border">
+                                    <div className="flex items-center justify-between">
+                                        <p className="font-medium flex-shrink-0">{box.name}</p>
+                                         <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" disabled={isProcessing === box.id}><Trash2 className="w-4 h-4"/></Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>¿Eliminar la caja "{box.name}"?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Esta acción es permanente y no se puede deshacer.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleRemoveBox(box.id)}>Sí, eliminar</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </div>
                                     <div className="flex-grow flex items-center gap-2">
                                         <div className="relative w-full">
                                             <Input
@@ -129,11 +151,11 @@ function CashierManagementCard() {
                                     </div>
                                     <div className="flex items-center gap-1 justify-end flex-wrap">
                                         <Button asChild variant="outline" size="sm">
-                                            <Link href={`/transactions/settings/cashier/${box.id}`}><FileText className="w-4 h-4 mr-2"/>Ver Detalles</Link>
+                                            <Link href={`/transactions/settings/cashier/${box.id}`}><FileText className="w-4 h-4 mr-2"/>Detalles</Link>
                                         </Button>
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
-                                                <Button variant="outline" size="sm" disabled={isProcessing === box.id}>{isProcessing === box.id ? <RefreshCw className="w-4 h-4 animate-spin"/> : <RefreshCw className="w-4 h-4 mr-2"/>}{isProcessing !== box.id && "Generar Nuevo QR"}</Button>
+                                                <Button variant="outline" size="sm" disabled={isProcessing === box.id}>{isProcessing === box.id ? <RefreshCw className="w-4 h-4 animate-spin"/> : <RefreshCw className="w-4 h-4 mr-2"/>}{isProcessing !== box.id && "Nuevo QR"}</Button>
                                             </AlertDialogTrigger>
                                             <AlertDialogContent>
                                                 <AlertDialogHeader>
@@ -151,23 +173,6 @@ function CashierManagementCard() {
                                         <Button variant="outline" size="sm" onClick={() => setSelectedBox({id: box.id, name: box.name, businessId: currentUser.coraboId || currentUser.id, qrDataURL: box.qrDataURL})}>
                                             <QrCode className="w-4 h-4 mr-2"/>Ver QR
                                         </Button>
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" disabled={isProcessing === box.id}><Trash2 className="w-4 h-4"/></Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>¿Eliminar la caja "{box.name}"?</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                        Esta acción es permanente y no se puede deshacer.
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => handleRemoveBox(box.id)}>Sí, eliminar</AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
                                     </div>
                                 </div>
                             ))}
