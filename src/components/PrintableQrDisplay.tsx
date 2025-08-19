@@ -1,19 +1,18 @@
-
 'use client';
 
 import { Button } from "./ui/button";
-import { Download, Loader2 } from "lucide-react";
+import { Download, Loader2, QrCode, Handshake, Wallet, ArrowRight } from "lucide-react";
 import { AlertDialogFooter, AlertDialogCancel } from "./ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useCallback, useState, useRef } from "react";
 import Image from "next/image";
 import html2canvas from 'html2canvas';
-import QRComponent from "./QRComponent"; // Import the isolated QR component
+import QRComponent from "./QRComponent"; 
 
 interface PrintableQrDisplayProps {
     boxName: string;
     businessId: string;
-    qrValue: string; // **FIX**: This prop should be the raw value to encode, not a pre-rendered data URL.
+    qrValue: string;
     onClose: () => void;
 }
 
@@ -31,7 +30,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
         setIsDownloading(true);
         html2canvas(printRef.current, {
             useCORS: true,
-            backgroundColor: null, // Make background transparent for the capture
+            backgroundColor: null, 
         }).then(canvas => {
             const link = document.createElement('a');
             link.download = `QR-Caja-${boxName.replace(/\s+/g, '-')}.png`;
@@ -51,30 +50,40 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
         <div className="flex flex-col items-center gap-4 bg-background p-6 rounded-lg shadow-lg">
             {/* This is the div that will be "photographed" */}
             <div ref={printRef} className="bg-[#E3F2FD] p-6 rounded-lg text-center" style={{ width: '400px' }}>
-                <Image src="https://i.postimg.cc/Wz1MTvWK/lg.png" alt="Corabo Logo" width={150} height={50} className="mx-auto mb-4" />
+                <div className="relative w-40 h-16 mx-auto mb-4">
+                    <Image src="https://i.postimg.cc/Wz1MTvWK/lg.png" alt="Corabo Logo" fill style={{objectFit: "contain"}} />
+                </div>
                 <h3 className="text-xl font-bold text-[#1E3A8A] mb-4">Paga a tu Ritmo con Corabo</h3>
                 
-                {qrValue ? (
-                    <div className="flex justify-center mb-4">
-                        {/* **FIX**: Pass the raw qrValue to the component for encoding */}
+                <div className="flex justify-center mb-4 bg-white p-4 rounded-xl shadow-md">
+                    {qrValue ? (
                         <QRComponent value={qrValue} />
-                    </div>
-                ) : (
-                    <div className="w-64 h-64 bg-gray-200 flex items-center justify-center rounded-lg mx-auto mb-4">
-                        <p className="text-muted-foreground">Generando QR...</p>
-                    </div>
-                )}
+                    ) : (
+                        <div className="w-64 h-64 bg-gray-200 flex items-center justify-center rounded-lg">
+                            <p className="text-muted-foreground">Generando QR...</p>
+                        </div>
+                    )}
+                </div>
                 
-                <div className="flex justify-around items-center text-xs text-[#1E3A8A] font-semibold my-4">
-                    <span>Escanear</span>
-                    <span className="text-gray-400">----</span>
-                    <span>Autorizar</span>
-                    <span className="text-gray-400">----</span>
-                    <span>Pagar</span>
+                 <div className="grid grid-cols-5 items-center text-xs text-[#1E3A8A] font-semibold my-4">
+                    <div className="flex flex-col items-center gap-1">
+                        <QrCode className="w-7 h-7" />
+                        <span>Escanea</span>
+                    </div>
+                    <ArrowRight className="w-5 h-5 text-gray-400" />
+                    <div className="flex flex-col items-center gap-1">
+                        <Handshake className="w-7 h-7" />
+                        <span>Autoriza</span>
+                    </div>
+                    <ArrowRight className="w-5 h-5 text-gray-400" />
+                    <div className="flex flex-col items-center gap-1">
+                        <Wallet className="w-7 h-7" />
+                        <span>Paga</span>
+                    </div>
                 </div>
 
-                <div className="bg-white p-3 rounded-md mt-4">
-                    <p className="font-bold text-lg text-[#1E3A8A]">{boxName}</p>
+                <div className="mt-6 border-t border-dashed border-gray-400 pt-4">
+                    <p className="font-bold text-lg text-[#1E3A8A]">Caja: {boxName}</p>
                     <p className="text-sm text-gray-600">ID Negocio: {businessId}</p>
                 </div>
             </div>
