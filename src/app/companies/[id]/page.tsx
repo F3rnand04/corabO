@@ -83,7 +83,7 @@ export default function CompanyProfilePage() {
             setProvider(fetchedProvider);
 
             if (fetchedProvider) {
-              if (fetchedProvider.profileSetupData?.offerType === 'product' || fetchedProvider.profileSetupData?.providerType === 'company') {
+              if (fetchedProvider.profileSetupData?.offerType === 'product' || fetchedProvider.profileSetupData?.offerType === 'both') {
                   const productsResult = await getProfileProducts({ userId: providerId, limitNum: 50 });
                   setProviderProducts(productsResult.products || []);
               } else {
@@ -185,7 +185,9 @@ export default function CompanyProfilePage() {
   }
   
   const isCompany = provider.profileSetupData?.providerType === 'company';
-  const isProductProvider = provider.profileSetupData?.offerType === 'product';
+  const offerType = provider.profileSetupData?.offerType;
+  const showCatalogView = offerType === 'product' || offerType === 'both';
+
   const specializedData = provider.profileSetupData?.specializedData;
   const isSelfProfile = currentUser?.id === provider.id;
   
@@ -514,7 +516,7 @@ export default function CompanyProfilePage() {
                     </PopoverContent>
                   </Popover>
 
-                  {isProductProvider && (
+                  {showCatalogView && (
                     <AlertDialog open={isCheckoutAlertOpen} onOpenChange={setIsCheckoutAlertOpen}>
                       <Popover>
                         <PopoverTrigger asChild>
@@ -543,7 +545,7 @@ export default function CompanyProfilePage() {
             </div>
             
              <div className="flex items-center justify-around gap-4 text-xs text-muted-foreground pt-4 pb-2">
-                <p><span className="font-bold text-foreground">{isProductProvider || isCompany ? `${providerProducts.length} Productos` : `${profileData.publications} Publicaciones`}</span></p>
+                <p><span className="font-bold text-foreground">{showCatalogView ? `${providerProducts.length} Productos` : `${profileData.publications} Publicaciones`}</span></p>
                 {!isCompany && <p><span className="font-bold text-foreground">{profileData.completedJobs}</span> Trabajos</p>}
                 {isCompany && <p><span className="font-bold text-foreground">{affiliatedProfessionals.length}</span> Afiliados</p>}
                 {specializedData && (
@@ -600,7 +602,7 @@ export default function CompanyProfilePage() {
                 </Button>
               </div>
               <CardContent className="p-0">
-               {isProductProvider || isCompany ? (
+               {showCatalogView ? (
                   <div>
                       <div className="p-4 border-b">
                         <div className="relative">
