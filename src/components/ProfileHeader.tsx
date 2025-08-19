@@ -207,27 +207,28 @@ export function ProfileHeader() {
         </div>
 
         <div className="flex items-center gap-2 mt-4">
-            {isProvider && (
-                <Button variant="outline" className="flex-1" onClick={() => setIsCampaignDialogOpen(true)}>
-                    <Megaphone className="w-4 h-4 mr-2"/>
-                    Gestionar Campañas
-                </Button>
-            )}
-            
-            {isCompany ? (
-                <Button asChild variant="outline" className="flex-1">
-                    <Link href="/admin">
-                        <Handshake className="w-4 h-4 mr-2"/>
-                        Gestión de Afiliaciones
-                    </Link>
-                </Button>
-            ) : (
+            {isProvider && !isCompany && (
                 <Button asChild variant="outline" className="flex-1">
                     <Link href="/emprende">
                         <Zap className="w-4 h-4 mr-2"/>
                         Emprende por Hoy
                     </Link>
                 </Button>
+            )}
+            
+            {isCompany && (
+              <>
+                <Button variant="outline" className="flex-1" onClick={() => setIsCampaignDialogOpen(true)}>
+                    <Megaphone className="w-4 h-4 mr-2"/>
+                    Gestionar Campañas
+                </Button>
+                <Button asChild variant="outline" className="flex-1">
+                    <Link href="/admin">
+                        <Handshake className="w-4 h-4 mr-2"/>
+                        Gestión de Afiliaciones
+                    </Link>
+                </Button>
+              </>
             )}
         </div>
         

@@ -23,6 +23,7 @@ export function Footer() {
   }
 
   const isProvider = currentUser.type === 'provider';
+  const isCompany = isProvider && currentUser.profileSetupData?.providerType === 'company';
   const isProfilePage = pathname.startsWith('/profile');
 
   const handleCentralButtonClick = () => {
@@ -76,8 +77,6 @@ export function Footer() {
   };
   
   const renderRightmostButton = () => {
-    const isProfileContext = pathname.startsWith('/profile');
-    
     let href = '/profile/publications';
     let Icon = (
         <Avatar className={cn("w-7 h-7", pathname.startsWith('/profile') && "border-2 border-primary")}>
@@ -86,9 +85,9 @@ export function Footer() {
         </Avatar>
     );
 
-    if (isProfileContext) {
+    if (isProfilePage) {
         Icon = <Settings className="w-6 h-6" />;
-        href = '/transactions/settings';
+        href = '/profile-setup'; // Always go to the setup flow start
     }
     
     return (
