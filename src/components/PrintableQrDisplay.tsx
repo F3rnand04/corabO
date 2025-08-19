@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from "./ui/button";
@@ -37,14 +36,24 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
                   useCORS: true,
                 });
                 
-                const pngFile = canvas.toDataURL("image/png");
-                
-                const downloadLink = document.createElement("a");
-                downloadLink.href = pngFile;
-                downloadLink.download = `QR-Caja-${boxName.replace(/\s+/g, '-')}.png`;
-                downloadLink.click();
-                
-                onClose();
+                // Convert canvas to blob instead of dataURL to avoid security issues with useCORS
+                canvas.toBlob((blob) => {
+                    if (blob) {
+                        const url = URL.createObjectURL(blob);
+                        const downloadLink = document.createElement("a");
+                        downloadLink.href = url;
+                        downloadLink.download = `QR-Caja-${boxName.replace(/\s+/g, '-')}.png`;
+                        
+                        document.body.appendChild(downloadLink);
+                        downloadLink.click();
+                        document.body.removeChild(downloadLink);
+
+                        URL.revokeObjectURL(url); // Clean up the blob URL
+                        onClose();
+                    } else {
+                         throw new Error("Canvas to Blob conversion failed.");
+                    }
+                });
             }
         } catch (error) {
             console.error("Error downloading QR:", error);
@@ -66,7 +75,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
                 <div className="absolute -bottom-16 -left-8 w-40 h-40 bg-white/20 dark:bg-blue-800/20 rounded-full"></div>
 
                 <div className="relative z-10">
-                     <Image src="https://i.postimg.cc/Wz1MTvWK/lg.png" alt="Corabo Logo" width={120} height={50} className="mx-auto h-12 w-auto mb-2" />
+                     <Image src="https://i.postimg.cc/Wz1MTvWK/lg.png" alt="Corabo Logo" width={160} height={60} className="mx-auto h-16 w-auto mb-2" />
                      <h2 className="text-xl font-bold text-blue-900 dark:text-blue-200 mb-4" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.1)' }}>
                         Paga a tu Ritmo con Corabo
                     </h2>
