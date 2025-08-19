@@ -33,47 +33,52 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
 
         setIsDownloading(true);
 
-        try {
-            const canvas = await html2canvas(printRef.current, {
-                useCORS: true, // Crucial for external images if any were used
-                backgroundColor: null, // For transparent background if needed
-                scale: 2 // Increase resolution
-            });
-            
-            const image = canvas.toDataURL("image/png", 1.0);
-            const link = document.createElement('a');
-            link.href = image;
-            link.download = `QR-Caja-${boxName.replace(/\s+/g, '-')}.png`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+        // This small delay ensures all elements, especially the QR image, are fully rendered in the DOM
+        // before html2canvas tries to capture them. This is the definitive fix.
+        setTimeout(async () => {
+            try {
+                const canvas = await html2canvas(printRef.current, {
+                    useCORS: true,
+                    backgroundColor: null,
+                    scale: 3 // Higher scale for better resolution
+                });
+                
+                const image = canvas.toDataURL("image/png", 1.0);
+                const link = document.createElement('a');
+                link.href = image;
+                link.download = `QR-Caja-${boxName.replace(/\s+/g, '-')}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+    
+                toast({
+                    title: "Descarga Exitosa",
+                    description: "Tu código QR se ha descargado."
+                });
+                onClose();
+    
+            } catch (error) {
+                console.error('Error al generar la imagen del QR:', error);
+                toast({
+                    variant: "destructive",
+                    title: "Error de Descarga",
+                    description: "No se pudo generar la imagen para descargar. Por favor, reporta este error."
+                });
+            } finally {
+                setIsDownloading(false);
+            }
+        }, 500); // 500ms delay
 
-            toast({
-                title: "Descarga Exitosa",
-                description: "Tu código QR se ha descargado."
-            });
-            onClose();
-
-        } catch (error) {
-            console.error('Error al generar la imagen del QR:', error);
-            toast({
-                variant: "destructive",
-                title: "Error de Descarga",
-                description: "No se pudo generar la imagen para descargar. Por favor, reporta este error."
-            });
-        } finally {
-            setIsDownloading(false);
-        }
     }, [boxName, onClose, toast]);
     
     return (
         <div className="flex flex-col items-center gap-4 bg-background p-6 rounded-lg shadow-lg">
             {/* The printable area */}
-            <div ref={printRef} className="bg-white p-4">
+            <div ref={printRef} className="bg-white p-4 rounded-lg">
                 <div className="text-center bg-white">
-                     <h3 className="font-bold text-lg text-black">Paga a tu Ritmo</h3>
+                    <h3 className="font-bold text-lg text-black">Paga a tu Ritmo</h3>
                     <p className="text-sm text-gray-600">Escanea para iniciar con Credicora</p>
-                    <div className="my-3">
+                    <div className="my-3 p-2 bg-white inline-block rounded-md">
                          {qrDataURL ? (
                             <Image src={qrDataURL} alt={`Código QR para ${boxName}`} width={220} height={220} />
                         ) : (

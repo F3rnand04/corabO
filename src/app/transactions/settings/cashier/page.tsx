@@ -179,7 +179,7 @@ function CashierManagementCard() {
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
-                                        <Button variant="outline" size="sm" onClick={() => setSelectedBox({id: box.id, name: box.name, businessId: currentUser.coraboId || currentUser.id, qrDataURL: box.qrDataURL})}>
+                                         <Button variant="outline" size="sm" onClick={() => setSelectedBox({id: box.id, name: box.name, businessId: currentUser.coraboId || currentUser.id, qrDataURL: box.qrDataURL})}>
                                             <QrCode className="w-4 h-4 mr-2"/>Ver QR
                                         </Button>
                                     </div>
