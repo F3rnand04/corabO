@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "./ui/button";
@@ -5,8 +6,7 @@ import Image from "next/image";
 import { QrCode, Handshake, Wallet, Download, Loader2 } from "lucide-react";
 import { AlertDialogFooter, AlertDialogCancel } from "./ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useCallback, useRef, useState, useEffect } from "react";
-
+import { useCallback, useState } from "react";
 
 interface PrintableQrDisplayProps {
     boxName: string;
@@ -18,8 +18,6 @@ interface PrintableQrDisplayProps {
 export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: PrintableQrDisplayProps) => {
     const { toast } = useToast();
     const [isGenerating, setIsGenerating] = useState(false);
-    const logoImageRef = useRef<HTMLImageElement>(null);
-    const qrImageRef = useRef<HTMLImageElement>(null);
 
     const downloadQR = useCallback(async () => {
         if (!qrDataURL) {
@@ -41,64 +39,57 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             if (!ctx) {
-                throw new Error("Could not get canvas context");
+                throw new Error("No se pudo obtener el contexto del canvas");
             }
 
             const width = 320;
-            const height = 480; // Adjusted height for better layout
+            const height = 480;
             canvas.width = width;
             canvas.height = height;
 
-            // 1. Draw Background
+            // 1. Dibujar Fondo
             const gradient = ctx.createLinearGradient(0, 0, 0, height);
-            gradient.addColorStop(0, '#e0f7fa'); // Light cyan
-            gradient.addColorStop(1, '#e3f2fd'); // Light blue
+            gradient.addColorStop(0, '#e0f7fa'); // Cian claro
+            gradient.addColorStop(1, '#e3f2fd'); // Azul claro
             ctx.fillStyle = gradient;
             ctx.fillRect(0, 0, width, height);
-            
-            // 2. Load and Draw Logo
-            const logoImg = new window.Image();
-            logoImg.crossOrigin = 'Anonymous';
-            logoImg.src = "https://i.postimg.cc/Wz1MTvWK/lg.png";
-            await new Promise((resolve, reject) => {
-                logoImg.onload = resolve;
-                logoImg.onerror = reject;
-            });
-            ctx.drawImage(logoImg, (width - 200) / 2, 20, 200, 75);
 
-            // 3. Draw Texts
-            ctx.fillStyle = '#0f172a'; // dark slate
-            ctx.font = 'bold 18px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText('Paga a tu Ritmo con Corabo', width / 2, 125);
-
-            // 4. Load and Draw QR Code Image
+            // 2. Cargar y Dibujar Imagen QR
             const qrImg = new window.Image();
-            qrImg.crossOrigin = 'Anonymous';
             qrImg.src = qrDataURL;
             await new Promise((resolve, reject) => {
                 qrImg.onload = resolve;
                 qrImg.onerror = reject;
             });
+            
+            // Dibuja un fondo blanco y un borde para el QR
             ctx.fillStyle = 'white';
             ctx.strokeStyle = 'rgba(0,0,0,0.1)';
             ctx.lineWidth = 1;
             ctx.shadowColor = 'rgba(0,0,0,0.1)';
             ctx.shadowBlur = 10;
             ctx.shadowOffsetY = 4;
-            ctx.fillRect((width - 200) / 2 - 10, 150 - 10, 220, 220); // White background
-            ctx.strokeRect((width - 200) / 2 - 10, 150 - 10, 220, 220); // Border
-            ctx.shadowColor = 'transparent'; // Reset shadow
+            ctx.fillRect((width - 200) / 2 - 10, 150 - 10, 220, 220);
+            ctx.strokeRect((width - 200) / 2 - 10, 150 - 10, 220, 220);
+            ctx.shadowColor = 'transparent'; // Resetear sombra
+            
+            // Dibuja la imagen del QR sobre el fondo blanco
             ctx.drawImage(qrImg, (width - 200) / 2, 150, 200, 200);
 
-            // 5. Draw Footer Text
-            ctx.fillStyle = '#334155'; // slate-700
-            ctx.font = 'bold 14px sans-serif';
-            ctx.fillText(`Caja: ${boxName}`, width / 2, height - 40);
-            ctx.font = '14px monospace';
-            ctx.fillText(`ID: ${businessId}`, width / 2, height - 20);
+            // 3. Dibujar Textos (después del QR para que no se superpongan)
+            ctx.fillStyle = '#0f172a'; // slate-900
+            ctx.font = 'bold 20px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Paga a tu Ritmo con Corabo', width / 2, 70);
 
-            // 6. Trigger Download
+            // 4. Dibujar Textos del Pie de Página
+            ctx.fillStyle = '#334155'; // slate-700
+            ctx.font = 'bold 16px sans-serif';
+            ctx.fillText(`Caja: ${boxName}`, width / 2, height - 60);
+            ctx.font = '14px monospace';
+            ctx.fillText(`ID: ${businessId}`, width / 2, height - 35);
+            
+            // 5. Disparar Descarga
             const finalDataUrl = canvas.toDataURL('image/png');
             const link = document.createElement('a');
             link.href = finalDataUrl;
@@ -110,11 +101,11 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
             onClose();
 
         } catch (error) {
-            console.error('oops, something went wrong!', error);
+            console.error('oops, algo salió mal!', error);
             toast({
                 variant: "destructive",
                 title: "Error de Descarga",
-                description: "No se pudo generar la imagen. Asegúrate de que tu conexión a internet está activa."
+                description: "No se pudo generar la imagen. Por favor, intenta de nuevo."
             });
         } finally {
             setIsGenerating(false);
