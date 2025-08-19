@@ -5,75 +5,135 @@ import Image from "next/image";
 import { QrCode, Handshake, Wallet, Download, Loader2 } from "lucide-react";
 import { AlertDialogFooter, AlertDialogCancel } from "./ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useCallback, useRef, useState } from "react";
-import html2canvas from 'html2canvas';
+import { useCallback, useRef, useState, useEffect } from "react";
 
 
 interface PrintableQrDisplayProps {
     boxName: string;
     businessId: string;
-    qrDataURL: string | undefined; // Can be undefined initially
+    qrDataURL: string | undefined;
     onClose: () => void;
 }
 
 export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: PrintableQrDisplayProps) => {
     const { toast } = useToast();
-    const printableRef = useRef<HTMLDivElement>(null);
     const [isGenerating, setIsGenerating] = useState(false);
+    const logoImageRef = useRef<HTMLImageElement>(null);
+    const qrImageRef = useRef<HTMLImageElement>(null);
 
-    const downloadQR = useCallback(() => {
-        if (!printableRef.current) {
+    const downloadQR = useCallback(async () => {
+        if (!qrDataURL) {
             toast({
                 variant: "destructive",
-                title: "Error de Renderizado",
-                description: "No se pudo encontrar el componente para descargar."
+                title: "Error de QR",
+                description: "El código QR aún no se ha generado."
             });
             return;
         }
+
         setIsGenerating(true);
         toast({
             title: "Generando Imagen...",
             description: "Preparando tu código QR para la descarga."
         });
 
-        html2canvas(printableRef.current, {
-            useCORS: true, // Crucial for allowing the canvas to read the QR image data
-            backgroundColor: null, // Use transparent background
-        }).then(canvas => {
-            const dataUrl = canvas.toDataURL('image/png');
+        try {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                throw new Error("Could not get canvas context");
+            }
+
+            const width = 320;
+            const height = 480; // Adjusted height for better layout
+            canvas.width = width;
+            canvas.height = height;
+
+            // 1. Draw Background
+            const gradient = ctx.createLinearGradient(0, 0, 0, height);
+            gradient.addColorStop(0, '#e0f7fa'); // Light cyan
+            gradient.addColorStop(1, '#e3f2fd'); // Light blue
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+            
+            // 2. Load and Draw Logo
+            const logoImg = new window.Image();
+            logoImg.crossOrigin = 'Anonymous';
+            logoImg.src = "https://i.postimg.cc/Wz1MTvWK/lg.png";
+            await new Promise((resolve, reject) => {
+                logoImg.onload = resolve;
+                logoImg.onerror = reject;
+            });
+            ctx.drawImage(logoImg, (width - 200) / 2, 20, 200, 75);
+
+            // 3. Draw Texts
+            ctx.fillStyle = '#0f172a'; // dark slate
+            ctx.font = 'bold 18px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Paga a tu Ritmo con Corabo', width / 2, 125);
+
+            // 4. Load and Draw QR Code Image
+            const qrImg = new window.Image();
+            qrImg.crossOrigin = 'Anonymous';
+            qrImg.src = qrDataURL;
+            await new Promise((resolve, reject) => {
+                qrImg.onload = resolve;
+                qrImg.onerror = reject;
+            });
+            ctx.fillStyle = 'white';
+            ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+            ctx.lineWidth = 1;
+            ctx.shadowColor = 'rgba(0,0,0,0.1)';
+            ctx.shadowBlur = 10;
+            ctx.shadowOffsetY = 4;
+            ctx.fillRect((width - 200) / 2 - 10, 150 - 10, 220, 220); // White background
+            ctx.strokeRect((width - 200) / 2 - 10, 150 - 10, 220, 220); // Border
+            ctx.shadowColor = 'transparent'; // Reset shadow
+            ctx.drawImage(qrImg, (width - 200) / 2, 150, 200, 200);
+
+            // 5. Draw Footer Text
+            ctx.fillStyle = '#334155'; // slate-700
+            ctx.font = 'bold 14px sans-serif';
+            ctx.fillText(`Caja: ${boxName}`, width / 2, height - 40);
+            ctx.font = '14px monospace';
+            ctx.fillText(`ID: ${businessId}`, width / 2, height - 20);
+
+            // 6. Trigger Download
+            const finalDataUrl = canvas.toDataURL('image/png');
             const link = document.createElement('a');
-            link.href = dataUrl;
+            link.href = finalDataUrl;
             link.download = `QR-Caja-${boxName.replace(/\s+/g, '-')}.png`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
+
             onClose();
-        }).catch(error => {
+
+        } catch (error) {
             console.error('oops, something went wrong!', error);
             toast({
                 variant: "destructive",
                 title: "Error de Descarga",
-                description: "No se pudo generar la imagen para descargar. Por favor, intenta de nuevo."
+                description: "No se pudo generar la imagen. Asegúrate de que tu conexión a internet está activa."
             });
-        }).finally(() => {
+        } finally {
             setIsGenerating(false);
-        });
+        }
 
-    }, [printableRef, boxName, toast, onClose]);
+    }, [qrDataURL, boxName, businessId, toast, onClose]);
 
 
     return (
         <div className="flex flex-col items-center gap-4">
             <div 
-                ref={printableRef}
                 className="w-[320px] p-6 bg-blue-100 dark:bg-blue-900/30 rounded-3xl shadow-lg font-sans text-center relative overflow-hidden"
             >
-                 <div className="absolute -top-12 -right-12 w-32 h-32 bg-white/20 dark:bg-blue-800/20 rounded-full"></div>
+                <div className="absolute -top-12 -right-12 w-32 h-32 bg-white/20 dark:bg-blue-800/20 rounded-full"></div>
                 <div className="absolute -bottom-16 -left-8 w-40 h-40 bg-white/20 dark:bg-blue-800/20 rounded-full"></div>
 
                 <div className="relative z-10">
-                     <Image src="https://i.postimg.cc/Wz1MTvWK/lg.png" alt="Corabo Logo" width={240} height={90} className="mx-auto h-24 w-auto mb-2" />
-                     <h2 className="text-xl font-bold text-blue-900 dark:text-blue-200 mb-4" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.1)' }}>
+                    <Image src="https://i.postimg.cc/Wz1MTvWK/lg.png" alt="Corabo Logo" width={240} height={90} className="mx-auto h-24 w-auto mb-2" />
+                    <h2 className="text-xl font-bold text-blue-900 dark:text-blue-200 mb-4" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.1)' }}>
                         Paga a tu Ritmo con Corabo
                     </h2>
 
