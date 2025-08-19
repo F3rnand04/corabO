@@ -79,6 +79,29 @@ export function Footer() {
     );
   };
 
+  const renderRightmostButton = () => {
+    if (isCompany && isProfilePage) {
+        return (
+             <Link href="/profile/details" passHref>
+                <Button variant="ghost" className={cn("flex-col h-auto p-1 text-muted-foreground hover:text-primary", pathname.startsWith('/profile') && "text-primary")}>
+                    <Settings className="w-7 h-7" />
+                </Button>
+            </Link>
+        )
+    }
+
+    return (
+        <Link href="/profile" passHref>
+            <Button variant="ghost" className={cn("flex-col h-auto p-1 text-muted-foreground hover:text-primary", pathname.startsWith('/profile') && "text-primary")}>
+                <Avatar className={cn("w-7 h-7", pathname.startsWith('/profile') && "border-2 border-primary")}>
+                    <AvatarImage src={currentUser.profileImage} alt={currentUser.name} />
+                    <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+            </Button>
+        </Link>
+    );
+  }
+
 
   return (
     <>
@@ -114,14 +137,7 @@ export function Footer() {
                 </Button>
             </Link>
 
-            <Link href="/profile" passHref>
-                <Button variant="ghost" className={cn("flex-col h-auto p-1 text-muted-foreground hover:text-primary", pathname.startsWith('/profile') && "text-primary")}>
-                    <Avatar className={cn("w-7 h-7", pathname.startsWith('/profile') && "border-2 border-primary")}>
-                        <AvatarImage src={currentUser.profileImage} alt={currentUser.name} />
-                        <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                </Button>
-            </Link>
+            {renderRightmostButton()}
 
         </div>
       </footer>
