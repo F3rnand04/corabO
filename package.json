@@ -9,8 +9,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "jest --config=./tests/jest.config.js",
-    "postinstall": "sh ./fix_build.sh"
+    "test": "jest --config=./tests/jest.config.js"
   },
   "engines": {
     "node": "18"
@@ -94,5 +93,3 @@
     "typescript": "5.5.4"
   }
 }
-
-    
