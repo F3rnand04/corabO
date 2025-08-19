@@ -29,7 +29,7 @@ export function Footer() {
     if (isProvider && isProfilePage) {
        setIsUploadOpen(true);
     } else {
-       router.push('/scan-qr');
+       router.push('/show-qr');
     }
   };
   
@@ -74,6 +74,27 @@ export function Footer() {
         </Popover>
     );
   };
+  
+  const renderRightmostButton = () => {
+    const isProfileContext = pathname.startsWith('/profile');
+    const Icon = isProfileContext ? Settings : Avatar;
+    const href = isProfileContext ? '/transactions/settings' : '/profile/publications';
+
+    return (
+      <Link href={href} passHref>
+        <Button variant="ghost" className={cn("flex-col h-auto p-1 text-muted-foreground hover:text-primary", pathname.startsWith('/profile') && "text-primary")}>
+          {isProfileContext ? (
+            <Settings className="w-6 h-6" />
+          ) : (
+            <Avatar className={cn("w-7 h-7", pathname.startsWith('/profile') && "border-2 border-primary")}>
+              <AvatarImage src={currentUser.profileImage} alt={currentUser.name} />
+              <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+            </Avatar>
+          )}
+        </Button>
+      </Link>
+    );
+  };
 
   return (
     <>
@@ -98,15 +119,8 @@ export function Footer() {
                 </Button>
             </Link>
 
-             <Link href="/profile/publications" passHref>
-                <Button variant="ghost" className={cn("flex-col h-auto p-1 text-muted-foreground hover:text-primary", pathname.startsWith('/profile') && "text-primary")}>
-                    <Avatar className={cn("w-7 h-7", pathname.startsWith('/profile') && "border-2 border-primary")}>
-                        <AvatarImage src={currentUser.profileImage} alt={currentUser.name} />
-                        <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                </Button>
-            </Link>
-
+            {renderRightmostButton()}
+            
         </div>
       </footer>
       <UploadDialog isOpen={isUploadOpen} onOpenChange={setIsUploadOpen} />
