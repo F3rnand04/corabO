@@ -16,6 +16,7 @@ export type QrSession = {
   id: string;
   providerId: string;
   clientId: string;
+  cashierBoxId?: string; // NEW: To identify which box initiated the session
   status: 'pendingAmount' | 'pendingClientApproval' | 'pendingVoucherUpload' | 'completed' | 'cancelled';
   amount?: number;
   initialPayment?: number;
@@ -30,12 +31,15 @@ export type QrSession = {
 export type Notification = {
   id: string;
   userId: string;
-  type: 'new_campaign' | 'payment_reminder' | 'admin_alert' | 'welcome' | 'affiliation_request' | 'payment_warning' | 'payment_due' | 'new_publication';
+  type: 'new_campaign' | 'payment_reminder' | 'admin_alert' | 'welcome' | 'affiliation_request' | 'payment_warning' | 'payment_due' | 'new_publication' | 'cashier_request';
   title: string;
   message: string;
   link?: string;
   isRead: boolean;
   timestamp: string;
+  metadata?: { // NEW: To hold context for cashier requests
+    requestId?: string;
+  }
 }
 
 export type Campaign = {
@@ -271,6 +275,13 @@ export type SpecializedData = {
     yearsOfExperience?: number;
 };
 
+// NEW: Type for a single cashier box
+export type CashierBox = {
+    id: string;
+    name: string;
+    passwordHash: string; // Only store the hash
+    qrValue: string; // Static value for the QR code
+};
 
 export type ProfileSetupData = {
   username?: string;
@@ -307,12 +318,14 @@ export type ProfileSetupData = {
         validated: boolean;
     }
   };
-  specializedData?: SpecializedData; // New field
+  specializedData?: SpecializedData;
   legalRepresentative?: {
     name: string;
     idNumber: string;
     phone: string;
   };
+  // NEW: Cashier boxes for company accounts
+  cashierBoxes?: CashierBox[];
 };
 
 
@@ -494,6 +507,10 @@ export type Transaction = {
     tax?: number; // Tax amount in local currency
     total?: number; // Final total in local currency
     exchangeRate?: number; // Tasa de cambio al momento de la creación
+    
+    // NEW: For cashier payments
+    cashierBoxId?: string;
+    cashierName?: string;
   };
 };
 

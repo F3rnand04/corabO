@@ -15,7 +15,8 @@ const QrScannerPlaceholder = ({ onScan }: { onScan: (data: string) => void }) =>
   // Simulate a scan after 2 seconds
   useEffect(() => {
     const timer = setTimeout(() => {
-      onScan('{"providerId":"user_provider_1"}'); // Simulate scanning a provider's QR
+      // Simulate scanning a provider's QR for a specific box
+      onScan('{"providerId":"user_provider_1", "cashierBoxId": "caja-1"}');
     }, 2000);
     return () => clearTimeout(timer);
   }, [onScan]);
@@ -67,7 +68,8 @@ export default function ScanQrPage() {
             title: "¡QR Escaneado!",
             description: `Conectando con el proveedor...`,
           });
-          const sessionId = await startQrSession(qrData.providerId);
+          // Pass the cashierBoxId if it exists in the QR
+          const sessionId = await startQrSession(qrData.providerId, qrData.cashierBoxId);
           if (sessionId) {
             router.push(`/payment/approval?sessionId=${sessionId}`);
           } else {

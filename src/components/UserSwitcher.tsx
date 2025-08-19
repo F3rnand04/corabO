@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -7,7 +8,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { addDays, differenceInDays } from 'date-fns';
-import { credicoraLevels } from '@/lib/types';
+import { credicoraLevels, credicoraCompanyLevels } from '@/lib/types';
 import { getAuth, signInWithPopup, signOut, User as FirebaseUser, GoogleAuthProvider } from 'firebase/auth';
 import { getFirebaseApp, getFirestoreDb, getAuthInstance } from '@/lib/firebase';
 import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, arrayUnion, getDocs, deleteDoc, collectionGroup, Unsubscribe, orderBy, deleteField } from 'firebase/firestore';
@@ -120,7 +121,7 @@ interface CoraboActions {
   fetchUser: (userId: string) => Promise<User | null>;
   acceptDelivery: (transactionId: string) => void;
   getDistanceToProvider: (provider: User) => string | null;
-  startQrSession: (providerId: string) => Promise<string | null>;
+  startQrSession: (providerId: string, cashierBoxId?: string) => Promise<string | null>;
   setQrSessionAmount: (sessionId: string, amount: number) => Promise<void>;
   approveQrSession: (sessionId: string) => Promise<void>;
   finalizeQrSession: (sessionId: string, voucherUrl: string) => Promise<void>;
@@ -379,8 +380,16 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, [users, updateUser]);
 
   const updateUserProfileImage = useCallback(async (userId: string, imageUrl: string) => {
+    if (imageUrl.length > 1048487) { // Firestore document limit is 1MB, give some buffer
+        toast({
+            variant: "destructive",
+            title: "Imagen demasiado grande",
+            description: "La imagen es muy grande. Por favor, utiliza una imagen más pequeña (menor a 1MB)."
+        });
+        return;
+    }
     await updateUser(userId, { profileImage: imageUrl });
-  }, [updateUser]);
+  }, [updateUser, toast]);
 
   const setDeliveryAddressToCurrent = useCallback(() => {
     if (navigator.geolocation) {
@@ -403,6 +412,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     signInWithGoogle: async () => {
         const auth = getAuthInstance();
         const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: 'select_account' }); // Fix for external domains
         try { await signInWithPopup(auth, provider); } catch (error: any) {
             if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user' || error.code === 'auth/popup-blocked') { return; }
             console.error("Error signing in with Google: ", error);
@@ -411,6 +421,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     logout: async () => {
         await signOut(getAuthInstance());
         setCurrentUser(null);
+        setTransactions([]); // Clear stale data on logout
+        setConversations([]); // Clear stale data on logout
         router.push('/login');
     },
     setCurrentUser,
@@ -672,7 +684,23 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     verifyUserId: (a:any)=>{},
     rejectUserId: (a:any)=>{},
     getUserMetrics: (a:any,b:any)=>{return {reputation: 0, effectiveness: 0, responseTime: 'Nuevo', paymentSpeed: 'N/A'}},
-    startQrSession: async (a:any) => null,
+    startQrSession: async (providerId: string, cashierBoxId?: string) => {
+      if(!currentUser) return null;
+      const db = getFirestoreDb();
+      const sessionId = `qrs-${currentUser.id.slice(-5)}-${Date.now()}`;
+      const sessionData: QrSession = {
+        id: sessionId,
+        providerId,
+        clientId: currentUser.id,
+        cashierBoxId,
+        status: 'pendingAmount',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        participantIds: [currentUser.id, providerId],
+      };
+      await setDoc(doc(db, 'qr_sessions', sessionId), sessionData);
+      return sessionId;
+    },
     setQrSessionAmount: async(a:any,b:any)=>{return Promise.resolve();},
     approveQrSession: async(a:any)=>{return Promise.resolve();},
     finalizeQrSession: async(a:any,b:any)=>{return Promise.resolve();},
@@ -729,7 +757,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }), [
     searchHistory, contacts, cart, transactions, getCartTotal, 
     getDeliveryCost, users, updateCart, router, currentUser, updateUser, updateFullProfile,
-    getDistanceToProvider, currentUserLocation, toast, updateUserProfileImage, setDeliveryAddress,
+    getDistanceToProvider, currentUserLocation, toast, setDeliveryAddress,
     deliveryAddress, setDeliveryAddressToCurrent, activeCartForCheckout
   ]);
   
