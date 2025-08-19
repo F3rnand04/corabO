@@ -143,6 +143,7 @@ interface CoraboActions {
   clearExpiredCarts: () => Promise<void>;
   addCashierBox: (name: string, password: string) => Promise<void>;
   removeCashierBox: (boxId: string) => Promise<void>;
+  updateCashierBox: (boxId: string, updates: Partial<Pick<CashierBox, 'name' | 'passwordHash'>>) => Promise<void>;
 }
 
 const CoraboStateContext = createContext<CoraboState | undefined>(undefined);
@@ -769,11 +770,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     addCashierBox: async (name: string, password: string) => {
         if (!currentUser || currentUser.profileSetupData?.providerType !== 'company') return;
         
+        const boxId = `caja-${Date.now()}`;
         const newBox: CashierBox = {
-            id: `caja-${Date.now()}`,
+            id: boxId,
             name,
-            passwordHash: password, // In a real app, this would be a hash
-            qrValue: JSON.stringify({ providerId: currentUser.id, cashierBoxId: `caja-${Date.now()}` }),
+            passwordHash: password, // In a real app, this would be a secure hash
+            qrValue: JSON.stringify({ providerId: currentUser.id, cashierBoxId: boxId }),
         };
 
         const userRef = doc(getFirestoreDb(), 'users', currentUser.id);
@@ -793,6 +795,27 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             'profileSetupData.cashierBoxes': arrayRemove(boxToRemove)
         });
         toast({ title: "Caja Eliminada", description: `La caja ha sido eliminada correctamente.` });
+    },
+    updateCashierBox: async (boxId: string, updates: Partial<Pick<CashierBox, 'name' | 'passwordHash'>>) => {
+        if (!currentUser || !currentUser.profileSetupData?.cashierBoxes) return;
+        
+        const currentBoxes = currentUser.profileSetupData.cashierBoxes;
+        const boxIndex = currentBoxes.findIndex(b => b.id === boxId);
+        
+        if (boxIndex === -1) {
+            toast({ variant: 'destructive', title: "Error", description: "No se encontró la caja para actualizar."});
+            return;
+        }
+        
+        const updatedBox = { ...currentBoxes[boxIndex], ...updates };
+        const newBoxes = [...currentBoxes];
+        newBoxes[boxIndex] = updatedBox;
+        
+        const userRef = doc(getFirestoreDb(), 'users', currentUser.id);
+        await updateDoc(userRef, {
+            'profileSetupData.cashierBoxes': newBoxes
+        });
+        toast({ title: "Caja Actualizada", description: `La contraseña de la caja ha sido cambiada.` });
     },
   }), [
     searchHistory, contacts, cart, transactions, getCartTotal, 

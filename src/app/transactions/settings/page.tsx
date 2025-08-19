@@ -4,7 +4,7 @@
 import { useState, ChangeEvent } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronLeft, Banknote, Smartphone, ShieldCheck, FileText, AlertTriangle, User, KeyRound, Link as LinkIcon, Trash2, Box, QrCode } from "lucide-react";
+import { ChevronLeft, Banknote, Smartphone, ShieldCheck, FileText, AlertTriangle, User, KeyRound, Link as LinkIcon, Trash2, Box, QrCode, Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCorabo } from '@/contexts/CoraboContext';
 import { useToast } from '@/hooks/use-toast';
@@ -92,10 +92,12 @@ function PaymentMethodCard({
 }
 
 function CashierManagementCard() {
-    const { currentUser, addCashierBox, removeCashierBox } = useCorabo();
+    const { currentUser, addCashierBox, removeCashierBox, updateCashierBox } = useCorabo();
     const [newBoxName, setNewBoxName] = useState('');
     const [newBoxPassword, setNewBoxPassword] = useState('');
     const [selectedBoxQr, setSelectedBoxQr] = useState<{name: string, value: string} | null>(null);
+    const [passwordVisibility, setPasswordVisibility] = useState<Record<string, boolean>>({});
+    const [editingPasswords, setEditingPasswords] = useState<Record<string, string>>({});
     
     const handleAddBox = () => {
         if (newBoxName && newBoxPassword) {
@@ -104,6 +106,22 @@ function CashierManagementCard() {
             setNewBoxPassword('');
         }
     };
+    
+    const handlePasswordChange = (boxId: string, value: string) => {
+        setEditingPasswords(prev => ({ ...prev, [boxId]: value }));
+    };
+    
+    const handleUpdatePassword = (boxId: string) => {
+        const newPassword = editingPasswords[boxId];
+        if (newPassword) {
+            updateCashierBox(boxId, { passwordHash: newPassword });
+        }
+    };
+
+    const togglePasswordVisibility = (boxId: string) => {
+        setPasswordVisibility(prev => ({ ...prev, [boxId]: !prev[boxId] }));
+    };
+
 
     const downloadQR = () => {
         if (!selectedBoxQr) return;
@@ -139,7 +157,7 @@ function CashierManagementCard() {
                     <h4 className="text-sm font-semibold">Añadir Nueva Caja</h4>
                     <div className="flex flex-col sm:flex-row gap-2">
                         <Input placeholder="Nombre de la caja (ej: Barra)" value={newBoxName} onChange={(e) => setNewBoxName(e.target.value)} />
-                        <Input type="password" placeholder="Contraseña numérica (4-6 dígitos)" value={newBoxPassword} onChange={(e) => setNewBoxPassword(e.target.value)} maxLength={6} />
+                        <Input type="text" placeholder="Contraseña numérica (4-6 dígitos)" value={newBoxPassword} onChange={(e) => setNewBoxPassword(e.target.value)} maxLength={6} />
                         <Button onClick={handleAddBox} disabled={!newBoxName || !newBoxPassword || (currentUser?.profileSetupData?.cashierBoxes?.length || 0) >= 5}>Añadir</Button>
                     </div>
                 </div>
@@ -148,9 +166,23 @@ function CashierManagementCard() {
                     {currentUser?.profileSetupData?.cashierBoxes && currentUser.profileSetupData.cashierBoxes.length > 0 ? (
                         <div className="space-y-2">
                             {currentUser.profileSetupData.cashierBoxes.map(box => (
-                                <div key={box.id} className="flex items-center justify-between p-2 bg-background rounded-md border">
-                                    <p className="font-medium">{box.name}</p>
-                                    <div className="flex items-center gap-1">
+                                <div key={box.id} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-background rounded-md border">
+                                    <p className="font-medium flex-shrink-0">{box.name}</p>
+                                    <div className="flex-grow flex items-center gap-2">
+                                        <div className="relative w-full">
+                                            <Input
+                                                type={passwordVisibility[box.id] ? 'text' : 'password'}
+                                                value={editingPasswords[box.id] ?? box.passwordHash}
+                                                onChange={(e) => handlePasswordChange(box.id, e.target.value)}
+                                                className="pr-10"
+                                            />
+                                            <Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8" onClick={() => togglePasswordVisibility(box.id)}>
+                                                {passwordVisibility[box.id] ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}
+                                            </Button>
+                                        </div>
+                                         <Button size="sm" onClick={() => handleUpdatePassword(box.id)} disabled={!editingPasswords[box.id] || editingPasswords[box.id] === box.passwordHash}>Guardar</Button>
+                                    </div>
+                                    <div className="flex items-center gap-1 justify-end">
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
                                             <Button variant="outline" size="sm" onClick={() => setSelectedBoxQr({name: box.name, value: box.qrValue})}>
