@@ -2,7 +2,7 @@
 'use client';
 
 import { Button } from "./ui/button";
-import { Download, Loader2, AlertTriangle } from "lucide-react";
+import { Download, Loader2, AlertTriangle, ScanLine, CreditCard, ShieldCheck } from "lucide-react";
 import { AlertDialogFooter, AlertDialogCancel } from "./ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useCallback, useState, useRef, useEffect } from "react";
@@ -15,7 +15,7 @@ interface PrintableQrDisplayProps {
     onClose: () => void;
 }
 
-const coraboLogoBase64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAA8CAMAAAB1a982AAAAbFBMVEUAAAAA//8AnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwdouwAnuwAnuwAnuwAm+oAm+oAnuwAnuwAnuwAnuwAnuwAl+sAnuwAm+oAnuwAnuwAnuwAnuwAnuxKq/H///8i2fa2AAAAI3RSTlMAwEC/f3+AIGAwv78Q75AgYFC/QKAwUP+AYI/vP0DfcM+fVfHlAAAAA1hJREFUeNrt2kGOwkAQRFGICYgi4g7u/w7HCXSBgY5Tqa2t1V4n9g7A9wzDfnsCslxw4qLliIuWIy5ajrhocR8XLYdcNB1x0XTERctRlzIuWou4aLbiwMUl4sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFp3DhL3BxcYg4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4c-gVwAAAABJRU5ErkJggg==";
+const coraboLogoBase64 = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAA8CAMAAAB1a982AAAAbFBMVEUAAAAA//8AnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwAnuwdouwAnuwAnuwAnuwAm+oAm+oAnuwAnuwAnuwAnuwAnuwAl+sAnuwAm+oAnuwAnuwAnuwAnuwAnuwAnuxKq/H///8i2fa2AAAAI3RSTlMAwEC/f3+AIGAwv78Q75AgYFC/QKAwUP+AYI/vP0DfcM+fVfHlAAAAA1hJREFUeNrt2kGOwkAQRFGICYgi4g7u/w7HCXSBgY5Tqa2t1V4n9g7A9wzDfnsCslxw4qLliIuWIy5ajrhocR8XLYdcNB1x0XTERctRlzIuWou4aLbiwMUl4sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFJeLAxSXiIMXl7sDFp3DhL3BxcYg4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4cHGJOMhxcmdwcYk4-gVwAAAABJRU5ErkJggg==";
 
 export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: PrintableQrDisplayProps) => {
     const { toast } = useToast();
@@ -26,7 +26,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
 
     const drawCanvasContent = useCallback(async () => {
         if (!qrDataURL) {
-            setError("El código QR aún no está disponible para esta caja.");
+            setError("El código QR para esta caja no está disponible.");
             return;
         }
 
@@ -60,7 +60,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
             ]);
 
             const width = 400;
-            const height = 550; // Reduced height as we remove the icons
+            const height = 550;
             canvas.width = width;
             canvas.height = height;
 
@@ -71,10 +71,8 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
             ctx.arcTo(0, 0, 20, 0, 20);
             ctx.lineTo(width - 20, 0);
             ctx.arcTo(width, 0, width, 20, 20);
-            ctx.lineTo(width, height - 20);
-            ctx.arcTo(width, height, width - 20, height, 20);
-            ctx.lineTo(20, height);
-            ctx.arcTo(0, height, 0, height - 20, 20);
+            ctx.lineTo(width, height);
+            ctx.lineTo(0, height);
             ctx.closePath();
             ctx.fill();
 
@@ -103,7 +101,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
             // Draw Footer
             ctx.fillStyle = '#1E3A8A';
             ctx.font = 'bold 18px Arial';
-            ctx.fillText(`Caja: ${boxName}`, width / 2, height - 60);
+            ctx.fillText(`${boxName}`, width / 2, height - 60);
             ctx.font = '14px Arial';
             ctx.fillText(`ID Negocio: ${businessId}`, width / 2, height - 35);
             
@@ -116,10 +114,8 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
     }, [qrDataURL, boxName, businessId]);
 
     useEffect(() => {
-        if (qrDataURL) {
-            drawCanvasContent();
-        }
-    }, [qrDataURL, drawCanvasContent]);
+        drawCanvasContent();
+    }, [drawCanvasContent]);
     
     const downloadQR = useCallback(() => {
         if (!isCanvasReady || error) {
