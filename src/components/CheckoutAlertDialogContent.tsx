@@ -11,7 +11,7 @@ import { Switch } from "./ui/switch";
 import { Label } from "./ui/label";
 import { Star, Truck, MapPin, Building, User, Phone, LocateFixed, Minus, Plus, Trash2 } from "lucide-react";
 import { credicoraLevels } from "@/lib/types";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { Input } from "./ui/input";
@@ -19,8 +19,9 @@ import Image from "next/image";
 import { ScrollArea } from "./ui/scroll-area";
 
 export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (open: boolean) => void }) {
-    const { currentUser, getCartTotal, getDeliveryCost, checkout: performCheckout, users, deliveryAddress, setDeliveryAddressToCurrent, tempRecipientInfo, setTempRecipientInfo, needsCheckoutDialog, setNeedsCheckoutDialog, activeCartForCheckout, setActiveCartForCheckout, updateCartQuantity } = useCorabo();
+    const { currentUser, getCartTotal, getDeliveryCost, checkout: performCheckout, users, deliveryAddress, setDeliveryAddressToCurrent, tempRecipientInfo, setTempRecipientInfo, activeCartForCheckout, setActiveCartForCheckout, updateCartQuantity } = useCorabo();
     const router = useRouter();
+    const searchParams = useSearchParams();
     
     const [deliveryMethod, setDeliveryMethod] = useState<'home' | 'pickup' | 'other_address' | 'current_location'>(
         () => tempRecipientInfo ? 'other_address' : 'home'
@@ -31,14 +32,18 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
     const [isRecipientDialogOpen, setIsRecipientDialogOpen] = useState(false);
 
     useEffect(() => {
-        if(needsCheckoutDialog) {
+        const fromMap = searchParams.get('fromMap');
+        if (fromMap) {
             onOpenChange(true);
-            setNeedsCheckoutDialog(false);
             if(tempRecipientInfo){
                 setDeliveryMethod('other_address');
             }
+            // Clean up URL
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.delete('fromMap');
+            router.replace(currentUrl.toString(), { scroll: false });
         }
-    }, [needsCheckoutDialog, onOpenChange, setNeedsCheckoutDialog, tempRecipientInfo]);
+    }, [searchParams, onOpenChange, tempRecipientInfo, router]);
 
     if (!currentUser || !activeCartForCheckout) {
         return (
