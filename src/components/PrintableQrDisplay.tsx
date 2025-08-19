@@ -93,8 +93,8 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
                     style={{ width: '825px', height: '1275px' }}
                 >
                     <div className="flex-shrink-0 flex flex-col items-center justify-center pt-8">
-                        <h2 className="text-3xl text-[#1E3A8A] mb-4">Escanea y paga a tu ritmo con</h2>
-                        <div className="relative w-72 aspect-[3/1]">
+                        <h2 className="text-4xl font-bold text-[#1E3A8A] mb-4">Escanea y paga a tu ritmo con</h2>
+                         <div className="relative w-72 aspect-[3/1]">
                             {logoBase64 && <img src={logoBase64} alt="Corabo Logo" style={{objectFit: "contain", width: '100%', height: 'auto'}} />}
                         </div>
                     </div>
@@ -106,8 +106,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
                     </div>
                     
                     <div className="flex-shrink-0 pb-8">
-                         <h2 className="text-4xl font-bold text-[#1E3A8A] mt-4">Paga a tu Ritmo con Corabo</h2>
-                         <p className="text-xl text-[#1E3A8A] mt-4">Descarga la App Corabo y únete a la comunidad de Óbiamigos</p>
+                         <h2 className="text-5xl font-bold text-[#1E3A8A] mt-4">Compra lo que amas,<br/>paga a tu ritmo.</h2>
                         <div className="flex justify-around items-center text-[#1E3A8A] my-12">
                             <div className="flex flex-col items-center gap-2">
                                 <QrCode className="w-12 h-12" />
@@ -149,7 +148,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
                         <h3 className="font-bold text-lg text-center">Vista Previa de Impresión</h3>
                         <div className="bg-[#E3F2FD] p-4 rounded-lg text-center w-full max-w-sm">
                              <h2 className="text-md font-semibold text-[#1E3A8A] mb-2">Escanea y paga a tu ritmo con</h2>
-                             <div className="relative w-3/4 mx-auto mb-2 aspect-[3/1]">
+                             <div className="relative w-2/3 mx-auto mb-2 aspect-[3/1]">
                                 {logoBase64 && <img src={logoBase64} alt="Corabo Logo" style={{objectFit: "contain", width: '100%', height: 'auto'}} />}
                             </div>
                             <div className="flex justify-center items-center my-4">
@@ -157,8 +156,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
                                     <QRComponent value={qrValue} />
                                 </div>
                             </div>
-                             <p className="text-xl font-bold text-[#1E3A8A] mt-2">Paga a tu Ritmo con Corabo</p>
-                             <p className="text-xs text-[#1E3A8A] mt-1">Descarga la App Corabo y únete a la comunidad de Óbiamigos</p>
+                             <p className="text-xl font-bold text-[#1E3A8A] mt-2">Compra lo que amas,<br/>paga a tu ritmo.</p>
                              <div className="mt-4 pt-2 border-t border-blue-200 text-xs font-semibold text-[#1E3A8A]">
                                  <p>Caja: {boxName}</p>
                                  <p>ID Negocio: {businessId}</p>

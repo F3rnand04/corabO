@@ -57,14 +57,20 @@ Esta sección es ahora el **Panel de Control Financiero** del proveedor.
 -   **Progreso de Credicora:** Visualiza tu nivel actual y tu progreso para alcanzar el siguiente.
 -   **Incentivos a la Suscripción:** Incluye una tarjeta que destaca los beneficios de suscribirse para potenciar tu perfil.
 
-### 3.6. Panel de Administración (`/admin`)
+### 3.6. Gestión de Cajas y Puntos de Venta
+Para los usuarios de tipo "Empresa", la sección de Ajustes de Transacciones (`/transactions/settings`) ahora incluye una opción para **"Gestión de Cajas"**.
+-   **Crear Cajas:** Puedes crear múltiples puntos de venta (ej: "Barra", "Piso de Venta"), cada uno con su propio nombre y contraseña numérica.
+-   **Generar y Descargar QR:** Cada caja genera un código QR único. Puedes visualizarlo y descargarlo como una imagen PNG en formato **media carta**, ideal para imprimir y colocar en tu punto de venta físico. Esto permite a los clientes escanear y pagar directamente a esa caja específica.
+-   **Seguimiento:** En los detalles de cada caja, puedes ver un historial de todas las transacciones realizadas a través de ella.
+
+### 3.7. Panel de Administración (`/admin`)
 Para usuarios con rol de "admin", esta sección permite gestionar la plataforma.
 -   **Gestión de Usuarios:** Ver, activar o desactivar usuarios.
 -   **Verificación de Documentos:** Revisar y aprobar manualmente las verificaciones de identidad.
 -   **Verificación de Pagos:** Confirmar los pagos de campañas y suscripciones para activarlos.
 -   **Gestión de Afiliaciones (para Empresas):** Si el admin es una empresa, puede gestionar las solicitudes de afiliación de profesionales.
 
-### 3.7. Chat y Propuestas de Acuerdo (`/messages/[id]/page.tsx`)
+### 3.8. Chat y Propuestas de Acuerdo (`/messages/[id]/page.tsx`)
 El chat es la herramienta de negociación. Los proveedores pueden enviar "Propuestas de Acuerdo" que los clientes pueden aceptar para formalizar una transacción de forma segura.
 
 ---
