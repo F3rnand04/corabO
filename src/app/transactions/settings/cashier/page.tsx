@@ -11,7 +11,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Input } from '@/components/ui/input';
 import { PrintableQrDisplay } from '@/components/PrintableQrDisplay';
 import Link from 'next/link';
-import { toBlob } from 'html-to-image';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
@@ -26,8 +25,10 @@ function CashierSettingsHeader() {
                         <ChevronLeft className="h-6 w-6" />
                     </Button>
                     <h1 className="text-lg font-semibold flex items-center gap-2"><KeyRound className="w-5 h-5"/> Gestión de Cajas</h1>
-                    <Button variant="ghost" size="icon" onClick={() => router.push('/')}>
-                        <Home className="h-5 w-5" />
+                    <Button asChild variant="ghost" size="icon">
+                        <Link href="/">
+                            <Home className="h-5 w-5" />
+                        </Link>
                     </Button>
                 </div>
             </div>
