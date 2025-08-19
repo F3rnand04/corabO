@@ -5,4 +5,4 @@
 
 declare module 'jspdf-autotable';
 declare module 'twilio';
-declare module 'html-to-image';
+declare module 'html2canvas';

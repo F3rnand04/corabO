@@ -6,7 +6,7 @@ import { QrCode, Handshake, Wallet, Download, Loader2 } from "lucide-react";
 import { AlertDialogFooter, AlertDialogCancel } from "./ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useCallback, useRef, useState } from "react";
-import { toBlob } from 'html-to-image';
+import html2canvas from 'html2canvas';
 
 
 interface PrintableQrDisplayProps {
@@ -22,44 +22,43 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
     const [isGenerating, setIsGenerating] = useState(false);
 
     const downloadQR = useCallback(() => {
-        if (!printableRef.current) return;
+        if (!printableRef.current) {
+            toast({
+                variant: "destructive",
+                title: "Error de Renderizado",
+                description: "No se pudo encontrar el componente para descargar."
+            });
+            return;
+        }
         setIsGenerating(true);
         toast({
-          title: "Generando Imagen...",
-          description: "Preparando tu código QR para la descarga."
+            title: "Generando Imagen...",
+            description: "Preparando tu código QR para la descarga."
         });
 
-        toBlob(printableRef.current, { cacheBust: true })
-            .then(function (blob) {
-                if (blob) {
-                    const url = window.URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = `QR-Caja-${boxName.replace(/\s+/g, '-')}.png`;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    window.URL.revokeObjectURL(url);
-                    onClose();
-                } else {
-                     toast({
-                        variant: "destructive",
-                        title: "Error de Descarga",
-                        description: "No se pudo generar el archivo de imagen (blob)."
-                    });
-                }
-            })
-            .catch(function (error) {
-                console.error('oops, something went wrong!', error);
-                toast({
-                    variant: "destructive",
-                    title: "Error de Descarga",
-                    description: "No se pudo generar la imagen para descargar. Por favor, intenta de nuevo."
-                });
-            })
-            .finally(() => {
-                 setIsGenerating(false);
+        html2canvas(printableRef.current, {
+            useCORS: true,
+            backgroundColor: null, // Use transparent background
+        }).then(canvas => {
+            const dataUrl = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = `QR-Caja-${boxName.replace(/\s+/g, '-')}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            onClose();
+        }).catch(error => {
+            console.error('oops, something went wrong!', error);
+            toast({
+                variant: "destructive",
+                title: "Error de Descarga",
+                description: "No se pudo generar la imagen para descargar. Por favor, intenta de nuevo."
             });
+        }).finally(() => {
+            setIsGenerating(false);
+        });
+
     }, [printableRef, boxName, toast, onClose]);
 
 
