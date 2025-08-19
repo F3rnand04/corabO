@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from "react";
 interface PrintableQrDisplayProps {
     boxName: string;
     businessId: string;
-    qrDataURL: string; // Receive the pre-generated data URL
+    qrDataURL: string | undefined; // Can be undefined initially
     onClose: () => void;
 }
 
@@ -34,21 +34,35 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
             const html2canvas = (await import('html2canvas')).default;
             const canvas = await html2canvas(element, {
                 scale: 3, 
-                backgroundColor: null,
+                backgroundColor: null, // Transparent background
+                useCORS: true,
             });
 
-            // This is the most reliable cross-browser download method
-            const dataUrl = canvas.toDataURL('image/png');
-            const downloadLink = document.createElement("a");
-            
-            downloadLink.href = dataUrl;
-            downloadLink.download = `QR-Caja-${boxName.replace(/\s+/g, '-')}.png`;
-            
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-            document.body.removeChild(downloadLink);
-
-            onClose();
+            // Convert canvas to Blob
+            canvas.toBlob(function(blob) {
+                if (!blob) {
+                    toast({
+                        variant: "destructive",
+                        title: "Error de Descarga",
+                        description: "No se pudo generar el archivo de imagen (blob)."
+                    });
+                    setIsGenerating(false);
+                    return;
+                }
+                
+                // Use File System Access API or fallback to anchor download
+                const url = URL.createObjectURL(blob);
+                const downloadLink = document.createElement("a");
+                downloadLink.href = url;
+                downloadLink.download = `QR-Caja-${boxName.replace(/\s+/g, '-')}.png`;
+                
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                
+                URL.revokeObjectURL(url); // Clean up
+                onClose();
+            }, 'image/png');
 
         } catch (error) {
             console.error("Error downloading QR:", error);
@@ -58,7 +72,9 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
                 description: "No se pudo generar la imagen para descargar. Por favor, intenta de nuevo."
             });
         } finally {
-            setIsGenerating(false);
+            // The setIsGenerating(false) will be called after the blob is processed.
+            // We set a timeout as a fallback.
+            setTimeout(() => setIsGenerating(false), 3000);
         }
     };
 
@@ -81,7 +97,10 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
                         {qrDataURL ? (
                            <Image src={qrDataURL} alt="Código QR" width={180} height={180} />
                         ) : (
-                           <div className="w-[180px] h-[180px] flex items-center justify-center bg-gray-200"><Loader2 className="animate-spin"/></div>
+                           <div className="w-[180px] h-[180px] flex flex-col items-center justify-center bg-gray-200 rounded-lg text-xs text-gray-500">
+                             <Loader2 className="animate-spin h-8 w-8 mb-2"/>
+                             <p>Generando QR...</p>
+                           </div>
                         )}
                     </div>
                     

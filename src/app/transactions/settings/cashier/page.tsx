@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronLeft, KeyRound, QrCode, Trash2, Eye, EyeOff, FileText } from "lucide-react";
+import { ChevronLeft, KeyRound, QrCode, Trash2, Eye, EyeOff, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCorabo } from '@/contexts/CoraboContext';
 import { useToast } from '@/hooks/use-toast';
@@ -30,10 +30,10 @@ function CashierSettingsHeader() {
 }
 
 function CashierManagementCard() {
-    const { currentUser, addCashierBox, removeCashierBox, updateCashierBox } = useCorabo();
+    const { currentUser, addCashierBox, removeCashierBox, updateCashierBox, regenerateCashierBoxQr } = useCorabo();
     const [newBoxName, setNewBoxName] = useState('');
     const [newBoxPassword, setNewBoxPassword] = useState('');
-    const [selectedBox, setSelectedBox] = useState<{id: string, name: string, value: string, businessId: string} | null>(null);
+    const [selectedBox, setSelectedBox] = useState<{id: string, name: string, businessId: string, qrDataURL: string | undefined} | null>(null);
     const [passwordVisibility, setPasswordVisibility] = useState<Record<string, boolean>>({});
     const [editingPasswords, setEditingPasswords] = useState<Record<string, string>>({});
     
@@ -110,21 +110,22 @@ function CashierManagementCard() {
                                     <div className="flex items-center gap-1 justify-end flex-wrap">
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
-                                                <Button variant="outline" size="sm"><FileText className="w-4 h-4 mr-2"/>Ver Detalles</Button>
+                                                <Button variant="outline" size="sm"><RefreshCw className="w-4 h-4 mr-2"/>Generar Nuevo QR</Button>
                                             </AlertDialogTrigger>
                                             <AlertDialogContent>
                                                 <AlertDialogHeader>
-                                                    <AlertDialogTitle>Próximamente</AlertDialogTitle>
+                                                    <AlertDialogTitle>¿Generar nuevo QR para "{box.name}"?</AlertDialogTitle>
                                                     <AlertDialogDescription>
-                                                      Aquí podrás ver el historial detallado de transacciones para esta caja.
+                                                        Esta acción invalidará el código QR anterior. Asegúrate de reemplazar cualquier QR físico que estés usando.
                                                     </AlertDialogDescription>
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
-                                                    <AlertDialogCancel>Cerrar</AlertDialogCancel>
+                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => regenerateCashierBoxQr(box.id)}>Sí, generar nuevo QR</AlertDialogAction>
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
-                                        <Button variant="outline" size="sm" onClick={() => setSelectedBox({id: box.id, name: box.name, value: box.qrValue, businessId: currentUser.coraboId || currentUser.id})}>
+                                        <Button variant="outline" size="sm" onClick={() => setSelectedBox({id: box.id, name: box.name, businessId: currentUser.coraboId || currentUser.id, qrDataURL: box.qrDataURL})}>
                                             <QrCode className="w-4 h-4 mr-2"/>Ver QR
                                         </Button>
                                         <AlertDialog>
@@ -159,7 +160,7 @@ function CashierManagementCard() {
                         <PrintableQrDisplay 
                             boxName={selectedBox.name}
                             businessId={selectedBox.businessId}
-                            qrValue={selectedBox.value}
+                            qrDataURL={selectedBox.qrDataURL}
                             onClose={() => setSelectedBox(null)}
                         />
                     )}
