@@ -161,24 +161,15 @@ function ScanQrContent() {
 
 
   return (
-    <div className="relative h-screen w-screen bg-black text-white">
-      <header className="absolute top-0 left-0 z-20 p-4 w-full flex items-center justify-between bg-gradient-to-b from-black/70 to-transparent">
-        <Button variant="ghost" size="icon" onClick={() => router.back()} className="bg-black/30 rounded-full shadow-md hover:bg-black/50">
+    <div className="relative h-screen w-screen bg-muted/40">
+      <header className="absolute top-0 left-0 z-20 p-4 w-full flex items-center justify-between">
+        <Button variant="ghost" size="icon" onClick={() => router.back()} className="bg-background/80 rounded-full shadow-md hover:bg-background">
           <ChevronLeft className="h-6 w-6" />
         </Button>
-         <h1 className="text-lg font-bold drop-shadow-md">Pagar con Credicora</h1>
-        <div className="w-10"></div>
       </header>
        <main className="h-full w-full flex items-center justify-center p-8">
         {renderContent()}
       </main>
-       <footer className="absolute bottom-0 left-0 z-20 p-6 w-full text-center bg-gradient-to-t from-black/70 to-transparent">
-         <p className="text-sm">
-           {isMobileDevice() 
-                ? "Apunta la cámara al código QR de la tienda para iniciar el pago." 
-                : "Pídele al proveedor su Corabo ID para continuar."}
-        </p>
-       </footer>
     </div>
   );
 }
