@@ -25,6 +25,7 @@ export function Footer() {
   const isProvider = currentUser.type === 'provider';
   const isCompany = isProvider && currentUser.profileSetupData?.providerType === 'company';
   const isProfilePage = pathname.startsWith('/profile');
+  const isCompanyProfileComplete = !!currentUser.profileSetupData?.specialty;
 
   const handleCentralButtonClick = () => {
     if (isProvider && isProfilePage) {
@@ -81,8 +82,11 @@ export function Footer() {
 
   const renderRightmostButton = () => {
     if (isCompany && isProfilePage) {
+        // If company profile is not complete, settings button goes to the setup flow.
+        // Otherwise, it goes to the quick details edit page.
+        const settingsHref = isCompanyProfileComplete ? '/profile/details' : '/profile-setup';
         return (
-             <Link href="/profile/details" passHref>
+             <Link href={settingsHref} passHref>
                 <Button variant="ghost" className={cn("flex-col h-auto p-1 text-muted-foreground hover:text-primary", pathname.startsWith('/profile') && "text-primary")}>
                     <Settings className="w-7 h-7" />
                 </Button>
