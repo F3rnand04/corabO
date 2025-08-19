@@ -1,16 +1,12 @@
-
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
-import { Loader2, X, CheckCircle, MapPin, LocateFixed } from 'lucide-react';
+import { Loader2, X, Check, LocateFixed } from 'lucide-react';
 import { Button } from './ui/button';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent } from './ui/card';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { APIProvider, Map, useMap } from '@vis.gl/react-google-maps';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
 
 // Internal component to get map instance
 function MapHandler({ onCenterChanged, onIdle }: { onCenterChanged: (center: google.maps.LatLngLiteral) => void; onIdle: () => void }) {
@@ -34,8 +30,7 @@ function MapHandler({ onCenterChanged, onIdle }: { onCenterChanged: (center: goo
 
 export function MapPageContent() {
   const router = useRouter();
-  const { toast } = useToast();
-  const { setDeliveryAddress, currentUserLocation, setNeedsCheckoutDialog } = useCorabo();
+  const { setDeliveryAddress, currentUserLocation } = useCorabo();
   
   const initialPosition = currentUserLocation ? { lat: currentUserLocation.latitude, lng: currentUserLocation.longitude } : { lat: 10.4806, lng: -66.9036 };
   
@@ -76,22 +71,10 @@ export function MapPageContent() {
             <X className="h-5 w-5"/>
         </Button>
       
-        <div className="absolute bottom-4 left-4 right-4 max-w-md mx-auto z-10">
-            <Card className="shadow-2xl animate-in fade-in-0 slide-in-from-bottom-5">
-                <CardContent className="p-4 space-y-4">
-                    <div>
-                        <h3 className="font-semibold text-lg flex items-center gap-2"><MapPin className="w-5 h-5 text-primary"/> Define la Ubicación</h3>
-                        <p className="text-sm text-muted-foreground mt-1">Arrastra el mapa para que el marcador central apunte al lugar deseado.</p>
-                    </div>
-                     <div className="p-2 bg-muted text-center rounded-md text-xs font-mono">
-                           {mapCenter.lat.toFixed(4)}, {mapCenter.lng.toFixed(4)}
-                     </div>
-                    <Button className="w-full" onClick={handleConfirmLocation}>
-                        <CheckCircle className="mr-2 h-4 w-4"/>
-                        Confirmar esta Ubicación
-                    </Button>
-                </CardContent>
-            </Card>
+        <div className="absolute bottom-6 right-6 z-10">
+           <Button size="icon" className="w-14 h-14 rounded-full shadow-2xl" onClick={handleConfirmLocation}>
+                <Check className="h-7 w-7"/>
+           </Button>
         </div>
     </div>
   );
