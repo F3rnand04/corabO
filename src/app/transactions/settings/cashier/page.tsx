@@ -52,13 +52,17 @@ function CashierManagementCard() {
         const newPassword = editingPasswords[boxId];
         if (newPassword) {
             updateCashierBox(boxId, { passwordHash: newPassword });
+            setEditingPasswords(prev => {
+                const newState = {...prev};
+                delete newState[boxId];
+                return newState;
+            });
         }
     };
 
     const togglePasswordVisibility = (boxId: string) => {
         setPasswordVisibility(prev => ({ ...prev, [boxId]: !prev[boxId] }));
     };
-
 
     const downloadQR = () => {
         if (!selectedBoxQr) return;
@@ -87,6 +91,8 @@ function CashierManagementCard() {
         return <p>Esta función solo está disponible para cuentas de empresa.</p>;
     }
     
+    const cashierBoxes = currentUser?.profileSetupData?.cashierBoxes || [];
+
     return (
         <Card>
             <CardHeader>
@@ -99,21 +105,21 @@ function CashierManagementCard() {
                     <div className="flex flex-col sm:flex-row gap-2">
                         <Input placeholder="Nombre de la caja (ej: Barra)" value={newBoxName} onChange={(e) => setNewBoxName(e.target.value)} />
                         <Input type="text" placeholder="Contraseña numérica (4-6 dígitos)" value={newBoxPassword} onChange={(e) => setNewBoxPassword(e.target.value)} maxLength={6} />
-                        <Button onClick={handleAddBox} disabled={!newBoxName || !newBoxPassword || (currentUser?.profileSetupData?.cashierBoxes?.length || 0) >= 5}>Añadir</Button>
+                        <Button onClick={handleAddBox} disabled={!newBoxName || !newBoxPassword || cashierBoxes.length >= 5}>Añadir</Button>
                     </div>
                 </div>
                 <div className="space-y-2">
                     <h4 className="text-sm font-semibold">Cajas Activas</h4>
-                    {currentUser?.profileSetupData?.cashierBoxes && currentUser.profileSetupData.cashierBoxes.length > 0 ? (
+                    {cashierBoxes.length > 0 ? (
                         <div className="space-y-2">
-                            {currentUser.profileSetupData.cashierBoxes.map(box => (
+                            {cashierBoxes.map(box => (
                                 <div key={box.id} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-background rounded-md border">
                                     <p className="font-medium flex-shrink-0">{box.name}</p>
                                     <div className="flex-grow flex items-center gap-2">
                                         <div className="relative w-full">
                                             <Input
                                                 type={passwordVisibility[box.id] ? 'text' : 'password'}
-                                                value={editingPasswords[box.id] ?? box.passwordHash}
+                                                defaultValue={box.passwordHash}
                                                 onChange={(e) => handlePasswordChange(box.id, e.target.value)}
                                                 className="pr-10"
                                             />
@@ -121,7 +127,7 @@ function CashierManagementCard() {
                                                 {passwordVisibility[box.id] ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}
                                             </Button>
                                         </div>
-                                         <Button size="sm" onClick={() => handleUpdatePassword(box.id)} disabled={!editingPasswords[box.id] || editingPasswords[box.id] === box.passwordHash}>Guardar</Button>
+                                         <Button size="sm" onClick={() => handleUpdatePassword(box.id)} disabled={!editingPasswords[box.id]}>Guardar</Button>
                                     </div>
                                     <div className="flex items-center gap-1 justify-end flex-wrap">
                                         <AlertDialog>
@@ -197,7 +203,6 @@ function CashierManagementCard() {
         </Card>
     )
 }
-
 
 export default function CashierPage() {
     return (
