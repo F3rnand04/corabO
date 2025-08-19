@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, ChangeEvent, useCallback } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Megaphone, Zap, Plus, Package, Wallet, MapPin, Calendar as CalendarIcon, TrendingUp, Timer, FileText, Settings2, UserRoundCog } from 'lucide-react';
+import { Star, Megaphone, Zap, Plus, Package, Wallet, MapPin, Calendar as CalendarIcon, TrendingUp, Timer, FileText, Settings2, UserRoundCog, Handshake } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
@@ -38,6 +38,7 @@ export function ProfileHeader() {
   if (!currentUser) return null;
 
   const isProvider = currentUser.type === 'provider';
+  const isCompany = isProvider && currentUser.profileSetupData?.providerType === 'company';
   
   const { reputation, effectiveness, responseTime, paymentSpeed } = getUserMetrics(currentUser.id);
   const isNewProvider = responseTime === 'Nuevo';
@@ -196,11 +197,6 @@ export function ProfileHeader() {
                             <Wallet className="w-5 h-5"/>
                         </Link>
                     </Button>
-                    <Button asChild variant="ghost" size="icon" className="w-7 h-7 text-muted-foreground">
-                        <Link href="/profile/details">
-                            <UserRoundCog className="w-5 h-5"/>
-                        </Link>
-                    </Button>
                  </div>
             </div>
         </div>
@@ -212,10 +208,26 @@ export function ProfileHeader() {
                     Gestionar Campañas
                 </Button>
             )}
-            <Button asChild variant="outline" className="flex-1">
-                <Link href="/emprende">
-                    <Zap className="w-4 h-4 mr-2"/>
-                    Emprende por Hoy
+            
+            {isCompany ? (
+                <Button asChild variant="outline" className="flex-1">
+                    <Link href="/admin">
+                        <Handshake className="w-4 h-4 mr-2"/>
+                        Gestión de Afiliaciones
+                    </Link>
+                </Button>
+            ) : (
+                <Button asChild variant="outline" className="flex-1">
+                    <Link href="/emprende">
+                        <Zap className="w-4 h-4 mr-2"/>
+                        Emprende por Hoy
+                    </Link>
+                </Button>
+            )}
+
+            <Button asChild variant="ghost" size="icon">
+                <Link href="/profile/details">
+                    <Settings2 className="w-5 h-5"/>
                 </Link>
             </Button>
         </div>
