@@ -580,7 +580,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         await TransactionFlows.payCommitment({ transactionId, userId: user.id, paymentDetails }); 
     },
     sendQuote: async (transactionId: string, quote: { breakdown: string; total: number }) => { 
-        if(!currentUser) return;
+        if(!currentUser) return; 
         await TransactionFlows.sendQuote({ transactionId, userId: currentUser.id, breakdown: quote.breakdown, total: quote.total }); 
     },
     acceptQuote: async (transactionId: string) => { 
@@ -784,8 +784,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         await batch.commit();
         toast({ title: 'Carritos expirados limpiados' });
     },
-    addCashierBox: async (name: string, password: string) => {
-        if (!currentUser || currentUser.profileSetupData?.providerType !== 'company') return;
+    addCashierBox: (name: string, password: string) => new Promise<void>(async (resolve) => {
+        if (!currentUser || currentUser.profileSetupData?.providerType !== 'company') return resolve();
         
         const boxId = `caja-${Date.now()}`;
         const qrValue = JSON.stringify({ providerId: currentUser.id, cashierBoxId: boxId });
@@ -794,7 +794,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         const newBox: CashierBox = {
             id: boxId,
             name,
-            passwordHash: password, // In a real app, this would be a secure hash
+            passwordHash: password,
             qrValue: qrValue,
             qrDataURL: qrDataURL
         };
@@ -804,28 +804,30 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             'profileSetupData.cashierBoxes': arrayUnion(newBox)
         });
         toast({ title: "Caja Añadida", description: `La caja "${name}" ha sido creada.` });
-    },
-    removeCashierBox: async (boxId: string) => {
-        if (!currentUser || !currentUser.profileSetupData?.cashierBoxes) return;
+        resolve();
+    }),
+    removeCashierBox: (boxId: string) => new Promise<void>(async (resolve) => {
+        if (!currentUser || !currentUser.profileSetupData?.cashierBoxes) return resolve();
         
         const boxToRemove = currentUser.profileSetupData.cashierBoxes.find(b => b.id === boxId);
-        if (!boxToRemove) return;
+        if (!boxToRemove) return resolve();
 
         const userRef = doc(getFirestoreDb(), 'users', currentUser.id);
         await updateDoc(userRef, {
             'profileSetupData.cashierBoxes': arrayRemove(boxToRemove)
         });
         toast({ title: "Caja Eliminada", description: `La caja ha sido eliminada correctamente.` });
-    },
-    updateCashierBox: async (boxId: string, updates: Partial<Pick<CashierBox, 'name' | 'passwordHash'>>) => {
-        if (!currentUser || !currentUser.profileSetupData?.cashierBoxes) return;
+        resolve();
+    }),
+    updateCashierBox: (boxId: string, updates: Partial<Pick<CashierBox, 'name' | 'passwordHash'>>) => new Promise<void>(async (resolve) => {
+        if (!currentUser || !currentUser.profileSetupData?.cashierBoxes) return resolve();
         
         const currentBoxes = currentUser.profileSetupData.cashierBoxes;
         const boxIndex = currentBoxes.findIndex(b => b.id === boxId);
         
         if (boxIndex === -1) {
             toast({ variant: 'destructive', title: "Error", description: "No se encontró la caja para actualizar."});
-            return;
+            return resolve();
         }
         
         const updatedBox = { ...currentBoxes[boxIndex], ...updates };
@@ -837,16 +839,17 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             'profileSetupData.cashierBoxes': newBoxes
         });
         toast({ title: "Caja Actualizada", description: `La contraseña de la caja ha sido cambiada.` });
-    },
-    regenerateCashierBoxQr: async (boxId: string) => {
-        if (!currentUser || !currentUser.profileSetupData?.cashierBoxes) return;
+        resolve();
+    }),
+    regenerateCashierBoxQr: (boxId: string) => new Promise<void>(async (resolve) => {
+        if (!currentUser || !currentUser.profileSetupData?.cashierBoxes) return resolve();
         
         const currentBoxes = currentUser.profileSetupData.cashierBoxes;
         const boxIndex = currentBoxes.findIndex(b => b.id === boxId);
         
         if (boxIndex === -1) {
             toast({ variant: 'destructive', title: "Error", description: "No se encontró la caja para regenerar el QR."});
-            return;
+            return resolve();
         }
         
         const newQrValue = JSON.stringify({ providerId: currentUser.id, cashierBoxId: boxId, timestamp: Date.now() });
@@ -861,7 +864,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             'profileSetupData.cashierBoxes': newBoxes
         });
         toast({ title: "QR Regenerado", description: `Se ha creado un nuevo código QR para la caja.` });
-    },
+        resolve();
+    }),
   }), [
     searchHistory, contacts, cart, transactions, getCartTotal, 
     getDeliveryCost, users, updateCart, router, currentUser, updateUser, updateFullProfile,

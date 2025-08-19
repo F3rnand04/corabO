@@ -57,7 +57,7 @@ const ProcessDirectPaymentSchema = z.object({
 /**
  * Creates the initial transaction and subsequent Credicora installment transactions
  * after a direct QR payment is finalized by the provider.
- * This flow now includes the definitive commission logic.
+ * This flow now includes the definitive commission logic and cashier tracking.
  */
 export const processDirectPayment = ai.defineFlow(
     {
@@ -130,6 +130,8 @@ export const processDirectPayment = ai.defineFlow(
                 total: finalAmountUSD * exchangeRate, // Store in local currency
                 exchangeRate,
                 amountUSD: totalAmountUSD,
+                cashierBoxId: session.cashierBoxId, // Store cashier box ID
+                cashierName: session.cashierName, // Store cashier name
             }
         };
         batch.set(doc(db, 'transactions', initialTxId), initialTransaction);
