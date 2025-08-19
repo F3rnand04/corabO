@@ -160,6 +160,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     '/admin',
     '/initial-setup',
     '/profile/details', // Hides header/footer on the new details edit page
+    '/transactions/settings/cashier', // Hides for the dedicated cashier management page
   ];
 
   const shouldHideAllLayout = noHeaderFooterRoutes.some(path => pathname.startsWith(path));
