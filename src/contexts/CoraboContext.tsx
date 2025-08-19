@@ -125,7 +125,8 @@ interface CoraboActions {
   getDistanceToProvider: (provider: User) => string | null;
   startQrSession: (providerId: string, cashierBoxId?: string) => Promise<string | null>;
   setQrSessionAmount: (sessionId: string, amount: number) => Promise<void>;
-  approveQrSession: (sessionId: string) => Promise<void>;
+  handleClientCopyAndPay: (sessionId: string) => Promise<void>;
+  confirmMobilePayment: (sessionId: string) => Promise<void>;
   finalizeQrSession: (sessionId: string, voucherUrl: string) => Promise<void>;
   cancelQrSession: (sessionId: string, byProvider?: boolean) => Promise<void>;
   registerSystemPayment: (concept: string, amount: number, isSubscription: boolean) => Promise<void>;
@@ -363,10 +364,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const updateUser = useCallback(async (userId: string, updates: Partial<User>) => {
       const db = getFirestoreDb();
       await updateDoc(doc(db, 'users', userId), updates);
-      setCurrentUser(prevUser => prevUser && prevUser.id === userId ? { ...prevUser, ...updates } : prevUser);
-      // Update local `users` state as well
+      if (currentUser?.id === userId) {
+        setCurrentUser(prevUser => prevUser ? { ...prevUser, ...updates } : null);
+      }
       setUsers(prevUsers => prevUsers.map(u => u.id === userId ? {...u, ...updates} : u));
-  }, [setCurrentUser]);
+  }, [setCurrentUser, currentUser?.id]);
 
   const updateFullProfile = useCallback(async (userId: string, data: ProfileSetupData, profileType: 'client' | 'provider' | 'repartidor') => {
         const existingUser = users.find(u => u.id === userId);
@@ -468,17 +470,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     getCartItemQuantity: (productId: string) => cart.find(item => item.product.id === productId)?.quantity || 0,
     updateUser,
     updateFullProfile,
-    updateUserProfileImage: async (userId: string, imageUrl: string) => {
-        if (imageUrl.length > 1048487) {
-            toast({
-                variant: "destructive",
-                title: "Imagen demasiado grande",
-                description: "Por favor, elige una imagen más pequeña (menor a 1MB)."
-            });
-            return;
-        }
-        await updateUser(userId, { profileImage: imageUrl });
-    },
+    updateUserProfileImage,
     activateTransactions: async (userId: string, paymentDetails: any) => {
         const userToUpdate = users.find(u => u.id === userId);
         if (!userToUpdate) return;
@@ -732,6 +724,17 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       return sessionId;
     },
     setQrSessionAmount: async(a:any,b:any)=>{return Promise.resolve();},
+    handleClientCopyAndPay: async (sessionId: string) => {
+        const db = getFirestoreDb();
+        const sessionRef = doc(db, 'qr_sessions', sessionId);
+        await updateDoc(sessionRef, { status: 'awaitingPayment', updatedAt: new Date().toISOString() });
+    },
+    confirmMobilePayment: async (sessionId: string) => {
+        const db = getFirestoreDb();
+        const sessionRef = doc(db, 'qr_sessions', sessionId);
+        await TransactionFlows.processDirectPayment({ sessionId });
+        await updateDoc(sessionRef, { status: 'completed', updatedAt: new Date().toISOString() });
+    },
     approveQrSession: async(a:any)=>{return Promise.resolve();},
     finalizeQrSession: async(a:any,b:any)=>{return Promise.resolve();},
     cancelQrSession: async(a:any,b:any)=>{return Promise.resolve();},
@@ -784,73 +787,48 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         await batch.commit();
         toast({ title: 'Carritos expirados limpiados' });
     },
-    addCashierBox: (name: string, password: string) => new Promise<void>(async (resolve) => {
-        if (!currentUser || currentUser.profileSetupData?.providerType !== 'company') return resolve();
+    addCashierBox: async (name: string, password: string) => {
+        if (!currentUser || currentUser.profileSetupData?.providerType !== 'company') return;
         
         const boxId = `caja-${Date.now()}`;
         const qrValue = JSON.stringify({ providerId: currentUser.id, cashierBoxId: boxId });
         const qrDataURL = await generateQrDataURL(qrValue);
 
-        const newBox: CashierBox = {
-            id: boxId,
-            name,
-            passwordHash: password,
-            qrValue: qrValue,
-            qrDataURL: qrDataURL
-        };
-
-        const userRef = doc(getFirestoreDb(), 'users', currentUser.id);
-        await updateDoc(userRef, {
-            'profileSetupData.cashierBoxes': arrayUnion(newBox)
-        });
-        toast({ title: "Caja Añadida", description: `La caja "${name}" ha sido creada.` });
-        resolve();
-    }),
-    removeCashierBox: (boxId: string) => new Promise<void>(async (resolve) => {
-        if (!currentUser || !currentUser.profileSetupData?.cashierBoxes) return resolve();
+        const newBox: CashierBox = { id: boxId, name, passwordHash: password, qrValue, qrDataURL };
+        const newBoxes = [...(currentUser.profileSetupData?.cashierBoxes || []), newBox];
         
-        const boxToRemove = currentUser.profileSetupData.cashierBoxes.find(b => b.id === boxId);
-        if (!boxToRemove) return resolve();
+        await updateUser(currentUser.id, { profileSetupData: { ...currentUser.profileSetupData, cashierBoxes: newBoxes } });
 
-        const userRef = doc(getFirestoreDb(), 'users', currentUser.id);
-        await updateDoc(userRef, {
-            'profileSetupData.cashierBoxes': arrayRemove(boxToRemove)
-        });
+        toast({ title: "Caja Añadida", description: `La caja "${name}" ha sido creada.` });
+    },
+    removeCashierBox: async (boxId: string) => {
+        if (!currentUser || !currentUser.profileSetupData?.cashierBoxes) return;
+        
+        const newBoxes = currentUser.profileSetupData.cashierBoxes.filter(b => b.id !== boxId);
+        await updateUser(currentUser.id, { profileSetupData: { ...currentUser.profileSetupData, cashierBoxes: newBoxes } });
+
         toast({ title: "Caja Eliminada", description: `La caja ha sido eliminada correctamente.` });
-        resolve();
-    }),
-    updateCashierBox: (boxId: string, updates: Partial<Pick<CashierBox, 'name' | 'passwordHash'>>) => new Promise<void>(async (resolve) => {
-        if (!currentUser || !currentUser.profileSetupData?.cashierBoxes) return resolve();
+    },
+    updateCashierBox: async (boxId: string, updates: Partial<Pick<CashierBox, 'name' | 'passwordHash'>>) => {
+        if (!currentUser || !currentUser.profileSetupData?.cashierBoxes) return;
         
         const currentBoxes = currentUser.profileSetupData.cashierBoxes;
         const boxIndex = currentBoxes.findIndex(b => b.id === boxId);
-        
-        if (boxIndex === -1) {
-            toast({ variant: 'destructive', title: "Error", description: "No se encontró la caja para actualizar."});
-            return resolve();
-        }
+        if (boxIndex === -1) return;
         
         const updatedBox = { ...currentBoxes[boxIndex], ...updates };
         const newBoxes = [...currentBoxes];
         newBoxes[boxIndex] = updatedBox;
         
-        const userRef = doc(getFirestoreDb(), 'users', currentUser.id);
-        await updateDoc(userRef, {
-            'profileSetupData.cashierBoxes': newBoxes
-        });
+        await updateUser(currentUser.id, { profileSetupData: { ...currentUser.profileSetupData, cashierBoxes: newBoxes } });
         toast({ title: "Caja Actualizada", description: `La contraseña de la caja ha sido cambiada.` });
-        resolve();
-    }),
-    regenerateCashierBoxQr: (boxId: string) => new Promise<void>(async (resolve) => {
-        if (!currentUser || !currentUser.profileSetupData?.cashierBoxes) return resolve();
+    },
+    regenerateCashierBoxQr: async (boxId: string) => {
+        if (!currentUser || !currentUser.profileSetupData?.cashierBoxes) return;
         
         const currentBoxes = currentUser.profileSetupData.cashierBoxes;
         const boxIndex = currentBoxes.findIndex(b => b.id === boxId);
-        
-        if (boxIndex === -1) {
-            toast({ variant: 'destructive', title: "Error", description: "No se encontró la caja para regenerar el QR."});
-            return resolve();
-        }
+        if (boxIndex === -1) return;
         
         const newQrValue = JSON.stringify({ providerId: currentUser.id, cashierBoxId: boxId, timestamp: Date.now() });
         const newQrDataURL = await generateQrDataURL(newQrValue);
@@ -859,13 +837,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         const newBoxes = [...currentBoxes];
         newBoxes[boxIndex] = updatedBox;
         
-        const userRef = doc(getFirestoreDb(), 'users', currentUser.id);
-        await updateDoc(userRef, {
-            'profileSetupData.cashierBoxes': newBoxes
-        });
+        await updateUser(currentUser.id, { profileSetupData: { ...currentUser.profileSetupData, cashierBoxes: newBoxes } });
         toast({ title: "QR Regenerado", description: `Se ha creado un nuevo código QR para la caja.` });
-        resolve();
-    }),
+    },
   }), [
     searchHistory, contacts, cart, transactions, getCartTotal, 
     getDeliveryCost, users, updateCart, router, currentUser, updateUser, updateFullProfile,
