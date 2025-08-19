@@ -3,13 +3,14 @@
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChevronLeft, KeyRound, QrCode, Trash2, Eye, EyeOff, RefreshCw } from "lucide-react";
+import { ChevronLeft, KeyRound, QrCode, Trash2, Eye, EyeOff, RefreshCw, FileText } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCorabo } from '@/contexts/CoraboContext';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Input } from '@/components/ui/input';
 import { PrintableQrDisplay } from '@/components/PrintableQrDisplay';
+import Link from 'next/link';
 
 
 function CashierSettingsHeader() {
@@ -33,15 +34,18 @@ function CashierManagementCard() {
     const { currentUser, addCashierBox, removeCashierBox, updateCashierBox, regenerateCashierBoxQr } = useCorabo();
     const [newBoxName, setNewBoxName] = useState('');
     const [newBoxPassword, setNewBoxPassword] = useState('');
-    const [selectedBox, setSelectedBox] = useState<{id: string, name: string, value: string, businessId: string, qrDataURL: string} | null>(null);
+    const [selectedBox, setSelectedBox] = useState<{id: string, name: string, businessId: string, qrDataURL: string | undefined} | null>(null);
     const [passwordVisibility, setPasswordVisibility] = useState<Record<string, boolean>>({});
     const [editingPasswords, setEditingPasswords] = useState<Record<string, string>>({});
+    const [isProcessing, setIsProcessing] = useState<string | null>(null); // To track which box is being processed
     
-    const handleAddBox = () => {
+    const handleAddBox = async () => {
         if (newBoxName && newBoxPassword) {
-            addCashierBox(newBoxName, newBoxPassword);
+            setIsProcessing('new');
+            await addCashierBox(newBoxName, newBoxPassword);
             setNewBoxName('');
             setNewBoxPassword('');
+            setIsProcessing(null);
         }
     };
     
@@ -49,17 +53,31 @@ function CashierManagementCard() {
         setEditingPasswords(prev => ({ ...prev, [boxId]: value }));
     };
     
-    const handleUpdatePassword = (boxId: string) => {
+    const handleUpdatePassword = async (boxId: string) => {
         const newPassword = editingPasswords[boxId];
         if (newPassword) {
-            updateCashierBox(boxId, { passwordHash: newPassword });
+            setIsProcessing(boxId);
+            await updateCashierBox(boxId, { passwordHash: newPassword });
             setEditingPasswords(prev => {
                 const newState = {...prev};
                 delete newState[boxId];
                 return newState;
             });
+            setIsProcessing(null);
         }
     };
+
+    const handleRegenerateQr = async (boxId: string) => {
+      setIsProcessing(boxId);
+      await regenerateCashierBoxQr(boxId);
+      setIsProcessing(null);
+    }
+    
+    const handleRemoveBox = async (boxId: string) => {
+       setIsProcessing(boxId);
+       await removeCashierBox(boxId);
+       setIsProcessing(null);
+    }
 
     const togglePasswordVisibility = (boxId: string) => {
         setPasswordVisibility(prev => ({ ...prev, [boxId]: !prev[boxId] }));
@@ -81,9 +99,11 @@ function CashierManagementCard() {
                  <div className="space-y-2 p-3 border rounded-lg bg-background">
                     <h4 className="text-sm font-semibold">Añadir Nueva Caja</h4>
                     <div className="flex flex-col sm:flex-row gap-2">
-                        <Input placeholder="Nombre de la caja (ej: Barra)" value={newBoxName} onChange={(e) => setNewBoxName(e.target.value)} />
-                        <Input type="text" placeholder="Contraseña numérica (4-6 dígitos)" value={newBoxPassword} onChange={(e) => setNewBoxPassword(e.target.value)} maxLength={6} />
-                        <Button onClick={handleAddBox} disabled={!newBoxName || !newBoxPassword || cashierBoxes.length >= 5}>Añadir</Button>
+                        <Input placeholder="Nombre de la caja (ej: Barra)" value={newBoxName} onChange={(e) => setNewBoxName(e.target.value)} disabled={isProcessing === 'new'} />
+                        <Input type="text" placeholder="Contraseña numérica (4-6 dígitos)" value={newBoxPassword} onChange={(e) => setNewBoxPassword(e.target.value)} maxLength={6} disabled={isProcessing === 'new'}/>
+                        <Button onClick={handleAddBox} disabled={isProcessing === 'new' || !newBoxName || !newBoxPassword || cashierBoxes.length >= 5}>
+                            {isProcessing === 'new' ? "Creando..." : "Añadir"}
+                        </Button>
                     </div>
                 </div>
                 <div className="space-y-2">
@@ -91,8 +111,27 @@ function CashierManagementCard() {
                     {cashierBoxes.length > 0 ? (
                         <div className="space-y-2">
                             {cashierBoxes.map(box => (
-                                <div key={box.id} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between p-3 bg-background rounded-md border">
-                                    <p className="font-medium flex-shrink-0">{box.name}</p>
+                                <div key={box.id} className="flex flex-col gap-3 p-3 bg-background rounded-md border">
+                                    <div className="flex items-center justify-between">
+                                        <p className="font-medium flex-shrink-0">{box.name}</p>
+                                         <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" disabled={isProcessing === box.id}><Trash2 className="w-4 h-4"/></Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>¿Eliminar la caja "{box.name}"?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Esta acción es permanente y no se puede deshacer.
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => handleRemoveBox(box.id)}>Sí, eliminar</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </div>
                                     <div className="flex-grow flex items-center gap-2">
                                         <div className="relative w-full">
                                             <Input
@@ -105,12 +144,15 @@ function CashierManagementCard() {
                                                 {passwordVisibility[box.id] ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}
                                             </Button>
                                         </div>
-                                         <Button size="sm" onClick={() => handleUpdatePassword(box.id)} disabled={!editingPasswords[box.id]}>Guardar</Button>
+                                         <Button size="sm" onClick={() => handleUpdatePassword(box.id)} disabled={!editingPasswords[box.id] || isProcessing === box.id}>Guardar</Button>
                                     </div>
-                                    <div className="flex items-center gap-1 justify-end flex-wrap">
+                                    <div className="flex items-center gap-2 justify-end flex-wrap">
+                                        <Button asChild variant="outline" size="sm">
+                                            <Link href={`/transactions/settings/cashier/${box.id}`}><FileText className="w-4 h-4 mr-2"/>Detalles</Link>
+                                        </Button>
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
-                                                <Button variant="outline" size="sm"><RefreshCw className="w-4 h-4 mr-2"/>Generar Nuevo QR</Button>
+                                                <Button variant="outline" size="sm" disabled={isProcessing === box.id}>{isProcessing === box.id ? <RefreshCw className="w-4 h-4 animate-spin"/> : <RefreshCw className="w-4 h-4 mr-2"/>}{isProcessing !== box.id && "Nuevo QR"}</Button>
                                             </AlertDialogTrigger>
                                             <AlertDialogContent>
                                                 <AlertDialogHeader>
@@ -121,30 +163,13 @@ function CashierManagementCard() {
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
                                                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => regenerateCashierBoxQr(box.id)}>Sí, generar nuevo QR</AlertDialogAction>
+                                                    <AlertDialogAction onClick={() => handleRegenerateQr(box.id)}>Sí, generar nuevo QR</AlertDialogAction>
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
-                                        <Button variant="outline" size="sm" onClick={() => setSelectedBox({id: box.id, name: box.name, value: box.qrValue, businessId: currentUser.coraboId || currentUser.id, qrDataURL: box.qrDataURL})}>
+                                        <Button variant="outline" size="sm" onClick={() => setSelectedBox({id: box.id, name: box.name, businessId: currentUser.coraboId || currentUser.id, qrDataURL: box.qrDataURL})}>
                                             <QrCode className="w-4 h-4 mr-2"/>Ver QR
                                         </Button>
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"><Trash2 className="w-4 h-4"/></Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>¿Eliminar la caja "{box.name}"?</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                        Esta acción es permanente y no se puede deshacer.
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => removeCashierBox(box.id)}>Sí, eliminar</AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
                                     </div>
                                 </div>
                             ))}

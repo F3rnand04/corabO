@@ -5,7 +5,8 @@ import Image from "next/image";
 import { QrCode, Handshake, Wallet, Download, Loader2 } from "lucide-react";
 import { AlertDialogFooter, AlertDialogCancel } from "./ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import { toBlob } from 'html-to-image';
 
 
 interface PrintableQrDisplayProps {
@@ -20,63 +21,47 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
     const printableRef = useRef<HTMLDivElement>(null);
     const [isGenerating, setIsGenerating] = useState(false);
 
-    const downloadQR = async () => {
-        const element = printableRef.current;
-        if (!element || isGenerating) return;
-
+    const downloadQR = useCallback(() => {
+        if (!printableRef.current) return;
         setIsGenerating(true);
         toast({
           title: "Generando Imagen...",
           description: "Preparando tu código QR para la descarga."
         });
 
-        try {
-            const html2canvas = (await import('html2canvas')).default;
-            const canvas = await html2canvas(element, {
-                scale: 3, 
-                backgroundColor: null, // Transparent background
-                useCORS: true,
-            });
-
-            // Convert canvas to Blob
-            canvas.toBlob(function(blob) {
-                if (!blob) {
-                    toast({
+        toBlob(printableRef.current, { cacheBust: true })
+            .then(function (blob) {
+                if (blob) {
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `QR-Caja-${boxName.replace(/\s+/g, '-')}.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                    onClose();
+                } else {
+                     toast({
                         variant: "destructive",
                         title: "Error de Descarga",
                         description: "No se pudo generar el archivo de imagen (blob)."
                     });
-                    setIsGenerating(false);
-                    return;
                 }
-                
-                // Use File System Access API or fallback to anchor download
-                const url = URL.createObjectURL(blob);
-                const downloadLink = document.createElement("a");
-                downloadLink.href = url;
-                downloadLink.download = `QR-Caja-${boxName.replace(/\s+/g, '-')}.png`;
-                
-                document.body.appendChild(downloadLink);
-                downloadLink.click();
-                document.body.removeChild(downloadLink);
-                
-                URL.revokeObjectURL(url); // Clean up
-                onClose();
-            }, 'image/png');
-
-        } catch (error) {
-            console.error("Error downloading QR:", error);
-            toast({
-                variant: "destructive",
-                title: "Error de Descarga",
-                description: "No se pudo generar la imagen para descargar. Por favor, intenta de nuevo."
+            })
+            .catch(function (error) {
+                console.error('oops, something went wrong!', error);
+                toast({
+                    variant: "destructive",
+                    title: "Error de Descarga",
+                    description: "No se pudo generar la imagen para descargar. Por favor, intenta de nuevo."
+                });
+            })
+            .finally(() => {
+                 setIsGenerating(false);
             });
-        } finally {
-            // The setIsGenerating(false) will be called after the blob is processed.
-            // We set a timeout as a fallback.
-            setTimeout(() => setIsGenerating(false), 3000);
-        }
-    };
+    }, [printableRef, boxName, toast, onClose]);
+
 
     return (
         <div className="flex flex-col items-center gap-4">
@@ -130,7 +115,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrDataURL, onClose }: 
             <AlertDialogFooter className="sm:justify-between w-full px-6 pb-2">
                  <AlertDialogCancel onClick={onClose}>Cerrar</AlertDialogCancel>
                  <Button onClick={downloadQR} disabled={isGenerating || !qrDataURL}>
-                    <Download className="mr-2 h-4 w-4"/>
+                    {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Download className="mr-2 h-4 w-4"/>}
                     {isGenerating ? 'Generando...' : 'Descargar PNG'}
                 </Button>
             </AlertDialogFooter>
