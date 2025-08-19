@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MapPin, FileText, Menu, Search, LogOut, User, Wallet, History as HistoryIcon, Shield, HelpCircle, Contact, ShoppingCart, ChevronDown, Box } from "lucide-react";
+import { MapPin, FileText, Menu, Search, LogOut, User, Wallet, History as HistoryIcon, Shield, HelpCircle, Contact, ShoppingCart, ChevronDown, Box, KeyRound } from "lucide-react";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -59,6 +59,10 @@ export function Header() {
 
   const selectedCategoryName = serviceGroups.find(g => g.id === categoryFilter)?.name || "Todos";
 
+  const cashierBoxes = currentUser.profileSetupData?.cashierBoxes || [];
+  const activeCashierBoxes = cashierBoxes.filter(box => box.isActive).length;
+  const totalCashierBoxes = cashierBoxes.length;
+
   return (
     <header className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b">
       <div className="container px-4 sm:px-6">
@@ -82,8 +86,15 @@ export function Header() {
             </Button>
             
             {isCompany && isTransactionsActive && (
-              <Button variant="ghost" size="icon" onClick={() => router.push('/transactions/settings')}>
-                <Box className="h-5 w-5 text-muted-foreground" />
+              <Button asChild variant="ghost" size="icon" className="relative">
+                <Link href="/transactions/settings/cashier">
+                    <KeyRound className="h-5 w-5 text-muted-foreground" />
+                    {totalCashierBoxes > 0 && (
+                        <Badge variant="secondary" className="absolute -bottom-1 -right-1 text-xs px-1 h-4 scale-75">
+                            {activeCashierBoxes}/{totalCashierBoxes}
+                        </Badge>
+                    )}
+                </Link>
               </Button>
             )}
             
