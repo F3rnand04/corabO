@@ -33,17 +33,21 @@ export default function ProfileSetupPage() {
   }, [currentUser]);
 
   useEffect(() => {
+    // When returning from map, update the location in the form state
     if (deliveryAddress && deliveryAddress !== formData.location) {
       setFormData(prev => ({ ...prev, location: deliveryAddress }));
+      // Clear the address from context so it doesn't persist incorrectly
       setDeliveryAddress(''); 
     }
   }, [deliveryAddress, formData.location, setDeliveryAddress]);
   
    useEffect(() => {
+    // This effect handles returning from the map view
     const fromMap = searchParams.get('fromMap');
     if (fromMap) {
       // When returning from map, we should be on the logistics step
       setStep(2); 
+      // Clean up the URL query parameter
       const url = new URL(window.location.href);
       url.searchParams.delete('fromMap');
       window.history.replaceState({}, '', url);

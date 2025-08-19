@@ -25,6 +25,8 @@ export function Footer() {
   const isProvider = currentUser.type === 'provider';
   const isCompany = isProvider && currentUser.profileSetupData?.providerType === 'company';
   const isProfilePage = pathname.startsWith('/profile');
+  
+  // A company's profile is considered "complete" for this purpose if they have a specialty.
   const isCompanyProfileComplete = !!currentUser.profileSetupData?.specialty;
 
   const handleCentralButtonClick = () => {
@@ -81,8 +83,9 @@ export function Footer() {
   };
 
   const renderRightmostButton = () => {
+    // For a company on their profile page, the gear button's behavior is conditional.
     if (isCompany && isProfilePage) {
-        // If company profile is not complete, settings button goes to the setup flow.
+        // If company profile is not complete, settings button goes to the multi-step setup flow.
         // Otherwise, it goes to the quick details edit page.
         const settingsHref = isCompanyProfileComplete ? '/profile/details' : '/profile-setup';
         return (
@@ -94,6 +97,7 @@ export function Footer() {
         )
     }
 
+    // Default behavior for all other users or pages
     return (
         <Link href="/profile" passHref>
             <Button variant="ghost" className={cn("flex-col h-auto p-1 text-muted-foreground hover:text-primary", pathname.startsWith('/profile') && "text-primary")}>

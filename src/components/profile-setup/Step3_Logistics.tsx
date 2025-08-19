@@ -23,7 +23,7 @@ export default function Step3_Logistics({ formData, onUpdate, onNext }: Step3_Lo
 
   const handleSetLocationFromMap = () => {
     // In a real app, we might store the current form state before navigating
-    router.push('/map?fromSetup=true'); 
+    router.push('/map?fromMap=true'); 
   };
   
   const canContinue = formData.offerType;

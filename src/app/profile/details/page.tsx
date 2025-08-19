@@ -126,7 +126,7 @@ export default function DetailsPage() {
       <DetailsHeader />
       <main className="container max-w-4xl mx-auto py-8">
          <div className="space-y-6">
-            <Accordion type="multiple" defaultValue={['schedule', 'specialized-fields', 'payment-details']} className="w-full space-y-4">
+            <Accordion type="multiple" defaultValue={['specialized-fields', 'schedule', 'payment-details']} className="w-full space-y-4">
               
               <AccordionItem value="specialized-fields" className="border rounded-lg">
                   <AccordionTrigger className="px-4 hover:no-underline">
