@@ -79,7 +79,7 @@ export function Footer() {
     const isProfileContext = pathname.startsWith('/profile');
     
     // The key logic change is here
-    let href = '/profile/publications';
+    let href = '/profile/publications'; // Default profile link
     if (isProfileContext) {
         const isCompany = currentUser.profileSetupData?.providerType === 'company';
         const isCompanySetupComplete = !!currentUser.profileSetupData?.specialty;
@@ -87,7 +87,8 @@ export function Footer() {
         if (isCompany && !isCompanySetupComplete) {
             href = '/profile-setup'; // Unconfigured company goes to the 4-step setup
         } else {
-            href = '/profile/details'; // Everyone else (and configured companies) go to details
+            // For everyone else (professionals, clients, and CONFIGURED companies), the gear links to /transactions/settings
+            href = '/transactions/settings';
         }
     }
     
