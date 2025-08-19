@@ -84,9 +84,14 @@ El chat es la herramienta de negociación. Los proveedores pueden enviar "Propue
     -   **Efectividad:** Mide tu fiabilidad. Aumenta con cada transacción exitosa y disminuye con disputas.
     -   **Agilidad de Pago:** Mide qué tan rápido pagas una vez que se te solicita. Pagar en menos de 15 minutos te da una insignia verde y mejora tu reputación.
     -   **Inactividad:** Tu cuenta se pausará si no inicias sesión en 45 días para mantener la comunidad activa.
+-   **Modelo de Comisión de Credicora:**
+    -   **Gratis para el Cliente:** El uso de Credicora no tiene costo para el cliente. El monto que paga es el precio de la venta.
+    -   **Compromiso del Proveedor:** La comisión de servicio es asumida por el proveedor que acepta el pago con Credicora. Esta comisión (4% para profesionales, 6% para empresas, con descuentos por suscripción) se convierte en un nuevo compromiso de pago del proveedor hacia Corabo.
 
 ---
 
 ## 5. Instalación en Dispositivos Móviles (PWA)
 
 La aplicación ahora se puede "instalar" en la pantalla de inicio de tu teléfono. Gracias a las últimas correcciones, al hacerlo, verás el **logo oficial de Corabo**, ofreciendo una experiencia de aplicación nativa.
+
+    

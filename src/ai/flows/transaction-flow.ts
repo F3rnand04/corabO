@@ -10,7 +10,7 @@ import { getFirestoreDb } from '@/lib/firebase-server'; // Use server-side fireb
 import { doc, getDoc, setDoc, updateDoc, writeBatch, increment } from 'firebase/firestore';
 import type { Transaction, User, AppointmentRequest, QrSession } from '@/lib/types';
 import { credicoraLevels } from '@/lib/types';
-import { addDays } from 'date-fns';
+import { addDays, endOfMonth } from 'date-fns';
 import { getExchangeRate } from './exchange-rate-flow';
 
 // --- Schemas ---
@@ -90,29 +90,28 @@ export const processDirectPayment = ai.defineFlow(
         if (!providerSnap.exists()) throw new Error("Provider not found");
         const provider = providerSnap.data() as User;
         
-        // --- Commission and Tax Calculation Logic ---
+        // --- NEW Commission and Tax Logic ---
+        // The commission is a commitment FROM the provider TO Corabo
         const { rate: exchangeRate } = await getExchangeRate();
         const isCompany = provider.profileSetupData?.providerType === 'company';
         
-        let commissionRate = 0;
-        // Only apply commission logic for companies
-        if(isCompany) {
-            commissionRate = 0.08; // 8% default for companies
-            if(client.isSubscribed) { // Subscription overrides Credicora commission
-                 commissionRate = 0.05; // 5% if client is subscribed
-            }
+        // 1. Determine Commission Rate based on Provider type and subscription
+        let commissionRate = isCompany ? 0.06 : 0.04; // 6% for companies, 4% for professionals
+        if (provider.isSubscribed) {
+            commissionRate = isCompany ? 0.05 : 0.03; // Reduced rates for subscribers
         }
         
-        const baseAmount = session.amount; // Base amount in local currency from the session
-        const baseAmountUSD = baseAmount / exchangeRate;
-        const taxRate = 0.16; // 16% IVA for Venezuela
-
+        const baseAmount = session.amount; // Base sale amount in local currency
+        
+        // 2. Calculate commission and its respective tax
         const commissionAmount = baseAmount * commissionRate;
-        // **CORRECTION:** IVA is calculated ONLY on the commission, not the base amount.
-        const taxAmount = commissionAmount * taxRate;
-        // The final amount is the base sale + Corabo's commission + Corabo's IVA on that commission.
-        const finalAmount = baseAmount + commissionAmount + taxAmount;
-        // --- End of Corrected Logic ---
+        const taxRate = 0.16; // 16% IVA for Venezuela
+        const taxAmountOnCommission = commissionAmount * taxRate; // IVA is ONLY on the commission
+        const providerCommitmentAmount = commissionAmount + taxAmountOnCommission;
+
+        // 3. The client pays ONLY the base amount of the sale
+        const finalAmountClientPays = baseAmount;
+        // --- End of New Logic ---
 
 
         // 1. Create the main transaction for the initial payment
@@ -120,9 +119,9 @@ export const processDirectPayment = ai.defineFlow(
         const initialTransaction: Transaction = {
             id: initialTxId,
             type: 'Compra Directa',
-            status: 'Pagado',
+            status: 'Pagado', // Status is directly Pagado as it's a direct payment
             date: new Date().toISOString(),
-            amount: finalAmount, // The final amount including Corabo's commission and its respective tax
+            amount: finalAmountClientPays, // The client pays the sale amount
             participantIds: [session.clientId, session.providerId],
             clientId: session.clientId,
             providerId: session.providerId,
@@ -131,22 +130,39 @@ export const processDirectPayment = ai.defineFlow(
                 initialPayment: session.initialPayment,
                 financedAmount: session.financedAmount,
                 paymentVoucherUrl: session.voucherUrl,
-                system: `Pago inicial de compra por ${baseAmount.toFixed(2)}`,
+                system: `Venta por ${baseAmount.toFixed(2)}`,
                 baseAmount: baseAmount,
-                commissionRate,
-                commission: commissionAmount,
-                taxRate,
-                tax: taxAmount,
-                total: finalAmount,
                 exchangeRate,
-                amountUSD: finalAmount / exchangeRate,
+                amountUSD: baseAmount / exchangeRate,
                 cashierBoxId: session.cashierBoxId,
                 cashierName: session.cashierName,
             }
         };
         batch.set(doc(db, 'transactions', initialTxId), initialTransaction);
         
-        // 2. Create installment transactions if financed
+        // 2. Create the separate commission commitment transaction FOR THE PROVIDER
+        const commissionTxId = `txn-comm-${initialTxId}`;
+        const commissionDueDate = endOfMonth(new Date()); // Due at the end of the current month
+        const commissionTransaction: Transaction = {
+            id: commissionTxId,
+            type: 'Sistema',
+            status: 'Finalizado - Pendiente de Pago',
+            date: commissionDueDate.toISOString(),
+            amount: providerCommitmentAmount,
+            clientId: session.providerId, // The provider is the "client" for this debt
+            providerId: 'corabo-admin',   // Corabo is the "provider" of the service
+            participantIds: [session.providerId, 'corabo-admin'],
+            details: {
+                system: `Comisión de servicio por Venta (Tx: ${initialTxId.slice(-6)})`,
+                baseAmount: commissionAmount,
+                tax: taxAmountOnCommission,
+                taxRate,
+                commissionRate,
+            },
+        };
+        batch.set(doc(db, 'transactions', commissionTxId), commissionTransaction);
+
+        // 3. Create client's installment transactions if financed with Credicora
         if (session.financedAmount && session.installments && session.financedAmount > 0) {
             const installmentAmount = session.financedAmount / session.installments;
             for (let i = 1; i <= session.installments; i++) {
@@ -168,13 +184,10 @@ export const processDirectPayment = ai.defineFlow(
                 batch.set(doc(db, 'transactions', installmentTxId), installmentTx);
             }
 
-            // 3. Update client's Credicora limit
+            // 4. Update client's Credicora limit
             const newCredicoraLimit = (client.credicoraLimit || 0) - session.financedAmount;
             batch.update(clientRef, { credicoraLimit: newCredicoraLimit });
         }
-        
-        // 4. Mark session as completed (This is now handled by the context to allow for invoice generation first)
-        // batch.update(sessionRef, { status: 'completed' });
         
         await batch.commit();
         
@@ -459,5 +472,7 @@ export const startDispute = ai.defineFlow(
         await updateDoc(txRef, { status: 'En Disputa' });
     }
 );
+
+    
 
     
