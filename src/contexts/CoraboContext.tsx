@@ -6,7 +6,6 @@ import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupDa
 import { useToast } from "@/hooks/use-toast"
 import { useRouter, useSearchParams } from "next/navigation";
 import jsPDF from 'jspdf';
-// Removed problematic import
 import { addDays, differenceInDays } from 'date-fns';
 import { credicoraLevels, credicoraCompanyLevels } from '@/lib/types';
 import { getAuth, signInWithPopup, signOut, User as FirebaseUser, GoogleAuthProvider } from 'firebase/auth';
@@ -96,7 +95,6 @@ interface CoraboActions {
   subscribeUser: (userId: string, planName: string, amount: number) => void;
   activateTransactions: (userId: string, paymentDetails: any) => Promise<void>;
   deactivateTransactions: (userId: string) => void;
-  downloadTransactionsPDF: (transactions: Transaction[]) => void;
   sendMessage: (options: { recipientId: string; text?: string; createOnly?: boolean; location?: { lat: number, lon: number } }) => string | undefined;
   sendProposalMessage: (conversationId: string, proposal: AgreementProposal) => void;
   acceptProposal: (conversationId: string, messageId: string) => void;
@@ -433,7 +431,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         setConversations([]); // Clear stale data on logout
         router.push('/login');
     },
-    setCurrentUser: _setCurrentUser,
+    setCurrentUser,
     setIsLoadingAuth,
     setSearchQuery: (query: string) => {
         _setSearchQuery(query);
@@ -665,7 +663,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         router.push(`/quotes/payment?concept=${encodeURIComponent(`Suscripción: ${planName}`)}&amount=${amount}&isSubscription=true`);
     },
     deactivateTransactions: (a:any)=>{},
-    downloadTransactionsPDF: (a:any)=>{},
     sendProposalMessage: (a:any,b:any)=>{},
     acceptProposal: (a:any,b:any)=>{},
     createAppointmentRequest: (a:any)=>{},
@@ -899,7 +896,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     searchHistory, contacts, cart, transactions, getCartTotal, 
     getDeliveryCost, users, updateCart, router, currentUser, updateUser, updateFullProfile,
     getDistanceToProvider, currentUserLocation, toast, setDeliveryAddress,
-    deliveryAddress, setDeliveryAddressToCurrent, activeCartForCheckout
+    deliveryAddress, setDeliveryAddressToCurrent, activeCartForCheckout,
+    setCurrentUser,
   ]);
   
   return (
