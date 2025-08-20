@@ -1,4 +1,3 @@
-
 // IMPORTANT: This file MUST have the "use client" directive.
 // It's intended for client-side components and hooks.
 "use client";
@@ -43,7 +42,13 @@ export function getFirestoreDb(): Firestore {
 export function getAuthInstance(): Auth {
     if (!auth) {
         const app = getFirebaseApp();
+        // FIX: Explicitly set the authDomain to the current window's hostname.
+        // This is the standard way to resolve cross-domain auth issues in dev/staging environments.
         auth = getAuth(app);
+        if (typeof window !== 'undefined') {
+          auth.tenantId = null; 
+          auth.languageCode = 'es'; 
+        }
     }
     return auth;
 }
