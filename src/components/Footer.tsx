@@ -86,7 +86,7 @@ export function Footer() {
 
     if (isProfilePage) {
         Icon = <Settings className="w-6 h-6" />;
-        href = '/transactions/settings'; // Go to transaction settings
+        href = '/profile-setup'; // Go to company profile setup wizard
     }
     
     return (
