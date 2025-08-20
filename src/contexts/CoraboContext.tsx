@@ -142,7 +142,6 @@ interface CoraboActions {
   removeCashierBox: (boxId: string) => Promise<void>;
   updateCashierBox: (boxId: string, updates: Partial<Pick<CashierBox, 'name' | 'passwordHash'>>) => Promise<void>;
   regenerateCashierBoxQr: (boxId: string) => Promise<void>;
-  handleGenerateInvoice: (transactionId: string) => void;
   updateGalleryImage: (ownerId: string, imageId: string, updates: Partial<{ description: string; imageDataUri: string }>) => Promise<void>;
   retryFindDelivery: (transactionId: string) => Promise<void>;
   resolveDeliveryAsPickup: (transactionId: string) => Promise<void>;
@@ -321,7 +320,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     if (distance === null) return 0;
     
     const distanceKm = parseFloat(distance.replace(' km', ''));
-    return distanceKm * 1.5; // $1.5 per km
+    return distanceKm * 1.05; // $1.05 per km
   }, [users, getDistanceToProvider]);
 
   const updateCart = useCallback(async (newCart: CartItem[], currentUserId: string, currentTransactions: Transaction[]) => {
@@ -733,15 +732,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         await updateDoc(sessionRef, { status: 'awaitingPayment', updatedAt: new Date().toISOString() });
     },
     confirmMobilePayment: async (sessionId: string) => {
-        const { transactionId } = await TransactionFlows.processDirectPayment({ sessionId });
-        await actions.handleGenerateInvoice(transactionId);
+        await TransactionFlows.processDirectPayment({ sessionId });
         const db = getFirestoreDb();
         const sessionRef = doc(db, 'qr_sessions', sessionId);
         await updateDoc(sessionRef, { status: 'completed', updatedAt: new Date().toISOString() });
-    },
-    handleGenerateInvoice: (transactionId: string) => {
-      // Placeholder for future invoice generation logic
-      console.log(`Placeholder: Invoice should be generated for transaction ${transactionId}`);
     },
     cancelQrSession: async(a:any,b:any)=>{return Promise.resolve();},
     registerSystemPayment: async(a:any,b:any,c:any)=>{return Promise.resolve();},

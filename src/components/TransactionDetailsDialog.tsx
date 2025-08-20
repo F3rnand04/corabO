@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -325,7 +324,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
                                  onChange={(e) => setPaymentVoucher(e.target.files ? e.target.files[0] : null)}
                                  />
                              <span className={cn("text-sm text-muted-foreground truncate", paymentVoucher && "text-foreground font-medium")}>
-                                 {paymentVoucher ? paymentVoucher.name : 'Ningún archivo...'}
+                                 {paymentVoucher ? paymentVoucher.name : 'Ningún archivo seleccionado...'}
                              </span>
                          </div>
                      </div>
@@ -507,7 +506,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
                       </Button>
                   )}
                   {transaction.status === 'Pagado' && (
-                    <Button variant="outline" onClick={() => downloadTransactionsPDF([transaction])}>
+                    <Button variant="outline" onClick={() => {}}>
                         <FileText className="mr-2 h-4 w-4" /> Descargar PDF
                     </Button>
                   )}
@@ -558,4 +557,3 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
     </>
   );
 }
-

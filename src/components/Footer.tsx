@@ -10,7 +10,6 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useState } from 'react';
 import { UploadDialog } from './UploadDialog';
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
  
 export function Footer() {
   const pathname = usePathname();
@@ -25,54 +24,14 @@ export function Footer() {
   const isProvider = currentUser.type === 'provider';
   const isProfilePage = pathname.startsWith('/profile');
 
-  const handleCentralButtonClick = () => {
-    if (isProvider && isProfilePage) {
-       setIsUploadOpen(true);
-    } else {
-       router.push('/show-qr');
-    }
-  };
-  
   const CentralButtonIcon = isProvider && isProfilePage ? Upload : ScanLine;
 
-  const renderCentralButton = () => {
+  const handleCentralButtonClick = () => {
     if (isProvider && isProfilePage) {
-      return (
-        <Button
-            key="central-action"
-            onClick={handleCentralButtonClick}
-            size="icon"
-            className="relative -top-4 w-16 h-16 rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90"
-        >
-            <Upload className="w-8 h-8" />
-        </Button>
-      );
+      setIsUploadOpen(true);
+    } else {
+      router.push(isProvider ? '/show-qr' : '/scan-qr');
     }
-
-    // Professionals and Clients get a Popover with two options.
-    return (
-       <Popover>
-            <PopoverTrigger asChild>
-                <Button
-                    key="central-popover"
-                    size="icon"
-                    className="relative -top-4 w-16 h-16 rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90"
-                >
-                    <CentralButtonIcon className="w-8 h-8" />
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent side="top" align="center" className="w-auto p-2 mb-2 space-y-1">
-                 <Button variant="ghost" className="w-full justify-start" onClick={() => router.push('/scan-qr')}>
-                    <ScanLine className="mr-2 h-5 w-5"/>
-                    Escanear para Pagar
-                </Button>
-                 <Button variant="ghost" className="w-full justify-start" onClick={() => router.push('/show-qr')}>
-                    <QrCode className="mr-2 h-5 w-5"/>
-                    Mostrar mi QR para Cobrar
-                </Button>
-            </PopoverContent>
-        </Popover>
-    );
   };
   
   const renderRightmostButton = () => {
@@ -84,7 +43,6 @@ export function Footer() {
         </Avatar>
     );
 
-    // **FIX:** The settings button should now lead to the dedicated details page.
     if (isProfilePage) {
         Icon = <Settings className="w-6 h-6" />;
         href = '/profile-setup/details'; 
@@ -114,7 +72,14 @@ export function Footer() {
                 </Button>
             </Link>
 
-            {renderCentralButton()}
+            <Button
+                key="central-action"
+                onClick={handleCentralButtonClick}
+                size="icon"
+                className="relative -top-4 w-16 h-16 rounded-full shadow-lg bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+                <CentralButtonIcon className="w-8 h-8" />
+            </Button>
             
             <Link href="/messages" passHref>
                 <Button variant="ghost" className={cn("flex-col h-auto p-1 text-muted-foreground hover:text-primary", pathname.startsWith('/messages') && "text-primary")}>
