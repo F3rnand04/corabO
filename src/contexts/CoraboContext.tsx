@@ -43,6 +43,7 @@ interface GeolocationCoords {
     longitude: number;
 }
 
+// Separate state from actions for better management
 interface CoraboState {
   users: User[];
   allPublications: GalleryImage[];
@@ -63,6 +64,7 @@ interface CoraboState {
 }
 
 interface CoraboActions {
+  // Define only action methods here
   setSearchQuery: (query: string) => void;
   setCategoryFilter: (category: string | null) => void;
   clearSearchHistory: () => void;
@@ -137,15 +139,13 @@ interface CoraboActions {
   assignOwnDelivery: (transactionId: string) => Promise<void>;
 }
 
-const CoraboStateContext = createContext<CoraboState | undefined>(undefined);
-const CoraboActionsContext = createContext<CoraboActions | undefined>(undefined);
-
+const CoraboContext = createContext<(CoraboState & CoraboActions) | undefined>(undefined);
 
 export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
   const router = useRouter();
   
-  const { currentUser } = useAuth();
+  const { currentUser } = useAuth(); // Now we can safely use this hook
   
   const [users, setUsers] = useState<User[]>([]);
   const [allPublications, setAllPublications] = useState<GalleryImage[]>([]);
@@ -286,17 +286,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         unsubscribeUserSpecificData.forEach(unsub => unsub());
     };
   }, [currentUser?.id, fetchUser]);
-
-
-  const state = useMemo(() => ({
-    users, allPublications, transactions, conversations, cart, searchQuery,
-    categoryFilter, contacts, isGpsActive, searchHistory, 
-    deliveryAddress, exchangeRate, qrSession, currentUserLocation, tempRecipientInfo, activeCartForCheckout
-  }), [
-    users, allPublications, transactions, conversations, cart, searchQuery,
-    categoryFilter, contacts, isGpsActive, searchHistory,
-    deliveryAddress, exchangeRate, qrSession, currentUserLocation, tempRecipientInfo, activeCartForCheckout
-  ]);
   
   const getCartTotal = useCallback((cartItems: CartItem[] | undefined = cart) => cartItems.reduce((total, item) => total + item.product.price * item.quantity, 0), [cart]);
   
@@ -400,8 +389,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         toast({ variant: 'destructive', title: 'GPS no Soportado', description: 'Tu navegador no soporta geolocalización.' });
     }
   }, [setDeliveryAddress, toast]);
-      
-  const actions = useMemo(() => ({
+
+  const value = {
+    users, allPublications, transactions, conversations, cart, searchQuery,
+    categoryFilter, contacts, isGpsActive, searchHistory, 
+    deliveryAddress, exchangeRate, qrSession, currentUserLocation, tempRecipientInfo, activeCartForCheckout,
     setSearchQuery: (query: string) => {
         _setSearchQuery(query);
         if (query.trim() && !searchHistory.includes(query.trim())) {
@@ -808,30 +800,22 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             status: 'En Reparto',
         });
     },
-  }), [
-    searchHistory, contacts, cart, transactions, getCartTotal, 
-    users, updateCart, router, currentUser, updateUser, updateFullProfile,
-    getDeliveryCost, currentUserLocation, toast, setDeliveryAddress,
-    deliveryAddress, setDeliveryAddressToCurrent, activeCartForCheckout, fetchUser
-  ]);
+  };
   
   return (
-    <CoraboStateContext.Provider value={state}>
-        <CoraboActionsContext.Provider value={actions}>
-            {children}
-        </CoraboActionsContext.Provider>
-    </CoraboStateContext.Provider>
+    <CoraboContext.Provider value={value}>
+        {children}
+    </CoraboContext.Provider>
   );
 };
 
+// Hook to use the context
 export const useCorabo = (): CoraboState & CoraboActions => {
-  const state = useContext(CoraboStateContext);
-  const actions = useContext(CoraboActionsContext);
-  
-  if (state === undefined || actions === undefined) {
+  const context = useContext(CoraboContext);
+  if (context === undefined) {
     throw new Error('useCorabo must be used within a CoraboProvider');
   }
-  return { ...state, ...actions };
+  return context;
 };
 
 export type { Transaction };

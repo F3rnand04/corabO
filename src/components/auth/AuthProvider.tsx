@@ -7,7 +7,6 @@ import { getAuthInstance } from '@/lib/firebase';
 import { useRouter } from "next/navigation";
 import type { User } from '@/lib/types';
 import { getOrCreateUser } from '@/ai/flows/auth-flow'; 
-import type { FirebaseUserInput } from '@/ai/flows/auth-flow';
 
 interface AuthContextType {
   currentUser: User | null;
