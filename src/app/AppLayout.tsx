@@ -61,6 +61,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
 
   useEffect(() => {
+    // Wait until the authentication state is resolved
     if (isLoadingAuth) return;
 
     const isLoginPage = pathname === '/login';
@@ -69,19 +70,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const isProfileSetupPage = pathname === '/profile-setup';
 
     if (!currentUser) {
+        // If not logged in, and not on a public page, redirect to login
         if (!isLoginPage && !isCashierLoginPage) {
             router.replace('/login');
         }
     } else {
+        // If logged in but setup is not complete
         if (!currentUser.isInitialSetupComplete) {
             if (!isSetupPage) {
                 router.replace('/initial-setup');
             }
-        // **UPDATED LOGIC**: If company profile setup is done, redirect away from it.
-        } else if (currentUser.profileSetupData?.providerType === 'company' && currentUser.profileSetupData?.specialty) {
-            if (isProfileSetupPage) {
-                router.replace('/profile/details');
-            }
+        // If logged in and setup is complete
         } else {
              if (isLoginPage || isSetupPage) {
                  router.replace('/');
@@ -129,32 +128,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const isLoginPage = pathname === '/login';
   const isCashierLoginPage = pathname === '/cashier-login';
   
-  // If no user, only render the login pages.
+  // If no user, only render the public pages.
   if (!currentUser) {
-    return (isLoginPage || isCashierLoginPage) ? <main>{children}</main> : (
-        <div className="flex items-center justify-center min-h-screen">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
-    );
+    return (isLoginPage || isCashierLoginPage) ? <main>{children}</main> : null;
   }
 
   // If user is not setup, only render the setup page.
   if (!currentUser.isInitialSetupComplete) {
-     return pathname === '/initial-setup' ? <main>{children}</main> : (
-        <div className="flex items-center justify-center min-h-screen">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
-    );
+     return pathname === '/initial-setup' ? <main>{children}</main> : null;
   }
   
   // Admin role check
   if (pathname.startsWith('/admin') && currentUser.role !== 'admin') {
       router.replace('/');
-      return (
-        <div className="flex items-center justify-center min-h-screen">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
-      );
+      return null;
   }
   
   const noHeaderFooterRoutes = [

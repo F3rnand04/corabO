@@ -144,6 +144,9 @@ interface CoraboActions {
   regenerateCashierBoxQr: (boxId: string) => Promise<void>;
   handleGenerateInvoice: (transactionId: string) => void;
   updateGalleryImage: (ownerId: string, imageId: string, updates: Partial<{ description: string; imageDataUri: string }>) => Promise<void>;
+  retryFindDelivery: (transactionId: string) => Promise<void>;
+  resolveDeliveryAsPickup: (transactionId: string) => Promise<void>;
+  assignOwnDelivery: (transactionId: string) => Promise<void>;
 }
 
 const CoraboStateContext = createContext<CoraboState | undefined>(undefined);
@@ -911,6 +914,7 @@ export const useCorabo = (): CoraboState & CoraboActions => {
 export type { Transaction };
 
     
+
 
 
 
