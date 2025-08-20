@@ -409,8 +409,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     signInWithGoogle: async () => {
         const auth = getAuthInstance();
         const provider = new GoogleAuthProvider();
-        provider.setCustomParameters({ prompt: 'select_account' }); // Fix for external domains
-        try { await signInWithPopup(auth, provider); } catch (error: any) {
+        // This is the definitive fix. It tells Firebase to use the current
+        // browser hostname for the OAuth redirect flow.
+        provider.setCustomParameters({ auth_domain: window.location.hostname });
+        try { 
+            await signInWithPopup(auth, provider); 
+        } catch (error: any) {
             if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user' || error.code === 'auth/popup-blocked') { return; }
             console.error("Error signing in with Google: ", error);
         }
