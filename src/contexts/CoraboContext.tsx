@@ -412,6 +412,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     signInWithGoogle: async () => {
         const auth = getAuthInstance();
         const provider = new GoogleAuthProvider();
+        provider.setCustomParameters({ 'auth_domain': window.location.hostname });
         try { 
             await signInWithPopup(auth, provider); 
         } catch (error: any) {
@@ -914,6 +915,7 @@ export const useCorabo = (): CoraboState & CoraboActions => {
 export type { Transaction };
 
     
+
 
 
 
