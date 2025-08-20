@@ -3,8 +3,8 @@
 /**
  * @fileOverview Service Layer for Client-to-Backend Actions
  * This file centralizes all calls to Genkit flows, abstracting the
- * business logic from the UI components and the CoraboContext.
- * This is the ONLY place where flows should be imported.
+ * business logic from the UI components. This is the ONLY place where
+ * component-facing server actions should be defined.
  */
 
 import { getFirestoreDb } from '@/lib/firebase-server';
@@ -18,14 +18,17 @@ import { createCampaign as createCampaignFlow, type CreateCampaignInput } from '
 import { sendMessage as sendMessageFlow, acceptProposal as acceptProposalFlow, SendMessageInput } from '@/ai/flows/message-flow';
 import * as TransactionFlows from '@/ai/flows/transaction-flow';
 import * as NotificationFlows from '@/ai/flows/notification-flow';
+import * as ProfileFlows from '@/ai/flows/profile-flow';
 import { autoVerifyIdWithAI as autoVerifyIdWithAIFlow, type VerificationInput } from '@/ai/flows/verification-flow';
 import { sendSmsVerificationCodeFlow, verifySmsCodeFlow } from '@/ai/flows/sms-flow';
 import { createProduct as createProductFlow, createPublication as createPublicationFlow } from '@/ai/flows/publication-flow';
 import { findDeliveryProvider as findDeliveryProviderFlow, resolveDeliveryAsPickup as resolveDeliveryAsPickupFlow } from '@/ai/flows/delivery-flow';
-import { createCashierBox as createCashierBoxFlow, regenerateCashierQr as regenerateCashierQrFlow } from '@/ai/flows/cashier-flow';
+import { createCashierBox as createCashierBoxFlow, regenerateCashierQr as regenerateCashierQrFlow, requestCashierSessionFlow } from '@/ai/flows/cashier-flow';
 import { requestAffiliation as requestAffiliationFlow, approveAffiliation as approveAffiliationFlow, rejectAffiliation as rejectAffiliationFlow, revokeAffiliation as revokeAffiliationFlow } from '@/ai/flows/affiliation-flow';
 
 // --- User and Profile Actions ---
+
+export const getPublicProfile = ProfileFlows.getPublicProfileFlow;
 
 export async function updateUser(userId: string, updates: Partial<User>) {
     const db = getFirestoreDb();
@@ -43,7 +46,7 @@ export async function updateUserProfileAndGallery(userId: string, image: Gallery
     await batch.commit();
 }
 
-export async function updateFullProfile(userId: string, data: ProfileSetupData, profileType: 'client' | 'provider' | 'repartidor') {
+export async function updateFullProfile(userId: string, data: ProfileSetupData, profileType: User['type']) {
     const db = getFirestoreDb();
     const userRef = doc(db, 'users', userId);
     const userSnap = await getDoc(userRef);
@@ -54,8 +57,7 @@ export async function updateFullProfile(userId: string, data: ProfileSetupData, 
 }
 
 export async function deleteUser(userId: string) {
-    const db = getFirestoreDb();
-    await deleteDoc(doc(db, 'users', userId));
+    await ProfileFlows.deleteUserFlow({ userId });
 }
 
 export async function toggleUserPause(userId: string, currentIsPaused: boolean) {
@@ -176,7 +178,6 @@ export async function checkout(userId: string, providerId: string, deliveryMetho
         recipientInfo,
     };
     
-    // Note: Delivery cost calculation would need to be done here on the server
     await updateDoc(doc(db, 'transactions', cartTx.id), { 
         status: 'Buscando Repartidor',
         'details.delivery': deliveryDetails,
@@ -189,8 +190,11 @@ export async function checkout(userId: string, providerId: string, deliveryMetho
     }
 }
 
-export const { payCommitment, sendQuote, acceptQuote, acceptAppointment, confirmPaymentReceived, completeWork, confirmWorkReceived, startDispute, createAppointmentRequest, processDirectPayment } = TransactionFlows;
+export const { sendQuote, acceptQuote, acceptAppointment, confirmPaymentReceived, completeWork, confirmWorkReceived, startDispute, createAppointmentRequest, processDirectPayment } = TransactionFlows;
 
+export async function payCommitment(transactionId: string, userId: string, paymentDetails: any) {
+    return TransactionFlows.payCommitment({ transactionId, userId, paymentDetails });
+}
 
 // --- Messaging Actions ---
 
@@ -230,6 +234,30 @@ export async function activatePromotion(userId: string, details: { imageId: stri
     await updateDoc(pubRef, { isTemporary: false, 'promotion.text': details.promotionText, 'promotion.expires': new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() });
 }
 
+export async function registerSystemPayment(userId: string, concept: string, amount: number, isSubscription: boolean) {
+    const db = getFirestoreDb();
+    const txId = `txn-sys-${userId.slice(-4)}-${Date.now()}`;
+    const txData: Transaction = {
+        id: txId,
+        type: 'Sistema',
+        status: 'Pago Enviado - Esperando Confirmación',
+        date: new Date().toISOString(),
+        amount,
+        clientId: userId,
+        providerId: 'corabo-admin',
+        participantIds: [userId, 'corabo-admin'],
+        details: {
+            system: concept,
+            isSubscription
+        }
+    };
+    await setDoc(doc(db, 'transactions', txId), txData);
+}
+
+export async function cancelSystemTransaction(transactionId: string) {
+    await deleteDoc(doc(getFirestoreDb(), 'transactions', transactionId));
+}
+
 // --- Admin Actions ---
 
 export async function verifyCampaignPayment(transactionId: string, campaignId: string) {
@@ -250,7 +278,7 @@ export const rejectAffiliation = (affiliationId: string, actorId: string) => rej
 export const revokeAffiliation = (affiliationId: string, actorId: string) => revokeAffiliationFlow({ affiliationId, actorId });
 
 // --- QR Session Actions ---
-export async function startQrSession(clientId: string, providerId: string, cashierBoxId?: string, cashierName?: string) {
+export async function startQrSession(clientId: string, providerId: string, cashierBoxId?: string, cashierName?: string): Promise<string> {
     const db = getFirestoreDb();
     const sessionId = `qrs-${clientId.slice(-5)}-${Date.now()}`;
     const sessionData: QrSession = {
@@ -276,22 +304,14 @@ export async function handleClientCopyAndPay(sessionId: string) {
     await updateDoc(doc(db, 'qr_sessions', sessionId), { status: 'awaitingPayment', updatedAt: new Date().toISOString() });
 }
 
-export async function confirmMobilePayment(sessionId: string) {
-    await TransactionFlows.processDirectPayment({ sessionId });
-    const db = getFirestoreDb();
-    const sessionRef = doc(db, 'qr_sessions', sessionId);
-    await updateDoc(sessionRef, { status: 'completed', updatedAt: new Date().toISOString() });
-}
-
 // --- Cashier Box Actions ---
-export async function addCashierBox(userId: string, name: string, password: string): Promise<CashierBox> {
+export async function addCashierBox(userId: string, name: string, password: string): Promise<void> {
     const newBox = await createCashierBoxFlow({ userId, name, password });
     if (!newBox) throw new Error("Failed to create cashier box");
     const db = getFirestoreDb();
     await updateDoc(doc(db, 'users', userId), {
         'profileSetupData.cashierBoxes': arrayUnion(newBox)
     });
-    return newBox;
 }
 
 export async function removeCashierBox(userId: string, boxId: string) {
@@ -339,6 +359,10 @@ export async function regenerateCashierBoxQr(userId: string, boxId: string) {
         newBoxes[boxIndex] = updatedBox;
         await updateDoc(userRef, { 'profileSetupData.cashierBoxes': newBoxes });
     }
+}
+
+export async function requestCashierSession(data: { businessCoraboId: string, cashierName: string, cashierBoxId: string, password: string }) {
+    return await requestCashierSessionFlow(data);
 }
 
 // --- Delivery Actions ---

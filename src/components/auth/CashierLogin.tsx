@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,46 +22,79 @@ import {
 } from '@/components/ui/select';
 import { Box, ChevronLeft, Loader2, LogIn } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useCorabo } from '@/contexts/CoraboContext';
+import { requestCashierSession } from '@/lib/actions';
+import type { User, CashierBox } from '@/lib/types';
 
-// This is a placeholder for the actual hook that would handle cashier login logic.
-// In the real implementation, this would call a Genkit flow.
-const useCashierAuth = () => {
-    const [isLoading, setIsLoading] = useState(false);
-    const { toast } = useToast();
-    const router = useRouter();
-
-    const requestSession = async (data: any) => {
-        setIsLoading(true);
-        console.log("Requesting cashier session with:", data);
-        // Simulate an API call
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        setIsLoading(false);
-        toast({
-            title: "Solicitud Enviada",
-            description: "El dueño del negocio ha sido notificado. Por favor, espera su aprobación.",
-        });
-        // In a real app, we would start listening for approval here.
-        // For the prototype, we can just inform the user.
-    };
-
-    return { requestSession, isLoading };
-};
 
 export function CashierLogin() {
     const router = useRouter();
-    const { requestSession, isLoading } = useCashierAuth();
+    const { users } = useCorabo();
+    const { toast } = useToast();
+    const [isLoading, setIsLoading] = useState(false);
     
     const [businessId, setBusinessId] = useState('');
+    const [selectedBusiness, setSelectedBusiness] = useState<User | null>(null);
+    const [availableBoxes, setAvailableBoxes] = useState<CashierBox[]>([]);
+    
     const [cashierName, setCashierName] = useState('');
-    const [cashierBox, setCashierBox] = useState('');
+    const [cashierBoxId, setCashierBoxId] = useState('');
     const [password, setPassword] = useState('');
+    
+    useEffect(() => {
+        if(businessId) {
+            const foundBusiness = users.find(u => u.coraboId === businessId.trim() && u.type === 'provider' && u.profileSetupData?.providerType === 'company');
+            setSelectedBusiness(foundBusiness || null);
+            setAvailableBoxes(foundBusiness?.profileSetupData?.cashierBoxes || []);
+            setCashierBoxId(''); // Reset selection when business changes
+        } else {
+            setSelectedBusiness(null);
+            setAvailableBoxes([]);
+        }
+    }, [businessId, users]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        requestSession({ businessId, cashierName, cashierBox, password });
+        setIsLoading(true);
+        try {
+            const result = await requestCashierSession({
+                businessCoraboId: businessId,
+                cashierName,
+                cashierBoxId,
+                password
+            });
+            
+            if (result.success) {
+                 toast({
+                    title: "Solicitud Enviada",
+                    description: "El dueño del negocio ha sido notificado. Por favor, espera su aprobación.",
+                });
+                // Clear form but stay on page to allow another login if needed
+                setBusinessId('');
+                setCashierName('');
+                setCashierBoxId('');
+                setPassword('');
+            } else {
+                toast({
+                    variant: "destructive",
+                    title: "Error de Acceso",
+                    description: result.message,
+                });
+            }
+        } catch (error) {
+            console.error("Error requesting cashier session:", error);
+            toast({
+                variant: "destructive",
+                title: "Error Inesperado",
+                description: "Ocurrió un error al procesar la solicitud.",
+            });
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const canSubmit = businessId && cashierName && cashierBox && password;
+    const canSubmit = selectedBusiness && cashierName && cashierBoxId && password;
 
     return (
         <div className="min-h-screen bg-muted/40 flex items-center justify-center p-4">
@@ -90,15 +123,14 @@ export function CashierLogin() {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="cashier-box">Caja Asignada</Label>
-                            <Select onValueChange={setCashierBox} value={cashierBox}>
+                            <Select onValueChange={setCashierBoxId} value={cashierBoxId} disabled={!selectedBusiness}>
                                 <SelectTrigger id="cashier-box">
-                                    <SelectValue placeholder="Selecciona una caja" />
+                                    <SelectValue placeholder={selectedBusiness ? "Selecciona una caja" : "Introduce un ID de negocio"} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {/* This would be populated dynamically in a real app */}
-                                    <SelectItem value="caja-1">Caja Principal</SelectItem>
-                                    <SelectItem value="caja-2">Barra</SelectItem>
-                                    <SelectItem value="caja-3">Auto-servicio</SelectItem>
+                                    {availableBoxes.map(box => (
+                                      <SelectItem key={box.id} value={box.id}>{box.name}</SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -116,5 +148,3 @@ export function CashierLogin() {
         </div>
     );
 }
-
-    

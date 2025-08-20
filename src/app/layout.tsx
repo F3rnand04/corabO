@@ -5,8 +5,11 @@ import { Providers } from './providers';
 import { Inter } from 'next/font/google';
 import { AuthProvider } from '@/components/auth/AuthProvider';
 import { CoraboProvider } from '@/contexts/CoraboContext';
-import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
+import { Header } from '@/components/Header';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { AppLayout } from '@/app/AppLayout';
+
 
 export const metadata: Metadata = {
   title: 'corabO.app',
@@ -34,7 +37,9 @@ export default function RootLayout({
         <Providers attribute="class" defaultTheme="system" enableSystem>
             <AuthProvider>
               <CoraboProvider>
-                {children}
+                <AppLayout>
+                    {children}
+                </AppLayout>
               </CoraboProvider>
             </AuthProvider>
         </Providers>

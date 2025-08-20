@@ -8,6 +8,7 @@ import { useRouter, usePathname } from "next/navigation";
 import type { User } from '@/lib/types';
 import { getOrCreateUser } from '@/ai/flows/auth-flow'; 
 import { Loader2 } from 'lucide-react';
+import { AppLayout } from '@/app/AppLayout';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -26,8 +27,6 @@ type AuthProviderProps = {
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
     const auth = getAuthInstance();
@@ -62,36 +61,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (isLoadingAuth) return;
-
-    const isPublicPage = ['/login', '/cashier-login', '/policies', '/terms', '/privacy', '/community-guidelines'].some(p => pathname.startsWith(p));
-    
-    if (!currentUser) {
-      if (!isPublicPage) {
-        router.replace('/login');
-      }
-    } else {
-      if (!currentUser.isInitialSetupComplete && !pathname.startsWith('/initial-setup')) {
-          router.replace('/initial-setup');
-      } else if (currentUser.isInitialSetupComplete && (pathname === '/login' || pathname === '/initial-setup')) {
-          router.replace('/');
-      }
-    }
-  }, [currentUser, isLoadingAuth, pathname, router]);
-
-
   const signInWithGoogle = async () => {
     const auth = getAuthInstance();
     const provider = new GoogleAuthProvider();
     await signInWithPopup(auth, provider);
-    // onAuthStateChanged will handle the rest
   };
 
   const logout = async () => {
     await signOut(getAuthInstance());
     setCurrentUser(null);
-    router.push('/login');
   };
 
   const value = {
