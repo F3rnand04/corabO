@@ -18,7 +18,7 @@ module.exports = {
   // Define cómo transformar diferentes tipos de archivos para Jest.
   transform: {
     '^.+\\.(ts|tsx)$': 'ts-jest',
-    '^.+\\.(js|jsx)$': 'babel-jest', // Usa babel-jest para archivos JS/JSX si es necesario
+    '^.+\\.(js|jsx)$': ['babel-jest', { presets: ['next/babel'] }],
     '^.+\\.mjs$': 'ts-jest',
   },
   testPathIgnorePatterns: [

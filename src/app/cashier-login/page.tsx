@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -22,7 +21,6 @@ import {
 } from '@/components/ui/select';
 import { Box, ChevronLeft, Loader2, LogIn } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import Link from 'next/link';
 
 // This is a placeholder for the actual hook that would handle cashier login logic.
 // In the real implementation, this would call a Genkit flow.
@@ -67,8 +65,8 @@ export default function CashierLoginPage() {
 
     return (
         <div className="min-h-screen bg-muted/40 flex items-center justify-center p-4">
-             <Button asChild variant="ghost" size="icon" className="absolute top-4 left-4">
-                <Link href="/login"><ChevronLeft className="h-6 w-6"/></Link>
+             <Button variant="ghost" size="icon" className="absolute top-4 left-4" onClick={() => router.push('/login')}>
+                <ChevronLeft className="h-6 w-6"/>
             </Button>
             <Card className="w-full max-w-sm shadow-lg">
                 <CardHeader className="text-center">

@@ -7,7 +7,7 @@ import {
 } from '@firebase/rules-unit-testing';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { createPublication } from '@/ai/flows/publication-flow';
-import { getFirestoreDb } from '@/lib/firebase-server';
+import { getFirestoreDb } from '@/ai/flows/../../lib/firebase-server';
 import type { User, PublicationOwner } from '@/lib/types';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -30,8 +30,13 @@ jest.mock('@/lib/firebase-server', () => ({
   getFirestoreDb: jest.fn(),
 }));
 
-// **FIX:** The path needs to be adjusted based on the test file's new location.
 const { getFirestoreDb: mockedGetDb } = require('@/lib/firebase-server');
+
+// Mock a minimal notification flow to prevent external calls
+jest.mock('@/ai/flows/notification-flow', () => ({
+  sendNewPublicationNotification: jest.fn().mockResolvedValue(undefined),
+}));
+
 
 describe('Publication Flow - Data Resilience Integration Tests', () => {
   let testEnv: RulesTestEnvironment;
@@ -48,14 +53,13 @@ describe('Publication Flow - Data Resilience Integration Tests', () => {
 
   beforeEach(async () => {
     await testEnv.clearFirestore();
+    const db = testEnv.unauthenticatedContext().firestore();
+    mockedGetDb.mockReturnValue(db);
   });
 
   // Test 1: Test de Integridad Referencial
   test('should fail to create a publication for a non-existent user', async () => {
-    const userContext = testEnv.authenticatedContext('user_ghost');
-    const db = userContext.firestore();
-    mockedGetDb.mockReturnValue(db);
-
+    
     const publicationData = {
       userId: 'user_that_does_not_exist',
       description: 'This should fail',
@@ -71,10 +75,7 @@ describe('Publication Flow - Data Resilience Integration Tests', () => {
   
   // Test 2: Test de integridad de datos (ya no se usa desnormalización)
   test('should not embed owner data into the public publication document', async () => {
-    const userContext = testEnv.authenticatedContext('user_denormalized');
-    const db = userContext.firestore();
-    mockedGetDb.mockReturnValue(db);
-
+    
     const specificUser: User = {
         id: 'user_denormalized',
         name: 'John Doe',
@@ -83,7 +84,7 @@ describe('Publication Flow - Data Resilience Integration Tests', () => {
         verified: true,
         profileSetupData: { username: 'john_doe', specialty: 'Denormalization Expert', providerType: 'professional', useUsername: true }
     };
-    await setDoc(doc(db, 'users/user_denormalized'), specificUser);
+    await setDoc(doc(mockedGetDb(), 'users/user_denormalized'), specificUser);
 
     await createPublication({
       userId: 'user_denormalized',

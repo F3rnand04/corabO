@@ -4,11 +4,12 @@
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Box, LogIn } from 'lucide-react';
 
 export default function LoginPage() {
   const { signInWithGoogle } = useCorabo();
+  const router = useRouter();
 
   // AppLayout now handles all redirection logic. This component is now very simple.
   
@@ -46,10 +47,8 @@ export default function LoginPage() {
             <Button onClick={signInWithGoogle} size="lg" className="w-full">
               Ingresa o Regístrate con Google
             </Button>
-            <Button variant="link" asChild>
-                <Link href="/cashier-login">
-                    Acceder a Caja
-                </Link>
+            <Button variant="link" onClick={() => router.push('/cashier-login')}>
+                Acceder a Caja
             </Button>
         </div>
       </div>
