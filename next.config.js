@@ -30,9 +30,9 @@ const nextConfig = {
       ],
     };
     
-    // FIX: Add 'handlebars' to externals to prevent webpack bundling error.
+    // FIX: Add problematic dependencies to externals to prevent webpack bundling errors.
     if (isServer) {
-        config.externals = [...config.externals, "handlebars"];
+        config.externals = [...config.externals, "handlebars", "require-in-the-middle"];
     }
     
     return config;
