@@ -8,7 +8,6 @@ import { useRouter, usePathname } from "next/navigation";
 import type { User } from '@/lib/types';
 import { getOrCreateUser } from '@/ai/flows/auth-flow'; 
 import { Loader2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -29,7 +28,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
-  const { toast } = useToast();
 
   useEffect(() => {
     const auth = getAuthInstance();
@@ -37,7 +35,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setIsLoadingAuth(true);
       if (firebaseUser) {
         try {
-          // Call the server action directly here. This is the correct pattern.
           const user = await getOrCreateUser({
             uid: firebaseUser.uid,
             displayName: firebaseUser.displayName,
@@ -53,7 +50,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           }
         } catch (error) {
           console.error("Error fetching/creating user:", error);
-          await signOut(auth); // Sign out if there's an error
+          await signOut(auth);
           setCurrentUser(null);
         }
       } else {
@@ -85,21 +82,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
 
   const signInWithGoogle = async () => {
-    try {
-        const auth = getAuthInstance();
-        const provider = new GoogleAuthProvider();
-        await signInWithPopup(auth, provider);
-        // onAuthStateChanged will handle the rest
-    } catch (error: any) {
-       if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
-        console.error("Error signing in with Google:", error);
-        toast({
-          variant: "destructive",
-          title: "Error de Inicio de Sesión",
-          description: "No se pudo iniciar sesión con Google. Por favor, inténtalo de nuevo.",
-        });
-      }
-    }
+    const auth = getAuthInstance();
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(auth, provider);
+    // onAuthStateChanged will handle the rest
   };
 
   const logout = async () => {

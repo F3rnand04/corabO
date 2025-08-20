@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, memo } from 'react';
-import { useCorabo } from '@/contexts/CoraboContext';
+import { useAuth } from '@/components/auth/AuthProvider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useRouter } from 'next/navigation';
 import { checkIdUniquenessFlow, completeInitialSetupFlow } from '@/ai/flows/profile-flow';
 import type { User } from '@/lib/types';
+import * as Actions from '@/lib/actions';
 
 const countries = [
   { code: 'VE', name: 'Venezuela', idLabel: 'Cédula de Identidad', companyIdLabel: 'RIF' },
@@ -43,7 +44,7 @@ const CountrySelector = memo(function CountrySelector({ value, onValueChange }: 
 
 
 export default function InitialSetupPage() {
-  const { currentUser, setCurrentUser, sendMessage, logout } = useCorabo();
+  const { currentUser, setCurrentUser, logout } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -130,7 +131,9 @@ export default function InitialSetupPage() {
   };
 
   const handleContactSupport = () => {
-    const conversationId = sendMessage({ recipientId: 'corabo-admin', text: "Hola, mi número de documento de identidad ya está en uso y necesito ayuda para verificar mi cuenta." });
+    if(!currentUser) return;
+    const conversationId = [currentUser.id, 'corabo-admin'].sort().join('-');
+    Actions.sendMessage({ recipientId: 'corabo-admin', text: "Hola, mi número de documento de identidad ya está en uso y necesito ayuda para verificar mi cuenta.", conversationId, senderId: currentUser.id });
     router.push(`/messages/${conversationId}`);
   };
 

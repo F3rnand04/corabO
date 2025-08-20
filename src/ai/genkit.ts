@@ -1,4 +1,3 @@
-
 /**
  * @fileOverview Central Genkit configuration.
  *
@@ -17,6 +16,4 @@ import { googleAI } from '@genkit-ai/googleai';
 // that import this `ai` object. The initialization is deferred.
 export const ai = genkit({
   plugins: [googleAI()],
-  logLevel: 'debug',
-  enableTracingAndMetrics: true,
 });
