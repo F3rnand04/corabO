@@ -13,12 +13,11 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { getAuthInstance } from '@/lib/firebase';
-import { getOrCreateUser } from '@/ai/flows/auth-flow';
 import type { User } from '@/lib/types';
 
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { currentUser, isLoadingAuth, setIsLoadingAuth, setCurrentUser, logout } = useCorabo();
+  const { currentUser, isLoadingAuth, setIsLoadingAuth, setCurrentUser, logout, getOrCreateUser } = useCorabo();
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
@@ -29,6 +28,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
         if (firebaseUser) {
             try {
+                // Call the server flow to get or create the user profile
                 const user = await getOrCreateUser({
                     uid: firebaseUser.uid,
                     displayName: firebaseUser.displayName,
@@ -38,11 +38,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 });
 
                 if (!user) {
-                  // This case handles if the flow returns null/undefined
                   throw new Error("User data could not be retrieved from the server.");
                 }
 
-                setCurrentUser(user as User | null);
+                setCurrentUser(user as User);
             } catch (error) {
                 console.error("Error fetching/creating user:", error);
                 toast({

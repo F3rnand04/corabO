@@ -15,7 +15,7 @@ export default function LoginPage() {
   return (
     <div className="relative flex items-center justify-center min-h-screen bg-muted/40 p-4">
       <Image 
-        src="https://i.postimg.cc/C1sxJnNT/bv.png"
+        src="https://i.postimg.cc/C1sxJnnt/bv.png"
         alt="Fondo de bienvenida"
         layout="fill"
         objectFit="cover"

@@ -46,7 +46,6 @@ export const getOrCreateUser = ai.defineFlow(
       const updates: Partial<User> = {};
 
       // Inactivity Logic: Pause account after 45 days.
-      // The effectiveness penalty is now handled centrally in CoraboContext.
       if (user.lastActivityAt) {
           const daysSinceLastActivity = differenceInDays(now, new Date(user.lastActivityAt));
           if (daysSinceLastActivity >= 45 && !user.isPaused) {

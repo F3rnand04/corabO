@@ -22,7 +22,7 @@ import { sendSmsVerificationCodeFlow, verifySmsCodeFlow } from '@/ai/flows/sms-f
 import { createProduct as createProductFlow, createPublication as createPublicationFlow } from '@/ai/flows/publication-flow';
 import { completeInitialSetupFlow, getPublicProfileFlow, deleteUserFlow, getProfileGallery, getProfileProducts, checkIdUniquenessFlow } from '@/ai/flows/profile-flow';
 import { haversineDistance } from '@/lib/utils';
-import { getOrCreateUser, type FirebaseUserInput } from '@/ai/flows/auth-flow';
+import { getOrCreateUser as getOrCreateUserFlow, type FirebaseUserInput } from '@/ai/flows/auth-flow';
 import { requestAffiliation as requestAffiliationFlow, approveAffiliation as approveAffiliationFlow, rejectAffiliation as rejectAffiliationFlow, revokeAffiliation as revokeAffiliationFlow } from '@/ai/flows/affiliation-flow';
 import { getEta } from '@/ai/flows/directions-flow';
 import { findDeliveryProvider as findDeliveryProviderFlow, resolveDeliveryAsPickup as resolveDeliveryAsPickupFlow } from '@/ai/flows/delivery-flow';
@@ -68,6 +68,7 @@ interface CoraboState {
 }
 
 interface CoraboActions {
+  getOrCreateUser: (firebaseUser: FirebaseUserInput) => Promise<User | null>;
   signInWithGoogle: () => void;
   setCurrentUser: (user: User | null) => void;
   setIsLoadingAuth: (loading: boolean) => void;
@@ -408,6 +409,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, [setDeliveryAddress, toast]);
       
   const actions = useMemo(() => ({
+    getOrCreateUser: getOrCreateUserFlow,
     signInWithGoogle: async () => {
         const auth = getAuthInstance();
         const provider = new GoogleAuthProvider();
