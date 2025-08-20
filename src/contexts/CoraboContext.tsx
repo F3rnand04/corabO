@@ -409,9 +409,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     signInWithGoogle: async () => {
         const auth = getAuthInstance();
         const provider = new GoogleAuthProvider();
-        // This is the definitive fix. It tells Firebase to use the current
-        // browser hostname for the OAuth redirect flow.
-        provider.setCustomParameters({ auth_domain: window.location.hostname });
+        provider.setCustomParameters({ prompt: 'select_account' });
         try { 
             await signInWithPopup(auth, provider); 
         } catch (error: any) {
