@@ -37,13 +37,14 @@ export function MapPageContent() {
   
   const [mapCenter, setMapCenter] = useState<google.maps.LatLngLiteral>(initialPosition);
   const [isMapIdle, setIsMapIdle] = useState(false);
+  const [isMapReady, setIsMapReady] = useState(false);
 
   useEffect(() => {
     // This effect runs when the component mounts and the currentUserLocation is available
     // It ensures the map is centered correctly from the start.
     if(currentUserLocation) {
         setMapCenter({ lat: currentUserLocation.latitude, lng: currentUserLocation.longitude });
-        setIsMapIdle(true);
+        setIsMapReady(true);
     }
   }, [currentUserLocation]);
 
@@ -58,7 +59,7 @@ export function MapPageContent() {
       router.back();
   }
 
-  if (!currentUserLocation) {
+  if (!isMapReady) {
     return (
       <div className="flex flex-col items-center justify-center h-screen w-screen bg-muted">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />

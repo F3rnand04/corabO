@@ -195,31 +195,31 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         _setDeliveryAddress(savedAddress);
     }
     const checkGeolocation = () => {
-      if (navigator.geolocation) {
+      if ('geolocation' in navigator) {
         navigator.permissions.query({ name: 'geolocation' }).then((result) => {
-          if (result.state === 'granted') {
-            navigator.geolocation.getCurrentPosition(
-              (position) => setCurrentUserLocation({
-                latitude: position.coords.latitude,
-                longitude: position.coords.longitude,
-              }),
-              (error) => console.error("Error getting geolocation: ", error)
-            );
-          } else if (result.state === 'prompt') {
-             navigator.geolocation.getCurrentPosition(
-              (position) => setCurrentUserLocation({
-                latitude: position.coords.latitude,
-                longitude: position.coords.longitude,
-              }),
-              (error) => console.error("Error getting geolocation: ", error)
-            );
-          } else if (result.state === 'denied') {
-            toast({
-              title: "Permiso de Ubicación Denegado",
-              description: "Para ver distancias y usar el mapa, activa los permisos de ubicación en tu navegador.",
-              variant: "destructive",
-              duration: 5000
+          const handleSuccess = (position: GeolocationPosition) => {
+            setCurrentUserLocation({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
             });
+          };
+          const handleError = (error: GeolocationPositionError) => {
+             console.error("Error getting geolocation: ", error);
+             if (error.code === 1) { // PERMISSION_DENIED
+                toast({
+                  title: "Permiso de Ubicación Denegado",
+                  description: "Para ver distancias y usar el mapa, activa los permisos de ubicación en la configuración de tu navegador.",
+                  variant: "destructive",
+                  duration: 7000
+                });
+             }
+          };
+
+          if (result.state === 'granted') {
+            navigator.geolocation.getCurrentPosition(handleSuccess, handleError);
+          } else if (result.state === 'prompt') {
+            // Proactively request permission
+            navigator.geolocation.getCurrentPosition(handleSuccess, handleError);
           }
         });
       }
