@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -118,8 +117,8 @@ function LocationBubble({ lat, lon, onForward }: { lat: number, lon: number, onF
            <Image
               src={`https://placehold.co/400x200.png?text=Mapa`}
               alt="Mapa de ubicación"
-              layout="fill"
-              objectFit="cover"
+              fill
+              style={{objectFit: 'cover'}}
               data-ai-hint="map location"
               className="group-hover:scale-105 transition-transform duration-300"
             />
@@ -458,4 +457,3 @@ export default function ChatPage() {
     </>
   );
 }
-
