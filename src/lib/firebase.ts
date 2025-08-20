@@ -42,13 +42,12 @@ export function getFirestoreDb(): Firestore {
 export function getAuthInstance(): Auth {
     if (!auth) {
         const app = getFirebaseApp();
-        // FIX: Explicitly set the authDomain to the current window's hostname.
-        // This is the standard way to resolve cross-domain auth issues in dev/staging environments.
+        // FIX: Remove conditional window check.
+        // The "use client" directive ensures this code only runs in the browser.
+        // This guarantees consistent auth object configuration.
         auth = getAuth(app);
-        if (typeof window !== 'undefined') {
-          auth.tenantId = null; 
-          auth.languageCode = 'es'; 
-        }
+        auth.tenantId = null; 
+        auth.languageCode = 'es'; 
     }
     return auth;
 }
