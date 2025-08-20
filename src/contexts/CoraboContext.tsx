@@ -8,10 +8,11 @@ import { addDays } from 'date-fns';
 import { getFirestoreDb } from '@/lib/firebase';
 import { doc, getDoc, collection, onSnapshot, query, where, orderBy, Unsubscribe } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
-import { useAuth } from '@/components/auth/AuthProvider';
 import * as Actions from '@/lib/actions';
 
-interface CoraboState {
+interface CoraboContextValue {
+  // State
+  currentUser: User | null;
   users: User[];
   allPublications: GalleryImage[];
   transactions: Transaction[];
@@ -28,9 +29,9 @@ interface CoraboState {
   currentUserLocation: GeolocationCoords | null;
   tempRecipientInfo: TempRecipientInfo | null;
   activeCartForCheckout: CartItem[] | null;
-}
+  isLoadingAuth: boolean;
 
-interface CoraboActions {
+  // Actions
   setSearchQuery: (query: string) => void;
   setCategoryFilter: (category: string | null) => void;
   clearSearchHistory: () => void;
@@ -101,6 +102,7 @@ interface CoraboActions {
   retryFindDelivery: (transactionId: string) => Promise<void>;
   assignOwnDelivery: (transactionId: string) => Promise<void>;
   resolveDeliveryAsPickup: (transactionId: string) => Promise<void>;
+  requestQuoteFromGroup: (title: string, items: string[], group: string) => boolean;
 }
 
 interface GeolocationCoords {
@@ -120,11 +122,10 @@ interface UserMetrics {
     paymentSpeed: string;
 }
 
-const CoraboContext = createContext<(CoraboState & Omit<CoraboActions, 'updateUser'> & { updateUser: (updates: Partial<User>) => Promise<void>; }) | undefined>(undefined);
+const CoraboContext = createContext<CoraboContextValue | undefined>(undefined);
 
-export const CoraboProvider = ({ children }: { children: ReactNode }) => {
+export const CoraboProvider = ({ children, currentUser }: { children: ReactNode, currentUser: User | null }) => {
   const { toast } = useToast();
-  const { currentUser } = useAuth();
   
   const [users, setUsers] = useState<User[]>([]);
   const [allPublications, setAllPublications] = useState<GalleryImage[]>([]);
@@ -180,28 +181,35 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    if (!currentUser?.id) return;
     const db = getFirestoreDb();
     const unsubscribes: Unsubscribe[] = [];
 
+    // This listener can be outside the currentUser check as it fetches all users
     unsubscribes.push(onSnapshot(collection(db, 'users'), (snapshot) => {
         const userList = snapshot.docs.map(doc => doc.data() as User)
         setUsers(userList);
         userList.forEach(user => userCache.current.set(user.id, user));
     }));
     
+    // This listener can also be outside, fetching all public publications
     unsubscribes.push(onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
         setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage));
     }));
-
+    
+    // These listeners DEPEND on the currentUser ID.
     if (currentUser?.id) {
         unsubscribes.push(onSnapshot(query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id)), (snapshot) => setTransactions(snapshot.docs.map(doc => doc.data() as Transaction))));
         unsubscribes.push(onSnapshot(query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id), orderBy("lastUpdated", "desc")), (snapshot) => setConversations(snapshot.docs.map(doc => doc.data() as Conversation))));
         unsubscribes.push(onSnapshot(query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', currentUser.id)), (snapshot) => setQrSession(snapshot.docs.map(d => d.data() as QrSession).find(s => s.status !== 'completed' && s.status !== 'cancelled') || null)));
+    } else {
+        // If there's no user, clear the personalized data
+        setTransactions([]);
+        setConversations([]);
+        setQrSession(null);
     }
 
     return () => unsubscribes.forEach(unsub => unsub());
-  }, [currentUser?.id]);
+  }, [currentUser?.id]); // Depend only on the user's ID
   
   const getCartTotal = useCallback((cartItems: CartItem[] = cart) => cartItems.reduce((total, item) => total + item.product.price * item.quantity, 0), [cart]);
   
@@ -301,6 +309,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
 
   const value = {
+    currentUser,
+    isLoadingAuth: !currentUser, // Simplified loading state based on user presence
     users, allPublications, transactions, conversations, cart, searchQuery, categoryFilter, contacts, isGpsActive, searchHistory, 
     deliveryAddress, exchangeRate, qrSession, currentUserLocation, tempRecipientInfo, activeCartForCheckout,
     setSearchQuery: (query: string) => {
@@ -364,7 +374,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     setQrSessionAmount: async (sessionId: string, amount: number) => {
         if(!currentUser) return;
         const level = currentUser.credicoraLevel || 1;
-        const details = currentUser.credicoraDetails || credicoraLevels[level.toString()];
+        const details = currentUser.credicoraDetails || { initialPaymentPercentage: 0.6, installments: 3 };
         const financed = Math.min(amount * (1 - details.initialPaymentPercentage), currentUser.credicoraLimit || 0);
         await Actions.setQrSessionAmount(sessionId, amount, amount - financed, financed, details.installments);
     },
@@ -401,12 +411,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const useCorabo = (): CoraboState & CoraboActions => {
+export const useCorabo = (): CoraboContextValue => {
   const context = useContext(CoraboContext);
   if (context === undefined) {
     throw new Error('useCorabo must be used within a CoraboProvider');
   }
-  return context as any;
+  return context;
 };
 
 export type { Transaction };

@@ -9,11 +9,13 @@
  * to only run on the server.
  */
 
-import { genkit } from 'genkit';
+import { genkit, configureGenkit } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
 
 // By defining the plugin here, we make it available to all flows
 // that import this `ai` object. The initialization is deferred.
 export const ai = genkit({
   plugins: [googleAI()],
+  logLevel: 'debug',
+  enableTracingAndMetrics: true,
 });

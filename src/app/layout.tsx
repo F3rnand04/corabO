@@ -33,11 +33,9 @@ export default function RootLayout({
       <body className={`${inter.variable} antialiased bg-background`}>
         <Providers attribute="class" defaultTheme="system" enableSystem>
             <AuthProvider>
-              <CoraboProvider>
-                <AppLayout>
-                    {children}
-                </AppLayout>
-              </CoraboProvider>
+              <AppLayout>
+                  {children}
+              </AppLayout>
             </AuthProvider>
         </Providers>
       </body>

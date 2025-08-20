@@ -6,9 +6,9 @@ import { getFirestore, type Firestore } from "firebase/firestore";
 import { firebaseConfig } from './firebase-config'; // Import from the SHARED config
 
 let app: FirebaseApp;
-let db: Firestore;
 
 // This function ensures Firebase is initialized only once on the server.
+// This is the robust pattern for server-side initialization.
 function getFirebaseAppInstance(): FirebaseApp {
     if (!getApps().length) {
         // No apps initialized, create a new one.
@@ -22,9 +22,6 @@ function getFirebaseAppInstance(): FirebaseApp {
 
 // This function provides a server-side instance of Firestore.
 export function getFirestoreDb(): Firestore {
-    if (!db) {
-        app = getFirebaseAppInstance();
-        db = getFirestore(app);
-    }
-    return db;
+    const app = getFirebaseAppInstance();
+    return getFirestore(app);
 }

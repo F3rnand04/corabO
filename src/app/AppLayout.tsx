@@ -6,6 +6,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { CoraboProvider } from "@/contexts/CoraboContext";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { currentUser } = useAuth();
@@ -31,7 +32,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const showAppLayout = currentUser && !isPublicPage;
 
   return (
-    <>
+    <CoraboProvider currentUser={currentUser}>
       {showAppLayout ? (
         <div className="flex flex-col min-h-screen">
           <Header />
@@ -42,6 +43,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         // For public or setup pages, just render the children
         children
       )}
-    </>
+    </CoraboProvider>
   );
 }
