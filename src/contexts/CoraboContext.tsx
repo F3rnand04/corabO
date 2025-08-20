@@ -6,7 +6,7 @@ import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupDa
 import { useToast } from "@/hooks/use-toast"
 import { useRouter, useSearchParams } from "next/navigation";
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+// Removed problematic import
 import { addDays, differenceInDays } from 'date-fns';
 import { credicoraLevels, credicoraCompanyLevels } from '@/lib/types';
 import { getAuth, signInWithPopup, signOut, User as FirebaseUser, GoogleAuthProvider } from 'firebase/auth';
