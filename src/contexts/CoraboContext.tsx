@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -10,7 +9,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { addDays, differenceInDays } from 'date-fns';
 import { credicoraLevels, credicoraCompanyLevels } from '@/lib/types';
-import { getAuth, signInWithPopup, signOut, User as FirebaseUser, GoogleAuthProvider, getRedirectResult } from 'firebase/auth';
+import { getAuth, signInWithPopup, signOut, User as FirebaseUser, GoogleAuthProvider, getRedirectResult, signInWithRedirect } from 'firebase/auth';
 import { getFirebaseApp, getFirestoreDb, getAuthInstance } from '@/lib/firebase';
 import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, arrayUnion, getDocs, deleteDoc, collectionGroup, Unsubscribe, orderBy, deleteField, arrayRemove } from 'firebase/firestore';
 import { createCampaign as createCampaignFlow, type CreateCampaignInput } from '@/ai/flows/campaign-flow';
@@ -191,6 +190,23 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const activeCartTx = useMemo(() => transactions.find(tx => tx.status === 'Carrito Activo'), [transactions]);
   const cart: CartItem[] = useMemo(() => activeCartTx?.details.items || [], [activeCartTx]);
+
+  useEffect(() => {
+    const auth = getAuthInstance();
+    // This effect runs once to check for a redirect result
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result) {
+          // User has successfully signed in.
+          // The onAuthStateChanged listener in AppLayout will handle the user creation/fetch.
+          toast({ title: '¡Bienvenido de vuelta!', description: 'Has iniciado sesión correctamente.' });
+        }
+      })
+      .catch((error) => {
+        console.error("Error getting redirect result:", error);
+      });
+  }, [toast]);
+
 
   useEffect(() => {
     const savedAddress = sessionStorage.getItem('coraboDeliveryAddress');
@@ -412,13 +428,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     signInWithGoogle: async () => {
         const auth = getAuthInstance();
         const provider = new GoogleAuthProvider();
-        provider.setCustomParameters({ 'auth_domain': window.location.hostname });
-        try { 
-            await signInWithPopup(auth, provider); 
-        } catch (error: any) {
-            if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user' || error.code === 'auth/popup-blocked') { return; }
-            console.error("Error signing in with Google: ", error);
-        }
+        setIsLoadingAuth(true);
+        await signInWithRedirect(auth, provider);
     },
     logout: async () => {
         await signOut(getAuthInstance());
@@ -915,8 +926,3 @@ export const useCorabo = (): CoraboState & CoraboActions => {
 export type { Transaction };
 
     
-
-
-
-
-

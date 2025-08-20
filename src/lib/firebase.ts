@@ -1,5 +1,4 @@
 
-
 // IMPORTANT: This file MUST have the "use client" directive.
 // It's intended for client-side components and hooks.
 "use client";
@@ -44,8 +43,11 @@ export function getFirestoreDb(): Firestore {
 export function getAuthInstance(): Auth {
     if (!auth) {
         const app = getFirebaseApp();
+        // Standard initialization for most cases.
         auth = getAuth(app);
         auth.languageCode = 'es'; 
     }
     return auth;
 }
+
+    
