@@ -1,3 +1,4 @@
+
 // IMPORTANT: This file MUST have the "use client" directive.
 // It's intended for client-side components and hooks.
 "use client";
@@ -42,11 +43,14 @@ export function getFirestoreDb(): Firestore {
 export function getAuthInstance(): Auth {
     if (!auth) {
         const app = getFirebaseApp();
-        // FIX: Remove conditional window check.
-        // The "use client" directive ensures this code only runs in the browser.
-        // This guarantees consistent auth object configuration.
-        auth = getAuth(app);
-        auth.tenantId = null; 
+        // **FIX:** Explicitly configure auth to run in the current context,
+        // preventing cross-domain issues in hosted dev environments.
+        auth = getAuth(app, {
+            tenantId: null,
+            // By leaving authDomain empty, Firebase SDK avoids using the default
+            // production domain handler and uses the current window's context.
+            authDomain: '', 
+        });
         auth.languageCode = 'es'; 
     }
     return auth;
