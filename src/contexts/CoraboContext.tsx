@@ -536,8 +536,16 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         const user = currentUser;
         if (!user) return;
         const conversationId = [user.id, options.recipientId].sort().join('-');
+        const messageOptions = {
+            conversationId,
+            senderId: user.id,
+            recipientId: options.recipientId,
+            text: options.text,
+            location: options.location
+        };
+
         if (!options.createOnly) {
-            sendMessageFlow({ conversationId, senderId: user.id, ...options });
+            sendMessageFlow(messageOptions);
         }
         return conversationId;
     },

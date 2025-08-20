@@ -8,7 +8,7 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChevronLeft, Send, Paperclip, CheckCheck, MapPin, Calendar, FileText, PlusCircle, Handshake, Star, AlertTriangle, Loader2 } from 'lucide-react';
+import { ChevronLeft, Send, Paperclip, CheckCheck, MapPin, Calendar, FileText, PlusCircle, Handshake, Star, AlertTriangle, Loader2, Link as LinkIcon, Forward } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format } from 'date-fns';
@@ -109,11 +109,11 @@ function ChatHeader({
   );
 }
 
-function LocationBubble({ lat, lon }: { lat: number, lon: number }) {
+function LocationBubble({ lat, lon, onForward }: { lat: number, lon: number, onForward: () => void }) {
   const mapUrl = `https://www.google.com/maps?q=${lat},${lon}`;
   return (
-    <a href={mapUrl} target="_blank" rel="noopener noreferrer" className="flex justify-center w-full my-2 group">
-      <div className="w-full max-w-sm rounded-lg border bg-background shadow-md p-0.5 space-y-1 overflow-hidden">
+    <div className="flex flex-col items-center w-full my-2">
+      <a href={mapUrl} target="_blank" rel="noopener noreferrer" className="block w-full max-w-sm rounded-lg border bg-background shadow-md p-0.5 space-y-1 overflow-hidden group">
         <div className="relative aspect-video w-full">
            <Image
               src={`https://placehold.co/400x200.png?text=Mapa`}
@@ -128,8 +128,12 @@ function LocationBubble({ lat, lon }: { lat: number, lon: number }) {
             <p className="text-sm font-semibold">Ubicación Compartida</p>
             <p className="text-xs text-blue-600 group-hover:underline">Ver en Google Maps</p>
         </div>
-      </div>
-    </a>
+      </a>
+      <Button variant="outline" size="sm" className="mt-2" onClick={onForward}>
+        <Forward className="w-4 h-4 mr-2" />
+        Reenviar Ubicación
+      </Button>
+    </div>
   );
 }
 
@@ -190,7 +194,7 @@ function ProposalBubble({ msg, onAccept, canAccept }: { msg: Message, onAccept: 
     )
 }
 
-function MessageBubble({ msg, isCurrentUser, onAccept, canAcceptProposal }: { msg: Message, isCurrentUser: boolean, onAccept: (messageId: string) => void, canAcceptProposal: boolean }) {
+function MessageBubble({ msg, isCurrentUser, onAccept, canAcceptProposal, onForwardLocation }: { msg: Message, isCurrentUser: boolean, onAccept: (messageId: string) => void, canAcceptProposal: boolean, onForwardLocation: (location: { lat: number, lon: number }) => void }) {
     const [formattedTime, setFormattedTime] = useState('');
 
     useEffect(() => {
@@ -203,7 +207,7 @@ function MessageBubble({ msg, isCurrentUser, onAccept, canAcceptProposal }: { ms
     }
 
     if (msg.type === 'location' && msg.location) {
-        return <LocationBubble lat={msg.location.lat} lon={msg.location.lon} />;
+        return <LocationBubble lat={msg.location.lat} lon={msg.location.lon} onForward={() => onForwardLocation(msg.location!)} />;
     }
 
     return (
@@ -239,7 +243,7 @@ function MessageBubble({ msg, isCurrentUser, onAccept, canAcceptProposal }: { ms
 export default function ChatPage() {
   const params = useParams();
   const router = useRouter();
-  const { currentUser, conversations, sendMessage, acceptProposal, markConversationAsRead, fetchUser, createAppointmentRequest } = useCorabo();
+  const { currentUser, conversations, sendMessage, acceptProposal, markConversationAsRead, fetchUser, createAppointmentRequest, setDeliveryAddressToCurrent, currentUserLocation } = useCorabo();
   const { toast } = useToast();
   
   const [otherParticipant, setOtherParticipant] = useState<User | null>(null);
@@ -345,24 +349,27 @@ export default function ChatPage() {
       });
   };
   
-  const handleSendLocation = () => {
-    if (!navigator.geolocation) {
-        toast({ variant: 'destructive', title: 'Geolocalización no soportada' });
-        return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-        (position) => {
-            const { latitude, longitude } = position.coords;
-            sendMessage({
-                recipientId: otherParticipant.id,
-                location: { lat: latitude, lon: longitude },
-            });
-        },
-        (error) => {
-            toast({ variant: 'destructive', title: 'No se pudo obtener la ubicación', description: error.message });
-        }
-    );
+  const handleSendLocation = (type: 'current' | 'saved') => {
+      if (type === 'current') {
+          if (currentUserLocation) {
+              sendMessage({
+                  recipientId: otherParticipant.id,
+                  location: { lat: currentUserLocation.latitude, lon: currentUserLocation.longitude },
+              });
+          } else {
+              toast({ variant: 'destructive', title: 'Ubicación no disponible', description: 'Activa los permisos de GPS para compartir tu ubicación actual.' });
+          }
+      } else { // 'saved'
+          if (currentUser.profileSetupData?.location) {
+              const [lat, lon] = currentUser.profileSetupData.location.split(',').map(Number);
+              sendMessage({
+                  recipientId: otherParticipant.id,
+                  location: { lat, lon },
+              });
+          } else {
+              toast({ variant: 'destructive', title: 'Sin dirección guardada', description: 'No tienes una dirección guardada en tu perfil.' });
+          }
+      }
   };
 
   return (
@@ -390,7 +397,14 @@ export default function ChatPage() {
             {conversation.messages.map((msg) => {
               const isCurrentUserMsg = msg.senderId === currentUser.id;
               return (
-                <MessageBubble key={msg.id} msg={msg} isCurrentUser={isCurrentUserMsg} onAccept={acceptProposal.bind(null, conversationId)} canAcceptProposal={canAcceptProposal} />
+                <MessageBubble 
+                  key={msg.id} 
+                  msg={msg} 
+                  isCurrentUser={isCurrentUserMsg} 
+                  onAccept={acceptProposal.bind(null, conversationId)} 
+                  canAcceptProposal={canAcceptProposal} 
+                  onForwardLocation={(loc) => sendMessage({ recipientId: otherParticipant.id, location: loc })}
+                />
               )
             })}
           </div>
@@ -399,14 +413,31 @@ export default function ChatPage() {
       
       <footer className="p-2 border-t bg-transparent">
         <form onSubmit={handleSendMessage} className="flex items-center gap-2">
-           <Button type="button" variant="ghost" size="icon" className="bg-background rounded-full shadow-md" onClick={handleSendLocation} disabled={isSelfChat}>
-                <MapPin className="h-5 w-5 text-muted-foreground" />
-            </Button>
-            {isProvider && !isSelfChat && (
-              <Button type="button" variant="ghost" size="icon" className="bg-background rounded-full shadow-md" onClick={() => setIsProposalDialogOpen(true)}>
-                  <PlusCircle className="h-5 w-5 text-muted-foreground" />
-              </Button>
-            )}
+           <Popover>
+            <PopoverTrigger asChild>
+                <Button type="button" variant="ghost" size="icon" className="bg-background rounded-full shadow-md" disabled={isSelfChat}>
+                    <Paperclip className="h-5 w-5 text-muted-foreground" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent side="top" align="start" className="w-auto p-1">
+                <div className="flex flex-col gap-1">
+                     <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant="ghost" className="w-full justify-start"><MapPin className="mr-2 h-4 w-4 text-red-500" />Ubicación</Button>
+                        </PopoverTrigger>
+                        <PopoverContent side="top" align="start" className="w-auto p-1 ml-2">
+                            <div className="flex flex-col gap-1">
+                                <Button variant="ghost" className="w-full justify-start" onClick={() => handleSendLocation('current')}>Actual (GPS)</Button>
+                                <Button variant="ghost" className="w-full justify-start" onClick={() => handleSendLocation('saved')}>Guardada en Perfil</Button>
+                            </div>
+                        </PopoverContent>
+                     </Popover>
+                    {isProvider && !isSelfChat && (
+                        <Button variant="ghost" className="w-full justify-start" onClick={() => setIsProposalDialogOpen(true)}><PlusCircle className="mr-2 h-4 w-4 text-green-500"/>Propuesta de Acuerdo</Button>
+                    )}
+                </div>
+            </PopoverContent>
+           </Popover>
           <Input
             placeholder="Escribe un mensaje..."
             className="flex-grow rounded-full shadow-md"
@@ -427,4 +458,5 @@ export default function ChatPage() {
     </>
   );
 }
+
 
