@@ -84,9 +84,10 @@ export function Footer() {
         </Avatar>
     );
 
+    // **FIX:** The settings button should now lead to the dedicated details page.
     if (isProfilePage) {
         Icon = <Settings className="w-6 h-6" />;
-        href = '/profile-setup'; // Go to company profile setup wizard
+        href = '/profile-setup/details'; 
     }
     
     return (
