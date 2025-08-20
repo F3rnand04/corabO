@@ -41,6 +41,29 @@ const proposalSchema = z.object({
 
 type ProposalFormValues = z.infer<typeof proposalSchema>;
 
+const placeholderMap: Record<string, { title: string; description: string }> = {
+    'Salud y Bienestar': {
+        title: 'Ej: Consulta de Fisioterapia inicial',
+        description: 'Incluye evaluación postural, plan de tratamiento y primera sesión de terapia manual.',
+    },
+    'Hogar y Reparaciones': {
+        title: 'Ej: Instalación de lámpara de techo',
+        description: 'Incluye desinstalación de lámpara anterior, montaje seguro y conexión eléctrica. No incluye la lámpara.',
+    },
+    'Tecnología y Soporte': {
+        title: 'Ej: Mantenimiento preventivo de laptop',
+        description: 'Limpieza interna de hardware, optimización de software y revisión de estado del sistema.',
+    },
+    'Belleza': {
+        title: 'Ej: Servicio de Manicure y Pedicure Completo',
+        description: 'Incluye limado, tratamiento de cutículas, exfoliación y esmaltado semi-permanente.',
+    },
+    'default': {
+        title: 'Ej: Reparación de fuga en baño principal',
+        description: 'Incluye materiales, tiempo estimado, etc.',
+    }
+};
+
 export function ProposalDialog({ isOpen, onOpenChange, conversationId }: ProposalDialogProps) {
     const { currentUser, sendProposalMessage } = useCorabo();
 
@@ -62,6 +85,10 @@ export function ProposalDialog({ isOpen, onOpenChange, conversationId }: Proposa
         form.reset();
         onOpenChange(false);
     };
+    
+    const providerCategory = currentUser?.profileSetupData?.primaryCategory || 'default';
+    const placeholders = placeholderMap[providerCategory] || placeholderMap.default;
+
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -78,14 +105,14 @@ export function ProposalDialog({ isOpen, onOpenChange, conversationId }: Proposa
                         <FormField control={form.control} name="title" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Título</FormLabel>
-                                <FormControl><Input placeholder="Ej: Reparación de fuga en baño principal" {...field} /></FormControl>
+                                <FormControl><Input placeholder={placeholders.title} {...field} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />
                         <FormField control={form.control} name="description" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Descripción Detallada</FormLabel>
-                                <FormControl><Textarea placeholder="Incluye materiales, tiempo estimado, etc." {...field} /></FormControl>
+                                <FormControl><Textarea placeholder={placeholders.description} {...field} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )} />
