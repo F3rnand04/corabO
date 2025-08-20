@@ -7,18 +7,22 @@ module.exports = {
   roots: ['<rootDir>/tests'], 
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    // Mock para archivos CSS, específico para el entorno de pruebas.
     '\\.css$': '<rootDir>/tests/styleMock.js',
   },
-  // Use a less restrictive transformIgnorePatterns to allow transforming specific node_modules
-  transformIgnorePatterns: ['/node_modules/(?!(yaml)/)'],
+  // Ignora la transformación de todos los módulos de node_modules excepto 'yaml'
+  transformIgnorePatterns: [
+    '/node_modules/(?!yaml)/'
+  ],
+  // Define cómo transformar diferentes tipos de archivos para Jest.
+  transform: {
+    '^.+\\.(ts|tsx)$': 'ts-jest',
+    '^.+\\.(js|jsx)$': ['babel-jest', { presets: ['next/babel'] }],
+    '^.+\\.mjs$': 'ts-jest',
+  },
   testPathIgnorePatterns: [
     '<rootDir>/.next/',
     '<rootDir>/node_modules/',
   ],
-  transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest',
-    '^.+\\.js$': 'ts-jest', // Añadido para transformar archivos .js, incluyendo los de node_modules.
-    '^.+\\.mjs$': 'ts-jest', // Add rule for .mjs files often used in node_modules
-  },
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
 };
