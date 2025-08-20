@@ -78,7 +78,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     const isLoginPage = pathname === '/login';
     const isCashierLoginPage = pathname === '/cashier-login';
-    const isSetupPage = pathname === '/initial-setup';
+    // **FIX:** Allow any setup page, not just the initial one.
+    const isInSetupFlow = pathname.startsWith('/initial-setup') || pathname.startsWith('/profile-setup');
 
     if (!currentUser) {
         // If not logged in, and not on a public page, redirect to login
@@ -88,12 +89,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     } else {
         // If logged in but setup is not complete
         if (!currentUser.isInitialSetupComplete) {
-            if (!isSetupPage) {
+            // Only redirect if they are NOT in any part of the setup flow.
+            if (!isInSetupFlow) {
                 router.replace('/initial-setup');
             }
         // If logged in and setup is complete
         } else {
-             if (isLoginPage || isSetupPage) {
+             if (isLoginPage || pathname === '/initial-setup') { // Still prevent access to initial-setup if complete
                  router.replace('/');
              }
         }
@@ -146,7 +148,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   // If user is not setup, only render the setup page.
   if (!currentUser.isInitialSetupComplete) {
-     return pathname === '/initial-setup' ? <main>{children}</main> : null;
+     const isInSetupFlow = pathname.startsWith('/initial-setup') || pathname.startsWith('/profile-setup');
+     return isInSetupFlow ? <main>{children}</main> : null;
   }
   
   // Admin role check
@@ -207,4 +210,3 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
-
