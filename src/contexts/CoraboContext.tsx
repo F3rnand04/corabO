@@ -7,8 +7,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useRouter, useSearchParams } from "next/navigation";
 import { addDays, differenceInDays } from 'date-fns';
 import { credicoraLevels, credicoraCompanyLevels } from '@/lib/types';
-import { getAuth, signInWithPopup, signOut, User as FirebaseUser, GoogleAuthProvider } from 'firebase/auth';
-import { getFirebaseApp, getFirestoreDb, getAuthInstance } from '@/lib/firebase';
+import { getFirebaseApp, getFirestoreDb } from '@/lib/firebase';
 import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, arrayUnion, getDocs, deleteDoc, collectionGroup, Unsubscribe, orderBy, deleteField, arrayRemove } from 'firebase/firestore';
 import { createCampaign as createCampaignFlow, type CreateCampaignInput } from '@/ai/flows/campaign-flow';
 import { sendMessage as sendMessageFlow, acceptProposal as acceptProposalFlow } from '@/ai/flows/message-flow';
@@ -20,11 +19,11 @@ import { sendSmsVerificationCodeFlow, verifySmsCodeFlow } from '@/ai/flows/sms-f
 import { createProduct as createProductFlow, createPublication as createPublicationFlow } from '@/ai/flows/publication-flow';
 import { completeInitialSetupFlow, deleteUserFlow, getProfileGallery, getProfileProducts, checkIdUniquenessFlow, getPublicProfileFlow } from '@/ai/flows/profile-flow';
 import { haversineDistance } from '@/lib/utils';
-import { getOrCreateUser as getOrCreateUserFlow, type FirebaseUserInput } from '@/ai/flows/auth-flow';
 import { requestAffiliation as requestAffiliationFlow, approveAffiliation as approveAffiliationFlow, rejectAffiliation as rejectAffiliationFlow, revokeAffiliation as revokeAffiliationFlow } from '@/ai/flows/affiliation-flow';
 import { getEta } from '@/ai/flows/directions-flow';
 import { findDeliveryProvider as findDeliveryProviderFlow, resolveDeliveryAsPickup as resolveDeliveryAsPickupFlow } from '@/ai/flows/delivery-flow';
 import { createCashierBox as createCashierBoxFlow, regenerateCashierQr as regenerateCashierQrFlow } from '@/ai/flows/cashier-flow';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 
 interface DailyQuote {
@@ -45,7 +44,6 @@ interface GeolocationCoords {
 }
 
 interface CoraboState {
-  currentUser: User | null;
   users: User[];
   allPublications: GalleryImage[];
   transactions: Transaction[];
@@ -56,7 +54,6 @@ interface CoraboState {
   contacts: User[];
   isGpsActive: boolean;
   searchHistory: string[];
-  isLoadingAuth: boolean;
   deliveryAddress: string;
   exchangeRate: number;
   qrSession: QrSession | null;
@@ -66,14 +63,9 @@ interface CoraboState {
 }
 
 interface CoraboActions {
-  getOrCreateUser: (firebaseUser: FirebaseUserInput) => Promise<User | null>;
-  signInWithGoogle: () => void;
-  setCurrentUser: (user: User | null) => void;
-  setIsLoadingAuth: (loading: boolean) => void;
   setSearchQuery: (query: string) => void;
   setCategoryFilter: (category: string | null) => void;
   clearSearchHistory: () => void;
-  logout: () => void;
   addToCart: (product: Product, quantity: number) => void;
   updateCartQuantity: (productId: string, quantity: number) => void;
   removeFromCart: (productId: string) => void;
@@ -153,12 +145,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
   const router = useRouter();
   
-  const [currentUser, _setCurrentUser] = useState<User | null>(null);
+  const { currentUser } = useAuth();
+  
   const [users, setUsers] = useState<User[]>([]);
   const [allPublications, setAllPublications] = useState<GalleryImage[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [searchQuery, _setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
@@ -173,13 +165,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const userCache = useRef<Map<string, User>>(new Map());
 
-  const setCurrentUser = useCallback((user: User | null) => {
-    _setCurrentUser(user);
-    if(user?.deliveryAddress) {
-      _setDeliveryAddress(user.deliveryAddress);
-    }
-  }, []);
-  
   const setDeliveryAddress = useCallback((address: string) => {
     sessionStorage.setItem('coraboDeliveryAddress', address);
     _setDeliveryAddress(address);
@@ -217,7 +202,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
           if (result.state === 'granted') {
             navigator.geolocation.getCurrentPosition(handleSuccess, handleError);
           } else if (result.state === 'prompt') {
-            // Proactively request permission
             navigator.geolocation.getCurrentPosition(handleSuccess, handleError);
           }
         });
@@ -248,18 +232,15 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             return userCache.current.get(userId)!;
         }
         try {
-            // Using the server action directly as Next.js handles the client-server boundary.
-            const publicProfile = await getPublicProfileFlow({ userId });
-            if (publicProfile) {
-                const userData = publicProfile as User;
-                userCache.current.set(userId, userData);
-                return userData;
-            }
-            return null;
-        } catch (error) {
-            console.error("Failed to fetch user profile:", error);
-            return null;
+          const user = await getPublicProfileFlow({ userId });
+          if(user) {
+            userCache.current.set(userId, user as User);
+            return user as User;
+          }
+        } catch (e) {
+          console.error(`Failed to fetch user ${userId}`, e);
         }
+        return null;
   }, []);
 
   useEffect(() => {
@@ -268,7 +249,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribeUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
         const userList = snapshot.docs.map(doc => doc.data() as User)
         setUsers(userList);
-        // Pre-populate the cache with all users to reduce individual fetches
         userList.forEach(user => userCache.current.set(user.id, user));
     });
     
@@ -276,24 +256,25 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage));
     });
 
-    let unsubscribeUserSpecificData: Unsubscribe = () => {};
+    let unsubscribeUserSpecificData: Unsubscribe[] = [];
 
     if (currentUser?.id) {
         const userTransactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
         const userConversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id), orderBy("lastUpdated", "desc"));
         const userQrSessionQuery = query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', currentUser.id));
         
-        const unsubscribeTransactions = onSnapshot(userTransactionsQuery, (snapshot) => setTransactions(snapshot.docs.map(doc => doc.data() as Transaction)));
-        const unsubscribeConversations = onSnapshot(userConversationsQuery, (snapshot) => {
+        unsubscribeUserSpecificData.push(onSnapshot(userTransactionsQuery, (snapshot) => setTransactions(snapshot.docs.map(doc => doc.data() as Transaction))));
+        unsubscribeUserSpecificData.push(onSnapshot(userConversationsQuery, (snapshot) => {
+            snapshot.docs.forEach(doc => {
+                 const convo = doc.data() as Conversation;
+                 const otherParticipantId = convo.participantIds.find(pId => pId !== currentUser.id);
+                 if (otherParticipantId) {
+                     fetchUser(otherParticipantId);
+                 }
+            });
             setConversations(snapshot.docs.map(doc => doc.data() as Conversation));
-        });
-        const unsubscribeQrSession = onSnapshot(userQrSessionQuery, (snapshot) => setQrSession(snapshot.docs.map(d => d.data() as QrSession).find(s => s.status !== 'completed' && s.status !== 'cancelled') || null));
-
-        unsubscribeUserSpecificData = () => {
-            unsubscribeTransactions();
-            unsubscribeConversations();
-            unsubscribeQrSession();
-        };
+        }));
+        unsubscribeUserSpecificData.push(onSnapshot(userQrSessionQuery, (snapshot) => setQrSession(snapshot.docs.map(d => d.data() as QrSession).find(s => s.status !== 'completed' && s.status !== 'cancelled') || null)));
     } else {
         setTransactions([]); 
         setConversations([]); 
@@ -302,18 +283,18 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     return () => {
         unsubscribeUsers();
         unsubscribePublications();
-        unsubscribeUserSpecificData();
+        unsubscribeUserSpecificData.forEach(unsub => unsub());
     };
   }, [currentUser?.id, fetchUser]);
 
 
   const state = useMemo(() => ({
-    currentUser, users, allPublications, transactions, conversations, cart, searchQuery,
-    categoryFilter, contacts, isGpsActive, searchHistory, isLoadingAuth,
+    users, allPublications, transactions, conversations, cart, searchQuery,
+    categoryFilter, contacts, isGpsActive, searchHistory, 
     deliveryAddress, exchangeRate, qrSession, currentUserLocation, tempRecipientInfo, activeCartForCheckout
   }), [
-    currentUser, users, allPublications, transactions, conversations, cart, searchQuery,
-    categoryFilter, contacts, isGpsActive, searchHistory, isLoadingAuth,
+    users, allPublications, transactions, conversations, cart, searchQuery,
+    categoryFilter, contacts, isGpsActive, searchHistory,
     deliveryAddress, exchangeRate, qrSession, currentUserLocation, tempRecipientInfo, activeCartForCheckout
   ]);
   
@@ -341,7 +322,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     if (distance === null) return 0;
     
     const distanceKm = parseFloat(distance.replace(' km', ''));
-    return distanceKm * 1.05; // Corrected Rate
+    return distanceKm * 1.05;
   }, [users, getDistanceToProvider]);
 
   const updateCart = useCallback(async (newCart: CartItem[], currentUserId: string, currentTransactions: Transaction[]) => {
@@ -371,16 +352,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const updateUser = useCallback(async (userId: string, updates: Partial<User>) => {
     const db = getFirestoreDb();
     const userRef = doc(db, 'users', userId);
-
-    // Perform the update in Firestore
     await updateDoc(userRef, updates);
-
-    // Optimistically update the local state for better responsiveness
-    if (currentUser?.id === userId) {
-        _setCurrentUser(prevUser => (prevUser ? { ...prevUser, ...updates } : null));
-    }
-    setUsers(prevUsers => prevUsers.map(u => (u.id === userId ? { ...u, ...updates } : u)));
-  }, [currentUser?.id]);
+  }, []);
 
   const updateFullProfile = useCallback(async (userId: string, data: ProfileSetupData, profileType: 'client' | 'provider' | 'repartidor') => {
         const existingUser = users.find(u => u.id === userId);
@@ -400,7 +373,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, [users, updateUser]);
 
   const updateUserProfileImage = useCallback(async (userId: string, imageUrl: string) => {
-    if (imageUrl.length > 1048487) { // Firestore document limit is 1MB, give some buffer
+    if (imageUrl.length > 1048487) {
         toast({
             variant: "destructive",
             title: "Imagen demasiado grande",
@@ -429,33 +402,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   }, [setDeliveryAddress, toast]);
       
   const actions = useMemo(() => ({
-    getOrCreateUser: getOrCreateUserFlow,
-    signInWithGoogle: async () => {
-        const auth = getAuthInstance();
-        const provider = new GoogleAuthProvider();
-        try { 
-            await signInWithPopup(auth, provider);
-        } catch (error: any) {
-            // Handle specific errors like popup closed by user gracefully.
-            if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
-                console.error("Error signing in with Google:", error);
-                toast({
-                    variant: "destructive",
-                    title: "Error de Inicio de Sesión",
-                    description: "No se pudo iniciar sesión con Google. Por favor, inténtalo de nuevo."
-                });
-            }
-        }
-    },
-    logout: async () => {
-        await signOut(getAuthInstance());
-        _setCurrentUser(null);
-        setTransactions([]); // Clear stale data on logout
-        setConversations([]); // Clear stale data on logout
-        router.push('/login');
-    },
-    setCurrentUser,
-    setIsLoadingAuth,
     setSearchQuery: (query: string) => {
         _setSearchQuery(query);
         if (query.trim() && !searchHistory.includes(query.trim())) {
@@ -526,7 +472,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         if(!currentUser || !activeCartForCheckout) return;
         const db = getFirestoreDb();
         
-        // Find an existing "Carrito Activo" transaction for this provider or create a new one
         let cartTx = transactions.find(tx => tx.status === 'Carrito Activo' && tx.providerId === providerId);
         let txId = cartTx?.id;
 
@@ -697,16 +642,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     },
     createPublication: async (data: CreatePublicationInput) => {
         await createPublicationFlow(data);
-        const db = getFirestoreDb();
-        const snapshot = await getDocs(query(collection(db, 'publications'), orderBy('createdAt', 'desc')));
-        setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage));
     },
     createProduct: async(data: CreateProductInput) => {
-        const productId = await createProductFlow(data);
-        const db = getFirestoreDb();
-        const snapshot = await getDocs(query(collection(db, 'publications'), orderBy('createdAt', 'desc')));
-        setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage));
-        return productId;
+        return await createProductFlow(data);
     },
     setDeliveryAddress,
     setDeliveryAddressToCurrent,
@@ -787,7 +725,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         if (!currentUser || currentUser.profileSetupData?.providerType !== 'company') return;
 
         try {
-            // The flow now handles QR generation before returning the box data
             const newBox = await createCashierBoxFlow({
                 userId: currentUser.id,
                 name,
@@ -795,7 +732,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             });
 
             if (newBox) {
-                // The returned newBox now includes the qrDataURL
                 const updatedUser = {
                     ...currentUser,
                     profileSetupData: {
@@ -803,10 +739,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
                         cashierBoxes: [...(currentUser.profileSetupData?.cashierBoxes || []), newBox]
                     }
                 };
-
-                await updateUser(currentUser.id, { 
-                    profileSetupData: updatedUser.profileSetupData 
-                });
+                await updateUser(currentUser.id, { profileSetupData: updatedUser.profileSetupData });
                 toast({ title: "Caja Añadida", description: `La caja "${name}" ha sido creada.` });
             }
         } catch (error) {
@@ -816,63 +749,33 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     },
     removeCashierBox: async (boxId: string) => {
         if (!currentUser || !currentUser.profileSetupData?.cashierBoxes) return;
-        
         const newBoxes = currentUser.profileSetupData.cashierBoxes.filter(b => b.id !== boxId);
-        
-        await updateUser(currentUser.id, { 
-            profileSetupData: { ...currentUser.profileSetupData, cashierBoxes: newBoxes } 
-        });
-
+        await updateUser(currentUser.id, { profileSetupData: { ...currentUser.profileSetupData, cashierBoxes: newBoxes } });
         toast({ title: "Caja Eliminada", description: `La caja ha sido eliminada correctamente.` });
     },
     updateCashierBox: async (boxId: string, updates: Partial<Pick<CashierBox, 'name' | 'passwordHash'>>) => {
         if (!currentUser || !currentUser.profileSetupData?.cashierBoxes) return;
-        
         const currentBoxes = currentUser.profileSetupData.cashierBoxes;
         const boxIndex = currentBoxes.findIndex(b => b.id === boxId);
         if (boxIndex === -1) return;
-        
         const updatedBox = { ...currentBoxes[boxIndex], ...updates };
         const newBoxes = [...currentBoxes];
         newBoxes[boxIndex] = updatedBox;
-        
-        await updateUser(currentUser.id, { 
-            profileSetupData: { ...currentUser.profileSetupData, cashierBoxes: newBoxes } 
-        });
+        await updateUser(currentUser.id, { profileSetupData: { ...currentUser.profileSetupData, cashierBoxes: newBoxes } });
         toast({ title: "Caja Actualizada", description: `La contraseña de la caja ha sido cambiada.` });
     },
     regenerateCashierBoxQr: async (boxId: string) => {
         if (!currentUser || !currentUser.profileSetupData?.cashierBoxes) return;
-        
         try {
             const newQrData = await regenerateCashierQrFlow({ boxId, userId: currentUser.id });
-            
             const currentBoxes = currentUser.profileSetupData.cashierBoxes;
             const boxIndex = currentBoxes.findIndex(b => b.id === boxId);
             if (boxIndex === -1) return;
-
             const updatedBox = { ...currentBoxes[boxIndex], ...newQrData };
             const newBoxes = [...currentBoxes];
             newBoxes[boxIndex] = updatedBox;
-            
-            const updatedUser = {
-                ...currentUser,
-                profileSetupData: {
-                    ...currentUser.profileSetupData,
-                    cashierBoxes: newBoxes,
-                },
-            };
-
-            // Update Firestore
-            await updateDoc(doc(getFirestoreDb(), 'users', currentUser.id), {
-                profileSetupData: updatedUser.profileSetupData,
-            });
-
-            // Update local state
-            _setCurrentUser(updatedUser);
-            
+            await updateUser(currentUser.id, { profileSetupData: { ...currentUser.profileSetupData, cashierBoxes: newBoxes } });
             toast({ title: "QR Regenerado", description: `Se ha creado un nuevo código QR para la caja.` });
-
         } catch(error) {
             console.error("Error regenerating QR:", error);
             toast({ variant: "destructive", title: "Error", description: "No se pudo regenerar el QR." });
@@ -921,15 +824,16 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const useCorabo = (): CoraboState & CoraboActions => {
+export const useCorabo = (): CoraboState & CoraboActions & { currentUser: User | null; logout: () => void; signInWithGoogle: () => void; } => {
   const state = useContext(CoraboStateContext);
   const actions = useContext(CoraboActionsContext);
-  if (state === undefined || actions === undefined) {
-    throw new Error('useCorabo must be used within a CoraboProvider');
+  const auth = useAuth();
+
+  if (state === undefined || actions === undefined || auth === undefined) {
+    throw new Error('useCorabo must be used within a CoraboProvider and AuthProvider');
   }
-  return { ...state, ...actions };
+
+  return { ...state, ...actions, currentUser: auth.currentUser, logout: auth.logout, signInWithGoogle: auth.signInWithGoogle };
 };
 
 export type { Transaction };
-
-    

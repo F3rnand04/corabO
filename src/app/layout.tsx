@@ -3,7 +3,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Providers } from './providers';
 import { Inter } from 'next/font/google';
-import ClientLayout from './ClientLayout'; // Importar el nuevo layout de cliente
+import ClientLayout from './ClientLayout';
+import { AuthProvider } from '@/components/auth/AuthProvider';
 
 export const metadata: Metadata = {
   title: 'corabO.app',
@@ -29,10 +30,13 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} antialiased bg-background`}>
         <Providers attribute="class" defaultTheme="system" enableSystem>
-          {/* El ClientLayout ahora envuelve a los hijos para manejar la lógica de cliente */}
-          <ClientLayout>{children}</ClientLayout>
+            <AuthProvider>
+              <ClientLayout>{children}</ClientLayout>
+            </AuthProvider>
         </Providers>
       </body>
     </html>
   );
 }
+
+    

@@ -1,17 +1,32 @@
 
 'use client';
 
-import { useCorabo } from '@/contexts/CoraboContext';
+import { useAuth } from '@/components/auth/AuthProvider';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Box, LogIn } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
-  const { signInWithGoogle } = useCorabo();
+  const { signInWithGoogle } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
 
-  // AppLayout now handles all redirection logic. This component is now very simple.
+  const handleSignIn = async () => {
+    try {
+      await signInWithGoogle();
+      // On success, the onAuthStateChanged listener in AuthProvider will handle the rest.
+    } catch (error: any) {
+       if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
+        console.error("Error signing in with Google:", error);
+        toast({
+          variant: "destructive",
+          title: "Error de Inicio de Sesión",
+          description: "No se pudo iniciar sesión con Google. Por favor, inténtalo de nuevo.",
+        });
+      }
+    }
+  };
   
   return (
     <div className="relative flex items-center justify-center min-h-screen bg-muted/40 p-4">
@@ -44,7 +59,7 @@ export default function LoginPage() {
         </div>
         <p className="text-muted-foreground mb-8">Conectando tus necesidades con las mejores soluciones.</p>
         <div className="space-y-4">
-            <Button onClick={signInWithGoogle} size="lg" className="w-full">
+            <Button onClick={handleSignIn} size="lg" className="w-full">
               Ingresa o Regístrate con Google
             </Button>
             <Button variant="link" onClick={() => router.push('/cashier-login')}>

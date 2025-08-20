@@ -1,11 +1,12 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MapPin, FileText, Menu, Search, LogOut, User, Wallet, History as HistoryIcon, Shield, HelpCircle, Contact, ShoppingCart, ChevronDown, Box, KeyRound } from "lucide-react";
+import { MapPin, FileText, Menu, Search, LogOut, User, Wallet, History as HistoryIcon, Shield, HelpCircle, Contact, ShoppingCart, ChevronDown, KeyRound } from "lucide-react";
 import { useCorabo } from "@/contexts/CoraboContext";
+import { useAuth } from "@/components/auth/AuthProvider";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -43,7 +44,8 @@ const serviceGroups = [
 
 
 export function Header() {
-  const { currentUser, toggleGps, logout, cart, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter } = useCorabo();
+  const { cart, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter } = useCorabo();
+  const { currentUser, logout, toggleGps } = useAuth();
   const router = useRouter();
 
   const [isCheckoutAlertOpen, setIsCheckoutAlertOpen] = useState(false);
@@ -203,3 +205,5 @@ export function Header() {
     </header>
   );
 }
+
+    
