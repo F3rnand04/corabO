@@ -18,7 +18,7 @@ const nextConfig = {
       }
     ],
   },
-  webpack: (config, { isServer }) => {
+  webpack: (config) => {
     // Tell webpack to ignore watching the files that Genkit generates.
     // This prevents an infinite hot-reload loop.
     config.watchOptions = {
@@ -30,15 +30,8 @@ const nextConfig = {
       ],
     };
     
-    // FIX: Add problematic dependencies to externals to prevent webpack bundling errors.
-    if (isServer) {
-        config.externals = [...config.externals, "handlebars", "require-in-the-middle"];
-    }
-    
     return config;
   },
 };
 
 module.exports = nextConfig;
-
-    
