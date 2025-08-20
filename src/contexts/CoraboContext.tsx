@@ -5,7 +5,6 @@ import React, { createContext, useContext, useState, ReactNode, useEffect, useCa
 import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest, PublicationOwner, CreatePublicationInput, CreateProductInput, QrSession, TempRecipientInfo, CashierBox } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast"
 import { useRouter, useSearchParams } from "next/navigation";
-import jsPDF from 'jspdf';
 import { addDays, differenceInDays } from 'date-fns';
 import { credicoraLevels, credicoraCompanyLevels } from '@/lib/types';
 import { getAuth, signInWithPopup, signOut, User as FirebaseUser, GoogleAuthProvider } from 'firebase/auth';
@@ -19,7 +18,7 @@ import { autoVerifyIdWithAI as autoVerifyIdWithAIFlow, type VerificationInput } 
 import { getExchangeRate as getExchangeRateFlow } from '@/ai/flows/exchange-rate-flow';
 import { sendSmsVerificationCodeFlow, verifySmsCodeFlow } from '@/ai/flows/sms-flow';
 import { createProduct as createProductFlow, createPublication as createPublicationFlow } from '@/ai/flows/publication-flow';
-import { completeInitialSetupFlow, getPublicProfileFlow, deleteUserFlow, getProfileGallery, getProfileProducts, checkIdUniquenessFlow } from '@/ai/flows/profile-flow';
+import { completeInitialSetupFlow, deleteUserFlow, getProfileGallery, getProfileProducts, checkIdUniquenessFlow, getPublicProfileFlow as getPublicProfile } from '@/ai/flows/profile-flow';
 import { haversineDistance } from '@/lib/utils';
 import { getOrCreateUser as getOrCreateUserFlow, type FirebaseUserInput } from '@/ai/flows/auth-flow';
 import { requestAffiliation as requestAffiliationFlow, approveAffiliation as approveAffiliationFlow, rejectAffiliation as rejectAffiliationFlow, revokeAffiliation as revokeAffiliationFlow } from '@/ai/flows/affiliation-flow';
@@ -318,7 +317,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     if (distance === null) return 0;
     
     const distanceKm = parseFloat(distance.replace(' km', ''));
-    return distanceKm * 1.05; // $1.05 per km
+    return distanceKm * 1.05; // Corrected Rate
   }, [users, getDistanceToProvider]);
 
   const updateCart = useCallback(async (newCart: CartItem[], currentUserId: string, currentTransactions: Transaction[]) => {
@@ -405,6 +404,24 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [setDeliveryAddress, toast]);
       
+  const fetchUser = useCallback(async (userId: string): Promise<User | null> => {
+        if (userCache.current.has(userId)) {
+            return userCache.current.get(userId)!;
+        }
+        try {
+            const publicProfile = await getPublicProfile({ userId });
+            if (publicProfile) {
+                const userData = publicProfile as User; // Assuming the returned structure matches User
+                userCache.current.set(userId, userData);
+                return userData;
+            }
+            return null;
+        } catch (error) {
+            console.error("Failed to fetch user profile:", error);
+            return null;
+        }
+    }, []);
+
   const actions = useMemo(() => ({
     getOrCreateUser: getOrCreateUserFlow,
     signInWithGoogle: async () => {
@@ -443,7 +460,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     clearSearchHistory: () => setSearchHistory([]),
     getCartTotal,
     getDeliveryCost,
-    getDistanceToProvider,
     addContact: (user: User) => {
         if (contacts.some(c => c.id === user.id)) return false;
         setContacts(prev => [...prev, user]);
@@ -590,16 +606,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     startDispute: async (transactionId: string) => { 
         await TransactionFlows.startDispute(transactionId); 
     },
-    fetchUser: async (userId: string) => {
-        if (userCache.current.has(userId)) return userCache.current.get(userId)!;
-        const publicProfile = await getPublicProfileFlow({ userId });
-        if (publicProfile) {
-            const userData = publicProfile as User;
-            userCache.current.set(userId, userData);
-            return userData;
-        }
-        return null;
-    },
+    fetchUser,
     autoVerifyIdWithAI: async (user: User) => {
       if (!user.name || !user.idNumber || !user.idDocumentUrl) {
           throw new Error("Faltan datos del usuario para la verificación.");
@@ -894,10 +901,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     },
   }), [
     searchHistory, contacts, cart, transactions, getCartTotal, 
-    getDeliveryCost, users, updateCart, router, currentUser, updateUser, updateFullProfile,
-    getDistanceToProvider, currentUserLocation, toast, setDeliveryAddress,
-    deliveryAddress, setDeliveryAddressToCurrent, activeCartForCheckout,
-    setCurrentUser,
+    users, updateCart, router, currentUser, updateUser, updateFullProfile,
+    getDeliveryCost, currentUserLocation, toast, setDeliveryAddress,
+    deliveryAddress, setDeliveryAddressToCurrent, activeCartForCheckout, fetchUser
   ]);
   
   return (
@@ -919,3 +925,5 @@ export const useCorabo = (): CoraboState & CoraboActions => {
 };
 
 export type { Transaction };
+
+    
