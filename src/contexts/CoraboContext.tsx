@@ -744,15 +744,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     cancelQrSession: async(a:any,b:any)=>{return Promise.resolve();},
     registerSystemPayment: async(a:any,b:any,c:any)=>{return Promise.resolve();},
     cancelSystemTransaction: async(a:any)=>{return Promise.resolve();},
-    updateUserProfileAndGallery: async (userId: string, image: GalleryImage) => {
-        const db = getFirestoreDb();
-        const batch = writeBatch(db);
-        const userRef = doc(db, 'users', userId);
-        batch.update(userRef, { profileImage: image.src });
-        const newPubRef = doc(db, 'publications', image.id);
-        batch.set(newPubRef, image);
-        await batch.commit();
-    },
+    updateUserProfileAndGallery: async(a:any,b:any)=>{return Promise.resolve();},
     requestAffiliation: async(a:any,b:any)=>{return Promise.resolve();},
     approveAffiliation: async (affiliationId: string) => {
         if(!currentUser) return;
