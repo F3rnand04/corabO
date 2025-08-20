@@ -268,7 +268,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             snapshot.docs.forEach(doc => {
                  const convo = doc.data() as Conversation;
                  const otherParticipantId = convo.participantIds.find(pId => pId !== currentUser.id);
-                 if (otherParticipantId) {
+                 if (otherParticipantId && !userCache.current.has(otherParticipantId)) {
                      fetchUser(otherParticipantId);
                  }
             });
@@ -824,16 +824,15 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const useCorabo = (): CoraboState & CoraboActions & { currentUser: User | null; logout: () => void; signInWithGoogle: () => void; } => {
+export const useCorabo = (): CoraboState & CoraboActions => {
   const state = useContext(CoraboStateContext);
   const actions = useContext(CoraboActionsContext);
-  const auth = useAuth();
-
-  if (state === undefined || actions === undefined || auth === undefined) {
-    throw new Error('useCorabo must be used within a CoraboProvider and AuthProvider');
+  
+  if (state === undefined || actions === undefined) {
+    throw new Error('useCorabo must be used within a CoraboProvider');
   }
 
-  return { ...state, ...actions, currentUser: auth.currentUser, logout: auth.logout, signInWithGoogle: auth.signInWithGoogle };
+  return { ...state, ...actions };
 };
 
 export type { Transaction };

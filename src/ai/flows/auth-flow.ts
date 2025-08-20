@@ -11,7 +11,6 @@ import type { User } from '@/lib/types';
 import { z } from 'zod';
 import { credicoraLevels } from '@/lib/types';
 import { differenceInDays } from 'date-fns';
-import { checkPaymentDeadlines } from './notification-flow';
 
 
 // Schema for the user object we expect from the client (FirebaseUser)

@@ -9,6 +9,7 @@ import { Bell, Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { getOrCreateUser } from '@/ai/flows/auth-flow';
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const { currentUser, isLoadingAuth } = useAuth();

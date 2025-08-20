@@ -5,6 +5,7 @@ import { Providers } from './providers';
 import { Inter } from 'next/font/google';
 import ClientLayout from './ClientLayout';
 import { AuthProvider } from '@/components/auth/AuthProvider';
+import { getOrCreateUser } from '@/ai/flows/auth-flow';
 
 export const metadata: Metadata = {
   title: 'corabO.app',
@@ -30,7 +31,7 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} antialiased bg-background`}>
         <Providers attribute="class" defaultTheme="system" enableSystem>
-            <AuthProvider>
+            <AuthProvider getOrCreateUser={getOrCreateUser}>
               <ClientLayout>{children}</ClientLayout>
             </AuthProvider>
         </Providers>
@@ -38,5 +39,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-    

@@ -12,7 +12,7 @@ let app: FirebaseApp;
 let db: Firestore;
 
 // Enable debug logging for server-side Firebase
-setLogLevel('debug');
+
 
 function getFirebaseAppInstance(): FirebaseApp {
     if (!getApps().length) {

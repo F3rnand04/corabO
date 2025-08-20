@@ -4,9 +4,10 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User as FirebaseUser } from 'firebase/auth';
 import { getAuthInstance } from '@/lib/firebase';
-import { getOrCreateUser } from '@/ai/flows/auth-flow';
 import { useRouter } from "next/navigation";
 import type { User } from '@/lib/types';
+import type { FirebaseUserInput } from '@/ai/flows/auth-flow';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -18,10 +19,17 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+type AuthProviderProps = {
+    children: ReactNode;
+    getOrCreateUser: (user: FirebaseUserInput) => Promise<any>;
+};
+
+export const AuthProvider = ({ children, getOrCreateUser }: AuthProviderProps) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const router = useRouter();
+  const { toast } = useToast();
+
 
   useEffect(() => {
     const auth = getAuthInstance();
@@ -42,7 +50,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         } catch (error) {
           console.error("Error fetching/creating user:", error);
-          // Toast is now handled in ClientLayout
+          toast({
+            variant: "destructive",
+            title: "Error de Servidor",
+            description: "No se pudo obtener la información de tu perfil. Inténtalo más tarde.",
+          });
           await signOut(auth);
         } finally {
           setIsLoadingAuth(false);
@@ -54,7 +66,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [getOrCreateUser, toast]);
 
   const signInWithGoogle = async () => {
     const auth = getAuthInstance();
