@@ -69,6 +69,7 @@ interface CoraboState {
 
 interface CoraboActions {
   signInWithGoogle: () => void;
+  getRedirectResult: typeof getRedirectResult; // Expose getRedirectResult
   setCurrentUser: (user: User | null) => void;
   setIsLoadingAuth: (loading: boolean) => void;
   setSearchQuery: (query: string) => void;
@@ -190,23 +191,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const activeCartTx = useMemo(() => transactions.find(tx => tx.status === 'Carrito Activo'), [transactions]);
   const cart: CartItem[] = useMemo(() => activeCartTx?.details.items || [], [activeCartTx]);
-
-  useEffect(() => {
-    const auth = getAuthInstance();
-    // This effect handles the result of a successful redirect login.
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result) {
-          // User has successfully signed in.
-          // The onAuthStateChanged listener in AppLayout will handle the user creation/fetch.
-          toast({ title: '¡Bienvenido de vuelta!', description: 'Has iniciado sesión correctamente.' });
-        }
-      })
-      .catch((error) => {
-        console.error("Error getting redirect result:", error);
-      });
-  }, [toast]);
-
 
   useEffect(() => {
     const savedAddress = sessionStorage.getItem('coraboDeliveryAddress');
@@ -426,31 +410,23 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       
   const actions = useMemo(() => ({
     signInWithGoogle: async () => {
-      const auth = getAuthInstance();
-      const provider = new GoogleAuthProvider();
-      setIsLoadingAuth(true);
-
-      // Hybrid Auth Logic
-      const isFirebaseStudio = window.location.hostname.includes('studio.firebase.google.com');
-      
-      if (isFirebaseStudio) {
-        // Use Popup for Firebase Studio environment
-        try {
-          await signInWithPopup(auth, provider);
+        const auth = getAuthInstance();
+        const provider = new GoogleAuthProvider();
+        try { 
+            await signInWithPopup(auth, provider);
         } catch (error: any) {
-          if (error.code !== 'auth/popup-closed-by-user') {
-            console.error("Popup sign-in error:", error);
-          }
-        } finally {
-          setIsLoadingAuth(false);
+            // Handle specific errors like popup closed by user gracefully.
+            if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
+                console.error("Error signing in with Google:", error);
+                toast({
+                    variant: "destructive",
+                    title: "Error de Inicio de Sesión",
+                    description: "No se pudo iniciar sesión con Google. Por favor, inténtalo de nuevo."
+                });
+            }
         }
-      } else {
-        // Use Redirect for direct Cloud Workstations URL
-        // Crucially, we set the redirect URL to our own login page to handle the result
-        // This avoids the __/auth/handler and the init.json error
-        await signInWithRedirect(auth, provider);
-      }
     },
+    getRedirectResult,
     logout: async () => {
         await signOut(getAuthInstance());
         setCurrentUser(null);
@@ -944,5 +920,3 @@ export const useCorabo = (): CoraboState & CoraboActions => {
 };
 
 export type { Transaction };
-
-    
