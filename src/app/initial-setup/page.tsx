@@ -108,11 +108,13 @@ export default function InitialSetupPage() {
           providerType: isCompany ? 'company' : 'professional'
         });
         
+        // **FIX:** Directly update the context with the user object returned from the server.
+        // This ensures the AppLayout has the most recent state and avoids redirection loops.
         setCurrentUser(updatedUser as User);
 
         toast({ title: "Perfil Guardado", description: "Tus datos han sido guardados correctamente."});
         
-        // The AppLayout will now handle the redirection correctly because the context is up-to-date.
+        // AppLayout will now handle the redirection correctly because the context is up-to-date.
         router.push('/');
 
     } catch (error: any) {
