@@ -831,7 +831,6 @@ export const useCorabo = (): CoraboState & CoraboActions => {
   if (state === undefined || actions === undefined) {
     throw new Error('useCorabo must be used within a CoraboProvider');
   }
-
   return { ...state, ...actions };
 };
 

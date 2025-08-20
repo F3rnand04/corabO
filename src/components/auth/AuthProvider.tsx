@@ -2,12 +2,12 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User as FirebaseUser } from 'firebase/auth';
+import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User as FirebaseUser } from 'firebase/auth';
 import { getAuthInstance } from '@/lib/firebase';
 import { useRouter } from "next/navigation";
 import type { User } from '@/lib/types';
+import { getOrCreateUser } from '@/ai/flows/auth-flow'; 
 import type { FirebaseUserInput } from '@/ai/flows/auth-flow';
-import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -21,15 +21,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 type AuthProviderProps = {
     children: ReactNode;
-    getOrCreateUser: (user: FirebaseUserInput) => Promise<any>;
 };
 
-export const AuthProvider = ({ children, getOrCreateUser }: AuthProviderProps) => {
+export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const router = useRouter();
-  const { toast } = useToast();
-
 
   useEffect(() => {
     const auth = getAuthInstance();
@@ -43,6 +40,7 @@ export const AuthProvider = ({ children, getOrCreateUser }: AuthProviderProps) =
             photoURL: firebaseUser.photoURL,
             emailVerified: firebaseUser.emailVerified,
           });
+          
           if (user) {
             setCurrentUser(user as User);
           } else {
@@ -50,11 +48,6 @@ export const AuthProvider = ({ children, getOrCreateUser }: AuthProviderProps) =
           }
         } catch (error) {
           console.error("Error fetching/creating user:", error);
-          toast({
-            variant: "destructive",
-            title: "Error de Servidor",
-            description: "No se pudo obtener la información de tu perfil. Inténtalo más tarde.",
-          });
           await signOut(auth);
         } finally {
           setIsLoadingAuth(false);
@@ -66,7 +59,7 @@ export const AuthProvider = ({ children, getOrCreateUser }: AuthProviderProps) =
     });
 
     return () => unsubscribe();
-  }, [getOrCreateUser, toast]);
+  }, []);
 
   const signInWithGoogle = async () => {
     const auth = getAuthInstance();

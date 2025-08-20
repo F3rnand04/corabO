@@ -8,11 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Bell, Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/components/auth/AuthProvider';
-import { getOrCreateUser } from '@/ai/flows/auth-flow';
+import { useAuth } from '@/components/auth/AuthProvider'; 
+import { useCorabo } from '@/contexts/CoraboContext';
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
-  const { currentUser, isLoadingAuth } = useAuth();
+  const { currentUser, isLoadingAuth, signInWithGoogle } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
