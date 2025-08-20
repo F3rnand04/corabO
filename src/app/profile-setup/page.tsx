@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8,7 +9,7 @@ import { ChevronLeft, Loader2 } from 'lucide-react';
 import type { ProfileSetupData } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { ProgressBar } from '@/components/ui/progress-bar';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 // Import Step Components
 import Step2_CompanyInfo from '@/components/profile-setup/Step2_CompanyInfo';
@@ -20,7 +21,6 @@ export default function ProfileSetupPage() {
   const { currentUser, updateFullProfile, deliveryAddress, setDeliveryAddress } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
-  const searchParams = useSearchParams();
   
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<ProfileSetupData>(currentUser?.profileSetupData || {});
@@ -35,21 +35,14 @@ export default function ProfileSetupPage() {
   }, [currentUser]);
 
   useEffect(() => {
-    // This effect specifically handles the return from the map page.
-    const fromMap = searchParams.get('fromMap');
-    if (fromMap === 'true' && deliveryAddress) {
-        // Update the form data with the new address from context
+    // This effect specifically handles the return from the map page
+    // by listening to changes in the context's deliveryAddress.
+    if (deliveryAddress) {
         setFormData(prev => ({ ...prev, location: deliveryAddress }));
-        // Ensure we are on the correct step to see the change
-        setStep(2); 
         // Clean the address from context to prevent re-triggering
         setDeliveryAddress('');
-        // Clean up the URL query parameter to prevent loops on refresh
-        const currentUrl = new URL(window.location.href);
-        currentUrl.searchParams.delete('fromMap');
-        router.replace(currentUrl.toString(), { scroll: false });
     }
-  }, [deliveryAddress, searchParams, setDeliveryAddress, router]);
+  }, [deliveryAddress, setDeliveryAddress]);
 
   if (!currentUser) {
     return (
