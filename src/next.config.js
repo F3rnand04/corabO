@@ -17,7 +17,7 @@ const nextConfig = {
       }
     ],
   },
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     // Tell webpack to ignore watching the files that Genkit generates.
     // This prevents an infinite hot-reload loop.
     config.watchOptions = {
@@ -28,6 +28,12 @@ const nextConfig = {
         "**/firebase-debug.log",
       ],
     };
+    
+    // FIX: Add problematic dependencies to externals to prevent webpack bundling errors.
+    if (isServer) {
+        config.externals = [...config.externals, "handlebars", "require-in-the-middle"];
+    }
+    
     return config;
   },
 };
