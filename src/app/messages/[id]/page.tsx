@@ -239,7 +239,7 @@ function MessageBubble({ msg, isCurrentUser, onAccept, canAcceptProposal }: { ms
 export default function ChatPage() {
   const params = useParams();
   const router = useRouter();
-  const { currentUser, conversations, sendMessage, acceptProposal, markConversationAsRead, fetchUser } = useCorabo();
+  const { currentUser, conversations, sendMessage, acceptProposal, markConversationAsRead, fetchUser, createAppointmentRequest } = useCorabo();
   const { toast } = useToast();
   
   const [otherParticipant, setOtherParticipant] = useState<User | null>(null);
@@ -324,10 +324,26 @@ export default function ChatPage() {
   };
 
   const handleDateSelect = (date: Date) => {
-    const formattedDate = format(date, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: es });
-    const messageText = `¡Hola! Me gustaría solicitar una cita para el ${formattedDate}. ¿Estás disponible?`;
-    sendMessage({ recipientId: otherParticipant.id, text: messageText });
-  }
+      const formattedDate = format(date, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: es });
+      const requestDetails = `Solicitud de cita para el ${formattedDate}.`;
+      
+      createAppointmentRequest({
+          providerId: otherParticipant.id,
+          date: date.toISOString(),
+          details: requestDetails,
+          amount: otherParticipant.profileSetupData?.appointmentCost || 0,
+      });
+
+      sendMessage({ 
+          recipientId: otherParticipant.id, 
+          text: `¡Hola! Me gustaría solicitar una cita para el ${formattedDate}. ¿Estás disponible?` 
+      });
+
+      toast({
+          title: "Solicitud de Cita Enviada",
+          description: "El proveedor ha sido notificado. Podrás ver el estado en tu registro de transacciones."
+      });
+  };
   
   const handleSendLocation = () => {
     if (!navigator.geolocation) {
@@ -411,3 +427,4 @@ export default function ChatPage() {
     </>
   );
 }
+

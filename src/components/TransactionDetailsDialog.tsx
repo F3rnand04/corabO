@@ -1,6 +1,6 @@
 
 
-"use client";
+'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -259,7 +259,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   const CurrentIcon = statusInfo[transaction.status]?.icon || AlertTriangle;
   const iconColor = statusInfo[transaction.status]?.color || 'bg-gray-500';
 
-  const showPayButton = isClient && ['Finalizado - Pendiente de Pago', 'Cotización Recibida', 'Cita Solicitada'].includes(transaction.status) && !isRenewableTx;
+  const showPayButton = isClient && ['Finalizado - Pendiente de Pago', 'Cotización Recibida'].includes(transaction.status) && !isRenewableTx;
 
   const originalAmountUSD = transaction.details.amountUSD || (transaction.amount / (transaction.details.exchangeRate || exchangeRate));
   const adjustedAmountLocal = originalAmountUSD * exchangeRate;
@@ -525,8 +525,8 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
                           />
                       </AlertDialog>
                   }
-
-                  {isProvider && transaction.status === 'Cita Solicitada' && (
+                  
+                  {isClient && transaction.status === 'Cita Solicitada' && (
                     <>
                       <Button onClick={handleAcceptAppointment}>
                         <CalendarCheck className="mr-2 h-4 w-4" /> Aceptar y Crear Compromiso
@@ -536,7 +536,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
                       </Button>
                     </>
                   )}
-                  
+
                   {isProvider && transaction.status === 'Acuerdo Aceptado - Pendiente de Ejecución' && <Button onClick={handleCompleteWork}><ClipboardCheck className="mr-2 h-4 w-4" />Marcar como Finalizado</Button>}
                   
                   {isClient && transaction.status === 'Pendiente de Confirmación del Cliente' && <Button onClick={() => setShowRatingScreen(true)}>Confirmar Recepción y Calificar</Button>}
