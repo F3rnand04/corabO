@@ -5,9 +5,6 @@ import { Providers } from './providers';
 import { Inter } from 'next/font/google';
 import { AuthProvider } from '@/components/auth/AuthProvider';
 import { CoraboProvider } from '@/contexts/CoraboContext';
-import { Footer } from '@/components/Footer';
-import { Header } from '@/components/Header';
-import { useAuth } from '@/components/auth/AuthProvider';
 import { AppLayout } from '@/app/AppLayout';
 
 

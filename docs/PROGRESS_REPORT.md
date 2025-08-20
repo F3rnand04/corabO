@@ -10,7 +10,7 @@ La aplicación ha evolucionado hacia una arquitectura moderna y robusta Cliente-
 
 -   **Framework Principal:** Next.js con el **App Router**.
 -   **Frontend:** Construido con React, TypeScript y componentes de **ShadCN/UI** sobre Tailwind CSS.
--   **Backend (Lógica de Negocio):** La lógica crítica (creación de usuarios, publicaciones, transacciones, etc.) se gestiona a través de **flujos de Genkit**, marcados con la directiva `'use server'`. Esto asegura una separación clara entre el código que se ejecuta en el servidor y el que se ejecuta en el navegador.
+-   **Backend (Lógica de Negocio):** La lógica de negocio crítica (creación de usuarios, publicaciones, transacciones, etc.) se gestiona a través de **flujos de Genkit**, marcados con la directiva `'use server'`. Esto asegura una separación clara entre el código que se ejecuta en el servidor y el que se ejecuta en el navegador.
 -   **Base de Datos y Autenticación:** Se utiliza **Firebase** como la plataforma principal:
     -   **Firestore:** Actúa como la base de datos en tiempo real para toda la información (usuarios, publicaciones, transacciones).
     -   **Firebase Authentication:** Gestiona el registro y la autenticación de usuarios de forma segura (actualmente con Google).
@@ -50,12 +50,13 @@ El enrutamiento está centralizado y controlado lógicamente por el componente `
 
 ### 3.4. Sistema de Notificaciones Inteligente
 -   **Gestión de Cobranza:** El sistema envía recordatorios de pago automáticos y alertas de morosidad.
--   **Marketing Dirigido:** Se envían notificaciones de campañas a usuarios segmentados por intereses.
+-   **Marketing Dirigido:** Se envían notificaciones de campañas a usuarios segmentados por intereses, **solo después de que el pago de la campaña sea verificado**.
 -   **Alertas de Delivery:** Los proveedores reciben notificaciones instantáneas si el sistema no logra encontrar un repartidor para un pedido.
 
-### 3.5. Verificación y Afiliaciones
+### 3.5. Verificación y Puntos de Venta
 -   **Verificación con IA:** El sistema utiliza un modelo multimodal para analizar documentos de identidad (imágenes o PDF) y verificar la información del usuario de forma automática, usando un algoritmo de similitud para nombres.
 -   **Afiliaciones:** Las empresas pueden gestionar las solicitudes de afiliación de profesionales desde un panel de administración dedicado.
+-   **Gestión de Cajas (Puntos de Venta):** Las empresas ahora pueden crear múltiples cajas, cada una con un código QR único y descargable en formato de media carta, listo para imprimir. Esto facilita los pagos directos en puntos de venta físicos.
 
 ### 3.6. Estabilidad y Pruebas
 -   **Configuración de Compilación Robusta:** Los problemas de compilación recurrentes han sido resueltos aislando las configuraciones de prueba y optimizando el `package.json` para entornos de producción.

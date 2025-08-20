@@ -25,6 +25,8 @@ import { createProduct as createProductFlow, createPublication as createPublicat
 import { findDeliveryProvider as findDeliveryProviderFlow, resolveDeliveryAsPickup as resolveDeliveryAsPickupFlow } from '@/ai/flows/delivery-flow';
 import { createCashierBox as createCashierBoxFlow, regenerateCashierQr as regenerateCashierQrFlow, requestCashierSessionFlow } from '@/ai/flows/cashier-flow';
 import { requestAffiliation as requestAffiliationFlow, approveAffiliation as approveAffiliationFlow, rejectAffiliation as rejectAffiliationFlow, revokeAffiliation as revokeAffiliationFlow } from '@/ai/flows/affiliation-flow';
+import { Twilio } from 'twilio';
+
 
 // --- User and Profile Actions ---
 
@@ -73,6 +75,30 @@ export async function toggleGps(userId: string, currentStatus: boolean) {
 }
 
 // --- Verification and Auth Actions ---
+export async function sendSms(params: { to: string, body: string }) {
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    const twilioNumber = process.env.TWILIO_PHONE_NUMBER;
+
+    if (!accountSid || !authToken || !twilioNumber) {
+        console.error('Twilio credentials are not set in .env.local');
+        throw new Error('SMS service is not configured.');
+    }
+    
+    const twilioClient = new Twilio(accountSid, authToken);
+    
+    try {
+        await twilioClient.messages.create({
+            body: params.body,
+            from: twilioNumber,
+            to: params.to,
+        });
+    } catch (error) {
+        console.error("Error sending SMS via Twilio in server action:", error);
+        throw new Error("Failed to send SMS.");
+    }
+}
+
 
 export async function sendPhoneVerification(userId: string, phone: string) {
     await sendSmsVerificationCodeFlow({ userId, phoneNumber: phone });

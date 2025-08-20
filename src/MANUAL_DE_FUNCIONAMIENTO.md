@@ -30,11 +30,11 @@ La pantalla de inicio ahora presenta un diseño inmersivo de pantalla completa, 
 La barra de navegación inferior es el centro de control y su comportamiento es contextual.
 
 -   **Botón Central (Dinámico):**
-    -   **Para Clientes y en la mayoría de las páginas:** Es un icono de **Código QR** (`/show-qr`) para iniciar pagos rápidos.
+    -   **Para Clientes y en la mayoría de las páginas:** Es un icono de **Código QR** (`/scan-qr`) para iniciar pagos rápidos.
     -   **Para Proveedores en su propio perfil (`/profile`):** Se convierte en un icono de **Subir (+)**. Al hacer clic, se abrirá un diálogo para que elijas si quieres añadir una **publicación a la galería** o un **nuevo producto** a tu catálogo.
 -   **Botón Derecho (Dinámico):**
     -   **En la mayoría de las páginas:** Es tu **avatar de perfil** que te lleva a la ruta `/profile`, la cual redirige a `/profile/publications`.
-    -   **En tu propio perfil (`/profile`):** Se transforma en un **engranaje de Ajustes** (`/profile/details`).
+    -   **En tu propio perfil (`/profile`):** Se transforma en un **engranaje de Ajustes** (`/profile-setup/details`).
 
 ### 3.3. Configuración de Perfil (`/profile` y `/profile/details`)
 El perfil de un proveedor ahora tiene pestañas para una mejor organización. La navegación ha sido mejorada para ser más intuitiva.
@@ -84,14 +84,13 @@ El chat es la herramienta de negociación. Los proveedores pueden enviar "Propue
     -   **Efectividad:** Mide tu fiabilidad. Aumenta con cada transacción exitosa y disminuye con disputas.
     -   **Agilidad de Pago:** Mide qué tan rápido pagas una vez que se te solicita. Pagar en menos de 15 minutos te da una insignia verde y mejora tu reputación.
     -   **Inactividad:** Tu cuenta se pausará si no inicias sesión en 45 días para mantener la comunidad activa.
--   **Modelo de Comisión de Credicora:**
-    -   **Gratis para el Cliente:** El uso de Credicora no tiene costo para el cliente. El monto que paga es el precio de la venta.
-    -   **Compromiso del Proveedor:** La comisión de servicio es asumida por el proveedor que acepta el pago con Credicora. Esta comisión (4% para profesionales, 6% para empresas, con descuentos por suscripción) se convierte en un nuevo compromiso de pago del proveedor hacia Corabo.
+-   **Modelo de Comisión de Corabo:**
+    -   **Comisión por Servicio:** Para mantener y mejorar la plataforma, Corabo genera un compromiso de pago (comisión + IVA) para el proveedor por cada **venta de "Compra Directa"** (pago por QR) que se procesa a través del sistema.
+    -   **Tarifas:** La tasa de comisión varía si el proveedor es un profesional independiente o una empresa, y se aplican descuentos si el proveedor está suscrito.
+    -   **Transparencia:** El cliente final **NO** paga esta comisión; solo paga el precio de la venta acordado. La comisión es un compromiso entre Corabo y el proveedor por el uso de la plataforma.
 
 ---
 
 ## 5. Instalación en Dispositivos Móviles (PWA)
 
 La aplicación ahora se puede "instalar" en la pantalla de inicio de tu teléfono. Gracias a las últimas correcciones, al hacerlo, verás el **logo oficial de Corabo**, ofreciendo una experiencia de aplicación nativa.
-
-    
