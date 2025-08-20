@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -10,7 +9,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { addDays, differenceInDays } from 'date-fns';
 import { credicoraLevels, credicoraCompanyLevels } from '@/lib/types';
-import { getAuth, signInWithPopup, signOut, User as FirebaseUser, GoogleAuthProvider, getRedirectResult, signInWithRedirect } from 'firebase/auth';
+import { getAuth, signInWithPopup, signOut, User as FirebaseUser, GoogleAuthProvider } from 'firebase/auth';
 import { getFirebaseApp, getFirestoreDb, getAuthInstance } from '@/lib/firebase';
 import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, arrayUnion, getDocs, deleteDoc, collectionGroup, Unsubscribe, orderBy, deleteField, arrayRemove } from 'firebase/firestore';
 import { createCampaign as createCampaignFlow, type CreateCampaignInput } from '@/ai/flows/campaign-flow';
@@ -70,7 +69,6 @@ interface CoraboState {
 
 interface CoraboActions {
   signInWithGoogle: () => void;
-  getRedirectResult: typeof getRedirectResult; // Expose getRedirectResult
   setCurrentUser: (user: User | null) => void;
   setIsLoadingAuth: (loading: boolean) => void;
   setSearchQuery: (query: string) => void;
@@ -427,7 +425,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
             }
         }
     },
-    getRedirectResult,
     logout: async () => {
         await signOut(getAuthInstance());
         setCurrentUser(null);

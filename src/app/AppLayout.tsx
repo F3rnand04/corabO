@@ -18,7 +18,7 @@ import type { User } from '@/lib/types';
 
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { currentUser, isLoadingAuth, setIsLoadingAuth, setCurrentUser, logout, getRedirectResult } = useCorabo();
+  const { currentUser, isLoadingAuth, setIsLoadingAuth, setCurrentUser, logout } = useCorabo();
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
@@ -49,20 +49,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 setIsLoadingAuth(false);
             }
         } else {
-            // Also check for a redirect result if no user is immediately available.
-            try {
-                const result = await getRedirectResult(auth);
-                if (!result) {
-                    // Only set to null if there is no user and no redirect result.
-                    setCurrentUser(null);
-                    setIsLoadingAuth(false);
-                }
-                // If there IS a redirect result, the onAuthStateChanged will trigger again with the new user.
-            } catch(error) {
-                console.error("Error during getRedirectResult", error);
-                setCurrentUser(null);
-                setIsLoadingAuth(false);
-            }
+            // User is signed out
+            setCurrentUser(null);
+            setIsLoadingAuth(false);
         }
     });
 
@@ -78,7 +67,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     const isLoginPage = pathname === '/login';
     const isCashierLoginPage = pathname === '/cashier-login';
-    // **FIX:** Allow any setup page, not just the initial one.
     const isInSetupFlow = pathname.startsWith('/initial-setup') || pathname.startsWith('/profile-setup');
 
     if (!currentUser) {
@@ -95,7 +83,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             }
         // If logged in and setup is complete
         } else {
-             if (isLoginPage || pathname === '/initial-setup') { // Still prevent access to initial-setup if complete
+             if (isLoginPage || pathname === '/initial-setup') {
                  router.replace('/');
              }
         }
