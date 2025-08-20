@@ -36,15 +36,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     photoURL: firebaseUser.photoURL,
                     emailVerified: firebaseUser.emailVerified
                 });
+
+                if (!user) {
+                  // This case handles if the flow returns null/undefined
+                  throw new Error("User data could not be retrieved from the server.");
+                }
+
                 setCurrentUser(user as User | null);
             } catch (error) {
                 console.error("Error fetching/creating user:", error);
-                setCurrentUser(null);
-                 toast({
+                toast({
                     variant: "destructive",
                     title: "Error de autenticación",
-                    description: "No se pudo obtener la información de tu perfil.",
+                    description: "No se pudo obtener la información de tu perfil. Por favor, intenta de nuevo.",
                 });
+                await logout(); // Log out the user to prevent inconsistent state
             } finally {
                 setIsLoadingAuth(false);
             }
