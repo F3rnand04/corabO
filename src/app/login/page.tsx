@@ -39,7 +39,7 @@ export default function LoginPage() {
         </div>
         <h2 className="text-2xl font-bold mb-2">Bienvenido a Corabo</h2>
         <div className="mb-4 text-sm text-muted-foreground">
-            <p className="font-semibold">Tu marketplace de confianza para todo lo que necesites.</p>
+            <p className="font-semibold">Tu mercado de confianza para todo lo que necesites.</p>
             <p className="mt-2">Encuentra y contrata a los mejores profesionales verificados cerca de ti. Gestiona tus proyectos y pagos de forma segura, todo en un mismo lugar.</p>
         </div>
         <p className="text-muted-foreground mb-8">Conectando tus necesidades con las mejores soluciones.</p>

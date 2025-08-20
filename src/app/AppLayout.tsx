@@ -64,11 +64,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (isLoadingAuth) return;
 
     const isLoginPage = pathname === '/login';
+    const isCashierLoginPage = pathname === '/cashier-login';
     const isSetupPage = pathname === '/initial-setup';
     const isProfileSetupPage = pathname === '/profile-setup';
 
     if (!currentUser) {
-        if (!isLoginPage) {
+        if (!isLoginPage && !isCashierLoginPage) {
             router.replace('/login');
         }
     } else {
@@ -125,9 +126,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
   
-  // If no user, only render the login page.
+  const isLoginPage = pathname === '/login';
+  const isCashierLoginPage = pathname === '/cashier-login';
+  
+  // If no user, only render the login pages.
   if (!currentUser) {
-    return pathname === '/login' ? <main>{children}</main> : (
+    return (isLoginPage || isCashierLoginPage) ? <main>{children}</main> : (
         <div className="flex items-center justify-center min-h-screen">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
@@ -155,6 +159,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   
   const noHeaderFooterRoutes = [
     '/login',
+    '/cashier-login',
     '/map',
     '/credicora',
     '/search-history',
