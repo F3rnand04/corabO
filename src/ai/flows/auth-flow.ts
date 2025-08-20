@@ -69,7 +69,7 @@ export const getOrCreateUser = ai.defineFlow(
         user = { ...user, ...updates }; // Update local user object
       }
 
-      // Return a plain, serializable object
+      // **FIX:** Always return the user object for existing users.
       return JSON.parse(JSON.stringify(user));
     } else {
       // Create a new, minimal user object.

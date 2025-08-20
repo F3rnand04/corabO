@@ -311,19 +311,19 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       return `${Math.round(distanceKm)} km`;
   }, [currentUserLocation]);
   
-  const getDeliveryCost = useCallback((deliveryMethod: 'pickup' | 'home' | 'other_address' | 'current_location', providerId: string) => {
-      if (deliveryMethod === 'pickup') return 0;
+  const getDeliveryCost = useCallback((deliveryMethod: 'pickup' | 'home' | 'other_address' | 'current_location', providerId: string): number => {
+    if (deliveryMethod === 'pickup') return 0;
+    
+    const provider = users.find(u => u.id === providerId);
+    if (!provider) return 0;
 
-      const cartProvider = users.find(u => u.id === providerId);
-      if(!cartProvider || !deliveryAddress || !cartProvider.profileSetupData?.location) return 0;
-      
-      const [lat1, lon1] = deliveryAddress.split(',').map(Number);
-      const [lat2, lon2] = cartProvider.profileSetupData.location.split(',').map(Number);
-      
-      const distanceKm = haversineDistance(lat1, lon1, lat2, lon2);
-      return distanceKm * 1.0;
-  }, [users, deliveryAddress]);
-  
+    const distance = getDistanceToProvider(provider);
+    if (distance === null) return 0;
+    
+    const distanceKm = parseFloat(distance.replace(' km', ''));
+    return distanceKm * 1.5; // $1.5 per km
+  }, [users, getDistanceToProvider]);
+
   const updateCart = useCallback(async (newCart: CartItem[], currentUserId: string, currentTransactions: Transaction[]) => {
       if (!currentUserId) return;
       
@@ -429,12 +429,12 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     },
     logout: async () => {
         await signOut(getAuthInstance());
-        setCurrentUser(null);
+        _setCurrentUser(null);
         setTransactions([]); // Clear stale data on logout
         setConversations([]); // Clear stale data on logout
         router.push('/login');
     },
-    setCurrentUser,
+    setCurrentUser: _setCurrentUser,
     setIsLoadingAuth,
     setSearchQuery: (query: string) => {
         _setSearchQuery(query);
