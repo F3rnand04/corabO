@@ -18,7 +18,7 @@ import type { User } from '@/lib/types';
 
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { currentUser, isLoadingAuth, setIsLoadingAuth, setCurrentUser, logout } = useCorabo();
+  const { currentUser, isLoadingAuth, setIsLoadingAuth, setCurrentUser, logout, getRedirectResult } = useCorabo();
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
@@ -49,8 +49,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 setIsLoadingAuth(false);
             }
         } else {
-            setCurrentUser(null);
-            setIsLoadingAuth(false);
+            // Also check for a redirect result if no user is immediately available.
+            try {
+                const result = await getRedirectResult(auth);
+                if (!result) {
+                    // Only set to null if there is no user and no redirect result.
+                    setCurrentUser(null);
+                    setIsLoadingAuth(false);
+                }
+                // If there IS a redirect result, the onAuthStateChanged will trigger again with the new user.
+            } catch(error) {
+                console.error("Error during getRedirectResult", error);
+                setCurrentUser(null);
+                setIsLoadingAuth(false);
+            }
         }
     });
 
@@ -67,7 +79,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const isLoginPage = pathname === '/login';
     const isCashierLoginPage = pathname === '/cashier-login';
     const isSetupPage = pathname === '/initial-setup';
-    const isProfileSetupPage = pathname === '/profile-setup';
 
     if (!currentUser) {
         // If not logged in, and not on a public page, redirect to login
@@ -196,3 +207,4 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+

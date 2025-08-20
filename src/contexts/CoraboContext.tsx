@@ -193,7 +193,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const auth = getAuthInstance();
-    // This effect runs once to check for a redirect result
+    // This effect handles the result of a successful redirect login.
     getRedirectResult(auth)
       .then((result) => {
         if (result) {
@@ -426,10 +426,30 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       
   const actions = useMemo(() => ({
     signInWithGoogle: async () => {
-        const auth = getAuthInstance();
-        const provider = new GoogleAuthProvider();
-        setIsLoadingAuth(true);
+      const auth = getAuthInstance();
+      const provider = new GoogleAuthProvider();
+      setIsLoadingAuth(true);
+
+      // Hybrid Auth Logic
+      const isFirebaseStudio = window.location.hostname.includes('studio.firebase.google.com');
+      
+      if (isFirebaseStudio) {
+        // Use Popup for Firebase Studio environment
+        try {
+          await signInWithPopup(auth, provider);
+        } catch (error: any) {
+          if (error.code !== 'auth/popup-closed-by-user') {
+            console.error("Popup sign-in error:", error);
+          }
+        } finally {
+          setIsLoadingAuth(false);
+        }
+      } else {
+        // Use Redirect for direct Cloud Workstations URL
+        // Crucially, we set the redirect URL to our own login page to handle the result
+        // This avoids the __/auth/handler and the init.json error
         await signInWithRedirect(auth, provider);
+      }
     },
     logout: async () => {
         await signOut(getAuthInstance());
