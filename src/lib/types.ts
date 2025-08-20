@@ -370,6 +370,7 @@ export type User = {
   phoneVerificationCode?: string | null;
   phoneVerificationCodeExpires?: string | null;
   credicoraDetails?: CredicoraLevel;
+  deliveryAddress?: string;
   activeAffiliation?: {
     companyId: string;
     companyName: string;
@@ -587,7 +588,7 @@ export const CreateProductInputSchema = z.object({
   price: z.number(),
   imageDataUri: z.string(),
 });
-export type CreateProductInput = z.infer<typeof CreatePublicationInputSchema>;
+export type CreateProductInput = z.infer<typeof CreateProductInputSchema>;
 
 export type TempRecipientInfo = {
     name: string;

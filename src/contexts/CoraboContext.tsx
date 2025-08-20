@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -673,7 +674,14 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     getAgendaEvents: (a:any) => [],
     addCommentToImage: (a:any,b:any,c:any)=>{},
     removeCommentFromImage: (a:any,b:any,c:any)=>{},
-    activatePromotion: async(a:any)=>{return Promise.resolve();},
+    activatePromotion: async(details: { imageId: string, promotionText: string, cost: number }) => {
+        if (!currentUser) return;
+        await updateUser(currentUser.id, {
+            promotion: { text: details.promotionText, expires: addDays(new Date(), 1).toISOString() }
+        });
+        const pubRef = doc(getFirestoreDb(), 'publications', details.imageId);
+        await updateDoc(pubRef, { isTemporary: false, 'promotion.text': details.promotionText, 'promotion.expires': addDays(new Date(), 1).toISOString() });
+    },
     createCampaign: async(data: Omit<CreateCampaignInput, 'userId'>) => {
         if(!currentUser) return;
         await createCampaignFlow({userId: currentUser.id, ...data});
@@ -739,7 +747,15 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     cancelQrSession: async(a:any,b:any)=>{return Promise.resolve();},
     registerSystemPayment: async(a:any,b:any,c:any)=>{return Promise.resolve();},
     cancelSystemTransaction: async(a:any)=>{return Promise.resolve();},
-    updateUserProfileAndGallery: async(a:any,b:any)=>{return Promise.resolve();},
+    updateUserProfileAndGallery: async (userId: string, image: GalleryImage) => {
+        const db = getFirestoreDb();
+        const batch = writeBatch(db);
+        const userRef = doc(db, 'users', userId);
+        batch.update(userRef, { profileImage: image.src });
+        const newPubRef = doc(db, 'publications', image.id);
+        batch.set(newPubRef, image);
+        await batch.commit();
+    },
     requestAffiliation: async(a:any,b:any)=>{return Promise.resolve();},
     approveAffiliation: async (affiliationId: string) => {
         if(!currentUser) return;
