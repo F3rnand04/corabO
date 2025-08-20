@@ -246,9 +246,11 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const db = getFirestoreDb();
     
+    // These listeners are general and don't depend on the user.
     const unsubscribeUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
         const userList = snapshot.docs.map(doc => doc.data() as User)
         setUsers(userList);
+        // Keep the cache updated
         userList.forEach(user => userCache.current.set(user.id, user));
     });
     
@@ -258,26 +260,32 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
     let unsubscribeUserSpecificData: Unsubscribe[] = [];
 
+    // This block now only runs when the user ID is stable and present.
     if (currentUser?.id) {
         const userTransactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
         const userConversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id), orderBy("lastUpdated", "desc"));
         const userQrSessionQuery = query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', currentUser.id));
         
         unsubscribeUserSpecificData.push(onSnapshot(userTransactionsQuery, (snapshot) => setTransactions(snapshot.docs.map(doc => doc.data() as Transaction))));
+        
         unsubscribeUserSpecificData.push(onSnapshot(userConversationsQuery, (snapshot) => {
             snapshot.docs.forEach(doc => {
                  const convo = doc.data() as Conversation;
                  const otherParticipantId = convo.participantIds.find(pId => pId !== currentUser.id);
-                 if (otherParticipantId && !userCache.current.has(otherParticipantId)) {
+                 // The fetchUser call is now cached, preventing loops.
+                 if (otherParticipantId) {
                      fetchUser(otherParticipantId);
                  }
             });
             setConversations(snapshot.docs.map(doc => doc.data() as Conversation));
         }));
+        
         unsubscribeUserSpecificData.push(onSnapshot(userQrSessionQuery, (snapshot) => setQrSession(snapshot.docs.map(d => d.data() as QrSession).find(s => s.status !== 'completed' && s.status !== 'cancelled') || null)));
     } else {
+        // Clear user-specific data when logged out
         setTransactions([]); 
         setConversations([]); 
+        setQrSession(null);
     }
 
     return () => {
@@ -285,6 +293,8 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         unsubscribePublications();
         unsubscribeUserSpecificData.forEach(unsub => unsub());
     };
+    // Use `currentUser.id` as the dependency to ensure this effect only re-runs
+    // when the user actually changes, not on every re-render of the currentUser object.
   }, [currentUser?.id, fetchUser]);
   
   const getCartTotal = useCallback((cartItems: CartItem[] | undefined = cart) => cartItems.reduce((total, item) => total + item.product.price * item.quantity, 0), [cart]);
@@ -819,3 +829,5 @@ export const useCorabo = (): CoraboState & CoraboActions => {
 };
 
 export type { Transaction };
+
+    

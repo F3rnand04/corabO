@@ -3,9 +3,10 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Providers } from './providers';
 import { Inter } from 'next/font/google';
-import ClientLayout from './ClientLayout';
 import { AuthProvider } from '@/components/auth/AuthProvider';
 import { CoraboProvider } from '@/contexts/CoraboContext';
+import { Header } from '@/components/Header';
+import { Footer } from '@/components/Footer';
 
 export const metadata: Metadata = {
   title: 'corabO.app',
@@ -33,7 +34,7 @@ export default function RootLayout({
         <Providers attribute="class" defaultTheme="system" enableSystem>
             <AuthProvider>
               <CoraboProvider>
-                <ClientLayout>{children}</ClientLayout>
+                {children}
               </CoraboProvider>
             </AuthProvider>
         </Providers>
