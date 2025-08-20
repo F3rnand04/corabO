@@ -18,7 +18,7 @@ import { autoVerifyIdWithAI as autoVerifyIdWithAIFlow, type VerificationInput } 
 import { getExchangeRate as getExchangeRateFlow } from '@/ai/flows/exchange-rate-flow';
 import { sendSmsVerificationCodeFlow, verifySmsCodeFlow } from '@/ai/flows/sms-flow';
 import { createProduct as createProductFlow, createPublication as createPublicationFlow } from '@/ai/flows/publication-flow';
-import { completeInitialSetupFlow, deleteUserFlow, getProfileGallery, getProfileProducts, checkIdUniquenessFlow, getPublicProfileFlow as getPublicProfile } from '@/ai/flows/profile-flow';
+import { completeInitialSetupFlow, deleteUserFlow, getProfileGallery, getProfileProducts, checkIdUniquenessFlow, getPublicProfileFlow } from '@/ai/flows/profile-flow';
 import { haversineDistance } from '@/lib/utils';
 import { getOrCreateUser as getOrCreateUserFlow, type FirebaseUserInput } from '@/ai/flows/auth-flow';
 import { requestAffiliation as requestAffiliationFlow, approveAffiliation as approveAffiliationFlow, rejectAffiliation as rejectAffiliationFlow, revokeAffiliation as revokeAffiliationFlow } from '@/ai/flows/affiliation-flow';
@@ -243,18 +243,40 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('coraboContacts', JSON.stringify(contacts));
   }, [contacts]);
 
+  const fetchUser = useCallback(async (userId: string): Promise<User | null> => {
+        if (userCache.current.has(userId)) {
+            return userCache.current.get(userId)!;
+        }
+        try {
+            // Using the server action directly as Next.js handles the client-server boundary.
+            const publicProfile = await getPublicProfileFlow({ userId });
+            if (publicProfile) {
+                const userData = publicProfile as User;
+                userCache.current.set(userId, userData);
+                return userData;
+            }
+            return null;
+        } catch (error) {
+            console.error("Failed to fetch user profile:", error);
+            return null;
+        }
+  }, []);
+
   useEffect(() => {
     const db = getFirestoreDb();
     
     const unsubscribeUsers = onSnapshot(collection(db, 'users'), (snapshot) => {
-        setUsers(snapshot.docs.map(doc => doc.data() as User));
+        const userList = snapshot.docs.map(doc => doc.data() as User)
+        setUsers(userList);
+        // Pre-populate the cache with all users to reduce individual fetches
+        userList.forEach(user => userCache.current.set(user.id, user));
     });
     
     const unsubscribePublications = onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
         setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage));
     });
 
-    let unsubscribeUserSpecificData = () => {};
+    let unsubscribeUserSpecificData: Unsubscribe = () => {};
 
     if (currentUser?.id) {
         const userTransactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
@@ -262,7 +284,9 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         const userQrSessionQuery = query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', currentUser.id));
         
         const unsubscribeTransactions = onSnapshot(userTransactionsQuery, (snapshot) => setTransactions(snapshot.docs.map(doc => doc.data() as Transaction)));
-        const unsubscribeConversations = onSnapshot(userConversationsQuery, (snapshot) => setConversations(snapshot.docs.map(doc => doc.data() as Conversation)));
+        const unsubscribeConversations = onSnapshot(userConversationsQuery, (snapshot) => {
+            setConversations(snapshot.docs.map(doc => doc.data() as Conversation));
+        });
         const unsubscribeQrSession = onSnapshot(userQrSessionQuery, (snapshot) => setQrSession(snapshot.docs.map(d => d.data() as QrSession).find(s => s.status !== 'completed' && s.status !== 'cancelled') || null));
 
         unsubscribeUserSpecificData = () => {
@@ -280,7 +304,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         unsubscribePublications();
         unsubscribeUserSpecificData();
     };
-}, [currentUser?.id]);
+  }, [currentUser?.id, fetchUser]);
 
 
   const state = useMemo(() => ({
@@ -404,24 +428,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [setDeliveryAddress, toast]);
       
-  const fetchUser = useCallback(async (userId: string): Promise<User | null> => {
-        if (userCache.current.has(userId)) {
-            return userCache.current.get(userId)!;
-        }
-        try {
-            const publicProfile = await getPublicProfile({ userId });
-            if (publicProfile) {
-                const userData = publicProfile as User; // Assuming the returned structure matches User
-                userCache.current.set(userId, userData);
-                return userData;
-            }
-            return null;
-        } catch (error) {
-            console.error("Failed to fetch user profile:", error);
-            return null;
-        }
-    }, []);
-
   const actions = useMemo(() => ({
     getOrCreateUser: getOrCreateUserFlow,
     signInWithGoogle: async () => {
