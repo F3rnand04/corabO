@@ -10,7 +10,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { addDays, differenceInDays } from 'date-fns';
 import { credicoraLevels, credicoraCompanyLevels } from '@/lib/types';
-import { getAuth, signInWithPopup, signOut, User as FirebaseUser, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth, signInWithRedirect, signOut, User as FirebaseUser, GoogleAuthProvider, getRedirectResult } from 'firebase/auth';
 import { getFirebaseApp, getFirestoreDb, getAuthInstance } from '@/lib/firebase';
 import { doc, setDoc, getDoc, writeBatch, collection, onSnapshot, query, where, updateDoc, arrayUnion, getDocs, deleteDoc, collectionGroup, Unsubscribe, orderBy, deleteField, arrayRemove } from 'firebase/firestore';
 import { createCampaign as createCampaignFlow, type CreateCampaignInput } from '@/ai/flows/campaign-flow';
@@ -244,6 +244,28 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('coraboContacts', JSON.stringify(contacts));
   }, [contacts]);
 
+  //** NEW: Effect to handle redirect result **
+  useEffect(() => {
+    const auth = getAuthInstance();
+    getRedirectResult(auth)
+      .then((result) => {
+        // This will be null if the user just landed on the page
+        // without a redirect.
+        if (result) {
+           console.log("Handled redirect result.", result.user);
+        }
+      })
+      .catch((error) => {
+        console.error("Error handling redirect result:", error);
+      }).finally(() => {
+        // This is just to ensure the loading state is handled correctly,
+        // the main logic is now in AppLayout.
+        setIsLoadingAuth(false);
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+
   useEffect(() => {
     const db = getFirestoreDb();
     
@@ -409,13 +431,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     signInWithGoogle: async () => {
         const auth = getAuthInstance();
         const provider = new GoogleAuthProvider();
-        provider.setCustomParameters({ prompt: 'select_account' });
-        try { 
-            await signInWithPopup(auth, provider); 
-        } catch (error: any) {
-            if (error.code === 'auth/cancelled-popup-request' || error.code === 'auth/popup-closed-by-user' || error.code === 'auth/popup-blocked') { return; }
-            console.error("Error signing in with Google: ", error);
-        }
+        await signInWithRedirect(auth, provider);
     },
     logout: async () => {
         await signOut(getAuthInstance());
@@ -899,3 +915,4 @@ export const useCorabo = (): CoraboState & CoraboActions => {
 export type { Transaction };
 
     
+
