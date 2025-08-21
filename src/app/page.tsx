@@ -1,97 +1,20 @@
 
-"use client";
-
 import { PublicationCard } from "@/components/PublicationCard";
 import type { GalleryImage } from "@/lib/types";
-import { useMemo, useEffect, useState, useCallback, useRef } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useCorabo } from "@/contexts/CoraboContext";
-import { ActivationWarning } from "@/components/ActivationWarning";
 import * as Actions from '@/lib/actions';
+import { FeedClientComponent } from "@/components/FeedClientComponent";
 
-
-export default function HomePage() {
-  const { currentUser, searchQuery, categoryFilter, users } = useCorabo();
-  const [allPublications, setAllPublications] = useState<GalleryImage[]>([]);
-  const [isLoadingFeed, setIsLoadingFeed] = useState(true);
+// This is now a Server Component
+export default async function HomePage() {
   
-  // This useEffect will now only run once when the component mounts
-  useEffect(() => {
-    const fetchInitialFeed = async () => {
-        setIsLoadingFeed(true);
-        try {
-            // FIX: Pass an empty object to satisfy the Zod schema in the Genkit flow.
-            const initialFeed = await Actions.getFeed({});
-            if (initialFeed && initialFeed.publications) {
-              setAllPublications(initialFeed.publications);
-            }
-        } catch (error) {
-            console.error("Error fetching feed:", error);
-        } finally {
-            setIsLoadingFeed(false);
-        }
-    };
-    
-    // Only fetch if the user is loaded to avoid unnecessary calls
-    if (currentUser) {
-      fetchInitialFeed();
-    }
-  }, [currentUser]); // Dependency on currentUser ensures it runs after login.
+  // 1. Fetch initial data directly on the server.
+  // This happens before the page is sent to the client.
+  const initialFeed = await Actions.getFeed({});
   
-  const filteredPublications = useMemo(() => {
-    let results = allPublications.map(p => {
-        const owner = users.find(u => u.id === p.providerId);
-        return { ...p, owner };
-    });
-
-    if (categoryFilter) {
-      results = results.filter(p => {
-        const pCategory = p.productDetails?.category || p.owner?.profileSetupData?.primaryCategory;
-        return pCategory === categoryFilter;
-      });
-    }
-
-    if (searchQuery) {
-      results = results.filter(p => 
-          p.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.alt?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.owner?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (p.type === 'product' && p.productDetails?.name.toLowerCase().includes(searchQuery.toLowerCase()))
-      );
-    }
-    return results;
-  }, [allPublications, searchQuery, categoryFilter, users]);
-
-
-  if (isLoadingFeed) {
-    return (
-      <main className="space-y-4 container py-4">
-        {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[500px] w-full max-w-2xl mx-auto" />)}
-      </main>
-    );
-  }
-
-  if (!currentUser) return null; // Should be handled by AppLayout, but good practice
-
+  // 2. Pass the server-fetched data as a prop to a Client Component.
   return (
     <main className="space-y-4">
-       {currentUser && !currentUser.isTransactionsActive && (
-          <div className="container py-4">
-            <ActivationWarning userType={currentUser.type} />
-          </div>
-      )}
-       
-        <div className="space-y-4">
-          {filteredPublications.length > 0 ? (
-              filteredPublications.map((item, index) => (
-                  <PublicationCard key={item.id || index} publication={item} />
-              ))
-          ) : (
-              <div className="text-center text-muted-foreground pt-16">
-                <p>No hay publicaciones para mostrar en este momento.</p>
-              </div>
-          )}
-        </div>
+       <FeedClientComponent initialPublications={initialFeed.publications || []} />
     </main>
   );
 }
