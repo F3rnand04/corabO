@@ -1,69 +1,40 @@
+
 'use client';
 
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { CoraboProvider, useCorabo } from "@/contexts/CoraboContext";
-import { getOrCreateUser } from "@/ai/flows/auth-flow";
-import type { User } from "@/lib/types";
 import { Loader2 } from "lucide-react";
+import type { User } from "@/lib/types";
 
-function LayoutController({ children }: { children: React.ReactNode }) {
-    const { firebaseUser, isLoadingAuth } = useAuth();
-    const { currentUser, setCurrentUser } = useCorabo();
-    const [isLoadingUser, setIsLoadingUser] = useState(true);
+
+function LayoutContent({ children }: { children: React.ReactNode }) {
+    // This component now consumes the context
+    const { currentUser, isLoadingUser, isInitialSetupComplete } = useCorabo();
     const router = useRouter();
     const pathname = usePathname();
-
-    useEffect(() => {
-        if (isLoadingAuth) return;
-
-        if (firebaseUser) {
-            if (!currentUser || currentUser.id !== firebaseUser.uid) {
-                setIsLoadingUser(true);
-                getOrCreateUser({
-                    uid: firebaseUser.uid,
-                    displayName: firebaseUser.displayName,
-                    email: firebaseUser.email,
-                    photoURL: firebaseUser.photoURL,
-                    emailVerified: firebaseUser.emailVerified,
-                }).then(user => {
-                    setCurrentUser(user as User);
-                    setIsLoadingUser(false);
-                }).catch(err => {
-                    console.error("Failed to get or create Corabo user:", err);
-                    setCurrentUser(null);
-                    setIsLoadingUser(false);
-                });
-            } else {
-                 setIsLoadingUser(false);
-            }
-        } else {
-            setCurrentUser(null);
-            setIsLoadingUser(false);
-        }
-    }, [firebaseUser, isLoadingAuth, currentUser, setCurrentUser]);
 
     const isPublicPage = ['/login', '/cashier-login', '/policies', '/terms', '/privacy', '/community-guidelines'].some(p => pathname.startsWith(p));
     const isSetupPage = pathname.startsWith('/initial-setup');
 
     useEffect(() => {
-        if (isLoadingAuth || isLoadingUser) return;
+        if (isLoadingUser) return;
 
         if (!currentUser && !isPublicPage) {
             router.replace('/login');
         } else if (currentUser) {
-            if (!currentUser.isInitialSetupComplete && !isSetupPage) {
+            if (!isInitialSetupComplete && !isSetupPage) {
                 router.replace('/initial-setup');
-            } else if (currentUser.isInitialSetupComplete && (pathname === '/login' || isSetupPage)) {
+            } else if (isInitialSetupComplete && (pathname === '/login' || isSetupPage)) {
                 router.replace('/');
             }
         }
-    }, [currentUser, isLoadingAuth, isLoadingUser, pathname, router, isPublicPage, isSetupPage]);
+    }, [currentUser, isLoadingUser, isInitialSetupComplete, pathname, router, isPublicPage, isSetupPage]);
 
-    if (isLoadingAuth || isLoadingUser) {
+    if (isLoadingUser && !isPublicPage) {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -86,13 +57,21 @@ function LayoutController({ children }: { children: React.ReactNode }) {
 
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { firebaseUser } = useAuth();
+    const { firebaseUser, isLoadingAuth } = useAuth();
+
+    if (isLoadingAuth) {
+         return (
+            <div className="flex items-center justify-center min-h-screen">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+        );
+    }
   
-  return (
-    <CoraboProvider currentUser={null}>
-        <LayoutController>
-            {children}
-        </LayoutController>
-    </CoraboProvider>
-  );
+    // CoraboProvider now wraps the LayoutContent and manages its own state
+    // based on the firebaseUser, which is stable at this point.
+    return (
+        <CoraboProvider initialFirebaseUser={firebaseUser}>
+            <LayoutContent>{children}</LayoutContent>
+        </CoraboProvider>
+    );
 }

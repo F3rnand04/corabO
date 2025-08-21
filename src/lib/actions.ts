@@ -13,9 +13,11 @@ import { doc, updateDoc, deleteField, setDoc, getDoc, writeBatch, collection, wh
 import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, VerificationOutput, AppointmentRequest, QrSession, TempRecipientInfo, CashierBox, GalleryImageComment, CreatePublicationInput, CreateProductInput } from '@/lib/types';
 import { type CreateCampaignInput } from '@/ai/flows/campaign-flow';
 import { type SendMessageInput } from '@/ai/flows/message-flow';
+import { type FirebaseUserInput } from '@/ai/flows/auth-flow';
 
 
 // Flows
+import * as AuthFlows from '@/ai/flows/auth-flow';
 import * as CampaignFlows from '@/ai/flows/campaign-flow';
 import * as MessageFlows from '@/ai/flows/message-flow';
 import * as TransactionFlows from '@/ai/flows/transaction-flow';
@@ -32,6 +34,7 @@ import { getFirestoreDb } from './firebase-server';
 
 
 // --- User and Profile Actions ---
+export const getOrCreateUser = (user: FirebaseUserInput) => AuthFlows.getOrCreateUser(user);
 
 export const getPublicProfile = ProfileFlows.getPublicProfileFlow;
 

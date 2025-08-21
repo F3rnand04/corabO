@@ -8,11 +8,13 @@ import { getFirestoreDb } from '@/lib/firebase';
 import { doc, getDoc, collection, onSnapshot, query, where, orderBy, Unsubscribe, updateDoc, writeBatch, deleteField } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import * as Actions from '@/lib/actions';
+import type { User as FirebaseUser } from 'firebase/auth';
 
 interface CoraboContextValue {
   // State
   currentUser: User | null;
-  setCurrentUser: (user: User | null) => void;
+  isLoadingUser: boolean; // NEW: To manage loading state within the context
+  isInitialSetupComplete: boolean; // NEW: Derived state for easier checks
   users: User[];
   transactions: Transaction[];
   conversations: Conversation[];
@@ -59,10 +61,11 @@ interface UserMetrics {
 
 const CoraboContext = createContext<CoraboContextValue | undefined>(undefined);
 
-export const CoraboProvider = ({ children, currentUser: initialUser }: { children: ReactNode, currentUser: User | null }) => {
+export const CoraboProvider = ({ children, initialFirebaseUser }: { children: ReactNode, initialFirebaseUser: FirebaseUser | null }) => {
   const { toast } = useToast();
   
-  const [currentUser, setCurrentUser] = useState<User | null>(initialUser);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [users, setUsers] = useState<User[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -92,6 +95,32 @@ export const CoraboProvider = ({ children, currentUser: initialUser }: { childre
       _setTempRecipientInfo(info);
   }, []);
   
+
+  useEffect(() => {
+    // This effect now fetches the Corabo user based on the initialFirebaseUser prop
+    const getCoraboUser = async () => {
+        setIsLoadingUser(true);
+        if (initialFirebaseUser) {
+            try {
+                const user = await Actions.getOrCreateUser({
+                    uid: initialFirebaseUser.uid,
+                    displayName: initialFirebaseUser.displayName,
+                    email: initialFirebaseUser.email,
+                    photoURL: initialFirebaseUser.photoURL,
+                    emailVerified: initialFirebaseUser.emailVerified,
+                });
+                setCurrentUser(user as User);
+            } catch (error) {
+                console.error("Failed to get or create Corabo user:", error);
+                setCurrentUser(null);
+            }
+        } else {
+            setCurrentUser(null);
+        }
+        setIsLoadingUser(false);
+    };
+    getCoraboUser();
+  }, [initialFirebaseUser]);
 
   useEffect(() => {
     const savedAddress = sessionStorage.getItem('coraboDeliveryAddress');
@@ -213,7 +242,8 @@ export const CoraboProvider = ({ children, currentUser: initialUser }: { childre
 
     const value: CoraboContextValue = {
         currentUser,
-        setCurrentUser,
+        isLoadingUser,
+        isInitialSetupComplete: currentUser?.isInitialSetupComplete ?? false,
         users, transactions, conversations,
         searchQuery, categoryFilter, contacts, searchHistory, 
         deliveryAddress, exchangeRate, currentUserLocation, tempRecipientInfo, activeCartForCheckout,
