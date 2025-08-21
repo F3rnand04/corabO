@@ -17,8 +17,8 @@ export default function LoginPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Si ya no estamos cargando y hay un usuario, AppLayout se encargará de la redirección.
-    // Esta es una doble seguridad.
+    // Si, después de todas las cargas, hay un usuario, AppLayout se encargará de la redirección.
+    // Esta es una doble seguridad para mover al usuario fuera del login si ya tiene sesión.
     if (!isLoadingUser && currentUser) {
       router.replace('/');
     }
@@ -27,8 +27,9 @@ export default function LoginPage() {
   const handleSignIn = async () => {
     try {
       await signInWithGoogle();
-      // La redirección post-login es manejada por AppLayout.
+      // La redirección post-login es manejada centralmente por AppLayout.tsx
     } catch (error: any) {
+       // Ignorar errores comunes de cierre de popup por el usuario
        if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
         console.error("Error signing in with Google:", error);
         toast({
@@ -40,8 +41,9 @@ export default function LoginPage() {
     }
   };
   
-  // Mientras se verifica el estado de autenticación o si ya hay un usuario
-  // (y estamos esperando la redirección de AppLayout), muestra un loader.
+  // Muestra un loader general si se está procesando la autenticación
+  // o si el usuario ya está logueado y estamos esperando la redirección.
+  // Esto previene que el usuario vea la página de login por un instante si ya tiene sesión.
   if (isLoadingUser || isLoadingAuth || currentUser) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-muted/40">

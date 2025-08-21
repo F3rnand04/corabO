@@ -11,6 +11,8 @@ import { Loader2 } from "lucide-react";
 export default function HomePage() {
   const { isLoadingUser } = useCorabo();
 
+  // Muestra un loader mientras se carga la información del usuario en el contexto.
+  // Esto es crucial para evitar mostrar contenido incorrecto brevemente.
   if (isLoadingUser) {
       return (
            <div className="flex items-center justify-center pt-20">

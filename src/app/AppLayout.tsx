@@ -9,6 +9,7 @@ import { Footer } from "@/components/Footer";
 import { CoraboProvider, useCorabo } from "@/contexts/CoraboContext";
 import { Loader2 } from "lucide-react";
 
+// Lista de rutas que no requieren autenticación.
 const PUBLIC_PAGES = [
   '/login',
   '/cashier-login',
@@ -18,43 +19,44 @@ const PUBLIC_PAGES = [
   '/community-guidelines',
 ];
 
+// Este componente es el cerebro que controla las redirecciones y la visibilidad del layout.
 function LayoutController({ children }: { children: React.ReactNode }) {
     const { currentUser, isLoadingUser } = useCorabo();
     const router = useRouter();
     const pathname = usePathname();
     
     useEffect(() => {
+        // No tomar ninguna decisión de redirección hasta que el estado del usuario esté completamente resuelto.
         if (isLoadingUser) {
-            return; // Wait for user status to be resolved
+            return;
         }
 
         const isPublicPage = PUBLIC_PAGES.some(p => pathname.startsWith(p));
         const isSetupPage = pathname.startsWith('/initial-setup');
         
         if (currentUser) {
-            // User is authenticated
+            // -- Lógica para usuario AUTENTICADO --
             const isSetupComplete = currentUser.isInitialSetupComplete ?? false;
 
             if (!isSetupComplete && !isSetupPage) {
-                // Force setup if not complete and not already on a setup page.
+                // Si el setup no está completo, se le fuerza a ir a la página de configuración.
                 router.replace('/initial-setup');
-            } else if (isSetupComplete && (isPublicPage || isSetupPage)) {
-                 // If setup is complete and user is on a public/setup page, send to home.
-                if (pathname === '/login' || isSetupPage) {
-                    router.replace('/');
-                }
+            } else if (isSetupComplete && (pathname === '/login' || isSetupPage)) {
+                 // Si el setup está completo y el usuario está en login o setup, se le envía al inicio.
+                router.replace('/');
             }
         } else {
-            // User is not authenticated
+            // -- Lógica para usuario NO AUTENTICADO --
             if (!isPublicPage) {
-                // If not on a public page, redirect to login.
+                // Si intenta acceder a una ruta protegida, se le envía al login.
                 router.replace('/login');
             }
         }
     }, [currentUser, isLoadingUser, pathname, router]);
     
-    // While loading user status, show a full-screen loader.
-    // This is the key to preventing hydration errors and redirect loops.
+    // **Blindaje contra errores de hidratación y redirección**:
+    // Mientras el estado del usuario se esté verificando, se muestra un loader a pantalla completa.
+    // Esto previene cualquier renderizado parcial y asegura que el router no actúe con estado obsoleto.
     if (isLoadingUser) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-muted/40">
@@ -63,7 +65,7 @@ function LayoutController({ children }: { children: React.ReactNode }) {
         );
     }
     
-    // Determine if the main app layout (Header/Footer) should be shown.
+    // Determina si se debe mostrar el layout principal de la app (Header/Footer).
     const showAppLayout = currentUser && !PUBLIC_PAGES.some(p => pathname.startsWith(p));
 
     return (
@@ -77,11 +79,15 @@ function LayoutController({ children }: { children: React.ReactNode }) {
     );
 }
 
+// El componente AppLayout ahora es más simple.
+// Su única responsabilidad es orquestar los proveedores de contexto.
 export function AppLayout({ children }: { children: React.ReactNode }) {
     const { firebaseUser, isLoadingAuth } = useAuth();
     
     return (
+        // 1. CoraboProvider recibe el estado de Firebase.
         <CoraboProvider firebaseUser={firebaseUser} isAuthLoading={isLoadingAuth}>
+            {/* 2. LayoutController recibe el estado de Corabo y decide qué renderizar. */}
             <LayoutController>{children}</LayoutController>
         </CoraboProvider>
     );
