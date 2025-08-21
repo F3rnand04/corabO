@@ -1,8 +1,7 @@
 
-
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,14 +33,12 @@ function MessagesHeader() {
 
 
 export default function MessagesPage() {
-    const { currentUser, conversations } = useCorabo();
+    const { currentUser, conversations, users } = useCorabo();
     const [searchQuery, setSearchQuery] = useState('');
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         if (currentUser) {
-            // El listener en el contexto se encarga de las actualizaciones.
-            // Solo necesitamos saber cuándo dejar de mostrar el esqueleto de carga.
             setIsLoading(false);
         }
     }, [currentUser]);
@@ -49,22 +46,27 @@ export default function MessagesPage() {
 
     const isClientWithInactiveTransactions = currentUser?.type === 'client' && !currentUser?.isTransactionsActive;
     
-    // Ordenar conversaciones localmente en cada render
-    const sortedConversations = [...conversations].sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime());
+    const sortedConversations = useMemo(() => {
+        return [...conversations].sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime());
+    }, [conversations]);
 
-    const filteredConversations = sortedConversations.filter(convo => {
-        if (!currentUser) return false;
-        
-        // La búsqueda por nombre de participante se hará en ConversationCard, aquí solo filtramos por texto
-        const lowerCaseQuery = searchQuery.toLowerCase().trim();
-        if (!lowerCaseQuery) return true;
-        
-        const lastMessageText = convo.messages[convo.messages.length - 1]?.text || '';
-        const messageMatch = lastMessageText.toLowerCase().includes(lowerCaseQuery);
-        
-        // En una futura implementación, también buscaríamos por el nombre del otro participante
-        return messageMatch;
-    });
+    const filteredConversations = useMemo(() => {
+        if (!currentUser) return [];
+
+        return sortedConversations.filter(convo => {
+            const lowerCaseQuery = searchQuery.toLowerCase().trim();
+            if (!lowerCaseQuery) return true;
+            
+            const otherParticipantId = convo.participantIds.find(pId => pId !== currentUser.id);
+            const otherParticipant = otherParticipantId ? users.find(u => u.id === otherParticipantId) : (convo.participantIds.length === 1 ? currentUser : null);
+
+            const lastMessageText = convo.messages[convo.messages.length - 1]?.text || '';
+            const messageMatch = lastMessageText.toLowerCase().includes(lowerCaseQuery);
+            const nameMatch = otherParticipant?.name.toLowerCase().includes(lowerCaseQuery);
+            
+            return messageMatch || nameMatch;
+        });
+    }, [sortedConversations, searchQuery, currentUser, users]);
     
     const renderContent = () => {
         if (isLoading) {
@@ -77,9 +79,17 @@ export default function MessagesPage() {
         if (filteredConversations.length > 0) {
             return (
                  <div className="space-y-2 px-4 pb-24">
-                    {filteredConversations.map(convo => (
-                        <ConversationCard key={convo.id} conversation={convo} />
-                    ))}
+                    {filteredConversations.map((convo) => {
+                       const otherParticipantId = convo.participantIds.find(pId => pId !== currentUser?.id);
+                       const otherParticipant = otherParticipantId ? users.find(u => u.id === otherParticipantId) : (convo.participantIds.length === 1 ? currentUser : null);
+                        return (
+                           <ConversationCard 
+                                key={convo.id} 
+                                conversation={convo}
+                                otherParticipant={otherParticipant} 
+                            />
+                        )
+                    })}
                 </div>
             )
         }

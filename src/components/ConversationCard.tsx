@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import Link from 'next/link';
@@ -14,25 +13,11 @@ import { useEffect, useState } from 'react';
 
 interface ConversationCardProps {
     conversation: Conversation;
+    otherParticipant: User | null;
 }
 
-export function ConversationCard({ conversation }: ConversationCardProps) {
-    const { currentUser, fetchUser } = useCorabo();
-    const [otherParticipant, setOtherParticipant] = useState<User | null>(null);
-
-    useEffect(() => {
-        if (!currentUser || !conversation.participantIds) return;
-        
-        const otherParticipantId = conversation.participantIds.find(pId => pId !== currentUser.id);
-        
-        if (otherParticipantId) {
-            fetchUser(otherParticipantId).then(setOtherParticipant);
-        } else if (conversation.participantIds[0] === currentUser.id && conversation.participantIds.length === 1) {
-            // This is a self-chat / notes
-            setOtherParticipant(currentUser);
-        }
-    }, [conversation, currentUser, fetchUser]);
-
+export function ConversationCard({ conversation, otherParticipant }: ConversationCardProps) {
+    const { currentUser } = useCorabo();
 
     if (!currentUser) return null;
 

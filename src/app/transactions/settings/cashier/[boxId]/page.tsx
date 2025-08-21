@@ -5,10 +5,10 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChevronLeft, DollarSign, List, BarChart } from 'lucide-react';
-import { TransactionList } from '@/components/TransactionList';
 import { useMemo, useState } from 'react';
 import type { Transaction } from '@/lib/types';
 import { TransactionDetailsDialog } from '@/components/TransactionDetailsDialog';
+import { TransactionItem } from '@/components/TransactionItem';
 
 function CashierDetailsHeader({ boxName }: { boxName: string }) {
     const router = useRouter();
@@ -41,7 +41,7 @@ const StatCard = ({ title, value, icon: Icon }: { title: string, value: string, 
 
 export default function CashierDetailsPage() {
     const params = useParams();
-    const { currentUser, transactions } = useCorabo();
+    const { currentUser, transactions, users } = useCorabo();
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
     const boxId = params.boxId as string;
@@ -78,11 +78,30 @@ export default function CashierDetailsPage() {
                     <StatCard title="Promedio por Transacción" value={`$${averageTransaction.toFixed(2)}`} icon={BarChart} />
                 </div>
                 
-                <TransactionList 
-                    title="Historial de Transacciones de la Caja" 
-                    transactions={boxTransactions}
-                    onTransactionClick={setSelectedTransaction}
-                />
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Historial de Transacciones de la Caja</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {boxTransactions.length > 0 ? (
+                      <div className="space-y-2">
+                        {boxTransactions.map(tx => {
+                           const client = users.find(u => u.id === tx.clientId);
+                           return (
+                                <TransactionItem 
+                                    key={tx.id} 
+                                    transaction={tx} 
+                                    otherParty={client || null} 
+                                    onClick={setSelectedTransaction} 
+                                />
+                           )
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center py-8">No hay transacciones en esta caja.</p>
+                    )}
+                  </CardContent>
+                </Card>
             </main>
             <TransactionDetailsDialog 
                 isOpen={!!selectedTransaction}
