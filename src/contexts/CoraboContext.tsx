@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -17,7 +18,6 @@ interface CoraboContextValue {
   allPublications: GalleryImage[];
   transactions: Transaction[];
   conversations: Conversation[];
-  cart: CartItem[];
   searchQuery: string;
   categoryFilter: string | null;
   contacts: User[];
@@ -82,7 +82,7 @@ export const CoraboProvider = ({ children, currentUser: initialUser }: { childre
   const [exchangeRate, setExchangeRate] = useState(36.54);
   const [currentUserLocation, setCurrentUserLocation] = useState<GeolocationCoords | null>(null);
   const [qrSession, setQrSession] = useState<QrSession | null>(null);
-  const [tempRecipientInfo, setTempRecipientInfo] = useState<TempRecipientInfo | null>(null);
+  const [tempRecipientInfo, _setTempRecipientInfo] = useState<TempRecipientInfo | null>(null);
   const [activeCartForCheckout, setActiveCartForCheckout] = useState<CartItem[] | null>(null);
   const [dailyQuotes, setDailyQuotes] = useState<DailyQuote[]>([]);
   
@@ -93,12 +93,22 @@ export const CoraboProvider = ({ children, currentUser: initialUser }: { childre
     _setDeliveryAddress(address);
   }, []);
   
-  const activeCartTx = useMemo(() => transactions.find(tx => tx.clientId === currentUser?.id && tx.status === 'Carrito Activo'), [transactions, currentUser?.id]);
-  const cart: CartItem[] = useMemo(() => activeCartTx?.details.items || [], [activeCartTx]);
+  const setTempRecipientInfo = useCallback((info: TempRecipientInfo | null) => {
+      if (info) {
+          sessionStorage.setItem('tempRecipientInfo', JSON.stringify(info));
+      } else {
+          sessionStorage.removeItem('tempRecipientInfo');
+      }
+      _setTempRecipientInfo(info);
+  }, []);
+  
 
   useEffect(() => {
     const savedAddress = sessionStorage.getItem('coraboDeliveryAddress');
     if (savedAddress) _setDeliveryAddress(savedAddress);
+    
+    const savedRecipient = sessionStorage.getItem('tempRecipientInfo');
+    if(savedRecipient) _setTempRecipientInfo(JSON.parse(savedRecipient));
 
     if ('geolocation' in navigator) {
         navigator.geolocation.getCurrentPosition(
@@ -208,10 +218,14 @@ export const CoraboProvider = ({ children, currentUser: initialUser }: { childre
         description: `Tu ubicación ${newStatus ? 'ahora es visible' : 'ya no es visible'} para otros usuarios.`,
       });
     };
+    
+    // The context now gets the cart items directly from the transactions array
+    const activeCartTx = useMemo(() => transactions.find(tx => tx.clientId === currentUser?.id && tx.status === 'Carrito Activo'), [transactions, currentUser?.id]);
+    const cart: CartItem[] = useMemo(() => activeCartTx?.details.items || [], [activeCartTx]);
 
     const value: CoraboContextValue = {
         currentUser,
-        setCurrentUser, // Pass down the setter
+        setCurrentUser,
         users, allPublications, transactions, conversations, cart, searchQuery, categoryFilter, contacts, searchHistory, 
         deliveryAddress, exchangeRate, qrSession, currentUserLocation, tempRecipientInfo, activeCartForCheckout,
         setSearchQuery: (query: string) => {

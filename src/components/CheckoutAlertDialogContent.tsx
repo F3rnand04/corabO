@@ -28,8 +28,8 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
         () => tempRecipientInfo ? 'other_address' : 'home'
     );
     const [useCredicora, setUseCredicora] = useState(false);
-    const [recipientName, setRecipientName] = useState('');
-    const [recipientPhone, setRecipientPhone] = useState('');
+    const [recipientName, setRecipientName] = useState(tempRecipientInfo?.name || '');
+    const [recipientPhone, setRecipientPhone] = useState(tempRecipientInfo?.phone || '');
     const [isRecipientDialogOpen, setIsRecipientDialogOpen] = useState(false);
 
     useEffect(() => {
@@ -39,7 +39,6 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
             if(tempRecipientInfo){
                 setDeliveryMethod('other_address');
             }
-            // Clean up URL
             const currentUrl = new URL(window.location.href);
             currentUrl.searchParams.delete('fromMap');
             router.replace(currentUrl.toString(), { scroll: false });
@@ -68,7 +67,14 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
     
     const handleCheckout = () => {
         if(!currentUser.id) return;
-        Actions.checkout(currentUser.id, providerId, deliveryMethod, useCredicora, tempRecipientInfo || undefined, deliveryAddress);
+        Actions.checkout(
+            currentUser.id, 
+            providerId, 
+            deliveryMethod, 
+            useCredicora, 
+            tempRecipientInfo || undefined, 
+            deliveryAddress
+        );
         onOpenChange(false);
         setUseCredicora(false);
         setTempRecipientInfo(null);
@@ -97,7 +103,7 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
     const providerHasLocation = provider.profileSetupData?.hasPhysicalLocation || false;
 
     const subtotal = activeCartForCheckout.reduce((total, item) => total + item.product.price * item.quantity, 0);
-    const deliveryCost = 0; // Simplified for now, real calculation would be server-side
+    const deliveryCost = 0;
     
     const userCredicoraLevel = currentUser.credicoraLevel || 1;
     const credicoraDetails = credicoraLevels[userCredicoraLevel.toString()];

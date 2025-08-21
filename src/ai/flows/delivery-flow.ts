@@ -72,6 +72,11 @@ export const findDeliveryProvider = ai.defineFlow(
             // Found a delivery provider. In a real app, you'd have more logic here
             // like choosing the closest one, checking their current load, etc.
             const assignedRepartidor = availableRepartidores[0];
+
+            await updateDoc(txRef, {
+              'details.deliveryProviderId': assignedRepartidor.id,
+              status: 'En Reparto',
+            });
             
             // This is a simplified notification for the prototype
             await sendMessage({
