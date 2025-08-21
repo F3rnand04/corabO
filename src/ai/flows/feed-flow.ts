@@ -48,6 +48,7 @@ export const getFeedFlow = ai.defineFlow(
 
         // Fetch all owner data in a single batch query if there are any providers
         const ownersMap = new Map<string, User>();
+        // Firestore 'in' query fails with an empty array. Add a guard clause.
         if (providerIds.length > 0) {
             const usersQuery = query(collection(db, 'users'), where('id', 'in', providerIds));
             const ownersSnapshot = await getDocs(usersQuery);
@@ -59,6 +60,7 @@ export const getFeedFlow = ai.defineFlow(
         
         // Attach owner data to each publication
         const enrichedPublications = publicationsData.map(pub => {
+            // If an owner is not found (e.g., deleted user), owner will be null.
             const owner = ownersMap.get(pub.providerId) || null;
             return {
                 ...pub,
