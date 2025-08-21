@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -6,33 +5,19 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { MapPin, Truck, Star, Wrench } from 'lucide-react';
+import { MapPin, Truck, Star } from 'lucide-react';
 import type { ProfileSetupData } from '@/lib/types';
-import { useRouter } from "next/navigation";
 import { useCorabo } from "@/contexts/CoraboContext";
-import * as SpecializedFields from '@/components/profile/specialized-fields';
-import { useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { Separator } from "../ui/separator";
 import SetLocationButton from "./SetLocationButton";
+import { SpecializedFields } from "./SpecializedFields";
 
 interface Step3_LogisticsProps {
   formData: ProfileSetupData;
   onUpdate: (data: Partial<ProfileSetupData>) => void;
   onNext: () => void;
 }
-
-const categoryComponentMap: { [key: string]: React.ElementType } = {
-    'Transporte y Asistencia': SpecializedFields.TransportFields,
-    'Salud y Bienestar': SpecializedFields.HealthFields,
-    'Hogar y Reparaciones': SpecializedFields.HomeRepairFields,
-    'Alimentos y Restaurantes': SpecializedFields.FoodAndRestaurantFields,
-    'Belleza': SpecializedFields.BeautyFields,
-    'Automotriz y Repuestos': SpecializedFields.AutomotiveFields,
-    'Tecnología y Soporte': SpecializedFields.GeneralProviderFields,
-    'Educación': SpecializedFields.GeneralProviderFields,
-    'Eventos': SpecializedFields.GeneralProviderFields,
-};
 
 export default function Step3_Logistics({ formData, onUpdate, onNext }: Step3_LogisticsProps) {
   const { currentUser } = useCorabo();
@@ -47,29 +32,6 @@ export default function Step3_Logistics({ formData, onUpdate, onNext }: Step3_Lo
   }
 
   const showSubscriptionIncentive = (formData.serviceRadius || 0) > 10 && !currentUser?.isSubscribed;
-
-  const handleSpecializedInputChange = useCallback((field: keyof NonNullable<ProfileSetupData['specializedData']>, value: any) => {
-      onUpdate({
-          specializedData: {
-              ...(formData.specializedData || {}),
-              [field]: value
-          }
-      });
-  }, [formData.specializedData, onUpdate]);
-
-  const renderSpecializedFields = () => {
-    const category = formData.primaryCategory;
-    if (!category) {
-        return (
-             <div className="p-4 bg-muted rounded-md text-center text-sm text-muted-foreground">
-                Vuelve al paso anterior para seleccionar una categoría principal.
-            </div>
-        );
-    }
-    const SpecializedComponent = categoryComponentMap[category] || SpecializedFields.GeneralProviderFields;
-    return <SpecializedComponent formData={formData} onSpecializedChange={handleSpecializedInputChange} />;
-  };
-
 
   return (
     <div className="space-y-6">
@@ -145,15 +107,7 @@ export default function Step3_Logistics({ formData, onUpdate, onNext }: Step3_Lo
             </CardContent>
         </Card>
         
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Wrench className="w-5 h-5"/>Detalles Específicos</CardTitle>
-                <CardDescription>Completa la información según la categoría de tu negocio.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                 {renderSpecializedFields()}
-            </CardContent>
-        </Card>
+        <SpecializedFields formData={formData} onUpdate={onUpdate} />
 
       </div>
       
