@@ -8,12 +8,12 @@ export default async function HomePage() {
   
   // 1. Fetch initial data directly on the server.
   // This happens before the page is sent to the client.
-  const initialFeed = await Actions.getFeed({});
+  const initialFeed = await Actions.getFeed({ limitNum: 5 });
   
   // 2. Pass the server-fetched data as a prop to a Client Component.
   return (
     <main className="space-y-4">
-       <FeedClientComponent initialPublications={initialFeed.publications || []} />
+       <FeedClientComponent initialPublications={initialFeed.publications} />
     </main>
   );
 }

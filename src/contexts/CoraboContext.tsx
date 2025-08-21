@@ -1,10 +1,9 @@
-
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest, PublicationOwner, CreatePublicationInput, CreateProductInput, QrSession, TempRecipientInfo, CashierBox } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast"
-import { getFirestoreDb } from '@/lib/firebase';
+import { getFirestoreDb } from '@/contexts/firebase-client'; // CORREGIDO: Ruta de importación actualizada
 import { doc, getDoc, collection, onSnapshot, query, where, orderBy, Unsubscribe, updateDoc, writeBatch, deleteField } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import * as Actions from '@/lib/actions';
@@ -180,9 +179,6 @@ export const CoraboProvider = ({ children, firebaseUser, isAuthLoading }: Corabo
         const userList = snapshot.docs.map(doc => doc.data() as User)
         setUsers(userList);
         userList.forEach(user => userCache.current.set(user.id, user));
-    }));
-    unsubscribes.push(onSnapshot(collection(db, 'publications'), (snapshot) => {
-        setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage));
     }));
 
     if (currentUser?.id) {

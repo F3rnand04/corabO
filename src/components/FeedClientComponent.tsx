@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { useMemo, useEffect, useState } from "react";
@@ -14,17 +12,12 @@ interface FeedClientComponentProps {
 }
 
 export function FeedClientComponent({ initialPublications }: FeedClientComponentProps) {
-  const { currentUser, searchQuery, categoryFilter, users } = useCorabo();
-  // Initialize state with the data passed from the server
+  const { currentUser, searchQuery, categoryFilter } = useCorabo();
+  // The component's state is initialized with the data passed from the server.
+  // It is now the single source of truth for this component's data.
   const [publications, setPublications] = useState<GalleryImage[]>(initialPublications);
-  const [isLoading, setIsLoading] = useState(false); // Only for subsequent loads
-
-  useEffect(() => {
-    // This could be used for infinite scroll in the future
-  }, [currentUser]);
-
+  
   const filteredPublications = useMemo(() => {
-    // The owner data is already attached, no need to find it from `users`
     let results = publications;
 
     if (categoryFilter) {
@@ -35,11 +28,12 @@ export function FeedClientComponent({ initialPublications }: FeedClientComponent
     }
 
     if (searchQuery) {
+      const lowerCaseQuery = searchQuery.toLowerCase();
       results = results.filter(p => 
-          p.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.alt?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.owner?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (p.type === 'product' && p.productDetails?.name.toLowerCase().includes(searchQuery.toLowerCase()))
+          p.description?.toLowerCase().includes(lowerCaseQuery) ||
+          p.alt?.toLowerCase().includes(lowerCaseQuery) ||
+          p.owner?.name.toLowerCase().includes(lowerCaseQuery) ||
+          (p.type === 'product' && p.productDetails?.name.toLowerCase().includes(lowerCaseQuery))
       );
     }
     return results;
@@ -69,7 +63,7 @@ export function FeedClientComponent({ initialPublications }: FeedClientComponent
             ))
         ) : (
             <div className="text-center text-muted-foreground pt-16">
-              <p>No hay publicaciones para mostrar en este momento.</p>
+              <p>No hay publicaciones que coincidan con tu búsqueda.</p>
             </div>
         )}
       </div>

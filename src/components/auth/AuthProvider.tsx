@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User as FirebaseUser } from 'firebase/auth';
-import { getAuthInstance } from '@/lib/firebase';
+import { getAuthInstance } from '@/contexts/firebase-client'; // CORREGIDO: Ruta de importación actualizada
 import { Loader2 } from 'lucide-react';
 
 interface AuthContextType {
