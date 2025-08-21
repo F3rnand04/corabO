@@ -57,10 +57,6 @@ function LayoutController({ children }: { children: React.ReactNode }) {
 export function AppLayout({ children }: { children: React.ReactNode }) {
     const { firebaseUser, isLoadingAuth } = useAuth();
     
-    // The CoraboProvider now handles its own state logic.
-    // We just pass the firebaseUser and loading state.
-    // This solves the server-side rendering issue by ensuring no async state
-    // updates are happening in this top-level layout component.
     return (
         <CoraboProvider firebaseUser={firebaseUser} isAuthLoading={isLoadingAuth}>
             <LayoutController>{children}</LayoutController>
