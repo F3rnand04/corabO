@@ -1,32 +1,26 @@
-
 // IMPORTANT: This file should NOT have the "use client" directive.
 // It's intended for server-side code, like Genkit flows.
 
-import { initializeApp, getApp, getApps, type FirebaseApp } from "firebase/app";
-import { getFirestore, type Firestore } from "firebase/firestore";
-import { firebaseConfig } from './firebase-config'; // Import from the SHARED config
+import { initializeApp, getApp, getApps, type App } from 'firebase-admin/app';
+import { getFirestore, type Firestore } from 'firebase-admin/firestore';
+import { credential } from 'firebase-admin';
 
-let app: FirebaseApp;
-let db: Firestore;
+// This function ensures the Firebase Admin app is initialized only once.
+function getFirebaseAdminApp(): App {
+  if (getApps().length > 0) {
+    return getApp();
+  }
 
-// This function ensures Firebase is initialized only once on the server.
-function getFirebaseAppInstance(): FirebaseApp {
-    if (!getApps().length) {
-        // No apps initialized, create a new one.
-        app = initializeApp(firebaseConfig);
-    } else {
-        // App already initialized, get the existing one.
-        app = getApp();
-    }
-    return app;
+  // In a Google Cloud environment (like App Hosting), the SDK can
+  // auto-discover credentials. No need to pass them explicitly.
+  const app = initializeApp();
+  
+  return app;
 }
 
+
 // This function provides a server-side instance of Firestore.
-// It is now SYNCHRONOUS, as initialization is handled above.
 export function getFirestoreDb(): Firestore {
-    if (!db) {
-        const app = getFirebaseAppInstance();
-        db = getFirestore(app);
-    }
-    return db;
+    const app = getFirebaseAdminApp();
+    return getFirestore(app);
 }
