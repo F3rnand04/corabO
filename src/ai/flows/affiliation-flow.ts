@@ -6,8 +6,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { getFirestore } from 'firebase-admin/firestore';
-import { doc, setDoc, updateDoc, writeBatch, collection, query, where, getDocs, getDoc, FieldValue, deleteField } from 'firebase/firestore';
+import { getFirestore, FieldValue, query, where, getDocs, doc, getDoc } from 'firebase-admin/firestore';
 import type { Affiliation, User } from '@/lib/types';
 // DO NOT import sendNotification from notification-flow here to avoid circular dependencies.
 // The notification logic will be orchestrated by the action layer.
@@ -40,11 +39,11 @@ export const requestAffiliationFlow = ai.defineFlow(
 
     // Check if a pending or approved affiliation already exists
     const q = query(
-        collection(db, 'affiliations'),
+        db.collection('affiliations'),
         where('providerId', '==', providerId),
         where('companyId', '==', companyId),
         where('status', 'in', ['pending', 'approved'])
-    );
+    ) as any; // Cast to any to avoid complex type issues with admin SDK queries
     const existing = await getDocs(q);
     if (!existing.empty) {
         throw new Error("An affiliation request for this company already exists or has been approved.");
@@ -60,7 +59,7 @@ export const requestAffiliationFlow = ai.defineFlow(
       requestedAt: now,
       updatedAt: now,
     };
-    await setDoc(doc(db, 'affiliations', affiliationId), newAffiliation);
+    await db.collection('affiliations').doc(affiliationId).set(newAffiliation);
   }
 );
 
@@ -76,12 +75,12 @@ export const approveAffiliationFlow = ai.defineFlow(
   },
   async ({ affiliationId, actorId }) => {
     const db = getFirestore();
-    const batch = writeBatch(db);
-    const affiliationRef = doc(db, 'affiliations', affiliationId);
+    const batch = db.batch();
+    const affiliationRef = db.collection('affiliations').doc(affiliationId);
     
     // In a real app, you'd get the affiliation doc first to verify the actorId matches the companyId
     
-    const providerId = affiliationId.split('-')[1];
+    const providerId = affiliationId.split('-')[1]; // Assuming the format is 'affil-providerId-companyId'
     const companyId = affiliationId.split('-')[2];
 
     const providerRef = doc(db, 'users', providerId);
@@ -91,11 +90,11 @@ export const approveAffiliationFlow = ai.defineFlow(
     const companyData = companySnap.data() as User;
 
     // Update affiliation status
-    batch.update(affiliationRef, { status: 'approved', updatedAt: new Date().toISOString() });
+    batch.update(affiliationRef, { status: 'approved', updatedAt: FieldValue.serverTimestamp() });
     
     // Update provider's profile with denormalized company data
     batch.update(providerRef, {
-        'activeAffiliation': {
+        activeAffiliation: {
             companyId: companyData.id,
             companyName: companyData.profileSetupData?.username || companyData.name,
             companyProfileImage: companyData.profileImage,
@@ -118,9 +117,9 @@ export const rejectAffiliationFlow = ai.defineFlow(
     },
     async ({ affiliationId }) => {
         const db = getFirestore();
-        await updateDoc(doc(db, 'affiliations', affiliationId), {
+        await db.collection('affiliations').doc(affiliationId).update({
             status: 'rejected',
-            updatedAt: new Date().toISOString()
+            updatedAt: FieldValue.serverTimestamp()
         });
     }
 );
@@ -137,17 +136,17 @@ export const revokeAffiliationFlow = ai.defineFlow(
   },
   async ({ affiliationId, actorId }) => {
      const db = getFirestore();
-     const batch = writeBatch(db);
+     const batch = db.batch();
 
-     const affiliationRef = doc(db, 'affiliations', affiliationId);
+     const affiliationRef = db.collection('affiliations').doc(affiliationId);
      const providerId = affiliationId.split('-')[1];
      const providerRef = doc(db, 'users', providerId);
      
      // Update affiliation to revoked
-     batch.update(affiliationRef, { status: 'revoked', updatedAt: new Date().toISOString() });
+     batch.update(affiliationRef, { status: 'revoked', updatedAt: FieldValue.serverTimestamp() });
      
      // Remove affiliation from provider's profile using deleteField
-     batch.update(providerRef, { activeAffiliation: deleteField() });
+     batch.update(providerRef, { activeAffiliation: FieldValue.delete() });
      
      await batch.commit();
   }

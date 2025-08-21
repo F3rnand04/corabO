@@ -3,10 +3,13 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  const sessionCookieName = Object.keys(request.cookies.getStore()).find(name => 
-    name.startsWith('__session')
-  );
-  const session = sessionCookieName ? request.cookies.get(sessionCookieName) : undefined;
+  let session = undefined;
+  for (const cookie of request.cookies.getAll()) {
+    if (cookie.name.startsWith('__session')) {
+      session = cookie;
+      break;
+    }
+  }
   
   const { pathname } = request.nextUrl;
   const isPublicPath = 
@@ -39,6 +42,13 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
     '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 };
