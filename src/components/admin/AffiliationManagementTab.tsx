@@ -12,9 +12,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Affiliation, User } from '@/lib/types';
 import { getFirestore, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+import * as Actions from '@/lib/actions';
 
 export function AffiliationManagementTab() {
-  const { currentUser, users, approveAffiliation, rejectAffiliation, revokeAffiliation, sendMessage } = useCorabo();
+  const { currentUser, users } = useCorabo();
   const [affiliations, setAffiliations] = useState<Affiliation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
@@ -38,8 +39,11 @@ export function AffiliationManagementTab() {
 
   const handleContactProfessional = (professionalId: string) => {
     if (!currentUser) return;
-    const conversationId = sendMessage({ 
+    const conversationId = [currentUser.id, professionalId].sort().join('-');
+    Actions.sendMessage({ 
       recipientId: professionalId, 
+      senderId: currentUser.id,
+      conversationId,
       text: `Hola, me gustaría conversar sobre nuestra colaboración a través de ${currentUser.name}.` 
     });
     router.push(`/messages/${conversationId}`);
@@ -87,10 +91,10 @@ export function AffiliationManagementTab() {
                       </TableCell>
                       <TableCell>{new Date(aff.requestedAt).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" className="text-green-600" onClick={() => approveAffiliation(aff.id)}>
+                        <Button variant="ghost" size="icon" className="text-green-600" onClick={() => Actions.approveAffiliation(aff.id, currentUser.id)}>
                           <Check className="h-5 w-5" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => rejectAffiliation(aff.id)}>
+                        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => Actions.rejectAffiliation(aff.id, currentUser.id)}>
                           <X className="h-5 w-5" />
                         </Button>
                       </TableCell>
@@ -162,7 +166,7 @@ export function AffiliationManagementTab() {
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                       <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => revokeAffiliation(aff.id)}>
+                                      <AlertDialogAction onClick={() => Actions.revokeAffiliation(aff.id, currentUser.id)}>
                                         Sí, revocar
                                       </AlertDialogAction>
                                     </AlertDialogFooter>

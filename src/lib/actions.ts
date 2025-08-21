@@ -7,24 +7,28 @@
  * component-facing server actions should be defined.
  */
 
-import { doc, updateDoc, deleteDoc, setDoc, getDoc, writeBatch, collection, where, query, getDocs, arrayRemove, arrayUnion, deleteField, type FieldValue } from 'firebase/firestore';
+import { doc, updateDoc, deleteField, setDoc, getDoc, writeBatch, collection, where, query, getDocs, arrayRemove, arrayUnion, deleteDoc as deleteFirestoreDoc } from 'firebase/firestore';
 
 // Types
 import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, VerificationOutput, AppointmentRequest, CreatePublicationInput, CreateProductInput, QrSession, CashierBox } from '@/lib/types';
+import { type CreateCampaignInput } from '@/ai/flows/campaign-flow';
+import { type SendMessageInput } from '@/ai/flows/message-flow';
 
 // Flows
-import { createCampaign as createCampaignFlow, type CreateCampaignInput } from '@/ai/flows/campaign-flow';
-import { sendMessage as sendMessageFlow, acceptProposal as acceptProposalFlow, type SendMessageInput } from '@/ai/flows/message-flow';
+import * as CampaignFlows from '@/ai/flows/campaign-flow';
+import * as MessageFlows from '@/ai/flows/message-flow';
 import * as TransactionFlows from '@/ai/flows/transaction-flow';
 import * as NotificationFlows from '@/ai/flows/notification-flow';
 import * as ProfileFlows from '@/ai/flows/profile-flow';
-import { autoVerifyIdWithAI as autoVerifyIdWithAIFlow, type VerificationInput } from '@/ai/flows/verification-flow';
-import { sendSmsVerificationCodeFlow, verifySmsCodeFlow } from '@/ai/flows/sms-flow';
-import { createProduct as createProductFlow, createPublication as createPublicationFlow } from '@/ai/flows/publication-flow';
-import { findDeliveryProvider as findDeliveryProviderFlow, resolveDeliveryAsPickup as resolveDeliveryAsPickupFlow } from '@/ai/flows/delivery-flow';
-import { createCashierBox as createCashierBoxFlow, regenerateCashierQr as regenerateCashierQrFlow, requestCashierSessionFlow } from '@/ai/flows/cashier-flow';
-import { requestAffiliation as requestAffiliationFlow, approveAffiliation as approveAffiliationFlow, rejectAffiliation as rejectAffiliationFlow, revokeAffiliation as revokeAffiliationFlow } from '@/ai/flows/affiliation-flow';
+import * as VerificationFlows from '@/ai/flows/verification-flow';
+import * as SmsFlows from '@/ai/flows/sms-flow';
+import * as PublicationFlows from '@/ai/flows/publication-flow';
+import * as DeliveryFlows from '@/ai/flows/delivery-flow';
+import * as CashierFlows from '@/ai/flows/cashier-flow';
+import * as AffiliationFlows from '@/ai/flows/affiliation-flow';
+
 import { getFirestoreDb } from './firebase-server';
+import { credicoraLevels, credicoraCompanyLevels } from './types';
 
 
 // --- User and Profile Actions ---
@@ -73,13 +77,22 @@ export async function toggleGps(userId: string, currentStatus: boolean) {
     await updateUser(userId, { isGpsActive: !currentStatus });
 }
 
+export async function deactivateTransactions(userId: string) {
+    await updateUser(userId, { isTransactionsActive: false, 'profileSetupData.paymentDetails': deleteField() });
+}
+
+export async function activateTransactions(userId: string, paymentDetails: ProfileSetupData['paymentDetails']) {
+    await updateUser(userId, { isTransactionsActive: true, 'profileSetupData.paymentDetails': paymentDetails });
+}
+
+
 // --- Verification and Auth Actions ---
 export async function sendPhoneVerification(userId: string, phone: string) {
-    await sendSmsVerificationCodeFlow({ userId, phoneNumber: phone });
+    await SmsFlows.sendSmsVerificationCodeFlow({ userId, phoneNumber: phone });
 }
 
 export async function verifyPhoneCode(userId: string, code: string): Promise<boolean> {
-    const result = await verifySmsCodeFlow({ userId, code });
+    const result = await SmsFlows.verifySmsCodeFlow({ userId, code });
     return result.success;
 }
 
@@ -87,7 +100,7 @@ export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput
     if (!user.name || !user.idNumber || !user.idDocumentUrl) {
       throw new Error("Faltan datos del usuario para la verificación.");
     }
-    return autoVerifyIdWithAIFlow({
+    return VerificationFlows.autoVerifyIdWithAI({
       userId: user.id,
       nameInRecord: `${user.name} ${user.lastName || ''}`,
       idInRecord: user.idNumber,
@@ -107,18 +120,18 @@ export async function rejectUserId(userId: string) {
 // --- Publication and Product Actions ---
 
 export async function createPublication(data: CreatePublicationInput) {
-    await createPublicationFlow(data);
+    await PublicationFlows.createPublication(data);
 }
 
 export async function createProduct(data: CreateProductInput): Promise<string> {
-    const productId = await createProductFlow(data);
+    const productId = await PublicationFlows.createProduct(data);
     if (!productId) throw new Error("Failed to create product");
     return productId;
 }
 
 export async function removeGalleryImage(userId: string, imageId: string) {
     const db = getFirestoreDb();
-    await deleteDoc(doc(db, 'publications', imageId));
+    await deleteFirestoreDoc(doc(db, 'publications', imageId));
 }
 
 export async function updateGalleryImage(ownerId: string, imageId: string, updates: Partial<{ description: string; imageDataUri: string }>) {
@@ -144,15 +157,15 @@ export async function updateCart(userId: string, productId: string, quantity: nu
     const snapshot = await getDocs(q);
     
     // Find the cart (can be across multiple providers)
-    let cartTx = snapshot.docs.find(doc => {
+    let cartTxDoc = snapshot.docs.find(doc => {
       const tx = doc.data() as Transaction;
       return tx.details.items?.some(item => item.product.id === productId);
     });
 
-    if (cartTx) {
+    if (cartTxDoc) {
       // Cart exists, update it
-      const txRef = doc(db, 'transactions', cartTx.id);
-      const items = cartTx.data().details.items || [];
+      const txRef = doc(db, 'transactions', cartTxDoc.id);
+      const items = cartTxDoc.data().details.items || [];
       const itemIndex = items.findIndex((i: CartItem) => i.product.id === productId);
       
       let newItems = [...items];
@@ -183,7 +196,7 @@ export async function updateCart(userId: string, productId: string, quantity: nu
       if (newItems.length > 0) {
         await updateDoc(txRef, { 'details.items': newItems.map(item => ({...item, product: {...item.product}})) });
       } else {
-        await deleteDoc(txRef);
+        await deleteFirestoreDoc(txRef);
       }
     } else if (quantity > 0) {
         // No existing cart contains this item, create a new cart transaction for this provider
@@ -235,7 +248,7 @@ export async function checkout(userId: string, providerId: string, deliveryMetho
     });
 
     if (deliveryMethod !== 'pickup') {
-        await findDeliveryProviderFlow({ transactionId: cartTx.id });
+        await DeliveryFlows.findDeliveryProvider({ transactionId: cartTx.id });
     }
 }
 
@@ -248,11 +261,11 @@ export async function payCommitment(transactionId: string, userId: string, payme
 // --- Messaging Actions ---
 
 export async function sendMessage(options: SendMessageInput) {
-    await sendMessageFlow(options);
+    await MessageFlows.sendMessage(options);
 }
 
 export async function acceptProposal(conversationId: string, messageId: string, acceptorId: string) {
-    await acceptProposalFlow({ conversationId, messageId, acceptorId });
+    await MessageFlows.acceptProposal({ conversationId, messageId, acceptorId });
 }
 
 export async function markConversationAsRead(conversationId: string, userId: string) {
@@ -271,7 +284,7 @@ export async function markConversationAsRead(conversationId: string, userId: str
 // --- Campaign and Promotion Actions ---
 
 export async function createCampaign(userId: string, data: Omit<CreateCampaignInput, 'userId'>) {
-    return await createCampaignFlow({ userId, ...data });
+    return await CampaignFlows.createCampaign({ userId, ...data });
 }
 
 export async function activatePromotion(userId: string, details: { imageId: string, promotionText: string, cost: number }) {
@@ -304,7 +317,7 @@ export async function registerSystemPayment(userId: string, concept: string, amo
 }
 
 export async function cancelSystemTransaction(transactionId: string) {
-    await deleteDoc(doc(getFirestoreDb(), 'transactions', transactionId));
+    await deleteFirestoreDoc(doc(getFirestoreDb(), 'transactions', transactionId));
 }
 
 // --- Admin Actions ---
@@ -321,10 +334,10 @@ export async function verifyCampaignPayment(transactionId: string, campaignId: s
 
 
 // --- Affiliation Actions ---
-export const requestAffiliation = requestAffiliationFlow;
-export const approveAffiliation = (affiliationId: string, actorId: string) => approveAffiliationFlow({ affiliationId, actorId });
-export const rejectAffiliation = (affiliationId: string, actorId: string) => rejectAffiliationFlow({ affiliationId, actorId });
-export const revokeAffiliation = (affiliationId: string, actorId: string) => revokeAffiliationFlow({ affiliationId, actorId });
+export const requestAffiliation = AffiliationFlows.requestAffiliation;
+export const approveAffiliation = (affiliationId: string, actorId: string) => AffiliationFlows.approveAffiliation({ affiliationId, actorId });
+export const rejectAffiliation = (affiliationId: string, actorId: string) => AffiliationFlows.rejectAffiliation({ affiliationId, actorId });
+export const revokeAffiliation = (affiliationId: string, actorId: string) => AffiliationFlows.revokeAffiliation({ affiliationId, actorId });
 
 // --- QR Session Actions ---
 export async function startQrSession(clientId: string, providerId: string, cashierBoxId?: string, cashierName?: string): Promise<string> {
@@ -353,11 +366,9 @@ export async function handleClientCopyAndPay(sessionId: string) {
     await updateDoc(doc(db, 'qr_sessions', sessionId), { status: 'awaitingPayment', updatedAt: new Date().toISOString() });
 }
 
-export const confirmMobilePayment = TransactionFlows.confirmPaymentReceived;
-
 // --- Cashier Box Actions ---
 export async function addCashierBox(userId: string, name: string, password: string): Promise<void> {
-    const newBox = await createCashierBoxFlow({ userId, name, password });
+    const newBox = await CashierFlows.createCashierBox({ userId, name, password });
     if (!newBox) throw new Error("Failed to create cashier box");
     const db = getFirestoreDb();
     await updateDoc(doc(db, 'users', userId), {
@@ -396,7 +407,7 @@ export async function updateCashierBox(userId: string, boxId: string, updates: P
 }
 
 export async function regenerateCashierBoxQr(userId: string, boxId: string) {
-    const newQrData = await regenerateCashierQrFlow({ boxId, userId });
+    const newQrData = await CashierFlows.regenerateCashierQr({ boxId, userId });
     const db = getFirestoreDb();
     const userRef = doc(db, 'users', userId);
     const userSnap = await getDoc(userRef);
@@ -413,12 +424,12 @@ export async function regenerateCashierBoxQr(userId: string, boxId: string) {
 }
 
 export async function requestCashierSession(data: { businessCoraboId: string, cashierName: string, cashierBoxId: string, password: string }) {
-    return await requestCashierSessionFlow(data);
+    return await CashierFlows.requestCashierSessionFlow(data);
 }
 
 // --- Delivery Actions ---
-export const retryFindDelivery = findDeliveryProviderFlow;
-export const resolveDeliveryAsPickup = resolveDeliveryAsPickupFlow;
+export const retryFindDelivery = DeliveryFlows.findDeliveryProvider;
+export const resolveDeliveryAsPickup = DeliveryFlows.resolveDeliveryAsPickup;
 export async function assignOwnDelivery(transactionId: string, userId: string) {
     await updateDoc(doc(getFirestoreDb(), 'transactions', transactionId), {
         'details.deliveryProviderId': userId,
@@ -432,3 +443,10 @@ export async function requestQuoteFromGroup(data: { clientId: string, title: str
     // In a real app, this would trigger a flow to find relevant providers and create transactions
     console.log("Requesting quote from group:", data);
 }
+
+export async function subscribeUser(userId: string, title: string, amount: number) {
+    return registerSystemPayment(userId, title, amount, true);
+}
+
+// --- Notification Actions ---
+export const sendNewCampaignNotifications = NotificationFlows.sendNewCampaignNotifications;

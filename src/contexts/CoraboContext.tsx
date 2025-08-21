@@ -5,7 +5,7 @@ import React, { createContext, useContext, useState, ReactNode, useEffect, useCa
 import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest, PublicationOwner, CreatePublicationInput, CreateProductInput, QrSession, TempRecipientInfo, CashierBox } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast"
 import { getFirestoreDb } from '@/lib/firebase';
-import { doc, getDoc, collection, onSnapshot, query, where, orderBy, Unsubscribe, updateDoc, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, collection, onSnapshot, query, where, orderBy, Unsubscribe, updateDoc, writeBatch, deleteField } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import * as Actions from '@/lib/actions';
 
@@ -20,7 +20,6 @@ interface CoraboContextValue {
   searchQuery: string;
   categoryFilter: string | null;
   contacts: User[];
-  isGpsActive: boolean;
   searchHistory: string[];
   deliveryAddress: string;
   exchangeRate: number;
@@ -45,8 +44,8 @@ interface CoraboContextValue {
   setTempRecipientInfo: (info: TempRecipientInfo | null) => void;
   setActiveCartForCheckout: (cartItems: CartItem[] | null) => void;
   
-  // Refactored Actions (moved out, just keeping for reference)
-  // These are now called from @/lib/actions
+  // DEPRECATED ACTIONS - These will be called from @/lib/actions now
+  // Kept here only for reference during refactoring, they will be removed.
   sendMessage: (options: Omit<SendMessageInput, 'senderId'> & { conversationId?: string }) => string;
   createPublication: (data: CreatePublicationInput) => Promise<void>;
   createProduct: (data: CreateProductInput) => Promise<string>;
@@ -123,7 +122,6 @@ export const CoraboProvider = ({ children, currentUser }: { children: ReactNode,
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [contacts, setContacts] = useState<User[]>([]);
-  const [isGpsActive, setIsGpsActive] = useState(true);
   const [deliveryAddress, _setDeliveryAddress] = useState('');
   const [exchangeRate, setExchangeRate] = useState(36.54);
   const [currentUserLocation, setCurrentUserLocation] = useState<GeolocationCoords | null>(null);
@@ -210,7 +208,7 @@ export const CoraboProvider = ({ children, currentUser }: { children: ReactNode,
       if (!currentUserLocation || !provider.profileSetupData?.location) return null;
       const [lat2, lon2] = provider.profileSetupData.location.split(',').map(Number);
       const distanceKm = haversineDistance(currentUserLocation.latitude, currentUserLocation.longitude, lat2, lon2);
-      if (provider.profileSetupData.showExactLocation === false) return `${Math.max(1, Math.round(distanceKm))} km`;
+      if (provider.profileSetupData.showExactLocation === false) return `~${Math.max(1, Math.round(distanceKm))} km`;
       return `${Math.round(distanceKm)} km`;
   }, [currentUserLocation]);
   
@@ -245,37 +243,16 @@ export const CoraboProvider = ({ children, currentUser }: { children: ReactNode,
       }));
     }, []);
 
-    const sendMessageWrapper = (options: Omit<SendMessageInput, 'senderId'> & { conversationId?: string }): string => {
-        if (!currentUser) throw new Error("User not logged in");
-        const finalConversationId = options.conversationId || [currentUser.id, options.recipientId].sort().join('-');
-        Actions.sendMessage({ ...options, senderId: currentUser.id, conversationId: finalConversationId });
-        return finalConversationId;
-    }
-    
-    const requestQuoteFromGroupWrapper = (title: string, items: string[], group: string): boolean => {
-      if (!currentUser) return false;
-      const requestSignature = items.sort().join('|') + `|${group}`;
-      const today = new Date().toISOString().split('T')[0];
-      const todaysQuotes = dailyQuotes.filter(q => q.requestSignature.startsWith(today));
-      const existingQuote = todaysQuotes.find(q => q.requestSignature.endsWith(requestSignature));
-
-      if (existingQuote && existingQuote.count >= 3 && !currentUser.isSubscribed) {
-          return false;
-      }
-      const newDailyQuotes = [...todaysQuotes];
-      if (existingQuote) {
-          existingQuote.count++;
-      } else {
-          newDailyQuotes.push({ requestSignature: `${today}|${requestSignature}`, count: 1 });
-      }
-      setDailyQuotes(newDailyQuotes);
-      Actions.requestQuoteFromGroup({ clientId: currentUser.id, title, items, group });
-      return true;
-  };
+    // Dummy implementations for now. These will be removed in the next step.
+    const createDummyAction = (name: string) => async (...args: any[]): Promise<any> => {
+        console.warn(`Action "${name}" is deprecated in CoraboContext and should be imported from @/lib/actions.`);
+        toast({ variant: "destructive", title: "Función Obsoleta", description: `La función ${name} se está llamando desde el contexto.`});
+        return Promise.resolve(name === 'sendMessage' ? 'dummy-convo-id' : undefined);
+    };
 
     const value: CoraboContextValue = {
         currentUser,
-        users, allPublications, transactions, conversations, cart, searchQuery, categoryFilter, contacts, isGpsActive, searchHistory, 
+        users, allPublications, transactions, conversations, cart, searchQuery, categoryFilter, contacts, searchHistory, 
         deliveryAddress, exchangeRate, qrSession, currentUserLocation, tempRecipientInfo, activeCartForCheckout,
         setSearchQuery: (query: string) => {
             _setSearchQuery(query);
@@ -298,75 +275,50 @@ export const CoraboProvider = ({ children, currentUser }: { children: ReactNode,
         getDistanceToProvider,
         setTempRecipientInfo,
         setActiveCartForCheckout,
-        // Bind actions to the current user
-        sendMessage: sendMessageWrapper,
-        createPublication: (data) => { if (currentUser) Actions.createPublication(data) },
-        createProduct: (data) => { if (currentUser) return Actions.createProduct(data) },
-        updateUserProfileImage: (userId, imageUrl) => Actions.updateUserProfileImage(userId, imageUrl),
-        toggleGps: (userId) => Actions.toggleGps(userId, isGpsActive),
-        addCashierBox: (name, password) => { if (currentUser) Actions.addCashierBox(currentUser.id, name, password) },
-        removeCashierBox: (boxId) => { if (currentUser) Actions.removeCashierBox(currentUser.id, boxId) },
-        updateCashierBox: (boxId, updates) => { if (currentUser) Actions.updateCashierBox(currentUser.id, boxId, updates) },
-        regenerateCashierBoxQr: (boxId) => { if (currentUser) Actions.regenerateCashierBoxQr(currentUser.id, boxId) },
-        startQrSession: (providerId, cashierBoxId) => { if (currentUser) return Actions.startQrSession(currentUser.id, providerId, cashierBoxId) },
-        cancelQrSession: Actions.cancelQrSession,
-        setQrSessionAmount: (sessionId, amount) => {
-            if(!currentUser) return;
-            const credicoraDetails = currentUser.credicoraDetails || credicoraLevels['1'];
-            const financingPercentage = 1 - credicoraDetails.initialPaymentPercentage;
-            const financedAmount = Math.min(amount * financingPercentage, currentUser.credicoraLimit || 0);
-            const initialPayment = amount - financedAmount;
-            Actions.setQrSessionAmount(sessionId, amount, initialPayment, financedAmount, credicoraDetails.installments)
-        },
-        handleClientCopyAndPay: Actions.handleClientCopyAndPay,
-        confirmMobilePayment: async (sessionId: string) => {
-          const session = qrSession?.id === sessionId ? qrSession : null;
-          if(!session) return;
-          const { transactionId } = await Actions.processDirectPayment({ sessionId });
-          // Update the session in Firestore to mark it as completed
-          const db = getFirestoreDb();
-          await updateDoc(doc(db, "qr_sessions", sessionId), { status: 'completed' });
-        },
-        subscribeUser: (title, amount) => { if (currentUser) Actions.registerSystemPayment(currentUser.id, title, amount, true); },
-        updateFullProfile: (data) => { if (currentUser) Actions.updateFullProfile(currentUser.id, data, currentUser.type); },
-        deactivateTransactions: async () => {
-            if (currentUser) {
-                await Actions.updateUser(currentUser.id, { isTransactionsActive: false, 'profileSetupData.paymentDetails': deleteField() as any });
-                toast({ title: 'Registro Desactivado', description: 'Has desactivado tu módulo de transacciones.' });
-            }
-        },
-        activateTransactions: async (paymentDetails) => {
-             if (currentUser) {
-                await Actions.updateUser(currentUser.id, { isTransactionsActive: true, 'profileSetupData.paymentDetails': paymentDetails });
-                toast({ title: '¡Registro Activado!', description: 'Tu módulo de transacciones está activo.' });
-            }
-        },
-        approveAffiliation: (affiliationId) => { if(currentUser) return Actions.approveAffiliation(affiliationId, currentUser.id) },
-        rejectAffiliation: (affiliationId) => { if(currentUser) return Actions.rejectAffiliation(affiliationId, currentUser.id) },
-        revokeAffiliation: (affiliationId) => { if(currentUser) return Actions.revokeAffiliation(affiliationId, currentUser.id) },
-        verifyCampaignPayment: Actions.verifyCampaignPayment,
-        deleteUser: Actions.deleteUser,
-        toggleUserPause: Actions.toggleUserPause,
-        verifyUserId: Actions.verifyUserId,
-        rejectUserId: Actions.rejectUserId,
-        autoVerifyIdWithAI: Actions.autoVerifyIdWithAI,
-        requestQuoteFromGroup: requestQuoteFromGroupWrapper,
-        createCampaign: (data) => { if (currentUser) return Actions.createCampaign(currentUser.id, data) },
-        createAppointmentRequest: (data) => { if (currentUser) return Actions.createAppointmentRequest({ ...data, clientId: currentUser.id }) },
-        sendProposalMessage: (conversationId, proposal) => { if (currentUser) return Actions.sendMessage({ conversationId, recipientId: '', senderId: currentUser.id, proposal }) },
-        acceptProposal: (conversationId, messageId) => { if (currentUser) return Actions.acceptProposal(conversationId, messageId, currentUser.id) },
-        sendQuote: Actions.sendQuote,
-        acceptQuote: (transactionId) => { if (currentUser) return Actions.acceptQuote(transactionId, currentUser.id) },
-        startDispute: Actions.startDispute,
-        completeWork: (transactionId) => { if(currentUser) return Actions.completeWork({ transactionId, userId: currentUser.id }) },
-        confirmWorkReceived: (transactionId, rating, comment) => { if(currentUser) return Actions.confirmWorkReceived({ transactionId, userId: currentUser.id, rating, comment }) },
-        payCommitment: (transactionId) => { if(currentUser) return Actions.payCommitment(transactionId, currentUser.id, {}) },
-        confirmPaymentReceived: (transactionId, fromThirdParty) => { if(currentUser) return Actions.confirmPaymentReceived({ transactionId, userId: currentUser.id, fromThirdParty }) },
-        acceptAppointment: (transactionId) => { if(currentUser) return Actions.acceptAppointment({ transactionId, userId: currentUser.id }) },
-        cancelSystemTransaction: Actions.cancelSystemTransaction,
-        retryFindDelivery: Actions.retryFindDelivery,
-        assignOwnDelivery: (transactionId) => { if(currentUser) return Actions.assignOwnDelivery(transactionId, currentUser.id)},
-        resolveDeliveryAsPickup: Actions.resolveDeliveryAsPickup,
+        sendMessage: createDummyAction('sendMessage') as any,
+        createPublication: createDummyAction('createPublication'),
+        createProduct: createDummyAction('createProduct'),
+        updateUserProfileImage: createDummyAction('updateUserProfileImage'),
+        toggleGps: createDummyAction('toggleGps'),
+        addCashierBox: createDummyAction('addCashierBox'),
+        removeCashierBox: createDummyAction('removeCashierBox'),
+        updateCashierBox: createDummyAction('updateCashierBox'),
+        regenerateCashierBoxQr: createDummyAction('regenerateCashierBoxQr'),
+        startQrSession: createDummyAction('startQrSession'),
+        cancelQrSession: createDummyAction('cancelQrSession'),
+        setQrSessionAmount: createDummyAction('setQrSessionAmount'),
+        handleClientCopyAndPay: createDummyAction('handleClientCopyAndPay'),
+        confirmMobilePayment: createDummyAction('confirmMobilePayment'),
+        subscribeUser: createDummyAction('subscribeUser'),
+        updateFullProfile: createDummyAction('updateFullProfile'),
+        deactivateTransactions: createDummyAction('deactivateTransactions'),
+        activateTransactions: createDummyAction('activateTransactions'),
+        approveAffiliation: createDummyAction('approveAffiliation'),
+        rejectAffiliation: createDummyAction('rejectAffiliation'),
+        revokeAffiliation: createDummyAction('revokeAffiliation'),
+        verifyCampaignPayment: createDummyAction('verifyCampaignPayment'),
+        deleteUser: createDummyAction('deleteUser'),
+        toggleUserPause: createDummyAction('toggleUserPause'),
+        verifyUserId: createDummyAction('verifyUserId'),
+        rejectUserId: createDummyAction('rejectUserId'),
+        autoVerifyIdWithAI: createDummyAction('autoVerifyIdWithAI'),
+        requestQuoteFromGroup: createDummyAction('requestQuoteFromGroup') as any,
+        createCampaign: createDummyAction('createCampaign'),
+        createAppointmentRequest: createDummyAction('createAppointmentRequest'),
+        sendProposalMessage: createDummyAction('sendProposalMessage'),
+        acceptProposal: createDummyAction('acceptProposal'),
+        sendQuote: createDummyAction('sendQuote'),
+        acceptQuote: createDummyAction('acceptQuote'),
+        startDispute: createDummyAction('startDispute'),
+        completeWork: createDummyAction('completeWork'),
+        confirmWorkReceived: createDummyAction('confirmWorkReceived'),
+        payCommitment: createDummyAction('payCommitment'),
+        confirmPaymentReceived: createDummyAction('confirmPaymentReceived'),
+        acceptAppointment: createDummyAction('acceptAppointment'),
+        cancelSystemTransaction: createDummyAction('cancelSystemTransaction'),
+        retryFindDelivery: createDummyAction('retryFindDelivery'),
+        assignOwnDelivery: createDummyAction('assignOwnDelivery'),
+        resolveDeliveryAsPickup: createDummyAction('resolveDeliveryAsPickup'),
     };
   
     return (

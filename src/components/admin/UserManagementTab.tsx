@@ -12,9 +12,10 @@ import { Input } from '@/components/ui/input';
 import { Button } from '../ui/button';
 import { Trash2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+import * as Actions from '@/lib/actions';
 
 export function UserManagementTab() {
-  const { users, toggleUserPause, deleteUser } = useCorabo();
+  const { users } = useCorabo();
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredUsers = users.filter(u => 
@@ -71,7 +72,7 @@ export function UserManagementTab() {
                         <TableCell className="text-right space-x-2">
                            <Switch
                                 checked={!user.isPaused}
-                                onCheckedChange={() => toggleUserPause(user.id, !!user.isPaused)}
+                                onCheckedChange={() => Actions.toggleUserPause(user.id, !!user.isPaused)}
                            />
                            <AlertDialog>
                               <AlertDialogTrigger asChild>
@@ -88,7 +89,7 @@ export function UserManagementTab() {
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
                                       <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => deleteUser(user.id)}>Sí, eliminar usuario</AlertDialogAction>
+                                      <AlertDialogAction onClick={() => Actions.deleteUser(user.id)}>Sí, eliminar usuario</AlertDialogAction>
                                   </AlertDialogFooter>
                               </AlertDialogContent>
                            </AlertDialog>

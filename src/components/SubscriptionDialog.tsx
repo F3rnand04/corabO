@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from '@/lib/utils';
 import type { Transaction } from '@/lib/types';
 import { credicoraLevels, credicoraCompanyLevels } from '@/lib/types';
+import * as Actions from '@/lib/actions';
 
 
 interface SubscriptionDialogProps {
@@ -71,7 +72,7 @@ const plans = {
 
 
 export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogProps) {
-  const { currentUser, subscribeUser, updateUser } = useCorabo();
+  const { currentUser } = useCorabo();
   const [paymentCycle, setPaymentCycle] = useState<'monthly' | 'annually'>('monthly');
 
   if (!currentUser) {
@@ -114,9 +115,9 @@ export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogP
     // Set the user's credicora details upon subscribing
     const currentCredicoraLevel = currentUser.credicoraLevel || 1;
     const credicoraDetails = isCompany ? credicoraCompanyLevels[currentCredicoraLevel.toString()] : credicoraLevels[currentCredicoraLevel.toString()];
-    await updateUser(currentUser.id, { credicoraDetails });
+    await Actions.updateUser(currentUser.id, { credicoraDetails });
     
-    subscribeUser(currentUser.id, `Plan ${currentPlan.title} (${paymentCycle === 'monthly' ? 'Mensual' : 'Anual'})`, amount);
+    Actions.subscribeUser(currentUser.id, `Plan ${currentPlan.title} (${paymentCycle === 'monthly' ? 'Mensual' : 'Anual'})`, amount);
     onOpenChange(false);
   }
 

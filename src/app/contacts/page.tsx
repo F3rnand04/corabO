@@ -14,7 +14,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { ContactSupportCard } from '@/components/ContactSupportCard';
-import * as Actions from '@/lib/actions'; // Import actions directly
+import * as Actions from '@/lib/actions'; 
 
 
 function ContactsHeader({ onSubscribeClick }: { onSubscribeClick: () => void }) {
@@ -47,7 +47,7 @@ function ContactsHeader({ onSubscribeClick }: { onSubscribeClick: () => void }) 
 
 
 export default function ContactsPage() {
-  const { currentUser, contacts, removeContact, sendMessage } = useCorabo();
+  const { currentUser, contacts, removeContact } = useCorabo();
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
@@ -57,7 +57,9 @@ export default function ContactsPage() {
   }
 
   const handleDirectMessage = (contactId: string) => {
-    const conversationId = sendMessage({recipientId: contactId, text: ""});
+    if (!currentUser) return;
+    const conversationId = [currentUser.id, contactId].sort().join('-');
+    Actions.sendMessage({ recipientId: contactId, text: "", conversationId, senderId: currentUser.id });
     router.push(`/messages/${conversationId}`);
   };
 
@@ -157,6 +159,9 @@ export default function ContactsPage() {
               No tienes contactos guardados todavía.
             </p>
           )}
+        </div>
+        <div className='py-4'>
+            <ContactSupportCard />
         </div>
       </div>
     </main>

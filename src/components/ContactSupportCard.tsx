@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -5,9 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Mail, Phone, Instagram } from "lucide-react";
 import Link from 'next/link';
 import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
+import { useCorabo } from "../contexts/CoraboContext";
+import * as Actions from '@/lib/actions';
 
 export function ContactSupportCard() {
     const { toast } = useToast();
+    const router = useRouter();
+    const { currentUser } = useCorabo();
+    
     const contactEmail = "corabo.app@gmail.com";
     const contactPhone = "+584128978405";
     const whatsappNumber = "584128978405"; // Number without '+' for wa.me link
@@ -18,6 +25,16 @@ export function ContactSupportCard() {
         toast({ title: 'Copiado', description: `El ${type} de contacto ha sido copiado.` });
     };
 
+    const handleChatSupport = () => {
+        if (!currentUser) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Debes iniciar sesión para contactar a soporte.' });
+            return;
+        }
+        const conversationId = [currentUser.id, 'corabo-admin'].sort().join('-');
+        Actions.sendMessage({ recipientId: 'corabo-admin', text: "Hola, necesito ayuda con la plataforma.", conversationId, senderId: currentUser.id });
+        router.push(`/messages/${conversationId}`);
+    }
+
     return (
         <Card className="mt-12 bg-background">
             <CardHeader>
@@ -27,6 +44,9 @@ export function ContactSupportCard() {
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+                <Button onClick={handleChatSupport} className="w-full">
+                    Chatear con Soporte en Vivo
+                </Button>
                 <div className="flex flex-col sm:flex-row gap-2">
                     <Button asChild variant="outline" className="w-full justify-start">
                          <Link href={`mailto:${contactEmail}`}>

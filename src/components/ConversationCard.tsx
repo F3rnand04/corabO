@@ -21,11 +21,15 @@ export function ConversationCard({ conversation }: ConversationCardProps) {
     const [otherParticipant, setOtherParticipant] = useState<User | null>(null);
 
     useEffect(() => {
-        if (!currentUser || !conversation) return;
+        if (!currentUser || !conversation.participantIds) return;
         
         const otherParticipantId = conversation.participantIds.find(pId => pId !== currentUser.id);
+        
         if (otherParticipantId) {
             fetchUser(otherParticipantId).then(setOtherParticipant);
+        } else if (conversation.participantIds[0] === currentUser.id && conversation.participantIds.length === 1) {
+            // This is a self-chat / notes
+            setOtherParticipant(currentUser);
         }
     }, [conversation, currentUser, fetchUser]);
 
@@ -38,15 +42,15 @@ export function ConversationCard({ conversation }: ConversationCardProps) {
     // Format timestamp
     const timeAgo = lastMessage ? formatDistanceToNow(new Date(lastMessage.timestamp), { addSuffix: true, locale: es }) : '';
     
-    const participantName = otherParticipant ? otherParticipant.name : 'Sistema';
+    const participantName = otherParticipant ? (otherParticipant.id === currentUser.id ? "Tú (Notas)" : otherParticipant.name) : 'Sistema';
     const participantImage = otherParticipant ? otherParticipant.profileImage : "https://i.postimg.cc/Wz1MTvWK/lg.png";
     const fallbackChar = participantName.charAt(0) || 'S';
 
-    const cardStyles = otherParticipant 
+    const cardStyles = otherParticipant && otherParticipant.id !== currentUser.id
         ? "bg-background hover:bg-muted/80" 
         : "bg-blue-50 border border-blue-200 hover:bg-blue-100/80";
 
-    const nameStyles = otherParticipant ? "" : "text-blue-800";
+    const nameStyles = otherParticipant ? (otherParticipant.id === currentUser.id ? "" : "") : "text-blue-800";
     const timeStyles = otherParticipant ? (unreadCount > 0 ? "text-primary font-bold" : "text-muted-foreground") : "text-blue-600 font-medium";
     const messageStyles = otherParticipant ? "text-muted-foreground" : "text-blue-700/90";
 

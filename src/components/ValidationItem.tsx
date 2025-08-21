@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { CheckCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
-import { sendPhoneVerification, verifyPhoneCode } from '@/lib/actions'; // Import directly from actions
+import { sendPhoneVerification, verifyPhoneCode } from '@/lib/actions'; 
 import { useAuth } from './auth/AuthProvider';
 
 type ValidationStatus = 'idle' | 'pending' | 'validated';
@@ -49,11 +49,16 @@ export function ValidationItem({
             if (type === 'phone') {
                 await sendPhoneVerification(firebaseUser.uid, currentValue);
                 setStatus('pending');
+                toast({ title: 'Código Enviado', description: 'Revisa tu teléfono para obtener el código de 6 dígitos.'});
             } else if (onValidate) {
                 await onValidate(currentValue); // For email
                 setStatus('pending');
             }
-        } finally {
+        } catch (error) {
+            console.error(error);
+            toast({ variant: 'destructive', title: 'Error al Enviar', description: 'No se pudo enviar la validación.' });
+        }
+        finally {
             setIsLoading(false);
         }
     };
@@ -73,7 +78,11 @@ export function ValidationItem({
                 const success = await onValidate(inputCode);
                 if(success) setStatus('validated');
             }
-        } finally {
+        } catch(error) {
+            console.error(error);
+            toast({ variant: 'destructive', title: 'Error de Verificación', description: 'No se pudo completar la verificación.' });
+        }
+        finally {
             setIsLoading(false);
         }
     };

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState } from 'react';
@@ -18,12 +19,14 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useCorabo } from '@/contexts/CoraboContext';
 import { Handshake, Calendar as CalendarIcon, Star } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { cn } from '@/lib/utils';
 import { Switch } from './ui/switch';
+import { useCorabo } from '@/contexts/CoraboContext';
+import * as Actions from '@/lib/actions';
+
 
 interface ProposalDialogProps {
   isOpen: boolean;
@@ -65,7 +68,7 @@ const placeholderMap: Record<string, { title: string; description: string }> = {
 };
 
 export function ProposalDialog({ isOpen, onOpenChange, conversationId }: ProposalDialogProps) {
-    const { currentUser, sendProposalMessage } = useCorabo();
+    const { currentUser } = useCorabo();
 
     const form = useForm<ProposalFormValues>({
         resolver: zodResolver(proposalSchema),
@@ -78,9 +81,16 @@ export function ProposalDialog({ isOpen, onOpenChange, conversationId }: Proposa
     });
 
     const onSubmit = (data: ProposalFormValues) => {
-        sendProposalMessage(conversationId, {
-            ...data,
-            deliveryDate: data.deliveryDate.toISOString(),
+        if (!currentUser) return;
+        const otherParticipantId = conversationId.replace(currentUser.id, '').replace('-', '');
+        Actions.sendMessage({
+            senderId: currentUser.id,
+            recipientId: otherParticipantId,
+            conversationId,
+            proposal: {
+                ...data,
+                deliveryDate: data.deliveryDate.toISOString(),
+            },
         });
         form.reset();
         onOpenChange(false);

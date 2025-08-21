@@ -15,11 +15,12 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import * as Actions from '@/lib/actions';
 
 const promotionSuggestions = ["10% OFF", "2x1 Hoy", "Envío Gratis", "Oferta Especial", "Nuevo"];
 
 export default function EmprendePage() {
-  const { currentUser, activatePromotion, updateUserProfileAndGallery } = useCorabo();
+  const { currentUser } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -106,8 +107,8 @@ export default function EmprendePage() {
     };
     
     try {
-        await updateUserProfileAndGallery(currentUser.id, newTempImage);
-        await activatePromotion({ imageId: newTempImage.id, promotionText, cost: promotionCost });
+        await Actions.updateUserProfileAndGallery(currentUser.id, newTempImage as any);
+        await Actions.activatePromotion(currentUser.id, { imageId: newTempImage.id, promotionText, cost: promotionCost });
 
         toast({ title: "¡Promoción Activada!", description: "Tu oferta destacará por 24 horas." });
         router.push('/profile');

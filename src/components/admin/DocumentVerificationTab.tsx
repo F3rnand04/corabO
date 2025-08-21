@@ -12,9 +12,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import type { User, VerificationOutput } from '@/lib/types';
+import * as Actions from '@/lib/actions';
 
 export function DocumentVerificationTab() {
-  const { users, verifyUserId, rejectUserId, autoVerifyIdWithAI } = useCorabo();
+  const { users } = useCorabo();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [verificationResult, setVerificationResult] = useState<VerificationOutput | { error: string } | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -26,7 +27,7 @@ export function DocumentVerificationTab() {
       setIsVerifying(true);
       setVerificationResult(null);
       try {
-          const result = await autoVerifyIdWithAI(user);
+          const result = await Actions.autoVerifyIdWithAI(user);
           setVerificationResult(result);
       } catch (error) {
           console.error(error);
@@ -139,10 +140,10 @@ export function DocumentVerificationTab() {
                         </div>
                   </div>
                   <AlertDialogFooter>
-                      <Button variant="destructive" onClick={() => { selectedUser && rejectUserId(selectedUser.id); setIsDialogOpen(false);}}>Rechazar</Button>
+                      <Button variant="destructive" onClick={() => { selectedUser && Actions.rejectUserId(selectedUser.id); setIsDialogOpen(false);}}>Rechazar</Button>
                       <div className="flex-grow"></div>
                       <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => { selectedUser && verifyUserId(selectedUser.id); setIsDialogOpen(false);}}>Aprobar Verificación</AlertDialogAction>
+                      <AlertDialogAction onClick={() => { selectedUser && Actions.verifyUserId(selectedUser.id); setIsDialogOpen(false);}}>Aprobar Verificación</AlertDialogAction>
                   </AlertDialogFooter>
               </>
           )}

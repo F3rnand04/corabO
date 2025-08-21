@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useCorabo } from '@/contexts/CoraboContext';
@@ -6,11 +7,11 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { CheckCircle } from 'lucide-react';
-import { sendNewCampaignNotifications } from '@/ai/flows/notification-flow';
 import { useToast } from '@/hooks/use-toast';
+import * as Actions from '@/lib/actions';
 
 export function PaymentVerificationTab() {
-  const { transactions, users, verifyCampaignPayment } = useCorabo();
+  const { transactions, users } = useCorabo();
   const { toast } = useToast();
 
   const pendingPayments = transactions.filter(
@@ -19,11 +20,11 @@ export function PaymentVerificationTab() {
 
   const handleVerifyAndNotify = async (transactionId: string, campaignId: string) => {
       // First, verify the payment and activate the campaign
-      await verifyCampaignPayment(transactionId, campaignId);
+      await Actions.verifyCampaignPayment(transactionId, campaignId);
       
       // Then, send the notifications
       try {
-        await sendNewCampaignNotifications({ campaignId });
+        await Actions.sendNewCampaignNotifications({ campaignId });
         toast({ title: "Campaña Activada y Notificada", description: "La campaña está activa y los usuarios han sido notificados." });
       } catch (error) {
         console.error("Error sending campaign notifications:", error);
@@ -70,7 +71,7 @@ export function PaymentVerificationTab() {
                                 handleVerifyAndNotify(tx.id, campaignId);
                             } else if (isSubscription) {
                                 // Just verify the payment for subscriptions, no notification needed from here
-                                verifyCampaignPayment(tx.id, ''); // Pass empty campaignId
+                                Actions.verifyCampaignPayment(tx.id, ''); // Pass empty campaignId
                                 toast({ title: "Suscripción Activada", description: "El pago del usuario ha sido verificado."});
                             }
                           }}

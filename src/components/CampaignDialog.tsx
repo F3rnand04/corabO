@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -21,6 +22,7 @@ import { cn } from '@/lib/utils';
 import { Badge } from './ui/badge';
 import { Switch } from './ui/switch';
 import { Separator } from './ui/separator';
+import * as Actions from '@/lib/actions';
 
 interface CampaignDialogProps {
     isOpen: boolean;
@@ -28,7 +30,7 @@ interface CampaignDialogProps {
 }
 
 export function CampaignDialog({ isOpen, onOpenChange }: CampaignDialogProps) {
-    const { currentUser, createCampaign } = useCorabo();
+    const { currentUser } = useCorabo();
     const [step, setStep] = useState(1);
     const [selectedPublicationId, setSelectedPublicationId] = useState<string | null>(null);
     
@@ -56,6 +58,8 @@ export function CampaignDialog({ isOpen, onOpenChange }: CampaignDialogProps) {
 
         let totalCost = dailyCost * durationDays;
         
+        if(!currentUser) return { dailyCost: 0, totalCost: 0, discount: 0, finalCost: 0, initialPayment: 0, financedAmount: 0 };
+
         const discount = currentUser.isSubscribed ? totalCost * 0.10 : 0;
         const finalCost = totalCost - discount;
         
@@ -79,9 +83,9 @@ export function CampaignDialog({ isOpen, onOpenChange }: CampaignDialogProps) {
     const handleBack = () => setStep(s => s - 1);
 
     const handleCreateCampaign = () => {
-        if (!selectedPublicationId) return;
+        if (!selectedPublicationId || !currentUser) return;
 
-        createCampaign({
+        Actions.createCampaign(currentUser.id, {
             publicationId: selectedPublicationId,
             budget: calculatedCosts.finalCost,
             durationDays: durationDays,
@@ -109,6 +113,8 @@ export function CampaignDialog({ isOpen, onOpenChange }: CampaignDialogProps) {
         setUseCredicora(false);
     }
 
+    if (!currentUser) return null;
+
     const renderStepContent = () => {
         switch (step) {
             case 1: // Select Publication
@@ -117,7 +123,7 @@ export function CampaignDialog({ isOpen, onOpenChange }: CampaignDialogProps) {
                         <DialogDescription>Elige la publicación de tu galería que quieres impulsar.</DialogDescription>
                         <ScrollArea className="h-72">
                             <div className="grid grid-cols-3 gap-2 pr-4">
-                                {currentUser.gallery?.map(img => (
+                                {currentUser.profileSetupData?.gallery?.map(img => (
                                     <div 
                                         key={img.id} 
                                         className={cn("relative aspect-square rounded-md overflow-hidden cursor-pointer border-4", selectedPublicationId === img.id ? 'border-primary' : 'border-transparent')}
@@ -256,4 +262,3 @@ export function CampaignDialog({ isOpen, onOpenChange }: CampaignDialogProps) {
         </Dialog>
     );
 }
-
