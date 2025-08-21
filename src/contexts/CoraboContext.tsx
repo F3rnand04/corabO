@@ -47,6 +47,8 @@ interface CoraboContextValue {
   getDistanceToProvider: (provider: User) => string | null;
   setTempRecipientInfo: (info: TempRecipientInfo | null) => void;
   setActiveCartForCheckout: (cartItems: CartItem[] | null) => void;
+  
+  // Delegated Actions
   updateUser: (userId: string, updates: Partial<User>) => Promise<void>;
   updateUserProfileImage: (userId: string, imageUrl: string) => Promise<void>;
   toggleGps: (userId: string) => Promise<void>;
@@ -269,7 +271,7 @@ export const CoraboProvider = ({ children, currentUser }: { children: ReactNode,
         date: new Date(tx.date), type: 'payment', description: `Pago a ${tx.providerId}`, transactionId: tx.id,
       }));
     }, []);
-    
+
     const updateCartQuantity = async (productId: string, quantity: number) => {
         if (!currentUser) return;
         const newCart = [...cart];
@@ -315,115 +317,131 @@ export const CoraboProvider = ({ children, currentUser }: { children: ReactNode,
     const subscribeUser = async (userId: string, planName: string, amount: number) => {
         await Actions.registerSystemPayment(userId, `Suscripción: ${planName}`, amount, true);
     }
-
-  const value = {
-    currentUser,
-    users, allPublications, transactions, conversations, cart, searchQuery, categoryFilter, contacts, isGpsActive, searchHistory, 
-    deliveryAddress, exchangeRate, qrSession, currentUserLocation, tempRecipientInfo, activeCartForCheckout,
-    setSearchQuery: (query: string) => {
-        _setSearchQuery(query);
-        if (query.trim() && !searchHistory.includes(query.trim())) setSearchHistory(prev => [query.trim(), ...prev].slice(0, 10));
-    },
-    setCategoryFilter,
-    clearSearchHistory: () => setSearchHistory([]),
-    getCartTotal,
-    getDeliveryCost,
-    addContact: (user: User) => {
-        if (contacts.some(c => c.id === user.id)) return false;
-        setContacts(prev => [...prev, user]);
-        return true;
-    },
-    removeContact: (userId: string) => setContacts(prev => prev.filter(c => c.id !== userId)),
-    isContact: (userId: string) => contacts.some(c => c.id === userId),
-    getCartItemQuantity: (productId: string) => cart.find(item => item.product.id === productId)?.quantity || 0,
-    setDeliveryAddress,
-    setDeliveryAddressToCurrent,
-    getUserMetrics,
-    fetchUser,
-    getDistanceToProvider,
-    getAgendaEvents,
-    setTempRecipientInfo,
-    setActiveCartForCheckout,
-    updateUser: (userId: string, updates: Partial<User>) => Actions.updateUser(userId, updates),
-    updateUserProfileImage: (userId: string, imageUrl: string) => Actions.updateUserProfileImage(userId, imageUrl),
-    toggleGps: async (userId: string) => {
-      if(!currentUser) return;
-      await Actions.toggleGps(userId, currentUser.isGpsActive);
-    },
-    updateFullProfile: (userId: string, data: ProfileSetupData, profileType: User['type']) => Actions.updateFullProfile(userId, data, profileType),
-    deleteUser: (userId: string) => Actions.deleteUser(userId),
-    toggleUserPause: (userId: string, currentIsPaused: boolean) => Actions.toggleUserPause(userId, currentIsPaused),
-    sendPhoneVerification: (userId: string, phone: string) => Actions.sendPhoneVerification(userId, phone),
-    verifyPhoneCode: (userId: string, code: string) => Actions.verifyPhoneCode(userId, code),
-    autoVerifyIdWithAI: (user: User) => Actions.autoVerifyIdWithAI(user),
-    verifyUserId: (userId: string) => Actions.verifyUserId(userId),
-    rejectUserId: (userId: string) => Actions.rejectUserId(userId),
-    createPublication: (data: CreatePublicationInput) => Actions.createPublication(data),
-    createProduct: (data: CreateProductInput) => Actions.createProduct(data),
-    removeGalleryImage: (userId: string, imageId: string) => Actions.removeGalleryImage(userId, imageId),
-    updateGalleryImage: (ownerId: string, imageId: string, updates: Partial<{ description: string, imageDataUri: string }>) => Actions.updateGalleryImage(ownerId, imageId, updates),
-    updateCartQuantity,
-    checkout,
-    sendMessage,
-    acceptProposal,
-    markConversationAsRead,
-    createCampaign: (data: Omit<any, 'userId'>) => Actions.createCampaign(currentUser!.id, data),
-    activatePromotion: (details: any) => Actions.activatePromotion(currentUser!.id, details),
-    verifyCampaignPayment: (transactionId: string, campaignId: string) => Actions.verifyCampaignPayment(transactionId, campaignId),
-    approveAffiliation: (affiliationId: string) => Actions.approveAffiliation(affiliationId, currentUser!.id),
-    rejectAffiliation: (affiliationId: string) => Actions.rejectAffiliation(affiliationId, currentUser!.id),
-    revokeAffiliation: (affiliationId: string) => Actions.revokeAffiliation(affiliationId, currentUser!.id),
-    startQrSession: async (providerId: string, cashierBoxId?: string) => {
-        if (!currentUser) return null;
-        return await Actions.startQrSession(currentUser.id, providerId, cashierBoxId);
-    },
-    cancelQrSession: (sessionId: string) => Actions.cancelQrSession(sessionId),
-    setQrSessionAmount: async (sessionId: string, amount: number) => {
-        if(!currentUser) return;
-        const level = currentUser.credicoraLevel || 1;
-        const details = currentUser.credicoraDetails || { initialPaymentPercentage: 0.6, installments: 3 };
-        const financed = Math.min(amount * (1 - details.initialPaymentPercentage), currentUser.credicoraLimit || 0);
-        await Actions.setQrSessionAmount(sessionId, amount, amount - financed, financed, details.installments);
-    },
-    handleClientCopyAndPay: (sessionId: string) => Actions.handleClientCopyAndPay(sessionId),
-    confirmMobilePayment: (sessionId: string) => Actions.confirmMobilePayment(sessionId),
-    addCashierBox: (name: string, password: string) => Actions.addCashierBox(currentUser!.id, name, password),
-    removeCashierBox: (boxId: string) => Actions.removeCashierBox(currentUser!.id, boxId),
-    updateCashierBox: (boxId: string, updates: Partial<CashierBox>) => Actions.updateCashierBox(currentUser!.id, boxId, updates),
-    regenerateCashierBoxQr: (boxId: string) => Actions.regenerateCashierBoxQr(currentUser!.id, boxId),
-    sendQuote: (transactionId: string, quote: { breakdown: string, total: number }) => Actions.sendQuote(transactionId, currentUser!.id, quote.breakdown, quote.total),
-    acceptQuote: (transactionId: string) => Actions.acceptQuote(transactionId, currentUser!.id),
-    startDispute: (transactionId: string) => Actions.startDispute(transactionId),
-    completeWork: (transactionId: string) => Actions.completeWork(transactionId, currentUser!.id),
-    confirmWorkReceived: (transactionId: string, rating: number, comment: string) => Actions.confirmWorkReceived(transactionId, currentUser!.id, rating, comment),
-    confirmPaymentReceived: (transactionId: string, fromThirdParty: boolean) => Actions.confirmPaymentReceived(transactionId, currentUser!.id, fromThirdParty),
-    payCommitment: (transactionId: string, paymentDetails?: any) => Actions.payCommitment(transactionId, currentUser!.id, paymentDetails),
-    createAppointmentRequest: (request: Omit<AppointmentRequest, 'clientId'>) => Actions.createAppointmentRequest({ ...request, clientId: currentUser!.id }),
-    acceptAppointment: (transactionId: string) => Actions.acceptAppointment(transactionId, currentUser!.id),
-    subscribeUser,
-    registerSystemPayment: (concept: string, amount: number, isSubscription: boolean) => Actions.registerSystemPayment(currentUser!.id, concept, amount, isSubscription),
-    deactivateTransactions: (userId: string) => Actions.updateUser(userId, { isTransactionsActive: false }),
-    cancelSystemTransaction: (transactionId: string) => Actions.cancelSystemTransaction(transactionId),
-    downloadTransactionsPDF: (transactions: Transaction[], startDate: Date, endDate: Date) => {}, // Placeholder
-    retryFindDelivery: (transactionId: string) => Actions.retryFindDelivery({transactionId}),
-    assignOwnDelivery: (transactionId: string) => Actions.assignOwnDelivery(transactionId, currentUser!.id),
-    resolveDeliveryAsPickup: (transactionId: string) => Actions.resolveDeliveryAsPickup({transactionId}),
-    requestQuoteFromGroup: (title: string, items: string[], group: string) => { return true; },
-  };
   
-  return (
-    <CoraboContext.Provider value={value as any}>
-        {children}
-    </CoraboContext.Provider>
-  );
+    const value: CoraboContextValue = {
+        currentUser,
+        users, allPublications, transactions, conversations, cart, searchQuery, categoryFilter, contacts, isGpsActive, searchHistory, 
+        deliveryAddress, exchangeRate, qrSession, currentUserLocation, tempRecipientInfo, activeCartForCheckout,
+        setSearchQuery: (query: string) => {
+            _setSearchQuery(query);
+            if (query.trim() && !searchHistory.includes(query.trim())) setSearchHistory(prev => [query.trim(), ...prev].slice(0, 10));
+        },
+        setCategoryFilter,
+        clearSearchHistory: () => setSearchHistory([]),
+        getCartTotal,
+        getDeliveryCost,
+        addContact: (user: User) => {
+            if (contacts.some(c => c.id === user.id)) return false;
+            setContacts(prev => [...prev, user]);
+            return true;
+        },
+        removeContact: (userId: string) => setContacts(prev => prev.filter(c => c.id !== userId)),
+        isContact: (userId: string) => contacts.some(c => c.id === userId),
+        getCartItemQuantity: (productId: string) => cart.find(item => item.product.id === productId)?.quantity || 0,
+        setDeliveryAddress,
+        setDeliveryAddressToCurrent,
+        getUserMetrics,
+        fetchUser,
+        getDistanceToProvider,
+        getAgendaEvents,
+        setTempRecipientInfo,
+        setActiveCartForCheckout,
+        // Delegated Actions
+        updateUser: (userId, updates) => Actions.updateUser(userId, updates),
+        updateUserProfileImage: (userId, imageUrl) => Actions.updateUserProfileImage(userId, imageUrl),
+        toggleGps: async (userId) => {
+            if(!currentUser) return;
+            await Actions.toggleGps(userId, currentUser.isGpsActive);
+        },
+        updateFullProfile: (userId, data, profileType) => Actions.updateFullProfile(userId, data, profileType),
+        deleteUser: Actions.deleteUser,
+        toggleUserPause: Actions.toggleUserPause,
+        sendPhoneVerification: Actions.sendPhoneVerification,
+        verifyPhoneCode: Actions.verifyPhoneCode,
+        autoVerifyIdWithAI: Actions.autoVerifyIdWithAI,
+        verifyUserId: Actions.verifyUserId,
+        rejectUserId: Actions.rejectUserId,
+        createPublication: Actions.createPublication,
+        createProduct: Actions.createProduct,
+        removeGalleryImage: Actions.removeGalleryImage,
+        updateGalleryImage: Actions.updateGalleryImage,
+        updateCartQuantity,
+        checkout,
+        sendMessage,
+        acceptProposal,
+        markConversationAsRead,
+        createCampaign: (data) => Actions.createCampaign(currentUser!.id, data),
+        activatePromotion: (details) => Actions.activatePromotion(currentUser!.id, details),
+        verifyCampaignPayment: Actions.verifyCampaignPayment,
+        approveAffiliation: (affiliationId) => Actions.approveAffiliation(affiliationId, currentUser!.id),
+        rejectAffiliation: (affiliationId) => Actions.rejectAffiliation(affiliationId, currentUser!.id),
+        revokeAffiliation: (affiliationId) => Actions.revokeAffiliation(affiliationId, currentUser!.id),
+        startQrSession: (providerId, cashierBoxId) => {
+            if (!currentUser) return Promise.resolve(null);
+            return Actions.startQrSession(currentUser.id, providerId, cashierBoxId);
+        },
+        cancelQrSession: Actions.cancelQrSession,
+        setQrSessionAmount: (sessionId, amount) => {
+            if(!currentUser) return Promise.resolve();
+            const level = currentUser.credicoraLevel || 1;
+            const details = currentUser.credicoraDetails || { initialPaymentPercentage: 0.6, installments: 3 };
+            const financed = Math.min(amount * (1 - details.initialPaymentPercentage), currentUser.credicoraLimit || 0);
+            return Actions.setQrSessionAmount(sessionId, amount, amount - financed, financed, details.installments);
+        },
+        handleClientCopyAndPay: Actions.handleClientCopyAndPay,
+        confirmMobilePayment: Actions.confirmMobilePayment,
+        addCashierBox: (name, password) => Actions.addCashierBox(currentUser!.id, name, password),
+        removeCashierBox: (boxId) => Actions.removeCashierBox(currentUser!.id, boxId),
+        updateCashierBox: (boxId, updates) => Actions.updateCashierBox(currentUser!.id, boxId, updates),
+        regenerateCashierBoxQr: (boxId) => Actions.regenerateCashierBoxQr(currentUser!.id, boxId),
+        sendQuote: (transactionId, quote) => Actions.sendQuote(transactionId, currentUser!.id, quote.breakdown, quote.total),
+        acceptQuote: (transactionId) => Actions.acceptQuote(transactionId, currentUser!.id),
+        startDispute: Actions.startDispute,
+        completeWork: (transactionId) => Actions.completeWork(transactionId, currentUser!.id),
+        confirmWorkReceived: (transactionId, rating, comment) => Actions.confirmWorkReceived(transactionId, currentUser!.id, rating, comment),
+        confirmPaymentReceived: (transactionId, fromThirdParty) => Actions.confirmPaymentReceived(transactionId, currentUser!.id, fromThirdParty),
+        payCommitment: (transactionId, paymentDetails) => Actions.payCommitment(transactionId, currentUser!.id, paymentDetails),
+        createAppointmentRequest: (request) => Actions.createAppointmentRequest({ ...request, clientId: currentUser!.id }),
+        acceptAppointment: (transactionId) => Actions.acceptAppointment(transactionId, currentUser!.id),
+        subscribeUser,
+        registerSystemPayment: (concept, amount, isSubscription) => Actions.registerSystemPayment(currentUser!.id, concept, amount, isSubscription),
+        deactivateTransactions: (userId) => Actions.updateUser(userId, { isTransactionsActive: false }),
+        cancelSystemTransaction: Actions.cancelSystemTransaction,
+        downloadTransactionsPDF: (transactionsToExport, startDate, endDate) => { /* Placeholder */ return Promise.resolve(); },
+        retryFindDelivery: (transactionId) => Actions.retryFindDelivery({transactionId}),
+        assignOwnDelivery: (transactionId) => Actions.assignOwnDelivery(transactionId, currentUser!.id),
+        resolveDeliveryAsPickup: (transactionId) => Actions.resolveDeliveryAsPickup({transactionId}),
+        requestQuoteFromGroup: (title, items, group) => {
+          if (!currentUser) return false;
+          // In a real app, we'd check against a backend limit. For now, we simulate it.
+          const requestString = `${new Date().toISOString().split('T')[0]}-${group}-${items[0]}`;
+          const existingRequest = dailyQuotes.find(q => q.requestSignature === requestString);
+          if (existingRequest && existingRequest.count >= 3 && !currentUser.isSubscribed) {
+            return false;
+          }
+          if (existingRequest) {
+              setDailyQuotes(dailyQuotes.map(q => q.requestSignature === requestString ? { ...q, count: q.count + 1 } : q));
+          } else {
+              setDailyQuotes([...dailyQuotes, { requestSignature: requestString, count: 1 }]);
+          }
+          Actions.requestQuoteFromGroup({ clientId: currentUser.id, title, items, group });
+          return true;
+        },
+    };
+  
+    return (
+        <CoraboContext.Provider value={value}>
+            {children}
+        </CoraboContext.Provider>
+    );
 };
 
 export const useCorabo = (): CoraboContextValue => {
-  const context = useContext(CoraboContext);
-  if (context === undefined) {
-    throw new Error('useCorabo must be used within a CoraboProvider');
-  }
-  return context;
+    const context = useContext(CoraboContext);
+    if (context === undefined) {
+        throw new Error('useCorabo must be used within a CoraboProvider');
+    }
+    return context;
 };
 
 export type { Transaction };

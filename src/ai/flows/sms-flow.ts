@@ -11,7 +11,6 @@ import { getFirestoreDb } from '@/lib/firebase-server';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { addMinutes, isAfter } from 'date-fns';
 import type { User } from '@/lib/types';
-import { sendSms } from '@/lib/actions'; // Import the isolated server action
 
 const SmsVerificationInputSchema = z.object({
   userId: z.string(),
@@ -19,7 +18,7 @@ const SmsVerificationInputSchema = z.object({
 });
 
 /**
- * Generates a verification code, stores it in Firestore, and calls a server action to send the SMS.
+ * Generates a verification code and stores it in Firestore. It no longer sends the SMS.
  */
 const sendSmsVerificationCodeFlow = ai.defineFlow(
   {
@@ -33,15 +32,14 @@ const sendSmsVerificationCodeFlow = ai.defineFlow(
 
     const userRef = doc(getFirestoreDb(), 'users', userId);
     await updateDoc(userRef, {
+      phone: phoneNumber, // Update phone number in case it changed
       phoneVerificationCode: verificationCode,
       phoneVerificationCodeExpires: codeExpiry.toISOString(),
     });
 
-    // Delegate the actual sending to the isolated server action
-    await sendSms({
-      to: phoneNumber,
-      body: `Tu código de verificación para Corabo es: ${verificationCode}`,
-    });
+    // The actual sending is now handled by the action that calls this flow.
+    // We return the generated code so the action can send it.
+    return verificationCode;
   }
 );
 

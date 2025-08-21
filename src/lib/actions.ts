@@ -75,7 +75,7 @@ export async function toggleGps(userId: string, currentStatus: boolean) {
 }
 
 // --- Verification and Auth Actions ---
-export async function sendSms(params: { to: string, body: string }) {
+async function sendSms(params: { to: string, body: string }) {
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const authToken = process.env.TWILIO_AUTH_TOKEN;
     const twilioNumber = process.env.TWILIO_PHONE_NUMBER;
@@ -99,9 +99,14 @@ export async function sendSms(params: { to: string, body: string }) {
     }
 }
 
-
 export async function sendPhoneVerification(userId: string, phone: string) {
-    await sendSmsVerificationCodeFlow({ userId, phoneNumber: phone });
+    const verificationCode = await sendSmsVerificationCodeFlow({ userId, phoneNumber: phone });
+    if (verificationCode) {
+        await sendSms({
+            to: phone,
+            body: `Tu código de verificación para Corabo es: ${verificationCode}`
+        });
+    }
 }
 
 export async function verifyPhoneCode(userId: string, code: string): Promise<boolean> {
@@ -330,6 +335,8 @@ export async function handleClientCopyAndPay(sessionId: string) {
     await updateDoc(doc(db, 'qr_sessions', sessionId), { status: 'awaitingPayment', updatedAt: new Date().toISOString() });
 }
 
+export const confirmMobilePayment = TransactionFlows.confirmPaymentReceived;
+
 // --- Cashier Box Actions ---
 export async function addCashierBox(userId: string, name: string, password: string): Promise<void> {
     const newBox = await createCashierBoxFlow({ userId, name, password });
@@ -399,4 +406,11 @@ export async function assignOwnDelivery(transactionId: string, userId: string) {
         'details.deliveryProviderId': userId,
         status: 'En Reparto',
     });
+}
+
+
+// --- Quote Actions ---
+export async function requestQuoteFromGroup(data: { clientId: string, title: string, items: string[], group: string }) {
+    // In a real app, this would trigger a flow to find relevant providers and create transactions
+    console.log("Requesting quote from group:", data);
 }
