@@ -9,30 +9,52 @@ import { Footer } from "@/components/Footer";
 import { CoraboProvider, useCorabo } from "@/contexts/CoraboContext";
 import { Loader2 } from "lucide-react";
 
+const PUBLIC_PAGES = [
+  '/login',
+  '/cashier-login',
+  '/policies',
+  '/terms',
+  '/privacy',
+  '/community-guidelines',
+];
+
 function LayoutController({ children }: { children: React.ReactNode }) {
     const { currentUser, isLoadingUser } = useCorabo();
     const router = useRouter();
     const pathname = usePathname();
     
-    const isInitialSetupComplete = currentUser?.isInitialSetupComplete ?? false;
-    const isPublicPage = ['/login', '/cashier-login', '/policies', '/terms', '/privacy', '/community-guidelines'].some(p => pathname.startsWith(p));
-    const isSetupPage = pathname.startsWith('/initial-setup');
-
     useEffect(() => {
-        if (isLoadingUser) return;
+        if (isLoadingUser) {
+            return; // No hacer nada mientras se verifica el estado del usuario.
+        }
 
-        if (!currentUser && !isPublicPage) {
-            router.replace('/login');
-        } else if (currentUser) {
-            if (!isInitialSetupComplete && !isSetupPage) {
+        const isPublicPage = PUBLIC_PAGES.some(p => pathname.startsWith(p));
+        const isSetupPage = pathname.startsWith('/initial-setup');
+        
+        if (currentUser) {
+            // Usuario autenticado
+            const isSetupComplete = currentUser.isInitialSetupComplete ?? false;
+
+            if (!isSetupComplete && !isSetupPage) {
+                // Si no ha completado el setup, forzarlo a la página de configuración.
                 router.replace('/initial-setup');
-            } else if (isInitialSetupComplete && (pathname === '/login' || isSetupPage)) {
+            } else if (isSetupComplete && (pathname === '/login' || isSetupPage)) {
+                // Si ya completó el setup y está en login o setup, llevarlo a la página principal.
                 router.replace('/');
             }
+        } else {
+            // Usuario no autenticado
+            if (!isPublicPage) {
+                // Si no está en una página pública, redirigir a login.
+                router.replace('/login');
+            }
         }
-    }, [currentUser, isLoadingUser, isInitialSetupComplete, pathname, router, isPublicPage, isSetupPage]);
+    }, [currentUser, isLoadingUser, pathname, router]);
     
-    // While the user data is loading but we're not on a public page, show a loader.
+    const isPublicPage = PUBLIC_PAGES.some(p => pathname.startsWith(p));
+
+    // Mientras se carga el usuario y no estamos en una página pública, muestra un loader.
+    // Esto previene el parpadeo y asegura que no se renderice contenido protegido.
     if (isLoadingUser && !isPublicPage) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -41,6 +63,7 @@ function LayoutController({ children }: { children: React.ReactNode }) {
         );
     }
     
+    // El layout de la aplicación (Header/Footer) solo se muestra si el usuario está autenticado y no en una página pública.
     const showAppLayout = currentUser && !isPublicPage;
 
     return (
