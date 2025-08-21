@@ -53,17 +53,12 @@ export default function LoginPage() {
             />
         </div>
         <h2 className="text-2xl font-bold mb-2">Bienvenido a Corabo</h2>
-        <div className="mb-4 text-sm text-muted-foreground">
-            <p className="font-semibold">Tu mercado de confianza para todo lo que necesites.</p>
-            <p className="mt-2">Encuentra y contrata a los mejores profesionales verificados cerca de ti. Gestiona tus proyectos y pagos de forma segura, todo en un mismo lugar.</p>
-        </div>
-        <p className="text-muted-foreground mb-8">Conectando tus necesidades con las mejores soluciones.</p>
+        <p className="text-muted-foreground mb-8">
+            Conectando tus necesidades con las mejores soluciones.
+        </p>
         <div className="space-y-4">
             <Button onClick={handleSignIn} size="lg" className="w-full">
               Ingresa o Regístrate con Google
-            </Button>
-            <Button variant="link" onClick={() => router.push('/cashier-login')}>
-                Acceder a Caja
             </Button>
         </div>
       </div>
