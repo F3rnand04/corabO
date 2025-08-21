@@ -22,7 +22,6 @@ import * as TransactionFlows from '@/ai/flows/transaction-flow';
 import * as NotificationFlows from '@/ai/flows/notification-flow';
 import * as ProfileFlows from '@/ai/flows/profile-flow';
 import * as VerificationFlows from '@/ai/flows/verification-flow';
-import * as SmsFlows from '@/ai/flows/sms-flow';
 import * as PublicationFlows from '@/ai/flows/publication-flow';
 import * as DeliveryFlows from '@/ai/flows/delivery-flow';
 import * as CashierFlows from '@/ai/flows/cashier-flow';
@@ -88,15 +87,6 @@ export async function activateTransactions(userId: string, paymentDetails: Profi
 
 
 // --- Verification and Auth Actions ---
-export async function sendPhoneVerification(userId: string, phone: string) {
-    await SmsFlows.sendSmsVerificationCodeFlow({ userId, phoneNumber: phone });
-}
-
-export async function verifyPhoneCode(userId: string, code: string): Promise<boolean> {
-    const result = await SmsFlows.verifySmsCodeFlow({ userId, code });
-    return result.success;
-}
-
 export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput> {
     if (!user.name || !user.idNumber || !user.idDocumentUrl) {
       throw new Error("Faltan datos del usuario para la verificación.");
