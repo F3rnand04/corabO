@@ -1,4 +1,3 @@
-
 // El middleware se ha desactivado.
 // La lógica de protección de rutas y redirección ahora es manejada exclusivamente
 // por el componente /src/app/AppLayout.tsx, que tiene acceso al estado de
