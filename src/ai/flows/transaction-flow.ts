@@ -7,8 +7,8 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestoreDb } from '@/lib/firebase-server'; // Use server-side firebase
-import { doc, getDoc, setDoc, updateDoc, writeBatch, increment } from 'firebase/firestore';
-import type { Transaction, User, AppointmentRequest, QrSession } from '@/lib/types';
+import { doc, getDoc, setDoc, updateDoc, writeBatch, increment, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
+import type { Transaction, User, AppointmentRequest, QrSession, Product } from '@/lib/types';
 import { credicoraLevels } from '@/lib/types';
 import { addDays, endOfMonth } from 'date-fns';
 import { getExchangeRate } from './exchange-rate-flow';
@@ -25,7 +25,9 @@ const ConfirmWorkReceivedSchema = BasicTransactionSchema.extend({
     comment: z.string().optional(),
 });
 
-const PayCommitmentSchema = BasicTransactionSchema.extend({
+const PayCommitmentSchema = z.object({
+    transactionId: z.string(),
+    userId: z.string(), // The user performing the action
     paymentDetails: z.object({
         paymentMethod: z.string(),
         paymentReference: z.string().optional(),
@@ -143,6 +145,16 @@ export const processDirectPayment = ai.defineFlow(
         // 2. Create the separate commission commitment transaction FOR THE PROVIDER
         const commissionTxId = `txn-comm-${initialTxId}`;
         const commissionDueDate = endOfMonth(new Date()); // Due at the end of the current month
+        
+        // CORRECTED LOGIC: Create details object first
+        const commissionDetails = {
+            system: `Comisión de servicio por Venta (Tx: ${initialTxId.slice(-6)})`,
+            baseAmount: commissionAmount,
+            tax: taxAmountOnCommission,
+            taxRate,
+            commissionRate,
+        };
+        
         const commissionTransaction: Transaction = {
             id: commissionTxId,
             type: 'Sistema',
@@ -152,13 +164,7 @@ export const processDirectPayment = ai.defineFlow(
             clientId: session.providerId, // The provider is the "client" for this debt
             providerId: 'corabo-admin',   // Corabo is the "provider" of the service
             participantIds: [session.providerId, 'corabo-admin'],
-            details: {
-                system: `Comisión de servicio por Venta (Tx: ${initialTxId.slice(-6)})`,
-                baseAmount: commissionAmount,
-                tax: taxAmountOnCommission,
-                taxRate,
-                commissionRate,
-            },
+            details: commissionDetails,
         };
         batch.set(doc(db, 'transactions', commissionTxId), commissionTransaction);
 
@@ -471,4 +477,105 @@ export const startDispute = ai.defineFlow(
         const txRef = doc(getFirestoreDb(), 'transactions', transactionId);
         await updateDoc(txRef, { status: 'En Disputa' });
     }
+);
+
+/**
+ * Removes a system-generated transaction, such as a renewable subscription payment.
+ */
+export async function cancelSystemTransaction(transactionId: string) {
+    const db = getFirestoreDb();
+    const txRef = doc(db, 'transactions', transactionId);
+    await deleteDoc(txRef);
+}
+
+/**
+ * Placeholder for a flow that would generate a PDF of transactions.
+ */
+export const downloadTransactionsPDF = ai.defineFlow(
+    {
+        name: 'downloadTransactionsPDFFlow',
+        inputSchema: z.array(z.any()), // Expects an array of transactions
+        outputSchema: z.string(), // Returns a base64 string of the PDF
+    },
+    async (transactions) => {
+        // In a real implementation, you would use a library like jsPDF or Puppeteer
+        // on the server to generate a PDF from the transaction data.
+        // For this prototype, we'll return a placeholder string.
+        console.log("Generating PDF for", transactions.length, "transactions.");
+        return "base64-encoded-pdf-string-placeholder";
+    }
+);
+
+/**
+ * Handles the logic for checking out items from the cart.
+ * This flow now creates a transaction with status 'Buscando Repartidor'.
+ */
+export const checkout = ai.defineFlow({
+    name: 'checkoutFlow',
+    inputSchema: z.object({
+        userId: z.string(),
+        providerId: z.string(),
+        deliveryMethod: z.string(),
+        useCredicora: z.boolean(),
+        recipientInfo: z.object({ name: z.string(), phone: z.string() }).optional(),
+        deliveryAddress: z.string().optional(),
+    }),
+    outputSchema: z.void(),
+}, async ({ userId, providerId, deliveryMethod, useCredicora, recipientInfo, deliveryAddress }) => {
+    const db = getFirestoreDb();
+    
+    // 1. Find the active cart for this user and provider
+    const q = query(
+        collection(db, 'transactions'), 
+        where('clientId', '==', userId), 
+        where('providerId', '==', providerId), 
+        where('status', '==', 'Carrito Activo')
+    );
+    const snapshot = await getDocs(q);
+    const cartTxDoc = snapshot.docs[0];
+    
+    if (!cartTxDoc) {
+        throw new Error("Cart not found for checkout.");
+    }
+    
+    const cartTx = cartTxDoc.data() as Transaction;
+    
+    // 2. Define delivery details
+    const deliveryDetails = {
+        delivery: deliveryMethod !== 'pickup',
+        method: deliveryMethod,
+        address: deliveryAddress,
+        recipientInfo: recipientInfo,
+    };
+    
+    // 3. Update the transaction from a 'Cart' to a pending 'Delivery'
+    await updateDoc(doc(db, 'transactions', cartTx.id), {
+        status: 'Buscando Repartidor',
+        'details.delivery': deliveryDetails,
+        'details.deliveryCost': 1.5, // Placeholder cost
+        'details.paymentMethod': useCredicora ? 'credicora' : 'direct',
+    });
+
+    // 4. Trigger the delivery provider search flow if needed
+    if (deliveryMethod !== 'pickup') {
+        // We call this flow but don't wait for it to complete.
+        // It will run in the background.
+        ai.runFlow(findDeliveryProvider, { transactionId: cartTx.id });
+    }
+});
+
+
+/**
+ * Flow to find a delivery provider.
+ */
+export const findDeliveryProvider = ai.defineFlow(
+  {
+    name: 'findDeliveryProviderFlow',
+    inputSchema: z.object({ transactionId: z.string() }),
+    outputSchema: z.void(),
+  },
+  async ({ transactionId }) => {
+    // This flow's logic is defined in delivery-flow.ts
+    // We are just providing a wrapper here for consistency.
+  }
 );

@@ -24,7 +24,6 @@ interface CoraboContextValue {
   searchHistory: string[];
   deliveryAddress: string;
   exchangeRate: number;
-  qrSession: QrSession | null;
   currentUserLocation: GeolocationCoords | null;
   tempRecipientInfo: TempRecipientInfo | null;
   activeCartForCheckout: CartItem[] | null;
@@ -45,6 +44,14 @@ interface CoraboContextValue {
   setTempRecipientInfo: (info: TempRecipientInfo | null) => void;
   setActiveCartForCheckout: (cartItems: CartItem[] | null) => void;
   toggleGps: (userId: string) => Promise<void>;
+  
+  // DEPRECATED - Now handled in actions.ts
+  startQrSession: (providerId: string, cashierBoxId?: string) => Promise<string>;
+  cancelQrSession: (sessionId: string) => void;
+  setQrSessionAmount: (sessionId: string, amount: number) => void;
+  handleClientCopyAndPay: (sessionId: string) => void;
+  confirmMobilePayment: (sessionId: string) => void;
+  finalizeQrSession: (sessionId: string) => void;
 }
 
 interface GeolocationCoords {
@@ -81,7 +88,6 @@ export const CoraboProvider = ({ children, currentUser: initialUser }: { childre
   const [deliveryAddress, _setDeliveryAddress] = useState('');
   const [exchangeRate, setExchangeRate] = useState(36.54);
   const [currentUserLocation, setCurrentUserLocation] = useState<GeolocationCoords | null>(null);
-  const [qrSession, setQrSession] = useState<QrSession | null>(null);
   const [tempRecipientInfo, _setTempRecipientInfo] = useState<TempRecipientInfo | null>(null);
   const [activeCartForCheckout, setActiveCartForCheckout] = useState<CartItem[] | null>(null);
   const [dailyQuotes, setDailyQuotes] = useState<DailyQuote[]>([]);
@@ -156,15 +162,12 @@ export const CoraboProvider = ({ children, currentUser: initialUser }: { childre
         const userId = currentUser.id;
         const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userId));
         const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userId), orderBy("lastUpdated", "desc"));
-        const qrSessionQuery = query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', userId));
 
         unsubscribes.push(onSnapshot(transactionsQuery, (snapshot) => setTransactions(snapshot.docs.map(doc => doc.data() as Transaction))));
         unsubscribes.push(onSnapshot(conversationsQuery, (snapshot) => setConversations(snapshot.docs.map(doc => doc.data() as Conversation))));
-        unsubscribes.push(onSnapshot(qrSessionQuery, (snapshot) => setQrSession(snapshot.docs.map(d => d.data() as QrSession).find(s => s.status !== 'completed' && s.status !== 'cancelled') || null)));
     } else {
         setTransactions([]);
         setConversations([]);
-        setQrSession(null);
     }
 
     return () => unsubscribes.forEach(unsub => unsub());
@@ -226,8 +229,9 @@ export const CoraboProvider = ({ children, currentUser: initialUser }: { childre
     const value: CoraboContextValue = {
         currentUser,
         setCurrentUser,
-        users, allPublications, transactions, conversations, cart, searchQuery, categoryFilter, contacts, searchHistory, 
-        deliveryAddress, exchangeRate, qrSession, currentUserLocation, tempRecipientInfo, activeCartForCheckout,
+        users, allPublications, transactions, conversations,
+        searchQuery, categoryFilter, contacts, searchHistory, 
+        deliveryAddress, exchangeRate, currentUserLocation, tempRecipientInfo, activeCartForCheckout,
         setSearchQuery: (query: string) => {
             _setSearchQuery(query);
             if (query.trim() && !searchHistory.includes(query.trim())) setSearchHistory(prev => [query.trim(), ...prev].slice(0, 10));
@@ -250,6 +254,23 @@ export const CoraboProvider = ({ children, currentUser: initialUser }: { childre
         setTempRecipientInfo,
         setActiveCartForCheckout,
         toggleGps,
+        startQrSession: async (providerId: string, cashierBoxId?: string) => {
+          if (!currentUser) throw new Error("User not authenticated");
+          return await Actions.startQrSession(currentUser.id, providerId, cashierBoxId);
+        },
+        cancelQrSession: Actions.cancelQrSession,
+        setQrSessionAmount: async (sessionId: string, amount: number) => {
+          if (!currentUser) throw new Error("User not authenticated");
+          const level = currentUser.credicoraDetails || credicoraLevels['1'];
+          const financedAmount = Math.min(amount * (1 - level.initialPaymentPercentage), currentUser.credicoraLimit || 0);
+          const initialPayment = amount - financedAmount;
+          await Actions.setQrSessionAmount(sessionId, amount, initialPayment, financedAmount, level.installments);
+        },
+        handleClientCopyAndPay: Actions.handleClientCopyAndPay,
+        confirmMobilePayment: async (sessionId: string) => {
+          await Actions.confirmMobilePayment(sessionId);
+        },
+        finalizeQrSession: Actions.finalizeQrSession,
     };
   
     return (

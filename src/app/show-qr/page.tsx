@@ -10,18 +10,38 @@ import { QRCodeSVG } from 'qrcode.react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useState, useRef, ChangeEvent } from 'react';
+import { useState, useRef, ChangeEvent, useEffect } from 'react';
 import Image from 'next/image';
+import { getFirestoreDb } from '@/lib/firebase';
+import { collection, query, where, onSnapshot, Unsubscribe, doc } from 'firebase/firestore';
+import type { QrSession } from '@/lib/types';
+import * as Actions from '@/lib/actions';
+import { credicoraLevels } from '@/lib/types';
 
 export default function ShowQrPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { currentUser, qrSession, setQrSessionAmount, finalizeQrSession, cancelQrSession, confirmMobilePayment } = useCorabo();
+  const { currentUser } = useCorabo();
 
+  const [qrSession, setQrSession] = useState<QrSession | null>(null);
   const [amount, setAmount] = useState('');
   const [voucherFile, setVoucherFile] = useState<File | null>(null);
   const [voucherPreview, setVoucherPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    const db = getFirestoreDb();
+    const q = query(collection(db, 'qr_sessions'), where('providerId', '==', currentUser.id), where('status', '!=', 'completed'), where('status', '!=', 'cancelled'));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        const activeSession = snapshot.docs.length > 0 ? snapshot.docs[0].data() as QrSession : null;
+        setQrSession(activeSession);
+    });
+
+    return () => unsubscribe();
+  }, [currentUser]);
+
 
   if (!currentUser) {
     return (
@@ -41,6 +61,20 @@ export default function ShowQrPage() {
     }
   };
 
+  const handleSetAmount = async () => {
+    if (qrSession && amount && currentUser) {
+      const parsedAmount = parseFloat(amount);
+      const level = currentUser.credicoraDetails || credicoraLevels['1'];
+      const financedAmount = Math.min(parsedAmount * (1 - level.initialPaymentPercentage), currentUser.credicoraLimit || 0);
+      const initialPayment = parsedAmount - financedAmount;
+      await Actions.setQrSessionAmount(qrSession.id, parsedAmount, initialPayment, financedAmount, level.installments);
+    }
+  };
+
+  const handleCancelSession = async () => {
+    if(qrSession) await Actions.cancelQrSession(qrSession.id);
+  }
+
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -51,11 +85,17 @@ export default function ShowQrPage() {
     }
   };
 
-  const handleConfirmMobilePayment = () => {
+  const handleConfirmMobilePayment = async () => {
     if (qrSession) {
-      confirmMobilePayment(qrSession.id);
+      await Actions.confirmMobilePayment(qrSession.id);
     }
   };
+  
+  const handleFinalizeSession = async () => {
+    if (qrSession) {
+        await Actions.finalizeQrSession(qrSession.id);
+    }
+  }
 
   const renderContent = () => {
     if (!qrSession) {
@@ -103,8 +143,8 @@ export default function ShowQrPage() {
               />
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" className="flex-1" onClick={() => cancelQrSession(qrSession.id)}>Cancelar</Button>
-              <Button className="flex-1" onClick={() => setQrSessionAmount(qrSession.id, parseFloat(amount))} disabled={!amount}>Enviar Monto</Button>
+              <Button variant="outline" className="flex-1" onClick={handleCancelSession}>Cancelar</Button>
+              <Button className="flex-1" onClick={handleSetAmount} disabled={!amount}>Enviar Monto</Button>
             </div>
           </div>
         );
@@ -113,10 +153,23 @@ export default function ShowQrPage() {
           <div className="text-center space-y-6 w-full max-w-sm">
             <Hourglass className="h-16 w-16 text-blue-500 mx-auto animate-pulse" />
             <h2 className="text-xl font-semibold">Esperando Pago Móvil</h2>
-            <p className="text-muted-foreground text-sm">El cliente ha copiado tus datos de Pago Móvil. Confirma cuando recibas la transferencia por <span className="font-bold">${qrSession.amount?.toFixed(2)}</span>.</p>
+            <p className="text-muted-foreground text-sm">El cliente ha copiado tus datos de Pago Móvil. Confirma cuando recibas la transferencia por <span className="font-bold">${qrSession.initialPayment?.toFixed(2)}</span>.</p>
             <Button className="w-full" onClick={handleConfirmMobilePayment}>
               <CheckCircle className="mr-2 h-4 w-4" />
               He Recibido el Pago
+            </Button>
+             <Button variant="destructive" size="sm" onClick={handleCancelSession}>Cancelar Sesión</Button>
+          </div>
+        );
+      case 'pendingVoucherUpload':
+        return (
+           <div className="text-center space-y-6 w-full max-w-sm">
+            <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
+            <h2 className="text-xl font-semibold">Pago Recibido</h2>
+            <p className="text-muted-foreground text-sm">El cliente ha sido notificado. Finaliza la transacción para generar los compromisos y la factura.</p>
+            <Button className="w-full" onClick={handleFinalizeSession}>
+                <FileText className="mr-2 h-4 w-4" />
+                Finalizar y Generar Factura
             </Button>
           </div>
         );

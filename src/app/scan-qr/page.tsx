@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import * as Actions from '@/lib/actions';
 
 
 // --- Placeholder for QR Scanner Library ---
@@ -42,7 +43,7 @@ const QrScannerPlaceholder = ({ onScan, onScanError }: { onScan: (data: string) 
 function ScanQrContent() {
   const router = useRouter();
   const { toast } = useToast();
-  const { startQrSession, currentUser, users } = useCorabo();
+  const { currentUser, users } = useCorabo();
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [manualCode, setManualCode] = useState('');
@@ -59,7 +60,7 @@ function ScanQrContent() {
   };
   
   const handleScan = async (data: string | null) => {
-    if (data && !isProcessing) {
+    if (data && !isProcessing && currentUser) {
       setIsProcessing(true);
       try {
         const qrData = JSON.parse(data);
@@ -68,7 +69,7 @@ function ScanQrContent() {
             title: "¡QR Escaneado!",
             description: `Conectando con el proveedor...`,
           });
-          const sessionId = await startQrSession(qrData.providerId, qrData.cashierBoxId);
+          const sessionId = await Actions.startQrSession(currentUser.id, qrData.providerId, qrData.cashierBoxId);
           if (sessionId) {
             router.push(`/payment/approval?sessionId=${sessionId}`);
           } else {

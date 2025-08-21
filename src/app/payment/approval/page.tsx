@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
@@ -6,41 +7,54 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, CheckCircle, Handshake, AlertTriangle, Smartphone, Copy, Banknote, Star } from 'lucide-react';
-import { User, credicoraLevels } from '@/lib/types';
+import { User, credicoraLevels, QrSession } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
+import { getFirestoreDb } from '@/lib/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
+import * as Actions from '@/lib/actions';
+
 
 function ApprovalContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { qrSession, fetchUser, cancelQrSession, currentUser, handleClientCopyAndPay, exchangeRate } = useCorabo();
+  const { fetchUser, exchangeRate } = useCorabo();
   const { toast } = useToast();
   
   const [provider, setProvider] = useState<User | null>(null);
+  const [qrSession, setQrSession] = useState<QrSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const sessionId = searchParams.get('sessionId');
 
   useEffect(() => {
-    if (qrSession && qrSession.providerId) {
-      fetchUser(qrSession.providerId).then(p => {
-        setProvider(p);
-        if (qrSession.status !== 'pendingClientApproval') {
-          setIsLoading(true);
-        } else {
-          setIsLoading(false);
-        }
-      });
-    } else {
-        setIsLoading(false);
+    if (!sessionId) {
+      setIsLoading(false);
+      return;
     }
-  }, [qrSession, fetchUser]);
+    const db = getFirestoreDb();
+    const unsub = onSnapshot(doc(db, 'qr_sessions', sessionId), (doc) => {
+      const session = doc.data() as QrSession;
+      setQrSession(session);
 
-  const handleCopyAndPay = () => {
+      if (session && session.providerId && !provider) {
+        fetchUser(session.providerId).then(p => {
+          setProvider(p);
+          setIsLoading(false);
+        });
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    return () => unsub();
+
+  }, [sessionId, fetchUser, provider]);
+
+  const handleCopyAndPay = async () => {
     if (!sessionId || !provider || !provider.profileSetupData?.paymentDetails?.mobile) return;
     
-    // The amount to pay is the initial payment, not the full amount.
     const amountToPayInBs = (qrSession?.initialPayment || qrSession?.amount || 0) * exchangeRate;
 
     const { bankName, mobilePaymentPhone } = provider.profileSetupData.paymentDetails.mobile;
@@ -50,19 +64,19 @@ function ApprovalContent() {
     navigator.clipboard.writeText(textToCopy);
     toast({ title: 'Datos de Pago Copiados', description: 'Realiza el pago desde tu app bancaria.' });
     
-    handleClientCopyAndPay(sessionId);
+    await Actions.handleClientCopyAndPay(sessionId);
   };
 
 
-  const handleCancel = () => {
+  const handleCancel = async () => {
     if(sessionId) {
-      cancelQrSession(sessionId);
+      await Actions.cancelQrSession(sessionId);
       router.back();
     }
   }
   
   const renderContentByStatus = () => {
-    if (!qrSession || isLoading || !provider) {
+    if (isLoading || !qrSession || !provider) {
         return (
             <div className="text-center space-y-4">
                 <Loader2 className="h-12 w-12 mx-auto animate-spin text-primary" />
@@ -119,37 +133,37 @@ function ApprovalContent() {
                     </Avatar>
                     <CardTitle className="text-center">Confirmar Pago a ${provider.name}</CardTitle>
                     <CardDescription className="text-center">
-                        ${isFinanced ? "Tu compra será financiada con Credicora." : "Realiza el pago y espera la confirmación del proveedor."}
+                        {isFinanced ? "Tu compra será financiada con Credicora." : "Realiza el pago y espera la confirmación del proveedor."}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="text-center">
                         <p className="text-sm text-muted-foreground">Total de la Compra</p>
-                        <p className="text-5xl font-bold tracking-tighter">$${amount.toFixed(2)}</p>
+                        <p className="text-5xl font-bold tracking-tighter">${amount.toFixed(2)}</p>
                     </div>
 
-                    ${isFinanced && (
-                      `<div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-900 space-y-2">
+                    {isFinanced && (
+                      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-900 space-y-2">
                         <div className="font-bold text-center flex items-center justify-center gap-2"><Star className="w-5 h-5 fill-current"/> Desglose Credicora</div>
-                        <div className="flex justify-between"><span>Pagas hoy (Inicial):</span> <span className="font-bold">$${initialPayment.toFixed(2)}</span></div>
-                        <div className="flex justify-between"><span>Monto financiado:</span> <span className="font-bold">$${financedAmount.toFixed(2)}</span></div>
+                        <div className="flex justify-between"><span>Pagas hoy (Inicial):</span> <span className="font-bold">${initialPayment.toFixed(2)}</span></div>
+                        <div className="flex justify-between"><span>Monto financiado:</span> <span className="font-bold">${financedAmount.toFixed(2)}</span></div>
                         <div className="flex justify-between"><span>Próximos pagos:</span> <span className="font-bold">${installments} cuotas</span></div>
-                      </div>`
+                      </div>
                     )}
 
-                     ${mobilePaymentInfo?.active && (
-                        `<div className="p-4 bg-muted rounded-lg border text-sm space-y-1">
+                     {mobilePaymentInfo?.active && (
+                        <div className="p-4 bg-muted rounded-lg border text-sm space-y-1">
                              <p className="font-semibold flex items-center gap-2 mb-2"><Smartphone className="w-4 h-4"/> Realiza un Pago Móvil por la inicial:</p>
-                             <div className="flex justify-between mt-1"><span>Banco:</span><span className="font-mono">${mobilePaymentInfo.bankName}</span></div>
-                             <div className="flex justify-between mt-1"><span>Teléfono:</span><span className="font-mono">${mobilePaymentInfo.mobilePaymentPhone}</span></div>
-                             <div className="flex justify-between mt-1"><span>Cédula/RIF:</span><span className="font-mono">${provider.idNumber}</span></div>
+                             <div className="flex justify-between mt-1"><span>Banco:</span><span className="font-mono">{mobilePaymentInfo.bankName}</span></div>
+                             <div className="flex justify-between mt-1"><span>Teléfono:</span><span className="font-mono">{mobilePaymentInfo.mobilePaymentPhone}</span></div>
+                             <div className="flex justify-between mt-1"><span>Cédula/RIF:</span><span className="font-mono">{provider.idNumber}</span></div>
                              <div className="flex justify-between mt-1 font-bold"><span>Monto:</span><span className="font-mono">BS. ${(amountToPayToday * exchangeRate).toFixed(2)}</span></div>
-                        </div>`
+                        </div>
                      )}
                 </CardContent>
                 <div className="p-6 pt-0 grid grid-cols-2 gap-4">
-                     <Button variant="outline" onClick=${handleCancel}>Cancelar</Button>
-                     <Button onClick=${handleCopyAndPay} disabled=${!mobilePaymentInfo?.active}><Copy className="mr-2 h-4 w-4" />Copiar y Pagar</Button>
+                     <Button variant="outline" onClick={handleCancel}>Cancelar</Button>
+                     <Button onClick={handleCopyAndPay} disabled={!mobilePaymentInfo?.active}><Copy className="mr-2 h-4 w-4" />Copiar y Pagar</Button>
                 </div>
             </>
         )
@@ -159,7 +173,7 @@ function ApprovalContent() {
   return (
     <div className="min-h-screen bg-muted/40 flex items-center justify-center p-4">
       <Card className="w-full max-w-sm shadow-2xl">
-        ${renderContentByStatus()}
+        {renderContentByStatus()}
       </Card>
     </div>
   );
@@ -168,7 +182,7 @@ function ApprovalContent() {
 
 export default function ApprovalPage() {
     return (
-        <Suspense>
+        <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader2 className="w-8 h-8 animate-spin"/></div>}>
             <ApprovalContent />
         </Suspense>
     )
