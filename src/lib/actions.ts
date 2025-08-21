@@ -26,9 +26,9 @@ import * as PublicationFlows from '@/ai/flows/publication-flow';
 import * as DeliveryFlows from '@/ai/flows/delivery-flow';
 import * as CashierFlows from '@/ai/flows/cashier-flow';
 import * as AffiliationFlows from '@/ai/flows/affiliation-flow';
+import * as FeedFlows from '@/ai/flows/feed-flow';
 
 import { getFirestoreDb } from './firebase-server';
-import { credicoraLevels, credicoraCompanyLevels } from './types';
 
 
 // --- User and Profile Actions ---
@@ -481,3 +481,6 @@ export async function subscribeUser(userId: string, title: string, amount: numbe
 
 // --- Notification Actions ---
 export const sendNewCampaignNotifications = NotificationFlows.sendNewCampaignNotifications;
+
+// --- Feed Actions ---
+export const getFeed = FeedFlows.getFeedFlow;

@@ -7,9 +7,28 @@ import { useMemo, useEffect, useState, useCallback, useRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { ActivationWarning } from "@/components/ActivationWarning";
+import * as Actions from '@/lib/actions';
+
 
 export default function HomePage() {
-  const { currentUser, searchQuery, categoryFilter, allPublications, isLoadingAuth } = useCorabo();
+  const { currentUser, searchQuery, categoryFilter, isLoadingAuth } = useCorabo();
+  const [allPublications, setAllPublications] = useState<GalleryImage[]>([]);
+  const [isLoadingFeed, setIsLoadingFeed] = useState(true);
+  
+  useEffect(() => {
+    const fetchInitialFeed = async () => {
+        setIsLoadingFeed(true);
+        try {
+            const initialFeed = await Actions.getFeed({limitNum: 10});
+            setAllPublications(initialFeed.publications);
+        } catch (error) {
+            console.error("Error fetching feed:", error);
+        } finally {
+            setIsLoadingFeed(false);
+        }
+    };
+    fetchInitialFeed();
+  }, [])
   
   const filteredPublications = useMemo(() => {
     let results = allPublications;
@@ -32,7 +51,7 @@ export default function HomePage() {
   }, [allPublications, searchQuery, categoryFilter]);
 
 
-  if (isLoadingAuth && allPublications.length === 0) {
+  if (isLoadingAuth && isLoadingFeed) {
     return (
       <main className="space-y-4">
         {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[500px] w-full" />)}
@@ -64,5 +83,3 @@ export default function HomePage() {
     </main>
   );
 }
-
-    

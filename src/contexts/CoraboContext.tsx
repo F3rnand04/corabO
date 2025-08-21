@@ -14,7 +14,6 @@ interface CoraboContextValue {
   currentUser: User | null;
   setCurrentUser: (user: User | null) => void;
   users: User[];
-  allPublications: GalleryImage[];
   transactions: Transaction[];
   conversations: Conversation[];
   searchQuery: string;
@@ -65,7 +64,6 @@ export const CoraboProvider = ({ children, currentUser: initialUser }: { childre
   
   const [currentUser, setCurrentUser] = useState<User | null>(initialUser);
   const [users, setUsers] = useState<User[]>([]);
-  const [allPublications, setAllPublications] = useState<GalleryImage[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [searchQuery, _setSearchQuery] = useState('');
@@ -142,11 +140,6 @@ export const CoraboProvider = ({ children, currentUser: initialUser }: { childre
         setUsers(userList);
         userList.forEach(user => userCache.current.set(user.id, user));
     }));
-    
-    // Listener for all publications
-    unsubscribes.push(onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
-        setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage));
-    }));
 
     // Listeners specific to the current user
     if (currentUser?.id) {
@@ -221,7 +214,7 @@ export const CoraboProvider = ({ children, currentUser: initialUser }: { childre
     const value: CoraboContextValue = {
         currentUser,
         setCurrentUser,
-        users, allPublications, transactions, conversations,
+        users, transactions, conversations,
         searchQuery, categoryFilter, contacts, searchHistory, 
         deliveryAddress, exchangeRate, currentUserLocation, tempRecipientInfo, activeCartForCheckout,
         cart,

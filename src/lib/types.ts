@@ -1,5 +1,4 @@
 
-
 import { z } from 'zod';
 
 export type Affiliation = {
@@ -571,8 +570,7 @@ export const GetProfileProductsOutputSchema = z.object({
     lastVisibleDocId: z.string().optional(),
 });
 
-// Define types from schemas here, instead of a separate file.
-// This avoids circular dependencies.
+
 export type CreatePublicationInput = {
   userId: string,
   description: string,
