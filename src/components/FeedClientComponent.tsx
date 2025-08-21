@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useMemo, useEffect, useState } from "react";
@@ -23,10 +24,8 @@ export function FeedClientComponent({ initialPublications }: FeedClientComponent
   }, [currentUser]);
 
   const filteredPublications = useMemo(() => {
-    let results = publications.map(p => {
-        const owner = users.find(u => u.id === p.providerId);
-        return { ...p, owner };
-    });
+    // The owner data is already attached, no need to find it from `users`
+    let results = publications;
 
     if (categoryFilter) {
       results = results.filter(p => {
@@ -44,7 +43,7 @@ export function FeedClientComponent({ initialPublications }: FeedClientComponent
       );
     }
     return results;
-  }, [publications, searchQuery, categoryFilter, users]);
+  }, [publications, searchQuery, categoryFilter]);
 
 
   if (!currentUser) {

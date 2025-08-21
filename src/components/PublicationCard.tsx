@@ -26,34 +26,32 @@ interface PublicationCardProps {
 }
 
 export function PublicationCard({ publication, className }: PublicationCardProps) {
-    const { addContact, isContact, sendMessage, currentUser, getUserMetrics, transactions, getDistanceToProvider, fetchUser } = useCorabo();
+    const { addContact, isContact, sendMessage, currentUser, getUserMetrics, getDistanceToProvider } = useCorabo();
     const router = useRouter();
     const { toast } = useToast();
     
+    // The owner is now passed directly in the publication prop.
+    const owner = publication.owner as User | null;
+
     const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
     const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
     const [isLiked, setIsLiked] = useState(false);
-    const [likeCount, setLikeCount] = useState(0);
+    const [likeCount, setLikeCount] = useState(publication.likes || 0);
     const [shareCount, setShareCount] = useState(0);
     const [isAvatarExpanded, setIsAvatarExpanded] = useState(false);
-    const [owner, setOwner] = useState<User | null>(null);
 
-    useEffect(() => {
-        if (publication.providerId) {
-            fetchUser(publication.providerId).then(setOwner);
-        }
-    }, [publication.providerId, fetchUser]);
-    
     useEffect(() => {
         if (!currentUser || !owner) return;
         setIsSaved(isContact(owner.id));
         setLikeCount(publication.likes || 0);
         setShareCount(0);
         setIsAvatarExpanded(false);
+        // No need to fetch owner here anymore.
     }, [isContact, publication, currentUser, owner]);
 
     if (!owner || !owner.id) {
+        // This can be a skeleton or null, but shouldn't happen if the backend enriches data correctly.
         return null; 
     }
     
@@ -65,9 +63,9 @@ export function PublicationCard({ publication, className }: PublicationCardProps
     const profileLink = `/companies/${owner.id}`;
     const { reputation, effectiveness, responseTime } = getUserMetrics(owner.id);
     const isNewProvider = responseTime === 'Nuevo';
-    const distance = getDistanceToProvider(owner as User);
+    const distance = getDistanceToProvider(owner);
 
-    const showLocationInfo = currentUser?.country === (owner as User)?.country;
+    const showLocationInfo = currentUser?.country === owner?.country;
 
     const displayName = owner.profileSetupData?.username || owner.name;
         
@@ -75,7 +73,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
     const affiliation = owner.activeAffiliation;
 
     const handleSaveContact = () => {
-        const success = addContact(owner as User);
+        const success = addContact(owner);
         if (success) {
             toast({
                 title: "¡Contacto Guardado!",
@@ -186,7 +184,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
                         <Link href={profileLink} passHref>
                             <p className="font-semibold text-sm hover:underline flex items-center gap-1.5">
                                 {displayName}
-                                {(owner as User).isSubscribed && <CheckCircle className="w-4 h-4 text-blue-500" />}
+                                {owner.isSubscribed && <CheckCircle className="w-4 h-4 text-blue-500" />}
                             </p>
                         </Link>
                         <p className="text-xs text-muted-foreground">{specialty}</p>
@@ -314,7 +312,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
             isOpen={isDetailsDialogOpen}
             onOpenChange={setIsDetailsDialogOpen}
             gallery={[publication]}
-            owner={owner as User}
+            owner={owner}
             startIndex={0}
         />
         </>

@@ -9,8 +9,8 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestoreDb } from '@/lib/firebase-server';
-import { collection, query, orderBy, limit, startAfter, getDocs, doc, getDoc } from 'firebase/firestore';
-import type { GalleryImage } from '@/lib/types';
+import { collection, query, orderBy, limit, startAfter, getDocs, doc, getDoc, where } from 'firebase/firestore';
+import type { GalleryImage, User } from '@/lib/types';
 import { GetFeedInputSchema, GetFeedOutputSchema } from '@/lib/types';
 
 export const getFeedFlow = ai.defineFlow(
@@ -40,13 +40,38 @@ export const getFeedFlow = ai.defineFlow(
         const q = query(publicationsCollection, ...queryConstraints);
         const snapshot = await getDocs(q);
         
-        const publications = snapshot.docs.map(doc => doc.data() as GalleryImage);
+        const publicationsData = snapshot.docs.map(doc => doc.data() as GalleryImage);
+
+        // --- Data Enrichment Step ---
+        // Get all unique provider IDs from the fetched publications
+        const providerIds = [...new Set(publicationsData.map(p => p.providerId).filter(Boolean))];
+
+        // Fetch all owner data in a single batch query if there are any providers
+        const ownersMap = new Map<string, User>();
+        if (providerIds.length > 0) {
+            const usersQuery = query(collection(db, 'users'), where('id', 'in', providerIds));
+            const ownersSnapshot = await getDocs(usersQuery);
+            ownersSnapshot.forEach(doc => {
+                const owner = doc.data() as User;
+                ownersMap.set(owner.id, owner);
+            });
+        }
+        
+        // Attach owner data to each publication
+        const enrichedPublications = publicationsData.map(pub => {
+            const owner = ownersMap.get(pub.providerId) || null;
+            return {
+                ...pub,
+                // Ensure owner is a plain object, not a class instance, for serialization
+                owner: owner ? JSON.parse(JSON.stringify(owner)) : null,
+            };
+        });
 
         const lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
         const nextCursor = snapshot.docs.length === limitNum ? lastVisibleDoc?.id : null;
 
         return { 
-            publications: publications, 
+            publications: enrichedPublications, 
             lastVisibleDocId: nextCursor
         };
     }

@@ -18,6 +18,7 @@ interface CoraboContextValue {
   users: User[];
   transactions: Transaction[];
   conversations: Conversation[];
+  allPublications: GalleryImage[];
   searchQuery: string;
   categoryFilter: string | null;
   contacts: User[];
@@ -76,6 +77,7 @@ export const CoraboProvider = ({ children, firebaseUser, isAuthLoading }: Corabo
   const [users, setUsers] = useState<User[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [allPublications, setAllPublications] = useState<GalleryImage[]>([]);
   const [searchQuery, _setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
@@ -173,10 +175,14 @@ export const CoraboProvider = ({ children, firebaseUser, isAuthLoading }: Corabo
     
     let unsubscribes: Unsubscribe[] = [];
 
+    // General listeners
     unsubscribes.push(onSnapshot(collection(db, 'users'), (snapshot) => {
         const userList = snapshot.docs.map(doc => doc.data() as User)
         setUsers(userList);
         userList.forEach(user => userCache.current.set(user.id, user));
+    }));
+    unsubscribes.push(onSnapshot(collection(db, 'publications'), (snapshot) => {
+        setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage));
     }));
 
     if (currentUser?.id) {
@@ -249,7 +255,7 @@ export const CoraboProvider = ({ children, firebaseUser, isAuthLoading }: Corabo
     const value: CoraboContextValue = {
         currentUser,
         isLoadingUser,
-        users, transactions, conversations,
+        users, transactions, conversations, allPublications,
         searchQuery, categoryFilter, contacts, searchHistory, 
         deliveryAddress, exchangeRate, currentUserLocation, tempRecipientInfo, activeCartForCheckout,
         cart,
