@@ -25,36 +25,36 @@ function LayoutController({ children }: { children: React.ReactNode }) {
     
     useEffect(() => {
         if (isLoadingUser) {
-            return; // Espera a que la carga del usuario termine antes de hacer nada.
+            return; // Wait for user status to be resolved
         }
 
         const isPublicPage = PUBLIC_PAGES.some(p => pathname.startsWith(p));
         const isSetupPage = pathname.startsWith('/initial-setup');
         
         if (currentUser) {
-            // Usuario autenticado
+            // User is authenticated
             const isSetupComplete = currentUser.isInitialSetupComplete ?? false;
 
             if (!isSetupComplete && !isSetupPage) {
-                // Forzar al setup si no está completo y no está ya en la página de setup.
+                // Force setup if not complete and not already on a setup page.
                 router.replace('/initial-setup');
             } else if (isSetupComplete && (isPublicPage || isSetupPage)) {
-                 // Si ya completó el setup, y está en una página pública o de setup, mandarlo al home.
+                 // If setup is complete and user is on a public/setup page, send to home.
                 if (pathname === '/login' || isSetupPage) {
                     router.replace('/');
                 }
             }
         } else {
-            // Usuario no autenticado
+            // User is not authenticated
             if (!isPublicPage) {
-                // Si no está en una página pública, redirigir a login.
+                // If not on a public page, redirect to login.
                 router.replace('/login');
             }
         }
     }, [currentUser, isLoadingUser, pathname, router]);
     
-    // Mientras se carga el usuario, muestra un loader a pantalla completa.
-    // Esto previene cualquier renderizado de contenido protegido o incorrecto.
+    // While loading user status, show a full-screen loader.
+    // This is the key to preventing hydration errors and redirect loops.
     if (isLoadingUser) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-muted/40">
@@ -63,7 +63,7 @@ function LayoutController({ children }: { children: React.ReactNode }) {
         );
     }
     
-    // Determina si se debe mostrar el layout principal de la aplicación.
+    // Determine if the main app layout (Header/Footer) should be shown.
     const showAppLayout = currentUser && !PUBLIC_PAGES.some(p => pathname.startsWith(p));
 
     return (
