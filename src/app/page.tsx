@@ -11,27 +11,38 @@ import * as Actions from '@/lib/actions';
 
 
 export default function HomePage() {
-  const { currentUser, searchQuery, categoryFilter, isLoadingAuth } = useCorabo();
+  const { currentUser, searchQuery, categoryFilter, users } = useCorabo();
   const [allPublications, setAllPublications] = useState<GalleryImage[]>([]);
   const [isLoadingFeed, setIsLoadingFeed] = useState(true);
   
+  // This useEffect will now only run once when the component mounts
   useEffect(() => {
     const fetchInitialFeed = async () => {
         setIsLoadingFeed(true);
         try {
-            const initialFeed = await Actions.getFeed({limitNum: 10});
-            setAllPublications(initialFeed.publications);
+            // Fetch initial batch of publications without pagination for now to fix the loop
+            const initialFeed = await Actions.getFeed({limitNum: 20});
+            if (initialFeed && initialFeed.publications) {
+              setAllPublications(initialFeed.publications);
+            }
         } catch (error) {
             console.error("Error fetching feed:", error);
         } finally {
             setIsLoadingFeed(false);
         }
     };
-    fetchInitialFeed();
-  }, [])
+    
+    // Only fetch if the user is loaded to avoid unnecessary calls
+    if (currentUser) {
+      fetchInitialFeed();
+    }
+  }, [currentUser]); // Dependency on currentUser ensures it runs after login.
   
   const filteredPublications = useMemo(() => {
-    let results = allPublications;
+    let results = allPublications.map(p => {
+        const owner = users.find(u => u.id === p.providerId);
+        return { ...p, owner };
+    });
 
     if (categoryFilter) {
       results = results.filter(p => {
@@ -44,17 +55,18 @@ export default function HomePage() {
       results = results.filter(p => 
           p.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           p.alt?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.owner?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           (p.type === 'product' && p.productDetails?.name.toLowerCase().includes(searchQuery.toLowerCase()))
       );
     }
     return results;
-  }, [allPublications, searchQuery, categoryFilter]);
+  }, [allPublications, searchQuery, categoryFilter, users]);
 
 
-  if (isLoadingAuth && isLoadingFeed) {
+  if (isLoadingFeed) {
     return (
-      <main className="space-y-4">
-        {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[500px] w-full" />)}
+      <main className="space-y-4 container py-4">
+        {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[500px] w-full max-w-2xl mx-auto" />)}
       </main>
     );
   }

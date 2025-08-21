@@ -10,7 +10,6 @@ let app: FirebaseApp;
 let db: Firestore;
 
 // This function ensures Firebase is initialized only once on the server.
-// This is the robust pattern for server-side initialization.
 function getFirebaseAppInstance(): FirebaseApp {
     if (!getApps().length) {
         // No apps initialized, create a new one.
@@ -23,8 +22,8 @@ function getFirebaseAppInstance(): FirebaseApp {
 }
 
 // This function provides a server-side instance of Firestore.
-// It is now ASYNCHRONOUS to ensure initialization is complete.
-export async function getFirestoreDb(): Promise<Firestore> {
+// It is now SYNCHRONOUS, as initialization is handled above.
+export function getFirestoreDb(): Firestore {
     if (!db) {
         const app = getFirebaseAppInstance();
         db = getFirestore(app);

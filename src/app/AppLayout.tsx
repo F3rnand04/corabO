@@ -11,7 +11,7 @@ import { Loader2 } from "lucide-react";
 import type { User } from "@/lib/types";
 
 
-function LayoutContent({ children }: { children: React.ReactNode }) {
+function LayoutController({ children }: { children: React.ReactNode }) {
     // This component now consumes the context
     const { currentUser, isLoadingUser, isInitialSetupComplete } = useCorabo();
     const router = useRouter();
@@ -42,6 +42,8 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
         );
     }
     
+    // The conditional rendering of the main layout (Header/Footer) now depends on a valid currentUser,
+    // not just being outside a public page. This prevents them from showing up briefly before redirection.
     const showAppLayout = currentUser && !isPublicPage;
 
     return showAppLayout ? (
@@ -67,11 +69,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         );
     }
   
-    // CoraboProvider now wraps the LayoutContent and manages its own state
-    // based on the firebaseUser, which is stable at this point.
+    // CoraboProvider now wraps the entire layout controller.
+    // It is initialized with the firebaseUser, and its internal useEffect
+    // will fetch the corresponding Corabo user. This ensures any component
+    // inside LayoutController (including Header and Footer) can use useCorabo().
     return (
         <CoraboProvider initialFirebaseUser={firebaseUser}>
-            <LayoutContent>{children}</LayoutContent>
+            <LayoutController>{children}</LayoutController>
         </CoraboProvider>
     );
 }

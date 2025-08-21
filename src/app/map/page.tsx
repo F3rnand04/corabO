@@ -2,8 +2,14 @@
 
 import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { MapPageContent } from '@/components/MapPageContent';
 import { Loader2 } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+const MapPageContent = dynamic(() => import('@/components/MapPageContent').then(mod => mod.MapPageContent), {
+    ssr: false,
+    loading: () => <div className="flex items-center justify-center h-screen"><Loader2 className="h-12 w-12 animate-spin text-primary"/></div>
+});
+
 
 function MapPageWrapper() {
     return (

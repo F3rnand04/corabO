@@ -50,7 +50,7 @@ export const GeneralProviderFields = ({ formData, onSpecializedChange }: Special
             </div>
             <div className="space-y-2">
                 <Label htmlFor="yearsOfExperience" className="flex items-center gap-2"><Wrench className="w-4 h-4"/> Años de Experiencia</Label>
-                <Input id="yearsOfExperience" type="number" placeholder="Ej: 5" value={formData.specializedData?.yearsOfExperience || ''} onChange={(e) => onSpecializedChange('yearsOfExperience', parseInt(e.target.value, 10) || 0)}/>
+                <Input id="yearsOfExperience" type="number" placeholder="Ej: 5" value={formData.specializedData?.yearsOfExperience || ''} onChange={(e) => onSpecializedChange('yearsOfExperience', parseInt(e.target.value, 10) || undefined)}/>
             </div>
         </div>
     );

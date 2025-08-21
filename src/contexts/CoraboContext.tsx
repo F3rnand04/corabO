@@ -44,7 +44,7 @@ interface CoraboContextValue {
   getDistanceToProvider: (provider: User) => string | null;
   setTempRecipientInfo: (info: TempRecipientInfo | null) => void;
   setActiveCartForCheckout: (cartItems: CartItem[] | null) => void;
-  toggleGps: (userId: string) => Promise<void>;
+  toggleGps: () => Promise<void>;
 }
 
 interface GeolocationCoords {
@@ -226,10 +226,10 @@ export const CoraboProvider = ({ children, initialFirebaseUser }: { children: Re
       }));
     }, []);
 
-    const toggleGps = async (userId: string) => {
+    const toggleGps = async () => {
       if (!currentUser) return;
       const newStatus = !currentUser.isGpsActive;
-      await Actions.toggleGps(userId, newStatus);
+      await Actions.toggleGps(currentUser.id, newStatus);
       toast({
         title: `GPS ${newStatus ? 'Activado' : 'Desactivado'}`,
         description: `Tu ubicación ${newStatus ? 'ahora es visible' : 'ya no es visible'} para otros usuarios.`,

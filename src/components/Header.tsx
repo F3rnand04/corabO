@@ -44,8 +44,8 @@ const serviceGroups = [
 
 
 export function Header() {
-  const { cart, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter } = useCorabo();
-  const { currentUser, logout } = useAuth();
+  const { cart, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, toggleGps, currentUser } = useCorabo();
+  const { logout } = useAuth();
   const router = useRouter();
 
   const [isCheckoutAlertOpen, setIsCheckoutAlertOpen] = useState(false);
@@ -65,12 +65,6 @@ export function Header() {
   const activeCashierBoxes = cashierBoxes.filter(box => box.isActive).length;
   const totalCashierBoxes = cashierBoxes.length;
 
-  const handleToggleGps = () => {
-    // This function is now empty as the logic is in CoraboContext.
-    // It's kept for the onClick handler.
-    // The actual call will be done via useCorabo hook's toggleGps.
-  }
-
   return (
     <header className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b">
       <div className="container px-4 sm:px-6">
@@ -81,7 +75,7 @@ export function Header() {
           </Link>
 
           <div className="flex items-center gap-1">
-             <Button variant="ghost" size="icon" onClick={() => { useCorabo().toggleGps(currentUser.id) }} onDoubleClick={() => router.push('/map')}>
+             <Button variant="ghost" size="icon" onClick={() => toggleGps()} onDoubleClick={() => router.push('/map')}>
                 <MapPin className={cn("h-5 w-5", currentUser.isGpsActive ? "text-green-500" : "text-muted-foreground")} />
             </Button>
 
