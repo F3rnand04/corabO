@@ -31,10 +31,7 @@ const VerificationOutputSchema = z.object({
 export type VerificationOutput = z.infer<typeof VerificationOutputSchema>;
 
 export async function autoVerifyIdWithAI(input: VerificationInput): Promise<VerificationOutput> {
-  if (!process.env.GEMINI_API_KEY) {
-    console.error("GEMINI_API_KEY is not set.");
-    throw new Error("El servicio de verificación IA no está configurado.");
-  }
+  // This function is now the clean, exported wrapper.
   return autoVerifyIdWithAIFlow(input);
 }
 

@@ -17,9 +17,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "./ui/input";
 import Image from "next/image";
 import { ScrollArea } from "./ui/scroll-area";
+import * as Actions from '@/lib/actions';
 
 export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (open: boolean) => void }) {
-    const { currentUser, getCartTotal, getDeliveryCost, checkout: performCheckout, users, deliveryAddress, setDeliveryAddressToCurrent, tempRecipientInfo, setTempRecipientInfo, activeCartForCheckout, setActiveCartForCheckout, updateCartQuantity } = useCorabo();
+    const { currentUser, users, deliveryAddress, setDeliveryAddressToCurrent, tempRecipientInfo, setTempRecipientInfo, activeCartForCheckout, setActiveCartForCheckout } = useCorabo();
     const router = useRouter();
     const searchParams = useSearchParams();
     
@@ -66,7 +67,7 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
     if (!provider) return null;
     
     const handleCheckout = () => {
-        performCheckout(providerId, deliveryMethod, useCredicora, tempRecipientInfo || undefined);
+        Actions.checkout(currentUser.id, providerId, deliveryMethod, useCredicora, tempRecipientInfo || undefined, deliveryAddress);
         onOpenChange(false);
         setUseCredicora(false);
         setTempRecipientInfo(null);
@@ -84,7 +85,7 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
     
     const handleRemoveProviderCart = () => {
         activeCartForCheckout.forEach(item => {
-            updateCartQuantity(item.product.id, 0);
+            Actions.updateCart(currentUser.id, item.product.id, 0);
         });
         onOpenChange(false);
         setActiveCartForCheckout(null);
@@ -93,8 +94,8 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
     const providerAcceptsCredicora = provider.profileSetupData?.acceptsCredicora || false;
     const providerHasLocation = provider.profileSetupData?.hasPhysicalLocation || false;
 
-    const subtotal = getCartTotal(activeCartForCheckout);
-    const deliveryCost = getDeliveryCost(deliveryMethod, providerId);
+    const subtotal = activeCartForCheckout.reduce((total, item) => total + item.product.price * item.quantity, 0);
+    const deliveryCost = 0; // Simplified for now, real calculation would be server-side
     
     const userCredicoraLevel = currentUser.credicoraLevel || 1;
     const credicoraDetails = credicoraLevels[userCredicoraLevel.toString()];
@@ -128,9 +129,9 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
                                 <p className="text-sm text-muted-foreground">${item.product.price.toFixed(2)}</p>
                             </div>
                              <div className="flex items-center gap-1">
-                                <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateCartQuantity(item.product.id, item.quantity - 1)}><Minus className="h-3 w-3"/></Button>
+                                <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => Actions.updateCart(currentUser.id, item.product.id, item.quantity - 1)}><Minus className="h-3 w-3"/></Button>
                                 <span className="font-bold text-sm w-4 text-center">{item.quantity}</span>
-                                <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateCartQuantity(item.product.id, item.quantity + 1)}><Plus className="h-3 w-3"/></Button>
+                                <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => Actions.updateCart(currentUser.id, item.product.id, item.quantity + 1)}><Plus className="h-3 w-3"/></Button>
                             </div>
                         </div>
                     ))}

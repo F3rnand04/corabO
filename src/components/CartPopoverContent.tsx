@@ -2,11 +2,9 @@
 
 "use client";
 
-import Link from "next/link";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
-import { Minus, Plus, X } from "lucide-react";
 import { MultiProviderCart } from "./MultiProviderCart";
 
 export function CartPopoverContent({ onCheckoutClick }: { onCheckoutClick: () => void }) {

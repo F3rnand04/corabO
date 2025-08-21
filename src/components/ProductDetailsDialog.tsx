@@ -20,6 +20,7 @@ import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
+import * as Actions from '@/lib/actions';
 
 
 interface ProductDetailsDialogProps {
@@ -29,7 +30,7 @@ interface ProductDetailsDialogProps {
 }
 
 export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductDetailsDialogProps) {
-  const { currentUser, addToCart, cart, updateCartQuantity, removeGalleryImage } = useCorabo();
+  const { currentUser, cart } = useCorabo();
   const { toast } = useToast();
   const [newComment, setNewComment] = useState("");
   // Comments are now managed locally for this dialog
@@ -60,7 +61,7 @@ export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductD
           });
           return;
       }
-      addToCart(product, 1);
+      Actions.updateCart(currentUser.id, product.id, (quantityInCart || 0) + 1);
   }
 
   const handleUpdateQuantity = (newQuantity: number) => {
@@ -72,7 +73,7 @@ export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductD
           });
           return;
       }
-      updateCartQuantity(product.id, newQuantity);
+      Actions.updateCart(currentUser.id, product.id, newQuantity);
   }
 
   const handlePostComment = () => {
@@ -111,7 +112,7 @@ export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductD
   };
 
   const handleDeleteProduct = () => {
-    removeGalleryImage(product.providerId, product.id);
+    Actions.removeGalleryImage(product.providerId, product.id);
     onOpenChange(false);
   }
 

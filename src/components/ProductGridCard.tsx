@@ -10,6 +10,7 @@ import type { Product } from "@/lib/types";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import * as Actions from '@/lib/actions';
 
 interface ProductGridCardProps {
     product: Product;
@@ -17,7 +18,7 @@ interface ProductGridCardProps {
 }
 
 export function ProductGridCard({ product, onDoubleClick }: ProductGridCardProps) {
-    const { currentUser, addToCart, updateCartQuantity, cart } = useCorabo();
+    const { currentUser, cart } = useCorabo();
     const { toast } = useToast();
     const [likeCount, setLikeCount] = useState(0);
     const [isLiked, setIsLiked] = useState(false);
@@ -43,12 +44,12 @@ export function ProductGridCard({ product, onDoubleClick }: ProductGridCardProps
             });
             return;
         }
-        addToCart(product, 1);
+        Actions.updateCart(currentUser.id, product.id, 1);
     }
     
     const handleUpdateQuantity = (newQuantity: number) => {
         if (!isTransactionReady) return;
-        updateCartQuantity(product.id, newQuantity);
+        Actions.updateCart(currentUser.id, product.id, newQuantity);
     }
 
 

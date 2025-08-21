@@ -1,4 +1,5 @@
 
+
 'use server';
 /**
  * @fileOverview Service Layer for Client-to-Backend Actions
@@ -169,27 +170,76 @@ export async function updateGalleryImage(ownerId: string, imageId: string, updat
 
 // --- Transaction and Cart Actions ---
 
-export async function updateCart(userId: string, newCart: CartItem[]) {
+export async function updateCart(userId: string, productId: string, quantity: number) {
     const db = getFirestoreDb();
     const q = query(collection(db, 'transactions'), where('clientId', '==', userId), where('status', '==', 'Carrito Activo'));
     const snapshot = await getDocs(q);
-    const cartTx = snapshot.docs.length > 0 ? snapshot.docs[0].data() as Transaction : null;
+    
+    // Find the cart (can be across multiple providers)
+    let cartTx = snapshot.docs.find(doc => {
+      const tx = doc.data() as Transaction;
+      return tx.details.items?.some(item => item.product.id === productId);
+    });
 
-    if (newCart.length > 0) {
-        if (cartTx) {
-            const txRef = doc(db, 'transactions', cartTx.id);
-            await updateDoc(txRef, { 'details.items': newCart.map(item => ({...item})) });
+    if (cartTx) {
+      // Cart exists, update it
+      const txRef = doc(db, 'transactions', cartTx.id);
+      const items = cartTx.data().details.items || [];
+      const itemIndex = items.findIndex((i: CartItem) => i.product.id === productId);
+      
+      let newItems = [...items];
+      if (itemIndex > -1) {
+        if (quantity > 0) {
+            newItems[itemIndex].quantity = quantity;
         } else {
+            newItems.splice(itemIndex, 1);
+        }
+      } else if (quantity > 0) {
+        // This should not happen if addToCart is used, but as a safeguard
+        const productSnap = await getDoc(doc(db, 'publications', productId));
+        if(productSnap.exists()) {
+            const productData = productSnap.data();
+            const product: Product = {
+                id: productData.id,
+                name: productData.productDetails?.name || '',
+                price: productData.productDetails?.price || 0,
+                description: productData.description || '',
+                imageUrl: productData.src || '',
+                providerId: productData.providerId,
+                category: productData.productDetails?.category || '',
+            }
+            newItems.push({ product, quantity });
+        }
+      }
+      
+      if (newItems.length > 0) {
+        await updateDoc(txRef, { 'details.items': newItems.map(item => ({...item, product: {...item.product}})) });
+      } else {
+        await deleteDoc(txRef);
+      }
+    } else if (quantity > 0) {
+        // No existing cart contains this item, create a new cart transaction for this provider
+        const productSnap = await getDoc(doc(db, 'publications', productId));
+        if (productSnap.exists()) {
+            const productData = productSnap.data();
+            const product: Product = {
+                id: productData.id,
+                name: productData.productDetails?.name || '',
+                price: productData.productDetails?.price || 0,
+                description: productData.description || '',
+                imageUrl: productData.src || '',
+                providerId: productData.providerId,
+                category: productData.productDetails?.category || '',
+            }
+            const newCartItem: CartItem = { product, quantity };
+
             const newTxId = `txn-cart-${userId}-${Date.now()}`;
-            const providerId = newCart[0].product.providerId;
             const newCartTx: Transaction = {
                 id: newTxId, type: 'Compra', status: 'Carrito Activo', date: new Date().toISOString(), amount: 0,
-                clientId: userId, providerId: providerId, participantIds: [userId, providerId], details: { items: newCart.map(item => ({...item})) }
+                clientId: userId, providerId: product.providerId, participantIds: [userId, product.providerId], details: { items: [newCartItem].map(item => ({...item, product: {...item.product}})) }
             };
             await setDoc(doc(db, 'transactions', newTxId), newCartTx);
         }
-    } else if (cartTx) {
-        await deleteDoc(doc(db, 'transactions', cartTx.id));
     }
 }
 
