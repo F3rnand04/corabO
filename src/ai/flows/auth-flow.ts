@@ -36,79 +36,87 @@ export const getOrCreateUser = ai.defineFlow(
   },
   async (firebaseUser) => {
     const db = getFirestore();
-    const userDocRef: DocumentReference<User> = doc(db, 'users', firebaseUser.uid) as DocumentReference<User>;
-    const userDocSnap = await getDoc(userDocRef);
+    const userDocRef = doc(db, 'users', firebaseUser.uid) as DocumentReference<User>;
     const now = new Date();
 
-    if (userDocSnap.exists()) {
-      let user = userDocSnap.data() as User;
-      const updates: Partial<User> = {};
+    try {
+        const userDocSnap = await getDoc(userDocRef);
 
-      // Inactivity Logic: Pause account after 45 days.
-      if (user.lastActivityAt) {
-          const daysSinceLastActivity = differenceInDays(now, new Date(user.lastActivityAt));
-          if (daysSinceLastActivity >= 45 && !user.isPaused) {
-              updates.isPaused = true;
-          }
-      }
-      
-      // Update last activity timestamp on every login
-      updates.lastActivityAt = now.toISOString();
+        if (userDocSnap.exists()) {
+            let user = userDocSnap.data() as User;
+            const updates: Partial<User> = {};
 
-      // Ensure the specified user always has the admin role.
-      if (user.email === 'fernandopbt@gmail.com' && user.role !== 'admin') {
-        updates.role = 'admin';
-      }
-      
-      // Apply updates if there are any
-      if (Object.keys(updates).length > 0) {
-        await updateDoc(userDocRef, updates);
-        user = { ...user, ...updates }; // Update local user object
-      }
+            // Inactivity Logic: Pause account after 45 days.
+            if (user.lastActivityAt) {
+                const daysSinceLastActivity = differenceInDays(now, new Date(user.lastActivityAt));
+                if (daysSinceLastActivity >= 45 && !user.isPaused) {
+                    updates.isPaused = true;
+                }
+            }
+            
+            // Update last activity timestamp on every login
+            updates.lastActivityAt = now.toISOString();
 
-      // Return the complete, serializable user object for existing users.
-      return JSON.parse(JSON.stringify(user));
-    } else {
-      // Create a new, minimal user object.
-      const initialCredicoraLevel = credicoraLevels['1'];
-      const newUser: User = {
-        id: firebaseUser.uid,
-        coraboId: `${firebaseUser.displayName?.split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '') || 'user'}${Math.floor(1000 + Math.random() * 9000)}`,
-        name: firebaseUser.displayName || '', // Initialize with displayName
-        email: firebaseUser.email || '',
-        profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
-        createdAt: now.toISOString(),
-        lastActivityAt: now.toISOString(), // Set initial activity
-        isInitialSetupComplete: false, 
-        lastName: '',
-        idNumber: '',
-        birthDate: '',
-        country: '',
-        type: 'client',
-        reputation: 0,
-        effectiveness: 100, // Start with 100% effectiveness
-        phone: '',
-        emailValidated: firebaseUser.emailVerified,
-        phoneValidated: false,
-        isGpsActive: true,
-        credicoraLevel: initialCredicoraLevel.level,
-        credicoraLimit: initialCredicoraLevel.creditLimit,
-        credicoraDetails: initialCredicoraLevel,
-        isSubscribed: false,
-        isTransactionsActive: false,
-        idVerificationStatus: 'rejected',
-        profileSetupData: {
-            location: "10.4806,-66.9036"
-        },
-      };
+            // Ensure the specified user always has the admin role.
+            if (user.email === 'fernandopbt@gmail.com' && user.role !== 'admin') {
+                updates.role = 'admin';
+            }
+            
+            // Apply updates if there are any
+            if (Object.keys(updates).length > 0) {
+                await updateDoc(userDocRef, updates);
+                user = { ...user, ...updates }; // Update local user object
+            }
 
-      if (newUser.email === 'fernandopbt@gmail.com') {
-          newUser.role = 'admin';
-      }
+            // Return the complete, serializable user object for existing users.
+            return JSON.parse(JSON.stringify(user));
+        } else {
+            // Create a new, minimal user object.
+            const initialCredicoraLevel = credicoraLevels['1'];
+            const newUser: User = {
+                id: firebaseUser.uid,
+                coraboId: `${firebaseUser.displayName?.split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '') || 'user'}${Math.floor(1000 + Math.random() * 9000)}`,
+                name: firebaseUser.displayName || '', // Initialize with displayName
+                email: firebaseUser.email || '',
+                profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
+                createdAt: now.toISOString(),
+                lastActivityAt: now.toISOString(), // Set initial activity
+                isInitialSetupComplete: false, 
+                lastName: '',
+                idNumber: '',
+                birthDate: '',
+                country: '',
+                type: 'client',
+                reputation: 0,
+                effectiveness: 100, // Start with 100% effectiveness
+                phone: '',
+                emailValidated: firebaseUser.emailVerified,
+                phoneValidated: false,
+                isGpsActive: true,
+                credicoraLevel: initialCredicoraLevel.level,
+                credicoraLimit: initialCredicoraLevel.creditLimit,
+                credicoraDetails: initialCredicoraLevel,
+                isSubscribed: false,
+                isTransactionsActive: false,
+                idVerificationStatus: 'rejected',
+                profileSetupData: {
+                    location: "10.4806,-66.9036"
+                },
+            };
 
-      await setDoc(userDocRef, newUser);
-      // Return a plain, serializable object
-      return JSON.parse(JSON.stringify(newUser));
+            if (newUser.email === 'fernandopbt@gmail.com') {
+                newUser.role = 'admin';
+            }
+
+            await setDoc(userDocRef, newUser);
+            // Return a plain, serializable object
+            return JSON.parse(JSON.stringify(newUser));
+        }
+    } catch (error) {
+        console.error("FATAL ERROR in getOrCreateUserFlow: ", error);
+        // In case of a Firestore error, we must return null to prevent the app from crashing.
+        // The context will handle this null value and keep the user logged out.
+        return null;
     }
   }
 );

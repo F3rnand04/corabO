@@ -11,14 +11,14 @@ import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle, isLoadingAuth } = useAuth();
   const { currentUser, isLoadingUser } = useCorabo();
   const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Si el usuario ya está logueado (y no estamos en estado de carga), redirigir.
-    // Esta es la nueva lógica de redirección del lado del cliente para el login.
+    // Si ya no estamos cargando y hay un usuario, redirigir a la página principal.
+    // Esto evita que un usuario ya logueado vea la página de login.
     if (!isLoadingUser && currentUser) {
       router.replace('/');
     }
@@ -27,8 +27,7 @@ export default function LoginPage() {
   const handleSignIn = async () => {
     try {
       await signInWithGoogle();
-      // La redirección ahora es manejada por el useEffect de esta misma página
-      // y por el AppLayout una vez que el estado se propague.
+      // La redirección post-login es manejada por el AppLayout.
     } catch (error: any) {
        if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
         console.error("Error signing in with Google:", error);
@@ -41,10 +40,11 @@ export default function LoginPage() {
     }
   };
   
-  // Mientras se verifica el estado o si el usuario ya está logueado, mostrar un loader.
-  if (isLoadingUser || currentUser) {
+  // Mientras se verifica el estado de autenticación o si ya hay un usuario
+  // (y estamos esperando la redirección), muestra un loader.
+  if (isLoadingUser || isLoadingAuth || currentUser) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-muted/40">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );

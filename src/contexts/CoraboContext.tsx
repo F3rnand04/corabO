@@ -107,17 +107,22 @@ export const CoraboProvider = ({ children, firebaseUser, isAuthLoading }: Corabo
         emailVerified: firebaseUser.emailVerified,
       }).then(user => {
         setCurrentUser(user as User);
-        setIsLoadingUser(false);
       }).catch(error => {
         console.error("Failed to get or create Corabo user:", error);
         setCurrentUser(null);
+        toast({
+            variant: "destructive",
+            title: "Error de Cuenta",
+            description: "No pudimos cargar los datos de tu perfil de Corabo.",
+        });
+      }).finally(() => {
         setIsLoadingUser(false);
       });
     } else {
       setCurrentUser(null);
       setIsLoadingUser(false);
     }
-  }, [firebaseUser, isAuthLoading]);
+  }, [firebaseUser, isAuthLoading, toast]);
   
   const setDeliveryAddress = useCallback((address: string) => {
     sessionStorage.setItem('coraboDeliveryAddress', address);
@@ -191,8 +196,9 @@ export const CoraboProvider = ({ children, firebaseUser, isAuthLoading }: Corabo
     if (currentUser?.id) {
         const userId = currentUser.id;
         
+        // This makes sure the local currentUser state is always in sync with the live user list
         const updatedCurrentUser = users.find(u => u.id === userId);
-        if (updatedCurrentUser) {
+        if (updatedCurrentUser && JSON.stringify(updatedCurrentUser) !== JSON.stringify(currentUser)) {
             setCurrentUser(updatedCurrentUser);
         }
 
@@ -207,7 +213,7 @@ export const CoraboProvider = ({ children, firebaseUser, isAuthLoading }: Corabo
     }
 
     return () => unsubscribes.forEach(unsub => unsub());
-  }, [currentUser?.id, users]);
+  }, [currentUser, users]); // Depend on both currentUser and the list of users
   
   const getDistanceToProvider = useCallback((provider: User) => {
       if (!currentUserLocation || !provider.profileSetupData?.location) return null;

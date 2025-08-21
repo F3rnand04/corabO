@@ -24,46 +24,46 @@ function LayoutController({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     
     useEffect(() => {
-        // No hacer nada si aún estamos determinando el estado del usuario.
         if (isLoadingUser) {
-            return;
+            return; // Espera a que la carga del usuario termine antes de hacer nada.
         }
 
         const isPublicPage = PUBLIC_PAGES.some(p => pathname.startsWith(p));
         const isSetupPage = pathname.startsWith('/initial-setup');
         
-        // Si estamos en una página pública, no aplicamos lógica de redirección aquí.
-        // La página de login o registro se encargará de redirigir si el usuario ya tiene sesión.
-        if (isPublicPage) {
-            return;
-        }
-
         if (currentUser) {
-            // Usuario autenticado, pero fuera de las páginas públicas.
+            // Usuario autenticado
             const isSetupComplete = currentUser.isInitialSetupComplete ?? false;
 
             if (!isSetupComplete && !isSetupPage) {
-                // Si no ha completado el setup, forzarlo a la página de configuración.
+                // Forzar al setup si no está completo y no está ya en la página de setup.
                 router.replace('/initial-setup');
+            } else if (isSetupComplete && (isPublicPage || isSetupPage)) {
+                 // Si ya completó el setup, y está en una página pública o de setup, mandarlo al home.
+                if (pathname === '/login' || isSetupPage) {
+                    router.replace('/');
+                }
             }
         } else {
-            // Usuario no autenticado y no está en una página pública, redirigir a login.
-            router.replace('/login');
+            // Usuario no autenticado
+            if (!isPublicPage) {
+                // Si no está en una página pública, redirigir a login.
+                router.replace('/login');
+            }
         }
     }, [currentUser, isLoadingUser, pathname, router]);
     
-    // Mientras se carga el usuario y no estamos en una página pública, muestra un loader.
-    // Esto previene el parpadeo y asegura que no se renderice contenido protegido.
-    if (isLoadingUser && !PUBLIC_PAGES.some(p => pathname.startsWith(p))) {
+    // Mientras se carga el usuario, muestra un loader a pantalla completa.
+    // Esto previene cualquier renderizado de contenido protegido o incorrecto.
+    if (isLoadingUser) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
+            <div className="flex items-center justify-center min-h-screen bg-muted/40">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
             </div>
         );
     }
     
     // Determina si se debe mostrar el layout principal de la aplicación.
-    // Solo se muestra si el usuario está autenticado y no está en una página pública.
     const showAppLayout = currentUser && !PUBLIC_PAGES.some(p => pathname.startsWith(p));
 
     return (
