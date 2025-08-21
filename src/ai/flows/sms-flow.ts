@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A flow for managing SMS verification codes, including sending the SMS.
@@ -11,6 +10,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { addMinutes, isAfter } from 'date-fns';
 import type { User } from '@/lib/types';
 import { Twilio } from 'twilio';
+import { env } from '@/env.mjs';
 
 const SmsVerificationInputSchema = z.object({
   userId: z.string(),
@@ -38,14 +38,9 @@ export const sendSmsVerificationCodeFlow = ai.defineFlow(
       phoneVerificationCodeExpires: codeExpiry.toISOString(),
     });
 
-    const accountSid = process.env.TWILIO_ACCOUNT_SID;
-    const authToken = process.env.TWILIO_AUTH_TOKEN;
-    const twilioNumber = process.env.TWILIO_PHONE_NUMBER;
-
-    if (!accountSid || !authToken || !twilioNumber) {
-        console.error('Twilio credentials are not set in .env.local');
-        throw new Error('SMS service is not configured.');
-    }
+    const accountSid = env.TWILIO_ACCOUNT_SID;
+    const authToken = env.TWILIO_AUTH_TOKEN;
+    const twilioNumber = env.TWILIO_PHONE_NUMBER;
     
     const twilioClient = new Twilio(accountSid, authToken);
     

@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+import './src/env.mjs';
+
 const nextConfig = {
   images: {
     remotePatterns: [
@@ -13,22 +15,21 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'placehold.co',
-      }
+      },
     ],
   },
   webpack: (config) => {
-    // Tell webpack to ignore watching the files that Genkit generates.
-    // This prevents an infinite hot-reload loop.
-    // Ensure config.watchOptions.ignored is an array before attempting to spread it.
+    // Ensure config.watchOptions.ignored is an array before attempting to modify it.
+    // This is a robust way to prevent the "not iterable" error.
     if (!Array.isArray(config.watchOptions.ignored)) {
-        config.watchOptions.ignored = [];
+      config.watchOptions.ignored = [];
     }
     
     config.watchOptions.ignored.push(
-      "**/.genkit/**",
-      "**/.firebase/**",
-      "**/genkit-log.json",
-      "**/firebase-debug.log",
+      '**/.genkit/**',
+      '**/.firebase/**',
+      '**/genkit-log.json',
+      '**/firebase-debug.log',
     );
     
     return config;

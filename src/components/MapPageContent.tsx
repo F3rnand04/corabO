@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
@@ -8,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { APIProvider, Map, useMap } from '@vis.gl/react-google-maps';
 import { cn } from '@/lib/utils';
+import { env } from '@/env.mjs';
 
 // Internal component to get map instance
 function MapHandler({ onCenterChanged, onIdle }: { onCenterChanged: (center: google.maps.LatLngLiteral) => void; onIdle: () => void }) {
@@ -71,7 +71,7 @@ export function MapPageContent() {
 
   return (
     <div className="relative h-screen w-screen bg-muted">
-      <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''} libraries={['marker']}>
+      <APIProvider apiKey={env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY} libraries={['marker']}>
           <Map
               key={`${initialPosition.lat}-${initialPosition.lng}`} // Force re-render when initialPosition changes
               defaultCenter={initialPosition}
@@ -101,5 +101,3 @@ export function MapPageContent() {
     </div>
   );
 }
-
-    
