@@ -1,11 +1,9 @@
+// El middleware se ha desactivado.
+// La lógica de protección de rutas y redirección ahora es manejada exclusivamente
+// por el componente /src/app/AppLayout.tsx, que tiene acceso al estado de
+// autenticación del cliente y es más fiable para este caso de uso.
 
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-
-// El middleware ya no es necesario. La lógica de protección de rutas
-// ahora es manejada exclusivamente por AppLayout.tsx, que tiene acceso
-// al estado de autenticación del cliente y es más fiable.
-// Dejar este archivo vacío desactiva el middleware de Next.js.
+import { type NextRequest, NextResponse } from 'next/server';
 
 export function middleware(request: NextRequest) {
   return NextResponse.next();
