@@ -1,20 +1,21 @@
 
-import { PublicationCard } from "@/components/PublicationCard";
-import type { GalleryImage } from "@/lib/types";
-import * as Actions from '@/lib/actions';
 import { FeedClientComponent } from "@/components/FeedClientComponent";
+import * as Actions from '@/lib/actions';
 
-// This is now a Server Component
+// This is now a "dumb" server component.
+// Its only job is to fetch the initial data in a server context.
 export default async function HomePage() {
   
-  // 1. Fetch initial data directly on the server.
-  // This happens before the page is sent to the client.
-  const initialFeed = await Actions.getFeed({ limitNum: 5 });
-  
-  // 2. Pass the server-fetched data as a prop to a Client Component.
+  // Fetch initial data on the server.
+  // This approach is safer because it's part of the page lifecycle.
+  // If this fails, Next.js has better ways of handling the error than a context-based approach.
+  const { publications: initialPublications } = await Actions.getFeed({ limitNum: 10 });
+
+  // Pass the initial data to the client component.
+  // The client component will handle all the state, filtering, and interaction logic.
   return (
-    <main className="space-y-4">
-       <FeedClientComponent initialPublications={initialFeed.publications} />
+    <main className="flex-1">
+      <FeedClientComponent initialPublications={initialPublications} />
     </main>
   );
 }

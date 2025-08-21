@@ -13,10 +13,22 @@ interface FeedClientComponentProps {
 }
 
 export function FeedClientComponent({ initialPublications }: FeedClientComponentProps) {
-  const { currentUser, searchQuery, categoryFilter } = useCorabo();
+  const { currentUser, searchQuery, categoryFilter, allPublications } = useCorabo();
+  
   // The component's state is initialized with the data passed from the server.
-  // It is now the single source of truth for this component's data.
-  const [publications, setPublications] = useState<GalleryImage[]>(initialPublications);
+  // It also listens to the global `allPublications` from the context for real-time updates.
+  const publications = useMemo(() => {
+    // This creates a more robust feed by combining initial data and real-time updates.
+    const combined = [...initialPublications, ...allPublications];
+    const uniqueIds = new Set();
+    return combined.filter(p => {
+        if (!uniqueIds.has(p.id)) {
+            uniqueIds.add(p.id);
+            return true;
+        }
+        return false;
+    });
+  }, [initialPublications, allPublications]);
   
   const filteredPublications = useMemo(() => {
     let results = publications;

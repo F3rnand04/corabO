@@ -183,6 +183,13 @@ export const CoraboProvider = ({ children, firebaseUser, isAuthLoading }: Corabo
         setUsers(userList);
         userList.forEach(user => userCache.current.set(user.id, user));
     }));
+    
+    // This listener fetches ALL publications now, which is not ideal for large scale
+    // but works for this stage of the prototype. The FeedClientComponent will then filter.
+    unsubscribes.push(onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
+        const pubs = snapshot.docs.map(doc => doc.data() as GalleryImage);
+        setAllPublications(pubs);
+    }));
 
     if (currentUser?.id) {
         const userId = currentUser.id;
