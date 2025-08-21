@@ -19,13 +19,17 @@ const nextConfig = {
   webpack: (config) => {
     // Tell webpack to ignore watching the files that Genkit generates.
     // This prevents an infinite hot-reload loop.
-    config.watchOptions.ignored = [
-      ...(config.watchOptions.ignored || []),
+    // Ensure config.watchOptions.ignored is an array before attempting to spread it.
+    if (!Array.isArray(config.watchOptions.ignored)) {
+        config.watchOptions.ignored = [];
+    }
+    
+    config.watchOptions.ignored.push(
       "**/.genkit/**",
       "**/.firebase/**",
       "**/genkit-log.json",
       "**/firebase-debug.log",
-    ];
+    );
     
     return config;
   },
