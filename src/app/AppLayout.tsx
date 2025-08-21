@@ -8,14 +8,13 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { CoraboProvider, useCorabo } from "@/contexts/CoraboContext";
 import { Loader2 } from "lucide-react";
-import type { User } from "@/lib/types";
-
 
 function LayoutController({ children }: { children: React.ReactNode }) {
-    const { currentUser, isLoadingUser, isInitialSetupComplete } = useCorabo();
+    const { currentUser, isLoadingUser } = useCorabo();
     const router = useRouter();
     const pathname = usePathname();
-
+    
+    const isInitialSetupComplete = currentUser?.isInitialSetupComplete ?? false;
     const isPublicPage = ['/login', '/cashier-login', '/policies', '/terms', '/privacy', '/community-guidelines'].some(p => pathname.startsWith(p));
     const isSetupPage = pathname.startsWith('/initial-setup');
 
@@ -32,7 +31,8 @@ function LayoutController({ children }: { children: React.ReactNode }) {
             }
         }
     }, [currentUser, isLoadingUser, isInitialSetupComplete, pathname, router, isPublicPage, isSetupPage]);
-
+    
+    // While the user data is loading but we're not on a public page, show a loader.
     if (isLoadingUser && !isPublicPage) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -54,10 +54,15 @@ function LayoutController({ children }: { children: React.ReactNode }) {
     );
 }
 
-
 export function AppLayout({ children }: { children: React.ReactNode }) {
+    const { firebaseUser, isLoadingAuth } = useAuth();
+    
+    // The CoraboProvider now handles its own state logic.
+    // We just pass the firebaseUser and loading state.
+    // This solves the server-side rendering issue by ensuring no async state
+    // updates are happening in this top-level layout component.
     return (
-        <CoraboProvider>
+        <CoraboProvider firebaseUser={firebaseUser} isAuthLoading={isLoadingAuth}>
             <LayoutController>{children}</LayoutController>
         </CoraboProvider>
     );

@@ -8,14 +8,13 @@ import { getFirestoreDb } from '@/lib/firebase';
 import { doc, getDoc, collection, onSnapshot, query, where, orderBy, Unsubscribe, updateDoc, writeBatch, deleteField } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import * as Actions from '@/lib/actions';
-import { useAuth } from '@/components/auth/AuthProvider';
+import { type User as FirebaseUser } from 'firebase/auth';
 
 
 interface CoraboContextValue {
   // State
   currentUser: User | null;
-  isLoadingUser: boolean; // NEW: To manage loading state within the context
-  isInitialSetupComplete: boolean; // NEW: Derived state for easier checks
+  isLoadingUser: boolean; 
   users: User[];
   transactions: Transaction[];
   conversations: Conversation[];
@@ -46,6 +45,7 @@ interface CoraboContextValue {
   setTempRecipientInfo: (info: TempRecipientInfo | null) => void;
   setActiveCartForCheckout: (cartItems: CartItem[] | null) => void;
   toggleGps: () => Promise<void>;
+  setCurrentUser: (user: User | null) => void;
 }
 
 interface GeolocationCoords {
@@ -62,9 +62,14 @@ interface UserMetrics {
 
 const CoraboContext = createContext<CoraboContextValue | undefined>(undefined);
 
-export const CoraboProvider = ({ children }: { children: ReactNode }) => {
+interface CoraboProviderProps {
+    children: ReactNode;
+    firebaseUser: FirebaseUser | null;
+    isAuthLoading: boolean;
+}
+
+export const CoraboProvider = ({ children, firebaseUser, isAuthLoading }: CoraboProviderProps) => {
   const { toast } = useToast();
-  const { firebaseUser, isLoadingAuth } = useAuth();
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
@@ -83,6 +88,34 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   
   const userCache = useRef<Map<string, User>>(new Map());
 
+  useEffect(() => {
+    setIsLoadingUser(isAuthLoading);
+    if (isAuthLoading) {
+      setCurrentUser(null);
+      return;
+    }
+    
+    if (firebaseUser) {
+      Actions.getOrCreateUser({
+        uid: firebaseUser.uid,
+        displayName: firebaseUser.displayName,
+        email: firebaseUser.email,
+        photoURL: firebaseUser.photoURL,
+        emailVerified: firebaseUser.emailVerified,
+      }).then(user => {
+        setCurrentUser(user as User);
+        setIsLoadingUser(false);
+      }).catch(error => {
+        console.error("Failed to get or create Corabo user:", error);
+        setCurrentUser(null);
+        setIsLoadingUser(false);
+      });
+    } else {
+      setCurrentUser(null);
+      setIsLoadingUser(false);
+    }
+  }, [firebaseUser, isAuthLoading]);
+  
   const setDeliveryAddress = useCallback((address: string) => {
     sessionStorage.setItem('coraboDeliveryAddress', address);
     _setDeliveryAddress(address);
@@ -97,33 +130,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
       _setTempRecipientInfo(info);
   }, []);
   
-
-  useEffect(() => {
-    const getCoraboUser = async () => {
-        if (firebaseUser) {
-            try {
-                const user = await Actions.getOrCreateUser({
-                    uid: firebaseUser.uid,
-                    displayName: firebaseUser.displayName,
-                    email: firebaseUser.email,
-                    photoURL: firebaseUser.photoURL,
-                    emailVerified: firebaseUser.emailVerified,
-                });
-                setCurrentUser(user as User);
-            } catch (error) {
-                console.error("Failed to get or create Corabo user:", error);
-                setCurrentUser(null);
-            }
-        } else {
-            setCurrentUser(null);
-        }
-        setIsLoadingUser(false);
-    };
-
-    if (!isLoadingAuth) {
-        getCoraboUser();
-    }
-  }, [firebaseUser, isLoadingAuth]);
 
   useEffect(() => {
     const savedAddress = sessionStorage.getItem('coraboDeliveryAddress');
@@ -175,11 +181,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
     if (currentUser?.id) {
         const userId = currentUser.id;
-        unsubscribes.push(onSnapshot(doc(db, 'users', userId), (doc) => {
-            if(doc.exists()) {
-                setCurrentUser(doc.data() as User);
-            }
-        }));
         
         const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userId));
         const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userId), orderBy("lastUpdated", "desc"));
@@ -235,11 +236,10 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
 
     const toggleGps = async () => {
       if (!currentUser) return;
-      const newStatus = !currentUser.isGpsActive;
-      await Actions.toggleGps(currentUser.id, newStatus);
+      await Actions.toggleGps(currentUser.id, !!currentUser.isGpsActive);
       toast({
-        title: `GPS ${newStatus ? 'Activado' : 'Desactivado'}`,
-        description: `Tu ubicación ${newStatus ? 'ahora es visible' : 'ya no es visible'} para otros usuarios.`,
+        title: `GPS ${!currentUser.isGpsActive ? 'Activado' : 'Desactivado'}`,
+        description: `Tu ubicación ${!currentUser.isGpsActive ? 'ahora es visible' : 'ya no es visible'} para otros usuarios.`,
       });
     };
     
@@ -249,7 +249,6 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
     const value: CoraboContextValue = {
         currentUser,
         isLoadingUser,
-        isInitialSetupComplete: currentUser?.isInitialSetupComplete ?? false,
         users, transactions, conversations,
         searchQuery, categoryFilter, contacts, searchHistory, 
         deliveryAddress, exchangeRate, currentUserLocation, tempRecipientInfo, activeCartForCheckout,
@@ -276,6 +275,7 @@ export const CoraboProvider = ({ children }: { children: ReactNode }) => {
         setTempRecipientInfo,
         setActiveCartForCheckout,
         toggleGps,
+        setCurrentUser,
     };
   
     return (
