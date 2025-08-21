@@ -49,5 +49,3 @@ export function getAuthInstance(): Auth {
     }
     return auth;
 }
-
-    

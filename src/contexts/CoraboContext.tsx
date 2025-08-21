@@ -43,53 +43,7 @@ interface CoraboContextValue {
   getDistanceToProvider: (provider: User) => string | null;
   setTempRecipientInfo: (info: TempRecipientInfo | null) => void;
   setActiveCartForCheckout: (cartItems: CartItem[] | null) => void;
-  
-  // DEPRECATED ACTIONS - These will be called from @/lib/actions now
-  // Kept here only for reference during refactoring, they will be removed.
-  sendMessage: (options: Omit<SendMessageInput, 'senderId'> & { conversationId?: string }) => string;
-  createPublication: (data: CreatePublicationInput) => Promise<void>;
-  createProduct: (data: CreateProductInput) => Promise<string>;
-  updateUserProfileImage: (userId: string, imageUrl: string) => Promise<void>;
   toggleGps: (userId: string) => Promise<void>;
-  addCashierBox: (name: string, password: string) => Promise<void>;
-  removeCashierBox: (boxId: string) => Promise<void>;
-  updateCashierBox: (boxId: string, updates: Partial<Pick<CashierBox, "name" | "passwordHash">>) => Promise<void>;
-  regenerateCashierBoxQr: (boxId: string) => Promise<void>;
-  startQrSession: (providerId: string, cashierBoxId?: string) => Promise<string>;
-  cancelQrSession: (sessionId: string) => Promise<void>;
-  setQrSessionAmount: (sessionId: string, amount: number) => Promise<void>;
-  handleClientCopyAndPay: (sessionId: string) => Promise<void>;
-  confirmMobilePayment: (sessionId: string) => Promise<void>;
-  subscribeUser: (title: string, amount: number) => Promise<void>;
-  updateFullProfile: (data: ProfileSetupData) => Promise<void>;
-  deactivateTransactions: () => Promise<void>;
-  activateTransactions: (paymentDetails: ProfileSetupData['paymentDetails']) => Promise<void>;
-  approveAffiliation: (affiliationId: string) => Promise<void>;
-  rejectAffiliation: (affiliationId: string) => Promise<void>;
-  revokeAffiliation: (affiliationId: string) => Promise<void>;
-  verifyCampaignPayment: (transactionId: string, campaignId: string) => Promise<void>;
-  deleteUser: (userId: string) => Promise<void>;
-  toggleUserPause: (userId: string, currentIsPaused: boolean) => Promise<void>;
-  verifyUserId: (userId: string) => Promise<void>;
-  rejectUserId: (userId: string) => Promise<void>;
-  autoVerifyIdWithAI: (user: User) => Promise<VerificationOutput>;
-  requestQuoteFromGroup: (title: string, items: string[], group: string) => boolean;
-  createCampaign: (data: Omit<CreateCampaignInput, 'userId'>) => Promise<void>;
-  createAppointmentRequest: (data: Omit<AppointmentRequest, 'clientId'>) => Promise<void>;
-  sendProposalMessage: (conversationId: string, proposal: AgreementProposal) => Promise<void>;
-  acceptProposal: (conversationId: string, messageId: string) => Promise<void>;
-  sendQuote: (transactionId: string, quote: { breakdown: string; total: number; }) => Promise<void>;
-  acceptQuote: (transactionId: string) => Promise<void>;
-  startDispute: (transactionId: string) => Promise<void>;
-  completeWork: (transactionId: string) => Promise<void>;
-  confirmWorkReceived: (transactionId: string, rating: number, comment?: string) => Promise<void>;
-  payCommitment: (transactionId: string) => Promise<void>;
-  confirmPaymentReceived: (transactionId: string, fromThirdParty: boolean) => Promise<void>;
-  acceptAppointment: (transactionId: string) => Promise<void>;
-  cancelSystemTransaction: (transactionId: string) => Promise<void>;
-  retryFindDelivery: (transactionId: string) => Promise<void>;
-  assignOwnDelivery: (transactionId: string) => Promise<void>;
-  resolveDeliveryAsPickup: (transactionId: string) => Promise<void>;
 }
 
 interface GeolocationCoords {
@@ -243,11 +197,14 @@ export const CoraboProvider = ({ children, currentUser }: { children: ReactNode,
       }));
     }, []);
 
-    // Dummy implementations for now. These will be removed in the next step.
-    const createDummyAction = (name: string) => async (...args: any[]): Promise<any> => {
-        console.warn(`Action "${name}" is deprecated in CoraboContext and should be imported from @/lib/actions.`);
-        toast({ variant: "destructive", title: "Función Obsoleta", description: `La función ${name} se está llamando desde el contexto.`});
-        return Promise.resolve(name === 'sendMessage' ? 'dummy-convo-id' : undefined);
+    const toggleGps = async (userId: string) => {
+      if (!currentUser) return;
+      const newStatus = !currentUser.isGpsActive;
+      await Actions.toggleGps(userId, newStatus);
+      toast({
+        title: `GPS ${newStatus ? 'Activado' : 'Desactivado'}`,
+        description: `Tu ubicación ${newStatus ? 'ahora es visible' : 'ya no es visible'} para otros usuarios.`,
+      });
     };
 
     const value: CoraboContextValue = {
@@ -275,50 +232,7 @@ export const CoraboProvider = ({ children, currentUser }: { children: ReactNode,
         getDistanceToProvider,
         setTempRecipientInfo,
         setActiveCartForCheckout,
-        sendMessage: createDummyAction('sendMessage') as any,
-        createPublication: createDummyAction('createPublication'),
-        createProduct: createDummyAction('createProduct'),
-        updateUserProfileImage: createDummyAction('updateUserProfileImage'),
-        toggleGps: createDummyAction('toggleGps'),
-        addCashierBox: createDummyAction('addCashierBox'),
-        removeCashierBox: createDummyAction('removeCashierBox'),
-        updateCashierBox: createDummyAction('updateCashierBox'),
-        regenerateCashierBoxQr: createDummyAction('regenerateCashierBoxQr'),
-        startQrSession: createDummyAction('startQrSession'),
-        cancelQrSession: createDummyAction('cancelQrSession'),
-        setQrSessionAmount: createDummyAction('setQrSessionAmount'),
-        handleClientCopyAndPay: createDummyAction('handleClientCopyAndPay'),
-        confirmMobilePayment: createDummyAction('confirmMobilePayment'),
-        subscribeUser: createDummyAction('subscribeUser'),
-        updateFullProfile: createDummyAction('updateFullProfile'),
-        deactivateTransactions: createDummyAction('deactivateTransactions'),
-        activateTransactions: createDummyAction('activateTransactions'),
-        approveAffiliation: createDummyAction('approveAffiliation'),
-        rejectAffiliation: createDummyAction('rejectAffiliation'),
-        revokeAffiliation: createDummyAction('revokeAffiliation'),
-        verifyCampaignPayment: createDummyAction('verifyCampaignPayment'),
-        deleteUser: createDummyAction('deleteUser'),
-        toggleUserPause: createDummyAction('toggleUserPause'),
-        verifyUserId: createDummyAction('verifyUserId'),
-        rejectUserId: createDummyAction('rejectUserId'),
-        autoVerifyIdWithAI: createDummyAction('autoVerifyIdWithAI'),
-        requestQuoteFromGroup: createDummyAction('requestQuoteFromGroup') as any,
-        createCampaign: createDummyAction('createCampaign'),
-        createAppointmentRequest: createDummyAction('createAppointmentRequest'),
-        sendProposalMessage: createDummyAction('sendProposalMessage'),
-        acceptProposal: createDummyAction('acceptProposal'),
-        sendQuote: createDummyAction('sendQuote'),
-        acceptQuote: createDummyAction('acceptQuote'),
-        startDispute: createDummyAction('startDispute'),
-        completeWork: createDummyAction('completeWork'),
-        confirmWorkReceived: createDummyAction('confirmWorkReceived'),
-        payCommitment: createDummyAction('payCommitment'),
-        confirmPaymentReceived: createDummyAction('confirmPaymentReceived'),
-        acceptAppointment: createDummyAction('acceptAppointment'),
-        cancelSystemTransaction: createDummyAction('cancelSystemTransaction'),
-        retryFindDelivery: createDummyAction('retryFindDelivery'),
-        assignOwnDelivery: createDummyAction('assignOwnDelivery'),
-        resolveDeliveryAsPickup: createDummyAction('resolveDeliveryAsPickup'),
+        toggleGps,
     };
   
     return (
