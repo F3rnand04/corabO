@@ -28,7 +28,6 @@ export const getFeedFlow = ai.defineFlow(
             limit(limitNum)
         ];
 
-        // **FIX:** Ensure startAfterDocId exists and the document is found before using it.
         if (startAfterDocId) {
             const startAfterDoc = await getDoc(doc(db, 'publications', startAfterDocId));
             if(startAfterDoc.exists()) {
@@ -44,7 +43,6 @@ export const getFeedFlow = ai.defineFlow(
         const publications = snapshot.docs.map(doc => doc.data() as GalleryImage);
 
         const lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
-        // Ensure we only return a cursor if we fetched a full page.
         const nextCursor = snapshot.docs.length === limitNum ? lastVisibleDoc?.id : null;
 
         return { 

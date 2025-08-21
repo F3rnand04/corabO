@@ -20,8 +20,8 @@ export default function HomePage() {
     const fetchInitialFeed = async () => {
         setIsLoadingFeed(true);
         try {
-            // Fetch initial batch of publications without pagination for now to fix the loop
-            const initialFeed = await Actions.getFeed({limitNum: 20});
+            // FIX: Pass an empty object to satisfy the Zod schema in the Genkit flow.
+            const initialFeed = await Actions.getFeed({});
             if (initialFeed && initialFeed.publications) {
               setAllPublications(initialFeed.publications);
             }
