@@ -70,12 +70,12 @@ export function Header() {
       <div className="container px-4 sm:px-6">
         {/* Top Row: Logo, Actions, Menu */}
         <div className="flex h-16 items-center justify-between gap-4">
-          <Link href="/" passHref>
+          <Link href="/contacts" passHref>
              <Image src="https://i.postimg.cc/8zWvkhxS/Sin-t-tulo-3.png" alt="Corabo Logo" width={120} height={40} className="h-10 w-auto cursor-pointer" />
           </Link>
 
           <div className="flex items-center gap-1">
-             <Button variant="ghost" size="icon" onClick={() => toggleGps()} onDoubleClick={() => router.push('/map')}>
+             <Button variant="ghost" size="icon" onClick={() => toggleGps(currentUser.id)} onDoubleClick={() => router.push('/map')}>
                 <MapPin className={cn("h-5 w-5", currentUser.isGpsActive ? "text-green-500" : "text-muted-foreground")} />
             </Button>
 
