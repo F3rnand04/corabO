@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -7,13 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ChevronLeft, KeyRound, QrCode, Trash2, Eye, EyeOff, RefreshCw, FileText, Home } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCorabo } from '@/contexts/CoraboContext';
-import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Input } from '@/components/ui/input';
 import { PrintableQrDisplay } from '@/components/PrintableQrDisplay';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import * as Actions from '@/lib/actions';
 
 
 function CashierSettingsHeader() {
@@ -28,7 +27,7 @@ function CashierSettingsHeader() {
                     <h1 className="text-lg font-semibold flex items-center gap-2"><KeyRound className="w-5 h-5"/> Gestión de Cajas</h1>
                     <Button asChild variant="ghost" size="icon">
                         <Link href="/">
-                            <Home className="h-5 w-5" />
+                            <Home className="h-5 h-5" />
                         </Link>
                     </Button>
                 </div>
@@ -38,7 +37,7 @@ function CashierSettingsHeader() {
 }
 
 function CashierManagementCard() {
-    const { currentUser, addCashierBox, removeCashierBox, updateCashierBox, regenerateCashierBoxQr, qrSession } = useCorabo();
+    const { currentUser, qrSession } = useCorabo();
     const [newBoxName, setNewBoxName] = useState('');
     const [newBoxPassword, setNewBoxPassword] = useState('');
     const [selectedBox, setSelectedBox] = useState<{id: string, name: string, businessId: string, qrValue: string} | null>(null);
@@ -47,9 +46,9 @@ function CashierManagementCard() {
     const [isProcessing, setIsProcessing] = useState<string | null>(null); // To track which box is being processed
     
     const handleAddBox = async () => {
-        if (newBoxName && newBoxPassword) {
+        if (newBoxName && newBoxPassword && currentUser) {
             setIsProcessing('new');
-            await addCashierBox(newBoxName, newBoxPassword);
+            await Actions.addCashierBox(currentUser.id, newBoxName, newBoxPassword);
             setNewBoxName('');
             setNewBoxPassword('');
             setIsProcessing(null);
@@ -62,9 +61,9 @@ function CashierManagementCard() {
     
     const handleUpdatePassword = async (boxId: string) => {
         const newPassword = editingPasswords[boxId];
-        if (newPassword) {
+        if (newPassword && currentUser) {
             setIsProcessing(boxId);
-            await updateCashierBox(boxId, { passwordHash: newPassword });
+            await Actions.updateCashierBox(currentUser.id, boxId, { passwordHash: newPassword });
             setEditingPasswords(prev => {
                 const newState = {...prev};
                 delete newState[boxId];
@@ -75,14 +74,16 @@ function CashierManagementCard() {
     };
 
     const handleRegenerateQr = async (boxId: string) => {
+      if (!currentUser) return;
       setIsProcessing(boxId);
-      await regenerateCashierBoxQr(boxId);
+      await Actions.regenerateCashierBoxQr(currentUser.id, boxId);
       setIsProcessing(null);
     }
     
     const handleRemoveBox = async (boxId: string) => {
+       if (!currentUser) return;
        setIsProcessing(boxId);
-       await removeCashierBox(boxId);
+       await Actions.removeCashierBox(currentUser.id, boxId);
        setIsProcessing(null);
     }
 

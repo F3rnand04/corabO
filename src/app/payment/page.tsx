@@ -15,6 +15,7 @@ import type { Transaction } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { getFirestoreDb } from '@/lib/firebase';
 import { setDoc, doc } from 'firebase/firestore';
+import * as Actions from '@/lib/actions';
 
 
 function PaymentHeader() {
@@ -38,7 +39,7 @@ function PaymentPageContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { toast } = useToast();
-    const { currentUser, transactions, payCommitment, registerSystemPayment } = useCorabo();
+    const { currentUser, transactions } = useCorabo();
 
     const [commitment, setCommitment] = useState<Transaction | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -62,16 +63,16 @@ function PaymentPageContent() {
         if (commitmentId) {
             const foundTx = transactions.find(tx => tx.id === commitmentId);
             setCommitment(foundTx || null);
-        } else if (amount && concept) {
+        } else if (amount && concept && currentUser) {
             setDirectPaymentAmount(parseFloat(amount));
             setPaymentConcept(decodeURIComponent(concept));
             if(subscriptionFlag) setIsSubscription(true);
         }
         setIsLoading(false);
-    }, [searchParams, transactions]);
+    }, [searchParams, transactions, currentUser]);
 
     const handleConfirmPayment = async () => {
-        if (!paymentReference || !paymentVoucher) {
+        if (!paymentReference || !paymentVoucher || !currentUser) {
             toast({ variant: 'destructive', title: 'Faltan datos', description: 'Por favor, sube el comprobante y añade la referencia.' });
             return;
         }
@@ -80,10 +81,10 @@ function PaymentPageContent() {
         try {
              // For direct payments (subscriptions, campaigns), we create a system transaction
             if (directPaymentAmount && paymentConcept) {
-                 await registerSystemPayment(paymentConcept, directPaymentAmount, isSubscription);
+                 await Actions.registerSystemPayment(currentUser.id, paymentConcept, directPaymentAmount, isSubscription);
             } else if (commitment) {
                 // Regular commitment payment, handled by payCommitment which will update the status
-                 await payCommitment(commitment.id);
+                 await Actions.payCommitment(commitment.id);
             }
             
             toast({ title: 'Pago Registrado', description: 'Tu pago será verificado por un administrador.' });
