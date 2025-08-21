@@ -10,9 +10,11 @@
 import { doc, updateDoc, deleteField, setDoc, getDoc, writeBatch, collection, where, query, getDocs, arrayRemove, arrayUnion, deleteDoc as deleteFirestoreDoc } from 'firebase/firestore';
 
 // Types
-import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, VerificationOutput, AppointmentRequest, CreatePublicationInput, CreateProductInput, QrSession, TempRecipientInfo, CashierBox } from '@/lib/types';
+import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, VerificationOutput, AppointmentRequest, QrSession, TempRecipientInfo, CashierBox } from '@/lib/types';
 import { type CreateCampaignInput } from '@/ai/flows/campaign-flow';
 import { type SendMessageInput } from '@/ai/flows/message-flow';
+import { type CreatePublicationInput, type CreateProductInput } from '@/ai/flows/publication-flow';
+
 
 // Flows
 import * as CampaignFlows from '@/ai/flows/campaign-flow';

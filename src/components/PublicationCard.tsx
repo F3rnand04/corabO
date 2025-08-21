@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
+import * as Actions from '@/lib/actions';
 
 
 interface PublicationCardProps {
@@ -25,7 +26,7 @@ interface PublicationCardProps {
 }
 
 export function PublicationCard({ publication, className }: PublicationCardProps) {
-    const { addContact, isContact, sendMessage, currentUser, getUserMetrics, transactions, addToCart, getDistanceToProvider, fetchUser } = useCorabo();
+    const { addContact, isContact, sendMessage, currentUser, getUserMetrics, transactions, getDistanceToProvider, fetchUser } = useCorabo();
     const router = useRouter();
     const { toast } = useToast();
     
@@ -62,7 +63,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
     const isWithinDeliveryRange = true; 
 
     const profileLink = `/companies/${owner.id}`;
-    const { reputation, effectiveness, responseTime } = getUserMetrics(owner.id, transactions);
+    const { reputation, effectiveness, responseTime } = getUserMetrics(owner.id);
     const isNewProvider = responseTime === 'Nuevo';
     const distance = getDistanceToProvider(owner as User);
 
@@ -117,8 +118,8 @@ export function PublicationCard({ publication, className }: PublicationCardProps
     }
     
     const handleAddToCart = () => {
-        if (!isProduct || !productDetails) return;
-        if (!currentUser?.isTransactionsActive) {
+        if (!isProduct || !productDetails || !currentUser) return;
+        if (!currentUser.isTransactionsActive) {
             toast({
                 variant: "destructive",
                 title: "Acción Requerida",
@@ -134,22 +135,20 @@ export function PublicationCard({ publication, className }: PublicationCardProps
             });
             return;
         }
-        addToCart({
-            id: publication.id,
-            name: productDetails.name,
-            description: publication.description,
-            price: productDetails.price,
-            category: productDetails.category,
-            providerId: publication.providerId,
-            imageUrl: publication.src,
-        }, 1);
+        Actions.updateCart(currentUser.id, publication.id, 1);
+        toast({ title: "Producto añadido", description: `${productDetails.name} fue añadido a tu carrito.` });
     };
     
     const handleContact = () => {
-      const conversationId = sendMessage({ recipientId: owner.id, text: `¡Hola! Me interesa tu publicación.` });
-      if (conversationId) {
-        router.push(`/messages/${conversationId}`);
-      }
+      if (!currentUser) return;
+      const conversationId = [currentUser.id, owner.id].sort().join('-');
+      Actions.sendMessage({ 
+          senderId: currentUser.id,
+          recipientId: owner.id, 
+          conversationId: conversationId,
+          text: `¡Hola! Me interesa tu publicación.`
+      });
+      router.push(`/messages/${conversationId}`);
     };
     
     return (

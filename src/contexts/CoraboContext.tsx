@@ -12,7 +12,7 @@ import * as Actions from '@/lib/actions';
 interface CoraboContextValue {
   // State
   currentUser: User | null;
-  setCurrentUser: (user: User | null) => void; // New: to allow AppLayout to set the user
+  setCurrentUser: (user: User | null) => void;
   users: User[];
   allPublications: GalleryImage[];
   transactions: Transaction[];

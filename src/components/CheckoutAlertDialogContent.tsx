@@ -67,6 +67,7 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
     if (!provider) return null;
     
     const handleCheckout = () => {
+        if(!currentUser.id) return;
         Actions.checkout(currentUser.id, providerId, deliveryMethod, useCredicora, tempRecipientInfo || undefined, deliveryAddress);
         onOpenChange(false);
         setUseCredicora(false);
@@ -84,6 +85,7 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
     }
     
     const handleRemoveProviderCart = () => {
+        if(!currentUser.id) return;
         activeCartForCheckout.forEach(item => {
             Actions.updateCart(currentUser.id, item.product.id, 0);
         });

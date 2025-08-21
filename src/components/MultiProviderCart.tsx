@@ -10,14 +10,14 @@ import { Card, CardContent } from "./ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
 import { X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import * as Actions from '@/lib/actions';
 
 interface MultiProviderCartProps {
     onCheckoutClick: () => void;
 }
 
 export function MultiProviderCart({ onCheckoutClick }: MultiProviderCartProps) {
-    const { cart, users, getCartTotal, setActiveCartForCheckout, updateCartQuantity } = useCorabo();
+    const { cart, users, setActiveCartForCheckout, currentUser } = useCorabo();
 
     const groupedCart = useMemo(() => {
         return cart.reduce((acc, item) => {
@@ -37,7 +37,7 @@ export function MultiProviderCart({ onCheckoutClick }: MultiProviderCartProps) {
         }, {} as Record<string, { provider?: any; items: any[]; subtotal: number; itemCount: number }>);
     }, [cart, users]);
     
-    const grandTotal = getCartTotal(cart);
+    const grandTotal = cart.reduce((total, item) => total + item.product.price * item.quantity, 0);
 
     const handleCheckoutForProvider = (providerCart: { items: any[] }) => {
         setActiveCartForCheckout(providerCart.items);
@@ -45,8 +45,9 @@ export function MultiProviderCart({ onCheckoutClick }: MultiProviderCartProps) {
     };
 
     const handleRemoveProviderFromCart = (items: any[]) => {
+        if (!currentUser?.id) return;
         items.forEach(item => {
-            updateCartQuantity(item.product.id, 0);
+            Actions.updateCart(currentUser.id, item.product.id, 0);
         });
     };
 
