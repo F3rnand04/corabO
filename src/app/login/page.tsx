@@ -17,8 +17,8 @@ export default function LoginPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Si ya no estamos cargando y hay un usuario, redirigir a la página principal.
-    // Esto evita que un usuario ya logueado vea la página de login.
+    // Si ya no estamos cargando y hay un usuario, AppLayout se encargará de la redirección.
+    // Esta es una doble seguridad.
     if (!isLoadingUser && currentUser) {
       router.replace('/');
     }
@@ -27,7 +27,7 @@ export default function LoginPage() {
   const handleSignIn = async () => {
     try {
       await signInWithGoogle();
-      // La redirección post-login es manejada por el AppLayout.
+      // La redirección post-login es manejada por AppLayout.
     } catch (error: any) {
        if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
         console.error("Error signing in with Google:", error);
@@ -41,7 +41,7 @@ export default function LoginPage() {
   };
   
   // Mientras se verifica el estado de autenticación o si ya hay un usuario
-  // (y estamos esperando la redirección), muestra un loader.
+  // (y estamos esperando la redirección de AppLayout), muestra un loader.
   if (isLoadingUser || isLoadingAuth || currentUser) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-muted/40">
@@ -55,11 +55,11 @@ export default function LoginPage() {
       <Image 
         src="https://i.postimg.cc/C1sxJnNT/bv.png"
         alt="Fondo de bienvenida"
-        layout="fill"
-        objectFit="cover"
+        fill
+        sizes="100vw"
         quality={80}
         priority
-        className="z-0"
+        className="z-0 object-cover"
         data-ai-hint="background office"
       />
       <div className="absolute inset-0 bg-black/50 z-0" />
@@ -71,7 +71,7 @@ export default function LoginPage() {
                 fill
                 priority
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                style={{objectFit: 'contain'}}
+                className="object-contain"
             />
         </div>
         <h2 className="text-2xl font-bold mb-2">Bienvenido a Corabo</h2>

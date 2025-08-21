@@ -2,11 +2,23 @@
 'use client';
 
 import { FeedClientComponent } from "@/components/FeedClientComponent";
+import { useCorabo } from "@/contexts/CoraboContext";
+import { Loader2 } from "lucide-react";
 
-// This is now a simple client component wrapper.
-// It delegates all data fetching and rendering logic to FeedClientComponent.
-// This prevents any server-side data fetching on the root page, fixing previous errors.
+// Este componente ahora actúa como el punto de entrada principal de la aplicación.
+// Renderiza un loader mientras el estado del usuario se resuelve, y luego
+// delega el renderizado del feed al FeedClientComponent.
 export default function HomePage() {
+  const { isLoadingUser } = useCorabo();
+
+  if (isLoadingUser) {
+      return (
+           <div className="flex items-center justify-center pt-20">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      )
+  }
+
   return (
     <main className="flex-1">
       <FeedClientComponent />
