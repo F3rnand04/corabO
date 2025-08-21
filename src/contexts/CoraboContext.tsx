@@ -46,7 +46,6 @@ interface CoraboContextValue {
   getDistanceToProvider: (provider: User) => string | null;
   setTempRecipientInfo: (info: TempRecipientInfo | null) => void;
   setActiveCartForCheckout: (cartItems: CartItem[] | null) => void;
-  toggleGps: () => Promise<void>;
   setCurrentUser: (user: User | null) => void;
 }
 
@@ -248,16 +247,6 @@ export const CoraboProvider = ({ children, firebaseUser, isAuthLoading }: Corabo
         date: new Date(tx.date), type: 'payment' as 'payment' | 'task', description: `Pago a ${tx.providerId}`, transactionId: tx.id,
       }));
     }, []);
-
-    const toggleGps = async () => {
-      if (!currentUser) return;
-      const newStatus = !currentUser.isGpsActive;
-      await Actions.updateUser(currentUser.id, { isGpsActive: newStatus });
-      toast({
-        title: `GPS ${newStatus ? 'Activado' : 'Desactivado'}`,
-        description: `Tu ubicación ${newStatus ? 'ahora es visible' : 'ya no es visible'} para otros usuarios.`,
-      });
-    };
     
     const activeCartTx = useMemo(() => transactions.find(tx => tx.clientId === currentUser?.id && tx.status === 'Carrito Activo'), [transactions, currentUser?.id]);
     const cart: CartItem[] = useMemo(() => activeCartTx?.details.items || [], [activeCartTx]);
@@ -299,7 +288,6 @@ export const CoraboProvider = ({ children, firebaseUser, isAuthLoading }: Corabo
         getDistanceToProvider,
         setTempRecipientInfo,
         setActiveCartForCheckout,
-        toggleGps,
         setCurrentUser,
     };
   

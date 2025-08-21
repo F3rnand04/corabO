@@ -279,7 +279,7 @@ export async function checkout(userId: string, providerId: string, deliveryMetho
 export const { sendQuote, acceptQuote, acceptAppointment, confirmPaymentReceived, completeWork, confirmWorkReceived, startDispute, createAppointmentRequest, processDirectPayment } = TransactionFlows;
 
 export async function payCommitment(transactionId: string) {
-    const db = getFirestoreDb();
+    const db = await getFirestoreDb();
     await updateDoc(doc(db, 'transactions', transactionId), { status: 'Pago Enviado - Esperando Confirmación' });
 }
 
