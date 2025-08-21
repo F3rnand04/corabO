@@ -22,7 +22,9 @@ export function FeedClientComponent() {
         setIsLoadingFeed(true);
         Actions.getFeed({ limitNum: 20 }) // Fetch initial batch
             .then(result => {
-                setPublications(result.publications || []);
+                if (result.publications) {
+                    setPublications(result.publications);
+                }
             })
             .catch(error => {
                 console.error("Failed to fetch feed:", error);
