@@ -36,19 +36,11 @@ import { credicoraLevels, credicoraCompanyLevels } from './types';
 export const getPublicProfile = ProfileFlows.getPublicProfileFlow;
 
 export async function updateUser(userId: string, updates: Partial<User>) {
-    const db = await getFirestoreDb();
-    const userRef = doc(db, 'users', userId);
-    await updateDoc(userRef, updates);
+    await ProfileFlows.updateUserFlow({ userId, updates });
 }
 
-export async function updateUserProfileAndGallery(userId: string, image: GalleryImage) {
-    const db = await getFirestoreDb();
-    const userRef = doc(db, 'users', userId);
-    const pubRef = doc(db, 'publications', image.id);
-    const batch = writeBatch(db);
-    batch.update(userRef, { profileImage: image.src });
-    batch.set(pubRef, image);
-    await batch.commit();
+export async function updateUserProfileImage(userId: string, imageUrl: string) {
+    await ProfileFlows.updateUserFlow({ userId, updates: { profileImage: imageUrl } });
 }
 
 export async function updateFullProfile(userId: string, data: ProfileSetupData, profileType: User['type']) {
@@ -58,7 +50,7 @@ export async function updateFullProfile(userId: string, data: ProfileSetupData, 
     if (!userSnap.exists()) return;
     const existingData = userSnap.data() as User;
     const newProfileSetupData = { ...existingData.profileSetupData, ...data };
-    await updateDoc(userRef, { type: profileType, profileSetupData: newProfileSetupData });
+    await ProfileFlows.updateUserFlow({ userId, updates: { type: profileType, profileSetupData: newProfileSetupData } });
 }
 
 export async function deleteUser(userId: string) {
@@ -67,10 +59,6 @@ export async function deleteUser(userId: string) {
 
 export async function toggleUserPause(userId: string, currentIsPaused: boolean) {
     await updateUser(userId, { isPaused: !currentIsPaused });
-}
-
-export async function updateUserProfileImage(userId: string, imageUrl: string) {
-    await updateUser(userId, { profileImage: imageUrl });
 }
 
 export async function toggleGps(userId: string, currentStatus: boolean) {
@@ -309,7 +297,7 @@ export async function createCampaign(userId: string, data: Omit<CreateCampaignIn
 
 export async function activatePromotion(userId: string, details: { imageId: string, promotionText: string, cost: number }) {
     const db = await getFirestoreDb();
-    await updateDoc(doc(db, 'users', userId), {
+    await updateUser(userId, {
         promotion: { text: details.promotionText, expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() }
     });
     const pubRef = doc(db, 'publications', details.imageId);

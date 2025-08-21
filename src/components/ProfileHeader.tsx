@@ -1,13 +1,12 @@
 
 'use client';
 
-import { useState, useEffect, useRef, ChangeEvent, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import Image from 'next/image';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Megaphone, Zap, Plus, Package, Wallet, MapPin, Calendar as CalendarIcon, TrendingUp, Timer, FileText, Settings2, UserRoundCog, Handshake, Stethoscope, Utensils, Home as HomeIcon, Briefcase, Scissors, Car, MoreHorizontal } from 'lucide-react';
+import { Star, Megaphone, Zap, Plus, Wallet, MapPin, Calendar as CalendarIcon, TrendingUp, Timer, UserRoundCog, Handshake, Stethoscope, Utensils, Home as HomeIcon, Briefcase, Scissors, Car, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { useRouter, usePathname } from 'next/navigation';
@@ -20,7 +19,7 @@ import { format } from 'date-fns';
 import { TransactionDetailsDialog } from './TransactionDetailsDialog';
 import type { Transaction, SpecializedData } from '@/lib/types';
 import { SubscriptionDialog } from './SubscriptionDialog';
-import { Progress } from './ui/progress';
+import { EditableAvatar } from './EditableAvatar';
 
 const categoryIcons: { [key: string]: React.ElementType } = {
   'Salud y Bienestar': Stethoscope,
@@ -70,14 +69,51 @@ const renderSpecializedBadges = (specializedData?: SpecializedData) => {
     );
 };
 
+function ProfileStats({ user, metrics }: { user: any, metrics: any }) {
+  const { paymentSpeed, responseTime, reputation, effectiveness } = metrics;
+  const isNewProvider = responseTime === 'Nuevo';
+  
+  const paymentSpeedColor = (speed: string | undefined) => {
+    if (!speed) return 'text-muted-foreground';
+    if (speed.includes('+')) {
+      if (parseInt(speed.replace('+', '')) >= 45) return 'text-red-500';
+      return 'text-orange-500';
+    }
+    return 'text-green-500';
+  };
+
+  return (
+    <div className="flex items-center flex-wrap gap-x-2 gap-y-1 text-xs mt-1 text-muted-foreground">
+      <div className="flex items-center gap-1">
+        <Star className="w-4 h-4 text-yellow-400 fill-yellow-400"/>
+        <span className="font-semibold text-foreground">{reputation.toFixed(1)}</span>
+      </div>
+      {isNewProvider ? (
+        <Badge variant="secondary" className="px-1.5 py-0">Nuevo</Badge>
+      ) : (
+      <>
+        <div className="w-px h-3 bg-border mx-1"></div>
+        <div className="flex items-center gap-1">
+          <TrendingUp className="w-4 h-4 text-green-500"/>
+          <span className="font-semibold text-foreground">{effectiveness.toFixed(0)}%</span>
+        </div>
+        <div className="w-px h-3 bg-border mx-1"></div>
+        <div className={cn("flex items-center gap-1 font-semibold", paymentSpeedColor(paymentSpeed))}>
+          <Timer className="w-4 h-4"/>
+          <span>{paymentSpeed || 'N/A'}</span>
+        </div>
+      </>
+      )}
+    </div>
+  );
+}
+
 
 export function ProfileHeader() {
-  const { toast } = useToast();
-  const { currentUser, updateUserProfileImage, getUserMetrics, transactions, getAgendaEvents, toggleGps, allPublications } = useCorabo();
+  const { currentUser, getUserMetrics, transactions, getAgendaEvents, toggleGps, allPublications } = useCorabo();
   
   const router = useRouter();
   const pathname = usePathname();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isCampaignDialogOpen, setIsCampaignDialogOpen] = useState(false);
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
@@ -88,62 +124,7 @@ export function ProfileHeader() {
   const isProvider = currentUser.type === 'provider';
   const isCompany = isProvider && currentUser.profileSetupData?.providerType === 'company';
   
-  const { reputation, effectiveness, responseTime, paymentSpeed } = getUserMetrics(currentUser.id);
-  const isNewProvider = responseTime === 'Nuevo';
-  
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = document.createElement('img');
-        img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const MAX_WIDTH = 800;
-            const MAX_HEIGHT = 800;
-            let width = img.width;
-            let height = img.height;
-
-            if (width > height) {
-                if (width > MAX_WIDTH) {
-                    height *= MAX_WIDTH / width;
-                    width = MAX_WIDTH;
-                }
-            } else {
-                if (height > MAX_HEIGHT) {
-                    width *= MAX_HEIGHT / height;
-                    height = MAX_HEIGHT;
-                }
-            }
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx?.drawImage(img, 0, 0, width, height);
-
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-            
-            updateUserProfileImage(currentUser.id, dataUrl).then(() => {
-                toast({
-                    title: "¡Foto de Perfil Actualizada!",
-                    description: "Tu nueva foto de perfil está visible.",
-                });
-            }).catch(err => {
-                 toast({
-                    variant: "destructive",
-                    title: "Error al subir la imagen",
-                    description: err.message,
-                });
-            });
-        };
-        img.src = e.target?.result as string;
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-  
-  const handleAvatarClick = () => {
-    fileInputRef.current?.click();
-  };
+  const metrics = useMemo(() => getUserMetrics(currentUser.id), [currentUser.id, getUserMetrics]);
   
   const displayName = currentUser.profileSetupData?.useUsername && currentUser.profileSetupData.username 
     ? currentUser.profileSetupData.username 
@@ -164,16 +145,7 @@ export function ProfileHeader() {
         if(tx) setSelectedTransaction(tx);
     }
   }
-
-  const paymentSpeedColor = (speed: string | undefined) => {
-    if (!speed) return 'text-muted-foreground';
-    if (speed.includes('+')) {
-      if (parseInt(speed.replace('+', '')) >= 45) return 'text-red-500';
-      return 'text-orange-500';
-    }
-    return 'text-green-500';
-  };
-
+  
   const DetailsIcon = categoryIcons[currentUser.profileSetupData?.primaryCategory || ''] || Briefcase;
   const allSpecializedSkills = [
       ...(currentUser.profileSetupData?.specializedData?.mainTrades || []),
@@ -184,46 +156,15 @@ export function ProfileHeader() {
       ...(currentUser.profileSetupData?.specializedData?.keySkills || []),
   ];
 
-
   return (
     <>
       <header className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm pt-4 px-2">
          <div className="flex items-center space-x-4">
-            <div className="relative shrink-0">
-                <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
-                <Avatar className="w-16 h-16 cursor-pointer" onClick={handleAvatarClick}>
-                    <AvatarImage src={currentUser.profileImage} alt={currentUser.name} />
-                    <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <Button size="icon" className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full" onClick={handleAvatarClick}>
-                    <Plus className="w-4 h-4" />
-                </Button>
-            </div>
+            <EditableAvatar user={{ id: currentUser.id, name: currentUser.name, profileImage: currentUser.profileImage }} />
             <div className="flex-grow min-w-0">
                 <h1 className="text-lg font-bold text-foreground truncate">{displayName}</h1>
                 <p className="text-sm text-muted-foreground">{specialty}</p>
-                 <div className="flex items-center flex-wrap gap-x-2 gap-y-1 text-xs mt-1 text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                        <Star className="w-4 h-4 text-yellow-400 fill-yellow-400"/>
-                        <span className="font-semibold text-foreground">{reputation.toFixed(1)}</span>
-                    </div>
-                    {isNewProvider ? (
-                        <Badge variant="secondary" className="px-1.5 py-0">Nuevo</Badge>
-                    ) : (
-                    <>
-                        <div className="w-px h-3 bg-border mx-1"></div>
-                        <div className="flex items-center gap-1">
-                            <TrendingUp className="w-4 h-4 text-green-500"/>
-                            <span className="font-semibold text-foreground">{effectiveness.toFixed(0)}%</span>
-                        </div>
-                        <div className="w-px h-3 bg-border mx-1"></div>
-                        <div className={cn("flex items-center gap-1 font-semibold", paymentSpeedColor(paymentSpeed))}>
-                            <Timer className="w-4 h-4"/>
-                            <span>{paymentSpeed || 'N/A'}</span>
-                        </div>
-                    </>
-                    )}
-                </div>
+                <ProfileStats user={currentUser} metrics={metrics} />
             </div>
              <div className="flex flex-col items-end gap-2 shrink-0">
                 {!currentUser.isSubscribed && (
