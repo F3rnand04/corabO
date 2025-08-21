@@ -5,7 +5,7 @@ import { FeedClientComponent } from "@/components/FeedClientComponent";
 
 // This is now a simple client component wrapper.
 // It delegates all data fetching and rendering logic to FeedClientComponent.
-// This prevents any server-side data fetching on the root page, fixing the 500 error.
+// This prevents any server-side data fetching on the root page, fixing previous errors.
 export default function HomePage() {
   return (
     <main className="flex-1">

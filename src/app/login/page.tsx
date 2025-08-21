@@ -9,13 +9,12 @@ import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
   const { signInWithGoogle } = useAuth();
-  const router = useRouter();
   const { toast } = useToast();
 
   const handleSignIn = async () => {
     try {
       await signInWithGoogle();
-      // On success, the onAuthStateChanged listener in AuthProvider will handle the rest.
+      // On success, the onAuthStateChanged listener in AuthProvider and AppLayout will handle the redirection.
     } catch (error: any) {
        if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
         console.error("Error signing in with Google:", error);
