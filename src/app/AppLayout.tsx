@@ -12,7 +12,6 @@ import type { User } from "@/lib/types";
 
 
 function LayoutController({ children }: { children: React.ReactNode }) {
-    // This component now consumes the context
     const { currentUser, isLoadingUser, isInitialSetupComplete } = useCorabo();
     const router = useRouter();
     const pathname = usePathname();
@@ -42,39 +41,23 @@ function LayoutController({ children }: { children: React.ReactNode }) {
         );
     }
     
-    // The conditional rendering of the main layout (Header/Footer) now depends on a valid currentUser,
-    // not just being outside a public page. This prevents them from showing up briefly before redirection.
     const showAppLayout = currentUser && !isPublicPage;
 
-    return showAppLayout ? (
+    return (
         <div className="flex flex-col min-h-screen">
-            <Header />
-            <main className="flex-1 pt-32 pb-16">{children}</main>
-            <Footer />
+            {showAppLayout && <Header />}
+            <main className={showAppLayout ? "flex-1 pt-32 pb-16" : "flex-1"}>
+                {children}
+            </main>
+            {showAppLayout && <Footer />}
         </div>
-    ) : (
-        children
     );
 }
 
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-    const { firebaseUser, isLoadingAuth } = useAuth();
-
-    if (isLoadingAuth) {
-         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            </div>
-        );
-    }
-  
-    // CoraboProvider now wraps the entire layout controller.
-    // It is initialized with the firebaseUser, and its internal useEffect
-    // will fetch the corresponding Corabo user. This ensures any component
-    // inside LayoutController (including Header and Footer) can use useCorabo().
     return (
-        <CoraboProvider initialFirebaseUser={firebaseUser}>
+        <CoraboProvider>
             <LayoutController>{children}</LayoutController>
         </CoraboProvider>
     );

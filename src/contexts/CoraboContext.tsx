@@ -8,7 +8,8 @@ import { getFirestoreDb } from '@/lib/firebase';
 import { doc, getDoc, collection, onSnapshot, query, where, orderBy, Unsubscribe, updateDoc, writeBatch, deleteField } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import * as Actions from '@/lib/actions';
-import type { User as FirebaseUser } from 'firebase/auth';
+import { useAuth } from '@/components/auth/AuthProvider';
+
 
 interface CoraboContextValue {
   // State
@@ -40,7 +41,7 @@ interface CoraboContextValue {
   setDeliveryAddress: (address: string) => void;
   setDeliveryAddressToCurrent: () => void;
   getUserMetrics: (userId: string) => UserMetrics;
-  fetchUser: (userId: string) => Promise<User | null>;
+  fetchUser: (userId: string) => User | null;
   getDistanceToProvider: (provider: User) => string | null;
   setTempRecipientInfo: (info: TempRecipientInfo | null) => void;
   setActiveCartForCheckout: (cartItems: CartItem[] | null) => void;
@@ -61,8 +62,9 @@ interface UserMetrics {
 
 const CoraboContext = createContext<CoraboContextValue | undefined>(undefined);
 
-export const CoraboProvider = ({ children, initialFirebaseUser }: { children: ReactNode, initialFirebaseUser: FirebaseUser | null }) => {
+export const CoraboProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
+  const { firebaseUser, isLoadingAuth } = useAuth();
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
@@ -97,17 +99,15 @@ export const CoraboProvider = ({ children, initialFirebaseUser }: { children: Re
   
 
   useEffect(() => {
-    // This effect now fetches the Corabo user based on the initialFirebaseUser prop
     const getCoraboUser = async () => {
-        setIsLoadingUser(true);
-        if (initialFirebaseUser) {
+        if (firebaseUser) {
             try {
                 const user = await Actions.getOrCreateUser({
-                    uid: initialFirebaseUser.uid,
-                    displayName: initialFirebaseUser.displayName,
-                    email: initialFirebaseUser.email,
-                    photoURL: initialFirebaseUser.photoURL,
-                    emailVerified: initialFirebaseUser.emailVerified,
+                    uid: firebaseUser.uid,
+                    displayName: firebaseUser.displayName,
+                    email: firebaseUser.email,
+                    photoURL: firebaseUser.photoURL,
+                    emailVerified: firebaseUser.emailVerified,
                 });
                 setCurrentUser(user as User);
             } catch (error) {
@@ -119,8 +119,11 @@ export const CoraboProvider = ({ children, initialFirebaseUser }: { children: Re
         }
         setIsLoadingUser(false);
     };
-    getCoraboUser();
-  }, [initialFirebaseUser]);
+
+    if (!isLoadingAuth) {
+        getCoraboUser();
+    }
+  }, [firebaseUser, isLoadingAuth]);
 
   useEffect(() => {
     const savedAddress = sessionStorage.getItem('coraboDeliveryAddress');
@@ -146,15 +149,16 @@ export const CoraboProvider = ({ children, initialFirebaseUser }: { children: Re
     localStorage.setItem('coraboContacts', JSON.stringify(contacts));
   }, [contacts]);
 
-  const fetchUser = useCallback(async (userId: string): Promise<User | null> => {
+  const fetchUser = useCallback((userId: string): User | null => {
         if (userCache.current.has(userId)) return userCache.current.get(userId)!;
+        
         const user = users.find(u => u.id === userId);
         if (user) {
             userCache.current.set(userId, user);
             return user;
         }
-        // Fallback to fetch from server if not in the local users list
-        return await Actions.getPublicProfile({ userId });
+
+        return null;
   }, [users]);
 
   useEffect(() => {
@@ -163,23 +167,26 @@ export const CoraboProvider = ({ children, initialFirebaseUser }: { children: Re
     
     let unsubscribes: Unsubscribe[] = [];
 
-    // Listener for all users
     unsubscribes.push(onSnapshot(collection(db, 'users'), (snapshot) => {
         const userList = snapshot.docs.map(doc => doc.data() as User)
         setUsers(userList);
         userList.forEach(user => userCache.current.set(user.id, user));
     }));
 
-    // Listeners specific to the current user
     if (currentUser?.id) {
         const userId = currentUser.id;
+        unsubscribes.push(onSnapshot(doc(db, 'users', userId), (doc) => {
+            if(doc.exists()) {
+                setCurrentUser(doc.data() as User);
+            }
+        }));
+        
         const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userId));
         const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userId), orderBy("lastUpdated", "desc"));
 
         unsubscribes.push(onSnapshot(transactionsQuery, (snapshot) => setTransactions(snapshot.docs.map(doc => doc.data() as Transaction))));
         unsubscribes.push(onSnapshot(conversationsQuery, (snapshot) => setConversations(snapshot.docs.map(doc => doc.data() as Conversation))));
     } else {
-        // If no user, clear their specific data
         setTransactions([]);
         setConversations([]);
     }
@@ -222,7 +229,7 @@ export const CoraboProvider = ({ children, initialFirebaseUser }: { children: Re
 
     const getAgendaEvents = useCallback((agendaTransactions: Transaction[]) => {
       return agendaTransactions.filter(tx => tx.status === 'Finalizado - Pendiente de Pago').map(tx => ({
-        date: new Date(tx.date), type: 'payment', description: `Pago a ${tx.providerId}`, transactionId: tx.id,
+        date: new Date(tx.date), type: 'payment' as 'payment' | 'task', description: `Pago a ${tx.providerId}`, transactionId: tx.id,
       }));
     }, []);
 
@@ -236,7 +243,6 @@ export const CoraboProvider = ({ children, initialFirebaseUser }: { children: Re
       });
     };
     
-    // The context now gets the cart items directly from the transactions array
     const activeCartTx = useMemo(() => transactions.find(tx => tx.clientId === currentUser?.id && tx.status === 'Carrito Activo'), [transactions, currentUser?.id]);
     const cart: CartItem[] = useMemo(() => activeCartTx?.details.items || [], [activeCartTx]);
 
