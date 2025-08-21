@@ -22,7 +22,7 @@ import { UploadCloud, X, Image as ImageIcon, Video, PackagePlus, Loader2, Crop, 
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import type { CreatePublicationInput, CreateProductInput } from '@/lib/types';
 import { Slider } from './ui/slider';
-
+import * as Actions from '@/lib/actions';
 
 interface UploadDialogProps {
   isOpen: boolean;
@@ -94,20 +94,22 @@ function ImageEditor({ src, onConfirm, onCancel, isVideo }: { src: string, onCon
 }
 
 export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
-  const { currentUser, createPublication, createProduct } = useCorabo();
+  const { currentUser } = useCorabo();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
   if (!currentUser) return null;
 
-  const canOfferProducts = currentUser.profileSetupData?.offerType === 'product';
-  const isProvider = currentUser.type === 'provider';
-  const canOfferBoth = isProvider && canOfferProducts; 
+  const canOfferProducts = currentUser.profileSetupData?.offerType === 'product' || currentUser.profileSetupData?.offerType === 'both';
+  const canOfferServices = currentUser.profileSetupData?.offerType === 'service' || currentUser.profileSetupData?.offerType === 'both';
   
   const getInitialView = () => {
-      if (isProvider) {
-          return canOfferBoth ? 'selection' : 'upload_gallery';
+      if (canOfferProducts && canOfferServices) {
+          return 'selection';
+      }
+      if (canOfferProducts) {
+          return 'upload_product';
       }
       return 'upload_gallery'; 
   }
@@ -116,7 +118,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
   
   useEffect(() => {
     if (isOpen) setView(getInitialView());
-  }, [isOpen, currentUser?.id]);
+  }, [isOpen, currentUser?.id, canOfferProducts, canOfferServices]);
 
 
   // Common state
@@ -208,7 +210,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
             aspectRatio: galleryAspectRatio,
             type: isVideofile ? 'video' : 'image',
         };
-        await createPublication(publicationData);
+        await Actions.createPublication(publicationData);
         toast({ title: "¡Publicación Exitosa!", description: "Tu nuevo contenido ya está en tu galería." });
         handleClose();
         router.refresh();
@@ -235,7 +237,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
             price: parseFloat(productPrice),
             imageDataUri: productImagePreview,
         };
-        await createProduct(productData);
+        await Actions.createProduct(productData);
         toast({ title: "¡Producto Añadido!", description: `${productName} ya está en tu catálogo.` });
         handleClose();
         router.push('/profile/catalog');

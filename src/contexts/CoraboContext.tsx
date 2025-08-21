@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -27,6 +26,7 @@ interface CoraboContextValue {
   currentUserLocation: GeolocationCoords | null;
   tempRecipientInfo: TempRecipientInfo | null;
   activeCartForCheckout: CartItem[] | null;
+  cart: CartItem[];
 
   // Actions
   setSearchQuery: (query: string) => void;
@@ -44,24 +44,11 @@ interface CoraboContextValue {
   setTempRecipientInfo: (info: TempRecipientInfo | null) => void;
   setActiveCartForCheckout: (cartItems: CartItem[] | null) => void;
   toggleGps: (userId: string) => Promise<void>;
-  
-  // DEPRECATED - Now handled in actions.ts
-  startQrSession: (providerId: string, cashierBoxId?: string) => Promise<string>;
-  cancelQrSession: (sessionId: string) => void;
-  setQrSessionAmount: (sessionId: string, amount: number) => void;
-  handleClientCopyAndPay: (sessionId: string) => void;
-  confirmMobilePayment: (sessionId: string) => void;
-  finalizeQrSession: (sessionId: string) => void;
 }
 
 interface GeolocationCoords {
     latitude: number;
     longitude: number;
-}
-
-interface DailyQuote {
-    requestSignature: string;
-    count: number;
 }
 
 interface UserMetrics {
@@ -90,7 +77,6 @@ export const CoraboProvider = ({ children, currentUser: initialUser }: { childre
   const [currentUserLocation, setCurrentUserLocation] = useState<GeolocationCoords | null>(null);
   const [tempRecipientInfo, _setTempRecipientInfo] = useState<TempRecipientInfo | null>(null);
   const [activeCartForCheckout, setActiveCartForCheckout] = useState<CartItem[] | null>(null);
-  const [dailyQuotes, setDailyQuotes] = useState<DailyQuote[]>([]);
   
   const userCache = useRef<Map<string, User>>(new Map());
 
@@ -140,7 +126,8 @@ export const CoraboProvider = ({ children, currentUser: initialUser }: { childre
             userCache.current.set(userId, user);
             return user;
         }
-        return await Actions.getPublicProfile(userId);
+        // Fallback to fetch from server if not in the local users list
+        return await Actions.getPublicProfile({ userId });
   }, [users]);
 
   useEffect(() => {
@@ -149,15 +136,19 @@ export const CoraboProvider = ({ children, currentUser: initialUser }: { childre
     
     let unsubscribes: Unsubscribe[] = [];
 
+    // Listener for all users
     unsubscribes.push(onSnapshot(collection(db, 'users'), (snapshot) => {
         const userList = snapshot.docs.map(doc => doc.data() as User)
         setUsers(userList);
         userList.forEach(user => userCache.current.set(user.id, user));
     }));
+    
+    // Listener for all publications
     unsubscribes.push(onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
         setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage));
     }));
 
+    // Listeners specific to the current user
     if (currentUser?.id) {
         const userId = currentUser.id;
         const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userId));
@@ -166,6 +157,7 @@ export const CoraboProvider = ({ children, currentUser: initialUser }: { childre
         unsubscribes.push(onSnapshot(transactionsQuery, (snapshot) => setTransactions(snapshot.docs.map(doc => doc.data() as Transaction))));
         unsubscribes.push(onSnapshot(conversationsQuery, (snapshot) => setConversations(snapshot.docs.map(doc => doc.data() as Conversation))));
     } else {
+        // If no user, clear their specific data
         setTransactions([]);
         setConversations([]);
     }
@@ -232,6 +224,7 @@ export const CoraboProvider = ({ children, currentUser: initialUser }: { childre
         users, allPublications, transactions, conversations,
         searchQuery, categoryFilter, contacts, searchHistory, 
         deliveryAddress, exchangeRate, currentUserLocation, tempRecipientInfo, activeCartForCheckout,
+        cart,
         setSearchQuery: (query: string) => {
             _setSearchQuery(query);
             if (query.trim() && !searchHistory.includes(query.trim())) setSearchHistory(prev => [query.trim(), ...prev].slice(0, 10));
@@ -254,23 +247,6 @@ export const CoraboProvider = ({ children, currentUser: initialUser }: { childre
         setTempRecipientInfo,
         setActiveCartForCheckout,
         toggleGps,
-        startQrSession: async (providerId: string, cashierBoxId?: string) => {
-          if (!currentUser) throw new Error("User not authenticated");
-          return await Actions.startQrSession(currentUser.id, providerId, cashierBoxId);
-        },
-        cancelQrSession: Actions.cancelQrSession,
-        setQrSessionAmount: async (sessionId: string, amount: number) => {
-          if (!currentUser) throw new Error("User not authenticated");
-          const level = currentUser.credicoraDetails || credicoraLevels['1'];
-          const financedAmount = Math.min(amount * (1 - level.initialPaymentPercentage), currentUser.credicoraLimit || 0);
-          const initialPayment = amount - financedAmount;
-          await Actions.setQrSessionAmount(sessionId, amount, initialPayment, financedAmount, level.installments);
-        },
-        handleClientCopyAndPay: Actions.handleClientCopyAndPay,
-        confirmMobilePayment: async (sessionId: string) => {
-          await Actions.confirmMobilePayment(sessionId);
-        },
-        finalizeQrSession: Actions.finalizeQrSession,
     };
   
     return (

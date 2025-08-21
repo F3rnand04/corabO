@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from 'next/image';
@@ -19,6 +20,7 @@ import { useState, useEffect, useRef, ChangeEvent } from 'react';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 import { cn } from '@/lib/utils';
 import { Textarea } from './ui/textarea';
+import * as Actions from '@/lib/actions';
 
 
 interface ImageDetailsDialogProps {
@@ -30,7 +32,7 @@ interface ImageDetailsDialogProps {
 }
 
 export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex = 0, owner }: ImageDetailsDialogProps) {
-  const { currentUser, addCommentToImage, removeCommentFromImage, removeGalleryImage, updateGalleryImage } = useCorabo();
+  const { currentUser } = useCorabo();
   const [api, setApi] = useState<CarouselApi>();
   const [currentImageIndex, setCurrentImageIndex] = useState(startIndex);
   const [newComment, setNewComment] = useState("");
@@ -42,7 +44,7 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex =
   const [newImageFile, setNewImageFile] = useState<File | null>(null);
   const [newImagePreview, setNewImagePreview] = useState<string | null>(null);
 
-  const isOwnerView = currentUser.id === owner?.id;
+  const isOwnerView = currentUser?.id === owner?.id;
   
   const currentImage = gallery[currentImageIndex];
 
@@ -80,21 +82,21 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex =
 
   
   const handlePostComment = () => {
-    if (newComment.trim() && currentImage && owner) {
-        addCommentToImage(owner.id, currentImage.id, newComment);
+    if (newComment.trim() && currentImage && owner && currentUser) {
+        Actions.addCommentToImage(owner.id, currentImage.id, newComment, currentUser);
         setNewComment("");
     }
   }
   
   const handleDeleteComment = (commentIndex: number) => {
     if (currentImage && owner) {
-        removeCommentFromImage(owner.id, currentImage.id, commentIndex);
+        Actions.removeCommentFromImage(owner.id, currentImage.id, commentIndex);
     }
   }
 
   const handleDeletePublication = (imageId: string) => {
     if (owner) {
-      removeGalleryImage(owner.id, imageId);
+      Actions.removeGalleryImage(owner.id, imageId);
       onOpenChange(false);
     }
   }
@@ -112,9 +114,9 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex =
   const handleSaveChanges = () => {
     if (!currentImage || !owner) return;
     
-    updateGalleryImage(owner.id, currentImage.id, {
+    Actions.updateGalleryImage(owner.id, currentImage.id, {
         description: editedDescription,
-        imageDataUri: newImagePreview || currentImage.src,
+        imageDataUri: newImagePreview || undefined, // Send undefined if not changed
     });
     setIsEditing(false);
   };

@@ -10,10 +10,9 @@
 import { doc, updateDoc, deleteField, setDoc, getDoc, writeBatch, collection, where, query, getDocs, arrayRemove, arrayUnion, deleteDoc as deleteFirestoreDoc } from 'firebase/firestore';
 
 // Types
-import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, VerificationOutput, AppointmentRequest, QrSession, TempRecipientInfo, CashierBox } from '@/lib/types';
+import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, VerificationOutput, AppointmentRequest, QrSession, TempRecipientInfo, CashierBox, GalleryImageComment, CreatePublicationInput, CreateProductInput } from '@/lib/types';
 import { type CreateCampaignInput } from '@/ai/flows/campaign-flow';
 import { type SendMessageInput } from '@/ai/flows/message-flow';
-import { type CreatePublicationInput, type CreateProductInput } from '@/ai/flows/publication-flow';
 
 
 // Flows
@@ -38,13 +37,13 @@ import { credicoraLevels, credicoraCompanyLevels } from './types';
 export const getPublicProfile = ProfileFlows.getPublicProfileFlow;
 
 export async function updateUser(userId: string, updates: Partial<User>) {
-    const db = getFirestoreDb();
+    const db = await getFirestoreDb();
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, updates);
 }
 
 export async function updateUserProfileAndGallery(userId: string, image: GalleryImage) {
-    const db = getFirestoreDb();
+    const db = await getFirestoreDb();
     const userRef = doc(db, 'users', userId);
     const pubRef = doc(db, 'publications', image.id);
     const batch = writeBatch(db);
@@ -54,7 +53,7 @@ export async function updateUserProfileAndGallery(userId: string, image: Gallery
 }
 
 export async function updateFullProfile(userId: string, data: ProfileSetupData, profileType: User['type']) {
-    const db = getFirestoreDb();
+    const db = await getFirestoreDb();
     const userRef = doc(db, 'users', userId);
     const userSnap = await getDoc(userRef);
     if (!userSnap.exists()) return;
@@ -132,12 +131,12 @@ export async function createProduct(data: CreateProductInput): Promise<string> {
 }
 
 export async function removeGalleryImage(userId: string, imageId: string) {
-    const db = getFirestoreDb();
+    const db = await getFirestoreDb();
     await deleteFirestoreDoc(doc(db, 'publications', imageId));
 }
 
-export async function updateGalleryImage(ownerId: string, imageId: string, updates: Partial<{ description: string; imageDataUri: string }>) {
-    const db = getFirestoreDb();
+export async function updateGalleryImage(ownerId: string, imageId: string, updates: Partial<{ description: string; imageDataUri?: string }>) {
+    const db = await getFirestoreDb();
     const pubRef = doc(db, 'publications', imageId);
     const updatesToApply: any = {};
     if (updates.description) {
@@ -150,11 +149,40 @@ export async function updateGalleryImage(ownerId: string, imageId: string, updat
     await updateDoc(pubRef, updatesToApply);
 }
 
+export async function addCommentToImage(ownerId: string, imageId: string, commentText: string, currentUser: User) {
+    const db = await getFirestoreDb();
+    const pubRef = doc(db, 'publications', imageId);
+    const newComment: GalleryImageComment = {
+        author: currentUser.name,
+        text: commentText,
+        profileImage: currentUser.profileImage,
+        likes: 0,
+        dislikes: 0,
+    };
+    await updateDoc(pubRef, {
+        comments: arrayUnion(newComment)
+    });
+}
+
+export async function removeCommentFromImage(ownerId: string, imageId: string, commentIndex: number) {
+    const db = await getFirestoreDb();
+    const pubRef = doc(db, 'publications', imageId);
+    const pubSnap = await getDoc(pubRef);
+    if (!pubSnap.exists()) return;
+    const comments = (pubSnap.data()?.comments || []) as GalleryImageComment[];
+    if (commentIndex >= 0 && commentIndex < comments.length) {
+        const commentToRemove = comments[commentIndex];
+        await updateDoc(pubRef, {
+            comments: arrayRemove(commentToRemove)
+        });
+    }
+}
+
 
 // --- Transaction and Cart Actions ---
 
 export async function updateCart(userId: string, productId: string, quantity: number) {
-    const db = getFirestoreDb();
+    const db = await getFirestoreDb();
     const q = query(collection(db, 'transactions'), where('clientId', '==', userId), where('status', '==', 'Carrito Activo'));
     const snapshot = await getDocs(q);
     
@@ -227,7 +255,7 @@ export async function updateCart(userId: string, productId: string, quantity: nu
 }
 
 export async function checkout(userId: string, providerId: string, deliveryMethod: string, useCredicora: boolean, recipientInfo?: { name: string, phone: string }, deliveryAddress?: string) {
-    const db = getFirestoreDb();
+    const db = await getFirestoreDb();
     const q = query(collection(db, 'transactions'), where('clientId', '==', userId), where('providerId', '==', providerId), where('status', '==', 'Carrito Activo'));
     const snapshot = await getDocs(q);
     const cartTx = snapshot.docs.length > 0 ? snapshot.docs[0].data() as Transaction : null;
@@ -271,7 +299,7 @@ export async function acceptProposal(conversationId: string, messageId: string, 
 }
 
 export async function markConversationAsRead(conversationId: string, userId: string) {
-    const db = getFirestoreDb();
+    const db = await getFirestoreDb();
     const convoRef = doc(db, 'conversations', conversationId);
     const convoSnap = await getDoc(convoRef);
     if (convoSnap.exists()) {
@@ -290,7 +318,7 @@ export async function createCampaign(userId: string, data: Omit<CreateCampaignIn
 }
 
 export async function activatePromotion(userId: string, details: { imageId: string, promotionText: string, cost: number }) {
-    const db = getFirestoreDb();
+    const db = await getFirestoreDb();
     await updateDoc(doc(db, 'users', userId), {
         promotion: { text: details.promotionText, expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() }
     });
@@ -299,7 +327,7 @@ export async function activatePromotion(userId: string, details: { imageId: stri
 }
 
 export async function registerSystemPayment(userId: string, concept: string, amount: number, isSubscription: boolean) {
-    const db = getFirestoreDb();
+    const db = await getFirestoreDb();
     const txId = `txn-sys-${userId.slice(-4)}-${Date.now()}`;
     const txData: Transaction = {
         id: txId,
@@ -319,13 +347,13 @@ export async function registerSystemPayment(userId: string, concept: string, amo
 }
 
 export async function cancelSystemTransaction(transactionId: string) {
-    await deleteFirestoreDoc(doc(getFirestoreDb(), 'transactions', transactionId));
+    await deleteFirestoreDoc(doc(await getFirestoreDb(), 'transactions', transactionId));
 }
 
 // --- Admin Actions ---
 
 export async function verifyCampaignPayment(transactionId: string, campaignId: string) {
-    const db = getFirestoreDb();
+    const db = await getFirestoreDb();
     const batch = writeBatch(db);
     batch.update(doc(db, 'transactions', transactionId), { status: 'Resuelto' });
     if(campaignId) {
@@ -355,7 +383,7 @@ export const revokeAffiliation = (affiliationId: string, actorId: string) => Aff
 
 // --- QR Session Actions ---
 export async function startQrSession(clientId: string, providerId: string, cashierBoxId?: string, cashierName?: string): Promise<string> {
-    const db = getFirestoreDb();
+    const db = await getFirestoreDb();
     const sessionId = `qrs-${clientId.slice(-5)}-${Date.now()}`;
     const sessionData: QrSession = {
       id: sessionId, providerId, clientId, cashierBoxId, cashierName, status: 'pendingAmount',
@@ -366,32 +394,43 @@ export async function startQrSession(clientId: string, providerId: string, cashi
 }
 
 export async function cancelQrSession(sessionId: string) {
-    const db = getFirestoreDb();
+    const db = await getFirestoreDb();
     await updateDoc(doc(db, 'qr_sessions', sessionId), { status: 'cancelled' });
 }
 
 export async function setQrSessionAmount(sessionId: string, amount: number, initialPayment: number, financedAmount: number, installments: number) {
-    const db = getFirestoreDb();
+    const db = await getFirestoreDb();
     await updateDoc(doc(db, 'qr_sessions', sessionId), { amount, initialPayment, financedAmount, installments, status: 'pendingClientApproval' });
 }
 
 export async function handleClientCopyAndPay(sessionId: string) {
-    const db = getFirestoreDb();
+    const db = await getFirestoreDb();
     await updateDoc(doc(db, 'qr_sessions', sessionId), { status: 'awaitingPayment', updatedAt: new Date().toISOString() });
+}
+
+export async function confirmMobilePayment(sessionId: string) {
+    const db = await getFirestoreDb();
+    await updateDoc(doc(db, 'qr_sessions', sessionId), { status: 'pendingVoucherUpload' });
+}
+
+export async function finalizeQrSession(sessionId: string) {
+    await TransactionFlows.processDirectPayment({ sessionId });
+    const db = await getFirestoreDb();
+    await updateDoc(doc(db, 'qr_sessions', sessionId), { status: 'completed' });
 }
 
 // --- Cashier Box Actions ---
 export async function addCashierBox(userId: string, name: string, password: string): Promise<void> {
     const newBox = await CashierFlows.createCashierBox({ userId, name, password });
     if (!newBox) throw new Error("Failed to create cashier box");
-    const db = getFirestoreDb();
+    const db = await getFirestoreDb();
     await updateDoc(doc(db, 'users', userId), {
         'profileSetupData.cashierBoxes': arrayUnion(newBox)
     });
 }
 
 export async function removeCashierBox(userId: string, boxId: string) {
-    const db = getFirestoreDb();
+    const db = await getFirestoreDb();
     const userRef = doc(db, 'users', userId);
     const userSnap = await getDoc(userRef);
     if (!userSnap.exists()) return;
@@ -405,7 +444,7 @@ export async function removeCashierBox(userId: string, boxId: string) {
 }
 
 export async function updateCashierBox(userId: string, boxId: string, updates: Partial<Pick<CashierBox, 'name' | 'passwordHash'>>) {
-    const db = getFirestoreDb();
+    const db = await getFirestoreDb();
     const userRef = doc(db, 'users', userId);
     const userSnap = await getDoc(userRef);
     if (!userSnap.exists()) return;
@@ -422,7 +461,7 @@ export async function updateCashierBox(userId: string, boxId: string, updates: P
 
 export async function regenerateCashierBoxQr(userId: string, boxId: string) {
     const newQrData = await CashierFlows.regenerateCashierQr({ boxId, userId });
-    const db = getFirestoreDb();
+    const db = await getFirestoreDb();
     const userRef = doc(db, 'users', userId);
     const userSnap = await getDoc(userRef);
     if (!userSnap.exists()) return;
@@ -445,7 +484,7 @@ export async function requestCashierSession(data: { businessCoraboId: string, ca
 export const retryFindDelivery = DeliveryFlows.findDeliveryProvider;
 export const resolveDeliveryAsPickup = DeliveryFlows.resolveDeliveryAsPickup;
 export async function assignOwnDelivery(transactionId: string, userId: string) {
-    await updateDoc(doc(getFirestoreDb(), 'transactions', transactionId), {
+    await updateDoc(doc(await getFirestoreDb(), 'transactions', transactionId), {
         'details.deliveryProviderId': userId,
         status: 'En Reparto',
     });
@@ -453,9 +492,9 @@ export async function assignOwnDelivery(transactionId: string, userId: string) {
 
 
 // --- Quote Actions ---
-export async function requestQuoteFromGroup(data: { clientId: string, title: string, items: string[], group: string }) {
+export async function requestQuoteFromGroup(title: string, items: string[], group: string) {
     // In a real app, this would trigger a flow to find relevant providers and create transactions
-    console.log("Requesting quote from group:", data);
+    console.log("Requesting quote from group:", { title, items, group });
 }
 
 export async function subscribeUser(userId: string, title: string, amount: number) {
