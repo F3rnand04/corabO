@@ -25,7 +25,7 @@ export const updateUserFlow = ai.defineFlow(
         outputSchema: z.void(),
     },
     async ({ userId, updates }) => {
-        const db = await getFirestoreDb();
+        const db = getFirestoreDb();
         const userRef = doc(db, 'users', userId);
         await updateDoc(userRef, updates);
     }
@@ -44,7 +44,7 @@ export const deleteUserFlow = ai.defineFlow(
     outputSchema: z.void(),
   },
   async ({ userId }) => {
-    const db = await getFirestoreDb();
+    const db = getFirestoreDb();
     const userRef = doc(db, 'users', userId);
     // Note: In a production app, this would also trigger cleanup of related data
     // (e.g., publications, transactions) for data integrity.
@@ -69,7 +69,7 @@ export const checkIdUniquenessFlow = ai.defineFlow(
     if (!idNumber || !country) {
       return true; // Don't run check if data is incomplete
     }
-    const db = await getFirestoreDb();
+    const db = getFirestoreDb();
     const usersRef = collection(db, 'users');
     const q = query(usersRef, where("idNumber", "==", idNumber), where("country", "==", country));
     const querySnapshot = await getDocs(q);
@@ -109,7 +109,7 @@ export const completeInitialSetupFlow = ai.defineFlow(
     outputSchema: UserOutputSchema, // The flow now returns the updated user
   },
   async ({ userId, name, lastName, idNumber, birthDate, country, type, providerType }) => {
-    const db = await getFirestoreDb();
+    const db = getFirestoreDb();
     const userRef = doc(db, 'users', userId);
     
     const userSnap = await getDoc(userRef);
@@ -181,7 +181,7 @@ export const getPublicProfileFlow = ai.defineFlow(
     outputSchema: PublicUserOutputSchema.nullable(),
   },
   async ({ userId }) => {
-    const db = await getFirestoreDb();
+    const db = getFirestoreDb();
     const userRef = doc(db, 'users', userId);
     const userSnap = await getDoc(userRef);
 
@@ -223,7 +223,7 @@ export const getProfileGallery = ai.defineFlow(
         outputSchema: GetProfileGalleryOutputSchema,
     },
     async ({ userId, limitNum = 9, startAfterDocId }) => {
-        const db = await getFirestoreDb();
+        const db = getFirestoreDb();
         const galleryCollection = collection(db, 'publications');
         
         const queryConstraints: any[] = [
@@ -266,7 +266,7 @@ export const getProfileProducts = ai.defineFlow(
         outputSchema: GetProfileProductsOutputSchema,
     },
     async ({ userId, limitNum = 10, startAfterDocId }) => {
-        const db = await getFirestoreDb();
+        const db = getFirestoreDb();
         const publicationsCollection = collection(db, 'publications');
         
         const queryConstraints: any[] = [

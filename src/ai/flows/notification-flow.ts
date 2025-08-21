@@ -20,7 +20,8 @@ const SendNotificationInputSchema = z.object({
   title: z.string(),
   message: z.string(),
   link: z.string().optional(),
-  type: z.enum(['new_campaign', 'payment_reminder', 'admin_alert', 'welcome', 'affiliation_request', 'payment_warning', 'payment_due', 'new_publication']),
+  type: z.enum(['new_campaign', 'payment_reminder', 'admin_alert', 'welcome', 'affiliation_request', 'payment_warning', 'payment_due', 'new_publication', 'cashier_request']),
+  metadata: z.any().optional(),
 });
 
 /**
@@ -34,8 +35,9 @@ export const sendNotification = ai.defineFlow(
     outputSchema: z.void(),
   },
   async (input) => {
+    const db = getFirestoreDb();
     const notificationId = `notif-${input.userId}-${Date.now()}`;
-    const notificationRef = doc(getFirestoreDb(), 'notifications', notificationId);
+    const notificationRef = doc(db, 'notifications', notificationId);
     const newNotification: Notification = {
       id: notificationId,
       ...input,
@@ -58,8 +60,9 @@ export const checkPaymentDeadlines = ai.defineFlow(
         outputSchema: z.void(),
     },
     async () => {
+        const db = getFirestoreDb();
         const q = query(
-            collection(getFirestoreDb(), 'transactions'),
+            collection(db, 'transactions'),
             where('status', 'in', ['Finalizado - Pendiente de Pago', 'Pendiente de Confirmación del Cliente'])
         );
 
@@ -254,7 +257,7 @@ export const sendWelcomeToProviderNotification = ai.defineFlow({
         userId: userId,
         type: 'welcome',
         title: '¡Felicidades por convertirte en proveedor!',
-        message: 'Para empezar con el pie derecho, suscríbete y obtén la insignia de verificado.',
+        message: 'Para empezar con el pie de derecho, suscríbete y obtén la insignia de verificado.',
         link: '/contacts', // Links to the subscription page
     });
 });

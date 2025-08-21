@@ -9,21 +9,14 @@
  * to only run on the server.
  */
 
-import { genkit, configureGenkit } from 'genkit';
+import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
-import { firebase } from '@genkit-ai/firebase';
-import { getFirestoreDb } from '@/lib/firebase-server';
-
 
 // By defining the plugin here, we make it available to all flows
 // that import this `ai` object. The initialization is deferred.
 export const ai = genkit({
   plugins: [
     googleAI(),
-    // Connect Genkit to the production Firestore instance
-    firebase({
-      firestore: getFirestoreDb(),
-    })
   ],
   logLevel: 'debug',
   enableTracingAndMetrics: true,

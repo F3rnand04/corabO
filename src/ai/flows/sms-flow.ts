@@ -27,10 +27,11 @@ export const sendSmsVerificationCodeFlow = ai.defineFlow(
     outputSchema: z.void(),
   },
   async ({ userId, phoneNumber }) => {
+    const db = getFirestoreDb();
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit code
     const codeExpiry = addMinutes(new Date(), 10); // Code is valid for 10 minutes
 
-    const userRef = doc(getFirestoreDb(), 'users', userId);
+    const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, {
       phone: phoneNumber,
       phoneVerificationCode: verificationCode,
@@ -76,7 +77,8 @@ export const verifySmsCodeFlow = ai.defineFlow(
         outputSchema: z.object({ success: z.boolean(), message: z.string() }),
     },
     async ({ userId, code }) => {
-        const userRef = doc(getFirestoreDb(), 'users', userId);
+        const db = getFirestoreDb();
+        const userRef = doc(db, 'users', userId);
         const userSnap = await getDoc(userRef);
 
         if (!userSnap.exists()) {

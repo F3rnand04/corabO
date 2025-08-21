@@ -34,4 +34,3 @@ const getExchangeRateFlow = ai.defineFlow(
     return { rate: 36.54 };
   }
 );
-

@@ -82,9 +82,10 @@ const createCampaignFlow = ai.defineFlow(
     outputSchema: CampaignOutputSchema,
   },
   async (input: CreateCampaignInput) => {
+    const db = getFirestoreDb();
     // In a real app with auth, we'd get the UID from the auth context.
     // For now, we trust the input userId but proceed with caution.
-    const userRef = doc(getFirestoreDb(), 'users', input.userId);
+    const userRef = doc(db, 'users', input.userId);
     const userSnap = await getDoc(userRef);
 
     if (!userSnap.exists() || userSnap.data().type !== 'provider') {
@@ -92,7 +93,7 @@ const createCampaignFlow = ai.defineFlow(
     }
 
     const user = userSnap.data() as User;
-    const batch = writeBatch(getFirestoreDb());
+    const batch = writeBatch(db);
     const startDate = new Date();
     const endDate = new Date();
     endDate.setDate(startDate.getDate() + input.durationDays);
@@ -116,7 +117,7 @@ const createCampaignFlow = ai.defineFlow(
       financedWithCredicora: input.financedWithCredicora && input.budget >= 20,
     };
 
-    const campaignRef = doc(getFirestoreDb(), 'campaigns', newCampaign.id);
+    const campaignRef = doc(db, 'campaigns', newCampaign.id);
     batch.set(campaignRef, newCampaign);
 
     // Create system transaction for the payment
@@ -137,7 +138,7 @@ const createCampaignFlow = ai.defineFlow(
       },
     };
 
-    const txRef = doc(getFirestoreDb(), 'transactions', txId);
+    const txRef = doc(db, 'transactions', txId);
     batch.set(txRef, campaignTransaction);
 
     // Update user's active campaigns

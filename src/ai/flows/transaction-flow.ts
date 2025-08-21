@@ -12,6 +12,7 @@ import type { Transaction, User, AppointmentRequest, QrSession, Product } from '
 import { credicoraLevels } from '@/lib/types';
 import { addDays, endOfMonth } from 'date-fns';
 import { getExchangeRate } from './exchange-rate-flow';
+import { findDeliveryProvider } from './delivery-flow';
 
 // --- Schemas ---
 
@@ -213,7 +214,8 @@ export const completeWork = ai.defineFlow(
     outputSchema: z.void(),
   },
   async ({ transactionId, userId }) => {
-    const txRef = doc(getFirestoreDb(), 'transactions', transactionId);
+    const db = getFirestoreDb();
+    const txRef = doc(db, 'transactions', transactionId);
     const txSnap = await getDoc(txRef);
     if (!txSnap.exists()) throw new Error("Transaction not found.");
     
@@ -241,7 +243,8 @@ export const confirmWorkReceived = ai.defineFlow(
         outputSchema: z.void(),
     },
     async ({ transactionId, userId, rating, comment }) => {
-        const txRef = doc(getFirestoreDb(), 'transactions', transactionId);
+        const db = getFirestoreDb();
+        const txRef = doc(db, 'transactions', transactionId);
         const txSnap = await getDoc(txRef);
         if (!txSnap.exists()) throw new Error("Transaction not found.");
 
@@ -280,7 +283,8 @@ export const payCommitment = ai.defineFlow(
         outputSchema: z.void(),
     },
     async ({ transactionId, userId, paymentDetails }) => {
-        const txRef = doc(getFirestoreDb(), 'transactions', transactionId);
+        const db = getFirestoreDb();
+        const txRef = doc(db, 'transactions', transactionId);
         const txSnap = await getDoc(txRef);
         if (!txSnap.exists()) throw new Error("Transaction not found.");
 
@@ -356,7 +360,8 @@ export const sendQuote = ai.defineFlow(
         outputSchema: z.void(),
     },
     async ({ transactionId, userId, breakdown, total }) => {
-        const txRef = doc(getFirestoreDb(), 'transactions', transactionId);
+        const db = getFirestoreDb();
+        const txRef = doc(db, 'transactions', transactionId);
         const txSnap = await getDoc(txRef);
         if (!txSnap.exists()) throw new Error("Transaction not found.");
         
@@ -387,7 +392,8 @@ export const acceptQuote = ai.defineFlow(
         outputSchema: z.void(),
     },
     async ({ transactionId, userId }) => {
-        const txRef = doc(getFirestoreDb(), 'transactions', transactionId);
+        const db = getFirestoreDb();
+        const txRef = doc(db, 'transactions', transactionId);
         const txSnap = await getDoc(txRef);
         if (!txSnap.exists()) throw new Error("Transaction not found.");
         
@@ -415,6 +421,7 @@ export const createAppointmentRequest = ai.defineFlow(
         outputSchema: z.void(),
     },
     async (request) => {
+        const db = getFirestoreDb();
         // SECURITY: We trust the clientId from the validated client session.
         const txId = `txn-appt-${Date.now()}`;
         const newTransaction: Transaction = {
@@ -430,7 +437,7 @@ export const createAppointmentRequest = ai.defineFlow(
                 serviceName: `Solicitud de cita: ${request.details}`,
             },
         };
-        const txRef = doc(getFirestoreDb(), 'transactions', txId);
+        const txRef = doc(db, 'transactions', txId);
         await setDoc(txRef, newTransaction);
     }
 );
@@ -445,7 +452,8 @@ export const acceptAppointment = ai.defineFlow(
         outputSchema: z.void(),
     },
     async ({ transactionId, userId }) => {
-        const txRef = doc(getFirestoreDb(), 'transactions', transactionId);
+        const db = getFirestoreDb();
+        const txRef = doc(db, 'transactions', transactionId);
         const txSnap = await getDoc(txRef);
         if (!txSnap.exists()) throw new Error("Transaction not found.");
 
@@ -473,8 +481,9 @@ export const startDispute = ai.defineFlow(
         outputSchema: z.void(),
     },
     async (transactionId) => {
+        const db = getFirestoreDb();
         // SECURITY: In a real app, we'd check if the user calling this is a participant.
-        const txRef = doc(getFirestoreDb(), 'transactions', transactionId);
+        const txRef = doc(db, 'transactions', transactionId);
         await updateDoc(txRef, { status: 'En Disputa' });
     }
 );
@@ -563,19 +572,3 @@ export const checkout = ai.defineFlow({
         ai.runFlow(findDeliveryProvider, { transactionId: cartTx.id });
     }
 });
-
-
-/**
- * Flow to find a delivery provider.
- */
-export const findDeliveryProvider = ai.defineFlow(
-  {
-    name: 'findDeliveryProviderFlow',
-    inputSchema: z.object({ transactionId: z.string() }),
-    outputSchema: z.void(),
-  },
-  async ({ transactionId }) => {
-    // This flow's logic is defined in delivery-flow.ts
-    // We are just providing a wrapper here for consistency.
-  }
-);

@@ -117,7 +117,8 @@ export const rejectAffiliationFlow = ai.defineFlow(
       outputSchema: z.void(),
     },
     async ({ affiliationId }) => {
-        await updateDoc(doc(getFirestoreDb(), 'affiliations', affiliationId), {
+        const db = getFirestoreDb();
+        await updateDoc(doc(db, 'affiliations', affiliationId), {
             status: 'rejected',
             updatedAt: new Date().toISOString()
         });

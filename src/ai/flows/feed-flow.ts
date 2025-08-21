@@ -20,7 +20,7 @@ export const getFeedFlow = ai.defineFlow(
         outputSchema: GetFeedOutputSchema,
     },
     async ({ limitNum = 10, startAfterDocId }) => {
-        const db = await getFirestoreDb();
+        const db = getFirestoreDb();
         const publicationsCollection = collection(db, 'publications');
         
         const queryConstraints: any[] = [

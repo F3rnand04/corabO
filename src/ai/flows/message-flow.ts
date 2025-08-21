@@ -49,9 +49,10 @@ export const sendMessage = ai.defineFlow(
     outputSchema: z.void(),
   },
   async (input) => {
+    const db = getFirestoreDb();
     // SECURITY: In a real app, the senderId would be derived from the auth context, not the input.
     // For now, we proceed assuming the input is from a validated client session.
-    const convoRef = doc(getFirestoreDb(), 'conversations', input.conversationId);
+    const convoRef = doc(db, 'conversations', input.conversationId);
     const convoSnap = await getDoc(convoRef);
 
     // Dynamically build the message object to avoid undefined fields
