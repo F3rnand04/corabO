@@ -6,7 +6,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { getFirestore, FieldValue, query, where, getDocs, doc, getDoc } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import type { Affiliation, User } from '@/lib/types';
 // DO NOT import sendNotification from notification-flow here to avoid circular dependencies.
 // The notification logic will be orchestrated by the action layer.
@@ -38,13 +38,13 @@ export const requestAffiliationFlow = ai.defineFlow(
     const db = getFirestore();
 
     // Check if a pending or approved affiliation already exists
-    const q = query(
-        db.collection('affiliations'),
-        where('providerId', '==', providerId),
-        where('companyId', '==', companyId),
-        where('status', 'in', ['pending', 'approved'])
-    ) as any; // Cast to any to avoid complex type issues with admin SDK queries
-    const existing = await getDocs(q);
+    const q = db.collection('affiliations')
+        .where('providerId', '==', providerId)
+        .where('companyId', '==', companyId)
+        .where('status', 'in', ['pending', 'approved']);
+        
+    const existing = await q.get();
+
     if (!existing.empty) {
         throw new Error("An affiliation request for this company already exists or has been approved.");
     }
@@ -83,10 +83,10 @@ export const approveAffiliationFlow = ai.defineFlow(
     const providerId = affiliationId.split('-')[1]; // Assuming the format is 'affil-providerId-companyId'
     const companyId = affiliationId.split('-')[2];
 
-    const providerRef = doc(db, 'users', providerId);
-    const companyRef = doc(db, 'users', companyId);
-    const companySnap = await getDoc(companyRef);
-    if (!companySnap.exists()) throw new Error("Company not found");
+    const providerRef = db.collection('users').doc(providerId);
+    const companyRef = db.collection('users').doc(companyId);
+    const companySnap = await companyRef.get();
+    if (!companySnap.exists) throw new Error("Company not found");
     const companyData = companySnap.data() as User;
 
     // Update affiliation status
@@ -140,7 +140,7 @@ export const revokeAffiliationFlow = ai.defineFlow(
 
      const affiliationRef = db.collection('affiliations').doc(affiliationId);
      const providerId = affiliationId.split('-')[1];
-     const providerRef = doc(db, 'users', providerId);
+     const providerRef = db.collection('users').doc(providerId);
      
      // Update affiliation to revoked
      batch.update(affiliationRef, { status: 'revoked', updatedAt: FieldValue.serverTimestamp() });
@@ -151,3 +151,4 @@ export const revokeAffiliationFlow = ai.defineFlow(
      await batch.commit();
   }
 );
+
