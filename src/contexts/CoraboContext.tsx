@@ -12,6 +12,7 @@ import * as Actions from '@/lib/actions';
 interface CoraboContextValue {
   // State
   currentUser: User | null;
+  setCurrentUser: (user: User | null) => void; // New: to allow AppLayout to set the user
   users: User[];
   allPublications: GalleryImage[];
   transactions: Transaction[];
@@ -65,9 +66,10 @@ interface UserMetrics {
 
 const CoraboContext = createContext<CoraboContextValue | undefined>(undefined);
 
-export const CoraboProvider = ({ children, currentUser }: { children: ReactNode, currentUser: User | null }) => {
+export const CoraboProvider = ({ children, currentUser: initialUser }: { children: ReactNode, currentUser: User | null }) => {
   const { toast } = useToast();
   
+  const [currentUser, setCurrentUser] = useState<User | null>(initialUser);
   const [users, setUsers] = useState<User[]>([]);
   const [allPublications, setAllPublications] = useState<GalleryImage[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -209,6 +211,7 @@ export const CoraboProvider = ({ children, currentUser }: { children: ReactNode,
 
     const value: CoraboContextValue = {
         currentUser,
+        setCurrentUser, // Pass down the setter
         users, allPublications, transactions, conversations, cart, searchQuery, categoryFilter, contacts, searchHistory, 
         deliveryAddress, exchangeRate, qrSession, currentUserLocation, tempRecipientInfo, activeCartForCheckout,
         setSearchQuery: (query: string) => {

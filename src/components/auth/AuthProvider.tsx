@@ -24,7 +24,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   useEffect(() => {
     const auth = getAuthInstance();
-    const unsubscribe = onAuthStateChanged(auth, async (user: FirebaseUser | null) => {
+    const unsubscribe = onAuthStateChanged(auth, (user: FirebaseUser | null) => {
       setFirebaseUser(user);
       setIsLoadingAuth(false);
     });

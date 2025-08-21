@@ -10,7 +10,7 @@
 import { doc, updateDoc, deleteField, setDoc, getDoc, writeBatch, collection, where, query, getDocs, arrayRemove, arrayUnion, deleteDoc as deleteFirestoreDoc } from 'firebase/firestore';
 
 // Types
-import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, VerificationOutput, AppointmentRequest, CreatePublicationInput, CreateProductInput, QrSession, CashierBox } from '@/lib/types';
+import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, VerificationOutput, AppointmentRequest, CreatePublicationInput, CreateProductInput, QrSession, TempRecipientInfo, CashierBox } from '@/lib/types';
 import { type CreateCampaignInput } from '@/ai/flows/campaign-flow';
 import { type SendMessageInput } from '@/ai/flows/message-flow';
 
@@ -334,10 +334,22 @@ export async function verifyCampaignPayment(transactionId: string, campaignId: s
 
 
 // --- Affiliation Actions ---
-export const requestAffiliation = AffiliationFlows.requestAffiliation;
-export const approveAffiliation = (affiliationId: string, actorId: string) => AffiliationFlows.approveAffiliation({ affiliationId, actorId });
-export const rejectAffiliation = (affiliationId: string, actorId: string) => AffiliationFlows.rejectAffiliation({ affiliationId, actorId });
-export const revokeAffiliation = (affiliationId: string, actorId: string) => AffiliationFlows.revokeAffiliation({ affiliationId, actorId });
+export async function requestAffiliation(providerId: string, companyId: string) {
+    // 1. Create the affiliation request
+    await AffiliationFlows.requestAffiliationFlow({ providerId, companyId });
+
+    // 2. Orchestrate sending the notification
+    await NotificationFlows.sendNotification({
+        userId: companyId,
+        type: 'affiliation_request',
+        title: 'Nueva Solicitud de Asociación',
+        message: `Un proveedor desea asociarse como talento a tu empresa.`,
+        link: `/admin` // Link to the management panel
+    });
+}
+export const approveAffiliation = (affiliationId: string, actorId: string) => AffiliationFlows.approveAffiliationFlow({ affiliationId, actorId });
+export const rejectAffiliation = (affiliationId: string, actorId: string) => AffiliationFlows.rejectAffiliationFlow({ affiliationId, actorId });
+export const revokeAffiliation = (affiliationId: string, actorId: string) => AffiliationFlows.revokeAffiliationFlow({ affiliationId, actorId });
 
 // --- QR Session Actions ---
 export async function startQrSession(clientId: string, providerId: string, cashierBoxId?: string, cashierName?: string): Promise<string> {

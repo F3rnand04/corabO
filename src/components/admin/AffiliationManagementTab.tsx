@@ -48,6 +48,21 @@ export function AffiliationManagementTab() {
     });
     router.push(`/messages/${conversationId}`);
   };
+  
+  const handleApprove = (affiliationId: string) => {
+      if(!currentUser) return;
+      Actions.approveAffiliation(affiliationId, currentUser.id);
+  }
+  
+  const handleReject = (affiliationId: string) => {
+      if(!currentUser) return;
+      Actions.rejectAffiliation(affiliationId, currentUser.id);
+  }
+  
+  const handleRevoke = (affiliationId: string) => {
+      if(!currentUser) return;
+      Actions.revokeAffiliation(affiliationId, currentUser.id);
+  }
 
   const pendingAffiliations = affiliations.filter(a => a.status === 'pending');
   const approvedAffiliations = affiliations.filter(a => a.status === 'approved');
@@ -91,10 +106,10 @@ export function AffiliationManagementTab() {
                       </TableCell>
                       <TableCell>{new Date(aff.requestedAt).toLocaleDateString()}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" className="text-green-600" onClick={() => Actions.approveAffiliation(aff.id, currentUser.id)}>
+                        <Button variant="ghost" size="icon" className="text-green-600" onClick={() => handleApprove(aff.id)}>
                           <Check className="h-5 w-5" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => Actions.rejectAffiliation(aff.id, currentUser.id)}>
+                        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleReject(aff.id)}>
                           <X className="h-5 w-5" />
                         </Button>
                       </TableCell>
@@ -166,7 +181,7 @@ export function AffiliationManagementTab() {
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                       <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => Actions.revokeAffiliation(aff.id, currentUser.id)}>
+                                      <AlertDialogAction onClick={() => handleRevoke(aff.id)}>
                                         Sí, revocar
                                       </AlertDialogAction>
                                     </AlertDialogFooter>

@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect, memo } from 'react';
-import { useAuth } from '@/components/auth/AuthProvider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -19,6 +18,8 @@ import { useRouter } from 'next/navigation';
 import { checkIdUniquenessFlow, completeInitialSetupFlow } from '@/ai/flows/profile-flow';
 import type { User } from '@/lib/types';
 import * as Actions from '@/lib/actions';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { useCorabo } from '@/contexts/CoraboContext';
 
 const countries = [
   { code: 'VE', name: 'Venezuela', idLabel: 'Cédula de Identidad', companyIdLabel: 'RIF' },
@@ -44,7 +45,8 @@ const CountrySelector = memo(function CountrySelector({ value, onValueChange }: 
 
 
 export default function InitialSetupPage() {
-  const { currentUser, setCurrentUser, logout } = useAuth();
+  const { logout } = useAuth();
+  const { currentUser, setCurrentUser } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -111,7 +113,9 @@ export default function InitialSetupPage() {
         
         // **FIX:** Directly update the context with the user object returned from the server.
         // This ensures the AppLayout has the most recent state and avoids redirection loops.
-        setCurrentUser(updatedUser as User);
+        if (setCurrentUser) {
+            setCurrentUser(updatedUser as User);
+        }
 
         toast({ title: "Perfil Guardado", description: "Tus datos han sido guardados correctamente."});
         

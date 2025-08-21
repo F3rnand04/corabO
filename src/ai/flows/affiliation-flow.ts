@@ -9,7 +9,8 @@ import { z } from 'zod';
 import { getFirestoreDb } from '@/lib/firebase-server';
 import { doc, setDoc, updateDoc, writeBatch, collection, query, where, getDocs, getDoc, FieldValue, deleteField } from 'firebase/firestore';
 import type { Affiliation, User } from '@/lib/types';
-import { sendNotification } from './notification-flow';
+// DO NOT import sendNotification from notification-flow here to avoid circular dependencies.
+// The notification logic will be orchestrated by the action layer.
 
 // --- Schemas ---
 const AffiliationActionSchema = z.object({
@@ -26,8 +27,9 @@ const RequestAffiliationSchema = z.object({
 
 /**
  * A professional requests to be affiliated with a company.
+ * This flow is now only responsible for creating the affiliation document.
  */
-export const requestAffiliation = ai.defineFlow(
+export const requestAffiliationFlow = ai.defineFlow(
   {
     name: 'requestAffiliationFlow',
     inputSchema: RequestAffiliationSchema,
@@ -59,15 +61,6 @@ export const requestAffiliation = ai.defineFlow(
       updatedAt: now,
     };
     await setDoc(doc(db, 'affiliations', affiliationId), newAffiliation);
-
-    // Notify the company
-    await sendNotification({
-        userId: companyId,
-        type: 'affiliation_request',
-        title: 'Nueva Solicitud de Asociación',
-        message: `El proveedor con ID ${providerId} desea asociarse como talento a tu empresa.`,
-        link: `/admin` // Link to the management panel
-    });
   }
 );
 
@@ -75,7 +68,7 @@ export const requestAffiliation = ai.defineFlow(
 /**
  * A company approves a professional's affiliation request.
  */
-export const approveAffiliation = ai.defineFlow(
+export const approveAffiliationFlow = ai.defineFlow(
   {
     name: 'approveAffiliationFlow',
     inputSchema: AffiliationActionSchema,
@@ -117,7 +110,7 @@ export const approveAffiliation = ai.defineFlow(
 /**
  * A company rejects a professional's affiliation request.
  */
-export const rejectAffiliation = ai.defineFlow(
+export const rejectAffiliationFlow = ai.defineFlow(
     {
       name: 'rejectAffiliationFlow',
       inputSchema: AffiliationActionSchema,
@@ -135,7 +128,7 @@ export const rejectAffiliation = ai.defineFlow(
 /**
  * A company revokes an existing affiliation.
  */
-export const revokeAffiliation = ai.defineFlow(
+export const revokeAffiliationFlow = ai.defineFlow(
   {
     name: 'revokeAffiliationFlow',
     inputSchema: AffiliationActionSchema,
