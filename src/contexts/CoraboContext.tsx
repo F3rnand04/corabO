@@ -41,7 +41,7 @@ interface CoraboContextValue {
   getAgendaEvents: (transactions: Transaction[]) => { date: Date; type: 'payment' | 'task'; description: string, transactionId: string }[];
   setDeliveryAddress: (address: string) => void;
   setDeliveryAddressToCurrent: () => void;
-  getUserMetrics: (userId string) => UserMetrics;
+  getUserMetrics: (userId: string) => UserMetrics;
   fetchUser: (userId: string) => User | null;
   getDistanceToProvider: (provider: User) => string | null;
   setTempRecipientInfo: (info: TempRecipientInfo | null) => void;
