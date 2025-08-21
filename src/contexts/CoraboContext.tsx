@@ -4,7 +4,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest, PublicationOwner, CreatePublicationInput, CreateProductInput, QrSession, TempRecipientInfo, CashierBox } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast"
-import { addDays } from 'date-fns';
 import { getFirestoreDb } from '@/lib/firebase';
 import { doc, getDoc, collection, onSnapshot, query, where, orderBy, Unsubscribe } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
@@ -29,7 +28,6 @@ interface CoraboContextValue {
   currentUserLocation: GeolocationCoords | null;
   tempRecipientInfo: TempRecipientInfo | null;
   activeCartForCheckout: CartItem[] | null;
-  isLoadingAuth: boolean;
 
   // Actions
   setSearchQuery: (query: string) => void;
@@ -49,7 +47,6 @@ interface CoraboContextValue {
   getDistanceToProvider: (provider: User) => string | null;
   setTempRecipientInfo: (info: TempRecipientInfo | null) => void;
   setActiveCartForCheckout: (cartItems: CartItem[] | null) => void;
-  // Acciones que llaman al backend
   updateUser: (userId: string, updates: Partial<User>) => Promise<void>;
   updateUserProfileImage: (userId: string, imageUrl: string) => Promise<void>;
   toggleGps: (userId: string) => Promise<void>;
@@ -177,39 +174,50 @@ export const CoraboProvider = ({ children, currentUser }: { children: ReactNode,
 
   const fetchUser = useCallback(async (userId: string): Promise<User | null> => {
         if (userCache.current.has(userId)) return userCache.current.get(userId)!;
+        // In a real app, you might want to fetch from the server if not in the local 'users' state either
+        const user = users.find(u => u.id === userId);
+        if (user) {
+            userCache.current.set(userId, user);
+            return user;
+        }
         return await Actions.getPublicProfile(userId);
-  }, []);
+  }, [users]);
 
   useEffect(() => {
     const db = getFirestoreDb();
-    const unsubscribes: Unsubscribe[] = [];
+    if (!db) return;
+    
+    let unsubscribes: Unsubscribe[] = [];
 
-    // This listener can be outside the currentUser check as it fetches all users
+    // Public data subscriptions (do not depend on currentUser)
     unsubscribes.push(onSnapshot(collection(db, 'users'), (snapshot) => {
         const userList = snapshot.docs.map(doc => doc.data() as User)
         setUsers(userList);
         userList.forEach(user => userCache.current.set(user.id, user));
     }));
-    
-    // This listener can also be outside, fetching all public publications
     unsubscribes.push(onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
         setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage));
     }));
-    
-    // These listeners DEPEND on the currentUser ID.
+
+    // User-specific data subscriptions
     if (currentUser?.id) {
-        unsubscribes.push(onSnapshot(query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id)), (snapshot) => setTransactions(snapshot.docs.map(doc => doc.data() as Transaction))));
-        unsubscribes.push(onSnapshot(query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id), orderBy("lastUpdated", "desc")), (snapshot) => setConversations(snapshot.docs.map(doc => doc.data() as Conversation))));
-        unsubscribes.push(onSnapshot(query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', currentUser.id)), (snapshot) => setQrSession(snapshot.docs.map(d => d.data() as QrSession).find(s => s.status !== 'completed' && s.status !== 'cancelled') || null)));
+        const userId = currentUser.id;
+        const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userId));
+        const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userId), orderBy("lastUpdated", "desc"));
+        const qrSessionQuery = query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', userId));
+
+        unsubscribes.push(onSnapshot(transactionsQuery, (snapshot) => setTransactions(snapshot.docs.map(doc => doc.data() as Transaction))));
+        unsubscribes.push(onSnapshot(conversationsQuery, (snapshot) => setConversations(snapshot.docs.map(doc => doc.data() as Conversation))));
+        unsubscribes.push(onSnapshot(qrSessionQuery, (snapshot) => setQrSession(snapshot.docs.map(d => d.data() as QrSession).find(s => s.status !== 'completed' && s.status !== 'cancelled') || null)));
     } else {
-        // If there's no user, clear the personalized data
+        // Clear user-specific data when logged out
         setTransactions([]);
         setConversations([]);
         setQrSession(null);
     }
 
     return () => unsubscribes.forEach(unsub => unsub());
-  }, [currentUser?.id]); // Depend only on the user's ID
+  }, [currentUser?.id]); // Rerun only when the user ID changes
   
   const getCartTotal = useCallback((cartItems: CartItem[] = cart) => cartItems.reduce((total, item) => total + item.product.price * item.quantity, 0), [cart]);
   
@@ -310,7 +318,6 @@ export const CoraboProvider = ({ children, currentUser }: { children: ReactNode,
 
   const value = {
     currentUser,
-    isLoadingAuth: !currentUser, // Simplified loading state based on user presence
     users, allPublications, transactions, conversations, cart, searchQuery, categoryFilter, contacts, isGpsActive, searchHistory, 
     deliveryAddress, exchangeRate, qrSession, currentUserLocation, tempRecipientInfo, activeCartForCheckout,
     setSearchQuery: (query: string) => {

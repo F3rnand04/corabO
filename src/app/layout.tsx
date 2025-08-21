@@ -4,7 +4,6 @@ import './globals.css';
 import { Providers } from './providers';
 import { Inter } from 'next/font/google';
 import { AuthProvider } from '@/components/auth/AuthProvider';
-import { CoraboProvider } from '@/contexts/CoraboContext';
 import { AppLayout } from '@/app/AppLayout';
 
 
