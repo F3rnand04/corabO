@@ -2,19 +2,33 @@
 'use client';
 
 import { useAuth } from '@/components/auth/AuthProvider';
+import { useCorabo } from '@/contexts/CoraboContext';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
   const { signInWithGoogle } = useAuth();
+  const { currentUser, isLoadingUser } = useCorabo();
+  const router = useRouter();
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Si el usuario ya está logueado (y no estamos en estado de carga), redirigir.
+    // Esta es la nueva lógica de redirección del lado del cliente para el login.
+    if (!isLoadingUser && currentUser) {
+      router.replace('/');
+    }
+  }, [currentUser, isLoadingUser, router]);
 
   const handleSignIn = async () => {
     try {
       await signInWithGoogle();
-      // On success, the onAuthStateChanged listener in AuthProvider and AppLayout will handle the redirection.
+      // La redirección ahora es manejada por el useEffect de esta misma página
+      // y por el AppLayout una vez que el estado se propague.
     } catch (error: any) {
        if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
         console.error("Error signing in with Google:", error);
@@ -27,6 +41,15 @@ export default function LoginPage() {
     }
   };
   
+  // Mientras se verifica el estado o si el usuario ya está logueado, mostrar un loader.
+  if (isLoadingUser || currentUser) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="relative flex items-center justify-center min-h-screen bg-muted/40 p-4">
       <Image 
