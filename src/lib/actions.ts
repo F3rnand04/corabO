@@ -7,15 +7,14 @@
  * component-facing server actions should be defined.
  */
 
-import { getFirestoreDb } from '@/lib/firebase-server';
-import { doc, updateDoc, deleteDoc, setDoc, getDoc, writeBatch, collection, where, query, getDocs, arrayRemove, arrayUnion, deleteField } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc, setDoc, getDoc, writeBatch, collection, where, query, getDocs, arrayRemove, arrayUnion, deleteField, type FieldValue } from 'firebase/firestore';
 
 // Types
 import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, VerificationOutput, AppointmentRequest, CreatePublicationInput, CreateProductInput, QrSession, CashierBox } from '@/lib/types';
 
 // Flows
 import { createCampaign as createCampaignFlow, type CreateCampaignInput } from '@/ai/flows/campaign-flow';
-import { sendMessage as sendMessageFlow, acceptProposal as acceptProposalFlow, SendMessageInput } from '@/ai/flows/message-flow';
+import { sendMessage as sendMessageFlow, acceptProposal as acceptProposalFlow, type SendMessageInput } from '@/ai/flows/message-flow';
 import * as TransactionFlows from '@/ai/flows/transaction-flow';
 import * as NotificationFlows from '@/ai/flows/notification-flow';
 import * as ProfileFlows from '@/ai/flows/profile-flow';
@@ -25,6 +24,7 @@ import { createProduct as createProductFlow, createPublication as createPublicat
 import { findDeliveryProvider as findDeliveryProviderFlow, resolveDeliveryAsPickup as resolveDeliveryAsPickupFlow } from '@/ai/flows/delivery-flow';
 import { createCashierBox as createCashierBoxFlow, regenerateCashierQr as regenerateCashierQrFlow, requestCashierSessionFlow } from '@/ai/flows/cashier-flow';
 import { requestAffiliation as requestAffiliationFlow, approveAffiliation as approveAffiliationFlow, rejectAffiliation as rejectAffiliationFlow, revokeAffiliation as revokeAffiliationFlow } from '@/ai/flows/affiliation-flow';
+import { getFirestoreDb } from './firebase-server';
 
 
 // --- User and Profile Actions ---
