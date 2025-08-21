@@ -17,6 +17,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
+import * as Actions from '@/lib/actions';
 
 // New dedicated header for the focused editing view
 function EditDetailsHeader({ onSave, isSaving }: { onSave: () => void; isSaving: boolean }) {
@@ -58,7 +59,7 @@ const categoryComponentMap: { [key: string]: React.ElementType } = {
 const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
 export default function DetailsPage() {
-  const { currentUser, updateFullProfile } = useCorabo();
+  const { currentUser } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -107,7 +108,7 @@ export default function DetailsPage() {
     if (!currentUser || !formData) return;
     setIsSaving(true);
     try {
-        await updateFullProfile(currentUser.id, formData, currentUser.type);
+        await Actions.updateFullProfile(currentUser.id, formData, currentUser.type);
         toast({ title: "Perfil Actualizado", description: "Tus detalles han sido guardados." });
         router.push('/profile/publications');
     } catch (error) {

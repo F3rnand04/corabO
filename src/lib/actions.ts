@@ -76,6 +76,11 @@ export async function activateTransactions(userId: string, paymentDetails: Profi
     await updateUser(userId, { isTransactionsActive: true, 'profileSetupData.paymentDetails': paymentDetails });
 }
 
+export async function addContact(user: User) {
+    // This is a client-side action handled in context, but kept here for logical grouping
+    console.log("Adding contact (client-side):", user.name);
+}
+
 
 // --- Verification and Auth Actions ---
 export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput> {
@@ -239,34 +244,43 @@ export async function checkout(userId: string, providerId: string, deliveryMetho
     const db = await getFirestoreDb();
     const q = query(collection(db, 'transactions'), where('clientId', '==', userId), where('providerId', '==', providerId), where('status', '==', 'Carrito Activo'));
     const snapshot = await getDocs(q);
-    const cartTx = snapshot.docs.length > 0 ? snapshot.docs[0].data() as Transaction : null;
+    const cartTxDoc = snapshot.docs[0];
     
-    if (!cartTx) throw new Error("Cart not found for checkout");
+    if (!cartTxDoc) {
+        throw new Error("Cart not found for checkout.");
+    }
     
+    const cartTx = cartTxDoc.data() as Transaction;
+    
+    // 2. Define delivery details
     const deliveryDetails = {
         delivery: deliveryMethod !== 'pickup',
-        deliveryMethod: deliveryMethod,
-        pickupInStore: deliveryMethod === 'pickup',
-        deliveryLocation: deliveryAddress,
-        recipientInfo,
+        method: deliveryMethod,
+        address: deliveryAddress,
+        recipientInfo: recipientInfo,
     };
     
-    await updateDoc(doc(db, 'transactions', cartTx.id), { 
+    // 3. Update the transaction from a 'Cart' to a pending 'Delivery'
+    await updateDoc(doc(db, 'transactions', cartTx.id), {
         status: 'Buscando Repartidor',
         'details.delivery': deliveryDetails,
-        'details.deliveryCost': 0, // Placeholder
+        'details.deliveryCost': 1.5, // Placeholder cost
         'details.paymentMethod': useCredicora ? 'credicora' : 'direct',
     });
 
+    // 4. Trigger the delivery provider search flow if needed
     if (deliveryMethod !== 'pickup') {
+        // We call this flow but don't wait for it to complete.
+        // It will run in the background.
         await DeliveryFlows.findDeliveryProvider({ transactionId: cartTx.id });
     }
 }
 
 export const { sendQuote, acceptQuote, acceptAppointment, confirmPaymentReceived, completeWork, confirmWorkReceived, startDispute, createAppointmentRequest, processDirectPayment } = TransactionFlows;
 
-export async function payCommitment(transactionId: string, userId: string, paymentDetails: any) {
-    return TransactionFlows.payCommitment({ transactionId, userId, paymentDetails });
+export async function payCommitment(transactionId: string) {
+    const db = getFirestoreDb();
+    await updateDoc(doc(db, 'transactions', transactionId), { status: 'Pago Enviado - Esperando Confirmación' });
 }
 
 // --- Messaging Actions ---

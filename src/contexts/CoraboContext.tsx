@@ -29,18 +29,19 @@ interface CoraboContextValue {
   tempRecipientInfo: TempRecipientInfo | null;
   activeCartForCheckout: CartItem[] | null;
   cart: CartItem[];
+  qrSession: QrSession | null;
 
   // Actions
   setSearchQuery: (query: string) => void;
   setCategoryFilter: (category: string | null) => void;
   clearSearchHistory: () => void;
-  addContact: (user: User) => boolean;
+  addContact: (user: User) => void;
   removeContact: (userId: string) => void;
   isContact: (userId: string) => boolean;
   getAgendaEvents: (transactions: Transaction[]) => { date: Date; type: 'payment' | 'task'; description: string, transactionId: string }[];
   setDeliveryAddress: (address: string) => void;
   setDeliveryAddressToCurrent: () => void;
-  getUserMetrics: (userId: string) => UserMetrics;
+  getUserMetrics: (userId string) => UserMetrics;
   fetchUser: (userId: string) => User | null;
   getDistanceToProvider: (provider: User) => string | null;
   setTempRecipientInfo: (info: TempRecipientInfo | null) => void;
@@ -87,6 +88,7 @@ export const CoraboProvider = ({ children, firebaseUser, isAuthLoading }: Corabo
   const [currentUserLocation, setCurrentUserLocation] = useState<GeolocationCoords | null>(null);
   const [tempRecipientInfo, _setTempRecipientInfo] = useState<TempRecipientInfo | null>(null);
   const [activeCartForCheckout, setActiveCartForCheckout] = useState<CartItem[] | null>(null);
+  const [qrSession, setQrSession] = useState<QrSession | null>(null);
   
   const userCache = useRef<Map<string, User>>(new Map());
 
@@ -185,6 +187,12 @@ export const CoraboProvider = ({ children, firebaseUser, isAuthLoading }: Corabo
     if (currentUser?.id) {
         const userId = currentUser.id;
         
+        // Update the current user from the main 'users' listener
+        const updatedCurrentUser = users.find(u => u.id === userId);
+        if (updatedCurrentUser) {
+            setCurrentUser(updatedCurrentUser);
+        }
+
         const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userId));
         const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userId), orderBy("lastUpdated", "desc"));
 
@@ -196,7 +204,7 @@ export const CoraboProvider = ({ children, firebaseUser, isAuthLoading }: Corabo
     }
 
     return () => unsubscribes.forEach(unsub => unsub());
-  }, [currentUser?.id]);
+  }, [currentUser?.id, users]);
   
   const getDistanceToProvider = useCallback((provider: User) => {
       if (!currentUserLocation || !provider.profileSetupData?.location) return null;
@@ -249,24 +257,27 @@ export const CoraboProvider = ({ children, firebaseUser, isAuthLoading }: Corabo
     const activeCartTx = useMemo(() => transactions.find(tx => tx.clientId === currentUser?.id && tx.status === 'Carrito Activo'), [transactions, currentUser?.id]);
     const cart: CartItem[] = useMemo(() => activeCartTx?.details.items || [], [activeCartTx]);
 
+    const addContact = (user: User) => {
+        setContacts(prev => {
+            if (prev.some(c => c.id === user.id)) return prev;
+            return [...prev, user];
+        });
+    }
+
     const value: CoraboContextValue = {
         currentUser,
         isLoadingUser,
         users, transactions, conversations, allPublications,
         searchQuery, categoryFilter, contacts, searchHistory, 
         deliveryAddress, exchangeRate, currentUserLocation, tempRecipientInfo, activeCartForCheckout,
-        cart,
+        cart, qrSession,
         setSearchQuery: (query: string) => {
             _setSearchQuery(query);
             if (query.trim() && !searchHistory.includes(query.trim())) setSearchHistory(prev => [query.trim(), ...prev].slice(0, 10));
         },
         setCategoryFilter,
         clearSearchHistory: () => setSearchHistory([]),
-        addContact: (user: User) => {
-            if (contacts.some(c => c.id === user.id)) return false;
-            setContacts(prev => [...prev, user]);
-            return true;
-        },
+        addContact,
         removeContact: (userId: string) => setContacts(prev => prev.filter(c => c.id !== userId)),
         isContact: (userId: string) => contacts.some(c => c.id === userId),
         getAgendaEvents,

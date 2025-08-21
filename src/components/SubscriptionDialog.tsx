@@ -1,6 +1,5 @@
 
-
-"use client";
+'use client';
 
 import { useState, useEffect } from 'react';
 import {
@@ -117,7 +116,7 @@ export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogP
     const credicoraDetails = isCompany ? credicoraCompanyLevels[currentCredicoraLevel.toString()] : credicoraLevels[currentCredicoraLevel.toString()];
     await Actions.updateUser(currentUser.id, { credicoraDetails });
     
-    Actions.subscribeUser(currentUser.id, `Plan ${currentPlan.title} (${paymentCycle === 'monthly' ? 'Mensual' : 'Anual'})`, amount);
+    await Actions.subscribeUser(currentUser.id, `Plan ${currentPlan.title} (${paymentCycle === 'monthly' ? 'Mensual' : 'Anual'})`, amount);
     onOpenChange(false);
   }
 

@@ -1,3 +1,4 @@
+
 /** @type {import('next').NextConfig} */
 import './src/env.mjs';
 

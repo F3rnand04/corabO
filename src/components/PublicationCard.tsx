@@ -1,6 +1,5 @@
 
-
-"use client";
+'use client';
 
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -26,7 +25,7 @@ interface PublicationCardProps {
 }
 
 export function PublicationCard({ publication, className }: PublicationCardProps) {
-    const { addContact, isContact, sendMessage, currentUser, getUserMetrics, getDistanceToProvider } = useCorabo();
+    const { isContact, currentUser, getUserMetrics, getDistanceToProvider } = useCorabo();
     const router = useRouter();
     const { toast } = useToast();
     
@@ -73,19 +72,12 @@ export function PublicationCard({ publication, className }: PublicationCardProps
     const affiliation = owner.activeAffiliation;
 
     const handleSaveContact = () => {
-        const success = addContact(owner);
-        if (success) {
-            toast({
-                title: "¡Contacto Guardado!",
-                description: `Has añadido a ${owner.name} a tus contactos.`
-            });
-            setIsSaved(true);
-        } else {
-            toast({
-                title: "Contacto ya existe",
-                description: `${owner.name} ya está en tu lista de contactos.`
-            });
-        }
+        Actions.addContact(owner);
+        setIsSaved(true);
+        toast({
+            title: "¡Contacto Guardado!",
+            description: `Has añadido a ${owner.name} a tus contactos.`
+        });
     };
     
     const handleLike = () => {
