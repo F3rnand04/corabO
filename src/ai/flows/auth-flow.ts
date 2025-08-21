@@ -5,7 +5,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { getFirestoreDb } from '@/lib/firebase-server';
+import { getFirestore } from 'firebase-admin/firestore';
 import { doc, getDoc, setDoc, updateDoc, type DocumentReference } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 import { z } from 'zod';
@@ -35,7 +35,7 @@ export const getOrCreateUser = ai.defineFlow(
     outputSchema: UserOutputSchema,
   },
   async (firebaseUser) => {
-    const db = getFirestoreDb();
+    const db = getFirestore();
     const userDocRef: DocumentReference<User> = doc(db, 'users', firebaseUser.uid) as DocumentReference<User>;
     const userDocSnap = await getDoc(userDocRef);
     const now = new Date();

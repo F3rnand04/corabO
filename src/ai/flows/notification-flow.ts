@@ -10,7 +10,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { getFirestoreDb } from '@/lib/firebase-server'; // Use server-side firebase
+import { getFirestore } from 'firebase-admin/firestore';
 import { collection, doc, setDoc, query, where, getDocs, getDoc, writeBatch } from 'firebase/firestore';
 import type { Notification, Transaction, User, Campaign } from '@/lib/types';
 import { addDays, differenceInDays, isFuture, isPast } from 'date-fns';
@@ -35,7 +35,7 @@ export const sendNotification = ai.defineFlow(
     outputSchema: z.void(),
   },
   async (input) => {
-    const db = getFirestoreDb();
+    const db = getFirestore();
     const notificationId = `notif-${input.userId}-${Date.now()}`;
     const notificationRef = doc(db, 'notifications', notificationId);
     const newNotification: Notification = {
@@ -60,7 +60,7 @@ export const checkPaymentDeadlines = ai.defineFlow(
         outputSchema: z.void(),
     },
     async () => {
-        const db = getFirestoreDb();
+        const db = getFirestore();
         const q = query(
             collection(db, 'transactions'),
             where('status', 'in', ['Finalizado - Pendiente de Pago', 'Pendiente de Confirmación del Cliente'])
@@ -147,7 +147,7 @@ export const sendNewCampaignNotifications = ai.defineFlow({
     inputSchema: z.object({ campaignId: z.string() }),
     outputSchema: z.void(),
 }, async ({ campaignId }) => {
-    const db = getFirestoreDb();
+    const db = getFirestore();
     const campaignRef = doc(db, 'campaigns', campaignId);
     const campaignSnap = await getDoc(campaignRef);
     if (!campaignSnap.exists()) return;
@@ -211,7 +211,7 @@ export const sendNewPublicationNotification = ai.defineFlow({
     inputSchema: z.object({ providerId: z.string(), publicationId: z.string(), publicationDescription: z.string() }),
     outputSchema: z.void(),
 }, async ({ providerId, publicationId, publicationDescription }) => {
-    const db = getFirestoreDb();
+    const db = getFirestore();
     
     const providerRef = doc(db, 'users', providerId);
     const providerSnap = await getDoc(providerRef);

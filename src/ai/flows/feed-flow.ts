@@ -8,7 +8,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { getFirestoreDb } from '@/lib/firebase-server';
+import { getFirestore } from 'firebase-admin/firestore';
 import { collection, query, orderBy, limit, startAfter, getDocs, doc, getDoc, where } from 'firebase/firestore';
 import type { GalleryImage, User } from '@/lib/types';
 import { GetFeedInputSchema, GetFeedOutputSchema } from '@/lib/types';
@@ -20,7 +20,7 @@ export const getFeedFlow = ai.defineFlow(
         outputSchema: GetFeedOutputSchema,
     },
     async ({ limitNum = 10, startAfterDocId }) => {
-        const db = getFirestoreDb();
+        const db = getFirestore();
         const publicationsCollection = collection(db, 'publications');
         
         const queryConstraints: any[] = [
@@ -43,10 +43,8 @@ export const getFeedFlow = ai.defineFlow(
         const publicationsData = snapshot.docs.map(doc => doc.data() as GalleryImage);
 
         // --- Data Enrichment Step ---
-        // Get all unique provider IDs from the fetched publications
         const providerIds = [...new Set(publicationsData.map(p => p.providerId).filter(Boolean))];
 
-        // Fetch all owner data in a single batch query if there are any providers
         const ownersMap = new Map<string, User>();
         // Firestore 'in' query fails with an empty array. Add a guard clause.
         if (providerIds.length > 0) {
@@ -58,13 +56,10 @@ export const getFeedFlow = ai.defineFlow(
             });
         }
         
-        // Attach owner data to each publication
         const enrichedPublications = publicationsData.map(pub => {
-            // If an owner is not found (e.g., deleted user), owner will be null.
             const owner = ownersMap.get(pub.providerId) || null;
             return {
                 ...pub,
-                // Ensure owner is a plain object, not a class instance, for serialization
                 owner: owner ? JSON.parse(JSON.stringify(owner)) : null,
             };
         });

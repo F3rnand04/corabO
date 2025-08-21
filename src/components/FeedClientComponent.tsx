@@ -7,28 +7,37 @@ import { useCorabo } from "@/contexts/CoraboContext";
 import { ActivationWarning } from "@/components/ActivationWarning";
 import { PublicationCard } from "@/components/PublicationCard";
 import { Skeleton } from "@/components/ui/skeleton";
+import * as Actions from '@/lib/actions';
 
-interface FeedClientComponentProps {
-  initialPublications: GalleryImage[];
-}
-
-export function FeedClientComponent({ initialPublications }: FeedClientComponentProps) {
-  const { currentUser, searchQuery, categoryFilter, allPublications } = useCorabo();
+export function FeedClientComponent() {
+  const { currentUser, searchQuery, categoryFilter } = useCorabo();
   
-  // The component's state is initialized with the data passed from the server.
-  // It also listens to the global `allPublications` from the context for real-time updates.
-  const publications = useMemo(() => {
-    // This creates a more robust feed by combining initial data and real-time updates.
-    const combined = [...initialPublications, ...allPublications];
-    const uniqueIds = new Set();
-    return combined.filter(p => {
-        if (!uniqueIds.has(p.id)) {
-            uniqueIds.add(p.id);
-            return true;
-        }
-        return false;
-    });
-  }, [initialPublications, allPublications]);
+  // This component now manages its own state for publications
+  const [publications, setPublications] = useState<GalleryImage[]>([]);
+  const [isLoadingFeed, setIsLoadingFeed] = useState(true);
+
+  useEffect(() => {
+    // Fetch feed only when currentUser is available and loaded.
+    if (currentUser) {
+        setIsLoadingFeed(true);
+        Actions.getFeed({ limitNum: 20 }) // Fetch initial batch
+            .then(result => {
+                setPublications(result.publications || []);
+            })
+            .catch(error => {
+                console.error("Failed to fetch feed:", error);
+                setPublications([]); // Reset on error
+            })
+            .finally(() => {
+                setIsLoadingFeed(false);
+            });
+    } else {
+        // If there's no user, we show nothing or a loading state.
+        // This is important for the initial anonymous load.
+        setIsLoadingFeed(false);
+        setPublications([]);
+    }
+  }, [currentUser]); // Dependency on currentUser ensures we fetch data only after login.
   
   const filteredPublications = useMemo(() => {
     let results = publications;
@@ -53,8 +62,35 @@ export function FeedClientComponent({ initialPublications }: FeedClientComponent
   }, [publications, searchQuery, categoryFilter]);
 
 
+  const renderFeedContent = () => {
+    if (isLoadingFeed) {
+      return (
+        <main className="space-y-4 container py-4">
+          {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[500px] w-full max-w-2xl mx-auto" />)}
+        </main>
+      );
+    }
+
+    if (filteredPublications.length > 0) {
+      return (
+        <div className="space-y-4">
+          {filteredPublications.map((item, index) => (
+              <PublicationCard key={item.id || index} publication={item} />
+          ))}
+        </div>
+      );
+    }
+
+    return (
+      <div className="text-center text-muted-foreground pt-16">
+        <p>No hay publicaciones para mostrar.</p>
+        <p className="text-xs">Intenta cambiar tus filtros de búsqueda.</p>
+      </div>
+    );
+  };
+
   if (!currentUser) {
-     return (
+    return (
       <main className="space-y-4 container py-4">
         {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[500px] w-full max-w-2xl mx-auto" />)}
       </main>
@@ -63,23 +99,12 @@ export function FeedClientComponent({ initialPublications }: FeedClientComponent
 
   return (
     <>
-      {currentUser && !currentUser.isTransactionsActive && (
+      {!currentUser.isTransactionsActive && (
         <div className="container py-4">
           <ActivationWarning userType={currentUser.type} />
         </div>
       )}
-       
-      <div className="space-y-4">
-        {filteredPublications.length > 0 ? (
-            filteredPublications.map((item, index) => (
-                <PublicationCard key={item.id || index} publication={item} />
-            ))
-        ) : (
-            <div className="text-center text-muted-foreground pt-16">
-              <p>No hay publicaciones que coincidan con tu búsqueda.</p>
-            </div>
-        )}
-      </div>
+      {renderFeedContent()}
     </>
   );
 }

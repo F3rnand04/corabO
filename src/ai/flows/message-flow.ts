@@ -9,7 +9,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { getFirestoreDb } from '@/lib/firebase-server'; // Use server-side firebase
+import { getFirestore } from 'firebase-admin/firestore';
 import { doc, getDoc, setDoc, updateDoc, arrayUnion, writeBatch } from 'firebase/firestore';
 import type { Conversation, Message, Transaction, AgreementProposal, User } from '@/lib/types';
 
@@ -49,7 +49,7 @@ export const sendMessage = ai.defineFlow(
     outputSchema: z.void(),
   },
   async (input) => {
-    const db = getFirestoreDb();
+    const db = getFirestore();
     // SECURITY: In a real app, the senderId would be derived from the auth context, not the input.
     // For now, we proceed assuming the input is from a validated client session.
     const convoRef = doc(db, 'conversations', input.conversationId);
@@ -116,7 +116,7 @@ export const acceptProposal = ai.defineFlow(
     outputSchema: z.void(),
   },
   async ({ conversationId, messageId, acceptorId }) => {
-    const db = getFirestoreDb();
+    const db = getFirestore();
     const batch = writeBatch(db);
     const convoRef = doc(db, 'conversations', conversationId);
     

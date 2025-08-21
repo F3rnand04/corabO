@@ -6,7 +6,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { getFirestoreDb } from '@/lib/firebase-server';
+import { getFirestore } from 'firebase-admin/firestore';
 import { doc, getDoc, updateDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import type { Transaction, User } from '@/lib/types';
 import { haversineDistance } from '@/lib/utils';
@@ -30,7 +30,7 @@ export const findDeliveryProvider = ai.defineFlow(
     outputSchema: z.void(),
   },
   async ({ transactionId }) => {
-    const db = getFirestoreDb();
+    const db = getFirestore();
     const txRef = doc(db, 'transactions', transactionId);
     const txSnap = await getDoc(txRef);
 
@@ -119,7 +119,7 @@ export const resolveDeliveryAsPickup = ai.defineFlow(
         outputSchema: z.void(),
     },
     async ({ transactionId }) => {
-        const db = getFirestoreDb();
+        const db = getFirestore();
         const batch = writeBatch(db);
         const txRef = doc(db, 'transactions', transactionId);
         const txSnap = await getDoc(txRef);

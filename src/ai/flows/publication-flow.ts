@@ -9,7 +9,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { getFirestoreDb } from '@/lib/firebase-server';
+import { getFirestore } from 'firebase-admin/firestore';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import type { GalleryImage, User } from '@/lib/types';
 import { sendNewPublicationNotification } from './notification-flow';
@@ -43,7 +43,7 @@ export const createPublication = ai.defineFlow(
     outputSchema: z.void(),
   },
   async ({ userId, description, imageDataUri, aspectRatio, type }) => {
-    const db = getFirestoreDb();
+    const db = getFirestore();
     
     // Security: Validate the user exists before creating content for them.
     const userSnap = await getDoc(doc(db, 'users', userId));
@@ -91,7 +91,7 @@ export const createProduct = ai.defineFlow(
         outputSchema: z.string(), // Returns the new product ID
     },
     async ({ userId, name, description, price, imageDataUri }) => {
-        const db = getFirestoreDb();
+        const db = getFirestore();
         const userSnap = await getDoc(doc(db, 'users', userId));
         if (!userSnap.exists()) {
             throw new Error('User not found. Cannot create product for a non-existent user.');

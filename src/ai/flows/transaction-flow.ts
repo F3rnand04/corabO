@@ -6,7 +6,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { getFirestoreDb } from '@/lib/firebase-server'; // Use server-side firebase
+import { getFirestore } from 'firebase-admin/firestore';
 import { doc, getDoc, setDoc, updateDoc, writeBatch, increment, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
 import type { Transaction, User, AppointmentRequest, QrSession, Product } from '@/lib/types';
 import { credicoraLevels } from '@/lib/types';
@@ -68,7 +68,7 @@ export const processDirectPayment = ai.defineFlow(
         outputSchema: z.object({ transactionId: z.string() }),
     },
     async ({ sessionId }) => {
-        const db = getFirestoreDb();
+        const db = getFirestore();
         const batch = writeBatch(db);
 
         const sessionRef = doc(db, 'qr_sessions', sessionId);
@@ -214,7 +214,7 @@ export const completeWork = ai.defineFlow(
     outputSchema: z.void(),
   },
   async ({ transactionId, userId }) => {
-    const db = getFirestoreDb();
+    const db = getFirestore();
     const txRef = doc(db, 'transactions', transactionId);
     const txSnap = await getDoc(txRef);
     if (!txSnap.exists()) throw new Error("Transaction not found.");
@@ -243,7 +243,7 @@ export const confirmWorkReceived = ai.defineFlow(
         outputSchema: z.void(),
     },
     async ({ transactionId, userId, rating, comment }) => {
-        const db = getFirestoreDb();
+        const db = getFirestore();
         const txRef = doc(db, 'transactions', transactionId);
         const txSnap = await getDoc(txRef);
         if (!txSnap.exists()) throw new Error("Transaction not found.");
@@ -283,7 +283,7 @@ export const payCommitment = ai.defineFlow(
         outputSchema: z.void(),
     },
     async ({ transactionId, userId, paymentDetails }) => {
-        const db = getFirestoreDb();
+        const db = getFirestore();
         const txRef = doc(db, 'transactions', transactionId);
         const txSnap = await getDoc(txRef);
         if (!txSnap.exists()) throw new Error("Transaction not found.");
@@ -319,7 +319,7 @@ export const confirmPaymentReceived = ai.defineFlow(
         outputSchema: z.void(),
     },
     async ({ transactionId, userId, fromThirdParty }) => {
-        const db = getFirestoreDb();
+        const db = getFirestore();
         const batch = writeBatch(db);
         
         const txRef = doc(db, 'transactions', transactionId);
@@ -360,7 +360,7 @@ export const sendQuote = ai.defineFlow(
         outputSchema: z.void(),
     },
     async ({ transactionId, userId, breakdown, total }) => {
-        const db = getFirestoreDb();
+        const db = getFirestore();
         const txRef = doc(db, 'transactions', transactionId);
         const txSnap = await getDoc(txRef);
         if (!txSnap.exists()) throw new Error("Transaction not found.");
@@ -392,7 +392,7 @@ export const acceptQuote = ai.defineFlow(
         outputSchema: z.void(),
     },
     async ({ transactionId, userId }) => {
-        const db = getFirestoreDb();
+        const db = getFirestore();
         const txRef = doc(db, 'transactions', transactionId);
         const txSnap = await getDoc(txRef);
         if (!txSnap.exists()) throw new Error("Transaction not found.");
@@ -421,7 +421,7 @@ export const createAppointmentRequest = ai.defineFlow(
         outputSchema: z.void(),
     },
     async (request) => {
-        const db = getFirestoreDb();
+        const db = getFirestore();
         // SECURITY: We trust the clientId from the validated client session.
         const txId = `txn-appt-${Date.now()}`;
         const newTransaction: Transaction = {
@@ -452,7 +452,7 @@ export const acceptAppointment = ai.defineFlow(
         outputSchema: z.void(),
     },
     async ({ transactionId, userId }) => {
-        const db = getFirestoreDb();
+        const db = getFirestore();
         const txRef = doc(db, 'transactions', transactionId);
         const txSnap = await getDoc(txRef);
         if (!txSnap.exists()) throw new Error("Transaction not found.");
@@ -481,7 +481,7 @@ export const startDispute = ai.defineFlow(
         outputSchema: z.void(),
     },
     async (transactionId) => {
-        const db = getFirestoreDb();
+        const db = getFirestore();
         // SECURITY: In a real app, we'd check if the user calling this is a participant.
         const txRef = doc(db, 'transactions', transactionId);
         await updateDoc(txRef, { status: 'En Disputa' });
@@ -492,7 +492,7 @@ export const startDispute = ai.defineFlow(
  * Removes a system-generated transaction, such as a renewable subscription payment.
  */
 export async function cancelSystemTransaction(transactionId: string) {
-    const db = getFirestoreDb();
+    const db = getFirestore();
     const txRef = doc(db, 'transactions', transactionId);
     await deleteDoc(txRef);
 }
@@ -531,7 +531,7 @@ export const checkout = ai.defineFlow({
     }),
     outputSchema: z.void(),
 }, async ({ userId, providerId, deliveryMethod, useCredicora, recipientInfo, deliveryAddress }) => {
-    const db = getFirestoreDb();
+    const db = getFirestore();
     
     // 1. Find the active cart for this user and provider
     const q = query(

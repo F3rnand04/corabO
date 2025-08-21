@@ -16,7 +16,7 @@ import {
   type Transaction,
   credicoraLevels,
 } from '@/lib/types';
-import { getFirestoreDb } from '@/lib/firebase-server'; // Use server-side firebase
+import { getFirestore } from 'firebase-admin/firestore';
 import {collection, doc, getDoc, getDocs, query, writeBatch, where} from 'firebase/firestore';
 
 
@@ -82,7 +82,7 @@ const createCampaignFlow = ai.defineFlow(
     outputSchema: CampaignOutputSchema,
   },
   async (input: CreateCampaignInput) => {
-    const db = getFirestoreDb();
+    const db = getFirestore();
     // In a real app with auth, we'd get the UID from the auth context.
     // For now, we trust the input userId but proceed with caution.
     const userRef = doc(db, 'users', input.userId);

@@ -6,7 +6,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { getFirestoreDb } from '@/lib/firebase-server';
+import { getFirestore } from 'firebase-admin/firestore';
 import { doc, setDoc, updateDoc, writeBatch, collection, query, where, getDocs, getDoc, FieldValue, deleteField } from 'firebase/firestore';
 import type { Affiliation, User } from '@/lib/types';
 // DO NOT import sendNotification from notification-flow here to avoid circular dependencies.
@@ -36,7 +36,7 @@ export const requestAffiliationFlow = ai.defineFlow(
     outputSchema: z.void(),
   },
   async ({ providerId, companyId }) => {
-    const db = getFirestoreDb();
+    const db = getFirestore();
 
     // Check if a pending or approved affiliation already exists
     const q = query(
@@ -75,7 +75,7 @@ export const approveAffiliationFlow = ai.defineFlow(
     outputSchema: z.void(),
   },
   async ({ affiliationId, actorId }) => {
-    const db = getFirestoreDb();
+    const db = getFirestore();
     const batch = writeBatch(db);
     const affiliationRef = doc(db, 'affiliations', affiliationId);
     
@@ -117,7 +117,7 @@ export const rejectAffiliationFlow = ai.defineFlow(
       outputSchema: z.void(),
     },
     async ({ affiliationId }) => {
-        const db = getFirestoreDb();
+        const db = getFirestore();
         await updateDoc(doc(db, 'affiliations', affiliationId), {
             status: 'rejected',
             updatedAt: new Date().toISOString()
@@ -136,7 +136,7 @@ export const revokeAffiliationFlow = ai.defineFlow(
     outputSchema: z.void(),
   },
   async ({ affiliationId, actorId }) => {
-     const db = getFirestoreDb();
+     const db = getFirestore();
      const batch = writeBatch(db);
 
      const affiliationRef = doc(db, 'affiliations', affiliationId);

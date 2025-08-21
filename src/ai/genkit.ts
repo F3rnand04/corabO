@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview Central Genkit configuration.
  *
@@ -11,11 +12,13 @@
 
 import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
+import { firebase } from '@genkit-ai/firebase';
 
 // By defining the plugin here, we make it available to all flows
 // that import this `ai` object. The initialization is deferred.
 export const ai = genkit({
   plugins: [
+    firebase(),
     googleAI(),
   ],
   logLevel: 'debug',

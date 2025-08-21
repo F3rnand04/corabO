@@ -8,7 +8,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import QRCode from 'qrcode';
 import type { CashierBox, User, QrSession } from '@/lib/types';
-import { getFirestoreDb } from '@/lib/firebase-server';
+import { getFirestore } from 'firebase-admin/firestore';
 import { collection, doc, getDoc, getDocs, query, setDoc, where } from 'firebase/firestore';
 import { sendNotification } from './notification-flow';
 
@@ -56,7 +56,7 @@ export const requestCashierSessionFlow = ai.defineFlow(
     outputSchema: RequestCashierSessionOutputSchema,
   },
   async ({ businessCoraboId, cashierName, cashierBoxId, password }) => {
-    const db = getFirestoreDb();
+    const db = getFirestore();
     
     // 1. Find the business by its Corabo ID
     const businessQuery = query(collection(db, 'users'), where('coraboId', '==', businessCoraboId));

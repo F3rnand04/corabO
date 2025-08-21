@@ -35,7 +35,7 @@ interface CoraboContextValue {
   setSearchQuery: (query: string) => void;
   setCategoryFilter: (category: string | null) => void;
   clearSearchHistory: () => void;
-  addContact: (user: User) => void;
+  addContact: (user: User) => boolean;
   removeContact: (userId: string) => void;
   isContact: (userId: string) => boolean;
   getAgendaEvents: (transactions: Transaction[]) => { date: Date; type: 'payment' | 'task'; description: string, transactionId: string }[];
@@ -184,8 +184,6 @@ export const CoraboProvider = ({ children, firebaseUser, isAuthLoading }: Corabo
         userList.forEach(user => userCache.current.set(user.id, user));
     }));
     
-    // This listener fetches ALL publications now, which is not ideal for large scale
-    // but works for this stage of the prototype. The FeedClientComponent will then filter.
     unsubscribes.push(onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
         const pubs = snapshot.docs.map(doc => doc.data() as GalleryImage);
         setAllPublications(pubs);
@@ -194,7 +192,6 @@ export const CoraboProvider = ({ children, firebaseUser, isAuthLoading }: Corabo
     if (currentUser?.id) {
         const userId = currentUser.id;
         
-        // Update the current user from the main 'users' listener
         const updatedCurrentUser = users.find(u => u.id === userId);
         if (updatedCurrentUser) {
             setCurrentUser(updatedCurrentUser);
@@ -254,21 +251,28 @@ export const CoraboProvider = ({ children, firebaseUser, isAuthLoading }: Corabo
 
     const toggleGps = async () => {
       if (!currentUser) return;
-      await Actions.toggleGps(currentUser.id, !!currentUser.isGpsActive);
+      const newStatus = !currentUser.isGpsActive;
+      await Actions.updateUser(currentUser.id, { isGpsActive: newStatus });
       toast({
-        title: `GPS ${!currentUser.isGpsActive ? 'Activado' : 'Desactivado'}`,
-        description: `Tu ubicación ${!currentUser.isGpsActive ? 'ahora es visible' : 'ya no es visible'} para otros usuarios.`,
+        title: `GPS ${newStatus ? 'Activado' : 'Desactivado'}`,
+        description: `Tu ubicación ${newStatus ? 'ahora es visible' : 'ya no es visible'} para otros usuarios.`,
       });
     };
     
     const activeCartTx = useMemo(() => transactions.find(tx => tx.clientId === currentUser?.id && tx.status === 'Carrito Activo'), [transactions, currentUser?.id]);
     const cart: CartItem[] = useMemo(() => activeCartTx?.details.items || [], [activeCartTx]);
 
-    const addContact = (user: User) => {
+    const addContact = (user: User): boolean => {
+        let isNew = false;
         setContacts(prev => {
-            if (prev.some(c => c.id === user.id)) return prev;
+            if (prev.some(c => c.id === user.id)) {
+                isNew = false;
+                return prev;
+            }
+            isNew = true;
             return [...prev, user];
         });
+        return isNew;
     }
 
     const value: CoraboContextValue = {
