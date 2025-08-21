@@ -22,18 +22,13 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/privacy') ||
     pathname.startsWith('/community-guidelines');
 
-  // Permite el acceso a los archivos estáticos y de la API sin verificar la sesión
-  if (pathname.startsWith('/_next/') || pathname.startsWith('/static/') || pathname.includes('.')) {
-    return NextResponse.next();
-  }
-
   // Si el usuario no está autenticado y no está en una ruta pública, redirige a login
   if (!session && !isPublicPath) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
   // Si el usuario está autenticado y trata de acceder a login, redirige a la página principal
-  if (session && (pathname === '/login' || pathname === '/cashier-login')) {
+  if (session && pathname === '/login') {
     return NextResponse.redirect(new URL('/', request.url));
   }
 
