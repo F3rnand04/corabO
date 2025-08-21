@@ -1,8 +1,7 @@
 
 'use server';
 /**
- * @fileOverview A flow for managing SMS verification codes in the database.
- * The actual sending is delegated to a server action to isolate the Twilio SDK.
+ * @fileOverview A flow for managing SMS verification codes, including sending the SMS.
  */
 
 import { ai } from '@/ai/genkit';
@@ -11,6 +10,7 @@ import { getFirestoreDb } from '@/lib/firebase-server';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { addMinutes, isAfter } from 'date-fns';
 import type { User } from '@/lib/types';
+import { Twilio } from 'twilio';
 
 const SmsVerificationInputSchema = z.object({
   userId: z.string(),
@@ -18,9 +18,9 @@ const SmsVerificationInputSchema = z.object({
 });
 
 /**
- * Generates a verification code and stores it in Firestore. It no longer sends the SMS.
+ * Generates a verification code, stores it in Firestore, and sends it via SMS.
  */
-const sendSmsVerificationCodeFlow = ai.defineFlow(
+export const sendSmsVerificationCodeFlow = ai.defineFlow(
   {
     name: 'sendSmsVerificationCodeFlow',
     inputSchema: SmsVerificationInputSchema,
@@ -32,14 +32,33 @@ const sendSmsVerificationCodeFlow = ai.defineFlow(
 
     const userRef = doc(getFirestoreDb(), 'users', userId);
     await updateDoc(userRef, {
-      phone: phoneNumber, // Update phone number in case it changed
+      phone: phoneNumber,
       phoneVerificationCode: verificationCode,
       phoneVerificationCodeExpires: codeExpiry.toISOString(),
     });
 
-    // The actual sending is now handled by the action that calls this flow.
-    // We return the generated code so the action can send it.
-    return verificationCode;
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    const twilioNumber = process.env.TWILIO_PHONE_NUMBER;
+
+    if (!accountSid || !authToken || !twilioNumber) {
+        console.error('Twilio credentials are not set in .env.local');
+        throw new Error('SMS service is not configured.');
+    }
+    
+    const twilioClient = new Twilio(accountSid, authToken);
+    
+    try {
+        await twilioClient.messages.create({
+            body: `Tu código de verificación para Corabo es: ${verificationCode}`,
+            from: twilioNumber,
+            to: phoneNumber,
+        });
+    } catch (error) {
+        console.error("Error sending SMS via Twilio in flow:", error);
+        // Do not re-throw the error to the client, just log it.
+        // The client will handle the "pending" state.
+    }
   }
 );
 
@@ -50,7 +69,7 @@ const VerifySmsCodeInputSchema = z.object({
 });
 
 
-const verifySmsCodeFlow = ai.defineFlow(
+export const verifySmsCodeFlow = ai.defineFlow(
     {
         name: 'verifySmsCodeFlow',
         inputSchema: VerifySmsCodeInputSchema,
@@ -84,6 +103,3 @@ const verifySmsCodeFlow = ai.defineFlow(
         return { success: true, message: "Teléfono validado exitosamente." };
     }
 );
-
-
-export { sendSmsVerificationCodeFlow, verifySmsCodeFlow };

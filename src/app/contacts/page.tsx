@@ -14,6 +14,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { ContactSupportCard } from '@/components/ContactSupportCard';
+import * as Actions from '@/lib/actions'; // Import actions directly
+
 
 function ContactsHeader({ onSubscribeClick }: { onSubscribeClick: () => void }) {
   const router = useRouter();
@@ -45,19 +47,17 @@ function ContactsHeader({ onSubscribeClick }: { onSubscribeClick: () => void }) 
 
 
 export default function ContactsPage() {
-  const { currentUser, contacts, removeContact, validateEmail, sendPhoneVerification, updateUser, sendMessage } = useCorabo();
+  const { currentUser, contacts, removeContact, sendMessage } = useCorabo();
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
   if (!currentUser) {
-    // This is important to prevent rendering with a null user.
-    // AppLayout should handle redirection, but this is a safeguard.
     return null; 
   }
 
   const handleDirectMessage = (contactId: string) => {
-    const conversationId = sendMessage(contactId, '', true);
+    const conversationId = sendMessage({recipientId: contactId, text: ""});
     router.push(`/messages/${conversationId}`);
   };
 
@@ -93,16 +93,14 @@ export default function ContactsPage() {
                     label="Correo:"
                     value={currentUser.email}
                     initialStatus={currentUser.emailValidated ? 'validated' : 'idle'}
-                    onValidate={() => validateEmail(currentUser.id, currentUser.email)}
-                    onValueChange={(value) => updateUser(currentUser.id, { email: value })}
+                    onValueChange={(value) => Actions.updateUser(currentUser.id, { email: value })}
                     type="email"
                 />
                 <ValidationItem
                     label="Teléfono:"
                     value={currentUser.phone}
                     initialStatus={currentUser.phoneValidated ? 'validated' : 'idle'}
-                    onValidate={() => sendPhoneVerification(currentUser.id, currentUser.phone)}
-                    onValueChange={(value) => updateUser(currentUser.id, { phone: value })}
+                    onValueChange={(value) => Actions.updateUser(currentUser.id, { phone: value })}
                     type="phone"
                 />
             </div>

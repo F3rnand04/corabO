@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState } from 'react';
@@ -7,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { CheckCircle, Loader2 } from 'lucide-react';
-import { useCorabo } from '@/contexts/CoraboContext';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
+import { sendPhoneVerification, verifyPhoneCode } from '@/lib/actions'; // Import directly from actions
+import { useAuth } from './auth/AuthProvider';
 
 type ValidationStatus = 'idle' | 'pending' | 'validated';
 
@@ -30,7 +30,7 @@ export function ValidationItem({
     onValueChange,
     type,
 }: ValidationItemProps) {
-    const { currentUser, sendPhoneVerification, verifyPhoneCode } = useCorabo();
+    const { firebaseUser } = useAuth(); // Use firebaseUser for ID
     const [status, setStatus] = useState<ValidationStatus>(initialStatus);
     const [isLoading, setIsLoading] = useState(false);
     const [inputCode, setInputCode] = useState('');
@@ -42,11 +42,12 @@ export function ValidationItem({
             toast({ variant: 'destructive', title: 'Campo vacío', description: 'Por favor, introduce un valor para validar.' });
             return;
         }
+        if (!firebaseUser) return;
 
         setIsLoading(true);
         try {
-            if (type === 'phone' && currentUser) {
-                await sendPhoneVerification(currentUser.id, currentValue);
+            if (type === 'phone') {
+                await sendPhoneVerification(firebaseUser.uid, currentValue);
                 setStatus('pending');
             } else if (onValidate) {
                 await onValidate(currentValue); // For email
@@ -58,12 +59,15 @@ export function ValidationItem({
     };
     
     const handleVerifyCode = async () => {
+        if (!firebaseUser) return;
         setIsLoading(true);
         try {
-            if (type === 'phone' && currentUser) {
-                const success = await verifyPhoneCode(currentUser.id, inputCode);
+            if (type === 'phone') {
+                const success = await verifyPhoneCode(firebaseUser.uid, inputCode);
                 if(success) {
                     setStatus('validated');
+                } else {
+                     toast({ variant: 'destructive', title: 'Código Incorrecto', description: 'El código de verificación no es válido.' });
                 }
             } else if(onValidate){
                 const success = await onValidate(inputCode);

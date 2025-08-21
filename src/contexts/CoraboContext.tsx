@@ -1,12 +1,11 @@
 
-
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest, PublicationOwner, CreatePublicationInput, CreateProductInput, QrSession, TempRecipientInfo, CashierBox } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast"
 import { getFirestoreDb } from '@/lib/firebase';
-import { doc, getDoc, collection, onSnapshot, query, where, orderBy, Unsubscribe } from 'firebase/firestore';
+import { doc, getDoc, collection, onSnapshot, query, where, orderBy, Unsubscribe, updateDoc, writeBatch } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import * as Actions from '@/lib/actions';
 
@@ -40,11 +39,58 @@ interface CoraboContextValue {
   getAgendaEvents: (transactions: Transaction[]) => { date: Date; type: 'payment' | 'task'; description: string, transactionId: string }[];
   setDeliveryAddress: (address: string) => void;
   setDeliveryAddressToCurrent: () => void;
-  getUserMetrics: (userId: string, transactions: Transaction[]) => UserMetrics;
+  getUserMetrics: (userId: string) => UserMetrics;
   fetchUser: (userId: string) => Promise<User | null>;
   getDistanceToProvider: (provider: User) => string | null;
   setTempRecipientInfo: (info: TempRecipientInfo | null) => void;
   setActiveCartForCheckout: (cartItems: CartItem[] | null) => void;
+  
+  // Refactored Actions (moved out, just keeping for reference)
+  // These are now called from @/lib/actions
+  sendMessage: (options: Omit<SendMessageInput, 'senderId'> & { conversationId?: string }) => string;
+  createPublication: (data: CreatePublicationInput) => Promise<void>;
+  createProduct: (data: CreateProductInput) => Promise<string>;
+  updateUserProfileImage: (userId: string, imageUrl: string) => Promise<void>;
+  toggleGps: (userId: string) => Promise<void>;
+  addCashierBox: (name: string, password: string) => Promise<void>;
+  removeCashierBox: (boxId: string) => Promise<void>;
+  updateCashierBox: (boxId: string, updates: Partial<Pick<CashierBox, "name" | "passwordHash">>) => Promise<void>;
+  regenerateCashierBoxQr: (boxId: string) => Promise<void>;
+  startQrSession: (providerId: string, cashierBoxId?: string) => Promise<string>;
+  cancelQrSession: (sessionId: string) => Promise<void>;
+  setQrSessionAmount: (sessionId: string, amount: number) => Promise<void>;
+  handleClientCopyAndPay: (sessionId: string) => Promise<void>;
+  confirmMobilePayment: (sessionId: string) => Promise<void>;
+  subscribeUser: (title: string, amount: number) => Promise<void>;
+  updateFullProfile: (data: ProfileSetupData) => Promise<void>;
+  deactivateTransactions: () => Promise<void>;
+  activateTransactions: (paymentDetails: ProfileSetupData['paymentDetails']) => Promise<void>;
+  approveAffiliation: (affiliationId: string) => Promise<void>;
+  rejectAffiliation: (affiliationId: string) => Promise<void>;
+  revokeAffiliation: (affiliationId: string) => Promise<void>;
+  verifyCampaignPayment: (transactionId: string, campaignId: string) => Promise<void>;
+  deleteUser: (userId: string) => Promise<void>;
+  toggleUserPause: (userId: string, currentIsPaused: boolean) => Promise<void>;
+  verifyUserId: (userId: string) => Promise<void>;
+  rejectUserId: (userId: string) => Promise<void>;
+  autoVerifyIdWithAI: (user: User) => Promise<VerificationOutput>;
+  requestQuoteFromGroup: (title: string, items: string[], group: string) => boolean;
+  createCampaign: (data: Omit<CreateCampaignInput, 'userId'>) => Promise<void>;
+  createAppointmentRequest: (data: Omit<AppointmentRequest, 'clientId'>) => Promise<void>;
+  sendProposalMessage: (conversationId: string, proposal: AgreementProposal) => Promise<void>;
+  acceptProposal: (conversationId: string, messageId: string) => Promise<void>;
+  sendQuote: (transactionId: string, quote: { breakdown: string; total: number; }) => Promise<void>;
+  acceptQuote: (transactionId: string) => Promise<void>;
+  startDispute: (transactionId: string) => Promise<void>;
+  completeWork: (transactionId: string) => Promise<void>;
+  confirmWorkReceived: (transactionId: string, rating: number, comment?: string) => Promise<void>;
+  payCommitment: (transactionId: string) => Promise<void>;
+  confirmPaymentReceived: (transactionId: string, fromThirdParty: boolean) => Promise<void>;
+  acceptAppointment: (transactionId: string) => Promise<void>;
+  cancelSystemTransaction: (transactionId: string) => Promise<void>;
+  retryFindDelivery: (transactionId: string) => Promise<void>;
+  assignOwnDelivery: (transactionId: string) => Promise<void>;
+  resolveDeliveryAsPickup: (transactionId: string) => Promise<void>;
 }
 
 interface GeolocationCoords {
@@ -119,7 +165,6 @@ export const CoraboProvider = ({ children, currentUser }: { children: ReactNode,
 
   const fetchUser = useCallback(async (userId: string): Promise<User | null> => {
         if (userCache.current.has(userId)) return userCache.current.get(userId)!;
-        // In a real app, you might want to fetch from the server if not in the local 'users' state either
         const user = users.find(u => u.id === userId);
         if (user) {
             userCache.current.set(userId, user);
@@ -134,7 +179,6 @@ export const CoraboProvider = ({ children, currentUser }: { children: ReactNode,
     
     let unsubscribes: Unsubscribe[] = [];
 
-    // Public data subscriptions (do not depend on currentUser)
     unsubscribes.push(onSnapshot(collection(db, 'users'), (snapshot) => {
         const userList = snapshot.docs.map(doc => doc.data() as User)
         setUsers(userList);
@@ -144,7 +188,6 @@ export const CoraboProvider = ({ children, currentUser }: { children: ReactNode,
         setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage));
     }));
 
-    // User-specific data subscriptions
     if (currentUser?.id) {
         const userId = currentUser.id;
         const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userId));
@@ -155,14 +198,13 @@ export const CoraboProvider = ({ children, currentUser }: { children: ReactNode,
         unsubscribes.push(onSnapshot(conversationsQuery, (snapshot) => setConversations(snapshot.docs.map(doc => doc.data() as Conversation))));
         unsubscribes.push(onSnapshot(qrSessionQuery, (snapshot) => setQrSession(snapshot.docs.map(d => d.data() as QrSession).find(s => s.status !== 'completed' && s.status !== 'cancelled') || null)));
     } else {
-        // Clear user-specific data when logged out
         setTransactions([]);
         setConversations([]);
         setQrSession(null);
     }
 
     return () => unsubscribes.forEach(unsub => unsub());
-  }, [currentUser?.id]); // Rerun only when the user ID changes
+  }, [currentUser?.id]);
   
   const getDistanceToProvider = useCallback((provider: User) => {
       if (!currentUserLocation || !provider.profileSetupData?.location) return null;
@@ -176,12 +218,12 @@ export const CoraboProvider = ({ children, currentUser }: { children: ReactNode,
     if (currentUserLocation) setDeliveryAddress(`${currentUserLocation.latitude},${currentUserLocation.longitude}`);
   }, [currentUserLocation, setDeliveryAddress]);
 
-  const getUserMetrics = useCallback((userId: string, userTransactions: Transaction[]): UserMetrics => {
-        const userTxs = userTransactions.filter(tx => tx.providerId === userId && (tx.status === 'Pagado' || tx.status === 'Resuelto'));
+  const getUserMetrics = useCallback((userId: string): UserMetrics => {
+        const userTxs = transactions.filter(tx => tx.providerId === userId && (tx.status === 'Pagado' || tx.status === 'Resuelto'));
         const ratings = userTxs.map(tx => tx.details.clientRating || 0).filter(r => r > 0);
         const reputation = ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 5.0;
         const totalCompleted = userTxs.length;
-        const disputed = userTransactions.filter(tx => tx.providerId === userId && tx.status === 'En Disputa').length;
+        const disputed = transactions.filter(tx => tx.providerId === userId && tx.status === 'En Disputa').length;
         const effectiveness = totalCompleted + disputed > 0 ? (totalCompleted / (totalCompleted + disputed)) * 100 : 100;
         let responseTime = 'Nuevo';
         if (totalCompleted > 5) responseTime = 'Rápido';
@@ -195,13 +237,41 @@ export const CoraboProvider = ({ children, currentUser }: { children: ReactNode,
             else paymentSpeed = `+${Math.floor(avgMinutes / 60)} hr`;
         }
         return { reputation, effectiveness, responseTime, paymentSpeed };
-    }, []);
+    }, [transactions]);
 
     const getAgendaEvents = useCallback((agendaTransactions: Transaction[]) => {
       return agendaTransactions.filter(tx => tx.status === 'Finalizado - Pendiente de Pago').map(tx => ({
         date: new Date(tx.date), type: 'payment', description: `Pago a ${tx.providerId}`, transactionId: tx.id,
       }));
     }, []);
+
+    const sendMessageWrapper = (options: Omit<SendMessageInput, 'senderId'> & { conversationId?: string }): string => {
+        if (!currentUser) throw new Error("User not logged in");
+        const finalConversationId = options.conversationId || [currentUser.id, options.recipientId].sort().join('-');
+        Actions.sendMessage({ ...options, senderId: currentUser.id, conversationId: finalConversationId });
+        return finalConversationId;
+    }
+    
+    const requestQuoteFromGroupWrapper = (title: string, items: string[], group: string): boolean => {
+      if (!currentUser) return false;
+      const requestSignature = items.sort().join('|') + `|${group}`;
+      const today = new Date().toISOString().split('T')[0];
+      const todaysQuotes = dailyQuotes.filter(q => q.requestSignature.startsWith(today));
+      const existingQuote = todaysQuotes.find(q => q.requestSignature.endsWith(requestSignature));
+
+      if (existingQuote && existingQuote.count >= 3 && !currentUser.isSubscribed) {
+          return false;
+      }
+      const newDailyQuotes = [...todaysQuotes];
+      if (existingQuote) {
+          existingQuote.count++;
+      } else {
+          newDailyQuotes.push({ requestSignature: `${today}|${requestSignature}`, count: 1 });
+      }
+      setDailyQuotes(newDailyQuotes);
+      Actions.requestQuoteFromGroup({ clientId: currentUser.id, title, items, group });
+      return true;
+  };
 
     const value: CoraboContextValue = {
         currentUser,
@@ -228,6 +298,75 @@ export const CoraboProvider = ({ children, currentUser }: { children: ReactNode,
         getDistanceToProvider,
         setTempRecipientInfo,
         setActiveCartForCheckout,
+        // Bind actions to the current user
+        sendMessage: sendMessageWrapper,
+        createPublication: (data) => { if (currentUser) Actions.createPublication(data) },
+        createProduct: (data) => { if (currentUser) return Actions.createProduct(data) },
+        updateUserProfileImage: (userId, imageUrl) => Actions.updateUserProfileImage(userId, imageUrl),
+        toggleGps: (userId) => Actions.toggleGps(userId, isGpsActive),
+        addCashierBox: (name, password) => { if (currentUser) Actions.addCashierBox(currentUser.id, name, password) },
+        removeCashierBox: (boxId) => { if (currentUser) Actions.removeCashierBox(currentUser.id, boxId) },
+        updateCashierBox: (boxId, updates) => { if (currentUser) Actions.updateCashierBox(currentUser.id, boxId, updates) },
+        regenerateCashierBoxQr: (boxId) => { if (currentUser) Actions.regenerateCashierBoxQr(currentUser.id, boxId) },
+        startQrSession: (providerId, cashierBoxId) => { if (currentUser) return Actions.startQrSession(currentUser.id, providerId, cashierBoxId) },
+        cancelQrSession: Actions.cancelQrSession,
+        setQrSessionAmount: (sessionId, amount) => {
+            if(!currentUser) return;
+            const credicoraDetails = currentUser.credicoraDetails || credicoraLevels['1'];
+            const financingPercentage = 1 - credicoraDetails.initialPaymentPercentage;
+            const financedAmount = Math.min(amount * financingPercentage, currentUser.credicoraLimit || 0);
+            const initialPayment = amount - financedAmount;
+            Actions.setQrSessionAmount(sessionId, amount, initialPayment, financedAmount, credicoraDetails.installments)
+        },
+        handleClientCopyAndPay: Actions.handleClientCopyAndPay,
+        confirmMobilePayment: async (sessionId: string) => {
+          const session = qrSession?.id === sessionId ? qrSession : null;
+          if(!session) return;
+          const { transactionId } = await Actions.processDirectPayment({ sessionId });
+          // Update the session in Firestore to mark it as completed
+          const db = getFirestoreDb();
+          await updateDoc(doc(db, "qr_sessions", sessionId), { status: 'completed' });
+        },
+        subscribeUser: (title, amount) => { if (currentUser) Actions.registerSystemPayment(currentUser.id, title, amount, true); },
+        updateFullProfile: (data) => { if (currentUser) Actions.updateFullProfile(currentUser.id, data, currentUser.type); },
+        deactivateTransactions: async () => {
+            if (currentUser) {
+                await Actions.updateUser(currentUser.id, { isTransactionsActive: false, 'profileSetupData.paymentDetails': deleteField() as any });
+                toast({ title: 'Registro Desactivado', description: 'Has desactivado tu módulo de transacciones.' });
+            }
+        },
+        activateTransactions: async (paymentDetails) => {
+             if (currentUser) {
+                await Actions.updateUser(currentUser.id, { isTransactionsActive: true, 'profileSetupData.paymentDetails': paymentDetails });
+                toast({ title: '¡Registro Activado!', description: 'Tu módulo de transacciones está activo.' });
+            }
+        },
+        approveAffiliation: (affiliationId) => { if(currentUser) return Actions.approveAffiliation(affiliationId, currentUser.id) },
+        rejectAffiliation: (affiliationId) => { if(currentUser) return Actions.rejectAffiliation(affiliationId, currentUser.id) },
+        revokeAffiliation: (affiliationId) => { if(currentUser) return Actions.revokeAffiliation(affiliationId, currentUser.id) },
+        verifyCampaignPayment: Actions.verifyCampaignPayment,
+        deleteUser: Actions.deleteUser,
+        toggleUserPause: Actions.toggleUserPause,
+        verifyUserId: Actions.verifyUserId,
+        rejectUserId: Actions.rejectUserId,
+        autoVerifyIdWithAI: Actions.autoVerifyIdWithAI,
+        requestQuoteFromGroup: requestQuoteFromGroupWrapper,
+        createCampaign: (data) => { if (currentUser) return Actions.createCampaign(currentUser.id, data) },
+        createAppointmentRequest: (data) => { if (currentUser) return Actions.createAppointmentRequest({ ...data, clientId: currentUser.id }) },
+        sendProposalMessage: (conversationId, proposal) => { if (currentUser) return Actions.sendMessage({ conversationId, recipientId: '', senderId: currentUser.id, proposal }) },
+        acceptProposal: (conversationId, messageId) => { if (currentUser) return Actions.acceptProposal(conversationId, messageId, currentUser.id) },
+        sendQuote: Actions.sendQuote,
+        acceptQuote: (transactionId) => { if (currentUser) return Actions.acceptQuote(transactionId, currentUser.id) },
+        startDispute: Actions.startDispute,
+        completeWork: (transactionId) => { if(currentUser) return Actions.completeWork({ transactionId, userId: currentUser.id }) },
+        confirmWorkReceived: (transactionId, rating, comment) => { if(currentUser) return Actions.confirmWorkReceived({ transactionId, userId: currentUser.id, rating, comment }) },
+        payCommitment: (transactionId) => { if(currentUser) return Actions.payCommitment(transactionId, currentUser.id, {}) },
+        confirmPaymentReceived: (transactionId, fromThirdParty) => { if(currentUser) return Actions.confirmPaymentReceived({ transactionId, userId: currentUser.id, fromThirdParty }) },
+        acceptAppointment: (transactionId) => { if(currentUser) return Actions.acceptAppointment({ transactionId, userId: currentUser.id }) },
+        cancelSystemTransaction: Actions.cancelSystemTransaction,
+        retryFindDelivery: Actions.retryFindDelivery,
+        assignOwnDelivery: (transactionId) => { if(currentUser) return Actions.assignOwnDelivery(transactionId, currentUser.id)},
+        resolveDeliveryAsPickup: Actions.resolveDeliveryAsPickup,
     };
   
     return (
