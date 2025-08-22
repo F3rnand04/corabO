@@ -16,14 +16,6 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  useEffect(() => {
-    // Si, después de todas las cargas, hay un usuario, AppLayout se encargará de la redirección.
-    // Esta es una doble seguridad para mover al usuario fuera del login si ya tiene sesión.
-    if (!isLoadingUser && currentUser) {
-      router.replace('/');
-    }
-  }, [currentUser, isLoadingUser, router]);
-
   const handleSignIn = async () => {
     try {
       await signInWithGoogle();
@@ -44,8 +36,18 @@ export default function LoginPage() {
   // Muestra un loader general si se está procesando la autenticación
   // o si el usuario ya está logueado y estamos esperando la redirección.
   // Esto previene que el usuario vea la página de login por un instante si ya tiene sesión.
-  if (isLoadingUser || isLoadingAuth || currentUser) {
+  if (isLoadingUser || isLoadingAuth) {
     return (
+      <div className="flex items-center justify-center min-h-screen bg-muted/40">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Si después de cargar todo, ya hay un usuario, AppLayout se encargará de la redirección,
+  // pero mientras tanto, mostramos el loader para evitar un flash del contenido de login.
+  if (currentUser) {
+     return (
       <div className="flex items-center justify-center min-h-screen bg-muted/40">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>

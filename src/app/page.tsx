@@ -9,11 +9,12 @@ import { Loader2 } from "lucide-react";
 // Renderiza un loader mientras el estado del usuario se resuelve, y luego
 // delega el renderizado del feed al FeedClientComponent.
 export default function HomePage() {
-  const { isLoadingUser } = useCorabo();
+  const { isLoadingUser, currentUser } = useCorabo();
 
   // Muestra un loader mientras se carga la información del usuario en el contexto.
   // Esto es crucial para evitar mostrar contenido incorrecto brevemente.
-  if (isLoadingUser) {
+  // También se asegura de que no se intente renderizar el feed si el usuario es nulo.
+  if (isLoadingUser || !currentUser) {
       return (
            <div className="flex items-center justify-center pt-20">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />

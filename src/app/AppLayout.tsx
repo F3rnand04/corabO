@@ -20,13 +20,14 @@ const PUBLIC_PAGES = [
 ];
 
 // Este componente es el cerebro que controla las redirecciones y la visibilidad del layout.
+// Su lógica ahora implementa el principio de "Activación Progresiva".
 function LayoutController({ children }: { children: React.ReactNode }) {
     const { currentUser, isLoadingUser } = useCorabo();
     const router = useRouter();
     const pathname = usePathname();
     
     useEffect(() => {
-        // No tomar ninguna decisión de redirección hasta que el estado del usuario esté completamente resuelto.
+        // No tomar ninguna decisión de redirección hasta que el estado del usuario esté 100% resuelto.
         if (isLoadingUser) {
             return;
         }
@@ -35,28 +36,33 @@ function LayoutController({ children }: { children: React.ReactNode }) {
         const isSetupPage = pathname.startsWith('/initial-setup');
         
         if (currentUser) {
-            // -- Lógica para usuario AUTENTICADO --
+            // **REGLA #1: El "Muro de Configuración"**
+            // Si el setup inicial NO está completo, se le fuerza a ir a la página de configuración. No hay escape.
             const isSetupComplete = currentUser.isInitialSetupComplete ?? false;
-
             if (!isSetupComplete && !isSetupPage) {
-                // Si el setup no está completo, se le fuerza a ir a la página de configuración.
                 router.replace('/initial-setup');
-            } else if (isSetupComplete && (pathname === '/login' || isSetupPage)) {
-                 // Si el setup está completo y el usuario está en login o setup, se le envía al inicio.
+                return; // Detiene la ejecución para evitar otras reglas.
+            }
+            
+            // **REGLA #2: Escape del Usuario Configurado**
+            // Si el setup está completo y el usuario intenta acceder a login o a la página de setup, se le envía al inicio.
+            if (isSetupComplete && (pathname === '/login' || isSetupPage)) {
                 router.replace('/');
             }
+
         } else {
-            // -- Lógica para usuario NO AUTENTICADO --
+            // **REGLA #3: El Usuario Anónimo**
+            // Si intenta acceder a una ruta protegida sin ser usuario, se le envía al login.
             if (!isPublicPage) {
-                // Si intenta acceder a una ruta protegida, se le envía al login.
                 router.replace('/login');
             }
         }
     }, [currentUser, isLoadingUser, pathname, router]);
     
-    // **Blindaje contra errores de hidratación y redirección**:
-    // Mientras el estado del usuario se esté verificando, se muestra un loader a pantalla completa.
-    // Esto previene cualquier renderizado parcial y asegura que el router no actúe con estado obsoleto.
+    // **Mecanismo de Sincronización CRÍTICO:**
+    // Mientras el estado de autenticación y de usuario se esté verificando, se muestra un loader a pantalla completa.
+    // Esto previene cualquier renderizado prematuro y asegura que el servidor y el cliente estén sincronizados
+    // ANTES de decidir qué página mostrar, eliminando así el error de hidratación.
     if (isLoadingUser) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-muted/40">
@@ -66,7 +72,8 @@ function LayoutController({ children }: { children: React.ReactNode }) {
     }
     
     // Determina si se debe mostrar el layout principal de la app (Header/Footer).
-    const showAppLayout = currentUser && !PUBLIC_PAGES.some(p => pathname.startsWith(p));
+    // Esto solo ocurre si hay un usuario y la página NO es pública.
+    const showAppLayout = currentUser && !PUBLIC_PAGES.some(p => pathname.startsWith(p)) && !pathname.startsWith('/initial-setup');
 
     return (
         <div className="flex flex-col min-h-screen">
