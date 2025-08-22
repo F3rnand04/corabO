@@ -10,7 +10,7 @@ import { haversineDistance } from '@/lib/utils';
 import * as Actions from '@/lib/actions';
 import { type User as FirebaseUser } from 'firebase/auth';
 import { getOrCreateUser } from '@/ai/flows/auth-flow';
-import { useAuth } from '@/components/auth/AuthProvider'; // Importar useAuth
+import { useAuth } from '@/components/auth/AuthProvider';
 
 interface CoraboContextValue {
   // State
@@ -70,11 +70,11 @@ interface CoraboProviderProps {
 }
 
 export const CoraboProvider = ({ children }: CoraboProviderProps) => {
-  const { firebaseUser, isLoadingAuth, logout: authLogout } = useAuth(); // Usar el hook de Auth
+  const { firebaseUser, isLoadingAuth, logout: authLogout } = useAuth();
   const { toast } = useToast();
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const [isLoadingUser, setIsLoadingUser] = useState(isLoadingAuth);
   const [users, setUsers] = useState<User[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -92,7 +92,6 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   
   const userCache = useRef<Map<string, User>>(new Map());
 
-  // Este efecto ahora depende del estado de `firebaseUser` y `isLoadingAuth`
   useEffect(() => {
     if (isLoadingAuth) {
       setIsLoadingUser(true);
@@ -182,7 +181,6 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     
     let unsubscribes: Unsubscribe[] = [];
 
-    // General listeners
     unsubscribes.push(onSnapshot(collection(db, 'users'), (snapshot) => {
         const userList = snapshot.docs.map(doc => doc.data() as User)
         setUsers(userList);
@@ -197,14 +195,6 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     if (currentUser?.id) {
         const userId = currentUser.id;
         
-        // No necesitamos escuchar al usuario actual de nuevo, ya lo obtenemos en el primer efecto.
-        // const userRef = doc(db, 'users', userId);
-        // unsubscribes.push(onSnapshot(userRef, (doc) => {
-        //     if (doc.exists()) {
-        //         setCurrentUser(doc.data() as User);
-        //     }
-        // }));
-
         const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userId));
         const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userId), orderBy("lastUpdated", "desc"));
 
@@ -298,7 +288,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         setTempRecipientInfo,
         setActiveCartForCheckout,
         setCurrentUser,
-        logout: authLogout, // Usar el logout del AuthProvider
+        logout: authLogout,
     };
   
     return (

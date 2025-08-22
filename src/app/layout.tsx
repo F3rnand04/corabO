@@ -6,6 +6,9 @@ import { Inter } from 'next/font/google';
 import { AuthProvider } from '@/components/auth/AuthProvider';
 import { AppLayout } from '@/app/AppLayout';
 import { CoraboProvider } from '@/contexts/CoraboContext';
+import { getFirebaseAdmin } from '@/lib/firebase-server';
+import { cookies } from 'next/headers';
+import type { User as FirebaseUser } from 'firebase/auth';
 
 
 export const metadata: Metadata = {
@@ -19,11 +22,35 @@ const inter = Inter({
   variable: '--font-inter',
 });
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  let serverFirebaseUser: FirebaseUser | null = null;
+  
+  try {
+    const sessionCookie = cookies().get('session')?.value;
+    if (sessionCookie) {
+      const firebaseAdmin = getFirebaseAdmin();
+      const decodedClaims = await firebaseAdmin.auth().verifySessionCookie(sessionCookie, true);
+      const userRecord = await firebaseAdmin.auth().getUser(decodedClaims.uid);
+      
+      // Adapt the UserRecord to the FirebaseUser type expected by the client
+      serverFirebaseUser = {
+          uid: userRecord.uid,
+          email: userRecord.email || null,
+          displayName: userRecord.displayName || null,
+          photoURL: userRecord.photoURL || null,
+          emailVerified: userRecord.emailVerified,
+          // Add other properties if needed, ensuring they match the client's FirebaseUser type
+      } as FirebaseUser;
+    }
+  } catch (error) {
+    console.error("Server-side session verification failed:", error);
+    serverFirebaseUser = null;
+  }
+
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
@@ -34,7 +61,7 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} antialiased bg-background`}>
         <Providers attribute="class" defaultTheme="system" enableSystem>
-            <AuthProvider>
+            <AuthProvider serverFirebaseUser={serverFirebaseUser}>
               <CoraboProvider>
                 <AppLayout>
                     {children}

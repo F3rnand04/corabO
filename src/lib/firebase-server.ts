@@ -3,35 +3,52 @@
 
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
+import { getAuth, type Auth } from 'firebase-admin/auth';
 import { firebaseConfig } from './firebase-config';
 
 let app: App;
+let auth: Auth;
 let db: Firestore;
 
-const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
-  ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-  : undefined;
+// This function ensures a single instance of the Firebase Admin app is initialized and reused.
+function getFirebaseAdminApp() {
+    if (getApps().length) {
+        return getApps()[0]!;
+    }
+    
+    const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
+        ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+        : undefined;
 
-function getFirebaseAdminApp(): App {
-  if (getApps().length) {
-    return getApps()[0]!;
-  }
-  
-  if (!serviceAccount) {
-    throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable not set. Server-side Firebase cannot be initialized.');
-  }
+    if (!serviceAccount) {
+        throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable not set. Server-side Firebase cannot be initialized.');
+    }
 
-  app = initializeApp({
-    credential: cert(serviceAccount),
-    storageBucket: firebaseConfig.storageBucket,
-  });
-  return app;
+    app = initializeApp({
+        credential: cert(serviceAccount),
+        storageBucket: firebaseConfig.storageBucket,
+    });
+    return app;
 }
 
+// This function provides the initialized Firebase Admin SDK instance.
+export function getFirebaseAdmin() {
+    if (!app) {
+        getFirebaseAdminApp();
+    }
+    if (!auth) {
+        auth = getAuth(app);
+    }
+    if (!db) {
+        db = getFirestore(app);
+    }
+    return { auth: () => auth, firestore: () => db };
+}
+
+// Separate getter for Firestore DB for flows if needed.
 export function getFirestoreDb(): Firestore {
   if (!db) {
-    const adminApp = getFirebaseAdminApp();
-    db = getFirestore(adminApp);
+    getFirebaseAdmin();
   }
   return db;
 }

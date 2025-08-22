@@ -5,8 +5,6 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User as FirebaseUser } from 'firebase/auth';
 import { getAuthInstance } from '@/lib/firebase';
 
-// Este contexto ahora solo se preocupa por el estado de Firebase Auth.
-// No sabe nada sobre el perfil de usuario de Corabo.
 interface AuthContextType {
   firebaseUser: FirebaseUser | null;
   isLoadingAuth: boolean;
@@ -18,35 +16,61 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 type AuthProviderProps = {
     children: ReactNode;
+    serverFirebaseUser: FirebaseUser | null;
 };
 
-export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true); // Comienza en true
+export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps) => {
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(serverFirebaseUser);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(!serverFirebaseUser);
 
   useEffect(() => {
     const auth = getAuthInstance();
-    // onAuthStateChanged devuelve el "unsubscribe"
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setFirebaseUser(user);
-      setIsLoadingAuth(false); // La carga termina cuando se recibe el primer estado
+      // Only update if the user state has genuinely changed from the initial server state
+      if (user?.uid !== firebaseUser?.uid) {
+         setFirebaseUser(user);
+      }
+      setIsLoadingAuth(false); 
     });
 
-    // Limpia el listener al desmontar el componente
     return () => unsubscribe();
-  }, []);
+  }, [firebaseUser]);
 
   const signInWithGoogle = async () => {
-    const auth = getAuthInstance();
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
-    // El listener onAuthStateChanged se encargará de actualizar el estado
+    setIsLoadingAuth(true);
+    try {
+        const auth = getAuthInstance();
+        const provider = new GoogleAuthProvider();
+        const result = await signInWithPopup(auth, provider);
+        
+        // After successful sign-in, get the ID token and set it as a session cookie
+        const idToken = await result.user.getIdToken();
+        await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken }),
+        });
+        
+    } catch (error) {
+        console.error("Error signing in with Google:", error);
+        setIsLoadingAuth(false);
+    }
   };
 
   const logout = async () => {
-    const auth = getAuthInstance();
-    await signOut(auth);
-    setFirebaseUser(null);
+    setIsLoadingAuth(true);
+    try {
+        const auth = getAuthInstance();
+        await signOut(auth);
+
+        // Call the API endpoint to clear the session cookie
+        await fetch('/api/auth/session', { method: 'DELETE' });
+
+    } catch (error) {
+         console.error("Error signing out:", error);
+    } finally {
+        setIsLoadingAuth(false);
+    }
   };
 
   const value = {
