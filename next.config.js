@@ -7,6 +7,7 @@ const nextConfig = {
     '@genkit-ai/firebase',
     '@genkit-ai/googleai',
     '@google-cloud/firestore',
+    'next-themes',
   ],
   images: {
     remotePatterns: [
