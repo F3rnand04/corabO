@@ -30,13 +30,15 @@ import * as CashierFlows from '@/ai/flows/cashier-flow';
 import * as AffiliationFlows from '@/ai/flows/affiliation-flow';
 import * as FeedFlows from '@/ai/flows/feed-flow';
 
-import { getFirestoreDb } from './firebase-server';
+import { getFirestoreDb } from './firebase'; // Use client-side firebase for document references
 
 
 // --- User and Profile Actions ---
 export const getOrCreateUser = (user: FirebaseUserInput) => AuthFlows.getOrCreateUser(user);
 
 export const getPublicProfile = ProfileFlows.getPublicProfileFlow;
+
+export const completeInitialSetup = ProfileFlows.completeInitialSetupFlow;
 
 export async function updateUser(userId: string, updates: Partial<User>) {
     await ProfileFlows.updateUserFlow({ userId, updates });
@@ -64,8 +66,14 @@ export async function toggleUserPause(userId: string, currentIsPaused: boolean) 
     await updateUser(userId, { isPaused: !currentIsPaused });
 }
 
-export async function toggleGps(userId: string, currentStatus: boolean) {
-    await updateUser(userId, { isGpsActive: !currentStatus });
+export async function toggleGps(userId: string) {
+    const db = getFirestoreDb();
+    const userRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userRef);
+    if (userSnap.exists()) {
+        const currentStatus = userSnap.data().isGpsActive;
+        await updateDoc(userRef, { isGpsActive: !currentStatus });
+    }
 }
 
 export async function deactivateTransactions(userId: string) {
@@ -241,46 +249,23 @@ export async function updateCart(userId: string, productId: string, quantity: nu
 }
 
 export async function checkout(userId: string, providerId: string, deliveryMethod: string, useCredicora: boolean, recipientInfo?: { name: string, phone: string }, deliveryAddress?: string) {
-    const db = getFirestoreDb();
-    const q = query(collection(db, 'transactions'), where('clientId', '==', userId), where('providerId', '==', providerId), where('status', '==', 'Carrito Activo'));
-    const snapshot = await getDocs(q);
-    const cartTxDoc = snapshot.docs[0];
-    
-    if (!cartTxDoc) {
-        throw new Error("Cart not found for checkout.");
-    }
-    
-    const cartTx = cartTxDoc.data() as Transaction;
-    
-    // 2. Define delivery details
-    const deliveryDetails = {
-        delivery: deliveryMethod !== 'pickup',
-        method: deliveryMethod,
-        address: deliveryAddress,
-        recipientInfo: recipientInfo,
-    };
-    
-    // 3. Update the transaction from a 'Cart' to a pending 'Delivery'
-    await updateDoc(doc(db, 'transactions', cartTx.id), {
-        status: 'Buscando Repartidor',
-        'details.delivery': deliveryDetails,
-        'details.deliveryCost': 1.5, // Placeholder cost
-        'details.paymentMethod': useCredicora ? 'credicora' : 'direct',
-    });
-
-    // 4. Trigger the delivery provider search flow if needed
-    if (deliveryMethod !== 'pickup') {
-        // We call this flow but don't wait for it to complete.
-        // It will run in the background.
-        await DeliveryFlows.findDeliveryProvider({ transactionId: cartTx.id });
-    }
+    await TransactionFlows.checkout({ userId, providerId, deliveryMethod, useCredicora, recipientInfo, deliveryAddress });
 }
 
 export const { sendQuote, acceptQuote, acceptAppointment, confirmPaymentReceived, completeWork, confirmWorkReceived, startDispute, createAppointmentRequest, processDirectPayment } = TransactionFlows;
 
 export async function payCommitment(transactionId: string) {
     const db = getFirestoreDb();
-    await updateDoc(doc(db, 'transactions', transactionId), { status: 'Pago Enviado - Esperando Confirmación' });
+    const txDocRef = doc(db, "transactions", transactionId);
+    const txSnap = await getDoc(txDocRef);
+    if (txSnap.exists()) {
+        const txData = txSnap.data();
+        await TransactionFlows.payCommitment({ 
+            transactionId, 
+            userId: txData.clientId, 
+            paymentDetails: { paymentMethod: 'Transferencia', paymentVoucherUrl: 'https://i.postimg.cc/L8y2zWc2/vzla-id.png' }
+        });
+    }
 }
 
 // --- Messaging Actions ---
@@ -308,7 +293,7 @@ export async function markConversationAsRead(conversationId: string, userId: str
 
 // --- Campaign and Promotion Actions ---
 
-export async function createCampaign(userId: string, data: CreateCampaignInput) {
+export async function createCampaign(userId: string, data: Omit<CreateCampaignInput, 'userId'>) {
     return await CampaignFlows.createCampaign({ userId, ...data });
 }
 
@@ -353,6 +338,13 @@ export async function verifyCampaignPayment(transactionId: string, campaignId: s
     batch.update(doc(db, 'transactions', transactionId), { status: 'Resuelto' });
     if(campaignId) {
       batch.update(doc(db, 'campaigns', campaignId), { status: 'active' });
+    } else {
+        // Logic for subscription activation
+        const txSnap = await getDoc(doc(db, 'transactions', transactionId));
+        if (txSnap.exists()) {
+            const tx = txSnap.data() as Transaction;
+            batch.update(doc(db, 'users', tx.clientId), { isSubscribed: true });
+        }
     }
     await batch.commit();
 }
@@ -377,11 +369,11 @@ export const rejectAffiliation = (affiliationId: string, actorId: string) => Aff
 export const revokeAffiliation = (affiliationId: string, actorId: string) => AffiliationFlows.revokeAffiliationFlow({ affiliationId, actorId });
 
 // --- QR Session Actions ---
-export async function startQrSession(clientId: string, providerId: string, cashierBoxId?: string, cashierName?: string): Promise<string> {
+export async function startQrSession(clientId: string, providerId: string, cashierBoxId?: string): Promise<string> {
     const db = getFirestoreDb();
     const sessionId = `qrs-${clientId.slice(-5)}-${Date.now()}`;
     const sessionData: QrSession = {
-      id: sessionId, providerId, clientId, cashierBoxId, cashierName, status: 'pendingAmount',
+      id: sessionId, providerId, clientId, cashierBoxId, status: 'pendingAmount',
       createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), participantIds: [clientId, providerId],
     };
     await setDoc(doc(db, 'qr_sessions', sessionId), sessionData);

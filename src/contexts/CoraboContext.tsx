@@ -146,12 +146,8 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     const savedRecipient = sessionStorage.getItem('tempRecipientInfo');
     if(savedRecipient) _setTempRecipientInfo(JSON.parse(savedRecipient));
 
-    if ('geolocation' in navigator) {
-        navigator.geolocation.getCurrentPosition(
-            (position) => setCurrentUserLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude }),
-            (error) => console.error("Error getting geolocation: ", error)
-        );
-    }
+    // NOTE: Geolocation request is removed from here to prevent violation.
+    // It should be triggered by a user gesture.
   }, []);
 
   useEffect(() => {
@@ -217,8 +213,20 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   }, [currentUserLocation]);
   
   const setDeliveryAddressToCurrent = useCallback(() => {
-    if (currentUserLocation) setDeliveryAddress(`${currentUserLocation.latitude},${currentUserLocation.longitude}`);
-  }, [currentUserLocation, setDeliveryAddress]);
+    if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const newLocation = { latitude: position.coords.latitude, longitude: position.coords.longitude };
+                setCurrentUserLocation(newLocation);
+                setDeliveryAddress(`${newLocation.latitude},${newLocation.longitude}`);
+            },
+            (error) => {
+                toast({ variant: 'destructive', title: 'Error de Ubicación', description: 'No se pudo obtener tu ubicación actual.'});
+                console.error("Error getting geolocation: ", error)
+            }
+        );
+    }
+  }, [setDeliveryAddress, toast]);
 
   const getUserMetrics = useCallback((userId: string): UserMetrics => {
         const userTxs = transactions.filter(tx => tx.providerId === userId && (tx.status === 'Pagado' || tx.status === 'Resuelto'));

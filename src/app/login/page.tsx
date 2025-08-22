@@ -80,7 +80,7 @@ export default function LoginPage() {
         </div>
         <h2 className="text-2xl font-bold mb-2">Bienvenido a Corabo</h2>
         <p className="text-muted-foreground mb-8">
-            Conectando tus necesidades con las mejores soluciones.
+            Tu ecosistema de confianza para conectar con profesionales, comprar productos y gestionar tus servicios de forma segura y transparente.
         </p>
         <div className="space-y-4">
             <Button onClick={handleSignIn} size="lg" className="w-full">
