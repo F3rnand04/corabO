@@ -78,10 +78,10 @@ function LayoutController({ children }: { children: React.ReactNode }) {
       const shouldHideFooter = hideFooterForPaths.some(path => pathname.startsWith(path));
 
       return (
-        <>
+        <div className="flex flex-col min-h-screen">
           <div className="flex-1">{children}</div>
           {!shouldHideFooter && <Footer />}
-        </>
+        </div>
       );
   }
 
