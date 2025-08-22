@@ -25,8 +25,9 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <head>
-        <link rel="manifest" href="/manifest.json" crossOrigin="use-credentials" />
-        <meta name="theme-color" content="#B0D8FF" />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#FFFFFF" />
+        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
       </head>
       <body className={`${inter.variable} antialiased bg-background`}>
         <Providers attribute="class" defaultTheme="system" enableSystem>
