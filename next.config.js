@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 
 const nextConfig = {
+  srcDir: './src',
   transpilePackages: [
     '@genkit-ai/core',
     '@genkit-ai/firebase',
