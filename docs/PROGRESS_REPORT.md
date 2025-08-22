@@ -10,17 +10,17 @@ La aplicación ha evolucionado hacia una arquitectura moderna y robusta Cliente-
 
 -   **Framework Principal:** Next.js con el **App Router**.
 -   **Frontend:** Construido con React, TypeScript y componentes de **ShadCN/UI** sobre Tailwind CSS.
--   **Backend (Lógica de Negocio):** La lógica de negocio crítica (creación de usuarios, publicaciones, transacciones, etc.) se gestiona a través de **flujos de Genkit**, marcados con la directiva `'use server'`. Esto asegura una separación clara entre el código que se ejecuta en el servidor y el que se ejecuta en el navegador.
+-   **Backend (Lógica de Negocio):** La lógica de negocio crítica (creación de usuarios, publicaciones, transacciones, etc.) se gestiona a través de **flujos de Genkit**, orquestados por una capa de **Server Actions** (`src/lib/actions.ts`). Esto asegura una separación clara entre el código que se ejecuta en el servidor y el que se ejecuta en el navegador.
 -   **Base de Datos y Autenticación:** Se utiliza **Firebase** como la plataforma principal:
     -   **Firestore:** Actúa como la base de datos en tiempo real para toda la información (usuarios, publicaciones, transacciones).
-    -   **Firebase Authentication:** Gestiona el registro y la autenticación de usuarios de forma segura (actualmente con Google).
+    -   **Firebase Authentication:** Gestiona el registro y la autenticación de usuarios de forma segura (actualmente con Google). La sesión se verifica tanto en el servidor como en el cliente para evitar errores de hidratación.
 -   **Gestión de Estado (Cliente):** El `CoraboContext` (`src/contexts/CoraboContext.tsx`) funciona como el "cerebro" del lado del cliente. Se suscribe a los datos de Firestore en tiempo real para mantener la interfaz actualizada y actúa como un puente, llamando a los flujos de Genkit del backend para ejecutar acciones y persistir cambios.
 
 ---
 
 ## 2. Flujo de Rutas y Navegación
 
-El enrutamiento está centralizado y controlado lógicamente por el componente `AppLayout.tsx`, que actúa como un guardián.
+El enrutamiento está centralizado y controlado lógicamente por el componente `AppLayout.tsx`, que actúa como un guardián del lado del cliente.
 
 1.  **Ruta de Login (`/login`):** Punto de entrada para usuarios no autenticados.
 2.  **Redirección Post-Login:**
@@ -59,5 +59,6 @@ El enrutamiento está centralizado y controlado lógicamente por el componente `
 -   **Gestión de Cajas (Puntos de Venta):** Las empresas ahora pueden crear múltiples cajas, cada una con un código QR único y descargable en formato de media carta, listo para imprimir. Esto facilita los pagos directos en puntos de venta físicos.
 
 ### 3.6. Estabilidad y Pruebas
--   **Configuración de Compilación Robusta:** Los problemas de compilación recurrentes han sido resueltos aislando las configuraciones de prueba y optimizando el `package.json` para entornos de producción.
--   **Estructura de Proyecto Limpia:** Se han optimizado las rutas y componentes, y la configuración de Jest se ha estandarizado para un mantenimiento más sencillo.
+-   **Configuración de Compilación Robusta:** Los problemas de compilación recurrentes y los errores 404 de servidor han sido **resueltos** al ajustar `next.config.js` (`srcDir` y `transpilePackages`) para que Next.js compile correctamente las dependencias del servidor y encuentre el directorio de la aplicación.
+-   **Errores de Hidratación Solucionados:** Se implementó un flujo de autenticación server-side en `RootLayout` para pasar el estado de la sesión al cliente, eliminando las discrepancias entre el HTML del servidor y el renderizado del cliente.
+-   **Estructura de Proyecto Limpia:** Se ha optimizado la estructura de archivos (eliminando la carpeta `app` vacía) y la configuración de `tsconfig.json` para un mantenimiento más sencillo.

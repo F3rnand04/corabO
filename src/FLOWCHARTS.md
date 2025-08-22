@@ -4,22 +4,32 @@ Este documento contiene los flujogramas que describen los principales procesos y
 
 ---
 
-## 1. Flujo General de Autenticación y Acceso
+## 1. Flujo General de Autenticación y Acceso (Arquitectura Estable)
 
-Describe el viaje inicial de un usuario para acceder a la aplicación.
+Describe el viaje inicial de un usuario, ahora con verificación en el servidor para evitar errores de hidratación.
 
 ```mermaid
 graph TD
-    A[Usuario abre la App] --> B{¿Usuario autenticado?};
-    B -- No --> C[Redirigido a /login];
-    C --> D[Usuario hace clic en 'Iniciar Sesión con Google'];
-    D --> E[Popup de Firebase Authentication];
-    E --> F{¿Autenticación exitosa?};
-    F -- Sí --> G[Redirigido a la página principal '/'];
-    G --> H[CoraboContext se suscribe a los datos de Firestore del usuario];
-    H --> I[App lista para usar];
-    F -- No --> J[Muestra error en la página de login];
-    B -- Sí --> G;
+    A[Usuario abre la App] --> B{RootLayout (Server Component)};
+    B -- "1. Lee cookie de sesión" --> C{¿Cookie válida?};
+    C -- Sí --> D[Firebase Admin verifica la cookie];
+    D -- "OK" --> E[Obtiene Firebase User en Servidor];
+    C -- No --> F[serverFirebaseUser = null];
+    
+    subgraph "Renderizado del Servidor"
+        E --> G[Pasa serverFirebaseUser como prop];
+        F --> G;
+    end
+    
+    G --> H[Cliente recibe HTML y AuthProvider se inicializa con serverFirebaseUser];
+    H --> I{CoraboProvider: ¿Hay usuario?};
+    I -- Sí --> J[getOrCreateUser flow obtiene el perfil de Corabo];
+    I -- No --> K[App espera en estado no autenticado];
+    
+    J --> L{AppLayout: ¿Setup completo?};
+    L -- Sí --> M[Usuario navega por la app];
+    L -- No --> N[Redirigido a /initial-setup];
+    K --> O[Usuario ve /login];
 ```
 
 ---
@@ -51,9 +61,10 @@ graph TD
       D_Beauty --> E;
       D_Auto --> E;
       D_General --> E;
-      E --> F_FE[Frontend llama al flujo `updateFullProfile`];
-      F_FE --> G_BE[Backend actualiza el documento del usuario en Firestore];
-      G_BE --> H[Datos especializados persisten en `profileSetupData.specializedData`];
+      E --> F_FE[Frontend llama a la acción `updateFullProfile`];
+      F_FE --> G_BE[Acción de Servidor llama al flujo de Genkit];
+      G_BE --> H[Flow actualiza el documento del usuario en Firestore];
+      H --> I[Datos especializados persisten en `profileSetupData.specializedData`];
     end
 ```
 
@@ -94,18 +105,18 @@ graph TD
       O --> P;
     end
 
-    subgraph "Lógica de Backend (Genkit)"
+    subgraph "Lógica de Backend (Acción y Flujo)"
       direction LR
-      P --> Q_FE[Frontend llama al flujo `checkout` para Proveedor A];
-      Q_FE --> R_BE[Genkit valida y crea la transacción final];
+      P --> Q_FE[Frontend llama a la acción `checkout` para Proveedor A];
+      Q_FE --> R_BE[Acción de Servidor llama al flujo de Genkit];
       R_BE --> S_BE{¿Se requiere delivery?};
-      S_BE -- Sí --> T_BE[Backend llama al `findDeliveryProviderFlow` para buscar repartidor];
-      S_BE -- No --> U_BE[Transacción queda en estado 'Listo para Retirar'];
+      S_BE -- Sí --> T_BE[Flow llama al `findDeliveryProviderFlow` para buscar repartidor];
+      S_BE -- No --> U_BE[Flow actualiza tx a 'Listo para Retirar'];
     end
     
     subgraph "Lógica de Falla de Delivery"
-        T_BE -- Falla --> W[Backend actualiza tx a 'Error de Delivery'];
-        W --> X[Backend envía notificación a Proveedor A];
+        T_BE -- Falla --> W[Flow actualiza tx a 'Error de Delivery'];
+        W --> X[Flow envía notificación a Proveedor A];
         X --> Y[Proveedor A ve opciones: Reintentar, Asignar propio, Convertir a Retiro];
     end
     
@@ -123,20 +134,20 @@ Describe cómo un profesional se afilia a una empresa.
 ```mermaid
 graph TD
     A[Profesional visita perfil de Empresa] --> B[Hace clic en 'Solicitar Afiliación'];
-    B --> C_FE[Frontend llama a `requestAffiliation`];
-    C_FE --> D_BE[Genkit Flow crea documento de afiliación con estado 'pending'];
-    D_BE --> E_NOTIFY[Flow envía notificación a la Empresa];
-
+    B --> C_FE[Frontend llama a la acción `requestAffiliation`];
+    C_FE --> D_BE[Acción de Servidor llama al flow];
+    D_BE --> E_BE[Flow crea documento 'pending' y envía notificación];
+    
     subgraph Panel de Admin de la Empresa
         F[Empresa accede a /admin] --> G[Ve la solicitud en la pestaña 'Afiliaciones'];
         G --> H{¿Aprobar?};
-        H -- Sí --> I_APPROVE[Llama a `approveAffiliation`];
-        H -- No --> J_REJECT[Llama a `rejectAffiliation`];
+        H -- Sí --> I_APPROVE[Llama a la acción `approveAffiliation`];
+        H -- No --> J_REJECT[Llama a la acción `rejectAffiliation`];
     end
     
     subgraph Lógica de Backend (Aprobación)
-      I_APPROVE --> K_BE[Flow actualiza estado a 'approved'];
-      K_BE --> L_BE[Flow actualiza el perfil del Profesional con datos de la Empresa];
+      I_APPROVE --> K_BE[Acción de Servidor llama al flow de aprobación];
+      K_BE --> L_BE[Flow actualiza estado a 'approved' y actualiza el perfil del Profesional];
     end
     
     L_BE --> M[Profesional ahora muestra "Verificado por [Empresa]"];
@@ -147,7 +158,7 @@ graph TD
 
 ## 5. Flujo de Campaña Publicitaria (con Backend)
 
-Detalla el nuevo flujo de creación de campañas, ahora gestionado por Genkit.
+Detalla el nuevo flujo de creación de campañas, ahora gestionado por `actions.ts`.
 
 ```mermaid
 graph TD
@@ -157,21 +168,20 @@ graph TD
     
     subgraph "Lógica de Frontend/Backend"
       direction LR
-      D --> E_FE[Frontend llama al flujo `createCampaignFlow` de Genkit];
-      E_FE --> F_BE[**Genkit (Backend)** recibe los datos];
-      F_BE --> G_BE[Calcula costos, aplica descuentos];
-      G_BE --> H_BE[Crea el documento de la Campaña en Firestore con estado 'pending_payment'];
-      H_BE --> I_BE[Crea una **Transacción de Sistema** en Firestore para el pago de la campaña];
+      D --> E_FE[Frontend llama a la acción `createCampaign`];
+      E_FE --> F_BE[**Acción de Servidor** recibe los datos];
+      F_BE --> G_BE[Llama al `createCampaignFlow` de Genkit];
+      G_BE --> H_BE[Flow calcula costos y crea documentos en Firestore ('pending_payment')];
     end
 
-    I_BE --> J[Usuario es redirigido a la pantalla de pago de la transacción];
+    H_BE --> J[Usuario es redirigido a la pantalla de pago de la transacción];
     J --> K[Usuario paga la transacción];
     
     subgraph "Lógica de Notificación del Backend"
       direction LR
       K --> L_VERIFY[Admin verifica el pago en el panel];
-      L_VERIFY --> M_UPDATE[Sistema actualiza campaña a 'active'];
-      M_UPDATE --> N_NOTIFY[Sistema llama al flujo `sendNewCampaignNotifications`];
+      L_VERIFY --> M_UPDATE[Acción de Admin actualiza campaña a 'active'];
+      M_UPDATE --> N_NOTIFY[Acción de Admin llama a la acción `sendNewCampaignNotifications`];
       N_NOTIFY --> O_END[Usuarios relevantes reciben la notificación];
     end
     
