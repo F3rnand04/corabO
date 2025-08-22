@@ -9,7 +9,7 @@ import { doc, getDoc, collection, onSnapshot, query, where, orderBy, Unsubscribe
 import { haversineDistance } from '@/lib/utils';
 import * as Actions from '@/lib/actions';
 import { type User as FirebaseUser } from 'firebase/auth';
-import { getOrCreateUser } from '@/ai/flows/auth-flow';
+import { getOrCreateUser as getOrCreateUserAction } from '@/lib/actions';
 import { useAuth } from '@/components/auth/AuthProvider';
 
 interface CoraboContextValue {
@@ -99,7 +99,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     }
     
     if (firebaseUser) {
-      getOrCreateUser({
+      getOrCreateUserAction({
         uid: firebaseUser.uid,
         displayName: firebaseUser.displayName,
         email: firebaseUser.email,
@@ -120,6 +120,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
             description: "No pudimos cargar los datos de tu perfil de Corabo.",
         });
       }).finally(() => {
+        // This ensures the loading spinner will always disappear
         setIsLoadingUser(false);
       });
     } else {

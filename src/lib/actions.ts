@@ -91,6 +91,8 @@ export async function addContact(user: User) {
 
 
 // --- Verification and Auth Actions ---
+export const checkIdUniquenessFlow = ProfileFlows.checkIdUniquenessFlow;
+
 export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput> {
     if (!user.name || !user.idNumber || !user.idDocumentUrl) {
       throw new Error("Faltan datos del usuario para la verificación.");
@@ -253,20 +255,7 @@ export async function checkout(userId: string, providerId: string, deliveryMetho
 }
 
 export const { sendQuote, acceptQuote, acceptAppointment, confirmPaymentReceived, completeWork, confirmWorkReceived, startDispute, createAppointmentRequest, processDirectPayment } = TransactionFlows;
-
-export async function payCommitment(transactionId: string) {
-    const db = getFirestoreDb();
-    const txDocRef = doc(db, "transactions", transactionId);
-    const txSnap = await getDoc(txDocRef);
-    if (txSnap.exists()) {
-        const txData = txSnap.data();
-        await TransactionFlows.payCommitment({ 
-            transactionId, 
-            userId: txData.clientId, 
-            paymentDetails: { paymentMethod: 'Transferencia', paymentVoucherUrl: 'https://i.postimg.cc/L8y2zWc2/vzla-id.png' }
-        });
-    }
-}
+export const payCommitment = TransactionFlows.payCommitment;
 
 // --- Messaging Actions ---
 
