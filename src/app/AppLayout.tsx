@@ -3,7 +3,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { CoraboProvider, useCorabo } from "@/contexts/CoraboContext";
@@ -26,12 +26,22 @@ function LayoutController({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
     
-    // 2. Determinar el estado de carga general. La app no está lista hasta que AMBOS contextos lo estén.
+    // --- **DIAGNOSTIC FIX** ---
+    // Use a state to track if we are on the client and ready to render conditional UI.
+    const [isClientReady, setIsClientReady] = useState(false);
+
+    // This effect runs only on the client, after the initial render.
+    useEffect(() => {
+        setIsClientReady(true);
+    }, []);
+    // --- **END DIAGNOSTIC FIX** ---
+    
     const isAppLoading = isLoadingAuth || isLoadingUser;
 
     useEffect(() => {
-        // No tomar ninguna decisión hasta que la app esté completamente cargada.
-        if (isAppLoading) {
+        // **DIAGNOSTIC FIX**: Defer redirection logic until the client is ready.
+        // This ensures that server and client render the same thing initially (the loader).
+        if (isAppLoading || !isClientReady) {
             return;
         }
 
@@ -53,12 +63,11 @@ function LayoutController({ children }: { children: React.ReactNode }) {
                 router.replace('/login');
             }
         }
-    }, [currentUser, isAppLoading, pathname, router]);
+    }, [currentUser, isAppLoading, pathname, router, isClientReady]);
     
-    // 3. Mecanismo de Sincronización Definitivo: EL LOADER.
-    // Si la app está cargando, se muestra un loader a pantalla completa.
-    // Esto previene que se renderice contenido inconsistente y elimina el error de hidratación.
-    if (isAppLoading) {
+    // If the app is loading OR we're on the server (where isClientReady is false), show a loader.
+    // This guarantees the server render and initial client render are identical.
+    if (isAppLoading || !isClientReady) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-muted/40">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
