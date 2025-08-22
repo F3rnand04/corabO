@@ -1,4 +1,3 @@
-
 # Arquitectura y Flujo de Datos de Corabo (Versión Estable)
 
 Este documento describe la arquitectura estable y desacoplada de la aplicación Corabo, diseñada para ser mantenible, escalable y eficiente bajo los principios del App Router de Next.js.
