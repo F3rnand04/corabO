@@ -5,12 +5,10 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { getFirestore } from 'firebase-admin/firestore';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'; // Using client SDK for types
-import type { User, CredicoraLevel } from '@/lib/types';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import type { User } from '@/lib/types';
 import { z } from 'zod';
 import { credicoraLevels } from '@/lib/types';
-import { differenceInDays } from 'date-fns';
 
 // Schema for the user object we expect from the client (FirebaseUser)
 const FirebaseUserSchema = z.object({
@@ -33,23 +31,15 @@ export const getOrCreateUser = ai.defineFlow(
   },
   async (firebaseUser) => {
     const db = getFirestore();
-    const userDocRef = doc(db, 'users', firebaseUser.uid);
+    const userDocRef = db.collection('users').doc(firebaseUser.uid);
     const now = new Date();
 
     try {
-        const userDocSnap = await getDoc(userDocRef);
+        const userDocSnap = await userDocRef.get();
 
-        if (userDocSnap.exists()) {
-            let user = userDocSnap.data() as User;
-            const updates: Partial<User> = {};
-
-            // Inactivity Logic: Pause account after 45 days.
-            if (user.lastActivityAt) {
-                const daysSinceLastActivity = differenceInDays(now, new Date(user.lastActivityAt));
-                if (daysSinceLastActivity >= 45 && !user.isPaused) {
-                    updates.isPaused = true;
-                }
-            }
+        if (userDocSnap.exists) {
+            const user = userDocSnap.data() as User;
+            const updates: { [key: string]: any } = {};
             
             // Update last activity timestamp on every login
             updates.lastActivityAt = now.toISOString();
@@ -59,12 +49,12 @@ export const getOrCreateUser = ai.defineFlow(
                 updates.role = 'admin';
             }
             
-            // Apply updates if there are any
             if (Object.keys(updates).length > 0) {
-                await updateDoc(userDocRef, updates);
-                user = { ...user, ...updates }; // Update local user object
+                await userDocRef.update(updates);
+                // Return a serializable version of the updated user
+                return JSON.parse(JSON.stringify({ ...user, ...updates }));
             }
-
+            
             // Return the complete, serializable user object for existing users.
             return JSON.parse(JSON.stringify(user));
         } else {
@@ -105,7 +95,7 @@ export const getOrCreateUser = ai.defineFlow(
                 newUser.role = 'admin';
             }
 
-            await setDoc(userDocRef, newUser);
+            await userDocRef.set(newUser);
             // Return a plain, serializable object
             return JSON.parse(JSON.stringify(newUser));
         }

@@ -74,7 +74,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   const { toast } = useToast();
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isLoadingUser, setIsLoadingUser] = useState(isLoadingAuth);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [users, setUsers] = useState<User[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -106,7 +106,11 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         photoURL: firebaseUser.photoURL,
         emailVerified: firebaseUser.emailVerified,
       }).then(user => {
-        setCurrentUser(user as User);
+        if (user) {
+          setCurrentUser(user as User);
+        } else {
+          setCurrentUser(null);
+        }
       }).catch(error => {
         console.error("Failed to get or create Corabo user:", error);
         setCurrentUser(null);
@@ -146,8 +150,6 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     const savedRecipient = sessionStorage.getItem('tempRecipientInfo');
     if(savedRecipient) _setTempRecipientInfo(JSON.parse(savedRecipient));
 
-    // NOTE: Geolocation request is removed from here to prevent violation.
-    // It should be triggered by a user gesture.
   }, []);
 
   useEffect(() => {
