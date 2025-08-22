@@ -48,7 +48,7 @@ export const getOrCreateUser = ai.defineFlow(
             const newUser: User = {
                 id: firebaseUser.uid,
                 coraboId: `${firebaseUser.displayName?.split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '') || 'user'}${Math.floor(1000 + Math.random() * 9000)}`,
-                name: firebaseUser.displayName || '',
+                name: firebaseUser.displayName || 'Nuevo Usuario',
                 email: firebaseUser.email || '',
                 profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
                 createdAt: now.toISOString(),
@@ -76,6 +76,7 @@ export const getOrCreateUser = ai.defineFlow(
                 },
             };
 
+            // Assign admin role if the email matches
             if (newUser.email === 'fernandopbt@gmail.com') {
                 newUser.role = 'admin';
             }
