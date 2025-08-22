@@ -6,10 +6,13 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
 export function middleware(request: NextRequest) {
+  // Simplemente dejamos pasar todas las peticiones.
+  // La lógica se maneja en el cliente dentro de AppLayout.
   return NextResponse.next();
 }
 
-// Al no especificar un 'matcher', el middleware no se ejecutará en ninguna ruta.
+// Al establecer un matcher vacío, el middleware nunca se ejecutará.
+// Esto lo desactiva de forma segura sin eliminar el archivo.
 export const config = {
   matcher: [],
 };
