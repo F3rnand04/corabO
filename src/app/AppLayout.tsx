@@ -9,7 +9,6 @@ import { Footer } from "@/components/Footer";
 import { CoraboProvider, useCorabo } from "@/contexts/CoraboContext";
 import { Loader2 } from "lucide-react";
 
-// Lista de rutas que no requieren autenticación.
 const PUBLIC_PAGES = [
   '/login',
   '/cashier-login',
@@ -19,16 +18,20 @@ const PUBLIC_PAGES = [
   '/community-guidelines',
 ];
 
-// Este componente es el cerebro que controla las redirecciones y la visibilidad del layout.
-// Su lógica ahora implementa el principio de "Activación Progresiva".
+// Este componente ahora depende de los dos contextos y orquesta el renderizado.
 function LayoutController({ children }: { children: React.ReactNode }) {
+    // 1. Obtener los estados de carga de AMBOS contextos.
+    const { isLoadingAuth } = useAuth();
     const { currentUser, isLoadingUser } = useCorabo();
     const router = useRouter();
     const pathname = usePathname();
     
+    // 2. Determinar el estado de carga general. La app no está lista hasta que AMBOS contextos lo estén.
+    const isAppLoading = isLoadingAuth || isLoadingUser;
+
     useEffect(() => {
-        // No tomar ninguna decisión de redirección hasta que el estado del usuario esté 100% resuelto.
-        if (isLoadingUser) {
+        // No tomar ninguna decisión hasta que la app esté completamente cargada.
+        if (isAppLoading) {
             return;
         }
 
@@ -36,34 +39,26 @@ function LayoutController({ children }: { children: React.ReactNode }) {
         const isSetupPage = pathname.startsWith('/initial-setup');
         
         if (currentUser) {
-            // **REGLA #1: El "Muro de Configuración"**
-            // Si el setup inicial NO está completo, se le fuerza a ir a la página de configuración. No hay escape.
             const isSetupComplete = currentUser.isInitialSetupComplete ?? false;
             if (!isSetupComplete && !isSetupPage) {
                 router.replace('/initial-setup');
-                return; // Detiene la ejecución para evitar otras reglas.
+                return;
             }
             
-            // **REGLA #2: Escape del Usuario Configurado**
-            // Si el setup está completo y el usuario intenta acceder a login o a la página de setup, se le envía al inicio.
             if (isSetupComplete && (pathname === '/login' || isSetupPage)) {
                 router.replace('/');
             }
-
         } else {
-            // **REGLA #3: El Usuario Anónimo**
-            // Si intenta acceder a una ruta protegida sin ser usuario, se le envía al login.
             if (!isPublicPage) {
                 router.replace('/login');
             }
         }
-    }, [currentUser, isLoadingUser, pathname, router]);
+    }, [currentUser, isAppLoading, pathname, router]);
     
-    // **Mecanismo de Sincronización CRÍTICO:**
-    // Mientras el estado de autenticación y de usuario se esté verificando, se muestra un loader a pantalla completa.
-    // Esto previene cualquier renderizado prematuro y asegura que el servidor y el cliente estén sincronizados
-    // ANTES de decidir qué página mostrar, eliminando así el error de hidratación.
-    if (isLoadingUser) {
+    // 3. Mecanismo de Sincronización Definitivo: EL LOADER.
+    // Si la app está cargando, se muestra un loader a pantalla completa.
+    // Esto previene que se renderice contenido inconsistente y elimina el error de hidratación.
+    if (isAppLoading) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-muted/40">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -71,8 +66,6 @@ function LayoutController({ children }: { children: React.ReactNode }) {
         );
     }
     
-    // Determina si se debe mostrar el layout principal de la app (Header/Footer).
-    // Esto solo ocurre si hay un usuario y la página NO es pública NI de configuración.
     const showAppLayout = currentUser && !PUBLIC_PAGES.some(p => pathname.startsWith(p)) && !pathname.startsWith('/initial-setup');
 
     return (
@@ -86,16 +79,14 @@ function LayoutController({ children }: { children: React.ReactNode }) {
     );
 }
 
-// El componente AppLayout ahora es más simple.
-// Su única responsabilidad es orquestar los proveedores de contexto.
+// AppLayout ahora es un simple orquestador de proveedores.
 export function AppLayout({ children }: { children: React.ReactNode }) {
-    const { firebaseUser, isLoadingAuth } = useAuth();
-    
-    return (
-        // 1. CoraboProvider recibe el estado de Firebase.
-        <CoraboProvider firebaseUser={firebaseUser} isAuthLoading={isLoadingAuth}>
-            {/* 2. LayoutController recibe el estado de Corabo y decide qué renderizar. */}
-            <LayoutController>{children}</LayoutController>
-        </CoraboProvider>
-    );
+  return (
+    // 1. AuthProvider gestiona el estado de Firebase.
+    // 2. CoraboProvider (dentro de él) consume ese estado para obtener el perfil de Corabo.
+    // 3. LayoutController (dentro de CoraboProvider) consume AMBOS estados para decidir qué renderizar.
+    <CoraboProvider>
+        <LayoutController>{children}</LayoutController>
+    </CoraboProvider>
+  );
 }

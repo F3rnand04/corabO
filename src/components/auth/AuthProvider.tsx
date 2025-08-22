@@ -4,8 +4,9 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User as FirebaseUser } from 'firebase/auth';
 import { getAuthInstance } from '@/lib/firebase';
-import { Loader2 } from 'lucide-react';
 
+// Este contexto ahora solo se preocupa por el estado de Firebase Auth.
+// No sabe nada sobre el perfil de usuario de Corabo.
 interface AuthContextType {
   firebaseUser: FirebaseUser | null;
   isLoadingAuth: boolean;
@@ -21,15 +22,17 @@ type AuthProviderProps = {
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true); // Comienza en true
 
   useEffect(() => {
     const auth = getAuthInstance();
-    const unsubscribe = onAuthStateChanged(auth, (user: FirebaseUser | null) => {
+    // onAuthStateChanged devuelve el "unsubscribe"
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setFirebaseUser(user);
-      setIsLoadingAuth(false);
+      setIsLoadingAuth(false); // La carga termina cuando se recibe el primer estado
     });
 
+    // Limpia el listener al desmontar el componente
     return () => unsubscribe();
   }, []);
 
@@ -37,6 +40,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const auth = getAuthInstance();
     const provider = new GoogleAuthProvider();
     await signInWithPopup(auth, provider);
+    // El listener onAuthStateChanged se encargará de actualizar el estado
   };
 
   const logout = async () => {

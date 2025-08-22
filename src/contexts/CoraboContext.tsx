@@ -10,7 +10,7 @@ import { haversineDistance } from '@/lib/utils';
 import * as Actions from '@/lib/actions';
 import { type User as FirebaseUser } from 'firebase/auth';
 import { getOrCreateUser } from '@/ai/flows/auth-flow';
-
+import { useAuth } from '@/components/auth/AuthProvider'; // Importar useAuth
 
 interface CoraboContextValue {
   // State
@@ -67,11 +67,10 @@ const CoraboContext = createContext<CoraboContextValue | undefined>(undefined);
 
 interface CoraboProviderProps {
     children: ReactNode;
-    firebaseUser: FirebaseUser | null;
-    isAuthLoading: boolean;
 }
 
-export const CoraboProvider = ({ children, firebaseUser, isAuthLoading }: CoraboProviderProps) => {
+export const CoraboProvider = ({ children }: CoraboProviderProps) => {
+  const { firebaseUser, isLoadingAuth, logout: authLogout } = useAuth(); // Usar el hook de Auth
   const { toast } = useToast();
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -93,15 +92,13 @@ export const CoraboProvider = ({ children, firebaseUser, isAuthLoading }: Corabo
   
   const userCache = useRef<Map<string, User>>(new Map());
 
-  // This effect synchronizes the Corabo user with the Firebase auth state.
+  // Este efecto ahora depende del estado de `firebaseUser` y `isLoadingAuth`
   useEffect(() => {
-    // If Firebase auth is still loading, we are also loading the user.
-    if (isAuthLoading) {
+    if (isLoadingAuth) {
       setIsLoadingUser(true);
       return;
     }
     
-    // If Firebase auth has loaded and there's a user, get/create their profile.
     if (firebaseUser) {
       getOrCreateUser({
         uid: firebaseUser.uid,
@@ -120,15 +117,13 @@ export const CoraboProvider = ({ children, firebaseUser, isAuthLoading }: Corabo
             description: "No pudimos cargar los datos de tu perfil de Corabo.",
         });
       }).finally(() => {
-        // Critical: Signal that user loading is complete, regardless of outcome.
         setIsLoadingUser(false);
       });
     } else {
-      // If Firebase auth has loaded and there is no user, reset state.
       setCurrentUser(null);
       setIsLoadingUser(false);
     }
-  }, [firebaseUser, isAuthLoading, toast]);
+  }, [firebaseUser, isLoadingAuth, toast]);
   
   const setDeliveryAddress = useCallback((address: string) => {
     sessionStorage.setItem('coraboDeliveryAddress', address);
@@ -202,12 +197,13 @@ export const CoraboProvider = ({ children, firebaseUser, isAuthLoading }: Corabo
     if (currentUser?.id) {
         const userId = currentUser.id;
         
-        const userRef = doc(db, 'users', userId);
-        unsubscribes.push(onSnapshot(userRef, (doc) => {
-            if (doc.exists()) {
-                setCurrentUser(doc.data() as User);
-            }
-        }));
+        // No necesitamos escuchar al usuario actual de nuevo, ya lo obtenemos en el primer efecto.
+        // const userRef = doc(db, 'users', userId);
+        // unsubscribes.push(onSnapshot(userRef, (doc) => {
+        //     if (doc.exists()) {
+        //         setCurrentUser(doc.data() as User);
+        //     }
+        // }));
 
         const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userId));
         const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userId), orderBy("lastUpdated", "desc"));
@@ -302,7 +298,7 @@ export const CoraboProvider = ({ children, firebaseUser, isAuthLoading }: Corabo
         setTempRecipientInfo,
         setActiveCartForCheckout,
         setCurrentUser,
-        logout: () => { console.log('Logout called from context') }
+        logout: authLogout, // Usar el logout del AuthProvider
     };
   
     return (
