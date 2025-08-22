@@ -9,6 +9,7 @@ import { doc, getDoc, collection, onSnapshot, query, where, orderBy, Unsubscribe
 import { haversineDistance } from '@/lib/utils';
 import * as Actions from '@/lib/actions';
 import { type User as FirebaseUser } from 'firebase/auth';
+import { getOrCreateUser } from '@/ai/flows/auth-flow';
 
 
 interface CoraboContextValue {
@@ -46,7 +47,8 @@ interface CoraboContextValue {
   getDistanceToProvider: (provider: User) => string | null;
   setTempRecipientInfo: (info: TempRecipientInfo | null) => void;
   setActiveCartForCheckout: (cartItems: CartItem[] | null) => void;
-  setCurrentUser: (user: User | null) => void;
+  setCurrentUser: (user: User | null) => void; // Allow direct setting for sync
+  logout: () => void;
 }
 
 interface GeolocationCoords {
@@ -91,15 +93,17 @@ export const CoraboProvider = ({ children, firebaseUser, isAuthLoading }: Corabo
   
   const userCache = useRef<Map<string, User>>(new Map());
 
+  // This effect synchronizes the Corabo user with the Firebase auth state.
   useEffect(() => {
-    setIsLoadingUser(isAuthLoading);
+    // If Firebase auth is still loading, we are also loading the user.
     if (isAuthLoading) {
-      setCurrentUser(null);
+      setIsLoadingUser(true);
       return;
     }
     
+    // If Firebase auth has loaded and there's a user, get/create their profile.
     if (firebaseUser) {
-      Actions.getOrCreateUser({
+      getOrCreateUser({
         uid: firebaseUser.uid,
         displayName: firebaseUser.displayName,
         email: firebaseUser.email,
@@ -116,9 +120,11 @@ export const CoraboProvider = ({ children, firebaseUser, isAuthLoading }: Corabo
             description: "No pudimos cargar los datos de tu perfil de Corabo.",
         });
       }).finally(() => {
+        // Critical: Signal that user loading is complete, regardless of outcome.
         setIsLoadingUser(false);
       });
     } else {
+      // If Firebase auth has loaded and there is no user, reset state.
       setCurrentUser(null);
       setIsLoadingUser(false);
     }
@@ -196,11 +202,12 @@ export const CoraboProvider = ({ children, firebaseUser, isAuthLoading }: Corabo
     if (currentUser?.id) {
         const userId = currentUser.id;
         
-        // This makes sure the local currentUser state is always in sync with the live user list
-        const updatedCurrentUser = users.find(u => u.id === userId);
-        if (updatedCurrentUser && JSON.stringify(updatedCurrentUser) !== JSON.stringify(currentUser)) {
-            setCurrentUser(updatedCurrentUser);
-        }
+        const userRef = doc(db, 'users', userId);
+        unsubscribes.push(onSnapshot(userRef, (doc) => {
+            if (doc.exists()) {
+                setCurrentUser(doc.data() as User);
+            }
+        }));
 
         const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userId));
         const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userId), orderBy("lastUpdated", "desc"));
@@ -213,7 +220,7 @@ export const CoraboProvider = ({ children, firebaseUser, isAuthLoading }: Corabo
     }
 
     return () => unsubscribes.forEach(unsub => unsub());
-  }, [currentUser, users]); // Depend on both currentUser and the list of users
+  }, [currentUser?.id]);
   
   const getDistanceToProvider = useCallback((provider: User) => {
       if (!currentUserLocation || !provider.profileSetupData?.location) return null;
@@ -295,6 +302,7 @@ export const CoraboProvider = ({ children, firebaseUser, isAuthLoading }: Corabo
         setTempRecipientInfo,
         setActiveCartForCheckout,
         setCurrentUser,
+        logout: () => { console.log('Logout called from context') }
     };
   
     return (

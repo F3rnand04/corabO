@@ -6,12 +6,11 @@
 
 import { ai } from '@/ai/genkit';
 import { getFirestore } from 'firebase-admin/firestore';
-import { doc, getDoc, setDoc, updateDoc, type DocumentReference } from 'firebase/firestore';
-import type { User } from '@/lib/types';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore'; // Using client SDK for types
+import type { User, CredicoraLevel } from '@/lib/types';
 import { z } from 'zod';
 import { credicoraLevels } from '@/lib/types';
 import { differenceInDays } from 'date-fns';
-
 
 // Schema for the user object we expect from the client (FirebaseUser)
 const FirebaseUserSchema = z.object({
@@ -24,9 +23,7 @@ const FirebaseUserSchema = z.object({
 export type FirebaseUserInput = z.infer<typeof FirebaseUserSchema>;
 
 // The output MUST be a plain JSON-serializable object.
-// We are explicitly NOT using the User type here to enforce serialization.
 const UserOutputSchema = z.any().nullable();
-
 
 export const getOrCreateUser = ai.defineFlow(
   {
@@ -36,7 +33,7 @@ export const getOrCreateUser = ai.defineFlow(
   },
   async (firebaseUser) => {
     const db = getFirestore();
-    const userDocRef = doc(db, 'users', firebaseUser.uid) as DocumentReference<User>;
+    const userDocRef = doc(db, 'users', firebaseUser.uid);
     const now = new Date();
 
     try {
@@ -76,7 +73,7 @@ export const getOrCreateUser = ai.defineFlow(
             const newUser: User = {
                 id: firebaseUser.uid,
                 coraboId: `${firebaseUser.displayName?.split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '') || 'user'}${Math.floor(1000 + Math.random() * 9000)}`,
-                name: firebaseUser.displayName || '', // Initialize with displayName
+                name: firebaseUser.displayName || '',
                 email: firebaseUser.email || '',
                 profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
                 createdAt: now.toISOString(),
@@ -87,7 +84,7 @@ export const getOrCreateUser = ai.defineFlow(
                 birthDate: '',
                 country: '',
                 type: 'client',
-                reputation: 0,
+                reputation: 5,
                 effectiveness: 100, // Start with 100% effectiveness
                 phone: '',
                 emailValidated: firebaseUser.emailVerified,

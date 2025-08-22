@@ -72,7 +72,7 @@ function LayoutController({ children }: { children: React.ReactNode }) {
     }
     
     // Determina si se debe mostrar el layout principal de la app (Header/Footer).
-    // Esto solo ocurre si hay un usuario y la página NO es pública.
+    // Esto solo ocurre si hay un usuario y la página NO es pública NI de configuración.
     const showAppLayout = currentUser && !PUBLIC_PAGES.some(p => pathname.startsWith(p)) && !pathname.startsWith('/initial-setup');
 
     return (

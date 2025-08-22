@@ -1,53 +1,30 @@
+
 # Documentación del Prototipo Corabo
 
-## 1. Visión General y Arquitectura
+## 1. Arquitectura y Filosofía Central
 
 Este documento detalla la arquitectura y la lógica de funcionamiento de la aplicación Corabo, construida con **Next.js, React, TypeScript, Firebase y Genkit**.
 
-La aplicación ha evolucionado de un prototipo cliente-céntrico a una aplicación web robusta con una arquitectura cliente-servidor, diseñada para ser segura y escalable.
+La aplicación sigue un principio fundamental de **Activación Progresiva** para mejorar la experiencia del usuario y la retención, minimizando la fricción inicial.
 
-### Principios Arquitectónicos Clave:
+### Principio de Activación Progresiva: El "Muro y las Puertas"
 
--   **Frontend Moderno:** La interfaz se construye con componentes reutilizables de React y ShadCN/UI, aprovechando el App Router de Next.js para la navegación.
--   **Backend Seguro con Genkit:** La lógica de negocio crítica (creación de campañas, envío de mensajes, gestión de acuerdos) se ha migrado del frontend a **flujos de Genkit**. Estos flujos se ejecutan en el servidor, garantizando que las operaciones sean seguras y que la lógica de negocio no pueda ser manipulada desde el cliente.
--   **Autenticación y Base de Datos con Firebase:**
-    -   **Firebase Authentication:** Gestiona el inicio de sesión de usuarios a través de proveedores como Google, proporcionando un sistema de autenticación seguro y real.
-    -   **Firestore Database:** Actúa como la base de datos principal, almacenando en tiempo real la información de usuarios, transacciones y conversaciones.
--   **Gestión de Estado del Cliente (`CoraboContext.tsx`):** El `CoraboContext` ahora actúa como un gestor de estado del lado del cliente y un puente de comunicación. Se suscribe a los datos de Firestore en tiempo real y llama a los flujos de Genkit del backend para ejecutar acciones, manteniendo la UI reactiva y sincronizada.
+El flujo de incorporación de un usuario no es un proceso monolítico, sino una serie de etapas diseñadas para fomentar la exploración y la confianza.
 
-## 2. Lógica de Perfil Dinámico y Especialización
+1.  **Login es Acceso Inmediato:** El primer paso es la autenticación a través de un proveedor como Google. Una vez autenticado, el usuario **ya está dentro de la aplicación**. No se le bloquea en la entrada.
 
-Para ofrecer una experiencia de usuario clara, Corabo implementa un sistema de **perfiles dinámicos** que se adaptan al tipo de negocio del proveedor.
+2.  **El Muro de Configuración (`/initial-setup`):** Inmediatamente después del primer login, el usuario se encuentra con un **muro obligatorio**. Esta es la única barrera infranqueable. Aquí debe proporcionar los datos mínimos para la creación de su perfil (nombre, país, tipo de usuario). Es imposible saltarse este paso. Un usuario que no lo complete, volverá a esta pantalla cada vez que inicie sesión.
 
--   **Campos Especializados:** Dependiendo de la categoría principal seleccionada por el proveedor (ej. "Salud y Bienestar", "Hogar y Reparaciones", "Belleza"), el formulario de configuración de perfil (`/profile/details`) muestra campos adicionales y opcionales para que puedan detallar sus servicios:
-    -   **Salud:** Nro. de Licencia, Especialidades, Modalidad de Atención.
-    -   **Hogar:** Oficios Principales (Plomería, etc.), Habilidades Específicas (tags).
-    -   **Belleza:** Oficios Principales (Manicure, Estilismo, etc.), Habilidades Específicas.
-    -   **Alimentos y Restaurantes:** Tipo de Cocina, Opciones de Servicio (local, delivery, etc.), Enlace al Menú, Permiso Sanitario.
-    -   **Transporte y Asistencia:** Tipo de Vehículo, Capacidad de Carga, Condiciones Especiales.
-    -   **Otros Servicios Profesionales:** Habilidades Clave (tags), Marcas y Herramientas, Años de Experiencia.
--   **Visualización Pública:** La información especializada se muestra de forma clara en el perfil público del proveedor (`/companies/[id]`) mediante etiquetas (`Badge`) y secciones de detalles, ayudando a los clientes a tomar decisiones informadas.
+3.  **Libertad de Navegación (El Perfil por Defecto):** Una vez superado el "muro", el usuario obtiene acceso a la mayor parte de la aplicación con un **perfil por defecto**. Este perfil es funcional pero restrictivo. El objetivo es que el usuario pueda navegar, explorar perfiles, ver el feed y familiarizarse con la plataforma sin sentirse abrumado por solicitudes de información adicional.
 
-## 3. Panel de Control del Proveedor (`/transactions`)
+4.  **Las Puertas Opcionales (Activación de Módulos):** Funcionalidades críticas que requieren un mayor nivel de compromiso o datos sensibles (como las transacciones o la venta de productos) están detrás de "puertas opcionales". La aplicación le sugerirá al usuario activar estos módulos cuando intente usarlos (ej. un banner "¡Activa tu registro!" en la sección de transacciones), pero nunca le impedirá seguir usando el resto de la aplicación.
 
-La sección de transacciones ha sido transformada en un verdadero **panel de control (Dashboard)** para proveedores.
+Este enfoque reduce la carga cognitiva inicial, genera confianza y permite que el usuario se integre a su propio ritmo, descubriendo el valor de la plataforma de forma orgánica.
 
--   **Gráficos de Rendimiento:**
-    -   **Gráfico de Líneas:** Muestra la evolución de ingresos vs. egresos, incluyendo proyecciones de pagos pendientes.
-    -   **Gráfico de Torta:** Ofrece un resumen visual de la distribución financiera actual (ingresos, egresos, pendientes, etc.).
--   **Incentivo a la Suscripción:** El panel incluye una tarjeta destacada que comunica de forma amigable y comercial los beneficios de suscribirse, como la insignia de verificado y mayor visibilidad.
--   **Navegación Intuitiva:** El panel es la vista principal, con acceso rápido a las listas detalladas de transacciones pendientes e historial.
+### Componentes Arquitectónicos Clave:
 
-## 4. Flujos Clave de la Aplicación
-
--   **Autenticación y Configuración Inicial:** Un flujo seguro y guiado asegura que todos los usuarios, especialmente los proveedores, completen su información básica y de identidad antes de poder transaccionar. La lógica ahora incluye validación de ID único y una opción para volver al login si el usuario se equivocó de cuenta.
--   **Publicación de Contenido:** El flujo `publication-flow` centraliza la creación de publicaciones e ítems de catálogo, validando la existencia del usuario para mantener la integridad de los datos.
--   **Gestión de Puntos de Venta (Cajas):** Se ha implementado un sistema robusto para que las empresas puedan crear múltiples "cajas" o puntos de venta. Cada caja genera un **código QR único e imprimible**, diseñado para ser descargado en formato de media carta. Esta funcionalidad facilita a los clientes el inicio de un pago directo a un punto de venta específico.
--   **Notificaciones:** El sistema de notificaciones (`notification-flow`) se utiliza para comunicar eventos importantes como solicitudes de afiliación, recordatorios de pago y la activación de nuevas campañas. **Importante:** Las notificaciones de campaña se envían solo después de que un administrador verifique el pago, no en el momento de la creación.
--   **Verificación de Identidad con IA (`verification-flow`):** Un flujo multimodal utiliza la IA de Google para analizar documentos de identidad (imágenes o PDF), extrayendo y comparando los datos con los registros del usuario para una verificación rápida y segura. La comparación de nombres ahora usa un algoritmo de similitud para manejar variaciones en nombres comerciales.
--   **Afiliaciones Empresa-Profesional (`affiliation-flow`):** Se ha implementado un sistema completo que permite a los profesionales solicitar afiliarse a una empresa, y a las empresas gestionar (aprobar, rechazar, revocar) dichas afiliaciones desde un panel de administración.
--   **Credicora para Empresas:** Se ha creado un sistema de niveles de crédito (`credicoraCompanyLevels`) exclusivo para usuarios de tipo "Empresa", con límites y beneficios superiores, para potenciar el segmento B2B.
-
-## 5. Conclusión
-
-El prototipo actual es una aplicación web funcional y robusta con una arquitectura bien definida. La separación clara entre el frontend y el backend (Genkit), el uso de una base de datos en tiempo real (Firestore) y la implementación de perfiles especializados, un panel de control avanzado y flujos de negocio complejos (como la gestión de afiliaciones y Credicora por niveles) sientan las bases para una plataforma escalable, segura y de alto valor para sus usuarios.
+-   **Frontend Moderno:** La interfaz se construye con componentes reutilizables de React y ShadCN/UI, aprovechando el App Router de Next.js.
+-   **Backend Seguro con Genkit:** La lógica de negocio crítica (creación de campañas, envío de mensajes, etc.) se gestiona en **flujos de Genkit**.
+-   **Base de Datos y Autenticación:** Se utiliza **Firebase** (Firestore y Authentication).
+-   **Controlador de Layout (`AppLayout.tsx`):** Es el **guardián central** que implementa la lógica del "Muro y las Puertas". Decide si mostrar un loader, forzar la redirección a `/initial-setup`, o dar acceso a la aplicación principal, eliminando condiciones de carrera.
+-   **Gestión de Estado (`CoraboContext.tsx`):** Actúa como un proveedor de estado en tiempo real, suscribiéndose a los datos de Firestore y distribuyéndolos a la aplicación una vez que la lógica de enrutamiento del `AppLayout` se ha completado.
