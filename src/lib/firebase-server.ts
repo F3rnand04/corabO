@@ -1,16 +1,37 @@
 // IMPORTANT: This file should NOT have the "use client" directive.
 // It's intended for server-side code, like Genkit flows.
 
-// MARKER-A: Isolation Test for firebase-server.ts
-// This file has been simplified to its bare minimum to test if its
-// original logic was causing the server to fail on startup.
+import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
+import { getFirestore, type Firestore } from 'firebase-admin/firestore';
+import { firebaseConfig } from './firebase-config';
 
-import { type Firestore } from 'firebase-admin/firestore';
+let app: App;
+let db: Firestore;
 
-// This function now logs a success marker and returns a dummy object.
-// If the server logs show this message, we know this file is not the cause.
+const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
+  ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+  : undefined;
+
+function getFirebaseAdminApp(): App {
+  if (getApps().length) {
+    return getApps()[0]!;
+  }
+  
+  if (!serviceAccount) {
+    throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable not set. Server-side Firebase cannot be initialized.');
+  }
+
+  app = initializeApp({
+    credential: cert(serviceAccount),
+    storageBucket: firebaseConfig.storageBucket,
+  });
+  return app;
+}
+
 export function getFirestoreDb(): Firestore {
-  console.log("[MARKER-A: firebase-server.ts] Loaded successfully.");
-  // Return a dummy object that matches the expected type shape to avoid breaking imports.
-  return {} as Firestore;
+  if (!db) {
+    const adminApp = getFirebaseAdminApp();
+    db = getFirestore(adminApp);
+  }
+  return db;
 }
