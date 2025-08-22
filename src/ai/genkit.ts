@@ -1,4 +1,3 @@
-
 /**
  * @fileOverview Central Genkit configuration.
  *

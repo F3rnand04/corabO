@@ -138,7 +138,7 @@ export default function TransactionsPage() {
     const nextCredicoraLevelDetails = activeCredicoraLevels[((currentUser.credicoraLevel || 1) + 1).toString()];
 
     const completedTransactionsCount = useMemo(() => transactions.filter(tx => tx.clientId === currentUser.id && (tx.status === 'Pagado' || tx.status === 'Resuelto')).length, [transactions, currentUser.id]);
-    const transactionsNeeded = credicoraLevelDetails.transactionsForNextLevel;
+    const transactionsNeeded = credicoraLevelDetails?.transactionsForNextLevel ?? 1; // Avoid division by zero
     const progressToNextLevel = (completedTransactionsCount / transactionsNeeded) * 100;
     
     const renderContent = () => {
@@ -181,26 +181,26 @@ export default function TransactionsPage() {
                                  <CardDescription>Tu motor de crecimiento en Corabo.</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                               <div className="space-y-1">
+                               {credicoraLevelDetails && <div className="space-y-1">
                                     <div className="flex justify-between items-baseline text-sm font-medium">
                                         <span className="text-muted-foreground">Nivel {credicoraLevelDetails.level}</span>
                                         <span className="font-bold text-lg text-foreground">{credicoraLevelDetails.name}</span>
                                     </div>
-                               </div>
-                                <div className="space-y-1">
+                               </div>}
+                                {credicoraLevelDetails && <div className="space-y-1">
                                     <div className="flex justify-between text-xs font-medium">
                                         <span>Límite de Crédito</span>
                                         <span>${(currentUser.credicoraLimit || 0).toLocaleString()} / ${credicoraLevelDetails.creditLimit.toLocaleString()}</span>
                                     </div>
-                                    <Progress value={((currentUser.credicoraLimit || 0) / credicoraLevelDetails.creditLimit) * 100} className="[&>div]:bg-blue-500" />
-                                </div>
+                                    <Progress value={((currentUser.credicoraLimit || 0) / credicoraLevelDetails.creditLimit) * 100} className="h-2 [&>div]:bg-blue-500" />
+                                </div>}
                                 {nextCredicoraLevelDetails && (
                                      <div className="space-y-1">
                                         <div className="flex justify-between text-xs font-medium">
                                             <span>Próximo Nivel: {nextCredicoraLevelDetails.name}</span>
                                             <span>{completedTransactionsCount} / {transactionsNeeded} transacciones</span>
                                         </div>
-                                        <Progress value={progressToNextLevel} />
+                                        <Progress value={progressToNextLevel} className="h-2" />
                                     </div>
                                 )}
                                 <div className="text-right">
@@ -239,11 +239,11 @@ export default function TransactionsPage() {
                                <div className="space-y-3">
                                     <div className="space-y-1">
                                         <div className="flex justify-between text-xs font-medium"><span>Reputación (Estrellas)</span><span>{reputation.toFixed(1)}/5.0</span></div>
-                                        <Progress value={(reputation / 5) * 100} />
+                                        <Progress value={(reputation / 5) * 100} className="h-2" />
                                     </div>
                                     <div className="space-y-1">
                                         <div className="flex justify-between text-xs font-medium"><span>Efectividad</span><span>{effectiveness.toFixed(0)}%</span></div>
-                                        <Progress value={effectiveness} />
+                                        <Progress value={effectiveness} className="h-2" />
                                     </div>
                                 </div>
                             </CardContent>
