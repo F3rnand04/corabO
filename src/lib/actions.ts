@@ -5,8 +5,27 @@
  * This file centralizes all calls to Genkit flows, abstracting the
  * business logic from the UI components. This is the ONLY place where
  * component-facing server actions should be defined.
+ *
+ * It is also the ONLY place where the Genkit instance is configured
+ * to prevent server-only code from leaking into the client.
  */
 
+// --- Genkit Initialization (Server-Only) ---
+import { genkit } from 'genkit';
+import { googleAI } from '@genkit-ai/googleai';
+import { firebase } from '@genkit-ai/firebase';
+
+export const ai = genkit({
+  plugins: [
+    firebase(),
+    googleAI(),
+  ],
+  logLevel: 'debug',
+  enableTracingAndMetrics: true,
+});
+
+
+// --- Action Definitions ---
 import { doc, updateDoc, deleteField, setDoc, getDoc, writeBatch, collection, where, query, getDocs, arrayRemove, arrayUnion, deleteDoc as deleteFirestoreDoc } from 'firebase/firestore';
 
 // Types

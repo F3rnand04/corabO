@@ -4,8 +4,8 @@
  * This flow is now corrected to exclusively use the Firebase Admin SDK for all database operations.
  */
 
-import { ai } from '@/ai/genkit';
-import { getFirestore } from 'firebase-admin/firestore'; // Correct: Use Admin SDK
+import { ai } from '@/lib/actions'; // IMPORTANT: Import the initialized 'ai' object from actions.ts
+import { getFirestore } from 'firebase-admin/firestore';
 import type { User } from '@/lib/types';
 import { z } from 'zod';
 import { credicoraLevels } from '@/lib/types';
