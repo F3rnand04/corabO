@@ -1,30 +1,16 @@
 // IMPORTANT: This file should NOT have the "use client" directive.
 // It's intended for server-side code, like Genkit flows.
 
-import { initializeApp, getApp, getApps, type App } from 'firebase-admin/app';
-import { getFirestore, type Firestore } from 'firebase-admin/firestore';
-import { credential } from 'firebase-admin';
-import { firebaseConfig } from './firebase-config';
+// MARKER-A: Isolation Test for firebase-server.ts
+// This file has been simplified to its bare minimum to test if its
+// original logic was causing the server to fail on startup.
 
-// This function ensures the Firebase Admin app is initialized only once.
-function getFirebaseAdminApp(): App {
-  if (getApps().length > 0) {
-    return getApp();
-  }
+import { type Firestore } from 'firebase-admin/firestore';
 
-  // In a Google Cloud environment (like App Hosting), the SDK can
-  // auto-discover credentials. No need to pass them explicitly.
-  const app = initializeApp({
-    credential: credential.applicationDefault(),
-    storageBucket: firebaseConfig.storageBucket,
-  });
-  
-  return app;
-}
-
-
-// This function provides a server-side instance of Firestore.
+// This function now logs a success marker and returns a dummy object.
+// If the server logs show this message, we know this file is not the cause.
 export function getFirestoreDb(): Firestore {
-    const app = getFirebaseAdminApp();
-    return getFirestore(app);
+  console.log("[MARKER-A: firebase-server.ts] Loaded successfully.");
+  // Return a dummy object that matches the expected type shape to avoid breaking imports.
+  return {} as Firestore;
 }

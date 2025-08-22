@@ -14,12 +14,14 @@ import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
 import { firebase } from '@genkit-ai/firebase';
 
-// By defining the plugin here, we make it available to all flows
-// that import this `ai` object. The initialization is deferred.
+// MARKER-B: Isolation Test for genkit.ts
+// The plugins array has been temporarily emptied. If the app starts
+// successfully with this change, it confirms that one of the plugins
+// was causing the critical server failure.
 export const ai = genkit({
   plugins: [
-    firebase(),
-    googleAI(),
+    // firebase(),
+    // googleAI(),
   ],
   logLevel: 'debug',
   enableTracingAndMetrics: true,

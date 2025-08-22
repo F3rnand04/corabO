@@ -7,57 +7,62 @@
  * component-facing server actions should be defined.
  */
 
+// MARKER-C: Dependency Neutralization for actions.ts
+// All flow imports and their corresponding exports are temporarily commented out.
+// This prevents compilation errors while we test the initialization of genkit.ts
+// and firebase-server.ts.
+
 import { doc, updateDoc, deleteField, setDoc, getDoc, writeBatch, collection, where, query, getDocs, arrayRemove, arrayUnion, deleteDoc as deleteFirestoreDoc } from 'firebase/firestore';
 
 // Types
 import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, VerificationOutput, AppointmentRequest, QrSession, TempRecipientInfo, CashierBox, GalleryImageComment, CreatePublicationInput, CreateProductInput } from '@/lib/types';
-import { type CreateCampaignInput } from '@/ai/flows/campaign-flow';
-import { type SendMessageInput } from '@/ai/flows/message-flow';
-import { type FirebaseUserInput } from '@/ai/flows/auth-flow';
+// import { type CreateCampaignInput } from '@/ai/flows/campaign-flow';
+// import { type SendMessageInput } from '@/ai/flows/message-flow';
+// import { type FirebaseUserInput } from '@/ai/flows/auth-flow';
 
 
 // Flows
-import * as AuthFlows from '@/ai/flows/auth-flow';
-import * as CampaignFlows from '@/ai/flows/campaign-flow';
-import * as MessageFlows from '@/ai/flows/message-flow';
-import * as TransactionFlows from '@/ai/flows/transaction-flow';
-import * as NotificationFlows from '@/ai/flows/notification-flow';
-import * as ProfileFlows from '@/ai/flows/profile-flow';
-import * as VerificationFlows from '@/ai/flows/verification-flow';
-import * as PublicationFlows from '@/ai/flows/publication-flow';
-import * as DeliveryFlows from '@/ai/flows/delivery-flow';
-import * as CashierFlows from '@/ai/flows/cashier-flow';
-import * as AffiliationFlows from '@/ai/flows/affiliation-flow';
-import * as FeedFlows from '@/ai/flows/feed-flow';
+// import * as AuthFlows from '@/ai/flows/auth-flow';
+// import * as CampaignFlows from '@/ai/flows/campaign-flow';
+// import * as MessageFlows from '@/ai/flows/message-flow';
+// import * as TransactionFlows from '@/ai/flows/transaction-flow';
+// import * as NotificationFlows from '@/ai/flows/notification-flow';
+// import * as ProfileFlows from '@/ai/flows/profile-flow';
+// import * as VerificationFlows from '@/ai/flows/verification-flow';
+// import * as PublicationFlows from '@/ai/flows/publication-flow';
+// import * as DeliveryFlows from '@/ai/flows/delivery-flow';
+// import * as CashierFlows from '@/ai/flows/cashier-flow';
+// import * as AffiliationFlows from '@/ai/flows/affiliation-flow';
+// import * as FeedFlows from '@/ai/flows/feed-flow';
 
 import { getFirestoreDb } from './firebase-server';
 
 
 // --- User and Profile Actions ---
-export const getOrCreateUser = (user: FirebaseUserInput) => AuthFlows.getOrCreateUser(user);
+// export const getOrCreateUser = (user: FirebaseUserInput) => AuthFlows.getOrCreateUser(user);
 
-export const getPublicProfile = ProfileFlows.getPublicProfileFlow;
+// export const getPublicProfile = ProfileFlows.getPublicProfileFlow;
 
 export async function updateUser(userId: string, updates: Partial<User>) {
-    await ProfileFlows.updateUserFlow({ userId, updates });
+    // await ProfileFlows.updateUserFlow({ userId, updates });
 }
 
 export async function updateUserProfileImage(userId: string, imageUrl: string) {
-    await ProfileFlows.updateUserFlow({ userId, updates: { profileImage: imageUrl } });
+    // await ProfileFlows.updateUserFlow({ userId, updates: { profileImage: imageUrl } });
 }
 
 export async function updateFullProfile(userId: string, data: ProfileSetupData, profileType: User['type']) {
-    const db = await getFirestoreDb();
+    const db = getFirestoreDb();
     const userRef = doc(db, 'users', userId);
     const userSnap = await getDoc(userRef);
     if (!userSnap.exists()) return;
     const existingData = userSnap.data() as User;
     const newProfileSetupData = { ...existingData.profileSetupData, ...data };
-    await ProfileFlows.updateUserFlow({ userId, updates: { type: profileType, profileSetupData: newProfileSetupData } });
+    // await ProfileFlows.updateUserFlow({ userId, updates: { type: profileType, profileSetupData: newProfileSetupData } });
 }
 
 export async function deleteUser(userId: string) {
-    await ProfileFlows.deleteUserFlow({ userId });
+    // await ProfileFlows.deleteUserFlow({ userId });
 }
 
 export async function toggleUserPause(userId: string, currentIsPaused: boolean) {
@@ -87,13 +92,14 @@ export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput
     if (!user.name || !user.idNumber || !user.idDocumentUrl) {
       throw new Error("Faltan datos del usuario para la verificación.");
     }
-    return VerificationFlows.autoVerifyIdWithAI({
-      userId: user.id,
-      nameInRecord: `${user.name} ${user.lastName || ''}`,
-      idInRecord: user.idNumber,
-      documentImageUrl: user.idDocumentUrl,
-      isCompany: user.profileSetupData?.providerType === 'company',
-    });
+    // return VerificationFlows.autoVerifyIdWithAI({
+    //   userId: user.id,
+    //   nameInRecord: `${user.name} ${user.lastName || ''}`,
+    //   idInRecord: user.idNumber,
+    //   documentImageUrl: user.idDocumentUrl,
+    //   isCompany: user.profileSetupData?.providerType === 'company',
+    // });
+    return {} as VerificationOutput;
 }
 
 export async function verifyUserId(userId: string) {
@@ -107,22 +113,23 @@ export async function rejectUserId(userId: string) {
 // --- Publication and Product Actions ---
 
 export async function createPublication(data: CreatePublicationInput) {
-    await PublicationFlows.createPublication(data);
+    // await PublicationFlows.createPublication(data);
 }
 
 export async function createProduct(data: CreateProductInput): Promise<string> {
-    const productId = await PublicationFlows.createProduct(data);
-    if (!productId) throw new Error("Failed to create product");
-    return productId;
+    // const productId = await PublicationFlows.createProduct(data);
+    // if (!productId) throw new Error("Failed to create product");
+    // return productId;
+    return "";
 }
 
 export async function removeGalleryImage(userId: string, imageId: string) {
-    const db = await getFirestoreDb();
+    const db = getFirestoreDb();
     await deleteFirestoreDoc(doc(db, 'publications', imageId));
 }
 
 export async function updateGalleryImage(ownerId: string, imageId: string, updates: Partial<{ description: string; imageDataUri?: string }>) {
-    const db = await getFirestoreDb();
+    const db = getFirestoreDb();
     const pubRef = doc(db, 'publications', imageId);
     const updatesToApply: any = {};
     if (updates.description) {
@@ -136,7 +143,7 @@ export async function updateGalleryImage(ownerId: string, imageId: string, updat
 }
 
 export async function addCommentToImage(ownerId: string, imageId: string, commentText: string, currentUser: User) {
-    const db = await getFirestoreDb();
+    const db = getFirestoreDb();
     const pubRef = doc(db, 'publications', imageId);
     const newComment: GalleryImageComment = {
         author: currentUser.name,
@@ -151,7 +158,7 @@ export async function addCommentToImage(ownerId: string, imageId: string, commen
 }
 
 export async function removeCommentFromImage(ownerId: string, imageId: string, commentIndex: number) {
-    const db = await getFirestoreDb();
+    const db = getFirestoreDb();
     const pubRef = doc(db, 'publications', imageId);
     const pubSnap = await getDoc(pubRef);
     if (!pubSnap.exists()) return;
@@ -168,7 +175,7 @@ export async function removeCommentFromImage(ownerId: string, imageId: string, c
 // --- Transaction and Cart Actions ---
 
 export async function updateCart(userId: string, productId: string, quantity: number) {
-    const db = await getFirestoreDb();
+    const db = getFirestoreDb();
     const q = query(collection(db, 'transactions'), where('clientId', '==', userId), where('status', '==', 'Carrito Activo'));
     const snapshot = await getDocs(q);
     
@@ -241,7 +248,7 @@ export async function updateCart(userId: string, productId: string, quantity: nu
 }
 
 export async function checkout(userId: string, providerId: string, deliveryMethod: string, useCredicora: boolean, recipientInfo?: { name: string, phone: string }, deliveryAddress?: string) {
-    const db = await getFirestoreDb();
+    const db = getFirestoreDb();
     const q = query(collection(db, 'transactions'), where('clientId', '==', userId), where('providerId', '==', providerId), where('status', '==', 'Carrito Activo'));
     const snapshot = await getDocs(q);
     const cartTxDoc = snapshot.docs[0];
@@ -272,29 +279,29 @@ export async function checkout(userId: string, providerId: string, deliveryMetho
     if (deliveryMethod !== 'pickup') {
         // We call this flow but don't wait for it to complete.
         // It will run in the background.
-        await DeliveryFlows.findDeliveryProvider({ transactionId: cartTx.id });
+        // await DeliveryFlows.findDeliveryProvider({ transactionId: cartTx.id });
     }
 }
 
-export const { sendQuote, acceptQuote, acceptAppointment, confirmPaymentReceived, completeWork, confirmWorkReceived, startDispute, createAppointmentRequest, processDirectPayment } = TransactionFlows;
+// export const { sendQuote, acceptQuote, acceptAppointment, confirmPaymentReceived, completeWork, confirmWorkReceived, startDispute, createAppointmentRequest, processDirectPayment } = TransactionFlows;
 
 export async function payCommitment(transactionId: string) {
-    const db = await getFirestoreDb();
+    const db = getFirestoreDb();
     await updateDoc(doc(db, 'transactions', transactionId), { status: 'Pago Enviado - Esperando Confirmación' });
 }
 
 // --- Messaging Actions ---
 
-export async function sendMessage(options: SendMessageInput) {
-    await MessageFlows.sendMessage(options);
+export async function sendMessage(options: any) {
+    // await MessageFlows.sendMessage(options);
 }
 
 export async function acceptProposal(conversationId: string, messageId: string, acceptorId: string) {
-    await MessageFlows.acceptProposal({ conversationId, messageId, acceptorId });
+    // await MessageFlows.acceptProposal({ conversationId, messageId, acceptorId });
 }
 
 export async function markConversationAsRead(conversationId: string, userId: string) {
-    const db = await getFirestoreDb();
+    const db = getFirestoreDb();
     const convoRef = doc(db, 'conversations', conversationId);
     const convoSnap = await getDoc(convoRef);
     if (convoSnap.exists()) {
@@ -308,12 +315,12 @@ export async function markConversationAsRead(conversationId: string, userId: str
 
 // --- Campaign and Promotion Actions ---
 
-export async function createCampaign(userId: string, data: Omit<CreateCampaignInput, 'userId'>) {
-    return await CampaignFlows.createCampaign({ userId, ...data });
+export async function createCampaign(userId: string, data: any) {
+    // return await CampaignFlows.createCampaign({ userId, ...data });
 }
 
 export async function activatePromotion(userId: string, details: { imageId: string, promotionText: string, cost: number }) {
-    const db = await getFirestoreDb();
+    const db = getFirestoreDb();
     await updateUser(userId, {
         promotion: { text: details.promotionText, expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() }
     });
@@ -322,7 +329,7 @@ export async function activatePromotion(userId: string, details: { imageId: stri
 }
 
 export async function registerSystemPayment(userId: string, concept: string, amount: number, isSubscription: boolean) {
-    const db = await getFirestoreDb();
+    const db = getFirestoreDb();
     const txId = `txn-sys-${userId.slice(-4)}-${Date.now()}`;
     const txData: Transaction = {
         id: txId,
@@ -348,7 +355,7 @@ export async function cancelSystemTransaction(transactionId: string) {
 // --- Admin Actions ---
 
 export async function verifyCampaignPayment(transactionId: string, campaignId: string) {
-    const db = await getFirestoreDb();
+    const db = getFirestoreDb();
     const batch = writeBatch(db);
     batch.update(doc(db, 'transactions', transactionId), { status: 'Resuelto' });
     if(campaignId) {
@@ -361,24 +368,24 @@ export async function verifyCampaignPayment(transactionId: string, campaignId: s
 // --- Affiliation Actions ---
 export async function requestAffiliation(providerId: string, companyId: string) {
     // 1. Create the affiliation request
-    await AffiliationFlows.requestAffiliationFlow({ providerId, companyId });
+    // await AffiliationFlows.requestAffiliationFlow({ providerId, companyId });
 
     // 2. Orchestrate sending the notification
-    await NotificationFlows.sendNotification({
-        userId: companyId,
-        type: 'affiliation_request',
-        title: 'Nueva Solicitud de Asociación',
-        message: `Un proveedor desea asociarse como talento a tu empresa.`,
-        link: `/admin` // Link to the management panel
-    });
+    // await NotificationFlows.sendNotification({
+    //     userId: companyId,
+    //     type: 'affiliation_request',
+    //     title: 'Nueva Solicitud de Asociación',
+    //     message: `Un proveedor desea asociarse como talento a tu empresa.`,
+    //     link: `/admin` // Link to the management panel
+    // });
 }
-export const approveAffiliation = (affiliationId: string, actorId: string) => AffiliationFlows.approveAffiliationFlow({ affiliationId, actorId });
-export const rejectAffiliation = (affiliationId: string, actorId: string) => AffiliationFlows.rejectAffiliationFlow({ affiliationId, actorId });
-export const revokeAffiliation = (affiliationId: string, actorId: string) => AffiliationFlows.revokeAffiliationFlow({ affiliationId, actorId });
+export const approveAffiliation = (affiliationId: string, actorId: string) => {};// AffiliationFlows.approveAffiliationFlow({ affiliationId, actorId });
+export const rejectAffiliation = (affiliationId: string, actorId: string) => {};// AffiliationFlows.rejectAffiliationFlow({ affiliationId, actorId });
+export const revokeAffiliation = (affiliationId: string, actorId: string) => {};// AffiliationFlows.revokeAffiliationFlow({ affiliationId, actorId });
 
 // --- QR Session Actions ---
 export async function startQrSession(clientId: string, providerId: string, cashierBoxId?: string, cashierName?: string): Promise<string> {
-    const db = await getFirestoreDb();
+    const db = getFirestoreDb();
     const sessionId = `qrs-${clientId.slice(-5)}-${Date.now()}`;
     const sessionData: QrSession = {
       id: sessionId, providerId, clientId, cashierBoxId, cashierName, status: 'pendingAmount',
@@ -389,43 +396,43 @@ export async function startQrSession(clientId: string, providerId: string, cashi
 }
 
 export async function cancelQrSession(sessionId: string) {
-    const db = await getFirestoreDb();
+    const db = getFirestoreDb();
     await updateDoc(doc(db, 'qr_sessions', sessionId), { status: 'cancelled' });
 }
 
 export async function setQrSessionAmount(sessionId: string, amount: number, initialPayment: number, financedAmount: number, installments: number) {
-    const db = await getFirestoreDb();
+    const db = getFirestoreDb();
     await updateDoc(doc(db, 'qr_sessions', sessionId), { amount, initialPayment, financedAmount, installments, status: 'pendingClientApproval' });
 }
 
 export async function handleClientCopyAndPay(sessionId: string) {
-    const db = await getFirestoreDb();
+    const db = getFirestoreDb();
     await updateDoc(doc(db, 'qr_sessions', sessionId), { status: 'awaitingPayment', updatedAt: new Date().toISOString() });
 }
 
 export async function confirmMobilePayment(sessionId: string) {
-    const db = await getFirestoreDb();
+    const db = getFirestoreDb();
     await updateDoc(doc(db, 'qr_sessions', sessionId), { status: 'pendingVoucherUpload' });
 }
 
 export async function finalizeQrSession(sessionId: string) {
-    await TransactionFlows.processDirectPayment({ sessionId });
-    const db = await getFirestoreDb();
+    // await TransactionFlows.processDirectPayment({ sessionId });
+    const db = getFirestoreDb();
     await updateDoc(doc(db, 'qr_sessions', sessionId), { status: 'completed' });
 }
 
 // --- Cashier Box Actions ---
 export async function addCashierBox(userId: string, name: string, password: string): Promise<void> {
-    const newBox = await CashierFlows.createCashierBox({ userId, name, password });
-    if (!newBox) throw new Error("Failed to create cashier box");
-    const db = await getFirestoreDb();
-    await updateDoc(doc(db, 'users', userId), {
-        'profileSetupData.cashierBoxes': arrayUnion(newBox)
-    });
+    // const newBox = await CashierFlows.createCashierBox({ userId, name, password });
+    // if (!newBox) throw new Error("Failed to create cashier box");
+    // const db = getFirestoreDb();
+    // await updateDoc(doc(db, 'users', userId), {
+    //     'profileSetupData.cashierBoxes': arrayUnion(newBox)
+    // });
 }
 
 export async function removeCashierBox(userId: string, boxId: string) {
-    const db = await getFirestoreDb();
+    const db = getFirestoreDb();
     const userRef = doc(db, 'users', userId);
     const userSnap = await getDoc(userRef);
     if (!userSnap.exists()) return;
@@ -439,7 +446,7 @@ export async function removeCashierBox(userId: string, boxId: string) {
 }
 
 export async function updateCashierBox(userId: string, boxId: string, updates: Partial<Pick<CashierBox, 'name' | 'passwordHash'>>) {
-    const db = await getFirestoreDb();
+    const db = getFirestoreDb();
     const userRef = doc(db, 'users', userId);
     const userSnap = await getDoc(userRef);
     if (!userSnap.exists()) return;
@@ -455,8 +462,8 @@ export async function updateCashierBox(userId: string, boxId: string, updates: P
 }
 
 export async function regenerateCashierBoxQr(userId: string, boxId: string) {
-    const newQrData = await CashierFlows.regenerateCashierQr({ boxId, userId });
-    const db = await getFirestoreDb();
+    // const newQrData = await CashierFlows.regenerateCashierQr({ boxId, userId });
+    const db = getFirestoreDb();
     const userRef = doc(db, 'users', userId);
     const userSnap = await getDoc(userRef);
     if (!userSnap.exists()) return;
@@ -464,20 +471,21 @@ export async function regenerateCashierBoxQr(userId: string, boxId: string) {
     const boxes = user.profileSetupData?.cashierBoxes || [];
     const boxIndex = boxes.findIndex(b => b.id === boxId);
     if (boxIndex > -1) {
-        const updatedBox = { ...boxes[boxIndex], ...newQrData };
-        const newBoxes = [...boxes];
-        newBoxes[boxIndex] = updatedBox;
-        await updateDoc(userRef, { 'profileSetupData.cashierBoxes': newBoxes });
+        // const updatedBox = { ...boxes[boxIndex], ...newQrData };
+        // const newBoxes = [...boxes];
+        // newBoxes[boxIndex] = updatedBox;
+        // await updateDoc(userRef, { 'profileSetupData.cashierBoxes': newBoxes });
     }
 }
 
 export async function requestCashierSession(data: { businessCoraboId: string, cashierName: string, cashierBoxId: string, password: string }) {
-    return await CashierFlows.requestCashierSessionFlow(data);
+    // return await CashierFlows.requestCashierSessionFlow(data);
+    return { success: false, message: "Temporarily disabled"};
 }
 
 // --- Delivery Actions ---
-export const retryFindDelivery = DeliveryFlows.findDeliveryProvider;
-export const resolveDeliveryAsPickup = DeliveryFlows.resolveDeliveryAsPickup;
+// export const retryFindDelivery = DeliveryFlows.findDeliveryProvider;
+// export const resolveDeliveryAsPickup = DeliveryFlows.resolveDeliveryAsPickup;
 export async function assignOwnDelivery(transactionId: string, userId: string) {
     await updateDoc(doc(await getFirestoreDb(), 'transactions', transactionId), {
         'details.deliveryProviderId': userId,
@@ -497,7 +505,7 @@ export async function subscribeUser(userId: string, title: string, amount: numbe
 }
 
 // --- Notification Actions ---
-export const sendNewCampaignNotifications = NotificationFlows.sendNewCampaignNotifications;
+// export const sendNewCampaignNotifications = NotificationFlows.sendNewCampaignNotifications;
 
 // --- Feed Actions ---
-export const getFeed = FeedFlows.getFeedFlow;
+// export const getFeed = FeedFlows.getFeedFlow;
