@@ -69,7 +69,7 @@ export async function toggleGps(userId: string, currentStatus: boolean) {
 }
 
 export async function deactivateTransactions(userId: string) {
-    await updateUser(userId, { isTransactionsActive: false, 'profileSetupData.paymentDetails': deleteField() });
+    await updateUser(userId, { isTransactionsActive: false, 'profileSetupData.paymentDetails': deleteField() as any });
 }
 
 export async function activateTransactions(userId: string, paymentDetails: ProfileSetupData['paymentDetails']) {
