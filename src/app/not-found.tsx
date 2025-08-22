@@ -1,71 +1,35 @@
-{
-  "name": "corabo.app",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "next dev",
-    "genkit:dev": "genkit start",
-    "genkit:watch": "genkit start --watch",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  },
-  "engines": {
-    "node": "18"
-  },
-  "dependencies": {
-    "@genkit-ai/core": "1.16.1",
-    "@genkit-ai/firebase": "1.16.1",
-    "@genkit-ai/googleai": "1.16.1",
-    "@hookform/resolvers": "3.9.0",
-    "@radix-ui/react-accordion": "1.2.3",
-    "@radix-ui/react-alert-dialog": "1.1.6",
-    "@radix-ui/react-avatar": "1.1.3",
-    "@radix-ui/react-checkbox": "1.1.4",
-    "@radix-ui/react-collapsible": "1.1.11",
-    "@radix-ui/react-dialog": "1.1.6",
-    "@radix-ui/react-dropdown-menu": "2.1.6",
-    "@radix-ui/react-label": "2.1.2",
-    "@radix-ui/react-menubar": "1.1.6",
-    "@radix-ui/react-popover": "1.1.6",
-    "@radix-ui/react-progress": "1.1.2",
-    "@radix-ui/react-radio-group": "1.2.3",
-    "@radix-ui/react-scroll-area": "1.2.3",
-    "@radix-ui/react-select": "2.1.6",
-    "@radix-ui/react-separator": "1.1.2",
-    "@radix-ui/react-slider": "1.2.3",
-    "@radix-ui/react-slot": "1.2.3",
-    "@radix-ui/react-switch": "1.1.3",
-    "@radix-ui/react-tabs": "1.1.3",
-    "@radix-ui/react-toast": "1.2.6",
-    "@radix-ui/react-tooltip": "1.1.8",
-    "class-variance-authority": "0.7.1",
-    "clsx": "2.1.1",
-    "date-fns": "3.6.0",
-    "embla-carousel-react": "8.6.0",
-    "firebase": "^12.1.0",
-    "firebase-admin": "12.3.0",
-    "genkit": "1.16.1",
-    "lucide-react": "0.488.0",
-    "next": "14.2.6",
-    "next-themes": "0.3.0",
-    "qrcode": "^1.5.3",
-    "react": "18.3.1",
-    "react-day-picker": "8.10.1",
-    "react-dom": "18.3.1",
-    "recharts": "2.15.1",
-    "tailwind-merge": "3.0.1",
-    "tailwindcss-animate": "1.0.7",
-    "zod": "3.24.2"
-  },
-  "devDependencies": {
-    "@types/node": "20.14.12",
-    "@types/react": "18.3.3",
-    "@types/react-dom": "18.3.0",
-    "@types/qrcode": "^1.5.5",
-    "genkit-cli": "1.16.1",
-    "postcss": "8.4.40",
-    "tailwindcss": "3.4.1",
-    "typescript": "5.5.4"
-  }
+
+'use client';
+
+import { Button } from '@/components/ui/button';
+import Image from 'next/image';
+import Link from 'next/link';
+
+export default function NotFound() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background text-center px-4">
+      <div className="relative w-48 h-24 mx-auto mb-6">
+            <Image 
+                src="https://i.postimg.cc/Wz1MTvWK/lg.png"
+                alt="Corabo logo"
+                fill
+                priority
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                className="object-contain"
+            />
+        </div>
+      <h2 className="text-2xl font-bold text-destructive">Error 404</h2>
+      <p className="mt-2 text-lg text-muted-foreground">
+        Lo sentimos, no pudimos encontrar la página que estás buscando.
+      </p>
+      <p className="mt-2 text-sm text-muted-foreground">
+        Es posible que el enlace esté roto o que la página haya sido eliminada.
+      </p>
+      <Link href="/">
+        <Button className="mt-8">
+          Volver a la Página Principal
+        </Button>
+      </Link>
+    </div>
+  )
 }
