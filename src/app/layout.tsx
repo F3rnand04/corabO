@@ -47,7 +47,7 @@ export default async function RootLayout({
       } as FirebaseUser;
     }
   } catch (error) {
-    console.error("Server-side session verification failed:", error);
+    // Session cookie is invalid or expired. This is a normal flow.
     serverFirebaseUser = null;
   }
 
@@ -57,7 +57,7 @@ export default async function RootLayout({
         <meta name="format-detection" content="telephone=no, date=no, email=no, address=no" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#FFFFFF" />
-        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+        <link rel="apple-touch-icon" href="/logo-192.png" />
       </head>
       <body className={`${inter.variable} antialiased bg-background`}>
         <Providers attribute="class" defaultTheme="system" enableSystem>

@@ -1,3 +1,4 @@
+
 // IMPORTANT: This file should NOT have the "use client" directive.
 // It's intended for server-side code, like Genkit flows.
 
@@ -21,7 +22,10 @@ function getFirebaseAdminApp() {
         : undefined;
 
     if (!serviceAccount) {
-        throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable not set. Server-side Firebase cannot be initialized.');
+        console.error('FIREBASE_SERVICE_ACCOUNT environment variable not set. Falling back to default credentials. This might fail in some environments.');
+         return initializeApp({
+            storageBucket: firebaseConfig.storageBucket,
+        });
     }
 
     app = initializeApp({
@@ -34,7 +38,7 @@ function getFirebaseAdminApp() {
 // This function provides the initialized Firebase Admin SDK instance.
 export function getFirebaseAdmin() {
     if (!app) {
-        getFirebaseAdminApp();
+        app = getFirebaseAdminApp();
     }
     if (!auth) {
         auth = getAuth(app);
@@ -42,13 +46,5 @@ export function getFirebaseAdmin() {
     if (!db) {
         db = getFirestore(app);
     }
-    return { auth: () => auth, firestore: () => db };
-}
-
-// Separate getter for Firestore DB for flows if needed.
-export function getFirestoreDb(): Firestore {
-  if (!db) {
-    getFirebaseAdmin();
-  }
-  return db;
+    return { auth, firestore: db };
 }

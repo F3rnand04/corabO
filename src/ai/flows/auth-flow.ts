@@ -2,10 +2,11 @@
 'use server';
 /**
  * @fileOverview Authentication flow for creating or retrieving a user.
+ * This flow now correctly uses the Firebase Admin SDK for server-side database operations.
  */
 
 import { ai } from '@/ai/genkit';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore } from 'firebase-admin/firestore'; // Correct: Use Admin SDK
 import type { User } from '@/lib/types';
 import { z } from 'zod';
 import { credicoraLevels } from '@/lib/types';
@@ -30,7 +31,7 @@ export const getOrCreateUser = ai.defineFlow(
     outputSchema: UserOutputSchema,
   },
   async (firebaseUser) => {
-    const db = getFirestore();
+    const db = getFirestore(); // Gets the admin Firestore instance
     const userDocRef = db.collection('users').doc(firebaseUser.uid);
     const now = new Date();
 
@@ -39,22 +40,6 @@ export const getOrCreateUser = ai.defineFlow(
 
         if (userDocSnap.exists) {
             const user = userDocSnap.data() as User;
-            const updates: { [key: string]: any } = {};
-            
-            // Update last activity timestamp on every login
-            updates.lastActivityAt = now.toISOString();
-
-            // Ensure the specified user always has the admin role.
-            if (user.email === 'fernandopbt@gmail.com' && user.role !== 'admin') {
-                updates.role = 'admin';
-            }
-            
-            if (Object.keys(updates).length > 0) {
-                await userDocRef.update(updates);
-                // Return a serializable version of the updated user
-                return JSON.parse(JSON.stringify({ ...user, ...updates }));
-            }
-            
             // Return the complete, serializable user object for existing users.
             return JSON.parse(JSON.stringify(user));
         } else {
@@ -67,7 +52,7 @@ export const getOrCreateUser = ai.defineFlow(
                 email: firebaseUser.email || '',
                 profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
                 createdAt: now.toISOString(),
-                lastActivityAt: now.toISOString(), // Set initial activity
+                lastActivityAt: now.toISOString(),
                 isInitialSetupComplete: false, 
                 lastName: '',
                 idNumber: '',
@@ -75,7 +60,7 @@ export const getOrCreateUser = ai.defineFlow(
                 country: '',
                 type: 'client',
                 reputation: 5,
-                effectiveness: 100, // Start with 100% effectiveness
+                effectiveness: 100,
                 phone: '',
                 emailValidated: firebaseUser.emailVerified,
                 phoneValidated: false,
