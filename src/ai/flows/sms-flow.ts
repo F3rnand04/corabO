@@ -10,8 +10,8 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { addMinutes, isAfter } from 'date-fns';
 import type { User } from '@/lib/types';
-import { Twilio } from 'twilio';
-import { env } from '@/env.mjs';
+// import { Twilio } from 'twilio';
+// import { env } from '@/env.mjs';
 
 const SmsVerificationInputSchema = z.object({
   userId: z.string(),
@@ -39,18 +39,19 @@ export const sendSmsVerificationCodeFlow = ai.defineFlow(
       phoneVerificationCodeExpires: codeExpiry.toISOString(),
     });
 
-    const accountSid = env.TWILIO_ACCOUNT_SID;
-    const authToken = env.TWILIO_AUTH_TOKEN;
-    const twilioNumber = env.TWILIO_PHONE_NUMBER;
+    // const accountSid = env.TWILIO_ACCOUNT_SID;
+    // const authToken = env.TWILIO_AUTH_TOKEN;
+    // const twilioNumber = env.TWILIO_PHONE_NUMBER;
     
-    const twilioClient = new Twilio(accountSid, authToken);
+    // const twilioClient = new Twilio(accountSid, authToken);
     
     try {
-        await twilioClient.messages.create({
-            body: `Tu código de verificación para Corabo es: ${verificationCode}`,
-            from: twilioNumber,
-            to: phoneNumber,
-        });
+        // await twilioClient.messages.create({
+        //     body: `Tu código de verificación para Corabo es: ${verificationCode}`,
+        //     from: twilioNumber,
+        //     to: phoneNumber,
+        // });
+        console.log(`Simulating SMS to ${phoneNumber}: Your code is ${verificationCode}`);
     } catch (error) {
         console.error("Error sending SMS via Twilio in flow:", error);
         // Do not re-throw the error to the client, just log it.
