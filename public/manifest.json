@@ -1,11 +1,12 @@
+
 {
   "name": "Corabo",
   "short_name": "Corabo",
-  "description": "Tu ecosistema de confianza para conectar con profesionales, comprar productos y gestionar tus servicios.",
+  "description": "Tu ecosistema de confianza para conectar con profesionales, comprar productos y gestionar tus servicios de forma segura y transparente.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#007bff",
+  "theme_color": "#2563eb",
   "icons": [
     {
       "src": "/logo-192.png",

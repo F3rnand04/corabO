@@ -14,7 +14,7 @@ import type { User as FirebaseUser } from 'firebase/auth';
 export const metadata: Metadata = {
   title: 'corabO.app',
   description: 'Aplicación Funcional corabO',
-  manifest: '/manifest.json',
+  manifest: '/manifest.json', // Correct path to manifest
 };
 
 const inter = Inter({

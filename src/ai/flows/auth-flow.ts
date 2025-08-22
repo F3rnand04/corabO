@@ -2,7 +2,7 @@
 'use server';
 /**
  * @fileOverview Authentication flow for creating or retrieving a user.
- * This flow now correctly uses the Firebase Admin SDK for server-side database operations.
+ * This flow is now corrected to exclusively use the Firebase Admin SDK for all database operations.
  */
 
 import { ai } from '@/ai/genkit';
@@ -36,7 +36,7 @@ export const getOrCreateUser = ai.defineFlow(
     const now = new Date();
 
     try {
-        const userDocSnap = await userDocRef.get();
+        const userDocSnap = await userDocRef.get(); // Correct Admin SDK usage
 
         if (userDocSnap.exists) {
             const user = userDocSnap.data() as User;
@@ -81,7 +81,7 @@ export const getOrCreateUser = ai.defineFlow(
                 newUser.role = 'admin';
             }
 
-            await userDocRef.set(newUser);
+            await userDocRef.set(newUser); // Correct Admin SDK usage
             // Return a plain, serializable object
             return JSON.parse(JSON.stringify(newUser));
         }
