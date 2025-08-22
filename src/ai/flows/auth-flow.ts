@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Authentication flow for creating or retrieving a user.
@@ -36,7 +35,7 @@ export const getOrCreateUser = ai.defineFlow(
     const now = new Date();
 
     try {
-        const userDocSnap = await userDocRef.get(); // Correct Admin SDK usage
+        const userDocSnap = await userDocRef.get();
 
         if (userDocSnap.exists) {
             const user = userDocSnap.data() as User;
@@ -81,7 +80,7 @@ export const getOrCreateUser = ai.defineFlow(
                 newUser.role = 'admin';
             }
 
-            await userDocRef.set(newUser); // Correct Admin SDK usage
+            await userDocRef.set(newUser);
             // Return a plain, serializable object
             return JSON.parse(JSON.stringify(newUser));
         }

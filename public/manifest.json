@@ -1,11 +1,11 @@
 {
-  "name": "Corabo App",
+  "name": "Corabo",
   "short_name": "Corabo",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#FFFFFF",
-  "theme_color": "#FFFFFF",
-  "description": "Tu ecosistema de confianza para conectar con profesionales y servicios.",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "description": "Tu ecosistema de confianza para conectar con profesionales, comprar productos y gestionar tus servicios.",
   "icons": [
     {
       "src": "/logo-192.png",
