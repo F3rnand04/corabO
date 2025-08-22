@@ -1,7 +1,7 @@
 {
-  "name": "Corabo",
+  "name": "Corabo App",
   "short_name": "Corabo",
-  "description": "Corabo - Conectando tus necesidades con las mejores soluciones.",
+  "description": "Conectando tus necesidades con las mejores soluciones.",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",
@@ -14,9 +14,8 @@
       "type": "image/png"
     }
   ],
-  "theme_color": "#ffffff",
-  "background_color": "#ffffff",
+  "theme_color": "#FFFFFF",
+  "background_color": "#FFFFFF",
   "start_url": "/",
-  "display": "standalone",
-  "orientation": "portrait"
+  "display": "standalone"
 }
