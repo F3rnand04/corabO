@@ -16,8 +16,7 @@ import {
   type Transaction,
   credicoraLevels,
 } from '@/lib/types';
-import { getFirestore } from 'firebase-admin/firestore';
-import {collection, doc, getDoc, getDocs, query, writeBatch, where} from 'firebase/firestore';
+import { getFirestore, writeBatch, doc, getDoc } from 'firebase-admin/firestore';
 
 
 const CreateCampaignInputSchema = z.object({
@@ -83,17 +82,15 @@ const createCampaignFlow = ai.defineFlow(
   },
   async (input: CreateCampaignInput) => {
     const db = getFirestore();
-    // In a real app with auth, we'd get the UID from the auth context.
-    // For now, we trust the input userId but proceed with caution.
-    const userRef = doc(db, 'users', input.userId);
+    const userRef = db.collection('users').doc(input.userId);
     const userSnap = await getDoc(userRef);
 
-    if (!userSnap.exists() || userSnap.data().type !== 'provider') {
+    if (!userSnap.exists() || userSnap.data()?.type !== 'provider') {
       throw new Error('User not found or is not a provider.');
     }
 
     const user = userSnap.data() as User;
-    const batch = writeBatch(db);
+    const batch = db.batch();
     const startDate = new Date();
     const endDate = new Date();
     endDate.setDate(startDate.getDate() + input.durationDays);
@@ -101,7 +98,7 @@ const createCampaignFlow = ai.defineFlow(
     const campaignId = `camp-${Date.now()}`;
     const newCampaign: Campaign = {
       id: campaignId,
-      providerId: user.id, // Ensure providerId is the one from the validated user doc
+      providerId: user.id,
       publicationId: input.publicationId,
       budget: input.budget,
       durationDays: input.durationDays,
@@ -113,14 +110,12 @@ const createCampaignFlow = ai.defineFlow(
       dailyBudget: input.dailyBudget,
       segmentation: input.segmentation,
       appliedSubscriptionDiscount: input.appliedSubscriptionDiscount,
-      // Business Rule: Credicora financing is only applicable if the final budget is >= $20
       financedWithCredicora: input.financedWithCredicora && input.budget >= 20,
     };
 
-    const campaignRef = doc(db, 'campaigns', newCampaign.id);
+    const campaignRef = db.collection('campaigns').doc(newCampaign.id);
     batch.set(campaignRef, newCampaign);
 
-    // Create system transaction for the payment
     const txId = `txn-camp-${Date.now()}`;
     const campaignTransaction: Transaction = {
       id: txId,
@@ -129,27 +124,23 @@ const createCampaignFlow = ai.defineFlow(
       date: new Date().toISOString(),
       amount: input.budget,
       clientId: user.id,
-      providerId: 'corabo-admin', // System transaction
+      providerId: 'corabo-admin',
       participantIds: [user.id, 'corabo-admin'],
       details: {
         system: `Pago de campaña publicitaria: ${newCampaign.id}`,
         paymentMethod: newCampaign.financedWithCredicora ? 'credicora' : 'direct',
-        paymentVoucherUrl: 'https://i.postimg.cc/L8y2zWc2/vzla-id.png' // Placeholder for voucher
+        paymentVoucherUrl: 'https://i.postimg.cc/L8y2zWc2/vzla-id.png'
       },
     };
 
-    const txRef = doc(db, 'transactions', txId);
+    const txRef = db.collection('transactions').doc(txId);
     batch.set(txRef, campaignTransaction);
 
-    // Update user's active campaigns
     const updatedCampaignIds = [...(user.activeCampaignIds || []), newCampaign.id];
     batch.update(userRef, {activeCampaignIds: updatedCampaignIds});
     
     await batch.commit();
-    
-    // Notification is now handled by the admin panel upon payment verification,
-    // ensuring campaigns are not announced before they are paid and active.
-    
+        
     return newCampaign;
   }
 );
