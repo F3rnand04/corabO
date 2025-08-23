@@ -5,7 +5,7 @@ import React, { createContext, useContext, useState, ReactNode, useEffect, useCa
 import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest, PublicationOwner, CreatePublicationInput, CreateProductInput, QrSession, TempRecipientInfo, CashierBox } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast"
 import { getFirestoreDb } from '@/lib/firebase';
-import { doc, getDoc, collection, onSnapshot, query, where, orderBy, Unsubscribe, updateDoc, writeBatch, deleteField } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, where, orderBy, Unsubscribe, writeBatch, deleteField } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import { useAuth } from '@/components/auth/AuthProvider';
 import * as Actions from '@/lib/actions';
@@ -34,7 +34,7 @@ interface CoraboContextValue {
   cart: CartItem[];
   qrSession: QrSession | null;
 
-  // Actions - These are now mostly simple state setters, logic is in actions.ts
+  // Actions
   setSearchQuery: (query: string) => void;
   setCategoryFilter: (category: string | null) => void;
   clearSearchHistory: () => void;
@@ -70,7 +70,7 @@ interface CoraboProviderProps {
 }
 
 export const CoraboProvider = ({ children }: CoraboProviderProps) => {
-  // Auth state is now managed by AuthProvider and passed here
+  // Logic from AuthProvider is now the source of truth for user state
   const { currentUser, isLoadingUser, setCurrentUser, logout } = useAuth();
   const { toast } = useToast();
   
@@ -219,7 +219,11 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
       }));
     }, []);
     
-    const activeCartTx = useMemo(() => transactions.find(tx => tx.clientId === currentUser?.id && tx.status === 'Carrito Activo'), [transactions, currentUser?.id]);
+    const activeCartTx = useMemo(() => {
+      if (!currentUser?.id) return null;
+      return transactions.find(tx => tx.clientId === currentUser.id && tx.status === 'Carrito Activo')
+    }, [transactions, currentUser?.id]);
+
     const cart: CartItem[] = useMemo(() => activeCartTx?.details.items || [], [activeCartTx]);
 
     const addContact = (user: User): boolean => {
@@ -279,3 +283,5 @@ export const useCorabo = (): CoraboContextValue => {
 };
 
 export type { Transaction };
+
+    

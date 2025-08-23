@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Authentication flow for creating or retrieving a user.
@@ -38,7 +39,7 @@ export const getOrCreateUserFlow = ai.defineFlow(
     try {
         const userDocSnap = await userDocRef.get();
 
-        if (userDocSnap.exists) {
+        if (userDocSnap.exists()) {
             const user = userDocSnap.data() as User;
             // Return the complete, serializable user object for existing users.
             return JSON.parse(JSON.stringify(user));
