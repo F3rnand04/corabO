@@ -1,10 +1,11 @@
 'use server';
 /**
  * @fileOverview Authentication flow for creating or retrieving a user.
- * This flow is now corrected to exclusively use the Firebase Admin SDK for all database operations.
+ * This flow is now corrected to exclusively use the Firebase Admin SDK for all database operations
+ * and ensures the returned object is properly JSON-serializable.
  */
 
-import { ai } from '@/ai/genkit'; // Correct: Import from the central, server-only instance.
+import { ai } from '@/ai/genkit';
 import { getFirestore } from 'firebase-admin/firestore';
 import type { User } from '@/lib/types';
 import { z } from 'zod';
@@ -81,13 +82,12 @@ export const getOrCreateUser = ai.defineFlow(
             }
 
             await userDocRef.set(newUser);
-            // Return a plain, serializable object
+            // Return a plain, serializable object to prevent hydration issues
             return JSON.parse(JSON.stringify(newUser));
         }
     } catch (error) {
         console.error("FATAL ERROR in getOrCreateUserFlow: ", error);
         // In case of a Firestore error, we must return null to prevent the app from crashing.
-        // The context will handle this null value and keep the user logged out.
         return null;
     }
   }

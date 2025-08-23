@@ -1,15 +1,21 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User as FirebaseUser } from 'firebase/auth';
 import { getAuthInstance } from '@/lib/firebase';
+import { getOrCreateUser } from '@/lib/actions';
+import type { User as CoraboUser } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
+
 
 interface AuthContextType {
   firebaseUser: FirebaseUser | null;
-  isLoadingAuth: boolean;
+  currentUser: CoraboUser | null; // Changed to currentUser to match Corabo's user type
+  isLoadingUser: boolean; // Renamed for clarity
   signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
+  setCurrentUser: (user: CoraboUser | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,64 +26,109 @@ type AuthProviderProps = {
 };
 
 export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps) => {
+  const { toast } = useToast();
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(serverFirebaseUser);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(!serverFirebaseUser);
+  const [currentUser, setCurrentUser] = useState<CoraboUser | null>(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
+
+  const fetchCoraboUser = useCallback(async (fUser: FirebaseUser | null) => {
+    if (fUser) {
+        try {
+            const coraboUser = await getOrCreateUser({
+                uid: fUser.uid,
+                displayName: fUser.displayName,
+                email: fUser.email,
+                photoURL: fUser.photoURL,
+                emailVerified: fUser.emailVerified,
+            });
+            setCurrentUser(coraboUser as CoraboUser);
+        } catch (error) {
+            console.error("Failed to fetch or create Corabo user:", error);
+            toast({
+                variant: "destructive",
+                title: "Error de Cuenta",
+                description: "No pudimos cargar los datos de tu perfil de Corabo.",
+            });
+            setCurrentUser(null);
+        }
+    } else {
+        setCurrentUser(null);
+    }
+    setIsLoadingUser(false);
+  }, [toast]);
+
 
   useEffect(() => {
+    // If we have a user from the server, fetch their Corabo profile immediately.
+    // This handles the initial load for an already logged-in user.
+    if (serverFirebaseUser) {
+        fetchCoraboUser(serverFirebaseUser);
+    } else {
+        setIsLoadingUser(false);
+    }
+
     const auth = getAuthInstance();
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      // Only update if the user state has genuinely changed from the initial server state
-      if (user?.uid !== firebaseUser?.uid) {
-         setFirebaseUser(user);
-      }
-      setIsLoadingAuth(false); 
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        setFirebaseUser(user);
+        // This will trigger on login/logout on the client-side
+        if (!serverFirebaseUser) { // Avoid refetching if server already provided user
+             setIsLoadingUser(true);
+             await fetchCoraboUser(user);
+        }
     });
 
     return () => unsubscribe();
-  }, [firebaseUser]);
+  }, [serverFirebaseUser, fetchCoraboUser]);
 
   const signInWithGoogle = async () => {
-    setIsLoadingAuth(true);
+    setIsLoadingUser(true);
     try {
         const auth = getAuthInstance();
         const provider = new GoogleAuthProvider();
         const result = await signInWithPopup(auth, provider);
         
-        // After successful sign-in, get the ID token and set it as a session cookie
         const idToken = await result.user.getIdToken();
         await fetch('/api/auth/session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ idToken }),
         });
-        
-    } catch (error) {
-        console.error("Error signing in with Google:", error);
-        setIsLoadingAuth(false);
+        // onAuthStateChanged will handle fetching the Corabo user
+    } catch (error: any) {
+        if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
+          console.error("Error signing in with Google:", error);
+           toast({
+              variant: "destructive",
+              title: "Error de Inicio de Sesión",
+              description: "No se pudo iniciar sesión con Google.",
+           });
+        }
+        setIsLoadingUser(false);
     }
   };
 
   const logout = async () => {
-    setIsLoadingAuth(true);
+    setIsLoadingUser(true);
     try {
         const auth = getAuthInstance();
         await signOut(auth);
-
-        // Call the API endpoint to clear the session cookie
+        setCurrentUser(null);
+        setFirebaseUser(null);
         await fetch('/api/auth/session', { method: 'DELETE' });
-
     } catch (error) {
          console.error("Error signing out:", error);
     } finally {
-        setIsLoadingAuth(false);
+        setIsLoadingUser(false);
     }
   };
-
+  
   const value = {
     firebaseUser,
-    isLoadingAuth,
+    currentUser,
+    isLoadingUser,
     signInWithGoogle,
     logout,
+    setCurrentUser,
   };
   
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

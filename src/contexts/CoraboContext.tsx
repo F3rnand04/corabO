@@ -8,8 +8,6 @@ import { getFirestoreDb } from '@/lib/firebase';
 import { doc, getDoc, collection, onSnapshot, query, where, orderBy, Unsubscribe, updateDoc, writeBatch, deleteField } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import * as Actions from '@/lib/actions';
-import { type User as FirebaseUser } from 'firebase/auth';
-import { getOrCreateUser as getOrCreateUserAction } from '@/lib/actions';
 import { useAuth } from '@/components/auth/AuthProvider';
 
 interface CoraboContextValue {
@@ -47,8 +45,8 @@ interface CoraboContextValue {
   getDistanceToProvider: (provider: User) => string | null;
   setTempRecipientInfo: (info: TempRecipientInfo | null) => void;
   setActiveCartForCheckout: (cartItems: CartItem[] | null) => void;
-  setCurrentUser: (user: User | null) => void; // Allow direct setting for sync
   logout: () => void;
+  updateUser: (userId: string, updates: Partial<User>) => Promise<void>;
 }
 
 interface GeolocationCoords {
@@ -70,11 +68,9 @@ interface CoraboProviderProps {
 }
 
 export const CoraboProvider = ({ children }: CoraboProviderProps) => {
-  const { firebaseUser, isLoadingAuth, logout: authLogout } = useAuth();
+  const { currentUser, isLoadingUser, setCurrentUser, logout } = useAuth();
   const { toast } = useToast();
   
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [users, setUsers] = useState<User[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -92,42 +88,6 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   
   const userCache = useRef<Map<string, User>>(new Map());
 
-  useEffect(() => {
-    if (isLoadingAuth) {
-      setIsLoadingUser(true);
-      return;
-    }
-    
-    if (firebaseUser) {
-      getOrCreateUserAction({
-        uid: firebaseUser.uid,
-        displayName: firebaseUser.displayName,
-        email: firebaseUser.email,
-        photoURL: firebaseUser.photoURL,
-        emailVerified: firebaseUser.emailVerified,
-      }).then(user => {
-        if (user) {
-          setCurrentUser(user as User);
-        } else {
-          setCurrentUser(null);
-        }
-      }).catch(error => {
-        console.error("Failed to get or create Corabo user:", error);
-        setCurrentUser(null);
-        toast({
-            variant: "destructive",
-            title: "Error de Cuenta",
-            description: "No pudimos cargar los datos de tu perfil de Corabo.",
-        });
-      }).finally(() => {
-        // This ensures the loading spinner will always disappear
-        setIsLoadingUser(false);
-      });
-    } else {
-      setCurrentUser(null);
-      setIsLoadingUser(false);
-    }
-  }, [firebaseUser, isLoadingAuth, toast]);
   
   const setDeliveryAddress = useCallback((address: string) => {
     sessionStorage.setItem('coraboDeliveryAddress', address);
@@ -143,6 +103,13 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
       _setTempRecipientInfo(info);
   }, []);
   
+  const updateUser = useCallback(async (userId: string, updates: Partial<User>) => {
+    await Actions.updateUser(userId, updates);
+    if(userId === currentUser?.id) {
+        setCurrentUser(prev => prev ? { ...prev, ...updates } : null);
+    }
+  }, [currentUser?.id, setCurrentUser]);
+
 
   useEffect(() => {
     const savedAddress = sessionStorage.getItem('coraboDeliveryAddress');
@@ -298,8 +265,8 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         getDistanceToProvider,
         setTempRecipientInfo,
         setActiveCartForCheckout,
-        setCurrentUser,
-        logout: authLogout,
+        logout,
+        updateUser,
     };
   
     return (
