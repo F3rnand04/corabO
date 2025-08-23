@@ -25,7 +25,7 @@ interface PublicationCardProps {
 }
 
 export function PublicationCard({ publication, className }: PublicationCardProps) {
-    const { isContact, currentUser, getUserMetrics, getDistanceToProvider } = useCorabo();
+    const { isContact, currentUser, getUserMetrics, getDistanceToProvider, addContact } = useCorabo();
     const router = useRouter();
     const { toast } = useToast();
     
@@ -72,7 +72,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
     const affiliation = owner.activeAffiliation;
 
     const handleSaveContact = () => {
-        Actions.addContact(owner);
+        addContact(owner);
         setIsSaved(true);
         toast({
             title: "¡Contacto Guardado!",
