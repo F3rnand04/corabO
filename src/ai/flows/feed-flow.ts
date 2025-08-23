@@ -10,8 +10,14 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestore } from 'firebase-admin/firestore';
 import { collection, query, orderBy, limit, startAfter, getDocs, doc, getDoc, where } from 'firebase/firestore';
-import type { GalleryImage, User } from '@/lib/types';
+import type { GalleryImage, User, PublicationOwner } from '@/lib/types';
 import { GetFeedInputSchema, GetFeedOutputSchema } from '@/lib/types';
+
+
+export async function getFeed(input: z.infer<typeof GetFeedInputSchema>): Promise<z.infer<typeof GetFeedOutputSchema>> {
+    return getFeedFlow(input);
+}
+
 
 export const getFeedFlow = ai.defineFlow(
     {
@@ -57,10 +63,29 @@ export const getFeedFlow = ai.defineFlow(
         }
         
         const enrichedPublications = publicationsData.map(pub => {
-            const owner = ownersMap.get(pub.providerId) || null;
+            const ownerData = ownersMap.get(pub.providerId) || null;
+            let owner: PublicationOwner | null = null;
+            if (ownerData) {
+                owner = {
+                    id: ownerData.id,
+                    name: ownerData.name,
+                    profileImage: ownerData.profileImage,
+                    verified: ownerData.verified,
+                    isGpsActive: ownerData.isGpsActive,
+                    reputation: ownerData.reputation,
+                    profileSetupData: {
+                        specialty: ownerData.profileSetupData?.specialty,
+                        providerType: ownerData.profileSetupData?.providerType,
+                        username: ownerData.profileSetupData?.username,
+                        primaryCategory: ownerData.profileSetupData?.primaryCategory,
+                    },
+                    activeAffiliation: ownerData.activeAffiliation || null,
+                }
+            }
+
             return {
                 ...pub,
-                owner: owner ? JSON.parse(JSON.stringify(owner)) : null,
+                owner,
             };
         });
 

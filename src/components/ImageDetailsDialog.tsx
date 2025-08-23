@@ -20,7 +20,7 @@ import { useState, useEffect, useRef, ChangeEvent } from 'react';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 import { cn } from '@/lib/utils';
 import { Textarea } from './ui/textarea';
-import * as Actions from '@/lib/actions';
+import { addCommentToImage, removeCommentFromImage, updateGalleryImage, removeGalleryImage } from '@/ai/flows/publication-flow';
 
 
 interface ImageDetailsDialogProps {
@@ -83,20 +83,33 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex =
   
   const handlePostComment = () => {
     if (newComment.trim() && currentImage && owner && currentUser) {
-        Actions.addCommentToImage(owner.id, currentImage.id, newComment, currentUser);
+        addCommentToImage({
+            ownerId: owner.id,
+            imageId: currentImage.id,
+            commentText: newComment,
+            author: {
+                id: currentUser.id,
+                name: currentUser.name,
+                profileImage: currentUser.profileImage
+            }
+        });
         setNewComment("");
     }
   }
   
   const handleDeleteComment = (commentIndex: number) => {
     if (currentImage && owner) {
-        Actions.removeCommentFromImage(owner.id, currentImage.id, commentIndex);
+        removeCommentFromImage({
+            ownerId: owner.id,
+            imageId: currentImage.id,
+            commentIndex
+        });
     }
   }
 
   const handleDeletePublication = (imageId: string) => {
     if (owner) {
-      Actions.removeGalleryImage(owner.id, imageId);
+      removeGalleryImage({ ownerId: owner.id, imageId });
       onOpenChange(false);
     }
   }
@@ -114,9 +127,13 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex =
   const handleSaveChanges = () => {
     if (!currentImage || !owner) return;
     
-    Actions.updateGalleryImage(owner.id, currentImage.id, {
-        description: editedDescription,
-        imageDataUri: newImagePreview || undefined, // Send undefined if not changed
+    updateGalleryImage({
+        ownerId: owner.id,
+        imageId: currentImage.id,
+        updates: {
+            description: editedDescription,
+            imageDataUri: newImagePreview || undefined, // Send undefined if not changed
+        }
     });
     setIsEditing(false);
   };
