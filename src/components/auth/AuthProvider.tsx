@@ -4,15 +4,15 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User as FirebaseUser } from 'firebase/auth';
 import { getAuthInstance } from '@/lib/firebase';
-import { getOrCreateUser } from '@/lib/actions';
+import { getOrCreateUserFlow } from '@/ai/flows/auth-flow';
 import type { User as CoraboUser } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
 
 interface AuthContextType {
   firebaseUser: FirebaseUser | null;
-  currentUser: CoraboUser | null; // Changed to currentUser to match Corabo's user type
-  isLoadingUser: boolean; // Renamed for clarity
+  currentUser: CoraboUser | null;
+  isLoadingUser: boolean;
   signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   setCurrentUser: (user: CoraboUser | null) => void;
@@ -34,7 +34,7 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
   const fetchCoraboUser = useCallback(async (fUser: FirebaseUser | null) => {
     if (fUser) {
         try {
-            const coraboUser = await getOrCreateUser({
+            const coraboUser = await getOrCreateUserFlow({
                 uid: fUser.uid,
                 displayName: fUser.displayName,
                 email: fUser.email,
@@ -59,9 +59,7 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
 
 
   useEffect(() => {
-    // If we have a user from the server, fetch their Corabo profile immediately.
-    // This handles the initial load for an already logged-in user.
-    if (serverFirebaseUser) {
+    if (serverFirebaseUser && !currentUser) {
         fetchCoraboUser(serverFirebaseUser);
     } else {
         setIsLoadingUser(false);
@@ -70,15 +68,17 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
     const auth = getAuthInstance();
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
         setFirebaseUser(user);
-        // This will trigger on login/logout on the client-side
-        if (!serverFirebaseUser) { // Avoid refetching if server already provided user
-             setIsLoadingUser(true);
-             await fetchCoraboUser(user);
+        if (!user) {
+            setCurrentUser(null);
+            setIsLoadingUser(false);
+        } else if (user.uid !== currentUser?.id) {
+            setIsLoadingUser(true);
+            await fetchCoraboUser(user);
         }
     });
 
     return () => unsubscribe();
-  }, [serverFirebaseUser, fetchCoraboUser]);
+  }, [serverFirebaseUser, fetchCoraboUser, currentUser]);
 
   const signInWithGoogle = async () => {
     setIsLoadingUser(true);

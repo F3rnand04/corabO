@@ -24,7 +24,7 @@ export type FirebaseUserInput = z.infer<typeof FirebaseUserSchema>;
 // The output MUST be a plain JSON-serializable object.
 const UserOutputSchema = z.any().nullable();
 
-export const getOrCreateUser = ai.defineFlow(
+export const getOrCreateUserFlow = ai.defineFlow(
   {
     name: 'getOrCreateUserFlow',
     inputSchema: FirebaseUserSchema,
