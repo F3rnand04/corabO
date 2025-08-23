@@ -4,9 +4,9 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User as FirebaseUser } from 'firebase/auth';
 import { getAuthInstance } from '@/lib/firebase';
-import { getOrCreateUserFlow } from '@/ai/flows/auth-flow';
 import type { User as CoraboUser } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import * as Actions from '@/lib/actions';
 
 
 interface AuthContextType {
@@ -34,7 +34,7 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
   const fetchCoraboUser = useCallback(async (fUser: FirebaseUser | null) => {
     if (fUser) {
         try {
-            const coraboUser = await getOrCreateUserFlow({
+            const coraboUser = await Actions.getOrCreateUser({
                 uid: fUser.uid,
                 displayName: fUser.displayName,
                 email: fUser.email,
@@ -59,26 +59,26 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
 
 
   useEffect(() => {
+    // Initialize with server-side user data to prevent hydration mismatch
     if (serverFirebaseUser && !currentUser) {
         fetchCoraboUser(serverFirebaseUser);
     } else {
         setIsLoadingUser(false);
     }
 
+    // Then, listen for client-side changes
     const auth = getAuthInstance();
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
         setFirebaseUser(user);
-        if (!user) {
-            setCurrentUser(null);
-            setIsLoadingUser(false);
-        } else if (user.uid !== currentUser?.id) {
+        // Only trigger a full re-fetch if the user ID has actually changed
+        if (user?.uid !== currentUser?.id) {
             setIsLoadingUser(true);
             await fetchCoraboUser(user);
         }
     });
 
     return () => unsubscribe();
-  }, [serverFirebaseUser, fetchCoraboUser, currentUser]);
+  }, [serverFirebaseUser]); // Run only once on initial mount with server data
 
   const signInWithGoogle = async () => {
     setIsLoadingUser(true);

@@ -20,7 +20,7 @@ import { useState, useEffect, useRef, ChangeEvent } from 'react';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 import { cn } from '@/lib/utils';
 import { Textarea } from './ui/textarea';
-import { addCommentToImage, removeCommentFromImage, updateGalleryImage, removeGalleryImage } from '@/ai/flows/publication-flow';
+import * as Actions from '@/lib/actions';
 
 
 interface ImageDetailsDialogProps {
@@ -83,7 +83,7 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex =
   
   const handlePostComment = () => {
     if (newComment.trim() && currentImage && owner && currentUser) {
-        addCommentToImage({
+        Actions.addCommentToImage({
             ownerId: owner.id,
             imageId: currentImage.id,
             commentText: newComment,
@@ -99,7 +99,7 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex =
   
   const handleDeleteComment = (commentIndex: number) => {
     if (currentImage && owner) {
-        removeCommentFromImage({
+        Actions.removeCommentFromImage({
             ownerId: owner.id,
             imageId: currentImage.id,
             commentIndex
@@ -109,7 +109,7 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex =
 
   const handleDeletePublication = (imageId: string) => {
     if (owner) {
-      removeGalleryImage({ ownerId: owner.id, imageId });
+      Actions.removeGalleryImage({ ownerId: owner.id, imageId });
       onOpenChange(false);
     }
   }
@@ -127,7 +127,7 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex =
   const handleSaveChanges = () => {
     if (!currentImage || !owner) return;
     
-    updateGalleryImage({
+    Actions.updateGalleryImage({
         ownerId: owner.id,
         imageId: currentImage.id,
         updates: {

@@ -8,28 +8,7 @@ import { getFirestoreDb } from '@/lib/firebase';
 import { doc, getDoc, collection, onSnapshot, query, where, orderBy, Unsubscribe, updateDoc, writeBatch, deleteField } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import { useAuth } from '@/components/auth/AuthProvider';
-
-import {
-    getOrCreateUserFlow,
-    getPublicProfileFlow,
-    completeInitialSetupFlow,
-    updateUserFlow,
-    deleteUserFlow,
-    checkIdUniquenessFlow,
-    getProfileGallery,
-    getProfileProducts
-} from '@/ai/flows/profile-flow';
-import {
-    createCampaign,
-    // Other campaign actions
-} from '@/ai/flows/campaign-flow';
-import {
-    sendMessage as sendMessageFlow,
-    acceptProposal as acceptProposalFlow,
-    // other message actions
-} from '@/ai/flows/message-flow';
-// ... import other flows as needed
-
+import * as Actions from '@/lib/actions';
 
 interface CoraboContextValue {
   // State from AuthProvider, passed through for convenience
@@ -55,7 +34,7 @@ interface CoraboContextValue {
   cart: CartItem[];
   qrSession: QrSession | null;
 
-  // Actions
+  // Actions - These are now mostly simple state setters, logic is in actions.ts
   setSearchQuery: (query: string) => void;
   setCategoryFilter: (category: string | null) => void;
   clearSearchHistory: () => void;
@@ -70,10 +49,6 @@ interface CoraboContextValue {
   getDistanceToProvider: (provider: User) => string | null;
   setTempRecipientInfo: (info: TempRecipientInfo | null) => void;
   setActiveCartForCheckout: (cartItems: CartItem[] | null) => void;
-  updateUser: (userId: string, updates: Partial<User>) => Promise<void>;
-  deactivateTransactions: (userId: string) => Promise<void>;
-  createAppointmentRequest: (request: Omit<AppointmentRequest, 'clientId'>) => void;
-  sendMessage: (options: any) => Promise<string>;
 }
 
 interface GeolocationCoords {
@@ -115,7 +90,6 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   const [qrSession, setQrSession] = useState<QrSession | null>(null);
   
   const userCache = useRef<Map<string, User>>(new Map());
-
   
   const setDeliveryAddress = useCallback((address: string) => {
     sessionStorage.setItem('coraboDeliveryAddress', address);
@@ -130,30 +104,6 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
       }
       _setTempRecipientInfo(info);
   }, []);
-  
-  const updateUser = useCallback(async (userId: string, updates: Partial<User>) => {
-    await updateUserFlow({ userId, updates });
-    if(userId === currentUser?.id) {
-        setCurrentUser(prev => prev ? { ...prev, ...updates } : null);
-    }
-  }, [currentUser?.id, setCurrentUser]);
-
-  const deactivateTransactions = async (userId: string) => {
-    await updateUser(userId, { isTransactionsActive: false, 'profileSetupData.paymentDetails': deleteField() as any });
-  };
-  
-  const createAppointmentRequest = async (request: Omit<AppointmentRequest, 'clientId'>) => {
-      if(!currentUser) return;
-      // await createAppointmentRequestFlow({ ...request, clientId: currentUser.id });
-  };
-  
-  const sendMessage = async (options: any): Promise<string> => {
-    if(!currentUser) return '';
-    const conversationId = options.conversationId || [currentUser.id, options.recipientId].sort().join('-');
-    await sendMessageFlow({ ...options, senderId: currentUser.id, conversationId });
-    return conversationId;
-  };
-
 
   useEffect(() => {
     const savedAddress = sessionStorage.getItem('coraboDeliveryAddress');
@@ -311,10 +261,6 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         getDistanceToProvider,
         setTempRecipientInfo,
         setActiveCartForCheckout,
-        updateUser,
-        deactivateTransactions,
-        createAppointmentRequest,
-        sendMessage,
     };
   
     return (

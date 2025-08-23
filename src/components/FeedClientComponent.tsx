@@ -7,7 +7,7 @@ import { useCorabo } from "@/contexts/CoraboContext";
 import { ActivationWarning } from "@/components/ActivationWarning";
 import { PublicationCard } from "@/components/PublicationCard";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getFeed } from "@/ai/flows/feed-flow";
+import { getFeed } from "@/lib/actions";
 
 export function FeedClientComponent() {
   const { currentUser, searchQuery, categoryFilter } = useCorabo();
