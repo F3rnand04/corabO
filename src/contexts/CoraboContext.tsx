@@ -11,9 +11,13 @@ import * as Actions from '@/lib/actions';
 import { useAuth } from '@/components/auth/AuthProvider';
 
 interface CoraboContextValue {
-  // State
+  // State from AuthProvider, passed through for convenience
   currentUser: User | null;
   isLoadingUser: boolean; 
+  logout: () => void;
+  setCurrentUser: (user: User | null) => void;
+  
+  // State managed by CoraboContext
   users: User[];
   transactions: Transaction[];
   conversations: Conversation[];
@@ -45,7 +49,6 @@ interface CoraboContextValue {
   getDistanceToProvider: (provider: User) => string | null;
   setTempRecipientInfo: (info: TempRecipientInfo | null) => void;
   setActiveCartForCheckout: (cartItems: CartItem[] | null) => void;
-  logout: () => void;
   updateUser: (userId: string, updates: Partial<User>) => Promise<void>;
 }
 
@@ -68,6 +71,7 @@ interface CoraboProviderProps {
 }
 
 export const CoraboProvider = ({ children }: CoraboProviderProps) => {
+  // Auth state is now managed by AuthProvider and passed here
   const { currentUser, isLoadingUser, setCurrentUser, logout } = useAuth();
   const { toast } = useToast();
   
@@ -244,6 +248,8 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     const value: CoraboContextValue = {
         currentUser,
         isLoadingUser,
+        logout,
+        setCurrentUser,
         users, transactions, conversations, allPublications,
         searchQuery, categoryFilter, contacts, searchHistory, 
         deliveryAddress, exchangeRate, currentUserLocation, tempRecipientInfo, activeCartForCheckout,
@@ -265,7 +271,6 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         getDistanceToProvider,
         setTempRecipientInfo,
         setActiveCartForCheckout,
-        logout,
         updateUser,
     };
   
