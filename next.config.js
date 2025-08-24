@@ -1,18 +1,6 @@
 /** @type {import('next').NextConfig} */
 
 const nextConfig = {
-  // Ensure server-only packages are not bundled on the client.
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-        config.externals = [
-            ...config.externals, 
-            '@google-cloud/firestore',
-            'firebase-admin'
-        ];
-    }
-    return config;
-  },
-
   // Transpile Genkit packages to ensure compatibility with Next.js.
   // This is a common requirement for modern libraries that use newer JS features.
   transpilePackages: [
