@@ -65,38 +65,9 @@ import {
   requestCashierSession as requestCashierSessionFlow,
 } from '@/ai/flows/cashier-flow';
 
-import type {
-  User,
-  ProfileSetupData,
-  Transaction,
-  Product,
-  CartItem,
-  GalleryImage,
-  CreatePublicationInput,
-  CreateProductInput,
-  VerificationOutput,
-  CashierBox,
-  QrSession,
-} from '@/lib/types';
-import {
-  getFirestore,
-  writeBatch,
-  doc,
-  updateDoc,
-  arrayUnion,
-  arrayRemove,
-  increment,
-  setDoc,
-  deleteDoc,
-  getDoc,
-  query,
-  collection,
-  where,
-  getDocs,
-  orderBy,
-  limit,
-  FieldValue,
-} from 'firebase-admin/firestore';
+import type { User, ProfileSetupData, Transaction, Product, CartItem, GalleryImage, VerificationOutput, CashierBox, QrSession, TempRecipientInfo } from '@/lib/types';
+import { CreatePublicationInput, CreateProductInput } from '@/lib/types';
+import { getFirestore, writeBatch, doc, updateDoc, arrayUnion, arrayRemove, increment, setDoc, deleteDoc, getDoc, query, collection, where, getDocs, orderBy, limit, FieldValue } from 'firebase-admin/firestore';
 import { getFirebaseAdmin } from './firebase-server';
 
 // =================================
@@ -243,6 +214,7 @@ export async function autoVerifyIdWithAI(
   }
 }
 
+
 // =================================
 // PUBLICATION ACTIONS
 // =================================
@@ -256,31 +228,18 @@ export async function createProduct(data: CreateProductInput) {
 }
 
 export async function removeGalleryImage(ownerId: string, imageId: string) {
-  await removeGalleryImageFlow({ ownerId, imageId });
+  await removeGalleryImageFlow({ownerId, imageId});
 }
 
-export async function updateGalleryImage(data: {
-  ownerId: string;
-  imageId: string;
-  updates: { description?: string; imageDataUri?: string };
-}) {
+export async function updateGalleryImage(data: { ownerId: string; imageId: string; updates: { description?: string; imageDataUri?: string; }; }) {
   await updateGalleryImageFlow(data);
 }
 
-export async function addCommentToImage(data: {
-  ownerId: string;
-  imageId: string;
-  commentText: string;
-  author: { id: string; name: string; profileImage: string };
-}) {
+export async function addCommentToImage(data: { ownerId: string; imageId: string; commentText: string; author: { id: string; name: string; profileImage: string; }; }) {
   await addCommentToImageFlow(data);
 }
 
-export async function removeCommentFromImage(data: {
-  ownerId: string;
-  imageId: string;
-  commentIndex: number;
-}) {
+export async function removeCommentFromImage(data: { ownerId: string; imageId: string; commentIndex: number; }) {
   await removeCommentFromImageFlow(data);
 }
 
@@ -293,24 +252,21 @@ export async function sendMessage(input: SendMessageInput) {
   return input.conversationId;
 }
 
-export async function acceptProposal(
-  conversationId: string,
-  messageId: string,
-  acceptorId: string
-) {
-  await acceptProposalFlow({ conversationId, messageId, acceptorId });
+export async function acceptProposal(conversationId: string, messageId: string, acceptorId: string) {
+    await acceptProposalFlow({ conversationId, messageId, acceptorId });
 }
 
 export async function markConversationAsRead(conversationId: string) {
-  // This is a client-side concern, but a placeholder in case backend logic is needed.
+    // This is a client-side concern, but a placeholder in case backend logic is needed.
 }
+
 
 // =================================
 // TRANSACTION ACTIONS
 // =================================
 
 export async function createAppointmentRequest(data: any) {
-  await createAppointmentRequestFlow(data);
+    await createAppointmentRequestFlow(data);
 }
 
 export async function completeWork(data: {

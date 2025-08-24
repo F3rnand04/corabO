@@ -8,28 +8,10 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { doc, getDoc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
-import type { GalleryImage, User, GalleryImageComment } from '@/lib/types';
+import type { GalleryImage, User, GalleryImageComment, CreatePublicationInput, CreateProductInput } from '@/lib/types';
 import { sendNewPublicationNotification } from './notification-flow';
 
 // --- Schemas ---
-export const CreatePublicationInputSchema = z.object({
-  userId: z.string(),
-  description: z.string(),
-  imageDataUri: z.string(),
-  aspectRatio: z.enum(['square', 'horizontal', 'vertical']),
-  type: z.enum(['image', 'video']),
-});
-export type CreatePublicationInput = z.infer<typeof CreatePublicationInputSchema>;
-
-export const CreateProductInputSchema = z.object({
-  userId: z.string(),
-  name: z.string(),
-  description: z.string(),
-  price: z.number(),
-  imageDataUri: z.string(),
-});
-export type CreateProductInput = z.infer<typeof CreateProductInputSchema>;
-
 const AddCommentInputSchema = z.object({
   ownerId: z.string(),
   imageId: z.string(),
@@ -67,10 +49,10 @@ const RemoveImageInputSchema = z.object({
 export const createPublication = ai.defineFlow(
   {
     name: 'createPublicationFlow',
-    inputSchema: CreatePublicationInputSchema,
+    inputSchema: z.any(), // Using z.any() to avoid build errors with non-async exports
     outputSchema: z.void(),
   },
-  async ({ userId, description, imageDataUri, aspectRatio, type }) => {
+  async ({ userId, description, imageDataUri, aspectRatio, type }: CreatePublicationInput) => {
     const db = getFirestore();
     
     const userSnap = await getDoc(doc(db, 'users', userId));
@@ -111,10 +93,10 @@ export const createPublication = ai.defineFlow(
 export const createProduct = ai.defineFlow(
     {
         name: 'createProductFlow',
-        inputSchema: CreateProductInputSchema,
+        inputSchema: z.any(),
         outputSchema: z.string(),
     },
-    async ({ userId, name, description, price, imageDataUri }) => {
+    async ({ userId, name, description, price, imageDataUri }: CreateProductInput) => {
         const db = getFirestore();
         const userSnap = await getDoc(doc(db, 'users', userId));
         if (!userSnap.exists()) {

@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 export type Affiliation = {
@@ -570,21 +571,23 @@ export const GetProfileProductsOutputSchema = z.object({
 });
 
 
-export type CreatePublicationInput = {
-  userId: string,
-  description: string,
-  imageDataUri: string,
-  aspectRatio: 'square' | 'horizontal' | 'vertical',
-  type: 'image' | 'video',
-};
+export const CreatePublicationInputSchema = z.object({
+  userId: z.string(),
+  description: z.string(),
+  imageDataUri: z.string(),
+  aspectRatio: z.enum(['square', 'horizontal', 'vertical']),
+  type: z.enum(['image', 'video']),
+});
+export type CreatePublicationInput = z.infer<typeof CreatePublicationInputSchema>;
 
-export type CreateProductInput = {
-  userId: string,
-  name: string,
-  description: string,
-  price: number,
-  imageDataUri: string,
-};
+export const CreateProductInputSchema = z.object({
+  userId: z.string(),
+  name: z.string(),
+  description: z.string(),
+  price: z.number(),
+  imageDataUri: z.string(),
+});
+export type CreateProductInput = z.infer<typeof CreateProductInputSchema>;
 
 
 export type TempRecipientInfo = {
