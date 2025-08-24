@@ -24,7 +24,6 @@ import {
 import { Box, ChevronLeft, Loader2, LogIn } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useCorabo } from '@/contexts/CoraboContext';
-import { requestCashierSession } from '@/lib/actions';
 import type { User, CashierBox } from '@/lib/types';
 
 
@@ -58,41 +57,13 @@ export function CashierLogin() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
-        try {
-            const result = await requestCashierSession({
-                businessCoraboId: businessId,
-                cashierName,
-                cashierBoxId,
-                password
-            });
-            
-            if (result.success) {
-                 toast({
-                    title: "Solicitud Enviada",
-                    description: "El dueño del negocio ha sido notificado. Por favor, espera su aprobación.",
-                });
-                // Clear form but stay on page to allow another login if needed
-                setBusinessId('');
-                setCashierName('');
-                setCashierBoxId('');
-                setPassword('');
-            } else {
-                toast({
-                    variant: "destructive",
-                    title: "Error de Acceso",
-                    description: result.message,
-                });
-            }
-        } catch (error) {
-            console.error("Error requesting cashier session:", error);
-            toast({
-                variant: "destructive",
-                title: "Error Inesperado",
-                description: "Ocurrió un error al procesar la solicitud.",
-            });
-        } finally {
-            setIsLoading(false);
-        }
+        // This functionality is temporarily disabled for simplification.
+        toast({
+            variant: "destructive",
+            title: "Función Desactivada",
+            description: "El inicio de sesión de cajero está temporalmente desactivado.",
+        });
+        setIsLoading(false);
     };
 
     const canSubmit = selectedBusiness && cashierName && cashierBoxId && password;

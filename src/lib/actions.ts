@@ -14,12 +14,10 @@ import type { FirebaseUserInput, User, ProfileSetupData, Transaction, Product, C
 // =================================
 
 export async function getOrCreateUser(firebaseUser: FirebaseUserInput) {
-  // CORRECTED: Invokes the flow by its string name, no direct import.
   return await runFlow('getOrCreateUserFlow', firebaseUser);
 }
 
 export async function updateUser(userId: string, updates: Partial<User | { 'profileSetupData.serviceRadius': number } | { 'profileSetupData.cashierBoxes': CashierBox[] }>) {
-    // This action directly uses the Admin SDK and is safe.
     await runFlow('updateUserFlow', { userId, updates });
 }
 
@@ -77,7 +75,7 @@ export async function rejectUserId(userId: string) {
 export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput | null> {
     const input = {
       userId: user.id,
-      nameInRecord: `${'\'\'\''}${user.name} ${'\'\'\''}${user.lastName || ''}`.trim(),
+      nameInRecord: `${user.name} ${user.lastName || ''}`.trim(),
       idInRecord: user.idNumber || '',
       documentImageUrl: user.idDocumentUrl || '',
       isCompany: user.profileSetupData?.providerType === 'company',
@@ -161,8 +159,9 @@ export async function confirmWorkReceived(data: {
   await runFlow('confirmWorkReceivedFlow', data);
 }
 
-export async function payCommitment(data: any) {
-  await runFlow('payCommitmentFlow', data);
+export async function payCommitment(transactionId: string) {
+  // This needs to be fleshed out to pass the correct payload
+  await runFlow('payCommitmentFlow', { transactionId });
 }
 
 export async function confirmPaymentReceived(data: {
@@ -304,15 +303,6 @@ export async function removeCashierBox(userId: string, boxId: string) {
 
 export async function regenerateCashierBoxQr(userId: string, boxId: string) {
     await runFlow('regenerateCashierQrFlow', { userId, boxId });
-}
-
-export async function requestCashierSession(data: {
-  businessCoraboId: string;
-  cashierName: string;
-  cashierBoxId: string;
-  password: string;
-}) {
-  return await runFlow('requestCashierSessionFlow', data);
 }
 
 export async function startQrSession(

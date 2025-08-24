@@ -10,7 +10,6 @@ import QRCode from 'qrcode';
 import type { CashierBox, User, QrSession } from '@/lib/types';
 import { getFirestore } from 'firebase-admin/firestore';
 import { collection, doc, getDoc, getDocs, query, setDoc, where } from 'firebase/firestore';
-import { sendNotification } from './notification-flow';
 
 const CreateCashierBoxInputSchema = z.object({
   userId: z.string(),
@@ -30,84 +29,6 @@ const CashierBoxSchema = z.object({
     qrValue: z.string(),
     qrDataURL: z.string(),
 });
-
-const RequestCashierSessionInputSchema = z.object({
-  businessCoraboId: z.string(),
-  cashierName: z.string(),
-  cashierBoxId: z.string(),
-  password: z.string(),
-});
-
-const RequestCashierSessionOutputSchema = z.object({
-  success: z.boolean(),
-  message: z.string(),
-  sessionId: z.string().optional(),
-});
-
-
-/**
- * A cashier requests to start a session for a specific box.
- * This flow verifies the credentials and creates a pending session request.
- */
-export const requestCashierSessionFlow = ai.defineFlow(
-  {
-    name: 'requestCashierSessionFlow',
-    inputSchema: RequestCashierSessionInputSchema,
-    outputSchema: RequestCashierSessionOutputSchema,
-  },
-  async ({ businessCoraboId, cashierName, cashierBoxId, password }) => {
-    const db = getFirestore();
-    
-    // 1. Find the business by its Corabo ID
-    const businessQuery = query(collection(db, 'users'), where('coraboId', '==', businessCoraboId));
-    const businessSnap = await getDocs(businessQuery);
-
-    if (businessSnap.empty) {
-      return { success: false, message: "ID de negocio no encontrado." };
-    }
-    const business = businessSnap.docs[0].data() as User;
-    const businessId = business.id;
-
-    // 2. Find the specific cashier box and verify the password
-    const box = business.profileSetupData?.cashierBoxes?.find(b => b.id === cashierBoxId);
-
-    if (!box) {
-      return { success: false, message: "La caja seleccionada no existe para este negocio." };
-    }
-
-    if (box.passwordHash !== password) {
-      return { success: false, message: "La contraseña de la caja es incorrecta." };
-    }
-
-    // 3. Create a pending session request
-    const sessionId = `cashier-req-${Date.now()}`;
-    const sessionRequest = {
-      id: sessionId,
-      businessId,
-      cashierName,
-      cashierBoxId,
-      status: 'pending',
-      requestedAt: new Date().toISOString(),
-    };
-    
-    await setDoc(doc(db, 'cashier_sessions', sessionId), sessionRequest);
-
-    // 4. Notify the business owner
-    await sendNotification({
-        userId: businessId,
-        type: 'cashier_request',
-        title: 'Solicitud de Apertura de Caja',
-        message: `${cashierName} está solicitando abrir la caja "${box.name}".`,
-        link: '/admin?tab=user-management', // Future tab for cashier requests
-        metadata: {
-            requestId: sessionId,
-        }
-    });
-
-    return { success: true, message: "Solicitud enviada al dueño del negocio.", sessionId };
-  }
-);
-
 
 /**
  * Creates a new cashier box, generates a QR code for it, and returns the box object.
