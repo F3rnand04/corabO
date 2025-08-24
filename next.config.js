@@ -38,12 +38,6 @@ const nextConfig = {
 
     return config
   },
-
-  // This experimental flag further optimizes server components by ensuring
-  // server-only packages are not bundled for the client.
-  experimental: {
-    serverComponentsExternalPackages: ['@genkit-ai/googleai'],
-  },
 };
 
 export default nextConfig;
