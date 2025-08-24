@@ -31,31 +31,22 @@ interface CoraboContextValue {
   cart: CartItem[];
   qrSession: QrSession | null;
 
-  updateUser: (userId: string, updates: Partial<User>) => Promise<void>;
-  updateFullProfile: (userId: string, profileData: ProfileSetupData, userType: 'client' | 'provider' | 'repartidor') => Promise<void>;
-  updateUserProfileImage: (userId: string, dataUrl: string) => Promise<void>;
-  autoVerifyIdWithAI: (user: User) => Promise<VerificationOutput | null>;
-  deactivateTransactions: (userId: string) => Promise<void>;
-  sendMessage: (input: { recipientId: string; text?: string; location?: { lat: number; lon: number; }; proposal?: Omit<AgreementProposal, 'deliveryDate'> & { deliveryDate: string; }; }) => Promise<string>;
-  acceptProposal: (conversationId: string, messageId: string) => void;
-  markConversationAsRead: (conversationId: string) => void;
-  createAppointmentRequest: (request: Omit<AppointmentRequest, 'clientId'>) => void;
-  addContact: (user: User) => boolean;
-  removeContact: (userId: string) => void;
-  isContact: (userId: string) => boolean;
+  setCurrentUser: (user: User | null) => void;
+  fetchUser: (userId: string) => User | null;
+  getUserMetrics: (userId: string) => UserMetrics;
   setSearchQuery: (query: string) => void;
-  setCategoryFilter: (category: string | null) => void;
   clearSearchHistory: () => void;
-  getAgendaEvents: (transactions: Transaction[]) => { date: Date; type: 'payment' | 'task'; description: string, transactionId: string }[];
+  setCategoryFilter: (category: string | null) => void;
+  addContact: (user: User) => boolean;
+  isContact: (userId: string) => boolean;
+  removeContact: (userId: string) => void;
   toggleGps: (userId: string) => void;
   getDistanceToProvider: (provider: User) => string | null;
   setDeliveryAddress: (address: string) => void;
   setDeliveryAddressToCurrent: () => void;
   setTempRecipientInfo: (info: TempRecipientInfo | null) => void;
   setActiveCartForCheckout: (cartItems: CartItem[] | null) => void;
-  getUserMetrics: (userId: string) => UserMetrics;
-  fetchUser: (userId: string) => User | null;
-  setCurrentUser: (user: User | null) => void;
+  getAgendaEvents: (transactions: Transaction[]) => { date: Date; type: 'payment' | 'task'; description: string, transactionId: string }[];
 }
 
 interface GeolocationCoords {
@@ -232,7 +223,6 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   }, [setDeliveryAddress, toast]);
 
     const getUserMetrics = useCallback((userId: string): UserMetrics => {
-        // This logic could be a server action itself to avoid sending all txs to client
         const userTxs = transactions.filter(tx => tx.providerId === userId && (tx.status === 'Pagado' || tx.status === 'Resuelto'));
         const ratings = userTxs.map(tx => tx.details.clientRating || 0).filter(r => r > 0);
         const reputation = ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 5.0;
@@ -279,40 +269,6 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         return isNew;
     }
 
-    const autoVerifyIdWithAI = async (user: User): Promise<VerificationOutput | null> => {
-        try {
-            return await Actions.autoVerifyIdWithAI(user);
-        } catch (error) {
-            console.error("Error in AI Verification Context call:", error);
-            return null;
-        }
-    };
-
-    const contextActions = {
-        updateUser: Actions.updateUser,
-        updateFullProfile: Actions.updateFullProfile,
-        updateUserProfileImage: Actions.updateUserProfileImage,
-        deactivateTransactions: Actions.deactivateTransactions,
-        sendMessage: async (input: any) => {
-            if (!currentUser) throw new Error("User not authenticated");
-            const conversationId = [currentUser.id, input.recipientId].sort().join('-');
-            return await Actions.sendMessage({ ...input, senderId: currentUser.id, conversationId });
-        },
-        acceptProposal: (conversationId: string, messageId: string) => {
-            if (currentUser) {
-              Actions.acceptProposal(conversationId, messageId, currentUser.id);
-            }
-        },
-        markConversationAsRead: Actions.markConversationAsRead,
-        createAppointmentRequest: (request: any) => {
-            if(currentUser) {
-                Actions.createAppointmentRequest({...request, clientId: currentUser.id});
-            }
-        },
-        toggleGps: Actions.toggleGps,
-    };
-
-
     const value: CoraboContextValue = {
         currentUser,
         isLoadingUser, 
@@ -339,8 +295,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         getDistanceToProvider,
         setTempRecipientInfo,
         setActiveCartForCheckout,
-        autoVerifyIdWithAI,
-        ...contextActions,
+        toggleGps: Actions.toggleGps,
     };
   
     return (
