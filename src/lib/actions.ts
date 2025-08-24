@@ -1,10 +1,10 @@
+
 'use server';
 /**
  * @fileOverview Server Actions for the Corabo application.
  * This file serves as the PRIMARY and SOLE bridge between client-side components and server-side Genkit flows.
  * All functions exported from this file are marked as server actions and will only execute on the server.
  * Client components should ONLY import from this file to interact with the backend.
- * This file MUST NOT directly import from any file in `src/ai/flows`. It must use `runFlow`.
  */
 import { runFlow } from '@genkit-ai/core';
 import type { FirebaseUserInput, User, ProfileSetupData, Transaction, Product, CartItem, GalleryImage, CreatePublicationInput, CreateProductInput, VerificationOutput, CashierBox, QrSession, TempRecipientInfo } from '@/lib/types';
@@ -346,7 +346,8 @@ export async function confirmMobilePayment(sessionId: string) {
 }
 
 export async function finalizeQrSession(sessionId: string) {
-  await runFlow('finalizeQrSessionFlow', { sessionId });
+  // This is the critical fix: Correctly call the flow that processes the payment.
+  await runFlow('processDirectPayment', { sessionId });
 }
 
 export async function subscribeUser(
@@ -376,3 +377,5 @@ export async function registerSystemPayment(
 export async function createCampaign(userId: string, data: any) {
   return await runFlow('createCampaignFlow', { userId, ...data });
 }
+
+    
