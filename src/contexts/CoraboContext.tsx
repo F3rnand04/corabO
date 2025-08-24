@@ -8,15 +8,13 @@ import { getFirestoreDb } from '@/lib/firebase';
 import { doc, onSnapshot, collection, query, where, orderBy, Unsubscribe, writeBatch, deleteField } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import * as Actions from '@/lib/actions';
-import { useAuth } from '@/components/auth/AuthProvider'; // Import from the real AuthProvider
+import { useAuth } from '@/components/auth/AuthProvider';
 
 interface CoraboContextValue {
-  // State from AuthProvider, passed through for convenience
   currentUser: User | null;
   isLoadingUser: boolean; 
   logout: () => void;
   
-  // State managed by CoraboContext
   users: User[];
   transactions: Transaction[];
   conversations: Conversation[];
@@ -33,7 +31,6 @@ interface CoraboContextValue {
   cart: CartItem[];
   qrSession: QrSession | null;
 
-  // Actions from CoraboContext, now refactored to use Server Actions
   updateUser: (userId: string, updates: Partial<User>) => Promise<void>;
   updateFullProfile: (userId: string, profileData: ProfileSetupData, userType: 'client' | 'provider' | 'repartidor') => Promise<void>;
   updateUserProfileImage: (userId: string, dataUrl: string) => Promise<void>;
@@ -80,17 +77,11 @@ interface CoraboProviderProps {
 }
 
 export const CoraboProvider = ({ children }: CoraboProviderProps) => {
-  const { currentUser: authCurrentUser, isLoadingAuth: isLoadingUser, logout } = useAuth();
+  const { firebaseUser, isLoadingAuth, logout } = useAuth();
   const { toast } = useToast();
   
-  // The currentUser state is now primarily managed by AuthProvider.
-  // This local state is just to satisfy the context type.
-  const [currentUser, setCurrentUser] = useState<User | null>(authCurrentUser);
-
-  useEffect(() => {
-    setCurrentUser(authCurrentUser);
-  }, [authCurrentUser]);
-  
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
   
   const [users, setUsers] = useState<User[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -108,6 +99,30 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   const [qrSession, setQrSession] = useState<QrSession | null>(null);
   
   const userCache = useRef<Map<string, User>>(new Map());
+
+  useEffect(() => {
+    setIsLoadingUser(true);
+    if (firebaseUser) {
+      Actions.getOrCreateUser({
+        uid: firebaseUser.uid,
+        displayName: firebaseUser.displayName,
+        email: firebaseUser.email,
+        photoURL: firebaseUser.photoURL,
+        emailVerified: firebaseUser.emailVerified,
+      }).then(coraboUser => {
+        setCurrentUser(coraboUser as User);
+        setIsLoadingUser(false);
+      }).catch(error => {
+        console.error("Failed to fetch/create Corabo user:", error);
+        toast({ variant: "destructive", title: "Error de Perfil", description: "No se pudo cargar tu perfil de Corabo." });
+        setCurrentUser(null);
+        setIsLoadingUser(false);
+      });
+    } else if (!isLoadingAuth) {
+      setCurrentUser(null);
+      setIsLoadingUser(false);
+    }
+  }, [firebaseUser, isLoadingAuth, toast]);
   
   const setDeliveryAddress = useCallback((address: string) => {
     sessionStorage.setItem('coraboDeliveryAddress', address);
@@ -266,7 +281,6 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         }
     };
 
-    // Pass-through a selection of Actions methods for components to use
     const contextActions = {
         updateUser: (userId: string, updates: Partial<User>) => Actions.updateUser(userId, updates),
         updateFullProfile: (userId: string, profileData: ProfileSetupData, userType: any) => Actions.updateFullProfile(userId, profileData, userType),
@@ -324,3 +338,11 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         </CoraboContext.Provider>
     );
 };
+
+export const useCorabo = () => {
+    const context = useContext(CoraboContext);
+     if (context === undefined) {
+        throw new Error('useCorabo must be used within a CoraboProvider');
+    }
+    return context;
+}
