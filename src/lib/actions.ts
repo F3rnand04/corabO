@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Server Actions for the Corabo application.
@@ -8,8 +9,9 @@
 import { runFlow } from '@genkit-ai/core';
 import { getFirebaseAdmin } from './firebase-server';
 import { doc, updateDoc, writeBatch, FieldValue, setDoc, deleteDoc, getDoc, query, collection, where, getDocs, orderBy, limit } from 'firebase-admin/firestore';
-import type { FirebaseUserInput } from '@/ai/flows/auth-flow';
+import type { FirebaseUserInput } from '@/lib/types';
 import type { User, ProfileSetupData, Transaction, Product, CartItem, GalleryImage, CreatePublicationInput, CreateProductInput, VerificationOutput, CashierBox, QrSession, TempRecipientInfo } from '@/lib/types';
+import { auth } from 'firebase-admin';
 
 
 // =================================
