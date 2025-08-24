@@ -15,11 +15,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRouter } from 'next/navigation';
-import { checkIdUniquenessFlow, completeInitialSetupFlow } from '@/ai/flows/profile-flow';
-import type { User } from '@/lib/types';
 import * as Actions from '@/lib/actions';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useCorabo } from '@/contexts/CoraboContext';
+import type { User } from '@/lib/types';
+
 
 const countries = [
   { code: 'VE', name: 'Venezuela', idLabel: 'Cédula de Identidad', companyIdLabel: 'RIF' },
@@ -79,7 +79,7 @@ export default function InitialSetupPage() {
     setIdInUseError(false);
 
     try {
-        const isUnique = await checkIdUniquenessFlow({ idNumber, country, currentUserId: currentUser.id });
+        const isUnique = await Actions.checkIdUniqueness({ idNumber, country, currentUserId: currentUser.id });
         
         if (!isUnique) {
             setIdInUseError(true);
@@ -100,20 +100,22 @@ export default function InitialSetupPage() {
             return; // Stop submission
         }
         
-        const updatedUser = await completeInitialSetupFlow({ 
-          userId: currentUser.id, 
-          name, 
-          lastName, 
-          idNumber, 
-          birthDate, 
-          country,
-          type: isCompany ? 'provider' : 'client',
-          providerType: isCompany ? 'company' : 'professional'
-        });
+        const updatedUser = await Actions.completeInitialSetup(
+          currentUser.id, 
+          { 
+            name, 
+            lastName, 
+            idNumber, 
+            birthDate, 
+            country,
+            type: 'client', // Defaults to client, logic in flow might change it
+            providerType: isCompany ? 'company' : 'professional'
+          }
+        );
         
         // **FIX:** Directly update the context with the user object returned from the server.
         // This ensures the AppLayout has the most recent state and avoids redirection loops.
-        if (setCurrentUser) {
+        if (updatedUser && setCurrentUser) {
             setCurrentUser(updatedUser as User);
         }
 

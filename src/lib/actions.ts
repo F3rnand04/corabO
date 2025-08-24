@@ -298,3 +298,6 @@ export async function finalizeQrSession(data: any) {}
 export async function sendNewCampaignNotifications(data: any) {}
 export async function verifyCampaignPayment(data: any, data2: any) {}
 export async function registerSystemPayment(userId: string, concept: string, amount: number, isSubscription: boolean) {}
+export async function approveAffiliation(affiliationId: string, actorId: string) {}
+export async function rejectAffiliation(affiliationId: string, actorId: string) {}
+export async function revokeAffiliation(affiliationId: string, actorId: string) {}

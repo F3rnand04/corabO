@@ -18,20 +18,23 @@ function LayoutController({ children }: { children: React.ReactNode }) {
   const publicPaths = ['/login', '/cashier-login'];
 
   useEffect(() => {
+    // No hacer nada mientras el estado del usuario del contexto se está resolviendo.
+    // Esto previene redirecciones prematuras antes de tener la información completa.
     if (isLoadingUser) {
-      return; // No hacer nada mientras se carga el estado del usuario
+      return; 
     }
 
-    const isPublicPath = publicPaths.includes(pathname);
+    const isPublicPath = publicPaths.some(path => pathname.startsWith(path));
     const isSetupPath = pathname === '/initial-setup';
 
     if (currentUser) {
-      // Si el usuario está logueado pero no ha completado el setup, forzarlo a ir a la página de setup.
+      // Si el usuario está logueado...
+      // ...pero no ha completado el setup, forzarlo a ir a la página de setup.
       // Esta es la lógica del "muro obligatorio".
       if (!currentUser.isInitialSetupComplete && !isSetupPath) {
         router.replace('/initial-setup');
-      }
-      // Si el usuario ya completó el setup y está en una página de login o setup, llevarlo al inicio.
+      } 
+      // ...y ya completó el setup y está en una página pública o de setup, llevarlo al inicio.
       else if (currentUser.isInitialSetupComplete && (isPublicPath || isSetupPath)) {
         router.replace('/');
       }
@@ -56,17 +59,20 @@ function LayoutController({ children }: { children: React.ReactNode }) {
   }
 
   // Si no hay usuario y estamos en una ruta pública, renderiza la página (ej. /login).
-  if (!currentUser && publicPaths.includes(pathname)) {
+  const isAllowedPublic = !currentUser && publicPaths.some(path => pathname.startsWith(path));
+  if (isAllowedPublic) {
       return <>{children}</>;
   }
   
   // Si hay un usuario pero está en el proceso de setup, renderiza la página de setup.
-  if(currentUser && !currentUser.isInitialSetupComplete && pathname === '/initial-setup') {
+  const isAllowedSetup = currentUser && !currentUser.isInitialSetupComplete && pathname === '/initial-setup';
+  if(isAllowedSetup) {
       return <>{children}</>;
   }
 
   // Si hay un usuario y ya ha pasado el setup, muestra la app con su layout.
-  if (currentUser && currentUser.isInitialSetupComplete) {
+  const isAppReady = currentUser && currentUser.isInitialSetupComplete;
+  if (isAppReady) {
        // Oculta el footer en páginas específicas
       const hideFooterForPaths = [
         '/messages', 
