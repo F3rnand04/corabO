@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Server Actions for the Corabo application.
@@ -7,10 +6,7 @@
  * Client components should ONLY import from this file to interact with the backend.
  */
 import { runFlow } from '@genkit-ai/core';
-import { getFirebaseAdmin } from './firebase-server';
-import { doc, updateDoc, writeBatch, FieldValue, setDoc, deleteDoc, getDoc, query, collection, where, getDocs, orderBy, limit } from 'firebase-admin/firestore';
-import type { FirebaseUserInput } from '@/lib/types';
-import type { User, ProfileSetupData, Transaction, Product, CartItem, GalleryImage, CreatePublicationInput, CreateProductInput, VerificationOutput, CashierBox, QrSession, TempRecipientInfo } from '@/lib/types';
+import type { FirebaseUserInput, User, ProfileSetupData, Transaction, Product, CartItem, GalleryImage, CreatePublicationInput, CreateProductInput, VerificationOutput, CashierBox, QrSession, TempRecipientInfo } from '@/lib/types';
 
 
 // =================================
@@ -18,12 +14,13 @@ import type { User, ProfileSetupData, Transaction, Product, CartItem, GalleryIma
 // =================================
 
 export async function getOrCreateUser(firebaseUser: FirebaseUserInput) {
+  // CORRECTED: Invokes the flow by its string name, no direct import.
   return await runFlow('getOrCreateUserFlow', firebaseUser);
 }
 
 export async function updateUser(userId: string, updates: Partial<User | { 'profileSetupData.serviceRadius': number } | { 'profileSetupData.cashierBoxes': CashierBox[] }>) {
-    const { firestore } = getFirebaseAdmin();
-    await updateDoc(doc(firestore, 'users', userId), updates as any);
+    // This action directly uses the Admin SDK and is safe.
+    await runFlow('updateUserFlow', { userId, updates });
 }
 
 export async function deleteUser(userId: string) {
@@ -59,13 +56,7 @@ export async function updateUserProfileImage(userId: string, dataUrl: string) {
 }
 
 export async function toggleGps(userId: string) {
-    const { firestore } = getFirebaseAdmin();
-    const userRef = doc(firestore, 'users', userId);
-    const userSnap = await getDoc(userRef);
-    if (userSnap.exists()) {
-        const currentStatus = userSnap.data()?.isGpsActive || false;
-        await updateDoc(userRef, { isGpsActive: !currentStatus });
-    }
+    await runFlow('toggleGpsFlow', { userId });
 }
 
 export async function deactivateTransactions(userId: string) {
@@ -113,19 +104,19 @@ export async function createProduct(data: CreateProductInput) {
 }
 
 export async function removeGalleryImage(ownerId: string, imageId: string) {
-    await runFlow('removeGalleryImageFlow', { ownerId, imageId });
+    await runFlow('removeGalleryImageFlow', { imageId });
 }
 
 export async function updateGalleryImage(data: { ownerId: string; imageId: string; updates: { description?: string; imageDataUri?: string; }; }) {
-    await runFlow('updateGalleryImageFlow', data);
+    await runFlow('updateGalleryImageFlow', { imageId: data.imageId, updates: data.updates });
 }
 
 export async function addCommentToImage(data: { ownerId: string; imageId: string; commentText: string; author: { id: string; name: string; profileImage: string; }; }) {
-    await runFlow('addCommentToImageFlow', data);
+    await runFlow('addCommentToImageFlow', { imageId: data.imageId, commentText: data.commentText, author: data.author });
 }
 
 export async function removeCommentFromImage(data: { ownerId: string; imageId: string; commentIndex: number; }) {
-    await runFlow('removeCommentFromImageFlow', data);
+    await runFlow('removeCommentFromImageFlow', { imageId: data.imageId, commentIndex: data.commentIndex });
 }
 
 // =================================
@@ -198,7 +189,7 @@ export async function startDispute(transactionId: string) {
 }
 
 export async function cancelSystemTransaction(transactionId: string) {
-    await runFlow('cancelSystemTransactionFlow', { transactionId });
+    await runFlow('cancelSystemTransactionFlow', transactionId);
 }
 
 export async function downloadTransactionsPDF(transactions: Transaction[]) {
@@ -244,11 +235,7 @@ export async function assignOwnDelivery(
   transactionId: string,
   providerId: string
 ) {
-  const { firestore } = getFirebaseAdmin();
-  await updateDoc(doc(firestore, 'transactions', transactionId), {
-    'details.deliveryProviderId': providerId,
-    status: 'En Reparto',
-  });
+  await runFlow('assignOwnDeliveryFlow', { transactionId, providerId });
 }
 
 export async function resolveDeliveryAsPickup(data: { transactionId: string }) {

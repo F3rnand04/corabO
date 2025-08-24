@@ -103,6 +103,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   useEffect(() => {
     setIsLoadingUser(true);
     if (firebaseUser) {
+      // Use the correctly decoupled server action
       Actions.getOrCreateUser({
         uid: firebaseUser.uid,
         displayName: firebaseUser.displayName,
@@ -113,7 +114,6 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         if (coraboUser) {
             setCurrentUser(coraboUser as User);
         } else {
-            // Handle case where getOrCreateUser fails and returns null
             toast({ variant: "destructive", title: "Error de Perfil", description: "No se pudo cargar tu perfil de Corabo. Intenta recargar la página." });
             setCurrentUser(null);
         }
@@ -289,10 +289,10 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     };
 
     const contextActions = {
-        updateUser: (userId: string, updates: Partial<User>) => Actions.updateUser(userId, updates),
-        updateFullProfile: (userId: string, profileData: ProfileSetupData, userType: any) => Actions.updateFullProfile(userId, profileData, userType),
-        updateUserProfileImage: (userId: string, dataUrl: string) => Actions.updateUserProfileImage(userId, dataUrl),
-        deactivateTransactions: (userId: string) => Actions.deactivateTransactions(userId),
+        updateUser: Actions.updateUser,
+        updateFullProfile: Actions.updateFullProfile,
+        updateUserProfileImage: Actions.updateUserProfileImage,
+        deactivateTransactions: Actions.deactivateTransactions,
         sendMessage: async (input: any) => {
             if (!currentUser) throw new Error("User not authenticated");
             const conversationId = [currentUser.id, input.recipientId].sort().join('-');
@@ -303,13 +303,13 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
               Actions.acceptProposal(conversationId, messageId, currentUser.id);
             }
         },
-        markConversationAsRead: (conversationId: string) => Actions.markConversationAsRead(conversationId),
+        markConversationAsRead: Actions.markConversationAsRead,
         createAppointmentRequest: (request: any) => {
             if(currentUser) {
                 Actions.createAppointmentRequest({...request, clientId: currentUser.id});
             }
         },
-        toggleGps: (userId: string) => Actions.toggleGps(userId),
+        toggleGps: Actions.toggleGps,
     };
 
 

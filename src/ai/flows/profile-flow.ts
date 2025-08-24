@@ -31,6 +31,28 @@ export const updateUserFlow = ai.defineFlow(
     }
 );
 
+// --- Toggle GPS Flow ---
+const ToggleGpsInputSchema = z.object({
+    userId: z.string(),
+});
+
+export const toggleGpsFlow = ai.defineFlow(
+    {
+        name: 'toggleGpsFlow',
+        inputSchema: ToggleGpsInputSchema,
+        outputSchema: z.void(),
+    },
+    async ({ userId }) => {
+        const db = getFirestore();
+        const userRef = doc(db, 'users', userId);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+            const currentStatus = userSnap.data()?.isGpsActive || false;
+            await updateDoc(userRef, { isGpsActive: !currentStatus });
+        }
+    }
+);
+
 
 // --- Delete User Flow ---
 const DeleteUserInputSchema = z.object({
@@ -141,7 +163,7 @@ export const completeInitialSetupFlow = ai.defineFlow(
       }
     };
 
-    await updateDoc(userRef, dataToUpdate);
+    await updateDoc(userRef, dataToUpdate as any);
 
     // Return the full, updated user object so the client can update its state
     const updatedUser = { ...existingData, ...dataToUpdate };
@@ -216,7 +238,7 @@ export const getPublicProfileFlow = ai.defineFlow(
 
 // --- Get Gallery with Pagination ---
 
-export const getProfileGallery = ai.defineFlow(
+export const getProfileGalleryFlow = ai.defineFlow(
     {
         name: 'getProfileGalleryFlow',
         inputSchema: GetProfileGalleryInputSchema,
@@ -234,9 +256,9 @@ export const getProfileGallery = ai.defineFlow(
         ];
 
         if (startAfterDocId) {
-            const startAfterDoc = await getDoc(doc(db, 'publications', startAfterDocId));
-            if(startAfterDoc.exists()) {
-                queryConstraints.push(startAfter(startAfterDoc));
+            const startAfterDocSnap = await getDoc(doc(db, 'publications', startAfterDocId));
+            if(startAfterDocSnap.exists()) {
+                queryConstraints.push(startAfter(startAfterDocSnap));
             }
         }
         
@@ -259,7 +281,7 @@ export const getProfileGallery = ai.defineFlow(
 
 // --- Get Products with Pagination ---
 
-export const getProfileProducts = ai.defineFlow(
+export const getProfileProductsFlow = ai.defineFlow(
     {
         name: 'getProfileProductsFlow',
         inputSchema: GetProfileProductsInputSchema,
@@ -277,9 +299,9 @@ export const getProfileProducts = ai.defineFlow(
         ];
 
         if (startAfterDocId) {
-             const startAfterDoc = await getDoc(doc(db, 'publications', startAfterDocId));
-            if(startAfterDoc.exists()) {
-                queryConstraints.push(startAfter(startAfterDoc));
+             const startAfterDocSnap = await getDoc(doc(db, 'publications', startAfterDocId));
+            if(startAfterDocSnap.exists()) {
+                queryConstraints.push(startAfter(startAfterDocSnap));
             }
         }
 
