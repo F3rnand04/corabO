@@ -49,12 +49,6 @@ interface CoraboContextValue {
   getDistanceToProvider: (provider: User) => string | null;
   setTempRecipientInfo: (info: TempRecipientInfo | null) => void;
   setActiveCartForCheckout: (cartItems: CartItem[] | null) => void;
-  
-  // DEPRECATED - These will be removed once all components are updated
-  updateUser: (userId: string, updates: Partial<User>) => Promise<void>;
-  updateFullProfile: (userId: string, formData: ProfileSetupData, userType: string) => Promise<void>;
-  autoVerifyIdWithAI: (user: User) => Promise<VerificationOutput>;
-  deactivateTransactions: (userId: string) => Promise<void>;
 }
 
 interface GeolocationCoords {
@@ -271,11 +265,6 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         getDistanceToProvider,
         setTempRecipientInfo,
         setActiveCartForCheckout,
-        // Deprecated Actions - These call the new server actions for backward compatibility during refactoring
-        updateUser: Actions.updateUser,
-        updateFullProfile: Actions.updateFullProfile,
-        autoVerifyIdWithAI: Actions.autoVerifyIdWithAI,
-        deactivateTransactions: Actions.deactivateTransactions
     };
   
     return (
@@ -294,5 +283,3 @@ export const useCorabo = (): CoraboContextValue => {
 };
 
 export type { Transaction };
-
-    

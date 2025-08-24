@@ -13,6 +13,7 @@ interface AuthContextType {
   firebaseUser: FirebaseUser | null;
   currentUser: CoraboUser | null; // This is now the definitive Corabo user profile
   isLoadingUser: boolean; // Single loading state for the whole auth process
+  isLoadingAuth: boolean; // For the sign-in popup state
   signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   setCurrentUser: (user: CoraboUser | null) => void;
@@ -35,8 +36,11 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
   // This is the key change to prevent hydration errors.
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(serverFirebaseUser);
   
-  // A single, reliable loading state.
+  // A single, reliable loading state. It starts true and becomes false only when
+  // the entire auth flow (Firebase + Corabo profile) is complete.
   const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+
 
   // This effect runs ONCE when the provider mounts, or if the server-passed user changes.
   // It's responsible for fetching our app-specific user profile.
@@ -78,19 +82,21 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
   // This second effect listens for CLIENT-SIDE auth changes (e.g., manual logout, token expiration).
   useEffect(() => {
     const auth = getAuthInstance();
+    setIsLoadingAuth(true);
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setFirebaseUser(user);
       if (!user) {
         // If user logs out on the client, ensure all state is cleared.
         setCurrentUser(null);
-        setIsLoadingUser(false);
       }
+       // This loading state is for the initial check, not for profile fetching.
+       setIsLoadingAuth(false);
     });
     return () => unsubscribe();
   }, []);
 
   const signInWithGoogle = async () => {
-    setIsLoadingUser(true); // Start loading on sign-in attempt
+    setIsLoadingAuth(true); // Start loading on sign-in attempt
     try {
         const auth = getAuthInstance();
         const provider = new GoogleAuthProvider();
@@ -104,9 +110,8 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
             body: JSON.stringify({ idToken }),
         });
         
-        // Update the local firebaseUser state. This will trigger the
-        // fetchCoraboUser effect to get the profile.
-        setFirebaseUser(result.user);
+        // Let the onAuthStateChanged listener handle the firebaseUser update.
+        // It will trigger the fetchCoraboUser effect.
 
     } catch (error: any) {
         if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
@@ -117,7 +122,8 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
               description: "No se pudo iniciar sesión con Google.",
            });
         }
-        setIsLoadingUser(false); // Stop loading on error
+    } finally {
+        setIsLoadingAuth(false); // Stop loading on error or success
     }
   };
 
@@ -131,7 +137,7 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
     } catch (error) {
          console.error("Error signing out:", error);
     } finally {
-        setIsLoadingUser(false);
+        // isLoadingUser will be set to false by the onAuthStateChanged listener chain
     }
   };
   
@@ -142,6 +148,7 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
     signInWithGoogle,
     logout,
     setCurrentUser,
+    isLoadingAuth,
   };
   
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

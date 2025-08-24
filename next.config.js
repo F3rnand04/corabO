@@ -15,12 +15,6 @@ const nextConfig = {
 
     return config;
   },
-  transpilePackages: [
-    '@genkit-ai/core',
-    '@genkit-ai/firebase',
-    '@genkit-ai/googleai',
-    'next-themes',
-  ],
   images: {
     remotePatterns: [
       {
