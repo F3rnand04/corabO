@@ -52,6 +52,11 @@ import {
     findDeliveryProvider,
     resolveDeliveryAsPickup as resolveDeliveryAsPickupFlow,
 } from '@/ai/flows/delivery-flow';
+import {
+    approveAffiliation as approveAffiliationFlow,
+    rejectAffiliation as rejectAffiliationFlow,
+    revokeAffiliation as revokeAffiliationFlow,
+} from '@/ai/flows/affiliation-flow';
 
 import type { User, ProfileSetupData, Transaction, Product, CartItem, GalleryImage, CreatePublicationInput, CreateProductInput, VerificationOutput } from '@/lib/types';
 import { getFirestore, writeBatch, doc, updateDoc, arrayUnion, arrayRemove, increment, setDoc, deleteDoc, getDoc, query, collection, where, getDocs, orderBy, limit, deleteField, FieldValue } from 'firebase-admin/firestore';
@@ -126,6 +131,22 @@ export async function updateUserProfileImage(userId: string, dataUrl: string) {
 export async function deactivateTransactions(userId: string) {
     await updateUserFlow({userId, updates: { isTransactionsActive: false }});
 }
+
+// =================================
+// AFFILIATION ACTIONS
+// =================================
+export async function approveAffiliation(affiliationId: string, actorId: string) {
+    await approveAffiliationFlow({ affiliationId, actorId });
+}
+
+export async function rejectAffiliation(affiliationId: string, actorId: string) {
+    await rejectAffiliationFlow({ affiliationId, actorId });
+}
+
+export async function revokeAffiliation(affiliationId: string, actorId: string) {
+    await revokeAffiliationFlow({ affiliationId, actorId });
+}
+
 
 // =================================
 // PUBLICATION & PRODUCT ACTIONS
@@ -237,7 +258,6 @@ export async function updateCart(userId: string, productId: string, newQuantity:
             } else {
                  // In a real app, you would fetch the full product details here before adding.
                  // For the prototype, we assume the client provides enough data.
-                 // This is a major simplification.
                  console.error(`Product ${productId} not found to add to cart. This needs a product fetch.`);
             }
         } else { // newQuantity is 0 or less
@@ -364,6 +384,4 @@ export async function finalizeQrSession(data: any) {}
 export async function sendNewCampaignNotifications(data: any) {}
 export async function verifyCampaignPayment(data: any, data2: any) {}
 export async function registerSystemPayment(userId: string, concept: string, amount: number, isSubscription: boolean) {}
-export async function approveAffiliation(affiliationId: string, actorId: string) {}
-export async function rejectAffiliation(affiliationId: string, actorId: string) {}
-export async function revokeAffiliation(affiliationId: string, actorId: string) {}
+
