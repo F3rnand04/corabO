@@ -53,7 +53,7 @@ interface CoraboContextValue {
   setDeliveryAddressToCurrent: () => void;
   setTempRecipientInfo: (info: TempRecipientInfo | null) => void;
   setActiveCartForCheckout: (cartItems: CartItem[] | null) => void;
-  getUserMetrics: (userId: string) => Promise<UserMetrics>;
+  getUserMetrics: (userId: string) => UserMetrics;
   fetchUser: (userId: string) => User | null;
   setCurrentUser: (user: User | null) => void;
 }
@@ -225,7 +225,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     }
   }, [setDeliveryAddress, toast]);
 
-    const getUserMetrics = useCallback(async (userId: string): Promise<UserMetrics> => {
+    const getUserMetrics = useCallback((userId: string): UserMetrics => {
         // This logic could be a server action itself to avoid sending all txs to client
         const userTxs = transactions.filter(tx => tx.providerId === userId && (tx.status === 'Pagado' || tx.status === 'Resuelto'));
         const ratings = userTxs.map(tx => tx.details.clientRating || 0).filter(r => r > 0);
