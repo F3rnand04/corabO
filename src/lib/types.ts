@@ -1,4 +1,3 @@
-
 import { z } from 'zod';
 
 export type Affiliation = {
@@ -242,7 +241,7 @@ export type SpecializedData = {
     // Salud y Bienestar
     licenseNumber?: string;
     specialties?: string[];
-    consultationMode?: 'office' | 'home' | 'online' | 'hybrid';
+    consultationMode?: 'office' | 'home' | 'online' | 'hybrid' | 'facilities' | 'ambulance' | 'telemedicine' | 'hybrid_company';
     
     // Alimentos y Restaurantes
     cuisineTypes?: string[];
