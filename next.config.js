@@ -1,3 +1,4 @@
+
 /** @type {import('next').NextConfig} */
 
 const nextConfig = {
@@ -25,6 +26,20 @@ const nextConfig = {
         hostname: 'placehold.co',
       },
     ],
+  },
+  
+  webpack: (
+    config,
+    { isServer }
+  ) => {
+    // Genkit, and its dependency Handlebars, use 'require.extensions' which is not
+    // supported by Webpack. Adding this to externals will prevent Webpack
+    // from trying to bundle it.
+    if (!isServer) {
+        config.externals.push('@genkit-ai/googleai');
+    }
+
+    return config
   },
 };
 
