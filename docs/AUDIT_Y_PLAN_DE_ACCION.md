@@ -1,92 +1,95 @@
-# Plan Maestro de Auditoría y Refactorización de Corabo
+# Plan Maestro de Auditoría y Refactorización de Corabo (v2.0)
 
 **Fecha de Inicio:** 24 de Agosto de 2025
-**Objetivo:** Alcanzar un estado funcional, estable y coherente de la aplicación, lista para un lanzamiento de prueba (Beta) con usuarios reales.
-**Principio Rector:** Cada componente, acción y flujo debe tener una única y bien definida responsabilidad, integrándose como engranajes en un sistema mayor.
+**Objetivo Final:** Alcanzar un estado 100% funcional, estable y coherente de la aplicación, lista para un lanzamiento de prueba (Beta) con usuarios reales, sin fallas críticas.
+**Principio Rector:** **Nada que no funcione avanza.** Cada fase debe ser completada y verificada antes de iniciar la siguiente. La funcionalidad se construye sobre cimientos sólidos.
 
 ---
 
-## Fase I: Auditoría Arquitectónica y Funcional (Completada)
+## Manifiesto Arquitectónico: El Ecosistema de Confianza
 
-### 1. Resumen del Diagnóstico
-
-El análisis concluyó que la aplicación sufre de una **falla crítica en la capa de comunicación cliente-servidor**. Aunque los componentes de UI y la lógica de negocio en los flujos de Genkit están mayormente bien definidos, el "puente" que los une (las Server Actions de Next.js) está mal implementado.
-
-*   **Causa Raíz:** Una configuración de compilación incorrecta y una implementación de `src/lib/actions.ts` que viola las reglas de las Server Actions de Next.js, creando una ruptura en la cadena de ejecución que impide que las llamadas del cliente lleguen al backend.
-*   **Impacto Principal:** El flujo de login se bloquea, impidiendo que el perfil de usuario se cargue (`currentUser` permanece `null` en el contexto), lo que a su vez bloquea el acceso a todas las demás funcionalidades de la aplicación.
-
-### 2. Inventario de Fallos Detectados
-
-*   **Fallo Arquitectónico Central:** La capa de acciones (`src/lib/actions.ts`) no es funcional y rompe el build o falla silenciosamente.
-*   **Fugas de Lógica:** Componentes del cliente intentan llamar directamente a flujos, o la lógica de carga de datos está dispersa en lugares incorrectos (ej. `CoraboContext` en lugar de `AuthProvider`).
-*   **Rutas Incompletas:** Flujos de negocio como el `checkout` de productos no invocan los pasos subsecuentes (ej. `findDeliveryProvider`).
-*   **Funcionalidades Desconectadas:** El mapa de selección de dirección (`MapPageContent`) está deshabilitado.
-*   **Índices de Firestore Faltantes:** Se han identificado consultas que fallarán en producción sin los índices compuestos necesarios.
-*   **Dependencias de Proyecto Incompletas:** Falta el paquete `firebase` del lado del cliente.
+Nuestra visión es ambiciosa: fusionar la **atracción visual** de Instagram, la **confianza transaccional** de Binance/Cashea y el **engagement dinámico** de TikTok en una plataforma para prestadores de servicios. Esto exige una arquitectura impecable. Cada componente, acción y flujo es un engranaje. Si un engranaje falla, todo el sistema se detiene. Esta auditoría es la inspección completa para asegurar que cada pieza funcione a la perfección.
 
 ---
 
-## Fase II: Plan de Acción Correctivo (Pendiente de Ejecución)
+## **Las 8 Fases Hacia el Lanzamiento**
 
-Este plan detalla los pasos necesarios para reconstruir los cimientos de la aplicación y llevarla a un estado funcional. Se ejecutará en orden de prioridad.
+### **Fase 1: La Fundación - Autenticación y Carga de Perfil**
+*   **Objetivo:** Que un usuario pueda iniciar sesión y su perfil (`currentUser`) se cargue de forma fiable y consistente, sin errores de hidratación ni bucles de carga. Es el paso más crítico que desbloquea toda la aplicación.
+*   **Auditoría de Componentes y Flujos:**
+    *   `next.config.js`, `tsconfig.json`, `package.json`: Garantizar la compatibilidad de dependencias y la configuración de compilación.
+    *   `src/lib/actions.ts`: Reconstruir como el único "puente" de comunicación, empezando con `getOrCreateUser`.
+    *   `AuthProvider.tsx` y `CoraboContext.tsx`: Refactorizar para un flujo de carga de datos unidireccional y sin condiciones de carrera.
+    *   `auth-flow.ts`: Asegurar que `getOrCreateUserFlow` devuelve datos serializables.
+    *   `AppLayout.tsx`: Verificar que la lógica de redirección post-login (`/` o `/initial-setup`) es infalible.
+*   **Criterio de Completado:** Un usuario nuevo se redirige a `/initial-setup`. Un usuario existente accede al feed (`/`). El `currentUser` está disponible globalmente. La aplicación es estable tras el login.
 
-### **Sub-fase A: Reparación del Núcleo de Comunicación (Máxima Prioridad)**
+### **Fase 2: La Identidad del Proveedor - Configuración y Verificación**
+*   **Objetivo:** Permitir que un proveedor (persona o empresa) configure su perfil público al 100%, incluyendo sus datos especializados, y pueda completar el proceso de verificación de identidad.
+*   **Auditoría de Componentes y Flujos:**
+    *   `/initial-setup`: Flujo de configuración inicial.
+    *   `/profile-setup/**`: Rutas de configuración detallada para proveedores.
+    *   `/profile-setup/verify-id`: Flujo de carga y verificación de documentos.
+    *   `verification-flow.ts`: El flujo de IA para analizar documentos.
+    *   `profile-flow.ts`: Todos los flujos relacionados con la actualización del perfil.
+    *   Componentes en `src/components/profile/specialized-fields/`: Todos los formularios dinámicos.
+*   **Criterio de Completado:** Un proveedor puede rellenar todos los campos de su perfil. La verificación de identidad (con IA o manual) es funcional. Los datos se guardan y se muestran correctamente.
 
-*   **Paso 1: Reconstruir la Capa de Acciones (`src/lib/actions.ts`).**
-    *   **Tarea:** Crear un nuevo `src/lib/actions.ts` desde cero.
-    *   **Especificación:** Debe contener `export async function` explícitas para cada operación que el cliente necesite. Cada una de estas funciones será un *wrapper* que importa y llama al flujo de Genkit correspondiente.
-    *   **Meta:** Crear un "puente" de Server Actions robusto y compatible con Next.js.
+### **Fase 3: La Vitrina - Publicaciones, Catálogo y Feed Visual**
+*   **Objetivo:** Dar a los proveedores las herramientas para mostrar su trabajo y productos, y a los clientes una forma atractiva de descubrirlo. Es la capa "Instagram" de Corabo.
+*   **Auditoría de Componentes y Flujos:**
+    *   `FeedClientComponent.tsx` y `PublicationCard.tsx`: El corazón del feed.
+    *   `UploadDialog.tsx`: El componente para subir nuevas publicaciones y productos.
+    *   `ImageDetailsDialog.tsx` y `ProductDetailsDialog.tsx`: Vistas de detalle.
+    *   `/profile/publications` y `/profile/catalog`: Pestañas del perfil.
+    *   `publication-flow.ts` y `feed-flow.ts`: Lógica de backend para crear y obtener contenido.
+*   **Criterio de Completado:** Un proveedor puede publicar un servicio/producto y este aparece en su perfil y en el feed principal. Un cliente puede ver, dar like y comentar en las publicaciones.
 
-*   **Paso 2: Centralizar la Lógica de Carga de Usuario en `AuthProvider`.**
-    *   **Tarea:** Modificar `AuthProvider.tsx` para que, una vez verificado el `firebaseUser`, sea este componente quien llame a la nueva acción `getOrCreateUser`.
-    *   **Tarea:** `AuthProvider` gestionará el estado `isLoadingUser` y pasará el `currentUser` (perfil de Corabo) ya cargado al `CoraboContext`.
-    *   **Meta:** Eliminar la condición de carrera y la falla de hidratación de una vez por todas.
+### **Fase 4: La Interacción - Mensajería y Propuestas de Acuerdo**
+*   **Objetivo:** Establecer un canal de comunicación directo y funcional entre cliente y proveedor, donde puedan negociar y formalizar acuerdos de servicio.
+*   **Auditoría de Componentes y Flujos:**
+    *   `/messages` y `/messages/[id]`: Listado de chats y vista de chat individual.
+    *   `ConversationCard.tsx` y `ProposalDialog.tsx`: Componentes clave de la interfaz de mensajería.
+    *   `message-flow.ts`: Backend para enviar mensajes y aceptar propuestas.
+    *   `transaction-flow.ts`: La lógica que convierte una propuesta aceptada en una transacción formal.
+*   **Criterio de Completado:** Dos usuarios pueden iniciar una conversación. Un proveedor puede enviar una propuesta. Un cliente puede aceptarla, creando una transacción pendiente en el sistema.
 
-*   **Paso 3: Simplificar `CoraboContext`.**
-    *   **Tarea:** Eliminar toda la lógica de carga de usuario de `CoraboContext.tsx`.
-    *   **Meta:** Convertirlo en un proveedor de estado puro que solo distribuye los datos que recibe.
+### **Fase 5: El Ciclo de Vida Transaccional (Servicios)**
+*   **Objetivo:** Auditar y garantizar que todo el ciclo de vida de un servicio contratado funcione sin fisuras, desde la aceptación hasta la calificación final.
+*   **Auditoría de Componentes y Flujos:**
+    *   `TransactionDetailsDialog.tsx`: El modal central para gestionar cada paso.
+    *   `transaction-flow.ts`: Todos los flujos que modifican el estado de una transacción (`completeWork`, `confirmWorkReceived`, `payCommitment`, `confirmPaymentReceived`).
+    *   `/transactions`: La vista de registro donde los usuarios monitorean sus transacciones.
+*   **Criterio de Completado:** Un proveedor puede marcar un trabajo como hecho. El cliente puede confirmar, calificar, pagar y subir un comprobante. El proveedor puede confirmar el pago, cerrando el ciclo.
 
-*   **Paso 4: Corregir Dependencias y Configuración.**
-    *   **Tarea:** Añadir el paquete `firebase` a `package.json`.
-    *   **Tarea:** Crear un `firestore.indexes.json` para añadir los índices de Firestore requeridos.
-    *   **Tarea:** Validar que `next.config.js` esté limpio y no contenga configuraciones conflictivas.
-    *   **Meta:** Asegurar que el entorno de ejecución sea estable.
+### **Fase 6: El Ciclo de Vida Transaccional (Productos y Delivery)**
+*   **Objetivo:** Asegurar que el flujo de compra de productos, desde el carrito hasta la entrega, sea robusto y completo.
+*   **Auditoría de Componentes y Flujos:**
+    *   `CartPopoverContent.tsx` y `CheckoutAlertDialogContent.tsx`: Componentes del carrito y pre-factura.
+    *   `delivery-flow.ts`: El flujo crítico para encontrar repartidores.
+    *   `/map`: La página para seleccionar la dirección de entrega (actualmente desactivada).
+    *   `transaction-flow.ts`: La acción `checkout`.
+*   **Criterio de Completado:** Un cliente puede añadir productos de múltiples proveedores al carrito. Puede realizar el checkout para un proveedor, seleccionar una dirección y método de entrega. Si se requiere delivery, el sistema busca un repartidor.
 
-### **Sub-fase B: Conexión y Finalización de Flujos**
+### **Fase 7: Confianza y Ecosistema - Credicora, Afiliaciones y Reputación**
+*   **Objetivo:** Verificar que los sistemas que construyen la confianza en la plataforma (crédito, verificaciones por terceros, reputación) funcionen correctamente.
+*   **Auditoría de Componentes y Flujos:**
+    *   `/credicora`: Página informativa.
+    *   `affiliation-flow.ts`: Lógica para que empresas verifiquen a profesionales.
+    *   `/admin` (Pestaña de Afiliaciones): Interfaz de gestión para empresas.
+    *   `credicoraLevels` y `credicoraCompanyLevels` en `types.ts`: Las reglas del sistema de crédito.
+    *   Lógica de cálculo de reputación y efectividad en `CoraboContext`.
+*   **Criterio de Completado:** Los niveles de Credicora se aplican correctamente. Una empresa puede aprobar la solicitud de un profesional. La reputación de los usuarios se actualiza dinámicamente con cada acción.
 
-*   **Paso 5: Reconectar Todos los Componentes.**
-    *   **Tarea:** Auditar cada componente que realizaba llamadas al backend (`PublicationCard`, `ImageDetailsDialog`, `TransactionDetailsDialog`, etc.) y asegurarse de que ahora importen y usen las funciones del nuevo `src/lib/actions.ts`.
-    *   **Meta:** Unificar todas las interacciones con el backend a través de un único punto de entrada.
-
-*   **Paso 6: Completar el Flujo de Checkout y Delivery.**
-    *   **Tarea:** Modificar la acción `checkout` para que invoque correctamente el flujo `findDeliveryProvider`.
-    *   **Tarea:** Crear la lógica en la UI (probablemente en `TransactionDetailsDialog`) para que el proveedor pueda gestionar un `Error de Delivery`.
-    *   **Meta:** Hacer que el ciclo de vida de una compra de producto sea completamente funcional.
-
-*   **Paso 7: Reactivar el Mapa de Selección de Dirección.**
-    *   **Tarea:** Descomentar y reparar el componente `MapPageContent.tsx`.
-    *   **Tarea:** Asegurar que, al seleccionar una dirección, se retorne correctamente a la página de checkout con la información actualizada.
-    *   **Meta:** Habilitar la funcionalidad de envío a terceros.
-
-### **Sub-fase C: Pulido y Pruebas Pre-Lanzamiento**
-
-*   **Paso 8: Implementar Manejo de Errores y Estados de Carga.**
-    *   **Tarea:** Envolver las llamadas a las acciones en bloques `try...catch` en los componentes cliente.
-    *   **Tarea:** Utilizar el `isSubmitting` o estados de carga locales para dar feedback visual al usuario (ej. `Loader2` en los botones).
-    *   **Meta:** Mejorar la experiencia de usuario y la robustez de la aplicación.
-
-*   **Paso 9: Auditoría de Responsividad.**
-    *   **Tarea:** Revisar todas las páginas principales (`/`, `/login`, `/profile`, `/transactions`, `/messages`) y asegurar que el diseño sea completamente funcional y estéticamente agradable tanto en vista móvil como en escritorio.
-    *   **Meta:** Garantizar una experiencia de usuario consistente en todas las plataformas.
-
-*   **Paso 10: Pruebas de Flujo Completo (End-to-End).**
-    *   **Tarea:** Realizar una prueba manual completa de los siguientes flujos:
-        1.  Registro y configuración de un nuevo proveedor.
-        2.  Publicación de un nuevo servicio/producto.
-        3.  Un cliente encuentra el producto y lo añade al carrito.
-        4.  El cliente realiza el checkout y el pago.
-        5.  El proveedor gestiona la transacción hasta su finalización.
-    *   **Meta:** Validar que el sistema funciona como un todo integrado antes del lanzamiento de prueba.
+### **Fase 8: Estabilidad Final - Pulido, Pruebas y Responsividad**
+*   **Objetivo:** Preparar la aplicación para el lanzamiento de prueba, asegurando una experiencia de usuario de alta calidad en todos los dispositivos.
+*   **Auditoría de Componentes y Flujos:**
+    *   Revisión de todos los componentes para un manejo de errores y estados de carga consistente (`try...catch`, loaders).
+    *   Auditoría de CSS y layout en todas las páginas para garantizar la responsividad móvil y de escritorio.
+    *   Pruebas manuales E2E (End-to-End) de todos los flujos principales.
+    *   Revisión final de `firestore.indexes.json` para asegurar que todas las consultas de producción están cubiertas.
+    *   Actualización de este mismo documento para reflejar el estado final de la aplicación.
+*   **Criterio de Completado:** La aplicación es estable, robusta, visualmente pulida y está lista para recibir a sus primeros usuarios de prueba.
 
 ---
-*Este documento se actualizará a medida que cada paso se complete, sirviendo como el registro oficial del progreso del proyecto.*
+*Este documento es nuestro plan de trabajo oficial. Cada fase completada será registrada aquí.*
