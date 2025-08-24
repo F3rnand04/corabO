@@ -16,23 +16,13 @@ function initializeFirebaseAdmin() {
     if (getApps().length > 0) {
         app = getApps()[0]!;
     } else {
-        const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
-            ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-            : undefined;
-
-        if (!serviceAccount) {
-            console.warn('FIREBASE_SERVICE_ACCOUNT environment variable not set. Using default credentials. This might fail in some environments.');
-            app = initializeApp({
-                projectId: firebaseConfig.projectId,
-                storageBucket: firebaseConfig.storageBucket,
-            });
-        } else {
-            app = initializeApp({
-                credential: cert(serviceAccount),
-                projectId: firebaseConfig.projectId,
-                storageBucket: firebaseConfig.storageBucket,
-            });
-        }
+        // When running in a managed environment like Firebase App Hosting,
+        // the SDK can often auto-discover the credentials and project ID.
+        // We simplify by removing manual parsing of service account keys.
+        app = initializeApp({
+            projectId: firebaseConfig.projectId,
+            storageBucket: firebaseConfig.storageBucket,
+        });
     }
     
     auth = getAuth(app);
