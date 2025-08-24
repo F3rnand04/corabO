@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Server Actions for the Corabo application.
@@ -27,8 +26,7 @@ export async function updateUser(userId: string, updates: Partial<User | { 'prof
 }
 
 export async function deleteUser(userId: string) {
-    const { firestore } = getFirebaseAdmin();
-    await deleteDoc(doc(firestore, 'users', userId));
+    await runFlow('deleteUserFlow', { userId });
 }
 
 export async function getPublicProfile(userId: string) {
@@ -114,8 +112,7 @@ export async function createProduct(data: CreateProductInput) {
 }
 
 export async function removeGalleryImage(ownerId: string, imageId: string) {
-    const { firestore } = getFirebaseAdmin();
-    await deleteDoc(doc(firestore, 'publications', imageId));
+    await runFlow('removeGalleryImageFlow', { ownerId, imageId });
 }
 
 export async function updateGalleryImage(data: { ownerId: string; imageId: string; updates: { description?: string; imageDataUri?: string; }; }) {
@@ -200,8 +197,7 @@ export async function startDispute(transactionId: string) {
 }
 
 export async function cancelSystemTransaction(transactionId: string) {
-    const { firestore } = getFirebaseAdmin();
-    await deleteDoc(doc(firestore, 'transactions', transactionId));
+    await runFlow('cancelSystemTransactionFlow', { transactionId });
 }
 
 export async function downloadTransactionsPDF(transactions: Transaction[]) {
@@ -231,50 +227,7 @@ export async function updateCart(
   productId: string,
   newQuantity: number
 ) {
-    const { firestore } = getFirebaseAdmin();
-    const q = query(
-        collection(firestore, 'transactions'), 
-        where('clientId', '==', userId), 
-        where('status', '==', 'Carrito Activo')
-    );
-    const snapshot = await getDocs(q);
-    const cartTxDoc = snapshot.docs[0];
-    const productSnap = await getDoc(doc(firestore, 'publications', productId));
-    if (!productSnap.exists()) return;
-
-    const productData = productSnap.data() as GalleryImage;
-    const product: Product = {
-        id: productData.id,
-        name: productData.productDetails!.name,
-        description: productData.description,
-        price: productData.productDetails!.price,
-        category: productData.productDetails!.category,
-        providerId: productData.providerId,
-        imageUrl: productData.src,
-    };
-
-    if (cartTxDoc) {
-        const cartTxRef = cartTxDoc.ref;
-        const currentItems = (cartTxDoc.data()?.details.items || []) as CartItem[];
-        const updatedItems = currentItems.filter(item => item.product.id !== productId);
-        if (newQuantity > 0) {
-            updatedItems.push({ product, quantity: newQuantity });
-        }
-        await updateDoc(cartTxRef, { 'details.items': updatedItems });
-    } else if (newQuantity > 0) {
-        const newCart: Transaction = {
-            id: `cart-${userId}`,
-            type: 'Compra',
-            status: 'Carrito Activo',
-            date: new Date().toISOString(),
-            amount: 0,
-            participantIds: [userId],
-            clientId: userId,
-            providerId: '',
-            details: { items: [{ product, quantity: newQuantity }] },
-        };
-        await setDoc(doc(firestore, 'transactions', `cart-${userId}`), newCart);
-    }
+    await runFlow('updateCartFlow', { userId, productId, newQuantity });
 }
 
 
@@ -332,27 +285,7 @@ export async function verifyCampaignPayment(
   transactionId: string,
   campaignId?: string
 ) {
-  const { firestore } = getFirebaseAdmin();
-  const batch = writeBatch(firestore);
-
-  batch.update(doc(firestore, 'transactions', transactionId), {
-    status: 'Pagado',
-  });
-
-  if (campaignId) {
-    batch.update(doc(firestore, 'campaigns', campaignId), { status: 'active' });
-  } else {
-    // This is a subscription payment, update the user
-    const txSnap = await getDoc(doc(firestore, 'transactions', transactionId));
-    if (txSnap.exists()) {
-      const userId = txSnap.data()?.clientId;
-      if (userId) {
-        batch.update(doc(firestore, 'users', userId), { isSubscribed: true });
-      }
-    }
-  }
-
-  await batch.commit();
+  await runFlow('verifyCampaignPaymentFlow', { transactionId, campaignId });
 }
 
 export async function sendNewCampaignNotifications(data: {
@@ -366,11 +299,7 @@ export async function sendNewCampaignNotifications(data: {
 // =================================
 
 export async function addCashierBox(userId: string, name: string, password: string) {
-  const newBox = await runFlow('createCashierBoxFlow', { userId, name, password });
-  const { firestore } = getFirebaseAdmin();
-  await updateDoc(doc(firestore, 'users', userId), {
-    'profileSetupData.cashierBoxes': FieldValue.arrayUnion(newBox),
-  });
+    await runFlow('addCashierBoxFlow', { userId, name, password });
 }
 
 export async function updateCashierBox(
@@ -378,41 +307,15 @@ export async function updateCashierBox(
   boxId: string,
   updates: Partial<CashierBox>
 ) {
-  const { firestore } = getFirebaseAdmin();
-  const userRef = doc(firestore, 'users', userId);
-  const userSnap = await getDoc(userRef);
-  if (userSnap.exists()) {
-    const user = userSnap.data() as User;
-    const boxes = user.profileSetupData?.cashierBoxes || [];
-    const updatedBoxes = boxes.map((box) =>
-      box.id === boxId ? { ...box, ...updates } : box
-    );
-    await updateDoc(userRef, { 'profileSetupData.cashierBoxes': updatedBoxes });
-  }
+    await runFlow('updateCashierBoxFlow', { userId, boxId, updates });
 }
 
 export async function removeCashierBox(userId: string, boxId: string) {
-  const { firestore } = getFirebaseAdmin();
-  const userRef = doc(firestore, 'users', userId);
-  const userSnap = await getDoc(userRef);
-  if (userSnap.exists()) {
-    const user = userSnap.data() as User;
-    const boxes = user.profileSetupData?.cashierBoxes || [];
-    const boxToRemove = boxes.find((box) => box.id === boxId);
-    if (boxToRemove) {
-      await updateDoc(userRef, {
-        'profileSetupData.cashierBoxes': FieldValue.arrayRemove(boxToRemove),
-      });
-    }
-  }
+    await runFlow('removeCashierBoxFlow', { userId, boxId });
 }
 
 export async function regenerateCashierBoxQr(userId: string, boxId: string) {
-  const newQr = await runFlow('regenerateCashierQrFlow', { userId, boxId });
-  await updateCashierBox(userId, boxId, {
-    qrValue: newQr.qrValue,
-    qrDataURL: newQr.qrDataURL,
-  });
+    await runFlow('regenerateCashierQrFlow', { userId, boxId });
 }
 
 export async function requestCashierSession(data: {
@@ -429,19 +332,7 @@ export async function startQrSession(
   providerId: string,
   cashierBoxId?: string
 ) {
-  const { firestore } = getFirebaseAdmin();
-  const sessionId = `qrs-${Date.now()}`;
-  await setDoc(doc(firestore, 'qr_sessions', sessionId), {
-    id: sessionId,
-    clientId,
-    providerId,
-    cashierBoxId: cashierBoxId || null,
-    status: 'pendingAmount',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    participantIds: [clientId, providerId],
-  });
-  return sessionId;
+  return await runFlow('startQrSessionFlow', { clientId, providerId, cashierBoxId });
 }
 
 export async function setQrSessionAmount(
@@ -451,48 +342,23 @@ export async function setQrSessionAmount(
   financedAmount: number,
   installments: number
 ) {
-  const { firestore } = getFirebaseAdmin();
-  await updateDoc(doc(firestore, 'qr_sessions', sessionId), {
-    amount,
-    initialPayment,
-    financedAmount,
-    installments,
-    status: 'pendingClientApproval',
-    updatedAt: new Date().toISOString(),
-  });
+  await runFlow('setQrSessionAmountFlow', { sessionId, amount, initialPayment, financedAmount, installments });
 }
 
 export async function handleClientCopyAndPay(sessionId: string) {
-  const { firestore } = getFirebaseAdmin();
-  await updateDoc(doc(firestore, 'qr_sessions', sessionId), {
-    status: 'awaitingPayment',
-    updatedAt: new Date().toISOString(),
-  });
+  await runFlow('handleClientCopyAndPayFlow', { sessionId });
 }
 
 export async function cancelQrSession(sessionId: string) {
-  const { firestore } = getFirebaseAdmin();
-  await updateDoc(doc(firestore, 'qr_sessions', sessionId), {
-    status: 'cancelled',
-    updatedAt: new Date().toISOString(),
-  });
+  await runFlow('cancelQrSessionFlow', { sessionId });
 }
 
 export async function confirmMobilePayment(sessionId: string) {
-  const { firestore } = getFirebaseAdmin();
-  await updateDoc(doc(firestore, 'qr_sessions', sessionId), {
-    status: 'pendingVoucherUpload',
-    updatedAt: new Date().toISOString(),
-  });
+  await runFlow('confirmMobilePaymentFlow', { sessionId });
 }
 
 export async function finalizeQrSession(sessionId: string) {
-  await runFlow('processDirectPayment', { sessionId });
-  const { firestore } = getFirebaseAdmin();
-  await updateDoc(doc(firestore, 'qr_sessions', sessionId), {
-    status: 'completed',
-    updatedAt: new Date().toISOString(),
-  });
+  await runFlow('finalizeQrSessionFlow', { sessionId });
 }
 
 export async function subscribeUser(
@@ -500,72 +366,14 @@ export async function subscribeUser(
   plan: string,
   amount: number
 ) {
-  // This is a simplified version. A real one would involve a payment provider.
-  const { firestore } = getFirebaseAdmin();
-  const userRef = doc(firestore, 'users', userId);
-  await updateDoc(userRef, { isSubscribed: true });
-
-  // Create a transaction record for the subscription
-  const txId = `txn-sub-${Date.now()}`;
-  const newTransaction: Transaction = {
-    id: txId,
-    type: 'Sistema',
-    status: 'Pago Enviado - Esperando Confirmación',
-    date: new Date().toISOString(),
-    amount: amount,
-    clientId: userId,
-    providerId: 'corabo-admin',
-    participantIds: [userId, 'corabo-admin'],
-    details: {
-      system: `Pago de Suscripción: ${plan}`,
-      isSubscription: true,
-      isRenewable: true, // Assuming subscriptions are renewable
-      paymentVoucherUrl: 'https://i.postimg.cc/L8y2zWc2/vzla-id.png', // Placeholder
-    },
-  };
-  await setDoc(doc(firestore, 'transactions', txId), newTransaction);
+    await runFlow('subscribeUserFlow', { userId, plan, amount });
 }
 
 export async function activatePromotion(
   userId: string,
   data: { imageId: string; promotionText: string; cost: number }
 ) {
-  const { firestore } = getFirebaseAdmin();
-  const batch = writeBatch(firestore);
-
-  const userRef = doc(firestore, 'users', userId);
-  const pubRef = doc(firestore, 'publications', data.imageId);
-  const txRef = doc(firestore, 'transactions', `txn-promo-${Date.now()}`);
-
-  const expires = new Date();
-  expires.setHours(expires.getHours() + 24);
-
-  batch.update(userRef, {
-    'promotion.text': data.promotionText,
-    'promotion.expires': expires.toISOString(),
-  });
-  batch.update(pubRef, {
-    'promotion.text': data.promotionText,
-    'promotion.expires': expires.toISOString(),
-  });
-
-  const promoTx: Transaction = {
-    id: txRef.id,
-    type: 'Sistema',
-    status: 'Pago Enviado - Esperando Confirmación',
-    date: new Date().toISOString(),
-    amount: data.cost,
-    clientId: userId,
-    providerId: 'corabo-admin',
-    participantIds: [userId, 'corabo-admin'],
-    details: {
-      system: `Pago por Promoción 24h: ${data.promotionText}`,
-      paymentVoucherUrl: 'https://i.postimg.cc/L8y2zWc2/vzla-id.png',
-    },
-  };
-  batch.set(txRef, promoTx);
-
-  await batch.commit();
+    await runFlow('activatePromotionFlow', { userId, ...data });
 }
 
 export async function registerSystemPayment(
@@ -574,25 +382,7 @@ export async function registerSystemPayment(
   amount: number,
   isSubscription: boolean
 ) {
-  const { firestore } = getFirebaseAdmin();
-  const txId = `txn-sys-${Date.now()}`;
-  const newTransaction: Transaction = {
-    id: txId,
-    type: 'Sistema',
-    status: 'Pago Enviado - Esperando Confirmación',
-    date: new Date().toISOString(),
-    amount,
-    clientId: userId,
-    providerId: 'corabo-admin',
-    participantIds: [userId, 'corabo-admin'],
-    details: {
-      system: concept,
-      isSubscription: isSubscription,
-      isRenewable: isSubscription,
-      paymentVoucherUrl: 'https://i.postimg.cc/L8y2zWc2/vzla-id.png', // Placeholder
-    },
-  };
-  await setDoc(doc(firestore, 'transactions', txId), newTransaction);
+    await runFlow('registerSystemPaymentFlow', { userId, concept, amount, isSubscription });
 }
 
 export async function createCampaign(userId: string, data: any) {
