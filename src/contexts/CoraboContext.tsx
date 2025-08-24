@@ -70,9 +70,11 @@ interface CoraboProviderProps {
 }
 
 export const CoraboProvider = ({ children }: CoraboProviderProps) => {
-  // Logic from AuthProvider is now the source of truth for user state
-  const { currentUser, isLoadingUser, setCurrentUser, logout } = useAuth();
+  const { firebaseUser, isLoadingAuth, logout } = useAuth();
   const { toast } = useToast();
+  
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
   
   const [users, setUsers] = useState<User[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -91,6 +93,41 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   
   const userCache = useRef<Map<string, User>>(new Map());
   
+  useEffect(() => {
+    setIsLoadingUser(true);
+    if (!firebaseUser) {
+        setCurrentUser(null);
+        setIsLoadingUser(false);
+        return;
+    }
+
+    const fetchCoraboUser = async () => {
+        try {
+            const coraboUser = await Actions.getOrCreateUser({
+                uid: firebaseUser.uid,
+                displayName: firebaseUser.displayName,
+                email: firebaseUser.email,
+                photoURL: firebaseUser.photoURL,
+                emailVerified: firebaseUser.emailVerified,
+            });
+            setCurrentUser(coraboUser as User);
+        } catch (error) {
+            console.error("Failed to fetch or create Corabo user:", error);
+            toast({
+                variant: "destructive",
+                title: "Error de Cuenta",
+                description: "No pudimos cargar los datos de tu perfil de Corabo.",
+            });
+            setCurrentUser(null);
+        } finally {
+            setIsLoadingUser(false);
+        }
+    };
+
+    fetchCoraboUser();
+
+  }, [firebaseUser, toast]);
+
   const setDeliveryAddress = useCallback((address: string) => {
     sessionStorage.setItem('coraboDeliveryAddress', address);
     _setDeliveryAddress(address);
@@ -241,7 +278,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
 
     const value: CoraboContextValue = {
         currentUser,
-        isLoadingUser,
+        isLoadingUser: isLoadingAuth || isLoadingUser, 
         logout,
         setCurrentUser,
         users, transactions, conversations, allPublications,

@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { Providers } from './providers';
@@ -31,22 +32,19 @@ export default async function RootLayout({
   try {
     const sessionCookie = cookies().get('session')?.value;
     if (sessionCookie) {
-      const firebaseAdmin = getFirebaseAdmin();
-      const decodedClaims = await firebaseAdmin.auth().verifySessionCookie(sessionCookie, true);
-      const userRecord = await firebaseAdmin.auth().getUser(decodedClaims.uid);
+      const { auth } = getFirebaseAdmin();
+      const decodedClaims = await auth.verifySessionCookie(sessionCookie, true);
+      const userRecord = await auth.getUser(decodedClaims.uid);
       
-      // Adapt the UserRecord to the FirebaseUser type expected by the client
       serverFirebaseUser = {
           uid: userRecord.uid,
           email: userRecord.email || null,
           displayName: userRecord.displayName || null,
           photoURL: userRecord.photoURL || null,
           emailVerified: userRecord.emailVerified,
-          // Add other properties if needed, ensuring they match the client's FirebaseUser type
       } as FirebaseUser;
     }
   } catch (error) {
-    // Session cookie is invalid or expired. This is a normal flow.
     serverFirebaseUser = null;
   }
 

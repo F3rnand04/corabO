@@ -13,41 +13,18 @@ import { Loader2 } from 'lucide-react';
 export default function LoginPage() {
   const { signInWithGoogle, isLoadingAuth } = useAuth();
   const { currentUser, isLoadingUser } = useCorabo();
-  const router = useRouter();
-  const { toast } = useToast();
 
   const handleSignIn = async () => {
     try {
       await signInWithGoogle();
       // La redirección post-login es manejada centralmente por AppLayout.tsx
     } catch (error: any) {
-       // Ignorar errores comunes de cierre de popup por el usuario
-       if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
-        console.error("Error signing in with Google:", error);
-        toast({
-          variant: "destructive",
-          title: "Error de Inicio de Sesión",
-          description: "No se pudo iniciar sesión con Google. Por favor, inténtalo de nuevo.",
-        });
-      }
+       // El manejo de errores ya se hace dentro de signInWithGoogle
     }
   };
   
-  // Muestra un loader general si se está procesando la autenticación
-  // o si el usuario ya está logueado y estamos esperando la redirección.
-  // Esto previene que el usuario vea la página de login por un instante si ya tiene sesión.
-  if (isLoadingUser || isLoadingAuth) {
+  if (isLoadingUser || isLoadingAuth || currentUser) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-muted/40">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  // Si después de cargar todo, ya hay un usuario, AppLayout se encargará de la redirección,
-  // pero mientras tanto, mostramos el loader para evitar un flash del contenido de login.
-  if (currentUser) {
-     return (
       <div className="flex items-center justify-center min-h-screen bg-muted/40">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
@@ -83,8 +60,8 @@ export default function LoginPage() {
             Tu ecosistema de confianza para conectar con profesionales, comprar productos y gestionar tus servicios de forma segura y transparente.
         </p>
         <div className="space-y-4">
-            <Button onClick={handleSignIn} size="lg" className="w-full">
-              Ingresa o Regístrate con Google
+            <Button onClick={handleSignIn} size="lg" className="w-full" disabled={isLoadingAuth}>
+              {isLoadingAuth ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Ingresa o Regístrate con Google'}
             </Button>
         </div>
       </div>
