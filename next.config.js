@@ -2,8 +2,6 @@
 /** @type {import('next').NextConfig} */
 
 const nextConfig = {
-  // Transpile Genkit packages to ensure compatibility with Next.js.
-  // This is a common requirement for modern libraries that use newer JS features.
   transpilePackages: [
     '@genkit-ai/core',
     '@genkit-ai/firebase',
@@ -33,13 +31,19 @@ const nextConfig = {
     { isServer }
   ) => {
     // Genkit, and its dependency Handlebars, use 'require.extensions' which is not
-    // supported by Webpack. Adding this to externals will prevent Webpack
-    // from trying to bundle it.
+    // supported by Webpack on the client side. Adding this to externals will prevent
+    // Webpack from trying to bundle it for the browser.
     if (!isServer) {
         config.externals.push('@genkit-ai/googleai');
     }
 
     return config
+  },
+
+  // This experimental flag further optimizes server components by ensuring
+  // server-only packages are not bundled for the client.
+  experimental: {
+    serverComponentsExternalPackages: ['@genkit-ai/googleai'],
   },
 };
 
