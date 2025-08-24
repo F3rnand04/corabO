@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Server Actions for the Corabo application.
@@ -36,7 +35,7 @@ import {
   VerificationInput,
 } from '@/ai/flows/verification-flow';
 import type { User, ProfileSetupData, Transaction, Product, CartItem, GalleryImage, CreatePublicationInput, CreateProductInput, VerificationOutput } from '@/lib/types';
-import { getFirestore, writeBatch, doc, updateDoc, arrayUnion, arrayRemove, increment, setDoc, deleteDoc, getDoc, query, collection, where, getDocs, orderBy, limit, deleteField } from 'firebase-admin/firestore';
+import { getFirestore, writeBatch, doc, updateDoc, arrayUnion, arrayRemove, increment, setDoc, deleteDoc, getDoc, query, collection, where, getDocs, orderBy, limit, deleteField, FieldValue } from 'firebase-admin/firestore';
 import { getFirebaseAdmin } from './firebase-server';
 
 // =================================
@@ -142,9 +141,9 @@ export async function removeCommentFromImage(data: { ownerId: string; imageId: s
 // =================================
 
 export async function sendMessage(input: SendMessageInput) {
-  await sendMessageFlow(input);
-  // NOTE: We're not using 'await' here. The flow will run, but we don't block.
+  // NOTE: We're not using 'await' here on purpose. The flow will run in the background.
   // We return the conversationId immediately for client-side navigation.
+  sendMessageFlow(input);
   return input.conversationId;
 }
 
@@ -252,15 +251,20 @@ export async function subscribeUser(userId: string, plan: string, amount: number
     console.log(`Subscribing ${userId} to ${plan} for $${amount}`);
 }
 
-export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput> {
-  const input: VerificationInput = {
-    userId: user.id,
-    nameInRecord: `${user.name} ${user.lastName || ''}`.trim(),
-    idInRecord: user.idNumber || '',
-    documentImageUrl: user.idDocumentUrl || '',
-    isCompany: user.profileSetupData?.providerType === 'company',
-  };
-  return await autoVerifyIdWithAIFlow(input);
+export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput | null> {
+    const input: VerificationInput = {
+      userId: user.id,
+      nameInRecord: `${user.name} ${user.lastName || ''}`.trim(),
+      idInRecord: user.idNumber || '',
+      documentImageUrl: user.idDocumentUrl || '',
+      isCompany: user.profileSetupData?.providerType === 'company',
+    };
+    try {
+        return await autoVerifyIdWithAIFlow(input);
+    } catch (e) {
+        console.error("AI flow failed:", e);
+        return null;
+    }
 }
 
 

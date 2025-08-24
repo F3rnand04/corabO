@@ -1,6 +1,4 @@
-
-
-"use client";
+'use client';
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -68,7 +66,7 @@ const placeholderMap: Record<string, { title: string; description: string }> = {
 };
 
 export function ProposalDialog({ isOpen, onOpenChange, conversationId }: ProposalDialogProps) {
-    const { currentUser } = useCorabo();
+    const { currentUser, sendMessage } = useCorabo();
 
     const form = useForm<ProposalFormValues>({
         resolver: zodResolver(proposalSchema),
@@ -83,7 +81,7 @@ export function ProposalDialog({ isOpen, onOpenChange, conversationId }: Proposa
     const onSubmit = (data: ProposalFormValues) => {
         if (!currentUser) return;
         const otherParticipantId = conversationId.replace(currentUser.id, '').replace('-', '');
-        Actions.sendMessage({
+        sendMessage({
             senderId: currentUser.id,
             recipientId: otherParticipantId,
             conversationId,

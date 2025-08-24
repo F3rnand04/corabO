@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Message and proposal management flows.
@@ -9,9 +8,8 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { getFirestore } from 'firebase-admin/firestore';
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, writeBatch } from 'firebase/firestore';
-import type { Conversation, Message, Transaction, AgreementProposal, User } from '@/lib/types';
+import { getFirestore, writeBatch } from 'firebase-admin/firestore';
+import type { Conversation, Message, Transaction, User } from '@/lib/types';
 
 // Schema for sending a message/proposal
 const SendMessageInputSchema = z.object({
@@ -50,10 +48,8 @@ export const sendMessage = ai.defineFlow(
   },
   async (input) => {
     const db = getFirestore();
-    // SECURITY: In a real app, the senderId would be derived from the auth context, not the input.
-    // For now, we proceed assuming the input is from a validated client session.
-    const convoRef = doc(db, 'conversations', input.conversationId);
-    const convoSnap = await getDoc(convoRef);
+    const convoRef = db.collection('conversations').doc(input.conversationId);
+    const convoSnap = await convoRef.get();
 
     // Dynamically build the message object to avoid undefined fields
     const newMessage: Message = {
@@ -81,9 +77,9 @@ export const sendMessage = ai.defineFlow(
       
       // Repair logic for existing but potentially corrupted conversations.
       if (!conversation.participantIds || !Array.isArray(conversation.participantIds) || conversation.participantIds.length < 2) {
-          await updateDoc(convoRef, {
+          await convoRef.update({
             participantIds: [input.senderId, input.recipientId].sort(),
-            messages: arrayUnion(newMessage),
+            messages: FieldValue.arrayUnion(newMessage),
             lastUpdated: new Date().toISOString(),
           });
       } else {
@@ -91,14 +87,14 @@ export const sendMessage = ai.defineFlow(
         if (!conversation.participantIds.includes(input.senderId)) {
             throw new Error("Sender is not a participant of this conversation.");
         }
-        await updateDoc(convoRef, {
-            messages: arrayUnion(newMessage),
+        await convoRef.update({
+            messages: FieldValue.arrayUnion(newMessage),
             lastUpdated: new Date().toISOString(),
         });
       }
     } else {
       // Creating a new conversation requires both participants.
-      await setDoc(convoRef, {
+      await convoRef.set({
         id: input.conversationId,
         participantIds: [input.senderId, input.recipientId].sort(),
         messages: [newMessage],
@@ -118,9 +114,9 @@ export const acceptProposal = ai.defineFlow(
   async ({ conversationId, messageId, acceptorId }) => {
     const db = getFirestore();
     const batch = writeBatch(db);
-    const convoRef = doc(db, 'conversations', conversationId);
+    const convoRef = db.collection('conversations').doc(conversationId);
     
-    const convoSnap = await getDoc(convoRef);
+    const convoSnap = await convoRef.get();
     if (!convoSnap.exists()) throw new Error("Conversation not found");
     
     const conversation = convoSnap.data() as Conversation;
@@ -137,8 +133,8 @@ export const acceptProposal = ai.defineFlow(
 
     // --- Business Logic Enhancement ---
     // Fetch the client's data to check their subscription status.
-    const clientRef = doc(db, 'users', acceptorId);
-    const clientSnap = await getDoc(clientRef);
+    const clientRef = db.collection('users').doc(acceptorId);
+    const clientSnap = await clientRef.get();
     if (!clientSnap.exists()) throw new Error("Client user data not found.");
     const clientData = clientSnap.data() as User;
 
@@ -174,7 +170,7 @@ export const acceptProposal = ai.defineFlow(
       },
     };
 
-    const txRef = doc(db, 'transactions', newTransaction.id);
+    const txRef = db.collection('transactions').doc(newTransaction.id);
     batch.set(txRef, newTransaction);
     
     await batch.commit();
