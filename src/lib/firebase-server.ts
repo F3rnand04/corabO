@@ -12,39 +12,42 @@ let auth: Auth;
 let db: Firestore;
 
 // This function ensures a single instance of the Firebase Admin app is initialized and reused.
-function getFirebaseAdminApp() {
-    if (getApps().length) {
-        return getApps()[0]!;
+function initializeFirebaseAdmin() {
+    if (getApps().length > 0) {
+        app = getApps()[0]!;
+    } else {
+        const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
+            ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+            : undefined;
+
+        if (!serviceAccount) {
+            console.warn('FIREBASE_SERVICE_ACCOUNT environment variable not set. Using default credentials. This might fail in some environments.');
+            app = initializeApp({
+                projectId: firebaseConfig.projectId,
+                storageBucket: firebaseConfig.storageBucket,
+            });
+        } else {
+            app = initializeApp({
+                credential: cert(serviceAccount),
+                projectId: firebaseConfig.projectId,
+                storageBucket: firebaseConfig.storageBucket,
+            });
+        }
     }
     
-    const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
-        ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-        : undefined;
-
-    if (!serviceAccount) {
-        console.error('FIREBASE_SERVICE_ACCOUNT environment variable not set. Falling back to default credentials. This might fail in some environments.');
-         return initializeApp({
-            storageBucket: firebaseConfig.storageBucket,
-        });
-    }
-
-    app = initializeApp({
-        credential: cert(serviceAccount),
-        storageBucket: firebaseConfig.storageBucket,
-    });
-    return app;
+    auth = getAuth(app);
+    db = getFirestore(app);
 }
 
-// This function provides the initialized Firebase Admin SDK instance.
+// Initialize on module load
+initializeFirebaseAdmin();
+
+
+// This function provides the initialized Firebase Admin SDK instances.
 export function getFirebaseAdmin() {
-    if (!app) {
-        app = getFirebaseAdminApp();
-    }
-    if (!auth) {
-        auth = getAuth(app);
-    }
-    if (!db) {
-        db = getFirestore(app);
+    if (!app || !auth || !db) {
+      // This should not happen if the module is loaded correctly, but it's a safeguard.
+      initializeFirebaseAdmin();
     }
     return { auth, firestore: db };
 }

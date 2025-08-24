@@ -10,8 +10,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, UploadCloud, X, CheckCircle, AlertTriangle, Sparkles, FileText } from 'lucide-react';
-import { VerificationOutput } from '@/lib/types';
+import type { VerificationOutput } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import * as Actions from '@/lib/actions';
+import { deleteField } from 'firebase/firestore';
+
 
 const countriesInfo = [
   { code: 'VE', name: 'Venezuela', idLabel: 'Cédula de Identidad', companyIdLabel: 'RIF' },
