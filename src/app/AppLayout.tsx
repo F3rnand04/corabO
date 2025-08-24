@@ -64,7 +64,9 @@ function LayoutController({ children }: { children: React.ReactNode }) {
       return <>{children}</>;
   }
   
-  // Si hay un usuario pero está en el proceso de setup, renderiza la página de setup.
+  // *** CORRECCIÓN CLAVE ***
+  // Si hay un usuario pero está en el proceso de setup, permite renderizar la página de setup.
+  // Esta condición faltaba y era la causa del bucle de carga.
   const isAllowedSetup = currentUser && !currentUser.isInitialSetupComplete && pathname === '/initial-setup';
   if(isAllowedSetup) {
       return <>{children}</>;
@@ -92,7 +94,8 @@ function LayoutController({ children }: { children: React.ReactNode }) {
   }
 
   // En cualquier otro caso (como un usuario no logueado tratando de acceder a una ruta protegida
-  // mientras la redirección se efectúa), muestra el loader para evitar flashes de contenido.
+  // mientras la redirección se efectúa, o un usuario que necesita setup mientras es redirigido), 
+  // muestra el loader para evitar flashes de contenido incorrecto.
   return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
