@@ -1,9 +1,6 @@
 /** @type {import('next').NextConfig} */
 
 const nextConfig = {
-  // Use a dedicated 'src' directory for better project organization.
-  srcDir: 'src',
-
   // Ensure server-only packages are not bundled on the client.
   webpack: (config, { isServer }) => {
     if (!isServer) {
