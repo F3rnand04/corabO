@@ -32,10 +32,7 @@ export async function deleteUser(userId: string) {
 }
 
 export async function getPublicProfile(userId: string) {
-    const { firestore } = getFirebaseAdmin();
-    const userSnap = await getDoc(doc(firestore, 'users', userId));
-    if (!userSnap.exists()) return null;
-    return userSnap.data() as User;
+    return await ai.runFlow('getPublicProfileFlow', { userId });
 }
 
 export async function getFeed(params: { limitNum: number, startAfterDocId?: string }) {
@@ -117,7 +114,8 @@ export async function createProduct(data: CreateProductInput) {
 }
 
 export async function removeGalleryImage(ownerId: string, imageId: string) {
-    await ai.runFlow('removeGalleryImageFlow', {ownerId, imageId});
+    const { firestore } = getFirebaseAdmin();
+    await deleteDoc(doc(firestore, 'publications', imageId));
 }
 
 export async function updateGalleryImage(data: { ownerId: string; imageId: string; updates: { description?: string; imageDataUri?: string; }; }) {
@@ -233,72 +231,52 @@ export async function updateCart(
   productId: string,
   newQuantity: number
 ) {
-  const { firestore } = getFirebaseAdmin();
-  const cartTxRef = doc(firestore, 'transactions', `cart-${userId}`);
-  const cartTxSnap = await getDoc(cartTxRef);
-  const productRef = doc(firestore, 'publications', productId);
-  const productSnap = await getDoc(productRef);
-
-  if (!productSnap.exists()) {
-    console.error(`Product ${productId} not found!`);
-    return;
-  }
-
-  const productData = productSnap.data() as GalleryImage;
-  const product: Product = {
-    id: productData.id,
-    name: productData.productDetails!.name,
-    description: productData.description,
-    price: productData.productDetails!.price,
-    category: productData.productDetails!.category,
-    providerId: productData.providerId,
-    imageUrl: productData.src,
-  };
-
-  if (cartTxSnap.exists()) {
-    const cartItems =
-      (cartTxSnap.data()?.details.items || []) as CartItem[];
-    const itemIndex = cartItems.findIndex(
-      (item) => item.product.id === productId
+    const { firestore } = getFirebaseAdmin();
+    const q = query(
+        collection(firestore, 'transactions'), 
+        where('clientId', '==', userId), 
+        where('status', '==', 'Carrito Activo')
     );
+    const snapshot = await getDocs(q);
+    const cartTxDoc = snapshot.docs[0];
+    const productSnap = await getDoc(doc(firestore, 'publications', productId));
+    if (!productSnap.exists()) return;
 
-    if (newQuantity <= 0) {
-      if (itemIndex > -1) {
-        const itemToRemove = cartItems[itemIndex];
-        await updateDoc(cartTxRef, {
-          'details.items': FieldValue.arrayRemove(itemToRemove),
-        });
-      }
-    } else {
-      if (itemIndex > -1) {
-        // This is tricky without reading the array, updating, and writing back.
-        // For simplicity, we'll do read-modify-write.
-        const updatedItems = [...cartItems];
-        updatedItems[itemIndex].quantity = newQuantity;
-        await updateDoc(cartTxRef, { 'details.items': updatedItems });
-      } else {
-        await updateDoc(cartTxRef, {
-          'details.items': FieldValue.arrayUnion({ product, quantity: newQuantity }),
-        });
-      }
-    }
-  } else if (newQuantity > 0) {
-    const newCart: Transaction = {
-      id: `cart-${userId}`,
-      type: 'Compra',
-      status: 'Carrito Activo',
-      date: new Date().toISOString(),
-      amount: 0,
-      participantIds: [userId],
-      clientId: userId,
-      providerId: '', // Cart can contain items from multiple providers
-      details: {
-        items: [{ product, quantity: newQuantity }],
-      },
+    const productData = productSnap.data() as GalleryImage;
+    const product: Product = {
+        id: productData.id,
+        name: productData.productDetails!.name,
+        description: productData.description,
+        price: productData.productDetails!.price,
+        category: productData.productDetails!.category,
+        providerId: productData.providerId,
+        imageUrl: productData.src,
     };
-    await setDoc(cartTxRef, newCart);
-  }
+
+    if (cartTxDoc) {
+        const cartTxRef = cartTxDoc.ref;
+        const currentItems = (cartTxDoc.data()?.details.items || []) as CartItem[];
+        const updatedItems = currentItems.filter(item => item.product.id !== productId);
+        if (newQuantity > 0) {
+            updatedItems.push({ product, quantity: newQuantity });
+        }
+        await updateDoc(cartTxRef, { 'details.items': updatedItems });
+    } else if (newQuantity > 0) {
+        const newCart: Transaction = {
+            id: `cart-${userId}`,
+            type: 'Compra',
+            status: 'Carrito Activo',
+            date: new Date().toISOString(),
+            amount: 0,
+            participantIds: [userId],
+            clientId: userId,
+            providerId: '',
+            details: { items: [{ product, quantity: newQuantity }] },
+        };
+        await setDoc(doc(firestore, 'transactions', `cart-${userId}`), newCart);
+    }
 }
+
 
 // =================================
 // DELIVERY ACTIONS

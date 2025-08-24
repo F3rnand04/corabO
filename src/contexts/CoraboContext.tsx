@@ -110,7 +110,13 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         photoURL: firebaseUser.photoURL,
         emailVerified: firebaseUser.emailVerified,
       }).then(coraboUser => {
-        setCurrentUser(coraboUser as User);
+        if (coraboUser) {
+            setCurrentUser(coraboUser as User);
+        } else {
+            // Handle case where getOrCreateUser fails and returns null
+            toast({ variant: "destructive", title: "Error de Perfil", description: "No se pudo cargar tu perfil de Corabo. Intenta recargar la página." });
+            setCurrentUser(null);
+        }
         setIsLoadingUser(false);
       }).catch(error => {
         console.error("Failed to fetch/create Corabo user:", error);
