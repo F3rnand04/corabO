@@ -7,8 +7,8 @@ import { useToast } from "@/hooks/use-toast"
 import { getFirestoreDb } from '@/lib/firebase';
 import { doc, onSnapshot, collection, query, where, orderBy, Unsubscribe, writeBatch, deleteField } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
-import { useAuth } from '@/components/auth/AuthProvider';
 import * as Actions from '@/lib/actions';
+import { useAuth } from '@/components/auth/AuthProvider'; // Import from the real AuthProvider
 
 interface CoraboContextValue {
   // State from AuthProvider, passed through for convenience
@@ -73,18 +73,24 @@ interface UserMetrics {
     paymentSpeed: string;
 }
 
-const CoraboContext = createContext<CoraboContextValue | undefined>(undefined);
+export const CoraboContext = createContext<CoraboContextValue | undefined>(undefined);
 
 interface CoraboProviderProps {
     children: ReactNode;
 }
 
 export const CoraboProvider = ({ children }: CoraboProviderProps) => {
-  const { firebaseUser, isLoadingAuth, logout } = useAuth();
+  const { currentUser: authCurrentUser, isLoadingAuth: isLoadingUser, logout } = useAuth();
   const { toast } = useToast();
   
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
+  // The currentUser state is now primarily managed by AuthProvider.
+  // This local state is just to satisfy the context type.
+  const [currentUser, setCurrentUser] = useState<User | null>(authCurrentUser);
+
+  useEffect(() => {
+    setCurrentUser(authCurrentUser);
+  }, [authCurrentUser]);
+  
   
   const [users, setUsers] = useState<User[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -103,62 +109,6 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   
   const userCache = useRef<Map<string, User>>(new Map());
   
-  useEffect(() => {
-    // This effect now depends on the result of the authentication loading.
-    if (isLoadingAuth) {
-        setIsLoadingUser(true);
-        return;
-    }
-
-    if (!firebaseUser) {
-        setCurrentUser(null);
-        setIsLoadingUser(false);
-        return;
-    }
-
-    // Auth is done, now fetch the Corabo profile.
-    setIsLoadingUser(true);
-    const fetchCoraboUser = async () => {
-        try {
-            const coraboUser = await Actions.getOrCreateUser({
-                uid: firebaseUser.uid,
-                displayName: firebaseUser.displayName,
-                email: firebaseUser.email,
-                photoURL: firebaseUser.photoURL,
-                emailVerified: firebaseUser.emailVerified,
-            });
-            
-            if (coraboUser) {
-              setCurrentUser(coraboUser as User);
-            } else {
-              toast({
-                  variant: "destructive",
-                  title: "Error de Cuenta",
-                  description: "No pudimos cargar los datos de tu perfil de Corabo. Por favor, intenta de nuevo.",
-                  duration: 8000,
-              });
-              logout();
-              setCurrentUser(null);
-            }
-        } catch (error) {
-            console.error("Failed to fetch or create Corabo user:", error);
-            toast({
-                variant: "destructive",
-                title: "Error de Red",
-                description: "Hubo un problema de comunicación con el servidor.",
-                duration: 8000,
-            });
-            logout();
-            setCurrentUser(null);
-        } finally {
-            setIsLoadingUser(false);
-        }
-    };
-
-    fetchCoraboUser();
-
-  }, [firebaseUser, isLoadingAuth, toast, logout]);
-
   const setDeliveryAddress = useCallback((address: string) => {
     sessionStorage.setItem('coraboDeliveryAddress', address);
     _setDeliveryAddress(address);
@@ -340,7 +290,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
 
     const value: CoraboContextValue = {
         currentUser,
-        isLoadingUser: isLoadingAuth || isLoadingUser, 
+        isLoadingUser, 
         logout,
         setCurrentUser,
         users, transactions, conversations, allPublications,
@@ -374,13 +324,3 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         </CoraboContext.Provider>
     );
 };
-
-export const useCorabo = (): CoraboContextValue => {
-    const context = useContext(CoraboContext);
-    if (context === undefined) {
-        throw new Error('useCorabo must be used within a CoraboProvider');
-    }
-    return context;
-};
-
-export type { Transaction };

@@ -5,9 +5,13 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User as FirebaseUser } from 'firebase/auth';
 import { getAuthInstance } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
+import * as Actions from '@/lib/actions';
+import type { User } from '@/lib/types';
+import { CoraboContext } from '@/contexts/CoraboContext';
 
 interface AuthContextType {
   firebaseUser: FirebaseUser | null;
+  currentUser: User | null; // currentUser is now managed here
   isLoadingAuth: boolean; 
   signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
@@ -22,32 +26,46 @@ type AuthProviderProps = {
 
 export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps) => {
   const { toast } = useToast();
-  
-  // Initialize state with the server-provided user to prevent hydration mismatch
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(serverFirebaseUser);
-  
-  // isLoadingAuth is now true only if we don't have a user from the server and the client auth is still loading.
-  const [isClientAuthLoading, setIsClientAuthLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
 
   // This effect synchronizes the client-side auth state with Firebase's own state manager.
-  // It's crucial for cases like token refresh or when the user is already logged in on another tab.
   useEffect(() => {
     const auth = getAuthInstance();
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setFirebaseUser(user);
-      setIsClientAuthLoading(false);
+      if (user) {
+        // If Firebase user exists, fetch or create the corresponding Corabo user profile
+        try {
+            const coraboUser = await Actions.getOrCreateUser({
+                uid: user.uid,
+                displayName: user.displayName,
+                email: user.email,
+                photoURL: user.photoURL,
+                emailVerified: user.emailVerified,
+            });
+            setCurrentUser(coraboUser as User);
+        } catch (error) {
+            console.error("Failed to fetch/create Corabo user on auth change:", error);
+            toast({ variant: "destructive", title: "Error de Perfil", description: "No se pudo cargar tu perfil de Corabo." });
+            setCurrentUser(null);
+        }
+      } else {
+        setCurrentUser(null);
+      }
+      setIsLoadingAuth(false);
     });
     return () => unsubscribe();
-  }, []);
+  }, [toast]);
 
   const signInWithGoogle = async () => {
-    setIsClientAuthLoading(true);
+    setIsLoadingAuth(true);
     try {
         const auth = getAuthInstance();
         const provider = new GoogleAuthProvider();
         const result = await signInWithPopup(auth, provider);
         
-        // After successful login, get the ID token and send it to our API route to create the session cookie.
         const idToken = await result.user.getIdToken();
         await fetch('/api/auth/session', {
             method: 'POST',
@@ -55,7 +73,7 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
             body: JSON.stringify({ idToken }),
         });
         
-        // The onAuthStateChanged listener will handle setting the firebaseUser state.
+        // The onAuthStateChanged listener above will handle setting firebaseUser and currentUser
         
     } catch (error: any) {
         if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
@@ -66,35 +84,38 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
               description: "No se pudo iniciar sesión con Google.",
            });
         }
-    } finally {
-        // isLoadingAuth will be set to false by the onAuthStateChanged listener
+        setIsLoadingAuth(false); // Ensure loading is false on error
     }
   };
 
   const logout = async () => {
-    setIsClientAuthLoading(true);
+    setIsLoadingAuth(true);
     try {
         const auth = getAuthInstance();
         await signOut(auth);
-        // Tell the server to clear the session cookie.
         await fetch('/api/auth/session', { method: 'DELETE' });
         setFirebaseUser(null);
+        setCurrentUser(null);
     } catch (error) {
          console.error("Error signing out:", error);
     } finally {
-        setIsClientAuthLoading(false);
+        setIsLoadingAuth(false);
     }
   };
   
   const value = {
     firebaseUser,
-    // The user is loading if we don't have a user from server and the client SDK hasn't initialized yet.
-    isLoadingAuth: !serverFirebaseUser && isClientAuthLoading,
+    currentUser,
+    isLoadingAuth,
     signInWithGoogle,
     logout,
   };
   
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+      <CoraboContext.Provider value={value as any}>
+        {children}
+      </CoraboContext.Provider>
+  )
 };
 
 export const useAuth = () => {
@@ -104,3 +125,12 @@ export const useAuth = () => {
   }
   return context;
 };
+
+// Re-export CoraboContext's useCorabo hook for convenience
+export const useCorabo = () => {
+    const context = useContext(CoraboContext);
+     if (context === undefined) {
+        throw new Error('useCorabo must be used within a CoraboProvider');
+    }
+    return context;
+}

@@ -11,11 +11,6 @@ import { getOrCreateUserFlow, FirebaseUserInput } from '@/ai/flows/auth-flow';
 import {
   completeInitialSetupFlow,
   checkIdUniquenessFlow,
-  // updateUserFlow,
-  // deleteUserFlow,
-  // getPublicProfileFlow,
-  // getProfileGallery as getProfileGalleryFlow,
-  // getProfileProducts as getProfileProductsFlow,
 } from '@/ai/flows/profile-flow';
 import {
   createPublication as createPublicationFlow,
@@ -47,6 +42,7 @@ import {
     cancelSystemTransaction as cancelSystemTransactionFlow,
     downloadTransactionsPDF as downloadTransactionsPDFFlow,
     checkout as checkoutFlow,
+    processDirectPayment,
 } from '@/ai/flows/transaction-flow';
 import {
     findDeliveryProvider,
@@ -220,7 +216,7 @@ export async function removeCommentFromImage(data: { ownerId: string; imageId: s
 // =================================
 
 export async function sendMessage(input: SendMessageInput) {
-  sendMessageFlow(input);
+  await sendMessageFlow(input);
   return input.conversationId;
 }
 
@@ -516,8 +512,9 @@ export async function confirmMobilePayment(sessionId: string) {
 }
 
 export async function finalizeQrSession(sessionId: string) {
-     const { firestore } = getFirebaseAdmin();
-     await updateDoc(doc(firestore, 'qr_sessions', sessionId), {
+    await processDirectPayment({sessionId});
+    const { firestore } = getFirebaseAdmin();
+    await updateDoc(doc(firestore, 'qr_sessions', sessionId), {
         status: 'completed',
         updatedAt: new Date().toISOString(),
     });
@@ -609,5 +606,3 @@ export async function registerSystemPayment(userId: string, concept: string, amo
 export async function createCampaign(userId: string, data: any) {
     return await createCampaignFlow({userId, ...data});
 }
-
-    
