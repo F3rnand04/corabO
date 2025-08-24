@@ -141,7 +141,7 @@ export async function removeCommentFromImage(data: { ownerId: string; imageId: s
 // MESSAGE & PROPOSAL ACTIONS
 // =================================
 
-export async function sendMessage(input: SendMessageInput): Promise<string> {
+export async function sendMessage(input: SendMessageInput) {
   await sendMessageFlow(input);
   // NOTE: We're not using 'await' here. The flow will run, but we don't block.
   // We return the conversationId immediately for client-side navigation.
@@ -297,3 +297,4 @@ export async function confirmMobilePayment(data: any) {}
 export async function finalizeQrSession(data: any) {}
 export async function sendNewCampaignNotifications(data: any) {}
 export async function verifyCampaignPayment(data: any, data2: any) {}
+export async function registerSystemPayment(userId: string, concept: string, amount: number, isSubscription: boolean) {}
