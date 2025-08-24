@@ -11,7 +11,6 @@ import { getFirebaseAdmin } from './firebase-server';
 import { doc, updateDoc, writeBatch, FieldValue, setDoc, deleteDoc, getDoc, query, collection, where, getDocs, orderBy, limit } from 'firebase-admin/firestore';
 import type { FirebaseUserInput } from '@/lib/types';
 import type { User, ProfileSetupData, Transaction, Product, CartItem, GalleryImage, CreatePublicationInput, CreateProductInput, VerificationOutput, CashierBox, QrSession, TempRecipientInfo } from '@/lib/types';
-import { auth } from 'firebase-admin';
 
 
 // =================================
@@ -87,7 +86,7 @@ export async function rejectUserId(userId: string) {
 export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput | null> {
     const input = {
       userId: user.id,
-      nameInRecord: `${user.name} ${user.lastName || ''}`.trim(),
+      nameInRecord: `${'\'\'\''}${user.name} ${'\'\'\''}${user.lastName || ''}`.trim(),
       idInRecord: user.idNumber || '',
       documentImageUrl: user.idDocumentUrl || '',
       isCompany: user.profileSetupData?.providerType === 'company',

@@ -89,7 +89,7 @@ export default function InitialSetupPage() {
             if (newAttemptCount >= MAX_ATTEMPTS) {
                 toast({
                     variant: 'destructive',
-                    title: `Demasiados Intentos Fallidos (${MAX_ATTEMPTS})`,
+                    title: `Demasiados Intentos Fallidos (${'\'\'\''}${MAX_ATTEMPTS})`,
                     description: 'Su documento ya está en uso. Será redirigido al inicio de sesión para proteger su cuenta y la de otros usuarios.',
                     duration: 5000,
                 });
@@ -113,15 +113,12 @@ export default function InitialSetupPage() {
           }
         );
         
-        // **FIX:** Directly update the context with the user object returned from the server.
-        // This ensures the AppLayout has the most recent state and avoids redirection loops.
         if (updatedUser && setCurrentUser) {
             setCurrentUser(updatedUser as User);
         }
 
         toast({ title: "Perfil Guardado", description: "Tus datos han sido guardados correctamente."});
         
-        // AppLayout will now handle the redirection correctly because the context is up-to-date.
         router.push('/');
 
     } catch (error: any) {
@@ -140,7 +137,7 @@ export default function InitialSetupPage() {
     if(!currentUser) return;
     const conversationId = [currentUser.id, 'corabo-admin'].sort().join('-');
     Actions.sendMessage({ recipientId: 'corabo-admin', text: "Hola, mi número de documento de identidad ya está en uso y necesito ayuda para verificar mi cuenta.", conversationId, senderId: currentUser.id });
-    router.push(`/messages/${conversationId}`);
+    router.push(`/messages/${'\'\'\''}${conversationId}`);
   };
 
   if (!currentUser) {
@@ -220,7 +217,7 @@ export default function InitialSetupPage() {
         )}
         <div className="space-y-2">
           <Label htmlFor="idNumber">{idLabel}</Label>
-          <Input id="idNumber" placeholder={`Tu ${idLabel}`} value={idNumber} onChange={(e) => setIdNumber(e.target.value)} />
+          <Input id="idNumber" placeholder={`Tu ${'\'\'\''}${idLabel}`} value={idNumber} onChange={(e) => setIdNumber(e.target.value)} />
         </div>
         
         <div className="flex items-center space-x-2 pt-4">
