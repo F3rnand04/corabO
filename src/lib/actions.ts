@@ -32,7 +32,7 @@ import {
     AcceptProposalInput,
 } from '@/ai/flows/message-flow';
 import {
-  autoVerifyIdWithAI as autoVerifyIdWithAIFlow,
+  autoVerifyIdWithAIFlow,
   VerificationInput,
 } from '@/ai/flows/verification-flow';
 import type { User, ProfileSetupData, Transaction, Product, CartItem, GalleryImage, CreatePublicationInput, CreateProductInput, VerificationOutput } from '@/lib/types';
@@ -105,6 +105,10 @@ export async function updateUserProfileImage(userId: string, dataUrl: string) {
     await updateUserFlow({userId, updates: { profileImage: dataUrl }});
 }
 
+export async function deactivateTransactions(userId: string) {
+    await updateUserFlow({userId, updates: { isTransactionsActive: false }});
+}
+
 // =================================
 // PUBLICATION & PRODUCT ACTIONS
 // =================================
@@ -137,7 +141,7 @@ export async function removeCommentFromImage(data: { ownerId: string; imageId: s
 // MESSAGE & PROPOSAL ACTIONS
 // =================================
 
-export async function sendMessage(input: SendMessageInput) {
+export async function sendMessage(input: SendMessageInput): Promise<string> {
   await sendMessageFlow(input);
   // NOTE: We're not using 'await' here. The flow will run, but we don't block.
   // We return the conversationId immediately for client-side navigation.
@@ -229,9 +233,14 @@ export async function getFeed(params: { limitNum: number }) {
 
   // This is a simplified enrichment. A real implementation would be more robust.
   const enrichedPublications = await Promise.all(publications.map(async (pub) => {
-    const ownerDoc = await getDoc(doc(firestore, 'users', pub.providerId));
-    if (ownerDoc.exists()) {
-      pub.owner = ownerDoc.data() as User;
+    try {
+        const ownerDoc = await getDoc(doc(firestore, 'users', pub.providerId));
+        if (ownerDoc.exists()) {
+            pub.owner = ownerDoc.data() as User;
+        }
+    } catch (e) {
+        console.warn(`Could not fetch owner for publication ${pub.id}`, e);
+        pub.owner = undefined;
     }
     return pub;
   }));

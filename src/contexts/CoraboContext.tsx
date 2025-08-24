@@ -38,7 +38,7 @@ interface CoraboContextValue {
   updateUser: (userId: string, updates: Partial<User>) => Promise<void>;
   updateFullProfile: (userId: string, profileData: ProfileSetupData, userType: 'client' | 'provider' | 'repartidor') => Promise<void>;
   updateUserProfileImage: (userId: string, dataUrl: string) => Promise<void>;
-  autoVerifyIdWithAI: (user: User) => Promise<VerificationOutput>;
+  autoVerifyIdWithAI: (user: User) => Promise<VerificationOutput | null>;
   deactivateTransactions: (userId: string) => Promise<void>;
   sendMessage: (input: { conversationId: string; senderId: string; recipientId: string; text?: string; location?: { lat: number; lon: number; }; proposal?: Omit<AgreementProposal, 'deliveryDate'> & { deliveryDate: string; }; }) => string;
   acceptProposal: (conversationId: string, messageId: string) => void;
@@ -286,12 +286,20 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         return isNew;
     }
 
+    const autoVerifyIdWithAI = async (user: User): Promise<VerificationOutput | null> => {
+        try {
+            return await Actions.autoVerifyIdWithAI(user);
+        } catch (error) {
+            console.error("Error in AI Verification Context call:", error);
+            return null;
+        }
+    };
+
     // Pass-through a selection of Actions methods for components to use
     const contextActions = {
         updateUser: (userId: string, updates: Partial<User>) => Actions.updateUser(userId, updates),
         updateFullProfile: (userId: string, profileData: ProfileSetupData, userType: any) => Actions.updateFullProfile(userId, profileData, userType),
         updateUserProfileImage: (userId: string, dataUrl: string) => Actions.updateUserProfileImage(userId, dataUrl),
-        autoVerifyIdWithAI: (user: User) => Actions.autoVerifyIdWithAI(user),
         deactivateTransactions: (userId: string) => Actions.deactivateTransactions(userId),
         sendMessage: (input: any) => Actions.sendMessage(input),
         acceptProposal: (conversationId: string, messageId: string) => Actions.acceptProposal(conversationId, messageId),
@@ -327,6 +335,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         getDistanceToProvider,
         setTempRecipientInfo,
         setActiveCartForCheckout,
+        autoVerifyIdWithAI,
         ...contextActions,
     };
   
