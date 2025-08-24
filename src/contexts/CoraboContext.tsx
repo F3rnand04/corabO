@@ -34,21 +34,31 @@ interface CoraboContextValue {
   cart: CartItem[];
   qrSession: QrSession | null;
 
-  // Actions
-  setSearchQuery: (query: string) => void;
-  setCategoryFilter: (category: string | null) => void;
-  clearSearchHistory: () => void;
+  // Actions from CoraboContext, now refactored to use Server Actions
+  updateUser: (userId: string, updates: Partial<User>) => Promise<void>;
+  updateFullProfile: (userId: string, profileData: ProfileSetupData, userType: 'client' | 'provider' | 'repartidor') => Promise<void>;
+  updateUserProfileImage: (userId: string, dataUrl: string) => Promise<void>;
+  autoVerifyIdWithAI: (user: User) => Promise<VerificationOutput>;
+  deactivateTransactions: (userId: string) => Promise<void>;
+  sendMessage: (input: { conversationId: string; senderId: string; recipientId: string; text?: string; location?: { lat: number; lon: number; }; proposal?: Omit<AgreementProposal, 'deliveryDate'> & { deliveryDate: string; }; }) => string;
+  acceptProposal: (conversationId: string, messageId: string) => void;
+  markConversationAsRead: (conversationId: string) => void;
+  createAppointmentRequest: (request: Omit<AppointmentRequest, 'clientId'>) => void;
   addContact: (user: User) => boolean;
   removeContact: (userId: string) => void;
   isContact: (userId: string) => boolean;
+  setSearchQuery: (query: string) => void;
+  setCategoryFilter: (category: string | null) => void;
+  clearSearchHistory: () => void;
   getAgendaEvents: (transactions: Transaction[]) => { date: Date; type: 'payment' | 'task'; description: string, transactionId: string }[];
+  toggleGps: (userId: string) => void;
+  getDistanceToProvider: (provider: User) => string | null;
   setDeliveryAddress: (address: string) => void;
   setDeliveryAddressToCurrent: () => void;
-  getUserMetrics: (userId: string) => UserMetrics;
-  fetchUser: (userId: string) => User | null;
-  getDistanceToProvider: (provider: User) => string | null;
   setTempRecipientInfo: (info: TempRecipientInfo | null) => void;
   setActiveCartForCheckout: (cartItems: CartItem[] | null) => void;
+  getUserMetrics: (userId: string) => UserMetrics;
+  fetchUser: (userId: string) => User | null;
 }
 
 interface GeolocationCoords {
@@ -209,8 +219,8 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
       if (!currentUserLocation || !provider.profileSetupData?.location) return null;
       const [lat2, lon2] = provider.profileSetupData.location.split(',').map(Number);
       const distanceKm = haversineDistance(currentUserLocation.latitude, currentUserLocation.longitude, lat2, lon2);
-      if (provider.profileSetupData.showExactLocation === false) return `~${'\'\'\''}${Math.max(1, Math.round(distanceKm))} km`;
-      return `${'\'\'\''}${Math.round(distanceKm)} km`;
+      if (provider.profileSetupData.showExactLocation === false) return `~${distanceKm.toFixed(0)} km`;
+      return `${distanceKm.toFixed(0)} km`;
   }, [currentUserLocation]);
   
   const setDeliveryAddressToCurrent = useCallback(() => {
@@ -219,7 +229,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
             (position) => {
                 const newLocation = { latitude: position.coords.latitude, longitude: position.coords.longitude };
                 setCurrentUserLocation(newLocation);
-                setDeliveryAddress(`${'\'\'\''}${newLocation.latitude},${'\'\'\''}${newLocation.longitude}`);
+                setDeliveryAddress(`${newLocation.latitude},${newLocation.longitude}`);
             },
             (error) => {
                 toast({ variant: 'destructive', title: 'Error de Ubicación', description: 'No se pudo obtener tu ubicación actual.'});
@@ -245,14 +255,14 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
             const avgMinutes = (paymentTimes.reduce((a, b) => a + b, 0) / paymentTimes.length) / 60000;
             if(avgMinutes < 15) paymentSpeed = '<15 min';
             else if (avgMinutes < 60) paymentSpeed = '<1 hr';
-            else paymentSpeed = `+${'\'\'\''}${Math.floor(avgMinutes / 60)} hr`;
+            else paymentSpeed = `+${Math.floor(avgMinutes / 60)} hr`;
         }
         return { reputation, effectiveness, responseTime, paymentSpeed };
     }, [transactions]);
 
     const getAgendaEvents = useCallback((agendaTransactions: Transaction[]) => {
       return agendaTransactions.filter(tx => tx.status === 'Finalizado - Pendiente de Pago').map(tx => ({
-        date: new Date(tx.date), type: 'payment' as 'payment' | 'task', description: `Pago a ${'\'\'\''}${tx.providerId}`, transactionId: tx.id,
+        date: new Date(tx.date), type: 'payment' as 'payment' | 'task', description: `Pago a ${tx.providerId}`, transactionId: tx.id,
       }));
     }, []);
     
@@ -275,6 +285,21 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         });
         return isNew;
     }
+
+    // Pass-through a selection of Actions methods for components to use
+    const contextActions = {
+        updateUser: (userId: string, updates: Partial<User>) => Actions.updateUser(userId, updates),
+        updateFullProfile: (userId: string, profileData: ProfileSetupData, userType: any) => Actions.updateFullProfile(userId, profileData, userType),
+        updateUserProfileImage: (userId: string, dataUrl: string) => Actions.updateUserProfileImage(userId, dataUrl),
+        autoVerifyIdWithAI: (user: User) => Actions.autoVerifyIdWithAI(user),
+        deactivateTransactions: (userId: string) => Actions.deactivateTransactions(userId),
+        sendMessage: (input: any) => Actions.sendMessage(input),
+        acceptProposal: (conversationId: string, messageId: string) => Actions.acceptProposal(conversationId, messageId),
+        markConversationAsRead: (conversationId: string) => Actions.markConversationAsRead(conversationId),
+        createAppointmentRequest: (request: any) => Actions.createAppointmentRequest(request),
+        toggleGps: (userId: string) => Actions.toggleGps(userId),
+    };
+
 
     const value: CoraboContextValue = {
         currentUser,
@@ -302,6 +327,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         getDistanceToProvider,
         setTempRecipientInfo,
         setActiveCartForCheckout,
+        ...contextActions,
     };
   
     return (

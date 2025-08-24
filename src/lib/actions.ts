@@ -7,10 +7,7 @@
  * Client components should ONLY import from this file to interact with the backend.
  */
 
-import { getFirestore, doc, updateDoc, writeBatch, getDoc, FieldValue, collection, query, where, getDocs, setDoc, deleteDoc } from 'firebase-admin/firestore';
 import { getOrCreateUserFlow, FirebaseUserInput } from '@/ai/flows/auth-flow';
-import type { User, ProfileSetupData } from './types';
-
 
 // =================================
 // AUTH FLOWS
