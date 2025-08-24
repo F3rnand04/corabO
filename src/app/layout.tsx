@@ -36,18 +36,21 @@ export default async function RootLayout({
       const decodedClaims = await auth.verifySessionCookie(sessionCookie, true);
       const userRecord = await auth.getUser(decodedClaims.uid);
       
+      // We need to shape this object to match what the Firebase client SDK expects.
+      // This is a simplified version.
       serverFirebaseUser = {
           uid: userRecord.uid,
           email: userRecord.email || null,
           displayName: userRecord.displayName || null,
           photoURL: userRecord.photoURL || null,
           emailVerified: userRecord.emailVerified,
+          // Add other fields as needed, ensuring they are serializable
       } as FirebaseUser;
     }
   } catch (error) {
     // Session cookie is invalid or expired.
     // serverFirebaseUser remains null, which is the correct state.
-    console.log('Session cookie verification failed:', error);
+    console.log('Session cookie verification failed. This is expected on logout or expiration.');
     serverFirebaseUser = null;
   }
 

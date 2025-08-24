@@ -25,7 +25,9 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
   
   // Initialize state with the server-provided user to prevent hydration mismatch
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(serverFirebaseUser);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  
+  // isLoadingAuth is now true only if we don't have a user from the server and the client auth is still loading.
+  const [isClientAuthLoading, setIsClientAuthLoading] = useState(true);
 
   // This effect synchronizes the client-side auth state with Firebase's own state manager.
   // It's crucial for cases like token refresh or when the user is already logged in on another tab.
@@ -33,13 +35,13 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
     const auth = getAuthInstance();
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setFirebaseUser(user);
-      setIsLoadingAuth(false);
+      setIsClientAuthLoading(false);
     });
     return () => unsubscribe();
   }, []);
 
   const signInWithGoogle = async () => {
-    setIsLoadingAuth(true);
+    setIsClientAuthLoading(true);
     try {
         const auth = getAuthInstance();
         const provider = new GoogleAuthProvider();
@@ -70,7 +72,7 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
   };
 
   const logout = async () => {
-    setIsLoadingAuth(true);
+    setIsClientAuthLoading(true);
     try {
         const auth = getAuthInstance();
         await signOut(auth);
@@ -80,13 +82,14 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
     } catch (error) {
          console.error("Error signing out:", error);
     } finally {
-        setIsLoadingAuth(false);
+        setIsClientAuthLoading(false);
     }
   };
   
   const value = {
     firebaseUser,
-    isLoadingAuth,
+    // The user is loading if we don't have a user from server and the client SDK hasn't initialized yet.
+    isLoadingAuth: !serverFirebaseUser && isClientAuthLoading,
     signInWithGoogle,
     logout,
   };
