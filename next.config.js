@@ -1,10 +1,11 @@
-
 /** @type {import('next').NextConfig} */
 
 const nextConfig = {
+  // Use a dedicated 'src' directory for better project organization.
+  srcDir: 'src',
+
+  // Ensure server-only packages are not bundled on the client.
   webpack: (config, { isServer }) => {
-    // This is the correct way to tell Next.js's bundler to not include
-    // certain packages in the client-side bundle.
     if (!isServer) {
         config.externals = [
             ...config.externals, 
@@ -12,9 +13,18 @@ const nextConfig = {
             'firebase-admin'
         ];
     }
-
     return config;
   },
+
+  // Transpile Genkit packages to ensure compatibility with Next.js.
+  // This is a common requirement for modern libraries that use newer JS features.
+  transpilePackages: [
+    '@genkit-ai/core',
+    '@genkit-ai/firebase',
+    '@genkit-ai/googleai',
+    'genkit',
+  ],
+
   images: {
     remotePatterns: [
       {

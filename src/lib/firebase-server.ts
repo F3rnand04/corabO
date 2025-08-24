@@ -1,4 +1,3 @@
-
 // IMPORTANT: This file should NOT have the "use client" directive.
 // It's intended for server-side code, like Genkit flows.
 
@@ -16,13 +15,29 @@ function initializeFirebaseAdmin() {
     if (getApps().length > 0) {
         app = getApps()[0]!;
     } else {
-        // When running in a managed environment like Firebase App Hosting,
-        // the SDK can often auto-discover the credentials and project ID.
-        // We simplify by removing manual parsing of service account keys.
-        app = initializeApp({
-            projectId: firebaseConfig.projectId,
-            storageBucket: firebaseConfig.storageBucket,
-        });
+        const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT;
+        if (serviceAccountEnv) {
+            try {
+                const serviceAccount = JSON.parse(serviceAccountEnv);
+                app = initializeApp({
+                    credential: cert(serviceAccount),
+                    projectId: firebaseConfig.projectId,
+                    storageBucket: firebaseConfig.storageBucket,
+                });
+            } catch (e) {
+                console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT. Using default credentials.', e);
+                app = initializeApp({
+                    projectId: firebaseConfig.projectId,
+                    storageBucket: firebaseConfig.storageBucket,
+                });
+            }
+        } else {
+            console.warn('FIREBASE_SERVICE_ACCOUNT environment variable not set. Using default credentials. This might fail in some environments.');
+            app = initializeApp({
+                projectId: firebaseConfig.projectId,
+                storageBucket: firebaseConfig.storageBucket,
+            });
+        }
     }
     
     auth = getAuth(app);
@@ -31,7 +46,6 @@ function initializeFirebaseAdmin() {
 
 // Initialize on module load
 initializeFirebaseAdmin();
-
 
 // This function provides the initialized Firebase Admin SDK instances.
 export function getFirebaseAdmin() {
