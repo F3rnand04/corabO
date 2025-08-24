@@ -15,7 +15,6 @@ interface CoraboContextValue {
   currentUser: User | null;
   isLoadingUser: boolean; 
   logout: () => void;
-  setCurrentUser: (user: User | null) => void;
   
   // State managed by CoraboContext
   users: User[];
@@ -59,6 +58,7 @@ interface CoraboContextValue {
   setActiveCartForCheckout: (cartItems: CartItem[] | null) => void;
   getUserMetrics: (userId: string) => UserMetrics;
   fetchUser: (userId: string) => User | null;
+  setCurrentUser: (user: User | null) => void;
 }
 
 interface GeolocationCoords {
@@ -104,13 +104,20 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   const userCache = useRef<Map<string, User>>(new Map());
   
   useEffect(() => {
-    setIsLoadingUser(true);
+    // This effect now depends on the result of the authentication loading.
+    if (isLoadingAuth) {
+        setIsLoadingUser(true);
+        return;
+    }
+
     if (!firebaseUser) {
         setCurrentUser(null);
         setIsLoadingUser(false);
         return;
     }
 
+    // Auth is done, now fetch the Corabo profile.
+    setIsLoadingUser(true);
     const fetchCoraboUser = async () => {
         try {
             const coraboUser = await Actions.getOrCreateUser({
@@ -124,14 +131,12 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
             if (coraboUser) {
               setCurrentUser(coraboUser as User);
             } else {
-              // This is the critical failure case. The server action returned null.
               toast({
                   variant: "destructive",
                   title: "Error de Cuenta",
                   description: "No pudimos cargar los datos de tu perfil de Corabo. Por favor, intenta de nuevo.",
                   duration: 8000,
               });
-              // Log the user out to allow a clean retry.
               logout();
               setCurrentUser(null);
             }
@@ -152,7 +157,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
 
     fetchCoraboUser();
 
-  }, [firebaseUser, toast, logout]);
+  }, [firebaseUser, isLoadingAuth, toast, logout]);
 
   const setDeliveryAddress = useCallback((address: string) => {
     sessionStorage.setItem('coraboDeliveryAddress', address);

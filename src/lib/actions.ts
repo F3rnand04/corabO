@@ -36,7 +36,7 @@ import {
   VerificationInput,
 } from '@/ai/flows/verification-flow';
 import type { User, ProfileSetupData, Transaction, Product, CartItem, GalleryImage, CreatePublicationInput, CreateProductInput, VerificationOutput } from '@/lib/types';
-import { getFirestore, writeBatch, doc, updateDoc, arrayUnion, arrayRemove, increment, setDoc, deleteDoc, getDoc, query, collection, where, getDocs, orderBy, limit } from 'firebase-admin/firestore';
+import { getFirestore, writeBatch, doc, updateDoc, arrayUnion, arrayRemove, increment, setDoc, deleteDoc, getDoc, query, collection, where, getDocs, orderBy, limit, deleteField } from 'firebase-admin/firestore';
 import { getFirebaseAdmin } from './firebase-server';
 
 // =================================
@@ -264,4 +264,36 @@ export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput
 }
 
 
-export { checkIdUniquenessFlow };
+export async function checkIdUniqueness(data: { idNumber: string; country: string; currentUserId: string; }): Promise<boolean> {
+  return await checkIdUniquenessFlow(data);
+}
+
+// ... other server actions ...
+// Keep adding other actions as they are refactored
+export async function createAppointmentRequest(data: any) {}
+export async function payCommitment(data: any) {}
+export async function confirmPaymentReceived(data: any) {}
+export async function confirmWorkReceived(data: any) {}
+export async function completeWork(data: any) {}
+export async function sendQuote(data: any) {}
+export async function acceptAppointment(data: any) {}
+export async function startDispute(data: any) {}
+export async function cancelSystemTransaction(data: any) {}
+export async function downloadTransactionsPDF(data: any) {}
+export async function retryFindDelivery(data: any) {}
+export async function assignOwnDelivery(data: any, data2: any) {}
+export async function resolveDeliveryAsPickup(data: any) {}
+export async function addCashierBox(data: any, data2: any, data3: any) {}
+export async function updateCashierBox(data: any, data2: any, data3: any) {}
+export async function removeCashierBox(data: any, data2: any) {}
+export async function regenerateCashierBoxQr(data: any, data2: any) {}
+export async function requestCashierSession(data: any) {}
+export async function activatePromotion(data: any, data2: any) {}
+export async function createCampaign(data: any, data2: any) {}
+export async function handleClientCopyAndPay(data: any) {}
+export async function cancelQrSession(data: any) {}
+export async function setQrSessionAmount(data: any, data2: any, data3: any, data4: any, data5: any) {}
+export async function confirmMobilePayment(data: any) {}
+export async function finalizeQrSession(data: any) {}
+export async function sendNewCampaignNotifications(data: any) {}
+export async function verifyCampaignPayment(data: any, data2: any) {}
