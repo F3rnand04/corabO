@@ -11,6 +11,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import type { User } from '@/lib/types';
 import { z } from 'zod';
 import { credicoraLevels } from '@/lib/types';
+import { getFirebaseAdmin } from '@/lib/firebase-server';
 
 // Schema for the user object we expect from the client (FirebaseUser)
 const FirebaseUserSchema = z.object({
@@ -32,7 +33,7 @@ export const getOrCreateUserFlow = ai.defineFlow(
     outputSchema: UserOutputSchema,
   },
   async (firebaseUser) => {
-    const db = getFirestore(); // This gets the ADMIN Firestore instance
+    const { firestore: db } = getFirebaseAdmin(); // This gets the ADMIN Firestore instance
     const userDocRef = db.collection('users').doc(firebaseUser.uid);
     const now = new Date();
 
@@ -65,8 +66,6 @@ export const getOrCreateUserFlow = ai.defineFlow(
                 emailValidated: firebaseUser.emailVerified,
                 phoneValidated: false,
                 isGpsActive: true,
-                credicoraLevel: 1, // Default starting level
-                credicoraLimit: 0, // Default limit, will be set on setup completion
                 isSubscribed: false,
                 isTransactionsActive: false,
                 idVerificationStatus: 'rejected',
