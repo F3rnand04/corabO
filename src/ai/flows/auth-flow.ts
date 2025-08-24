@@ -45,7 +45,6 @@ export const getOrCreateUserFlow = ai.defineFlow(
             return JSON.parse(JSON.stringify(user));
         } else {
             // Create a new, minimal user object.
-            const initialCredicoraLevel = credicoraLevels['1'];
             const newUser: User = {
                 id: firebaseUser.uid,
                 coraboId: `${firebaseUser.displayName?.split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '') || 'user'}${Math.floor(1000 + Math.random() * 9000)}`,
@@ -66,9 +65,8 @@ export const getOrCreateUserFlow = ai.defineFlow(
                 emailValidated: firebaseUser.emailVerified,
                 phoneValidated: false,
                 isGpsActive: true,
-                credicoraLevel: initialCredicoraLevel.level,
-                credicoraLimit: initialCredicoraLevel.creditLimit,
-                credicoraDetails: initialCredicoraLevel,
+                credicoraLevel: 1, // Default starting level
+                credicoraLimit: 0, // Default limit, will be set on setup completion
                 isSubscribed: false,
                 isTransactionsActive: false,
                 idVerificationStatus: 'rejected',
