@@ -5,7 +5,6 @@ const nextConfig = {
   transpilePackages: [
     '@genkit-ai/core',
     '@genkit-ai/firebase',
-    '@genkit-ai/googleai',
     'genkit',
   ],
 
