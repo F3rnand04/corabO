@@ -65,8 +65,7 @@ import {
   requestCashierSession as requestCashierSessionFlow,
 } from '@/ai/flows/cashier-flow';
 
-import type { User, ProfileSetupData, Transaction, Product, CartItem, GalleryImage, VerificationOutput, CashierBox, QrSession, TempRecipientInfo } from '@/lib/types';
-import { CreatePublicationInput, CreateProductInput } from '@/lib/types';
+import type { User, ProfileSetupData, Transaction, Product, CartItem, GalleryImage, CreatePublicationInput, CreateProductInput, VerificationOutput, CashierBox, QrSession, TempRecipientInfo } from '@/lib/types';
 import { getFirestore, writeBatch, doc, updateDoc, arrayUnion, arrayRemove, increment, setDoc, deleteDoc, getDoc, query, collection, where, getDocs, orderBy, limit, FieldValue } from 'firebase-admin/firestore';
 import { getFirebaseAdmin } from './firebase-server';
 
@@ -75,72 +74,53 @@ import { getFirebaseAdmin } from './firebase-server';
 // =================================
 
 export async function getOrCreateUser(firebaseUser: FirebaseUserInput) {
-  const user = await getOrCreateUserFlow(firebaseUser);
-  return JSON.parse(JSON.stringify(user));
+  return await getOrCreateUserFlow(firebaseUser);
 }
 
-export async function updateUser(
-  userId: string,
-  updates: Partial<
-    User | { 'profileSetupData.serviceRadius': number } | { 'profileSetupData.cashierBoxes': CashierBox[] }
-  >
-) {
-  const { firestore } = getFirebaseAdmin();
-  await updateDoc(doc(firestore, 'users', userId), updates as any);
+export async function updateUser(userId: string, updates: Partial<User | { 'profileSetupData.serviceRadius': number } | { 'profileSetupData.cashierBoxes': CashierBox[] }>) {
+    const { firestore } = getFirebaseAdmin();
+    await updateDoc(doc(firestore, 'users', userId), updates as any);
 }
 
 export async function deleteUser(userId: string) {
-  const { firestore } = getFirebaseAdmin();
-  await deleteDoc(doc(firestore, 'users', userId));
+    const { firestore } = getFirebaseAdmin();
+    await deleteDoc(doc(firestore, 'users', userId));
 }
 
 export async function getPublicProfile(userId: string) {
-  const { firestore } = getFirebaseAdmin();
-  const userSnap = await getDoc(doc(firestore, 'users', userId));
-  if (!userSnap.exists()) return null;
-  return userSnap.data() as User;
+    const { firestore } = getFirebaseAdmin();
+    const userSnap = await getDoc(doc(firestore, 'users', userId));
+    if (!userSnap.exists()) return null;
+    return userSnap.data() as User;
 }
 
-export async function getFeed(params: {
-  limitNum: number;
-  startAfterDocId?: string;
-}) {
-  const { firestore } = getFirebaseAdmin();
-  const qConstraints = [orderBy('createdAt', 'desc'), limit(params.limitNum)];
-  if (params.startAfterDocId) {
-    // Implement cursor logic if needed
-  }
-  const publicationsQuery = query(
-    collection(firestore, 'publications'),
-    ...qConstraints
-  );
-  const snapshot = await getDocs(publicationsQuery);
-  const publications = snapshot.docs.map(
-    (doc) => doc.data() as GalleryImage
-  );
+export async function getFeed(params: { limitNum: number, startAfterDocId?: string }) {
+    const { firestore } = getFirebaseAdmin();
+    const qConstraints = [
+        orderBy('createdAt', 'desc'),
+        limit(params.limitNum),
+    ];
+    if (params.startAfterDocId) {
+        // Implement cursor logic if needed
+    }
+    const publicationsQuery = query(collection(firestore, 'publications'), ...qConstraints);
+    const snapshot = await getDocs(publicationsQuery);
+    const publications = snapshot.docs.map(doc => doc.data() as GalleryImage);
 
-  const ownerIds = [...new Set(publications.map((p) => p.providerId))];
-  if (ownerIds.length === 0) {
-    return { publications, lastVisibleDocId: null };
-  }
-  const ownersQuery = query(
-    collection(firestore, 'users'),
-    where('id', 'in', ownerIds)
-  );
-  const ownersSnap = await getDocs(ownersQuery);
-  const ownersMap = new Map(
-    ownersSnap.docs.map((d) => [d.id, d.data() as User])
-  );
+    const ownerIds = [...new Set(publications.map(p => p.providerId))];
+    if (ownerIds.length === 0) {
+        return { publications, lastVisibleDocId: null };
+    }
+    const ownersQuery = query(collection(firestore, 'users'), where('id', 'in', ownerIds));
+    const ownersSnap = await getDocs(ownersQuery);
+    const ownersMap = new Map(ownersSnap.docs.map(d => [d.id, d.data() as User]));
 
-  const enrichedPublications = publications.map((pub) => ({
-    ...pub,
-    owner: ownersMap.get(pub.providerId),
-  }));
+    const enrichedPublications = publications.map(pub => ({
+        ...pub,
+        owner: ownersMap.get(pub.providerId)
+    }));
 
-  return {
-    publications: enrichedPublications,
-    lastVisibleDocId: snapshot.docs[snapshot.docs.length - 1]?.id || null,
-  };
+    return { publications: enrichedPublications, lastVisibleDocId: snapshot.docs[snapshot.docs.length - 1]?.id || null };
 }
 
 // =================================
@@ -148,70 +128,60 @@ export async function getFeed(params: {
 // =================================
 
 export async function completeInitialSetup(userId: string, data: any) {
-  return await completeInitialSetupFlow({ userId, ...data });
+    return await completeInitialSetupFlow({ userId, ...data });
 }
 
-export async function checkIdUniqueness(data: {
-  idNumber: string;
-  country: string;
-  currentUserId: string;
-}) {
-  return await checkIdUniquenessFlow(data);
+export async function checkIdUniqueness(data: { idNumber: string; country: string; currentUserId: string; }) {
+    return await checkIdUniquenessFlow(data);
 }
 
-export async function updateFullProfile(
-  userId: string,
-  profileData: ProfileSetupData,
-  userType: User['type']
-) {
-  await updateUser(userId, { profileSetupData, type: userType });
+export async function updateFullProfile(userId: string, profileData: ProfileSetupData, userType: User['type']) {
+    await updateUser(userId, { profileSetupData, type: userType });
 }
 
 export async function updateUserProfileImage(userId: string, dataUrl: string) {
-  await updateUser(userId, { profileImage: dataUrl });
+    await updateUser(userId, { profileImage: dataUrl });
 }
 
 export async function toggleGps(userId: string) {
-  const { firestore } = getFirebaseAdmin();
-  const userRef = doc(firestore, 'users', userId);
-  const userSnap = await getDoc(userRef);
-  if (userSnap.exists()) {
-    const currentStatus = userSnap.data()?.isGpsActive || false;
-    await updateDoc(userRef, { isGpsActive: !currentStatus });
-  }
+    const { firestore } = getFirebaseAdmin();
+    const userRef = doc(firestore, 'users', userId);
+    const userSnap = await getDoc(userRef);
+    if (userSnap.exists()) {
+        const currentStatus = userSnap.data()?.isGpsActive || false;
+        await updateDoc(userRef, { isGpsActive: !currentStatus });
+    }
 }
 
 export async function deactivateTransactions(userId: string) {
-  await updateUser(userId, { isTransactionsActive: false });
+    await updateUser(userId, { isTransactionsActive: false });
 }
 
 export async function verifyUserId(userId: string) {
-  await updateUser(userId, { idVerificationStatus: 'verified', verified: true });
+    await updateUser(userId, { idVerificationStatus: 'verified', verified: true });
 }
 
 export async function rejectUserId(userId: string) {
-  await updateUser(userId, {
-    idVerificationStatus: 'rejected',
-    verified: false,
-  });
+    await updateUser(userId, {
+        idVerificationStatus: 'rejected',
+        verified: false,
+    });
 }
 
-export async function autoVerifyIdWithAI(
-  user: User
-): Promise<VerificationOutput | null> {
-  const input: VerificationInput = {
-    userId: user.id,
-    nameInRecord: `${user.name} ${user.lastName || ''}`.trim(),
-    idInRecord: user.idNumber || '',
-    documentImageUrl: user.idDocumentUrl || '',
-    isCompany: user.profileSetupData?.providerType === 'company',
-  };
-  try {
-    return await autoVerifyIdWithAIFlow(input);
-  } catch (e) {
-    console.error('AI flow failed:', e);
-    return null;
-  }
+export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput | null> {
+    const input: VerificationInput = {
+      userId: user.id,
+      nameInRecord: `${user.name} ${user.lastName || ''}`.trim(),
+      idInRecord: user.idNumber || '',
+      documentImageUrl: user.idDocumentUrl || '',
+      isCompany: user.profileSetupData?.providerType === 'company',
+    };
+    try {
+        return await autoVerifyIdWithAIFlow(input);
+    } catch (e) {
+        console.error("AI flow failed:", e);
+        return null;
+    }
 }
 
 
@@ -220,27 +190,27 @@ export async function autoVerifyIdWithAI(
 // =================================
 
 export async function createPublication(data: CreatePublicationInput) {
-  await createPublicationFlow(data);
+    await createPublicationFlow(data);
 }
 
 export async function createProduct(data: CreateProductInput) {
-  await createProductFlow(data);
+    await createProductFlow(data);
 }
 
 export async function removeGalleryImage(ownerId: string, imageId: string) {
-  await removeGalleryImageFlow({ownerId, imageId});
+    await removeGalleryImageFlow({ownerId, imageId});
 }
 
 export async function updateGalleryImage(data: { ownerId: string; imageId: string; updates: { description?: string; imageDataUri?: string; }; }) {
-  await updateGalleryImageFlow(data);
+    await updateGalleryImageFlow(data);
 }
 
 export async function addCommentToImage(data: { ownerId: string; imageId: string; commentText: string; author: { id: string; name: string; profileImage: string; }; }) {
-  await addCommentToImageFlow(data);
+    await addCommentToImageFlow(data);
 }
 
 export async function removeCommentFromImage(data: { ownerId: string; imageId: string; commentIndex: number; }) {
-  await removeCommentFromImageFlow(data);
+    await removeCommentFromImageFlow(data);
 }
 
 // =================================
