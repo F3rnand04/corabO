@@ -36,7 +36,7 @@ interface CoraboContextValue {
   updateUserProfileImage: (userId: string, dataUrl: string) => Promise<void>;
   autoVerifyIdWithAI: (user: User) => Promise<VerificationOutput | null>;
   deactivateTransactions: (userId: string) => Promise<void>;
-  sendMessage: (input: { conversationId: string; senderId: string; recipientId: string; text?: string; location?: { lat: number; lon: number; }; proposal?: Omit<AgreementProposal, 'deliveryDate'> & { deliveryDate: string; }; }) => string;
+  sendMessage: (input: { recipientId: string; text?: string; location?: { lat: number; lon: number; }; proposal?: Omit<AgreementProposal, 'deliveryDate'> & { deliveryDate: string; }; }) => Promise<string>;
   acceptProposal: (conversationId: string, messageId: string) => void;
   markConversationAsRead: (conversationId: string) => void;
   createAppointmentRequest: (request: Omit<AppointmentRequest, 'clientId'>) => void;
@@ -53,7 +53,7 @@ interface CoraboContextValue {
   setDeliveryAddressToCurrent: () => void;
   setTempRecipientInfo: (info: TempRecipientInfo | null) => void;
   setActiveCartForCheckout: (cartItems: CartItem[] | null) => void;
-  getUserMetrics: (userId: string) => UserMetrics;
+  getUserMetrics: (userId: string) => Promise<UserMetrics>;
   fetchUser: (userId: string) => User | null;
   setCurrentUser: (user: User | null) => void;
 }
@@ -225,7 +225,8 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     }
   }, [setDeliveryAddress, toast]);
 
-  const getUserMetrics = useCallback((userId: string): UserMetrics => {
+    const getUserMetrics = useCallback(async (userId: string): Promise<UserMetrics> => {
+        // This logic could be a server action itself to avoid sending all txs to client
         const userTxs = transactions.filter(tx => tx.providerId === userId && (tx.status === 'Pagado' || tx.status === 'Resuelto'));
         const ratings = userTxs.map(tx => tx.details.clientRating || 0).filter(r => r > 0);
         const reputation = ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 5.0;
@@ -286,7 +287,11 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         updateFullProfile: (userId: string, profileData: ProfileSetupData, userType: any) => Actions.updateFullProfile(userId, profileData, userType),
         updateUserProfileImage: (userId: string, dataUrl: string) => Actions.updateUserProfileImage(userId, dataUrl),
         deactivateTransactions: (userId: string) => Actions.deactivateTransactions(userId),
-        sendMessage: (input: any) => Actions.sendMessage(input),
+        sendMessage: async (input: any) => {
+            if (!currentUser) throw new Error("User not authenticated");
+            const conversationId = [currentUser.id, input.recipientId].sort().join('-');
+            return await Actions.sendMessage({ ...input, senderId: currentUser.id, conversationId });
+        },
         acceptProposal: (conversationId: string, messageId: string) => {
             if (currentUser) {
               Actions.acceptProposal(conversationId, messageId, currentUser.id);

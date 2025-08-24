@@ -8,7 +8,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { getFirestore, writeBatch } from 'firebase-admin/firestore';
+import { getFirestore, writeBatch, FieldValue } from 'firebase-admin/firestore';
 import type { Conversation, Message, Transaction, User } from '@/lib/types';
 
 // Schema for sending a message/proposal
@@ -17,17 +17,21 @@ const SendMessageInputSchema = z.object({
   senderId: z.string(),
   recipientId: z.string(), // Make recipientId mandatory for reliable conversation creation
   text: z.string().optional(),
-  location: z.object({
+  location: z
+    .object({
       lat: z.number(),
       lon: z.number(),
-  }).optional(),
-  proposal: z.object({
-    title: z.string(),
-    description: z.string(),
-    amount: z.number(),
-    deliveryDate: z.string(),
-    acceptsCredicora: z.boolean(),
-  }).optional(),
+    })
+    .optional(),
+  proposal: z
+    .object({
+      title: z.string(),
+      description: z.string(),
+      amount: z.number(),
+      deliveryDate: z.string(),
+      acceptsCredicora: z.boolean(),
+    })
+    .optional(),
 });
 export type SendMessageInput = z.infer<typeof SendMessageInputSchema>;
 
@@ -38,7 +42,6 @@ const AcceptProposalInputSchema = z.object({
   acceptorId: z.string(),
 });
 export type AcceptProposalInput = z.infer<typeof AcceptProposalInputSchema>;
-
 
 export const sendMessage = ai.defineFlow(
   {
@@ -62,34 +65,37 @@ export const sendMessage = ai.defineFlow(
     };
 
     if (input.proposal) {
-        newMessage.type = 'proposal';
-        newMessage.proposal = input.proposal;
+      newMessage.type = 'proposal';
+      newMessage.proposal = input.proposal;
     } else if (input.location) {
-        newMessage.type = 'location';
-        newMessage.location = input.location;
+      newMessage.type = 'location';
+      newMessage.location = input.location;
     } else {
-        newMessage.type = 'text';
+      newMessage.type = 'text';
     }
-
 
     if (convoSnap.exists()) {
       const conversation = convoSnap.data() as Conversation;
-      
+
       // Repair logic for existing but potentially corrupted conversations.
-      if (!conversation.participantIds || !Array.isArray(conversation.participantIds) || conversation.participantIds.length < 2) {
-          await convoRef.update({
-            participantIds: [input.senderId, input.recipientId].sort(),
-            messages: FieldValue.arrayUnion(newMessage),
-            lastUpdated: new Date().toISOString(),
-          });
+      if (
+        !conversation.participantIds ||
+        !Array.isArray(conversation.participantIds) ||
+        conversation.participantIds.length < 2
+      ) {
+        await convoRef.update({
+          participantIds: [input.senderId, input.recipientId].sort(),
+          messages: FieldValue.arrayUnion(newMessage),
+          lastUpdated: new Date().toISOString(),
+        });
       } else {
         // SECURITY CHECK: Ensure the sender is a participant of the conversation
         if (!conversation.participantIds.includes(input.senderId)) {
-            throw new Error("Sender is not a participant of this conversation.");
+          throw new Error('Sender is not a participant of this conversation.');
         }
         await convoRef.update({
-            messages: FieldValue.arrayUnion(newMessage),
-            lastUpdated: new Date().toISOString(),
+          messages: FieldValue.arrayUnion(newMessage),
+          lastUpdated: new Date().toISOString(),
         });
       }
     } else {
@@ -104,7 +110,6 @@ export const sendMessage = ai.defineFlow(
   }
 );
 
-
 export const acceptProposal = ai.defineFlow(
   {
     name: 'acceptProposalFlow',
@@ -115,27 +120,33 @@ export const acceptProposal = ai.defineFlow(
     const db = getFirestore();
     const batch = writeBatch(db);
     const convoRef = db.collection('conversations').doc(conversationId);
-    
+
     const convoSnap = await convoRef.get();
-    if (!convoSnap.exists()) throw new Error("Conversation not found");
-    
+    if (!convoSnap.exists()) throw new Error('Conversation not found');
+
     const conversation = convoSnap.data() as Conversation;
 
     // SECURITY CHECK: Ensure the acceptor is a participant and is not the sender
     if (!conversation.participantIds.includes(acceptorId)) {
-        throw new Error("Permission Denied: Acceptor is not a participant of this conversation.");
+      throw new Error(
+        'Permission Denied: Acceptor is not a participant of this conversation.'
+      );
     }
-    const message = conversation.messages.find(m => m.id === messageId);
-    if (!message) throw new Error("Message not found");
-    if (message.senderId === acceptorId) throw new Error("Permission Denied: Cannot accept your own proposal.");
+    const message = conversation.messages.find((m) => m.id === messageId);
+    if (!message) throw new Error('Message not found');
+    if (message.senderId === acceptorId) {
+      throw new Error('Permission Denied: Cannot accept your own proposal.');
+    }
 
-    if (message.type !== 'proposal' || !message.proposal) throw new Error("Message is not a proposal");
+    if (message.type !== 'proposal' || !message.proposal) {
+      throw new Error('Message is not a proposal');
+    }
 
     // --- Business Logic Enhancement ---
     // Fetch the client's data to check their subscription status.
     const clientRef = db.collection('users').doc(acceptorId);
     const clientSnap = await clientRef.get();
-    if (!clientSnap.exists()) throw new Error("Client user data not found.");
+    if (!clientSnap.exists()) throw new Error('Client user data not found.');
     const clientData = clientSnap.data() as User;
 
     // Determine the initial transaction status based on the client's subscription.
@@ -145,7 +156,9 @@ export const acceptProposal = ai.defineFlow(
       : 'Finalizado - Pendiente de Pago'; // Requires upfront payment
 
     // 1. Mark the proposal as accepted in the conversation
-    const messageIndex = conversation.messages.findIndex(m => m.id === messageId);
+    const messageIndex = conversation.messages.findIndex(
+      (m) => m.id === messageId
+    );
     const updatedMessages = [...conversation.messages];
     updatedMessages[messageIndex] = { ...message, isProposalAccepted: true };
     batch.update(convoRef, { messages: updatedMessages });
@@ -166,13 +179,16 @@ export const acceptProposal = ai.defineFlow(
       details: {
         serviceName: message.proposal.title,
         proposal: message.proposal,
-        paymentMethod: message.proposal.acceptsCredicora && message.proposal.amount >= 20 ? 'credicora' : 'direct',
+        paymentMethod:
+          message.proposal.acceptsCredicora && message.proposal.amount >= 20
+            ? 'credicora'
+            : 'direct',
       },
     };
 
     const txRef = db.collection('transactions').doc(newTransaction.id);
     batch.set(txRef, newTransaction);
-    
+
     await batch.commit();
   }
 );
