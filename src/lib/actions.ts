@@ -160,16 +160,8 @@ export async function confirmWorkReceived(data: {
   await runFlow('confirmWorkReceivedFlow', data);
 }
 
-export async function payCommitment(data: {
-  transactionId: string;
-  userId: string;
-  paymentDetails: {
-    paymentMethod: string;
-    paymentReference?: string;
-    paymentVoucherUrl?: string;
-  }
-}) {
-  await runFlow('payCommitmentFlow', data);
+export async function payCommitment(transactionId: string, userId: string, paymentDetails: { paymentMethod: string; paymentReference?: string; paymentVoucherUrl?: string;}) {
+  await runFlow('payCommitmentFlow', { transactionId, userId, paymentDetails });
 }
 
 export async function confirmPaymentReceived(data: {
@@ -196,8 +188,7 @@ export async function startDispute(transactionId: string) {
 }
 
 export async function cancelSystemTransaction(transactionId: string) {
-    // In a real app, you would have a flow for this.
-    // await runFlow('cancelSystemTransactionFlow', transactionId);
+    await runFlow('cancelSystemTransactionFlow', { transactionId });
 }
 
 export async function downloadTransactionsPDF(transactions: Transaction[]) {
@@ -227,8 +218,7 @@ export async function updateCart(
   productId: string,
   newQuantity: number
 ) {
-    // In a real app, this would be a flow. For now, it's a placeholder.
-    // await runFlow('updateCartFlow', { userId, productId, newQuantity });
+    await runFlow('updateCartFlow', { userId, productId, newQuantity });
 }
 
 
@@ -244,8 +234,7 @@ export async function assignOwnDelivery(
   transactionId: string,
   providerId: string
 ) {
-   // In a real app, this would be a flow.
-  // await runFlow('assignOwnDeliveryFlow', { transactionId, providerId });
+   await runFlow('assignOwnDeliveryFlow', { transactionId, providerId });
 }
 
 export async function resolveDeliveryAsPickup(data: { transactionId: string }) {
@@ -283,8 +272,7 @@ export async function verifyCampaignPayment(
   transactionId: string,
   campaignId?: string
 ) {
-    // In a real app, this would be a flow.
-  // await runFlow('verifyCampaignPaymentFlow', { transactionId, campaignId });
+  await runFlow('verifyCampaignPaymentFlow', { transactionId, campaignId });
 }
 
 export async function sendNewCampaignNotifications(data: {
@@ -298,11 +286,10 @@ export async function sendNewCampaignNotifications(data: {
 // =================================
 
 export async function addCashierBox(userId: string, name: string, password: string) {
-    // This action can stay as a direct DB update since it's simple.
     const newBox = await runFlow('createCashierBoxFlow', { userId, name, password });
-    const user = await getPublicProfile(userId);
+    const user = await runFlow('getPublicProfileFlow', { userId });
     const existingBoxes = user?.profileSetupData?.cashierBoxes || [];
-    await updateUser(userId, { 'profileSetupData.cashierBoxes': [...existingBoxes, newBox] });
+    await runFlow('updateUserFlow', { userId, updates: { 'profileSetupData.cashierBoxes': [...existingBoxes, newBox] } });
 }
 
 export async function updateCashierBox(
@@ -310,17 +297,17 @@ export async function updateCashierBox(
   boxId: string,
   updates: Partial<CashierBox>
 ) {
-    const user = await getPublicProfile(userId);
+    const user = await runFlow('getPublicProfileFlow', { userId });
     const existingBoxes = user?.profileSetupData?.cashierBoxes || [];
     const updatedBoxes = existingBoxes.map(box => box.id === boxId ? { ...box, ...updates } : box);
-    await updateUser(userId, { 'profileSetupData.cashierBoxes': updatedBoxes });
+    await runFlow('updateUserFlow', { userId, updates: { 'profileSetupData.cashierBoxes': updatedBoxes } });
 }
 
 export async function removeCashierBox(userId: string, boxId: string) {
-    const user = await getPublicProfile(userId);
+    const user = await runFlow('getPublicProfileFlow', { userId });
     const existingBoxes = user?.profileSetupData?.cashierBoxes || [];
     const updatedBoxes = existingBoxes.filter(box => box.id !== boxId);
-    await updateUser(userId, { 'profileSetupData.cashierBoxes': updatedBoxes });
+    await runFlow('updateUserFlow', { userId, updates: { 'profileSetupData.cashierBoxes': updatedBoxes } });
 }
 
 export async function regenerateCashierBoxQr(userId: string, boxId: string) {
@@ -367,8 +354,6 @@ export async function subscribeUser(
   plan: string,
   amount: number
 ) {
-    // This would likely be a more complex flow in a real app
-    // For now, we can simulate creating a system transaction for it.
     await registerSystemPayment(userId, `Suscripción: ${plan}`, amount, true);
 }
 
@@ -376,8 +361,7 @@ export async function activatePromotion(
   userId: string,
   data: { imageId: string; promotionText: string; cost: number }
 ) {
-    // This would be a flow
-    // await runFlow('activatePromotionFlow', { userId, ...data });
+    await runFlow('activatePromotionFlow', { userId, ...data });
 }
 
 export async function registerSystemPayment(
@@ -386,8 +370,7 @@ export async function registerSystemPayment(
   amount: number,
   isSubscription: boolean
 ) {
-  // This would be a flow
-  // await runFlow('registerSystemPaymentFlow', { userId, concept, amount, isSubscription });
+  await runFlow('registerSystemPaymentFlow', { userId, concept, amount, isSubscription });
 }
 
 export async function createCampaign(userId: string, data: any) {
