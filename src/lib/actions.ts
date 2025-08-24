@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Server Actions for the Corabo application.
@@ -34,6 +35,24 @@ import {
   autoVerifyIdWithAIFlow,
   VerificationInput,
 } from '@/ai/flows/verification-flow';
+import {
+    completeWork as completeWorkFlow,
+    confirmWorkReceived as confirmWorkReceivedFlow,
+    payCommitment as payCommitmentFlow,
+    confirmPaymentReceived as confirmPaymentReceivedFlow,
+    sendQuote as sendQuoteFlow,
+    acceptAppointment as acceptAppointmentFlow,
+    createAppointmentRequest as createAppointmentRequestFlow,
+    startDispute as startDisputeFlow,
+    cancelSystemTransaction as cancelSystemTransactionFlow,
+    downloadTransactionsPDF as downloadTransactionsPDFFlow,
+    checkout as checkoutFlow,
+} from '@/ai/flows/transaction-flow';
+import {
+    findDeliveryProvider,
+    resolveDeliveryAsPickup as resolveDeliveryAsPickupFlow,
+} from '@/ai/flows/delivery-flow';
+
 import type { User, ProfileSetupData, Transaction, Product, CartItem, GalleryImage, CreatePublicationInput, CreateProductInput, VerificationOutput } from '@/lib/types';
 import { getFirestore, writeBatch, doc, updateDoc, arrayUnion, arrayRemove, increment, setDoc, deleteDoc, getDoc, query, collection, where, getDocs, orderBy, limit, deleteField, FieldValue } from 'firebase-admin/firestore';
 import { getFirebaseAdmin } from './firebase-server';
@@ -162,6 +181,45 @@ export async function markConversationAsRead(conversationId: string) {
 // =================================
 // TRANSACTION & CART ACTIONS
 // =================================
+export async function completeWork(data: { transactionId: string; userId: string; }) {
+    await completeWorkFlow(data);
+}
+
+export async function confirmWorkReceived(data: { transactionId: string; userId: string; rating: number; comment: string; }) {
+    await confirmWorkReceivedFlow(data);
+}
+
+export async function payCommitment(data: { transactionId: string; userId: string; paymentDetails: { paymentMethod: string; paymentReference?: string; paymentVoucherUrl?: string; }; }) {
+    await payCommitmentFlow(data);
+}
+
+export async function confirmPaymentReceived(data: { transactionId: string; userId: string; fromThirdParty: boolean; }) {
+    await confirmPaymentReceivedFlow(data);
+}
+
+export async function sendQuote(data: { transactionId: string; userId: string; breakdown: string; total: number; }) {
+    await sendQuoteFlow(data);
+}
+
+export async function acceptAppointment(data: { transactionId: string; userId: string; }) {
+    await acceptAppointmentFlow(data);
+}
+
+export async function createAppointmentRequest(data: { providerId: string; clientId: string; date: string; details: string; amount: number; }) {
+    await createAppointmentRequestFlow(data);
+}
+
+export async function startDispute(transactionId: string) {
+    await startDisputeFlow(transactionId);
+}
+
+export async function cancelSystemTransaction(transactionId: string) {
+    await cancelSystemTransactionFlow(transactionId);
+}
+
+export async function downloadTransactionsPDF(transactions: Transaction[]) {
+    return await downloadTransactionsPDFFlow(transactions);
+}
 
 export async function updateCart(userId: string, productId: string, newQuantity: number) {
     const { firestore } = getFirebaseAdmin();
@@ -195,8 +253,25 @@ export async function updateCart(userId: string, productId: string, newQuantity:
 }
 
 export async function checkout(userId: string, providerId: string, deliveryMethod: string, useCredicora: boolean, recipientInfo?: { name: string; phone: string; }, deliveryAddress?: string) {
-   // Placeholder for checkout flow
-   console.log('Checkout Action Called:', { userId, providerId, deliveryMethod, useCredicora, recipientInfo, deliveryAddress });
+   await checkoutFlow({ userId, providerId, deliveryMethod, useCredicora, recipientInfo, deliveryAddress });
+}
+
+
+// =================================
+// DELIVERY ACTIONS
+// =================================
+export async function retryFindDelivery(data: { transactionId: string; }) {
+    await findDeliveryProvider(data);
+}
+export async function assignOwnDelivery(transactionId: string, providerId: string) {
+    const db = getFirestore();
+    await updateDoc(doc(db, 'transactions', transactionId), {
+        'details.deliveryProviderId': providerId,
+        status: 'En Reparto',
+    });
+}
+export async function resolveDeliveryAsPickup(data: { transactionId: string; }) {
+    await resolveDeliveryAsPickupFlow(data);
 }
 
 
@@ -274,19 +349,6 @@ export async function checkIdUniqueness(data: { idNumber: string; country: strin
 
 // ... other server actions ...
 // Keep adding other actions as they are refactored
-export async function createAppointmentRequest(data: any) {}
-export async function payCommitment(data: any) {}
-export async function confirmPaymentReceived(data: any) {}
-export async function confirmWorkReceived(data: any) {}
-export async function completeWork(data: any) {}
-export async function sendQuote(data: any) {}
-export async function acceptAppointment(data: any) {}
-export async function startDispute(data: any) {}
-export async function cancelSystemTransaction(data: any) {}
-export async function downloadTransactionsPDF(data: any) {}
-export async function retryFindDelivery(data: any) {}
-export async function assignOwnDelivery(data: any, data2: any) {}
-export async function resolveDeliveryAsPickup(data: any) {}
 export async function addCashierBox(data: any, data2: any, data3: any) {}
 export async function updateCashierBox(data: any, data2: any, data3: any) {}
 export async function removeCashierBox(data: any, data2: any) {}

@@ -183,6 +183,12 @@ function ClientActions({ tx, onAction }: { tx: Transaction; onAction: () => void
 
 
 // --- Main Dialog Component ---
+interface TransactionDetailsDialogProps {
+  transaction: Transaction | null;
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+}
+
 
 export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: TransactionDetailsDialogProps) {
   const { currentUser, fetchUser, exchangeRate } = useCorabo();
@@ -213,7 +219,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   const isRenewableTx = isSystemTx && transaction.details.isRenewable;
   const isCrossBorder = currentUser.country !== otherParty?.country;
 
-  const statusInfo = {
+  const statusInfo: Record<string, { icon: React.ElementType, color: string }> = {
     'Solicitud Pendiente': { icon: MessageSquare, color: 'bg-yellow-500' },
     'Cotización Recibida': { icon: Send, color: 'bg-blue-500' },
     'Cita Solicitada': { icon: CalendarCheck, color: 'bg-orange-500' },
