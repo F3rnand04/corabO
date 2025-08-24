@@ -6,7 +6,7 @@
  * All functions exported from this file are marked as server actions and will only execute on the server.
  * Client components should ONLY import from this file to interact with the backend.
  */
-import { ai } from '@/ai/genkit';
+import { runFlow } from '@genkit-ai/core';
 import { getFirebaseAdmin } from './firebase-server';
 import { doc, updateDoc, writeBatch, FieldValue, setDoc, deleteDoc, getDoc, query, collection, where, getDocs, orderBy, limit } from 'firebase-admin/firestore';
 import type { FirebaseUserInput } from '@/ai/flows/auth-flow';
@@ -18,7 +18,7 @@ import type { User, ProfileSetupData, Transaction, Product, CartItem, GalleryIma
 // =================================
 
 export async function getOrCreateUser(firebaseUser: FirebaseUserInput) {
-  return await ai.runFlow('getOrCreateUserFlow', firebaseUser);
+  return await runFlow('getOrCreateUserFlow', firebaseUser);
 }
 
 export async function updateUser(userId: string, updates: Partial<User | { 'profileSetupData.serviceRadius': number } | { 'profileSetupData.cashierBoxes': CashierBox[] }>) {
@@ -32,11 +32,11 @@ export async function deleteUser(userId: string) {
 }
 
 export async function getPublicProfile(userId: string) {
-    return await ai.runFlow('getPublicProfileFlow', { userId });
+    return await runFlow('getPublicProfileFlow', { userId });
 }
 
 export async function getFeed(params: { limitNum: number, startAfterDocId?: string }) {
-   return await ai.runFlow('getFeedFlow', params);
+   return await runFlow('getFeedFlow', params);
 }
 
 // =================================
@@ -44,11 +44,11 @@ export async function getFeed(params: { limitNum: number, startAfterDocId?: stri
 // =================================
 
 export async function completeInitialSetup(userId: string, data: any) {
-    return await ai.runFlow('completeInitialSetupFlow', { userId, ...data });
+    return await runFlow('completeInitialSetupFlow', { userId, ...data });
 }
 
 export async function checkIdUniqueness(data: { idNumber: string; country: string; currentUserId: string; }) {
-    return await ai.runFlow('checkIdUniquenessFlow', data);
+    return await runFlow('checkIdUniquenessFlow', data);
 }
 
 export async function updateFullProfile(userId: string, profileData: ProfileSetupData, userType: User['type']) {
@@ -93,7 +93,7 @@ export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput
       isCompany: user.profileSetupData?.providerType === 'company',
     };
     try {
-        return await ai.runFlow('autoVerifyIdWithAIFlow', input);
+        return await runFlow('autoVerifyIdWithAIFlow', input);
     } catch (e) {
         console.error("AI flow failed:", e);
         return null;
@@ -106,11 +106,11 @@ export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput
 // =================================
 
 export async function createPublication(data: CreatePublicationInput) {
-    await ai.runFlow('createPublicationFlow', data);
+    await runFlow('createPublicationFlow', data);
 }
 
 export async function createProduct(data: CreateProductInput) {
-    await ai.runFlow('createProductFlow', data);
+    await runFlow('createProductFlow', data);
 }
 
 export async function removeGalleryImage(ownerId: string, imageId: string) {
@@ -119,15 +119,15 @@ export async function removeGalleryImage(ownerId: string, imageId: string) {
 }
 
 export async function updateGalleryImage(data: { ownerId: string; imageId: string; updates: { description?: string; imageDataUri?: string; }; }) {
-    await ai.runFlow('updateGalleryImageFlow', data);
+    await runFlow('updateGalleryImageFlow', data);
 }
 
 export async function addCommentToImage(data: { ownerId: string; imageId: string; commentText: string; author: { id: string; name: string; profileImage: string; }; }) {
-    await ai.runFlow('addCommentToImageFlow', data);
+    await runFlow('addCommentToImageFlow', data);
 }
 
 export async function removeCommentFromImage(data: { ownerId: string; imageId: string; commentIndex: number; }) {
-    await ai.runFlow('removeCommentFromImageFlow', data);
+    await runFlow('removeCommentFromImageFlow', data);
 }
 
 // =================================
@@ -135,12 +135,12 @@ export async function removeCommentFromImage(data: { ownerId: string; imageId: s
 // =================================
 
 export async function sendMessage(input: any) {
-  await ai.runFlow('sendMessageFlow', input);
+  await runFlow('sendMessageFlow', input);
   return input.conversationId;
 }
 
 export async function acceptProposal(conversationId: string, messageId: string, acceptorId: string) {
-    await ai.runFlow('acceptProposalFlow', { conversationId, messageId, acceptorId });
+    await runFlow('acceptProposalFlow', { conversationId, messageId, acceptorId });
 }
 
 export async function markConversationAsRead(conversationId: string) {
@@ -153,14 +153,14 @@ export async function markConversationAsRead(conversationId: string) {
 // =================================
 
 export async function createAppointmentRequest(data: any) {
-    await ai.runFlow('createAppointmentRequestFlow', data);
+    await runFlow('createAppointmentRequestFlow', data);
 }
 
 export async function completeWork(data: {
   transactionId: string;
   userId: string;
 }) {
-  await ai.runFlow('completeWorkFlow', data);
+  await runFlow('completeWorkFlow', data);
 }
 
 export async function confirmWorkReceived(data: {
@@ -169,11 +169,11 @@ export async function confirmWorkReceived(data: {
   rating: number;
   comment: string;
 }) {
-  await ai.runFlow('confirmWorkReceivedFlow', data);
+  await runFlow('confirmWorkReceivedFlow', data);
 }
 
 export async function payCommitment(data: any) {
-  await ai.runFlow('payCommitmentFlow', data);
+  await runFlow('payCommitmentFlow', data);
 }
 
 export async function confirmPaymentReceived(data: {
@@ -181,22 +181,22 @@ export async function confirmPaymentReceived(data: {
   userId: string;
   fromThirdParty: boolean;
 }) {
-  await ai.runFlow('confirmPaymentReceivedFlow', data);
+  await runFlow('confirmPaymentReceivedFlow', data);
 }
 
 export async function sendQuote(data: any) {
-  await ai.runFlow('sendQuoteFlow', data);
+  await runFlow('sendQuoteFlow', data);
 }
 
 export async function acceptAppointment(data: {
   transactionId: string;
   userId: string;
 }) {
-  await ai.runFlow('acceptAppointmentFlow', data);
+  await runFlow('acceptAppointmentFlow', data);
 }
 
 export async function startDispute(transactionId: string) {
-  await ai.runFlow('startDisputeFlow', transactionId);
+  await runFlow('startDisputeFlow', transactionId);
 }
 
 export async function cancelSystemTransaction(transactionId: string) {
@@ -205,7 +205,7 @@ export async function cancelSystemTransaction(transactionId: string) {
 }
 
 export async function downloadTransactionsPDF(transactions: Transaction[]) {
-  return await ai.runFlow('downloadTransactionsPDFFlow', transactions);
+  return await runFlow('downloadTransactionsPDFFlow', transactions);
 }
 
 export async function checkout(
@@ -216,7 +216,7 @@ export async function checkout(
   recipientInfo?: { name: string; phone: string },
   deliveryAddress?: string
 ) {
-  await ai.runFlow('checkoutFlow', {
+  await runFlow('checkoutFlow', {
     userId,
     providerId,
     deliveryMethod,
@@ -283,7 +283,7 @@ export async function updateCart(
 // =================================
 
 export async function retryFindDelivery(data: { transactionId: string }) {
-  await ai.runFlow('findDeliveryProvider', data);
+  await runFlow('findDeliveryProviderFlow', data);
 }
 
 export async function assignOwnDelivery(
@@ -298,26 +298,26 @@ export async function assignOwnDelivery(
 }
 
 export async function resolveDeliveryAsPickup(data: { transactionId: string }) {
-  await ai.runFlow('resolveDeliveryAsPickupFlow', data);
+  await runFlow('resolveDeliveryAsPickupFlow', data);
 }
 
 // =================================
 // AFFILIATION ACTIONS
 // =================================
 export async function requestAffiliation(providerId: string, companyId: string) {
-  await ai.runFlow('requestAffiliationFlow', { providerId, companyId });
+  await runFlow('requestAffiliationFlow', { providerId, companyId });
 }
 
 export async function approveAffiliation(affiliationId: string, actorId: string) {
-  await ai.runFlow('approveAffiliationFlow', { affiliationId, actorId });
+  await runFlow('approveAffiliationFlow', { affiliationId, actorId });
 }
 
 export async function rejectAffiliation(affiliationId: string, actorId: string) {
-  await ai.runFlow('rejectAffiliationFlow', { affiliationId, actorId });
+  await runFlow('rejectAffiliationFlow', { affiliationId, actorId });
 }
 
 export async function revokeAffiliation(affiliationId: string, actorId: string) {
-  await ai.runFlow('revokeAffiliationFlow', { affiliationId, actorId });
+  await runFlow('revokeAffiliationFlow', { affiliationId, actorId });
 }
 
 // =================================
@@ -358,7 +358,7 @@ export async function verifyCampaignPayment(
 export async function sendNewCampaignNotifications(data: {
   campaignId: string;
 }) {
-  await ai.runFlow('sendNewCampaignNotificationsFlow', data);
+  await runFlow('sendNewCampaignNotificationsFlow', data);
 }
 
 // =================================
@@ -366,7 +366,7 @@ export async function sendNewCampaignNotifications(data: {
 // =================================
 
 export async function addCashierBox(userId: string, name: string, password: string) {
-  const newBox = await ai.runFlow('createCashierBoxFlow', { userId, name, password });
+  const newBox = await runFlow('createCashierBoxFlow', { userId, name, password });
   const { firestore } = getFirebaseAdmin();
   await updateDoc(doc(firestore, 'users', userId), {
     'profileSetupData.cashierBoxes': FieldValue.arrayUnion(newBox),
@@ -408,7 +408,7 @@ export async function removeCashierBox(userId: string, boxId: string) {
 }
 
 export async function regenerateCashierBoxQr(userId: string, boxId: string) {
-  const newQr = await ai.runFlow('regenerateCashierQrFlow', { userId, boxId });
+  const newQr = await runFlow('regenerateCashierQrFlow', { userId, boxId });
   await updateCashierBox(userId, boxId, {
     qrValue: newQr.qrValue,
     qrDataURL: newQr.qrDataURL,
@@ -421,7 +421,7 @@ export async function requestCashierSession(data: {
   cashierBoxId: string;
   password: string;
 }) {
-  return await ai.runFlow('requestCashierSessionFlow', data);
+  return await runFlow('requestCashierSessionFlow', data);
 }
 
 export async function startQrSession(
@@ -487,7 +487,7 @@ export async function confirmMobilePayment(sessionId: string) {
 }
 
 export async function finalizeQrSession(sessionId: string) {
-  await ai.runFlow('processDirectPayment', { sessionId });
+  await runFlow('processDirectPayment', { sessionId });
   const { firestore } = getFirebaseAdmin();
   await updateDoc(doc(firestore, 'qr_sessions', sessionId), {
     status: 'completed',
@@ -596,5 +596,5 @@ export async function registerSystemPayment(
 }
 
 export async function createCampaign(userId: string, data: any) {
-  return await ai.runFlow('createCampaignFlow', { userId, ...data });
+  return await runFlow('createCampaignFlow', { userId, ...data });
 }
