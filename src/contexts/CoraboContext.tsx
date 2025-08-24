@@ -120,14 +120,30 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
                 photoURL: firebaseUser.photoURL,
                 emailVerified: firebaseUser.emailVerified,
             });
-            setCurrentUser(coraboUser as User);
+            
+            if (coraboUser) {
+              setCurrentUser(coraboUser as User);
+            } else {
+              // This is the critical failure case. The server action returned null.
+              toast({
+                  variant: "destructive",
+                  title: "Error de Cuenta",
+                  description: "No pudimos cargar los datos de tu perfil de Corabo. Por favor, intenta de nuevo.",
+                  duration: 8000,
+              });
+              // Log the user out to allow a clean retry.
+              logout();
+              setCurrentUser(null);
+            }
         } catch (error) {
             console.error("Failed to fetch or create Corabo user:", error);
             toast({
                 variant: "destructive",
-                title: "Error de Cuenta",
-                description: "No pudimos cargar los datos de tu perfil de Corabo.",
+                title: "Error de Red",
+                description: "Hubo un problema de comunicación con el servidor.",
+                duration: 8000,
             });
+            logout();
             setCurrentUser(null);
         } finally {
             setIsLoadingUser(false);
@@ -136,7 +152,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
 
     fetchCoraboUser();
 
-  }, [firebaseUser, toast]);
+  }, [firebaseUser, toast, logout]);
 
   const setDeliveryAddress = useCallback((address: string) => {
     sessionStorage.setItem('coraboDeliveryAddress', address);
@@ -302,9 +318,17 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         updateUserProfileImage: (userId: string, dataUrl: string) => Actions.updateUserProfileImage(userId, dataUrl),
         deactivateTransactions: (userId: string) => Actions.deactivateTransactions(userId),
         sendMessage: (input: any) => Actions.sendMessage(input),
-        acceptProposal: (conversationId: string, messageId: string) => Actions.acceptProposal(conversationId, messageId),
+        acceptProposal: (conversationId: string, messageId: string) => {
+            if (currentUser) {
+              Actions.acceptProposal(conversationId, messageId, currentUser.id);
+            }
+        },
         markConversationAsRead: (conversationId: string) => Actions.markConversationAsRead(conversationId),
-        createAppointmentRequest: (request: any) => Actions.createAppointmentRequest(request),
+        createAppointmentRequest: (request: any) => {
+            if(currentUser) {
+                Actions.createAppointmentRequest({...request, clientId: currentUser.id});
+            }
+        },
         toggleGps: (userId: string) => Actions.toggleGps(userId),
     };
 
