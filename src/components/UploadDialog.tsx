@@ -21,15 +21,9 @@ import { useToast } from '@/hooks/use-toast';
 import { UploadCloud, X, Image as ImageIcon, Video, PackagePlus, Loader2, Crop, RotateCw, Check } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import type { CreatePublicationInput, CreateProductInput } from '@/lib/types';
-import { Slider } from './ui/slider';
 import * as Actions from '@/lib/actions';
 
-interface UploadDialogProps {
-  isOpen: boolean;
-  onOpenChange: (isOpen: boolean) => void;
-}
-
-function ImageEditor({ src, onConfirm, onCancel, isVideo }: { src: string, onConfirm: (dataUrl: string) => void, onCancel: () => void, isVideo: boolean }) {
+function ImageEditor({ src, onConfirm, onCancel, isVideo }: { src: string, onConfirm: (dataUrl: string, aspectRatio: 'square' | 'horizontal' | 'vertical') => void, onCancel: () => void, isVideo: boolean }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [aspectRatio, setAspectRatio] = useState<'square' | 'horizontal' | 'vertical'>('square');
 
@@ -37,36 +31,55 @@ function ImageEditor({ src, onConfirm, onCancel, isVideo }: { src: string, onCon
         if (isVideo || !canvasRef.current) return;
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        
         const img = new window.Image();
+        img.crossOrigin = "Anonymous";
         img.src = src;
         img.onload = () => {
             let sx=0, sy=0, sWidth=img.width, sHeight=img.height;
+            let targetWidth, targetHeight;
             
             if(aspectRatio === 'square') {
                 sWidth = sHeight = Math.min(img.width, img.height);
+                targetWidth = targetHeight = 800;
             } else if (aspectRatio === 'horizontal') {
                 sHeight = img.width / (16/9);
+                if (sHeight > img.height) {
+                    sHeight = img.height;
+                    sWidth = sHeight * (16/9);
+                }
+                targetWidth = 800;
+                targetHeight = 450;
             } else { // vertical
-                sWidth = img.height / (4/5);
+                sWidth = img.height * (4/5);
+                 if (sWidth > img.width) {
+                    sWidth = img.width;
+                    sHeight = sWidth * (5/4);
+                }
+                targetWidth = 640;
+                targetHeight = 800;
             }
-            sx = (img.width - sWidth) / 2;
-            sy = (img.height - sHeight) / 2;
 
-            canvas.width = 800; // Fixed output width
-            canvas.height = canvas.width * (sHeight / sWidth);
+            sx = Math.max(0, (img.width - sWidth) / 2);
+            sy = Math.max(0, (img.height - sHeight) / 2);
 
-            ctx?.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, canvas.width, canvas.height);
         }
     }, [src, aspectRatio, isVideo]);
     
     const handleConfirm = () => {
         if(isVideo) {
-          onConfirm(src);
+          onConfirm(src, 'horizontal'); // Videos default to horizontal
           return;
         }
         if(!canvasRef.current) return;
         const dataUrl = canvasRef.current.toDataURL('image/jpeg', 0.85);
-        onConfirm(dataUrl);
+        onConfirm(dataUrl, aspectRatio);
     }
 
     return (
@@ -80,9 +93,9 @@ function ImageEditor({ src, onConfirm, onCancel, isVideo }: { src: string, onCon
             </div>
             {!isVideo && (
                  <div className="flex justify-center gap-2">
-                    <Button variant={aspectRatio === 'square' ? 'default' : 'outline'} onClick={() => setAspectRatio('square')}>Cuadrado</Button>
-                    <Button variant={aspectRatio === 'horizontal' ? 'default' : 'outline'} onClick={() => setAspectRatio('horizontal')}>Horizontal</Button>
-                    <Button variant={aspectRatio === 'vertical' ? 'default' : 'outline'} onClick={() => setAspectRatio('vertical')}>Vertical</Button>
+                    <Button variant={aspectRatio === 'square' ? 'default' : 'outline'} onClick={() => setAspectRatio('square')}>Cuadrado (1:1)</Button>
+                    <Button variant={aspectRatio === 'horizontal' ? 'default' : 'outline'} onClick={() => setAspectRatio('horizontal')}>Horizontal (16:9)</Button>
+                    <Button variant={aspectRatio === 'vertical' ? 'default' : 'outline'} onClick={() => setAspectRatio('vertical')}>Vertical (4:5)</Button>
                 </div>
             )}
              <div className="flex justify-end gap-2">
@@ -93,6 +106,12 @@ function ImageEditor({ src, onConfirm, onCancel, isVideo }: { src: string, onCon
     )
 }
 
+
+interface UploadDialogProps {
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+}
+
 export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
   const { currentUser } = useCorabo();
   const { toast } = useToast();
@@ -100,25 +119,19 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
   const router = useRouter();
 
   if (!currentUser) return null;
+  
+  const [currentView, setCurrentView] = useState<'selection' | 'upload_gallery' | 'upload_product' | 'edit'>('selection');
 
-  const canOfferProducts = currentUser.profileSetupData?.offerType === 'product' || currentUser.profileSetupData?.offerType === 'both';
-  const canOfferServices = currentUser.profileSetupData?.offerType === 'service' || currentUser.profileSetupData?.offerType === 'both';
-  
-  const getInitialView = () => {
-      if (canOfferProducts && canOfferServices) {
-          return 'selection';
-      }
-      if (canOfferProducts) {
-          return 'upload_product';
-      }
-      return 'upload_gallery'; 
-  }
-  
-  const [view, setView] = useState<'selection' | 'upload_gallery' | 'upload_product' | 'edit'>(getInitialView());
-  
   useEffect(() => {
-    if (isOpen) setView(getInitialView());
-  }, [isOpen, currentUser?.id, canOfferProducts, canOfferServices]);
+    if (isOpen) {
+        const canOfferProducts = currentUser.profileSetupData?.offerType === 'product' || currentUser.profileSetupData?.offerType === 'both';
+        const canOfferServices = currentUser.profileSetupData?.offerType === 'service' || currentUser.profileSetupData?.offerType === 'both';
+
+        if (canOfferProducts && canOfferServices) setCurrentView('selection');
+        else if (canOfferProducts) setCurrentView('upload_product');
+        else setCurrentView('upload_gallery');
+    }
+  }, [isOpen, currentUser?.profileSetupData?.offerType]);
 
 
   // Common state
@@ -128,13 +141,11 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
   // Gallery state
   const [galleryImagePreview, setGalleryImagePreview] = useState<string | null>(null);
   const [galleryDescription, setGalleryDescription] = useState('');
-  const [galleryFile, setGalleryFile] = useState<File | null>(null);
-  const [isVideofile, setIsVideoFile] = useState(false);
+  const [isVideoFile, setIsVideoFile] = useState(false);
   const [galleryAspectRatio, setGalleryAspectRatio] = useState<'square' | 'horizontal' | 'vertical'>('square');
 
   // Product state
   const [productImagePreview, setProductImagePreview] = useState<string | null>(null);
-  const [productFile, setProductFile] = useState<File | null>(null);
   const [productName, setProductName] = useState('');
   const [productDescription, setProductDescription] = useState('');
   const [productPrice, setProductPrice] = useState('');
@@ -154,35 +165,43 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
             const result = reader.result as string;
             setEditingFileSrc(result);
             setIsVideoFile(selectedFile.type.startsWith('video/'));
-            setView('edit');
+            setCurrentView('edit');
         };
         reader.readAsDataURL(selectedFile);
     }
   };
   
-   const handleEditConfirm = (dataUrl: string) => {
-        if(view === 'upload_gallery') {
+   const handleEditConfirm = (dataUrl: string, aspectRatio: 'square' | 'horizontal' | 'vertical') => {
+        if(currentView === 'upload_gallery' || (currentView === 'edit' && !productName)) { // logic to know if we are editing for gallery
             setGalleryImagePreview(dataUrl);
+            setGalleryAspectRatio(aspectRatio);
+            setCurrentView('upload_gallery');
         } else {
             setProductImagePreview(dataUrl);
+            setCurrentView('upload_product');
         }
-        setView(view); // Return to previous view
         setEditingFileSrc(null);
     }
 
     const handleEditCancel = () => {
-        setView(view);
+        // Return to the view that triggered the editor
+        if(editingFileSrc && !galleryImagePreview && !productImagePreview){
+            setCurrentView('selection');
+        } else if (productName) {
+            setCurrentView('upload_product');
+        } else {
+            setCurrentView('upload_gallery');
+        }
         setEditingFileSrc(null);
     }
 
+
   const resetState = () => {
-    setView(getInitialView());
+    setCurrentView('selection');
     setGalleryImagePreview(null);
     setGalleryDescription('');
-    setGalleryFile(null);
     setIsVideoFile(false);
     setProductImagePreview(null);
-    setProductFile(null);
     setProductName('');
     setProductDescription('');
     setProductPrice('');
@@ -208,7 +227,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
             description: galleryDescription,
             imageDataUri: galleryImagePreview,
             aspectRatio: galleryAspectRatio,
-            type: isVideofile ? 'video' : 'image',
+            type: isVideoFile ? 'video' : 'image',
         };
         await Actions.createPublication(publicationData);
         toast({ title: "¡Publicación Exitosa!", description: "Tu nuevo contenido ya está en tu galería." });
@@ -257,12 +276,12 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
                     <DialogTitle>Editar Archivo</DialogTitle>
                     <DialogDescription>Ajusta tu imagen o video antes de publicar.</DialogDescription>
                  </DialogHeader>
-                <ImageEditor src={editingFileSrc} onConfirm={handleEditConfirm} onCancel={handleEditCancel} isVideo={isVideofile}/>
+                <ImageEditor src={editingFileSrc} onConfirm={handleEditConfirm} onCancel={handleEditCancel} isVideo={isVideoFile}/>
              </>
           )
       }
       
-      switch(view) {
+      switch(currentView) {
           case 'selection':
              return (
                 <>
@@ -273,11 +292,11 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid grid-cols-2 gap-4 py-4">
-                    <Button variant="outline" className="h-28 flex-col gap-2" onClick={() => setView('upload_gallery')}>
+                    <Button variant="outline" className="h-28 flex-col gap-2" onClick={() => setCurrentView('upload_gallery')}>
                       <ImageIcon className="w-8 h-8" />
                       Publicar en Galería
                     </Button>
-                    <Button variant="outline" className="h-28 flex-col gap-2" onClick={() => setView('upload_product')}>
+                    <Button variant="outline" className="h-28 flex-col gap-2" onClick={() => setCurrentView('upload_product')}>
                       <PackagePlus className="w-8 h-8" />
                       Añadir Producto
                     </Button>
@@ -310,7 +329,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
                               variant="destructive" 
                               size="icon" 
                               className="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => { setGalleryImagePreview(null); setGalleryFile(null); }}
+                              onClick={() => { setGalleryImagePreview(null); }}
                             >
                               <X className="h-4 w-4" />
                             </Button>

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, Package } from 'lucide-react';
 import { useCorabo } from '@/contexts/CoraboContext';
@@ -10,38 +10,39 @@ import { useToast } from '@/hooks/use-toast';
 import { ProductGridCard } from '@/components/ProductGridCard';
 import { ProductDetailsDialog } from '@/components/ProductDetailsDialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getProfileProducts } from '@/ai/flows/profile-flow';
 
 export default function CatalogPage() {
   const router = useRouter();
-  const { currentUser } = useCorabo();
+  const { currentUser, allPublications } = useCorabo();
   const { toast } = useToast();
 
-  const [products, setProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isProductDetailsDialogOpen, setIsProductDetailsDialogOpen] = useState(false);
   
+  // Filter products for the current user from the global state
+  const products: Product[] = useMemo(() => {
+    if (!currentUser) return [];
+    return allPublications
+      .filter(p => p.providerId === currentUser.id && p.type === 'product')
+      .map(p => ({
+        id: p.id,
+        name: p.productDetails?.name || 'Sin Nombre',
+        description: p.description,
+        price: p.productDetails?.price || 0,
+        category: p.productDetails?.category || 'General',
+        providerId: p.providerId,
+        imageUrl: p.src,
+      }));
+  }, [currentUser, allPublications]);
+
   useEffect(() => {
-    const fetchProducts = async () => {
-      if (!currentUser) return;
-      setIsLoading(true);
-      try {
-        const result = await getProfileProducts({ userId: currentUser.id });
-        setProducts(result.products || []);
-      } catch (error) {
-        console.error("Error fetching profile products:", error);
-        toast({
-          variant: 'destructive',
-          title: 'Error al cargar el catálogo',
-          description: 'No se pudieron obtener los productos. Inténtalo de nuevo.',
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchProducts();
-  }, [currentUser, toast]);
+    // We are now depending on the context for data, so we can set loading to false
+    // once the currentUser is available, as the context listener will handle updates.
+    if (currentUser) {
+      setIsLoading(false);
+    }
+  }, [currentUser]);
   
   const openProductDetailsDialog = (product: Product) => {
     setSelectedProduct(product);

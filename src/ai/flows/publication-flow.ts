@@ -97,7 +97,8 @@ export const createPublication = ai.defineFlow(
     const publicationRef = doc(db, 'publications', publicationId);
     await setDoc(publicationRef, newPublication);
     
-    if (user.verified || user.reputation > 4.0) {
+    // Notify followers if user is reputable
+    if (user.verified || (user.reputation || 0) > 4.0) {
       await sendNewPublicationNotification({
         providerId: userId,
         publicationId: publicationId,
@@ -143,7 +144,8 @@ export const createProduct = ai.defineFlow(
         const productRef = doc(db, 'publications', productId);
         await setDoc(productRef, newProductPublication);
         
-        if (user.verified || user.reputation > 4.0) {
+        // Notify followers if user is reputable
+        if (user.verified || (user.reputation || 0) > 4.0) {
           await sendNewPublicationNotification({
             providerId: userId,
             publicationId: productId,
