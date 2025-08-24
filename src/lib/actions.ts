@@ -47,7 +47,6 @@ import {
     cancelSystemTransaction as cancelSystemTransactionFlow,
     downloadTransactionsPDF as downloadTransactionsPDFFlow,
     checkout as checkoutFlow,
-    createAppointmentRequest,
 } from '@/ai/flows/transaction-flow';
 import {
     findDeliveryProvider,
@@ -220,7 +219,7 @@ export async function removeCommentFromImage(data: { ownerId: string; imageId: s
 // MESSAGE ACTIONS
 // =================================
 
-export function sendMessage(input: SendMessageInput) {
+export async function sendMessage(input: SendMessageInput) {
   sendMessageFlow(input);
   return input.conversationId;
 }
@@ -610,3 +609,5 @@ export async function registerSystemPayment(userId: string, concept: string, amo
 export async function createCampaign(userId: string, data: any) {
     return await createCampaignFlow({userId, ...data});
 }
+
+    
