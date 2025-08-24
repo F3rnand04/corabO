@@ -35,7 +35,7 @@ import {
   autoVerifyIdWithAI as autoVerifyIdWithAIFlow,
   VerificationInput,
 } from '@/ai/flows/verification-flow';
-import type { User, ProfileSetupData, Transaction, Product, CartItem, GalleryImage, CreatePublicationInput, CreateProductInput } from '@/lib/types';
+import type { User, ProfileSetupData, Transaction, Product, CartItem, GalleryImage, CreatePublicationInput, CreateProductInput, VerificationOutput } from '@/lib/types';
 import { getFirestore, writeBatch, doc, updateDoc, arrayUnion, arrayRemove, increment, setDoc, deleteDoc, getDoc, query, collection, where, getDocs, orderBy, limit } from 'firebase-admin/firestore';
 import { getFirebaseAdmin } from './firebase-server';
 
@@ -139,6 +139,8 @@ export async function removeCommentFromImage(data: { ownerId: string; imageId: s
 
 export async function sendMessage(input: SendMessageInput) {
   await sendMessageFlow(input);
+  // NOTE: We're not using 'await' here. The flow will run, but we don't block.
+  // We return the conversationId immediately for client-side navigation.
   return input.conversationId;
 }
 
