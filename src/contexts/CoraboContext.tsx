@@ -49,6 +49,12 @@ interface CoraboContextValue {
   getDistanceToProvider: (provider: User) => string | null;
   setTempRecipientInfo: (info: TempRecipientInfo | null) => void;
   setActiveCartForCheckout: (cartItems: CartItem[] | null) => void;
+  
+  // DEPRECATED - These will be removed once all components are updated
+  updateUser: (userId: string, updates: Partial<User>) => Promise<void>;
+  updateFullProfile: (userId: string, formData: ProfileSetupData, userType: string) => Promise<void>;
+  autoVerifyIdWithAI: (user: User) => Promise<VerificationOutput>;
+  deactivateTransactions: (userId: string) => Promise<void>;
 }
 
 interface GeolocationCoords {
@@ -172,8 +178,8 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
       if (!currentUserLocation || !provider.profileSetupData?.location) return null;
       const [lat2, lon2] = provider.profileSetupData.location.split(',').map(Number);
       const distanceKm = haversineDistance(currentUserLocation.latitude, currentUserLocation.longitude, lat2, lon2);
-      if (provider.profileSetupData.showExactLocation === false) return `~${Math.max(1, Math.round(distanceKm))} km`;
-      return `${Math.round(distanceKm)} km`;
+      if (provider.profileSetupData.showExactLocation === false) return `~${'\'\'\''}${Math.max(1, Math.round(distanceKm))} km`;
+      return `${'\'\'\''}${Math.round(distanceKm)} km`;
   }, [currentUserLocation]);
   
   const setDeliveryAddressToCurrent = useCallback(() => {
@@ -182,7 +188,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
             (position) => {
                 const newLocation = { latitude: position.coords.latitude, longitude: position.coords.longitude };
                 setCurrentUserLocation(newLocation);
-                setDeliveryAddress(`${newLocation.latitude},${newLocation.longitude}`);
+                setDeliveryAddress(`${'\'\'\''}${newLocation.latitude},${'\'\'\''}${newLocation.longitude}`);
             },
             (error) => {
                 toast({ variant: 'destructive', title: 'Error de Ubicación', description: 'No se pudo obtener tu ubicación actual.'});
@@ -208,14 +214,14 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
             const avgMinutes = (paymentTimes.reduce((a, b) => a + b, 0) / paymentTimes.length) / 60000;
             if(avgMinutes < 15) paymentSpeed = '<15 min';
             else if (avgMinutes < 60) paymentSpeed = '<1 hr';
-            else paymentSpeed = `+${Math.floor(avgMinutes / 60)} hr`;
+            else paymentSpeed = `+${'\'\'\''}${Math.floor(avgMinutes / 60)} hr`;
         }
         return { reputation, effectiveness, responseTime, paymentSpeed };
     }, [transactions]);
 
     const getAgendaEvents = useCallback((agendaTransactions: Transaction[]) => {
       return agendaTransactions.filter(tx => tx.status === 'Finalizado - Pendiente de Pago').map(tx => ({
-        date: new Date(tx.date), type: 'payment' as 'payment' | 'task', description: `Pago a ${tx.providerId}`, transactionId: tx.id,
+        date: new Date(tx.date), type: 'payment' as 'payment' | 'task', description: `Pago a ${'\'\'\''}${tx.providerId}`, transactionId: tx.id,
       }));
     }, []);
     
@@ -265,6 +271,11 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         getDistanceToProvider,
         setTempRecipientInfo,
         setActiveCartForCheckout,
+        // Deprecated Actions - These call the new server actions for backward compatibility during refactoring
+        updateUser: Actions.updateUser,
+        updateFullProfile: Actions.updateFullProfile,
+        autoVerifyIdWithAI: Actions.autoVerifyIdWithAI,
+        deactivateTransactions: Actions.deactivateTransactions
     };
   
     return (

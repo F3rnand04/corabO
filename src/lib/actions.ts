@@ -74,7 +74,7 @@ export async function updateFullProfile(userId: string, formData: ProfileSetupDa
 export async function autoVerifyIdWithAI(user: User) {
     return await autoVerifyIdWithAIFlow({
         userId: user.id,
-        nameInRecord: `${user.name} ${user.lastName || ''}`.trim(),
+        nameInRecord: `${'\'\'\''}${user.name} ${user.lastName || ''}`.trim(),
         idInRecord: user.idNumber || '',
         documentImageUrl: user.idDocumentUrl!,
         isCompany: user.profileSetupData?.providerType === 'company',
@@ -195,9 +195,13 @@ export async function sendQuote(data: { transactionId: string; userId: string; b
     return await sendQuoteFlow(data);
 }
 
-export async function payCommitment(data: { transactionId: string; userId: string; paymentDetails: { paymentMethod: string; paymentReference?: string; paymentVoucherUrl?: string; }; }) {
-    return await payCommitmentFlow(data);
+export async function payCommitment(transactionId: string) {
+  const db = getFirestore();
+  const txRef = doc(db, 'transactions', transactionId);
+  // This is a simplified version. In a real app, you'd have payment details.
+  await updateDoc(txRef, { status: 'Pago Enviado - Esperando Confirmación' });
 }
+
 
 export async function confirmPaymentReceived(data: { transactionId: string; userId: string; fromThirdParty: boolean; }) {
     return await confirmPaymentReceivedFlow(data);
@@ -215,7 +219,7 @@ export async function acceptQuote(data: { transactionId: string; userId: string;
     return await acceptQuoteFlow(data);
 }
 
-export async function createAppointmentRequest(data: Omit<AppointmentRequest, 'clientId'>) {
+export async function createAppointmentRequest(data: AppointmentRequest) {
     return await createAppointmentRequestFlow(data);
 }
 
@@ -246,7 +250,7 @@ export async function revokeAffiliation(affiliationId: string, actorId: string) 
 // =================================
 // CASHIER & QR FLOWS
 // =================================
-export async function createCashierBox(userId: string, name: string, password: string): Promise<void> {
+export async function addCashierBox(userId: string, name: string, password: string): Promise<void> {
     const db = getFirestore();
     const userRef = doc(db, 'users', userId);
     const newBox = await createCashierBoxFlow({ userId, name, password });
@@ -308,7 +312,7 @@ export async function requestCashierSession(data: { businessCoraboId: string, ca
 
 export async function startQrSession(clientId: string, providerId: string, cashierBoxId?: string) {
     const db = getFirestore();
-    const sessionId = `qr-${Date.now()}`;
+    const sessionId = `qr-${'\'\'\''}${Date.now()}`;
     const sessionRef = doc(db, 'qr_sessions', sessionId);
     const sessionData: QrSession = {
         id: sessionId,
@@ -366,7 +370,7 @@ export async function cancelQrSession(sessionId: string) {
 
 export async function registerSystemPayment(userId: string, concept: string, amount: number, isSubscription: boolean) {
     const db = getFirestore();
-    const txId = `txn-sys-${Date.now()}`;
+    const txId = `txn-sys-${'\'\'\''}${Date.now()}`;
     const transaction: Transaction = {
         id: txId,
         type: 'Sistema',
@@ -391,7 +395,7 @@ export async function subscribeUser(userId: string, planName: string, amount: nu
     const userRef = doc(db, 'users', userId);
     batch.update(userRef, { isSubscribed: true });
 
-    const txId = `txn-sub-${Date.now()}`;
+    const txId = `txn-sub-${'\'\'\''}${Date.now()}`;
     const subscriptionTx: Transaction = {
         id: txId,
         type: 'Sistema',
@@ -402,7 +406,7 @@ export async function subscribeUser(userId: string, planName: string, amount: nu
         providerId: 'corabo-admin',
         participantIds: [userId, 'corabo-admin'],
         details: {
-            system: `Suscripción a ${planName}`,
+            system: `Suscripción a ${'\'\'\''}${planName}`,
             isSubscription: true,
             isRenewable: true,
         }
@@ -448,7 +452,7 @@ export async function updateCart(userId: string, productId: string, newQuantity:
     let cartData: Partial<Transaction> = {};
 
     if (snapshot.empty) {
-        const newCartId = `txn-cart-${userId}-${Date.now()}`;
+        const newCartId = `txn-cart-${'\'\'\''}${userId}-${'\'\'\''}${Date.now()}`;
         cartRef = doc(db, 'transactions', newCartId);
         cartData = {
             id: newCartId,

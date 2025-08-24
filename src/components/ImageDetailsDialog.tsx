@@ -109,7 +109,7 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex =
 
   const handleDeletePublication = (imageId: string) => {
     if (owner) {
-      Actions.removeGalleryImage({ ownerId: owner.id, imageId });
+      Actions.removeGalleryImage(owner.id, imageId);
       onOpenChange(false);
     }
   }

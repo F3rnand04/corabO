@@ -7,7 +7,7 @@ import { useCorabo } from "@/contexts/CoraboContext";
 import { ActivationWarning } from "@/components/ActivationWarning";
 import { PublicationCard } from "@/components/PublicationCard";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getFeed } from "@/lib/actions";
+import * as Actions from '@/lib/actions';
 
 export function FeedClientComponent() {
   const { currentUser, searchQuery, categoryFilter } = useCorabo();
@@ -20,7 +20,7 @@ export function FeedClientComponent() {
     // Fetch feed only when currentUser is available and loaded.
     if (currentUser) {
         setIsLoadingFeed(true);
-        getFeed({ limitNum: 20 }) // Fetch initial batch
+        Actions.getFeed({ limitNum: 20 }) // Fetch initial batch
             .then(result => {
                 if (result.publications) {
                     setPublications(result.publications as GalleryImage[]);
