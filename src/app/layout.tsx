@@ -45,6 +45,9 @@ export default async function RootLayout({
       } as FirebaseUser;
     }
   } catch (error) {
+    // Session cookie is invalid or expired.
+    // serverFirebaseUser remains null, which is the correct state.
+    console.log('Session cookie verification failed:', error);
     serverFirebaseUser = null;
   }
 

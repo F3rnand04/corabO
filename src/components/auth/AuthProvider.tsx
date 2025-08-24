@@ -4,10 +4,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User as FirebaseUser } from 'firebase/auth';
 import { getAuthInstance } from '@/lib/firebase';
-import type { User as CoraboUser } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { getOrCreateUser } from '@/lib/actions';
-
 
 interface AuthContextType {
   firebaseUser: FirebaseUser | null;
@@ -26,9 +23,12 @@ type AuthProviderProps = {
 export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps) => {
   const { toast } = useToast();
   
+  // Initialize state with the server-provided user to prevent hydration mismatch
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(serverFirebaseUser);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
 
+  // This effect synchronizes the client-side auth state with Firebase's own state manager.
+  // It's crucial for cases like token refresh or when the user is already logged in on another tab.
   useEffect(() => {
     const auth = getAuthInstance();
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -45,12 +45,15 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
         const provider = new GoogleAuthProvider();
         const result = await signInWithPopup(auth, provider);
         
+        // After successful login, get the ID token and send it to our API route to create the session cookie.
         const idToken = await result.user.getIdToken();
         await fetch('/api/auth/session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ idToken }),
         });
+        
+        // The onAuthStateChanged listener will handle setting the firebaseUser state.
         
     } catch (error: any) {
         if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
@@ -71,6 +74,7 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
     try {
         const auth = getAuthInstance();
         await signOut(auth);
+        // Tell the server to clear the session cookie.
         await fetch('/api/auth/session', { method: 'DELETE' });
         setFirebaseUser(null);
     } catch (error) {
