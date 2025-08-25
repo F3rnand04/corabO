@@ -231,8 +231,8 @@ export async function confirmWorkReceived(data: { transactionId: string; userId:
   revalidatePath('/transactions');
 }
 
-export async function payCommitment(transactionId: string, paymentDetails?: any) {
-    await runFlow(payCommitmentFlow, { transactionId, userId: '', paymentDetails });
+export async function payCommitment(data: { transactionId: string, userId: string, paymentDetails: any }) {
+    await runFlow(payCommitmentFlow, data);
     revalidatePath('/transactions');
 }
 
