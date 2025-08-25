@@ -2,7 +2,8 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef, useMemo } from 'react';
-import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest, PublicationOwner, CreatePublicationInput, CreateProductInput, QrSession, TempRecipientInfo, FirebaseUserInput } from '@/lib/types';
+import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest, PublicationOwner, CreatePublicationInput, CreateProductInput, QrSession, TempRecipientInfo } from '@/lib/types';
+import type { User as FirebaseUser } from 'firebase/auth';
 import { useToast } from "@/hooks/use-toast"
 import { getFirestoreDb } from '@/lib/firebase';
 import { doc, onSnapshot, collection, query, where, orderBy, Unsubscribe, writeBatch, deleteField } from 'firebase/firestore';
@@ -12,7 +13,7 @@ import * as Actions from '@/lib/actions';
 interface CoraboContextValue {
   currentUser: User | null;
   isLoadingUser: boolean; 
-  syncCoraboUser: (firebaseUser: FirebaseUserInput) => Promise<void>;
+  syncCoraboUser: (firebaseUser: FirebaseUser) => Promise<void>;
   clearCoraboUser: () => void;
   
   users: User[];
@@ -105,10 +106,18 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
       _setTempRecipientInfo(info);
   }, []);
 
-  const syncCoraboUser = useCallback(async (firebaseUser: FirebaseUserInput) => {
+  const syncCoraboUser = useCallback(async (firebaseUser: FirebaseUser) => {
     setIsLoadingUser(true);
     try {
-        const coraboProfile = await Actions.getOrCreateUser(firebaseUser);
+        // The action now requires a simplified, serializable object.
+        const userInput = {
+          uid: firebaseUser.uid,
+          displayName: firebaseUser.displayName,
+          email: firebaseUser.email,
+          photoURL: firebaseUser.photoURL,
+          emailVerified: firebaseUser.emailVerified
+        };
+        const coraboProfile = await Actions.getOrCreateUser(userInput);
         if (coraboProfile) {
             setCurrentUser(coraboProfile);
         } else {
@@ -125,7 +134,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   
   const clearCoraboUser = useCallback(() => {
     setCurrentUser(null);
-    setIsLoadingUser(true); // Set to true on logout to show loader during redirect
+    setIsLoadingUser(true); 
   }, []);
 
   useEffect(() => {
@@ -177,7 +186,6 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     }));
 
     if (currentUser?.id) {
-        // We already have the main user data, but we listen for realtime updates to it.
         const userDocRef = doc(db, 'users', currentUser.id);
         unsubscribes.push(onSnapshot(userDocRef, (doc) => {
             if (doc.exists()) {
