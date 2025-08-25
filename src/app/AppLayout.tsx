@@ -1,4 +1,3 @@
-
 'use client';
 
 import { usePathname } from 'next/navigation';
@@ -16,6 +15,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     '/scan-qr',
     '/show-qr',
     '/videos',
+    '/profile',
   ];
 
   const hideFooterForPaths = [
