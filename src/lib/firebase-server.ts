@@ -26,6 +26,7 @@ function initializeFirebaseAdmin() {
                 });
             } catch (e) {
                 console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT. Using default credentials.', e);
+                // Fallback to default credentials if parsing fails
                 app = initializeApp({
                     projectId: firebaseConfig.projectId,
                     storageBucket: firebaseConfig.storageBucket,
