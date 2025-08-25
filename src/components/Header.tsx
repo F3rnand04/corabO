@@ -51,7 +51,16 @@ export function Header() {
   const [isCheckoutAlertOpen, setIsCheckoutAlertOpen] = useState(false);
   
   if (!currentUser) {
-    return null;
+    // Show a simplified header for the unauthenticated state
+    return (
+        <header className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b">
+            <div className="container px-4 sm:px-6">
+                <div className="flex h-16 items-center justify-center gap-4">
+                    <Image src="https://i.postimg.cc/8zWvkhxS/Sin-t-tulo-3.png" alt="Corabo Logo" width={120} height={40} className="h-10 w-auto" />
+                </div>
+            </div>
+        </header>
+    );
   }
   
   const isCompany = currentUser.profileSetupData?.providerType === 'company';

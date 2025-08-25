@@ -11,7 +11,7 @@ import type { User, ProfileSetupData, Transaction, Product, CartItem, GalleryIma
 import { revalidatePath } from 'next/cache';
 
 // Import all flows statically.
-import { getOrCreateUserFlow } from '@/ai/flows/auth-flow';
+import { getOrCreateUser as getOrCreateUserFlow } from '@/ai/flows/auth-flow';
 import { updateUserFlow, deleteUserFlow, getPublicProfileFlow, getProfileGalleryFlow, getProfileProductsFlow, completeInitialSetupFlow, checkIdUniquenessFlow, toggleGpsFlow } from '@/ai/flows/profile-flow';
 import { createPublicationFlow, createProductFlow, removeGalleryImageFlow, updateGalleryImageFlow, addCommentToImageFlow, removeCommentFromImageFlow } from '@/ai/flows/publication-flow';
 import { sendMessage as sendMessageFlow, acceptProposal as acceptProposalFlow } from '@/ai/flows/message-flow';
@@ -30,7 +30,9 @@ import { createCampaign as createCampaignFlow } from '@/ai/flows/campaign-flow';
 // AUTH & USER ACTIONS
 // =================================
 
-export async function getOrCreateUser(firebaseUser: FirebaseUserInput): Promise<User | null> {
+// Note: getOrCreateUser is now a placeholder until a new auth method is implemented.
+export async function getOrCreateUser(firebaseUser: FirebaseUserInput | null): Promise<User | null> {
+  if (!firebaseUser) return null;
   return getOrCreateUserFlow(firebaseUser);
 }
 
@@ -200,8 +202,8 @@ export async function confirmWorkReceived(data: { transactionId: string; userId:
   revalidatePath('/transactions');
 }
 
-export async function payCommitment(data: { transactionId: string, userId: string, paymentDetails: any }) {
-  await payCommitmentFlow(data);
+export async function payCommitment(transactionId: string, userId: string, paymentDetails: any) {
+  await payCommitmentFlow({ transactionId, userId, paymentDetails });
   revalidatePath('/transactions');
 }
 

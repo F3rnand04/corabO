@@ -140,11 +140,17 @@ export default function InitialSetupPage() {
     router.push(`/messages/${'\'\'\''}${conversationId}`);
   };
 
+  // Temporarily show a message because auth is disabled.
   if (!currentUser) {
     return (
-        <div className="flex items-center justify-center min-h-screen">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
+        <Card className="w-full max-w-md shadow-2xl">
+           <CardHeader className="text-center">
+             <CardTitle>Página en Mantenimiento</CardTitle>
+             <CardDescription>
+               El registro de usuarios está temporalmente desactivado para depuración.
+             </CardDescription>
+           </CardHeader>
+        </Card>
     );
   }
   

@@ -6,8 +6,6 @@ import { Inter } from 'next/font/google';
 import { AuthProvider } from '@/components/auth/AuthProvider';
 import { AppLayout } from '@/app/AppLayout';
 import { CoraboProvider } from '@/contexts/CoraboContext';
-import { getFirebaseAdmin } from '@/lib/firebase-server';
-import { cookies } from 'next/headers';
 import type { User as FirebaseUser } from 'firebase/auth';
 
 export const metadata: Metadata = {
@@ -26,28 +24,9 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  let serverFirebaseUser: FirebaseUser | null = null;
-  try {
-    const sessionCookie = cookies().get('session')?.value;
-    if (sessionCookie) {
-      const { auth } = getFirebaseAdmin();
-      const decodedClaims = await auth.verifySessionCookie(sessionCookie, true);
-      
-      // Construct a serializable FirebaseUser-like object
-      serverFirebaseUser = {
-          uid: decodedClaims.uid,
-          email: decodedClaims.email,
-          displayName: decodedClaims.name,
-          photoURL: decodedClaims.picture,
-          emailVerified: decodedClaims.email_verified,
-      } as FirebaseUser;
-    }
-  } catch (error) {
-    // Session cookie is invalid or expired.
-    console.log('Session cookie verification failed. Expected on logout/expiration.');
-    serverFirebaseUser = null;
-  }
-
+  // Authentication logic is removed from server-side rendering for cleanup.
+  const serverFirebaseUser: FirebaseUser | null = null;
+  
   return (
     <html lang="es" suppressHydrationWarning>
       <head>

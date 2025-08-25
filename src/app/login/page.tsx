@@ -7,14 +7,10 @@ import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function LoginPage() {
-  const { signInWithGoogle, isLoadingAuth } = useAuth();
-  
-  const handleSignIn = async () => {
-    // The signInWithGoogle function now handles the full, seamless sign-in flow.
-    await signInWithGoogle();
-  };
+  const { isLoadingAuth } = useAuth();
   
   return (
     <div className="relative flex items-center justify-center min-h-screen bg-muted/40 p-4">
@@ -29,27 +25,29 @@ export default function LoginPage() {
         data-ai-hint="background office"
       />
       <div className="absolute inset-0 bg-black/50 z-0" />
-      <div className="relative z-10 text-center p-8 bg-background rounded-2xl shadow-xl max-w-sm w-full border">
-        <div className="relative w-48 h-24 mx-auto mb-6">
-            <Image 
-                src="https://i.postimg.cc/Wz1MTvWK/lg.png"
-                alt="Corabo logo"
-                fill
-                priority
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                className="object-contain"
-            />
-        </div>
-        <h2 className="text-2xl font-bold mb-2">Bienvenido a Corabo</h2>
-        <p className="text-muted-foreground mb-8">
-            Tu ecosistema de confianza para conectar con profesionales, comprar productos y gestionar tus servicios de forma segura y transparente.
-        </p>
-        <div className="space-y-4">
-            <Button onClick={handleSignIn} size="lg" className="w-full" disabled={isLoadingAuth}>
-              {isLoadingAuth ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Ingresa o Regístrate con Google'}
+      <Card className="relative z-10 text-center p-8 bg-background rounded-2xl shadow-xl max-w-sm w-full border">
+         <CardHeader>
+            <div className="relative w-48 h-24 mx-auto mb-6">
+                <Image 
+                    src="https://i.postimg.cc/Wz1MTvWK/lg.png"
+                    alt="Corabo logo"
+                    fill
+                    priority
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    className="object-contain"
+                />
+            </div>
+            <CardTitle className="text-2xl">Mantenimiento</CardTitle>
+            <CardDescription>
+                El sistema de autenticación está siendo depurado. Por favor, intente más tarde.
+            </CardDescription>
+        </CardHeader>
+        <CardContent>
+             <Button size="lg" className="w-full" disabled={true}>
+              {isLoadingAuth ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Inicio de Sesión Deshabilitado'}
             </Button>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
