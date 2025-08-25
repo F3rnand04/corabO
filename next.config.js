@@ -19,6 +19,8 @@ const nextConfig = {
       },
     ],
   },
+  // NEW: Explicitly mark server-only packages to prevent bundling issues.
+  serverComponentsExternalPackages: ['@genkit-ai/googleai', 'handlebars'],
 };
 
 export default nextConfig;
