@@ -6,6 +6,7 @@ import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User 
 import { getAuthInstance } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useCorabo } from '@/contexts/CoraboContext';
+import * as Actions from '@/lib/actions';
 
 interface AuthContextType {
   firebaseUser: FirebaseUser | null;
@@ -31,7 +32,6 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
     const unsubscribe = onAuthStateChanged(getAuthInstance(), async (user) => {
         setFirebaseUser(user);
         if (user) {
-            // Only sync if the corabo user is not yet loaded or doesn't match
             if (!currentUser || currentUser.id !== user.uid) {
                await syncCoraboUser(user);
             }
@@ -53,14 +53,15 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
       const result = await signInWithPopup(auth, provider);
       const token = await result.user.getIdToken();
       
-      // Call the API route to set the session cookie
       await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken: token }),
       });
-      // The onAuthStateChanged listener will handle the rest, but we can force a reload to be sure
-      window.location.assign('/');
+      
+      // The onAuthStateChanged listener will handle the user sync.
+      // A simple reload ensures all server components re-render with the new session.
+      window.location.reload();
 
     } catch (error: any) {
         if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
@@ -75,12 +76,11 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
     setIsLoadingAuth(true);
     try {
         await signOut(getAuthInstance());
-        // Call the API route to clear the session cookie
         await fetch('/api/auth/session', { method: 'DELETE' });
+        window.location.href = '/login'; 
     } catch (error) {
          console.error("Error signing out:", error);
-    } finally {
-        window.location.href = '/login'; 
+         setIsLoadingAuth(false);
     }
   };
   

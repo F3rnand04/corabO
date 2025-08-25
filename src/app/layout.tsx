@@ -33,7 +33,6 @@ export default async function RootLayout({
       const { auth } = getFirebaseAdmin();
       const decodedClaims = await auth.verifySessionCookie(sessionCookie, true);
       
-      // Reconstruct a FirebaseUser-like object for the client
       serverFirebaseUser = {
           uid: decodedClaims.uid,
           email: decodedClaims.email,
@@ -43,7 +42,6 @@ export default async function RootLayout({
       } as FirebaseUser;
     }
   } catch (error) {
-    // This is expected to fail if the cookie is invalid or expired.
     console.log('Session cookie verification failed. Expected on logout/expiration.');
     serverFirebaseUser = null;
   }
@@ -56,7 +54,7 @@ export default async function RootLayout({
         <meta name="theme-color" content="#FFFFFF" />
         <link rel="apple-touch-icon" href="https://i.postimg.cc/Wz1MTvWK/lg.png" />
       </head>
-      <body className={`${inter.variable} antialiased bg-background`}>
+      <body className={`${'\'\'\''}${inter.variable} antialiased bg-background`}>
         <Providers attribute="class" defaultTheme="system" enableSystem>
            <CoraboProvider>
              <AuthProvider serverFirebaseUser={serverFirebaseUser}>

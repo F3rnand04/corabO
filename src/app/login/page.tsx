@@ -12,6 +12,7 @@ export default function LoginPage() {
   const handleSignIn = async () => {
     try {
       await signInWithGoogle();
+      // The reload is now handled inside signInWithGoogle
     } catch (error: any) {
        console.error("Login page sign-in error:", error);
     }
