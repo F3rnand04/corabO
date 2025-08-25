@@ -69,7 +69,7 @@ export const getOrCreateUserFlow = ai.defineFlow(
           isGpsActive: true,
           isSubscribed: false,
           isTransactionsActive: false,
-          idVerificationStatus: 'rejected',
+          idVerificationStatus: 'pending', // CRITICAL FIX: Was 'rejected', causing sync errors.
           profileSetupData: {
             location: '10.4806,-66.9036',
           },
