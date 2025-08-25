@@ -56,13 +56,13 @@ export default async function RootLayout({
       </head>
       <body className={`'${inter.variable}' antialiased bg-background`}>
         <Providers attribute="class" defaultTheme="system" enableSystem>
-           <CoraboProvider>
-             <AuthProvider serverFirebaseUser={serverFirebaseUser}>
+           <AuthProvider serverFirebaseUser={serverFirebaseUser}>
+             <CoraboProvider>
                 <AppLayout>
                     {children}
                 </AppLayout>
-            </AuthProvider>
-          </CoraboProvider>
+            </CoraboProvider>
+          </AuthProvider>
         </Providers>
       </body>
     </html>
