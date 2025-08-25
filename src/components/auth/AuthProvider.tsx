@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 interface AuthContextType {
   firebaseUser: FirebaseUser | null;
   isLoadingAuth: boolean;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: () => Promise<FirebaseUser | null>;
   logout: () => Promise<void>;
 }
 
@@ -35,7 +35,7 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
   }, []);
 
 
-  const signInWithGoogle = useCallback(async () => {
+  const signInWithGoogle = useCallback(async (): Promise<FirebaseUser | null> => {
     setIsLoadingAuth(true);
     const auth = getAuthInstance();
     const provider = new GoogleAuthProvider();
@@ -54,8 +54,11 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
           throw new Error('Failed to create session cookie.');
       }
       
-      // The onAuthStateChanged listener will update the firebaseUser state,
-      // which will trigger the CoraboContext to sync the profile. No reload needed.
+      // The onAuthStateChanged listener will update the state.
+      // We return the user object so the caller can use it immediately without waiting for the listener.
+      setFirebaseUser(result.user);
+      setIsLoadingAuth(false);
+      return result.user;
       
     } catch (error: any) {
         if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
@@ -72,12 +75,12 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
     try {
         await signOut(getAuthInstance());
         await fetch('/api/auth/session', { method: 'DELETE' });
-        // The onAuthStateChanged listener will handle clearing user state.
-        // The AppLayout will handle the redirect.
+        setFirebaseUser(null);
     } catch (error) {
          console.error("Error signing out:", error);
          toast({ variant: 'destructive', title: "Error", description: "No se pudo cerrar la sesión."});
-         setIsLoadingAuth(false);
+    } finally {
+        setIsLoadingAuth(false);
     }
   };
   

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuth } from '@/components/auth/AuthProvider';
@@ -5,22 +6,22 @@ import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const { signInWithGoogle, isLoadingAuth } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
 
   const handleSignIn = async () => {
     try {
+      // signInWithGoogle now returns the user, but we don't need it here.
+      // The state change in AuthProvider and CoraboContext will trigger AppLayout's logic.
       await signInWithGoogle();
-      // La redirección ahora es manejada por el AppLayout al detectar el cambio de estado
+      // No need to manually redirect. AppLayout will handle it.
     } catch (error: any) {
+       // Errors are already handled inside signInWithGoogle, but we catch here as a fallback.
        console.error("Login page sign-in error:", error);
-       toast({
-         variant: 'destructive',
-         title: 'Error de Inicio de Sesión',
-         description: 'No se pudo completar el inicio de sesión. Por favor, inténtalo de nuevo.',
-       });
     }
   };
   
