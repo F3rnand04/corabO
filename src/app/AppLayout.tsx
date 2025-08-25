@@ -108,3 +108,5 @@ function LayoutController({ children }: { children: React.ReactNode }) {
 export function AppLayout({ children }: { children: React.ReactNode }) {
   return <LayoutController>{children}</LayoutController>;
 }
+
+    

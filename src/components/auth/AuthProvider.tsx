@@ -5,6 +5,8 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User as FirebaseUser } from 'firebase/auth';
 import { getAuthInstance } from '@/lib/firebase';
 import * as Actions from '@/lib/actions';
+import { useCorabo } from '@/contexts/CoraboContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   firebaseUser: FirebaseUser | null;
@@ -20,20 +22,40 @@ type AuthProviderProps = {
     serverFirebaseUser: FirebaseUser | null; 
 };
 
-// Este componente ahora es más simple. Su responsabilidad principal es:
-// 1. Recibir el estado del usuario desde el servidor (serverFirebaseUser).
-// 2. Mantener ese estado sincronizado.
-// 3. Proveer las funciones de login/logout que interactúan con la API de sesión.
 export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps) => {
-  // El estado inicial del usuario se establece directamente desde la propiedad del servidor.
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(serverFirebaseUser);
-  // isLoadingAuth ahora solo refleja el proceso de login/logout, no la carga inicial.
-  const [isLoadingAuth, setIsLoadingAuth] = useState(false);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true); // Start as true
+  const { setCurrentUser, setIsLoadingUser } = useContext(CoraboContext)!;
+  const { toast } = useToast();
 
-  // Este efecto sincroniza el estado del cliente con el del servidor.
+  const syncCoraboUser = useCallback(async (user: FirebaseUser) => {
+    setIsLoadingUser(true);
+    try {
+        const coraboProfile = await Actions.getOrCreateUser(user);
+        setCurrentUser(coraboProfile);
+    } catch (e) {
+        console.error("Fatal error syncing user profile:", e);
+        toast({ variant: 'destructive', title: "Error de Sincronización", description: "No se pudo cargar tu perfil de Corabo. Intenta recargar la página." });
+        setCurrentUser(null);
+    } finally {
+        setIsLoadingUser(false);
+    }
+  }, [setIsLoadingUser, setCurrentUser, toast]);
+
   useEffect(() => {
-    setFirebaseUser(serverFirebaseUser);
-  }, [serverFirebaseUser]);
+    const unsubscribe = onAuthStateChanged(getAuthInstance(), async (user) => {
+        setFirebaseUser(user);
+        if (user) {
+            await syncCoraboUser(user);
+        } else {
+            setCurrentUser(null);
+        }
+        setIsLoadingAuth(false);
+    });
+
+    return () => unsubscribe();
+  }, [syncCoraboUser, setCurrentUser]);
+
 
   const signInWithGoogle = async () => {
     setIsLoadingAuth(true);
@@ -41,47 +63,40 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
         const auth = getAuthInstance();
         const provider = new GoogleAuthProvider();
         const result = await signInWithPopup(auth, provider);
-        
         const idToken = await result.user.getIdToken();
-        // Llama a nuestra API route para crear la cookie de sesión.
-        const response = await fetch('/api/auth/session', {
+        
+        await fetch('/api/auth/session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ idToken }),
         });
-
-        if (!response.ok) {
-          throw new Error('Failed to create session.');
-        }
         
-        // Actualizamos el estado local para reflejar el login inmediatamente.
-        setFirebaseUser(result.user);
-
-        // La recarga de la página post-login ahora es manejada por el router o un refresh.
-        // Esto asegura que el RootLayout del servidor lea la nueva cookie.
+        // After successful sign-in and session creation, force a reload
+        // to ensure the server picks up the new session cookie and hydrates correctly.
         window.location.reload();
 
     } catch (error: any) {
         if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
-          console.error("Error signing in with Google:", error);
+            console.error("Error signing in with Google:", error);
+            toast({ variant: 'destructive', title: "Error de Inicio de Sesión", description: "No se pudo iniciar sesión con Google." });
         }
     } finally {
-      setIsLoadingAuth(false);
+      // Don't set loading to false here, the reload will handle it.
     }
   };
 
   const logout = async () => {
     setIsLoadingAuth(true);
     try {
-        const auth = getAuthInstance();
-        await signOut(auth);
-        // Llama a nuestra API route para destruir la cookie.
+        await signOut(getAuthInstance());
         await fetch('/api/auth/session', { method: 'DELETE' });
-        setFirebaseUser(null);
+        setCurrentUser(null);
+        // Force a reload on logout to clear all state and ensure clean hydration
+        window.location.href = '/login'; 
     } catch (error) {
          console.error("Error signing out:", error);
     } finally {
-        setIsLoadingAuth(false);
+        // isLoading will be reset by the page reload
     }
   };
   

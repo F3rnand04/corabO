@@ -13,7 +13,7 @@ import { useAuth } from '@/components/auth/AuthProvider';
 interface CoraboContextValue {
   currentUser: User | null;
   isLoadingUser: boolean; 
-  logout: () => void;
+  setIsLoadingUser: (isLoading: boolean) => void;
   
   users: User[];
   transactions: Transaction[];
@@ -68,8 +68,8 @@ interface CoraboProviderProps {
 }
 
 export const CoraboProvider = ({ children }: CoraboProviderProps) => {
-  const { firebaseUser, logout } = useAuth();
   const { toast } = useToast();
+  const { firebaseUser, isLoadingAuth } = useAuth();
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true); 
@@ -91,47 +91,6 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   
   const userCache = useRef<Map<string, User>>(new Map());
 
-  useEffect(() => {
-    let unsub: Unsubscribe | undefined;
-
-    if (firebaseUser) {
-      setIsLoadingUser(true);
-      // We still listen for the REAL user document.
-      unsub = onSnapshot(doc(getFirestoreDb(), "users", firebaseUser.uid), 
-        (docSnap) => {
-          if (docSnap.exists()) {
-            setCurrentUser(docSnap.data() as User);
-            setIsLoadingUser(false);
-          } else {
-            // User is authenticated, but no profile exists. Create it.
-            Actions.getOrCreateUser(firebaseUser)
-              .then(coraboUser => {
-                if (coraboUser) {
-                  setCurrentUser(coraboUser);
-                }
-              })
-              .catch(error => {
-                console.error("Error creating user profile in DB:", error);
-                toast({ variant: "destructive", title: "Error de Perfil", description: "No se pudo crear tu perfil de Corabo. Intenta recargar." });
-              })
-              .finally(() => {
-                setIsLoadingUser(false);
-              });
-          }
-        },
-        (error) => {
-          console.error("Error listening to user document:", error);
-          toast({ variant: "destructive", title: "Error de Conexión", description: "No se pudo sincronizar tu perfil." });
-          setIsLoadingUser(false);
-        }
-      );
-    } else {
-      setCurrentUser(null);
-      setIsLoadingUser(false);
-    }
-    
-    return () => { if (unsub) unsub(); };
-  }, [firebaseUser, toast]);
   
   const setDeliveryAddress = useCallback((address: string) => {
     sessionStorage.setItem('coraboDeliveryAddress', address);
@@ -176,6 +135,43 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
 
         return null;
   }, [users]);
+  
+  // This effect listens to the authentication state from AuthProvider
+  useEffect(() => {
+    if (isLoadingAuth) {
+        setIsLoadingUser(true);
+        return;
+    }
+    if (!firebaseUser) {
+        setCurrentUser(null);
+        setIsLoadingUser(false);
+        return;
+    }
+
+    // At this point, firebaseUser is available. We now listen to the specific user's document.
+    const db = getFirestoreDb();
+    const unsubUser = onSnapshot(doc(db, "users", firebaseUser.uid), 
+        (docSnap) => {
+            if (docSnap.exists()) {
+                setCurrentUser(docSnap.data() as User);
+            } else {
+                // This case should be handled by getOrCreateUser on login, but it's a safeguard.
+                console.warn("User document not found for logged-in user, login flow might be incomplete.");
+                setCurrentUser(null);
+            }
+            setIsLoadingUser(false);
+        },
+        (error) => {
+            console.error("Error listening to user document:", error);
+            toast({ variant: "destructive", title: "Error de Conexión", description: "No se pudo sincronizar tu perfil." });
+            setIsLoadingUser(false);
+        }
+    );
+
+    return () => unsubUser();
+    
+  }, [firebaseUser, isLoadingAuth, toast]);
+
 
   useEffect(() => {
     const db = getFirestoreDb();
@@ -214,8 +210,8 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
       if (!currentUserLocation || !provider.profileSetupData?.location) return null;
       const [lat2, lon2] = provider.profileSetupData.location.split(',').map(Number);
       const distanceKm = haversineDistance(currentUserLocation.latitude, currentUserLocation.longitude, lat2, lon2);
-      if (provider.profileSetupData.showExactLocation === false) return `~${'\'\'\''}${distanceKm.toFixed(0)} km`;
-      return `${'\'\'\''}${distanceKm.toFixed(0)} km`;
+      if (provider.profileSetupData.showExactLocation === false) return `~${distanceKm.toFixed(0)} km`;
+      return `${distanceKm.toFixed(0)} km`;
   }, [currentUserLocation]);
   
   const setDeliveryAddressToCurrent = useCallback(() => {
@@ -224,7 +220,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
             (position) => {
                 const newLocation = { latitude: position.coords.latitude, longitude: position.coords.longitude };
                 setCurrentUserLocation(newLocation);
-                setDeliveryAddress(`${'\'\'\''}${newLocation.latitude},${'\'\'\''}${newLocation.longitude}`);
+                setDeliveryAddress(`${newLocation.latitude},${newLocation.longitude}`);
             },
             (error) => {
                 toast({ variant: 'destructive', title: 'Error de Ubicación', description: 'No se pudo obtener tu ubicación actual.'});
@@ -250,14 +246,14 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
             const avgMinutes = (paymentTimes.reduce((a, b) => a + b, 0) / paymentTimes.length) / 60000;
             if(avgMinutes < 15) paymentSpeed = '<15 min';
             else if (avgMinutes < 60) paymentSpeed = '<1 hr';
-            else paymentSpeed = `+${'\'\'\''}${Math.floor(avgMinutes / 60)} hr`;
+            else paymentSpeed = `+${Math.floor(avgMinutes / 60)} hr`;
         }
         return { reputation, effectiveness, responseTime, paymentSpeed };
     }, [transactions]);
 
     const getAgendaEvents = useCallback((agendaTransactions: Transaction[]) => {
       return agendaTransactions.filter(tx => tx.status === 'Finalizado - Pendiente de Pago').map(tx => ({
-        date: new Date(tx.date), type: 'payment' as 'payment' | 'task', description: `Pago a ${'\'\'\''}${tx.providerId}`, transactionId: tx.id,
+        date: new Date(tx.date), type: 'payment' as 'payment' | 'task', description: `Pago a ${tx.providerId}`, transactionId: tx.id,
       }));
     }, []);
     
@@ -284,7 +280,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     const value: CoraboContextValue = {
         currentUser,
         isLoadingUser, 
-        logout,
+        setIsLoadingUser,
         setCurrentUser,
         users, transactions, conversations, allPublications,
         searchQuery, categoryFilter, contacts, searchHistory, 

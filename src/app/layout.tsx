@@ -33,22 +33,14 @@ export default async function RootLayout({
     if (sessionCookie) {
       const { auth } = getFirebaseAdmin();
       const decodedClaims = await auth.verifySessionCookie(sessionCookie, true);
-      const userRecord = await auth.getUser(decodedClaims.uid);
       
-      // We need to shape this object to match what the Firebase client SDK expects.
-      // This is a simplified version.
+      // We only need the UID on the server, the client will get the full user object
       serverFirebaseUser = {
-          uid: userRecord.uid,
-          email: userRecord.email || null,
-          displayName: userRecord.displayName || null,
-          photoURL: userRecord.photoURL || null,
-          emailVerified: userRecord.emailVerified,
-          // Add other fields as needed, ensuring they are serializable
+          uid: decodedClaims.uid,
+          // The rest of the fields will be populated by the client-side onAuthStateChanged listener
       } as FirebaseUser;
     }
   } catch (error) {
-    // Session cookie is invalid or expired.
-    // serverFirebaseUser remains null, which is the correct state.
     console.log('Session cookie verification failed. This is expected on logout or expiration.');
     serverFirebaseUser = null;
   }
@@ -63,8 +55,8 @@ export default async function RootLayout({
       </head>
       <body className={`${inter.variable} antialiased bg-background`}>
         <Providers attribute="class" defaultTheme="system" enableSystem>
-            <AuthProvider serverFirebaseUser={serverFirebaseUser}>
-              <CoraboProvider>
+           <AuthProvider serverFirebaseUser={serverFirebaseUser}>
+             <CoraboProvider>
                 <AppLayout>
                     {children}
                 </AppLayout>
