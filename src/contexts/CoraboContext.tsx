@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -8,12 +9,12 @@ import { getFirestoreDb } from '@/lib/firebase';
 import { doc, onSnapshot, collection, query, where, orderBy, Unsubscribe, writeBatch, deleteField } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import * as Actions from '@/lib/actions';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 interface CoraboContextValue {
   currentUser: User | null;
   isLoadingUser: boolean; 
-  syncCoraboUser: (firebaseUser: FirebaseUser) => Promise<void>;
-  clearCoraboUser: () => void;
+  syncCoraboUser: (fbUser: FirebaseUser) => Promise<void>;
   
   users: User[];
   transactions: Transaction[];
@@ -46,7 +47,15 @@ interface CoraboContextValue {
   setTempRecipientInfo: (info: TempRecipientInfo | null) => void;
   setActiveCartForCheckout: (cartItems: CartItem[] | null) => void;
   getAgendaEvents: (transactions: Transaction[]) => { date: Date; type: 'payment' | 'task'; description: string, transactionId: string }[];
-  setCurrentUser: (user: User | null) => void; // Expose setCurrentUser
+  setCurrentUser: (user: User | null) => void;
+  updateUser: (userId: string, updates: any) => Promise<void>;
+  deactivateTransactions: (userId: string) => Promise<void>;
+  autoVerifyIdWithAI: (user: User) => Promise<any>;
+  createAppointmentRequest: (req: any) => void;
+  sendMessage: (msg: any) => string;
+  acceptProposal: (conversationId: string, messageId: string) => void;
+  markConversationAsRead: (conversationId: string) => void;
+  updateCartQuantity: (productId: string, newQuantity: number) => void;
 }
 
 interface GeolocationCoords {
@@ -69,7 +78,6 @@ interface CoraboProviderProps {
 
 export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   const { toast } = useToast();
-  
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   
@@ -89,21 +97,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   const [qrSession, setQrSession] = useState<QrSession | null>(null);
   
   const userCache = useRef<Map<string, User>>(new Map());
-
-  
-  const setDeliveryAddress = useCallback((address: string) => {
-    sessionStorage.setItem('coraboDeliveryAddress', address);
-    _setDeliveryAddress(address);
-  }, []);
-  
-  const setTempRecipientInfo = useCallback((info: TempRecipientInfo | null) => {
-      if (info) {
-          sessionStorage.setItem('tempRecipientInfo', JSON.stringify(info));
-      } else {
-          sessionStorage.removeItem('tempRecipientInfo');
-      }
-      _setTempRecipientInfo(info);
-  }, []);
+  const { firebaseUser, isLoadingAuth } = useAuth(); // Depend on AuthProvider
 
   const syncCoraboUser = useCallback(async (fbUser: FirebaseUser) => {
     setIsLoadingUser(true);
@@ -130,10 +124,26 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     }
   }, [toast]);
   
-  const clearCoraboUser = useCallback(() => {
-    setCurrentUser(null);
-    setIsLoadingUser(false); // Set loading to false when user is cleared
-  }, []);
+  // This effect now correctly listens to the AuthProvider's state.
+  useEffect(() => {
+    if (isLoadingAuth) {
+        setIsLoadingUser(true);
+        return;
+    }
+    if (firebaseUser) {
+        // If the currentUser is not yet loaded or doesn't match the firebaseUser, sync it.
+        if(!currentUser || currentUser.id !== firebaseUser.uid) {
+            syncCoraboUser(firebaseUser);
+        } else {
+            setIsLoadingUser(false);
+        }
+    } else {
+        // If there is no firebaseUser, clear the Corabo user and stop loading.
+        setCurrentUser(null);
+        setIsLoadingUser(false);
+    }
+  }, [firebaseUser, isLoadingAuth, syncCoraboUser, currentUser]);
+
 
   useEffect(() => {
     const savedAddress = sessionStorage.getItem('coraboDeliveryAddress');
@@ -184,13 +194,6 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     }));
 
     if (currentUser?.id) {
-        const userDocRef = doc(db, 'users', currentUser.id);
-        unsubscribes.push(onSnapshot(userDocRef, (doc) => {
-            if (doc.exists()) {
-                setCurrentUser(prev => ({ ...prev, ...doc.data() }));
-            }
-        }));
-
         const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
         const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id), orderBy("lastUpdated", "desc"));
 
@@ -218,7 +221,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
             (position) => {
                 const newLocation = { latitude: position.coords.latitude, longitude: position.coords.longitude };
                 setCurrentUserLocation(newLocation);
-                setDeliveryAddress(`${'\'\'\''}${newLocation.latitude},${newLocation.longitude}`);
+                _setDeliveryAddress(`${'\'\'\''}${newLocation.latitude},${newLocation.longitude}`);
             },
             (error) => {
                 toast({ variant: 'destructive', title: 'Error de Ubicación', description: 'No se pudo obtener tu ubicación actual.'});
@@ -226,7 +229,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
             }
         );
     }
-  }, [setDeliveryAddress, toast]);
+  }, [toast]);
 
     const getUserMetrics = useCallback((userId: string): UserMetrics => {
         const userTxs = transactions.filter(tx => tx.providerId === userId && (tx.status === 'Pagado' || tx.status === 'Resuelto'));
@@ -255,12 +258,11 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
       }));
     }, []);
     
-    const activeCartTx = useMemo(() => {
-      if (!currentUser?.id) return null;
-      return transactions.find(tx => tx.clientId === currentUser.id && tx.status === 'Carrito Activo')
+    const cart: CartItem[] = useMemo(() => {
+       if (!currentUser?.id) return [];
+       const cartTx = transactions.find(tx => tx.clientId === currentUser.id && tx.status === 'Carrito Activo');
+       return cartTx?.details.items || [];
     }, [transactions, currentUser?.id]);
-
-    const cart: CartItem[] = useMemo(() => activeCartTx?.details.items || [], [activeCartTx]);
 
     const addContact = (user: User): boolean => {
         let isNew = false;
@@ -277,9 +279,8 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
 
     const value: CoraboContextValue = {
         currentUser,
-        isLoadingUser, 
+        isLoadingUser,
         syncCoraboUser,
-        clearCoraboUser,
         users, transactions, conversations, allPublications,
         searchQuery, categoryFilter, contacts, searchHistory, 
         deliveryAddress, exchangeRate, currentUserLocation, tempRecipientInfo, activeCartForCheckout,
@@ -295,7 +296,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         removeContact: (userId: string) => setContacts(prev => prev.filter(c => c.id !== userId)),
         isContact: (userId: string) => contacts.some(c => c.id === userId),
         getAgendaEvents,
-        setDeliveryAddress,
+        setDeliveryAddress: _setDeliveryAddress,
         setDeliveryAddressToCurrent,
         getUserMetrics,
         fetchUser,
@@ -303,6 +304,14 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         setTempRecipientInfo,
         setActiveCartForCheckout,
         toggleGps: Actions.toggleGps,
+        updateUser: Actions.updateUser,
+        deactivateTransactions: Actions.deactivateTransactions,
+        autoVerifyIdWithAI: Actions.autoVerifyIdWithAI,
+        createAppointmentRequest: (req) => { if(currentUser) Actions.createAppointmentRequest({...req, clientId: currentUser.id })},
+        sendMessage: (msg) => { if(currentUser) return Actions.sendMessage({...msg, senderId: currentUser.id }); return ''; },
+        acceptProposal: (conversationId, messageId) => { if(currentUser) Actions.acceptProposal(conversationId, messageId, currentUser.id)},
+        markConversationAsRead: Actions.markConversationAsRead,
+        updateCartQuantity: (productId, newQuantity) => { if(currentUser) Actions.updateCart(currentUser.id, productId, newQuantity)}
     };
   
     return (

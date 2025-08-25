@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuth } from '@/components/auth/AuthProvider';
@@ -9,19 +10,10 @@ import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const { signInWithGoogle, isLoadingAuth } = useAuth();
-  const { toast } = useToast();
-  const router = useRouter();
-
+  
   const handleSignIn = async () => {
-    try {
-      // signInWithGoogle now handles the full logic flow internally.
-      // We just need to call it. AppLayout will handle redirection
-      // based on the updated context state.
-      await signInWithGoogle();
-    } catch (error: any) {
-       // This catch block is a fallback, as errors are now handled inside the hook.
-       console.error("Login page sign-in error:", error);
-    }
+    // The signInWithGoogle function now handles the full, seamless sign-in flow.
+    await signInWithGoogle();
   };
   
   return (
