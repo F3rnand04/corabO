@@ -23,7 +23,7 @@ type AuthProviderProps = {
 
 export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps) => {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(serverFirebaseUser);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(!serverFirebaseUser); // If no server user, we are loading.
+  const [isLoadingAuth, setIsLoadingAuth] = useState(!serverFirebaseUser);
   const { toast } = useToast();
   const { syncCoraboUser } = useCorabo();
 
