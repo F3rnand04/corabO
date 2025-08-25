@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Server Actions for the Corabo application.
@@ -66,7 +65,7 @@ import {
 import { autoVerifyIdWithAI as autoVerifyIdWithAIFlow } from '@/ai/flows/verification-flow';
 import { sendNewCampaignNotifications as sendNewCampaignNotificationsFlow } from '@/ai/flows/notification-flow';
 import { updateCartFlow } from '@/ai/flows/cart-flow';
-import { getFeedFlow } from '@/ai/flows/feed-flow';
+import { getFeed as getFeedFlow } from '@/ai/flows/feed-flow';
 import { createCampaign as createCampaignFlow } from '@/ai/flows/campaign-flow';
 
 // =================================
