@@ -54,10 +54,10 @@ import {
     resolveDeliveryAsPickup as resolveDeliveryAsPickupFlow 
 } from '@/ai/flows/delivery-flow';
 import { 
-    requestAffiliationFlow, 
-    approveAffiliationFlow, 
-    rejectAffiliationFlow, 
-    revokeAffiliationFlow 
+    requestAffiliation as requestAffiliationFlow, 
+    approveAffiliation as approveAffiliationFlow, 
+    rejectAffiliation as rejectAffiliationFlow, 
+    revokeAffiliation as revokeAffiliationFlow 
 } from '@/ai/flows/affiliation-flow';
 import { 
     createCashierBox as createCashierBoxFlow, 
@@ -145,19 +145,19 @@ export async function rejectUserId(userId: string) {
 }
 
 export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput | null> {
-    const input = {
-      userId: user.id,
-      nameInRecord: `${user.name} ${user.lastName || ''}`.trim(),
-      idInRecord: user.idNumber || '',
-      documentImageUrl: user.idDocumentUrl || '',
-      isCompany: user.profileSetupData?.providerType === 'company',
-    };
-    try {
-        return await runFlow(autoVerifyIdWithAIFlow, input);
-    } catch (e) {
-        console.error("AI flow failed:", e);
-        return null;
-    }
+  const input = {
+    userId: user.id,
+    nameInRecord: `${'\'\'\''}${user.name} ${user.lastName || ''}`.trim(),
+    idInRecord: user.idNumber || '',
+    documentImageUrl: user.idDocumentUrl || '',
+    isCompany: user.profileSetupData?.providerType === 'company',
+  };
+  try {
+      return await runFlow(autoVerifyIdWithAIFlow, input);
+  } catch (e) {
+      console.error("AI flow failed:", e);
+      return null;
+  }
 }
 
 
@@ -177,23 +177,23 @@ export async function createProduct(data: CreateProductInput) {
 
 export async function removeGalleryImage(ownerId: string, imageId: string) {
     await runFlow(removeGalleryImageFlow, { imageId });
-    revalidatePath(`/companies/${ownerId}`);
+    revalidatePath(`/companies/${'\'\'\''}${ownerId}`);
     revalidatePath('/profile/publications');
 }
 
 export async function updateGalleryImage(data: { ownerId: string; imageId: string; updates: { description?: string; imageDataUri?: string; }; }) {
     await runFlow(updateGalleryImageFlow, { imageId: data.imageId, updates: data.updates });
-    revalidatePath(`/companies/${data.ownerId}`);
+    revalidatePath(`/companies/${'\'\'\''}${data.ownerId}`);
 }
 
 export async function addCommentToImage(data: { ownerId: string; imageId: string; commentText: string; author: { id: string; name: string; profileImage: string; }; }) {
     await runFlow(addCommentToImageFlow, { imageId: data.imageId, commentText: data.commentText, author: data.author });
-    revalidatePath(`/companies/${data.ownerId}`);
+    revalidatePath(`/companies/${'\'\'\''}${data.ownerId}`);
 }
 
 export async function removeCommentFromImage(data: { ownerId: string; imageId: string; commentIndex: number; }) {
     await runFlow(removeCommentFromImageFlow, { imageId: data.imageId, commentIndex: data.commentIndex });
-    revalidatePath(`/companies/${data.ownerId}`);
+    revalidatePath(`/companies/${'\'\'\''}${data.ownerId}`);
 }
 
 // =================================
@@ -202,13 +202,13 @@ export async function removeCommentFromImage(data: { ownerId: string; imageId: s
 
 export async function sendMessage(input: { conversationId: string; senderId: string; recipientId: string; text?: string; location?: { lat: number; lon: number; }; proposal?: any; }): Promise<string> {
   await runFlow(sendMessageFlow, input);
-  revalidatePath(`/messages/${input.conversationId}`);
+  revalidatePath(`/messages/${'\'\'\''}${input.conversationId}`);
   return input.conversationId;
 }
 
 export async function acceptProposal(conversationId: string, messageId: string, acceptorId: string) {
     await runFlow(acceptProposalFlow, { conversationId, messageId, acceptorId });
-    revalidatePath(`/messages/${conversationId}`);
+    revalidatePath(`/messages/${'\'\'\''}${conversationId}`);
     revalidatePath('/transactions');
 }
 
@@ -231,10 +231,11 @@ export async function confirmWorkReceived(data: { transactionId: string; userId:
   revalidatePath('/transactions');
 }
 
-export async function payCommitment(data: { transactionId: string; userId: string; paymentDetails: any; }) {
-    await runFlow(payCommitmentFlow, data);
+export async function payCommitment(transactionId: string, paymentDetails?: any) {
+    await runFlow(payCommitmentFlow, { transactionId, userId: '', paymentDetails });
     revalidatePath('/transactions');
 }
+
 
 export async function confirmPaymentReceived(data: { transactionId: string; userId: string; fromThirdParty: boolean; }) {
   await runFlow(confirmPaymentReceivedFlow, data);
@@ -308,7 +309,7 @@ export async function assignOwnDelivery(
   providerId: string
 ) {
    // Placeholder for a future flow
-   console.log(`Assigning own delivery for tx: ${transactionId} by provider: ${providerId}`);
+   console.log(`Assigning own delivery for tx: ${'\'\'\''}${transactionId} by provider: ${'\'\'\''}${providerId}`);
    revalidatePath('/transactions');
 }
 
@@ -443,7 +444,7 @@ export async function startQrSession(
 ): Promise<string> {
   const { getFirebaseAdmin } = await import('./firebase-server');
   const { firestore } = getFirebaseAdmin();
-  const sessionId = `qrs-${Date.now()}`;
+  const sessionId = `qrs-${'\'\'\''}${Date.now()}`;
   const newSession: QrSession = {
     id: sessionId,
     providerId,
@@ -531,7 +532,7 @@ export async function subscribeUser(
   plan: string,
   amount: number
 ) {
-    await registerSystemPayment(userId, `Suscripción: ${plan}`, amount, true);
+    await registerSystemPayment(userId, `Suscripción: ${'\'\'\''}${plan}`, amount, true);
     revalidatePath('/contacts');
     revalidatePath('/profile');
 }
@@ -540,7 +541,7 @@ export async function activatePromotion(
   userId: string,
   data: { imageId: string; promotionText: string; cost: number }
 ) {
-    await registerSystemPayment(userId, `Promoción "Emprende por Hoy": ${data.promotionText}`, data.cost, false);
+    await registerSystemPayment(userId, `Promoción "Emprende por Hoy": ${'\'\'\''}${data.promotionText}`, data.cost, false);
     // In a real app, a flow would also update the user's promotion status
     const { getFirebaseAdmin } = await import('./firebase-server');
     const { firestore } = getFirebaseAdmin();
@@ -564,7 +565,7 @@ export async function registerSystemPayment(
 ) {
     const { getFirebaseAdmin } = await import('./firebase-server');
     const { firestore } = getFirebaseAdmin();
-    const txId = `txn-sys-${Date.now()}`;
+    const txId = `txn-sys-${'\'\'\''}${Date.now()}`;
     const newTransaction: Partial<Transaction> = {
         id: txId,
         type: 'Sistema',
