@@ -1,8 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // The `transpilePackages` option is obsolete with the App Router.
-  // Next.js now handles this automatically.
-  // The custom webpack config is also no longer necessary.
   images: {
     remotePatterns: [
       {
@@ -20,6 +17,7 @@ const nextConfig = {
     ],
   },
   // NEW: Explicitly mark server-only packages to prevent bundling issues.
+  // This is the correct modern approach for the App Router.
   serverComponentsExternalPackages: ['@genkit-ai/googleai', 'handlebars'],
 };
 

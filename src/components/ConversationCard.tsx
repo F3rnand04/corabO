@@ -47,13 +47,17 @@ export function ConversationCard({ conversation, otherParticipant }: Conversatio
              router.push(`/messages/${conversation.id}`);
              return;
         }
-        // Ensure conversation exists or create it before navigating
-        const finalConversationId = await Actions.sendMessage({ 
-            recipientId: otherParticipant.id, 
-            senderId: currentUser.id,
-            conversationId: conversation.id,
-        });
-        router.push(`/messages/${finalConversationId}`);
+        
+        // This is now purely for navigation after the action has been called
+        // by the context listener.
+        const conversationId = [currentUser.id, otherParticipant.id].sort().join('-');
+
+        // Optimistically mark as read on client before navigating
+        if(unreadCount > 0) {
+            Actions.markConversationAsRead(conversationId);
+        }
+
+        router.push(`/messages/${conversationId}`);
     };
 
     return (

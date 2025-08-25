@@ -1,4 +1,3 @@
-
 import type { Metadata } from 'next';
 import './globals.css';
 import { Providers } from './providers';
@@ -9,7 +8,6 @@ import { CoraboProvider } from '@/contexts/CoraboContext';
 import { getFirebaseAdmin } from '@/lib/firebase-server';
 import { cookies } from 'next/headers';
 import type { User as FirebaseUser } from 'firebase/auth';
-
 
 export const metadata: Metadata = {
   title: 'corabO.app',
@@ -34,6 +32,7 @@ export default async function RootLayout({
       const { auth } = getFirebaseAdmin();
       const decodedClaims = await auth.verifySessionCookie(sessionCookie, true);
       
+      // Reconstruct a FirebaseUser-like object for the client
       serverFirebaseUser = {
           uid: decodedClaims.uid,
           email: decodedClaims.email,
@@ -43,6 +42,7 @@ export default async function RootLayout({
       } as FirebaseUser;
     }
   } catch (error) {
+    // This is expected to fail if the cookie is invalid or expired.
     console.log('Session cookie verification failed. Expected on logout/expiration.');
     serverFirebaseUser = null;
   }

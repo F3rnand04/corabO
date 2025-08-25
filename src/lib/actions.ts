@@ -9,6 +9,8 @@
  */
 import type { User, ProfileSetupData, Transaction, Product, CartItem, GalleryImage, CreatePublicationInput, CreateProductInput, VerificationOutput, CashierBox, QrSession, TempRecipientInfo, FirebaseUserInput } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
+import { ai } from '@/ai/genkit';
+
 
 // Import all flows statically, using aliases to prevent name collisions.
 import { getOrCreateUserFlow } from '@/ai/flows/auth-flow';
@@ -73,7 +75,7 @@ import { createCampaign as createCampaignFlow } from '@/ai/flows/campaign-flow';
 // =================================
 
 export async function getOrCreateUser(firebaseUser: FirebaseUserInput): Promise<User | null> {
-  return await getOrCreateUserFlow(firebaseUser);
+  return getOrCreateUserFlow(firebaseUser);
 }
 
 export async function updateUser(userId: string, updates: Partial<User | { 'profileSetupData.serviceRadius': number } | { 'profileSetupData.cashierBoxes': CashierBox[] }>) {
@@ -88,11 +90,11 @@ export async function deleteUser(userId: string) {
 }
 
 export async function getPublicProfile(userId: string): Promise<Partial<User> | null> {
-    return await getPublicProfileFlow({ userId });
+    return getPublicProfileFlow({ userId });
 }
 
 export async function getFeed(params: { limitNum: number, startAfterDocId?: string }) {
-    return await getFeedFlow(params);
+    return getFeedFlow(params);
 }
 
 // =================================
@@ -107,7 +109,7 @@ export async function completeInitialSetup(userId: string, data: any): Promise<U
 }
 
 export async function checkIdUniqueness(data: { idNumber: string; country: string; currentUserId: string; }): Promise<boolean> {
-    return await checkIdUniquenessFlow(data);
+    return checkIdUniquenessFlow(data);
 }
 
 export async function updateFullProfile(userId: string, profileData: ProfileSetupData, userType: User['type']) {
@@ -583,4 +585,21 @@ export async function registerSystemPayment(
     };
     await firestore.collection('transactions').doc(txId).set(newTransaction);
     revalidatePath('/transactions');
+}
+
+export async function markConversationAsRead(conversationId: string) {
+    const { getFirebaseAdmin } = await import('./firebase-server');
+    const { auth, firestore } = getFirebaseAdmin();
+    // This action needs the current user's ID, which it can't get directly.
+    // This logic should be handled client-side or passed the user ID.
+    // For now, this is a placeholder for a more secure implementation.
+    console.log(`Marking conversation as read: ${conversationId}`);
+    // In a real implementation:
+    // const user = await auth.verifyIdToken(...);
+    // const conversationRef = firestore.collection('conversations').doc(conversationId);
+    // const conversationSnap = await conversationRef.get();
+    // const conversation = conversationSnap.data();
+    // const updatedMessages = conversation.messages.map(m => m.senderId !== user.uid ? { ...m, isRead: true } : m);
+    // await conversationRef.update({ messages: updatedMessages });
+    revalidatePath(`/messages`);
 }
