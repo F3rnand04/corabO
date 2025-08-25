@@ -176,12 +176,13 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   
   const getUserMetrics = useCallback((userId: string) => {
     const userTransactions = transactions.filter(tx => tx.providerId === userId || tx.clientId === userId);
-
+    
+    // Handle new user case
     if (userTransactions.length === 0) {
         return { 
             reputation: 5.0, 
             effectiveness: 100, 
-            responseTime: 'N/A',
+            responseTime: 'N/A', // Special value to indicate "New"
             paymentSpeed: null 
         };
     }

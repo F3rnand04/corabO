@@ -69,8 +69,9 @@ const renderSpecializedBadges = (specializedData?: SpecializedData) => {
     );
 };
 
-function ProfileStats({ user, metrics }: { user: any, metrics: any }) {
+function ProfileStats({ metrics }: { metrics: any }) {
   const { reputation, effectiveness, responseTime, paymentSpeed } = metrics;
+  // A user is new if they don't have a calculable response time.
   const isNewProvider = responseTime === 'N/A';
   
   const paymentSpeedColor = (speed: string | undefined | null) => {
@@ -91,6 +92,7 @@ function ProfileStats({ user, metrics }: { user: any, metrics: any }) {
           <TrendingUp className="w-4 h-4 text-green-500"/>
           <span className="font-semibold text-foreground">{effectiveness.toFixed(0)}%</span>
       </div>
+      
       {isNewProvider ? (
         <>
             <div className="w-px h-3 bg-border mx-1"></div>
@@ -169,7 +171,7 @@ export function ProfileHeader() {
             <div className="flex-grow min-w-0">
                 <h1 className="text-lg font-bold text-foreground truncate">{displayName}</h1>
                 <p className="text-sm text-muted-foreground">{specialty}</p>
-                <ProfileStats user={currentUser} metrics={metrics} />
+                <ProfileStats metrics={metrics} />
             </div>
              <div className="flex flex-col items-end gap-2 shrink-0">
                 {!currentUser.isSubscribed && (
