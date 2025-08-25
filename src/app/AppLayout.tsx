@@ -18,9 +18,6 @@ function LayoutController({ children }: { children: React.ReactNode }) {
   const publicPaths = ['/login', '/cashier-login'];
 
   useEffect(() => {
-    console.log('LayoutController useEffect: Initializing checks');
-    console.log('LayoutController useEffect: isLoadingUser =', isLoadingUser, 'currentUser =', currentUser);
-
     // No hacer nada mientras el estado del usuario del contexto se está resolviendo.
     // Esto previene redirecciones prematuras antes de tener la información completa.
     if (isLoadingUser) {

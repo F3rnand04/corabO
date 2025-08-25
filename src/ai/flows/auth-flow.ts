@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Authentication flow for creating or retrieving a user.
@@ -48,10 +49,10 @@ export const getOrCreateUserFlow = ai.defineFlow(
             // Create a new, minimal user object.
             const newUser: User = {
                 id: firebaseUser.uid,
-                coraboId: `${firebaseUser.displayName?.split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '') || 'user'}${Math.floor(1000 + Math.random() * 9000)}`,
+                coraboId: `${'\'\'\''}${firebaseUser.displayName?.split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '') || 'user'}${'\'\'\''}${Math.floor(1000 + Math.random() * 9000)}`,
                 name: firebaseUser.displayName || 'Nuevo Usuario',
                 email: firebaseUser.email || '',
-                profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
+                profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${'\'\'\''}${firebaseUser.uid}`,
                 createdAt: now.toISOString(),
                 lastActivityAt: now.toISOString(),
                 isInitialSetupComplete: false, 

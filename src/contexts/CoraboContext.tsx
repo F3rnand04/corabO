@@ -98,7 +98,6 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   // Efecto CLAVE: Este es el motor central que carga el perfil.
   useEffect(() => {
     // Si hay un usuario de Firebase, procede a obtener el perfil completo de Corabo.
-    console.log("CoraboContext: Effect triggered by firebaseUser change.", { firebaseUserExists: !!firebaseUser, currentUserId: firebaseUser?.uid });
     if (firebaseUser) {
       setIsLoadingUser(true);
       // Llama a la acción del servidor para obtener o crear el documento del usuario en Firestore.
@@ -109,7 +108,6 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         photoURL: firebaseUser.photoURL,
         emailVerified: firebaseUser.emailVerified,
       }).then(coraboUser => {
-        console.log("CoraboContext: getOrCreateUser finished.", { coraboUserExists: !!coraboUser });
         if (coraboUser) {
             // Setea el usuario completo de Corabo.
             setCurrentUser(coraboUser as User);
@@ -122,13 +120,11 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         setIsLoadingUser(false);
       }).catch(error => {
         console.error("Failed to fetch/create Corabo user:", error);
-        console.log("CoraboContext: Error fetching/creating user.", { error });
         toast({ variant: "destructive", title: "Error de Perfil", description: "No se pudo cargar tu perfil de Corabo." });
         setCurrentUser(null);
         setIsLoadingUser(false);
       });
     } else {
-      console.log("CoraboContext: No firebaseUser found.");
       // Si no hay usuario de Firebase, resetea el estado y finaliza la carga.
       setCurrentUser(null);
       setIsLoadingUser(false);
@@ -216,8 +212,8 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
       if (!currentUserLocation || !provider.profileSetupData?.location) return null;
       const [lat2, lon2] = provider.profileSetupData.location.split(',').map(Number);
       const distanceKm = haversineDistance(currentUserLocation.latitude, currentUserLocation.longitude, lat2, lon2);
-      if (provider.profileSetupData.showExactLocation === false) return `~${distanceKm.toFixed(0)} km`;
-      return `${distanceKm.toFixed(0)} km`;
+      if (provider.profileSetupData.showExactLocation === false) return `~${'\'\'\''}${distanceKm.toFixed(0)} km`;
+      return `${'\'\'\''}${distanceKm.toFixed(0)} km`;
   }, [currentUserLocation]);
   
   const setDeliveryAddressToCurrent = useCallback(() => {
@@ -226,7 +222,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
             (position) => {
                 const newLocation = { latitude: position.coords.latitude, longitude: position.coords.longitude };
                 setCurrentUserLocation(newLocation);
-                setDeliveryAddress(`${newLocation.latitude},${newLocation.longitude}`);
+                setDeliveryAddress(`${'\'\'\''}${newLocation.latitude},${'\'\'\''}${newLocation.longitude}`);
             },
             (error) => {
                 toast({ variant: 'destructive', title: 'Error de Ubicación', description: 'No se pudo obtener tu ubicación actual.'});
@@ -252,14 +248,14 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
             const avgMinutes = (paymentTimes.reduce((a, b) => a + b, 0) / paymentTimes.length) / 60000;
             if(avgMinutes < 15) paymentSpeed = '<15 min';
             else if (avgMinutes < 60) paymentSpeed = '<1 hr';
-            else paymentSpeed = `+${Math.floor(avgMinutes / 60)} hr`;
+            else paymentSpeed = `+${'\'\'\''}${Math.floor(avgMinutes / 60)} hr`;
         }
         return { reputation, effectiveness, responseTime, paymentSpeed };
     }, [transactions]);
 
     const getAgendaEvents = useCallback((agendaTransactions: Transaction[]) => {
       return agendaTransactions.filter(tx => tx.status === 'Finalizado - Pendiente de Pago').map(tx => ({
-        date: new Date(tx.date), type: 'payment' as 'payment' | 'task', description: `Pago a ${tx.providerId}`, transactionId: tx.id,
+        date: new Date(tx.date), type: 'payment' as 'payment' | 'task', description: `Pago a ${'\'\'\''}${tx.providerId}`, transactionId: tx.id,
       }));
     }, []);
     
