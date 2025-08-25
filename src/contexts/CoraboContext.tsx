@@ -39,7 +39,7 @@ interface CoraboContextValue {
   addContact: (user: User) => boolean;
   isContact: (userId: string) => boolean;
   removeContact: (userId: string) => void;
-  toggleGps: (userId: string) => void;
+
   getDistanceToProvider: (provider: User) => string | null;
   setDeliveryAddress: (address: string) => void;
   setDeliveryAddressToCurrent: () => void;
@@ -47,14 +47,6 @@ interface CoraboContextValue {
   setActiveCartForCheckout: (cartItems: CartItem[] | null) => void;
   getAgendaEvents: (transactions: Transaction[]) => { date: Date; type: 'payment' | 'task'; description: string, transactionId: string }[];
   setCurrentUser: (user: User | null) => void;
-  updateUser: (userId: string, updates: any) => Promise<void>;
-  deactivateTransactions: (userId: string) => Promise<void>;
-  autoVerifyIdWithAI: (user: User) => Promise<any>;
-  createAppointmentRequest: (req: any) => void;
-  sendMessage: (msg: any) => string;
-  acceptProposal: (conversationId: string, messageId: string) => void;
-  markConversationAsRead: (conversationId: string) => void;
-  updateCartQuantity: (productId: string, newQuantity: number) => void;
 }
 
 interface GeolocationCoords {
@@ -287,15 +279,6 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         getDistanceToProvider,
         setTempRecipientInfo: _setTempRecipientInfo,
         setActiveCartForCheckout,
-        toggleGps: Actions.toggleGps,
-        updateUser: Actions.updateUser,
-        deactivateTransactions: Actions.deactivateTransactions,
-        autoVerifyIdWithAI: Actions.autoVerifyIdWithAI,
-        createAppointmentRequest: (req) => { if(currentUser) Actions.createAppointmentRequest({...req, clientId: currentUser.id })},
-        sendMessage: (msg) => { if(currentUser) return Actions.sendMessage({...msg, senderId: currentUser.id }); return ''; },
-        acceptProposal: (conversationId, messageId) => { if(currentUser) Actions.acceptProposal(conversationId, messageId, currentUser.id)},
-        markConversationAsRead: Actions.markConversationAsRead,
-        updateCartQuantity: (productId, newQuantity) => { if(currentUser) Actions.updateCart(currentUser.id, productId, newQuantity)}
     };
   
     return (
