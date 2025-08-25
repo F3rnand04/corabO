@@ -6,6 +6,7 @@
  * All functions exported from this file are marked as server actions and will only execute on the server.
  * Client components should ONLY import from this file to interact with the backend.
  */
+import { runFlow } from '@genkit-ai/core';
 import type { FirebaseUserInput, User, ProfileSetupData, Transaction, Product, CartItem, GalleryImage, CreatePublicationInput, CreateProductInput, VerificationOutput, CashierBox, QrSession, TempRecipientInfo } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 
@@ -15,13 +16,11 @@ import { revalidatePath } from 'next/cache';
 // =================================
 
 export async function getOrCreateUser(firebaseUser: FirebaseUserInput): Promise<User | null> {
-  const { runFlow } = await import('@genkit-ai/core');
   const { getOrCreateUserFlow } = await import('@/ai/flows/auth-flow');
   return await runFlow(getOrCreateUserFlow, firebaseUser);
 }
 
 export async function updateUser(userId: string, updates: Partial<User | { 'profileSetupData.serviceRadius': number } | { 'profileSetupData.cashierBoxes': CashierBox[] }>) {
-    const { runFlow } = await import('@genkit-ai/core');
     const { updateUserFlow } = await import('@/ai/flows/profile-flow');
     await runFlow(updateUserFlow, { userId, updates });
     revalidatePath('/profile');
@@ -29,20 +28,17 @@ export async function updateUser(userId: string, updates: Partial<User | { 'prof
 }
 
 export async function deleteUser(userId: string) {
-    const { runFlow } = await import('@genkit-ai/core');
     const { deleteUserFlow } = await import('@/ai/flows/profile-flow');
     await runFlow(deleteUserFlow, { userId });
     revalidatePath('/admin');
 }
 
 export async function getPublicProfile(userId: string): Promise<Partial<User> | null> {
-    const { runFlow } = await import('@genkit-ai/core');
     const { getPublicProfileFlow } = await import('@/ai/flows/profile-flow');
     return await runFlow(getPublicProfileFlow, { userId });
 }
 
 export async function getFeed(params: { limitNum: number, startAfterDocId?: string }) {
-   const { runFlow } = await import('@genkit-ai/core');
    const { getFeedFlow } = await import('@/ai/flows/feed-flow');
    return await runFlow(getFeedFlow, params);
 }
@@ -52,7 +48,6 @@ export async function getFeed(params: { limitNum: number, startAfterDocId?: stri
 // =================================
 
 export async function completeInitialSetup(userId: string, data: any): Promise<User | null> {
-    const { runFlow } = await import('@genkit-ai/core');
     const { completeInitialSetupFlow } = await import('@/ai/flows/profile-flow');
     const user = await runFlow(completeInitialSetupFlow, { userId, ...data });
     revalidatePath('/initial-setup');
@@ -61,7 +56,6 @@ export async function completeInitialSetup(userId: string, data: any): Promise<U
 }
 
 export async function checkIdUniqueness(data: { idNumber: string; country: string; currentUserId: string; }): Promise<boolean> {
-    const { runFlow } = await import('@genkit-ai/core');
     const { checkIdUniquenessFlow } = await import('@/ai/flows/profile-flow');
     return await runFlow(checkIdUniquenessFlow, data);
 }
@@ -77,7 +71,6 @@ export async function updateUserProfileImage(userId: string, dataUrl: string) {
 }
 
 export async function toggleGps(userId: string) {
-    const { runFlow } = await import('@genkit-ai/core');
     const { toggleGpsFlow } = await import('@/ai/flows/profile-flow');
     await runFlow(toggleGpsFlow, { userId });
     revalidatePath('/profile');
@@ -102,7 +95,6 @@ export async function rejectUserId(userId: string) {
 }
 
 export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput | null> {
-    const { runFlow } = await import('@genkit-ai/core');
     const { autoVerifyIdWithAIFlow } = await import('@/ai/flows/verification-flow');
     const input = {
       userId: user.id,
@@ -125,21 +117,18 @@ export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput
 // =================================
 
 export async function createPublication(data: CreatePublicationInput) {
-    const { runFlow } = await import('@genkit-ai/core');
     const { createPublicationFlow } = await import('@/ai/flows/publication-flow');
     await runFlow(createPublicationFlow, data);
     revalidatePath('/profile/publications');
 }
 
 export async function createProduct(data: CreateProductInput) {
-    const { runFlow } = await import('@genkit-ai/core');
     const { createProductFlow } = await import('@/ai/flows/publication-flow');
     await runFlow(createProductFlow, data);
     revalidatePath('/profile/catalog');
 }
 
 export async function removeGalleryImage(ownerId: string, imageId: string) {
-    const { runFlow } = await import('@genkit-ai/core');
     const { removeGalleryImageFlow } = await import('@/ai/flows/publication-flow');
     await runFlow(removeGalleryImageFlow, { imageId });
     revalidatePath(`/companies/${ownerId}`);
@@ -147,21 +136,18 @@ export async function removeGalleryImage(ownerId: string, imageId: string) {
 }
 
 export async function updateGalleryImage(data: { ownerId: string; imageId: string; updates: { description?: string; imageDataUri?: string; }; }) {
-    const { runFlow } = await import('@genkit-ai/core');
     const { updateGalleryImageFlow } = await import('@/ai/flows/publication-flow');
     await runFlow(updateGalleryImageFlow, { imageId: data.imageId, updates: data.updates });
     revalidatePath(`/companies/${data.ownerId}`);
 }
 
 export async function addCommentToImage(data: { ownerId: string; imageId: string; commentText: string; author: { id: string; name: string; profileImage: string; }; }) {
-    const { runFlow } = await import('@genkit-ai/core');
     const { addCommentToImageFlow } = await import('@/ai/flows/publication-flow');
     await runFlow(addCommentToImageFlow, { imageId: data.imageId, commentText: data.commentText, author: data.author });
     revalidatePath(`/companies/${data.ownerId}`);
 }
 
 export async function removeCommentFromImage(data: { ownerId: string; imageId: string; commentIndex: number; }) {
-    const { runFlow } = await import('@genkit-ai/core');
     const { removeCommentFromImageFlow } = await import('@/ai/flows/publication-flow');
     await runFlow(removeCommentFromImageFlow, { imageId: data.imageId, commentIndex: data.commentIndex });
     revalidatePath(`/companies/${data.ownerId}`);
@@ -172,7 +158,6 @@ export async function removeCommentFromImage(data: { ownerId: string; imageId: s
 // =================================
 
 export async function sendMessage(input: { conversationId: string; senderId: string; recipientId: string; text?: string; location?: { lat: number; lon: number; }; proposal?: any; }): Promise<string> {
-  const { runFlow } = await import('@genkit-ai/core');
   const { sendMessage } = await import('@/ai/flows/message-flow');
   await runFlow(sendMessage, input);
   revalidatePath(`/messages/${input.conversationId}`);
@@ -180,7 +165,6 @@ export async function sendMessage(input: { conversationId: string; senderId: str
 }
 
 export async function acceptProposal(conversationId: string, messageId: string, acceptorId: string) {
-    const { runFlow } = await import('@genkit-ai/core');
     const { acceptProposal } = await import('@/ai/flows/message-flow');
     await runFlow(acceptProposal, { conversationId, messageId, acceptorId });
     revalidatePath(`/messages/${conversationId}`);
@@ -192,21 +176,18 @@ export async function acceptProposal(conversationId: string, messageId: string, 
 // =================================
 
 export async function createAppointmentRequest(data: {providerId: string, clientId: string, date: string, details: string, amount: number}) {
-    const { runFlow } = await import('@genkit-ai/core');
     const { createAppointmentRequest } = await import('@/ai/flows/transaction-flow');
     await runFlow(createAppointmentRequest, data);
     revalidatePath('/transactions');
 }
 
 export async function completeWork(data: { transactionId: string; userId: string; }) {
-  const { runFlow } = await import('@genkit-ai/core');
   const { completeWork } = await import('@/ai/flows/transaction-flow');
   await runFlow(completeWork, data);
   revalidatePath('/transactions');
 }
 
 export async function confirmWorkReceived(data: { transactionId: string; userId: string; rating: number; comment: string; }) {
-  const { runFlow } = await import('@genkit-ai/core');
   const { confirmWorkReceived } = await import('@/ai/flows/transaction-flow');
   await runFlow(confirmWorkReceived, data);
   revalidatePath('/transactions');
@@ -217,7 +198,6 @@ export async function payCommitment(data: {
   userId: string;
   paymentDetails: { paymentMethod: string; paymentReference?: string; paymentVoucherUrl?: string; };
 }) {
-    const { runFlow } = await import('@genkit-ai/core');
     const { payCommitment } = await import('@/ai/flows/transaction-flow');
     await runFlow(payCommitment, data);
     revalidatePath('/transactions');
@@ -225,42 +205,36 @@ export async function payCommitment(data: {
 
 
 export async function confirmPaymentReceived(data: { transactionId: string; userId: string; fromThirdParty: boolean; }) {
-  const { runFlow } = await import('@genkit-ai/core');
   const { confirmPaymentReceived } = await import('@/ai/flows/transaction-flow');
   await runFlow(confirmPaymentReceived, data);
   revalidatePath('/transactions');
 }
 
 export async function sendQuote(data: { transactionId: string; userId: string; breakdown: string; total: number; }) {
-  const { runFlow } = await import('@genkit-ai/core');
   const { sendQuote } = await import('@/ai/flows/transaction-flow');
   await runFlow(sendQuote, data);
   revalidatePath('/transactions');
 }
 
 export async function acceptAppointment(data: { transactionId: string; userId: string; }) {
-    const { runFlow } = await import('@genkit-ai/core');
     const { acceptAppointment } = await import('@/ai/flows/transaction-flow');
     await runFlow(acceptAppointment, data);
     revalidatePath('/transactions');
 }
 
 export async function startDispute(transactionId: string) {
-  const { runFlow } = await import('@genkit-ai/core');
   const { startDispute } = await import('@/ai/flows/transaction-flow');
   await runFlow(startDispute, transactionId);
   revalidatePath('/transactions');
 }
 
 export async function cancelSystemTransaction(transactionId: string) {
-    const { runFlow } = await import('@genkit-ai/core');
     const { cancelSystemTransaction } = await import('@/ai/flows/transaction-flow');
     await runFlow(cancelSystemTransaction, transactionId);
     revalidatePath('/transactions');
 }
 
 export async function downloadTransactionsPDF(transactions: Transaction[]) {
-  const { runFlow } = await import('@genkit-ai/core');
   const { downloadTransactionsPDF } = await import('@/ai/flows/transaction-flow');
   return await runFlow(downloadTransactionsPDF, transactions);
 }
@@ -273,7 +247,6 @@ export async function checkout(
   recipientInfo?: { name: string; phone: string },
   deliveryAddress?: string
 ) {
-    const { runFlow } = await import('@genkit-ai/core');
     const { checkout } = await import('@/ai/flows/transaction-flow');
   await runFlow(checkout, {
     userId,
@@ -291,7 +264,6 @@ export async function updateCart(
   productId: string,
   newQuantity: number
 ) {
-    const { runFlow } = await import('@genkit-ai/core');
     const { updateCartFlow } = await import('@/ai/flows/cart-flow');
     await runFlow(updateCartFlow, { userId, productId, newQuantity });
     revalidatePath('/'); // Revalidate main page to update cart icon
@@ -303,7 +275,6 @@ export async function updateCart(
 // =================================
 
 export async function retryFindDelivery(data: { transactionId: string }) {
-    const { runFlow } = await import('@genkit-ai/core');
     const { findDeliveryProvider } = await import('@/ai/flows/delivery-flow');
     await runFlow(findDeliveryProvider, data);
     revalidatePath('/transactions');
@@ -319,7 +290,6 @@ export async function assignOwnDelivery(
 }
 
 export async function resolveDeliveryAsPickup(data: { transactionId: string }) {
-  const { runFlow } = await import('@genkit-ai/core');
   const { resolveDeliveryAsPickup } = await import('@/ai/flows/delivery-flow');
   await runFlow(resolveDeliveryAsPickup, data);
   revalidatePath('/transactions');
@@ -329,28 +299,24 @@ export async function resolveDeliveryAsPickup(data: { transactionId: string }) {
 // AFFILIATION ACTIONS
 // =================================
 export async function requestAffiliation(providerId: string, companyId: string) {
-    const { runFlow } = await import('@genkit-ai/core');
     const { requestAffiliationFlow } = await import('@/ai/flows/affiliation-flow');
     await runFlow(requestAffiliationFlow, { providerId, companyId });
     revalidatePath('/admin');
 }
 
 export async function approveAffiliation(affiliationId: string, actorId: string) {
-    const { runFlow } = await import('@genkit-ai/core');
     const { approveAffiliationFlow } = await import('@/ai/flows/affiliation-flow');
     await runFlow(approveAffiliationFlow, { affiliationId, actorId });
     revalidatePath('/admin');
 }
 
 export async function rejectAffiliation(affiliationId: string, actorId: string) {
-    const { runFlow } = await import('@genkit-ai/core');
     const { rejectAffiliationFlow } = await import('@/ai/flows/affiliation-flow');
     await runFlow(rejectAffiliationFlow, { affiliationId, actorId });
     revalidatePath('/admin');
 }
 
 export async function revokeAffiliation(affiliationId: string, actorId: string) {
-    const { runFlow } = await import('@genkit-ai/core');
     const { revokeAffiliationFlow } = await import('@/ai/flows/affiliation-flow');
     await runFlow(revokeAffiliationFlow, { affiliationId, actorId });
     revalidatePath('/admin');
@@ -389,7 +355,6 @@ export async function verifyCampaignPayment(
 export async function sendNewCampaignNotifications(data: {
   campaignId: string;
 }) {
-  const { runFlow } = await import('@genkit-ai/core');
   const { sendNewCampaignNotifications } = await import('@/ai/flows/notification-flow');
   await runFlow(sendNewCampaignNotifications, data);
 }
@@ -399,7 +364,6 @@ export async function sendNewCampaignNotifications(data: {
 // =================================
 
 export async function addCashierBox(userId: string, name: string, password: string) {
-    const { runFlow } = await import('@genkit-ai/core');
     const { createCashierBox } = await import('@/ai/flows/cashier-flow');
     const newBox = await runFlow(createCashierBox, { userId, name, password });
     
@@ -441,7 +405,6 @@ export async function removeCashierBox(userId: string, boxId: string) {
 }
 
 export async function regenerateCashierBoxQr(userId: string, boxId: string) {
-    const { runFlow } = await import('@genkit-ai/core');
     const { regenerateCashierQr } = await import('@/ai/flows/cashier-flow');
     const newQrData = await runFlow(regenerateCashierQr, { userId, boxId });
     await updateCashierBox(userId, boxId, newQrData as Partial<CashierBox>);
@@ -522,7 +485,6 @@ export async function confirmMobilePayment(sessionId: string) {
 }
 
 export async function finalizeQrSession(sessionId: string) {
-    const { runFlow } = await import('@genkit-ai/core');
     const { processDirectPayment } = await import('@/ai/flows/transaction-flow');
     await runFlow(processDirectPayment, { sessionId });
     const { getFirebaseAdmin } = await import('./firebase-server');
@@ -596,5 +558,3 @@ export async function registerSystemPayment(
     await firestore.collection('transactions').doc(txId).set(newTransaction);
     revalidatePath('/transactions');
 }
-
-    

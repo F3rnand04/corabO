@@ -98,6 +98,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   // Efecto CLAVE: Este es el motor central que carga el perfil.
   useEffect(() => {
     // Si hay un usuario de Firebase, procede a obtener el perfil completo de Corabo.
+    console.log("CoraboContext: Effect triggered by firebaseUser change.", { firebaseUserExists: !!firebaseUser, currentUserId: firebaseUser?.uid });
     if (firebaseUser) {
       setIsLoadingUser(true);
       // Llama a la acción del servidor para obtener o crear el documento del usuario en Firestore.
@@ -108,6 +109,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         photoURL: firebaseUser.photoURL,
         emailVerified: firebaseUser.emailVerified,
       }).then(coraboUser => {
+        console.log("CoraboContext: getOrCreateUser finished.", { coraboUserExists: !!coraboUser });
         if (coraboUser) {
             // Setea el usuario completo de Corabo.
             setCurrentUser(coraboUser as User);
@@ -120,11 +122,13 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         setIsLoadingUser(false);
       }).catch(error => {
         console.error("Failed to fetch/create Corabo user:", error);
+        console.log("CoraboContext: Error fetching/creating user.", { error });
         toast({ variant: "destructive", title: "Error de Perfil", description: "No se pudo cargar tu perfil de Corabo." });
         setCurrentUser(null);
         setIsLoadingUser(false);
       });
     } else {
+      console.log("CoraboContext: No firebaseUser found.");
       // Si no hay usuario de Firebase, resetea el estado y finaliza la carga.
       setCurrentUser(null);
       setIsLoadingUser(false);
