@@ -2,13 +2,14 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef, useMemo } from 'react';
-import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest, PublicationOwner, CreatePublicationInput, CreateProductInput, QrSession, TempRecipientInfo } from '@/lib/types';
+import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest, PublicationOwner, CreatePublicationInput, CreateProductInput, QrSession, TempRecipientInfo, FirebaseUserInput } from '@/lib/types';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { useToast } from "@/hooks/use-toast"
 import { getFirestoreDb } from '@/lib/firebase';
 import { doc, onSnapshot, collection, query, where, orderBy, Unsubscribe, writeBatch, deleteField } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import * as Actions from '@/lib/actions';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 
 interface CoraboContextValue {
@@ -97,6 +98,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   const [qrSession, setQrSession] = useState<QrSession | null>(null);
   
   const userCache = useRef<Map<string, User>>(new Map());
+  // CoraboContext no longer needs to know about firebaseUser or isLoadingAuth directly
 
   const syncCoraboUser = useCallback(async (fbUser: FirebaseUser | null) => {
     if (!fbUser) {
@@ -128,7 +130,6 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     }
   }, [toast]);
   
-
   useEffect(() => {
     const savedAddress = sessionStorage.getItem('coraboDeliveryAddress');
     if (savedAddress) _setDeliveryAddress(savedAddress);
