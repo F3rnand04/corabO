@@ -93,33 +93,70 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
 
   useEffect(() => {
     let unsub: Unsubscribe | undefined;
+
+    const handleUserCreation = async (fbUser: any) => {
+        try {
+            const coraboUser = await Actions.getOrCreateUser(fbUser);
+            if (coraboUser) {
+                setCurrentUser(coraboUser);
+            } else {
+                 // **FALLBACK LOGIC**
+                 // If the backend fails, create a temporary user profile on the client
+                 // to unblock the UI and allow the user to proceed to initial setup.
+                console.warn("Backend user creation failed. Creating temporary client-side profile.");
+                const now = new Date();
+                const tempUser: User = {
+                    id: fbUser.uid,
+                    coraboId: `${fbUser.displayName?.split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '') || 'user'}${Math.floor(1000 + Math.random() * 9000)}`,
+                    name: fbUser.displayName || 'Nuevo Usuario',
+                    email: fbUser.email || '',
+                    profileImage: fbUser.photoURL || `https://i.pravatar.cc/150?u=${fbUser.uid}`,
+                    createdAt: now.toISOString(),
+                    lastActivityAt: now.toISOString(),
+                    isInitialSetupComplete: false,
+                    lastName: '',
+                    idNumber: '',
+                    birthDate: '',
+                    country: '',
+                    type: 'client',
+                    reputation: 5,
+                    effectiveness: 100,
+                    phone: '',
+                    emailValidated: fbUser.emailVerified,
+                    phoneValidated: false,
+                    isGpsActive: true,
+                    isSubscribed: false,
+                    isTransactionsActive: false,
+                    idVerificationStatus: 'rejected',
+                    profileSetupData: { location: "10.4806,-66.9036" },
+                };
+                setCurrentUser(tempUser);
+                toast({ variant: "default", title: "¡Bienvenido!", description: "Completa tu perfil para empezar." });
+            }
+        } catch (error) {
+            console.error("Critical error in getOrCreateUser action:", error);
+            toast({ variant: "destructive", title: "Error Crítico de Perfil", description: "No se pudo obtener ni crear tu perfil. Contacta a soporte." });
+        } finally {
+            setIsLoadingUser(false);
+        }
+    };
     
     if (firebaseUser) {
       setIsLoadingUser(true);
+      // We still listen for the REAL user document.
       unsub = onSnapshot(doc(getFirestoreDb(), "users", firebaseUser.uid), 
         (docSnap) => {
           if (docSnap.exists()) {
             setCurrentUser(docSnap.data() as User);
+            setIsLoadingUser(false);
           } else {
-            // User is authenticated with Firebase, but has no Corabo profile yet.
-            // Call the getOrCreateUser action to create the document.
-            Actions.getOrCreateUser(firebaseUser).then(coraboUser => {
-              if (coraboUser) {
-                setCurrentUser(coraboUser);
-              } else {
-                toast({ variant: "destructive", title: "Error de Perfil", description: "No se pudo crear tu perfil de Corabo. Intenta recargar." });
-                setCurrentUser(null);
-              }
-            }).catch(error => {
-               console.error("Error creating Corabo user:", error);
-               toast({ variant: "destructive", title: "Error de Perfil", description: "No se pudo crear tu perfil de Corabo." });
-            });
+            // If the document doesn't exist, we trigger our robust creation logic.
+            handleUserCreation(firebaseUser);
           }
-          // Set loading to false once we get the first snapshot result.
-          if (isLoadingUser) setIsLoadingUser(false);
         },
         (error) => {
           console.error("Error listening to user document:", error);
+          toast({ variant: "destructive", title: "Error de Conexión", description: "No se pudo sincronizar tu perfil." });
           setIsLoadingUser(false);
         }
       );
@@ -128,11 +165,8 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
       setIsLoadingUser(false);
     }
     
-    // Cleanup the listener on component unmount or when firebaseUser changes.
-    return () => {
-      if (unsub) unsub();
-    };
-  }, [firebaseUser, toast, isLoadingUser]);
+    return () => { if (unsub) unsub(); };
+  }, [firebaseUser, toast]);
   
   const setDeliveryAddress = useCallback((address: string) => {
     sessionStorage.setItem('coraboDeliveryAddress', address);
