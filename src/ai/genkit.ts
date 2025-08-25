@@ -7,11 +7,12 @@
  */
 
 import { genkit } from 'genkit';
-// The firebase() plugin is removed as we are now handling initialization globally in firebase-server.ts
+import { firebase } from '@genkit-ai/firebase';
 import { googleAI } from '@genkit-ai/googleai';
 
 export const ai = genkit({
   plugins: [
+    firebase(), // CRITICAL FIX: Restore the Firebase plugin.
     googleAI(),
   ],
   logLevel: 'debug',
