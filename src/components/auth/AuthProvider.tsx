@@ -32,7 +32,6 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
 
   // Este efecto sincroniza el estado del cliente con el del servidor.
   useEffect(() => {
-    console.log("Auth state changed. firebaseUser:", serverFirebaseUser);
     setFirebaseUser(serverFirebaseUser);
   }, [serverFirebaseUser]);
 
@@ -67,8 +66,7 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
           console.error("Error signing in with Google:", error);
         }
     } finally {
-      // El finally se ejecuta incluso si hay un error, así que no queremos recargar aquí.
-      // Movemos setIsLoadingAuth al bloque catch para que el loader no desaparezca en caso de error.
+      setIsLoadingAuth(false);
     }
   };
 

@@ -27,7 +27,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  console.log("RootLayout execution started")
   let serverFirebaseUser: FirebaseUser | null = null;
   try {
     const sessionCookie = cookies().get('session')?.value;
@@ -53,8 +52,6 @@ export default async function RootLayout({
     console.log('Session cookie verification failed. This is expected on logout or expiration.');
     serverFirebaseUser = null;
   }
-
- console.log("RootLayout - serverFirebaseUser:", serverFirebaseUser); // Segundo log
 
   return (
     <html lang="es" suppressHydrationWarning>

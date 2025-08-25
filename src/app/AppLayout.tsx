@@ -24,8 +24,7 @@ function LayoutController({ children }: { children: React.ReactNode }) {
       return; 
     }
 
-    // Asegúrate de que pathname no es null antes de usarlo
-    const currentPath = pathname || ''; // Usa una cadena vacía si pathname es null
+    const currentPath = pathname || '';
 
     const isPublicPath = publicPaths.some(path => currentPath.startsWith(path));
     const isSetupPath = currentPath === '/initial-setup';
@@ -68,9 +67,7 @@ function LayoutController({ children }: { children: React.ReactNode }) {
       return <>{children}</>;
   }
 
-  // *** CORRECCIÓN CLAVE ***
   // Si hay un usuario pero está en el proceso de setup, permite renderizar la página de setup.
-  // Esta condición faltaba y era la causa del bucle de carga.
   const isAllowedSetup = currentUser && !currentUser.isInitialSetupComplete && (pathname === '/initial-setup');
   if(isAllowedSetup) {
       return <>{children}</>;
