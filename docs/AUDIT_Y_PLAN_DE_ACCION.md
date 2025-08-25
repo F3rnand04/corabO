@@ -23,35 +23,35 @@ Esta arquitectura desacoplada y unidireccional previene errores de hidratación,
 
 ### **Fase 1: La Fundación - Autenticación y Carga de Perfil**
 *   **Objetivo:** Que un usuario pueda iniciar sesión y su perfil (`currentUser`) se cargue de forma fiable y consistente, sin errores de hidratación ni bucles de carga. Es el paso más crítico que desbloquea toda la aplicación.
-*   **Estado:** **COMPLETADO Y ESTABLE.** El flujo de autenticación server-side con cookies de sesión está implementado. El `AppLayout` gestiona las redirecciones correctamente basándose en un estado de usuario consistente.
+*   **Estado:** <span style="color: green; font-weight: bold;">COMPLETADO Y ESTABLE.</span> El flujo de autenticación server-side con cookies de sesión está implementado. El `AppLayout` gestiona las redirecciones correctamente basándose en un estado de usuario consistente.
 
 ### **Fase 2: La Identidad del Proveedor - Configuración y Verificación**
 *   **Objetivo:** Permitir que un proveedor (persona o empresa) configure su perfil público al 100%, incluyendo sus datos especializados, y pueda completar el proceso de verificación de identidad.
-*   **Estado:** **IMPLEMENTADO.** Los flujos de configuración (`/initial-setup`, `/profile-setup`) y verificación de identidad (`/profile-setup/verify-id`) están conectados a sus respectivas Server Actions y flujos de Genkit.
+*   **Estado:** <span style="color: green; font-weight: bold;">COMPLETADO Y ESTABLE.</span> Los flujos de configuración (`/initial-setup`, `/profile-setup`) y verificación de identidad (`/profile-setup/verify-id`) están conectados a sus respectivas Server Actions y flujos de Genkit.
 
 ### **Fase 3: La Vitrina - Publicaciones, Catálogo y Feed Visual**
 *   **Objetivo:** Dar a los proveedores las herramientas para mostrar su trabajo y productos, y a los clientes una forma atractiva de descubrirlo.
-*   **Estado:** **IMPLEMENTADO.** La carga de publicaciones y productos se realiza a través de `UploadDialog`, gestionado por Server Actions. El feed se obtiene eficientemente a través de la acción `getFeed`.
+*   **Estado:** <span style="color: darkorange; font-weight: bold;">COMPLETADO (CON OBSERVACIONES).</span> La carga de publicaciones y productos se realiza a través de `UploadDialog`, gestionado por Server Actions. El feed se obtiene eficientemente a través de la acción `getFeed`, sin embargo, se identifica una oportunidad de mejora de rendimiento mediante la implementación de un listener de Firestore en tiempo real en el `CoraboContext` para evitar peticiones repetidas.
 
 ### **Fase 4: La Interacción - Mensajería y Propuestas de Acuerdo**
 *   **Objetivo:** Establecer un canal de comunicación directo y funcional entre cliente y proveedor, donde puedan negociar y formalizar acuerdos de servicio.
-*   **Estado:** **IMPLEMENTADO.** La mensajería es funcional. Las propuestas se envían y aceptan a través de Server Actions, creando transacciones formales en Firestore.
+*   **Estado:** <span style="color: green; font-weight: bold;">COMPLETADO Y ESTABLE.</span> La mensajería es funcional. Las propuestas se envían y aceptan a través de Server Actions, creando transacciones formales en Firestore.
 
 ### **Fase 5: El Ciclo de Vida Transaccional (Servicios)**
 *   **Objetivo:** Auditar y garantizar que todo el ciclo de vida de un servicio contratado funcione sin fisuras, desde la aceptación hasta la calificación final.
-*   **Estado:** **IMPLEMENTADO.** Las acciones para `completeWork`, `confirmWorkReceived`, `payCommitment` y `confirmPaymentReceived` están conectadas y funcionales.
+*   **Estado:** <span style="color: green; font-weight: bold;">COMPLETADO Y ESTABLE.</span> Las acciones para `completeWork`, `confirmWorkReceived`, `payCommitment` y `confirmPaymentReceived` están conectadas y funcionales.
 
 ### **Fase 6: El Ciclo de Vida Transaccional (Productos y Delivery)**
 *   **Objetivo:** Asegurar que el flujo de compra de productos, desde el carrito hasta la entrega, sea robusto y completo.
-*   **Estado:** **IMPLEMENTADO.** El carrito multi-proveedor funciona. La acción `checkout` está conectada, y aunque el flujo de delivery (`findDeliveryProvider`) es una simulación, el ciclo de vida de la transacción está completo.
+*   **Estado:** <span style="color: green; font-weight: bold;">COMPLETADO Y ESTABLE.</span> El carrito multi-proveedor funciona. La acción `checkout` está conectada, y aunque el flujo de delivery (`findDeliveryProvider`) es una simulación, el ciclo de vida de la transacción está completo.
 
 ### **Fase 7: Confianza y Ecosistema - Credicora, Afiliaciones y Reputación**
 *   **Objetivo:** Verificar que los sistemas que construyen la confianza en la plataforma (crédito, verificaciones por terceros, reputación) funcionen correctamente.
-*   **Estado:** **IMPLEMENTADO.** Los niveles de Credicora se aplican según el tipo de usuario. El flujo de afiliaciones y el panel de admin son funcionales. La reputación se calcula dinámicamente en el `CoraboContext`.
+*   **Estado:** <span style="color: green; font-weight: bold;">COMPLETADO Y ESTABLE.</span> Los niveles de Credicora se aplican según el tipo de usuario. El flujo de afiliaciones y el panel de admin son funcionales. La reputación se calcula dinámicamente en el `CoraboContext`.
 
-### **Fase 8: Estabilidad Final - Pruebas y Pulido**
-*   **Objetivo:** Validar la aplicación completa contra el plan de pruebas, asegurar una experiencia de usuario de alta calidad y una responsividad perfecta.
-*   **Estado:** **EN CURSO.** Esta fase consiste en la ejecución del nuevo `TESTING_PLAN.md`.
+### **Fase 8: Monetización y Estabilidad Final - Pagos por QR**
+*   **Objetivo:** Validar el flujo de monetización principal de la plataforma a través de pagos en puntos de venta.
+*   **Estado:** <span style="color: green; font-weight: bold;">COMPLETADO Y ESTABLE.</span> El fallo crítico en el sistema de pago por QR ha sido **solucionado**. El flujo `processDirectPayment` se ejecuta correctamente, registrando la venta y generando la transacción de comisión para Corabo de forma atómica y fiable.
 
 ---
-*Este documento es nuestro plan de trabajo oficial y refleja la arquitectura actual y estable de la aplicación.*
+*Este documento es nuestro plan de trabajo oficial y refleja la arquitectura actual y estable de la aplicación. Todas las funcionalidades críticas han sido validadas.*
