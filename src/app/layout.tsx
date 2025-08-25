@@ -33,6 +33,7 @@ export default async function RootLayout({
       const { auth } = getFirebaseAdmin();
       const decodedClaims = await auth.verifySessionCookie(sessionCookie, true);
       
+      // Construct a serializable FirebaseUser-like object
       serverFirebaseUser = {
           uid: decodedClaims.uid,
           email: decodedClaims.email,
@@ -42,6 +43,7 @@ export default async function RootLayout({
       } as FirebaseUser;
     }
   } catch (error) {
+    // Session cookie is invalid or expired.
     console.log('Session cookie verification failed. Expected on logout/expiration.');
     serverFirebaseUser = null;
   }
@@ -56,13 +58,13 @@ export default async function RootLayout({
       </head>
       <body className={`'__variable_e8ce0c' antialiased bg-background`}>
         <Providers attribute="class" defaultTheme="system" enableSystem>
-            <CoraboProvider>
-                <AuthProvider serverFirebaseUser={serverFirebaseUser}>
+            <AuthProvider serverFirebaseUser={serverFirebaseUser}>
+                <CoraboProvider>
                     <AppLayout>
                         {children}
                     </AppLayout>
-                </AuthProvider>
-            </CoraboProvider>
+                </CoraboProvider>
+            </AuthProvider>
         </Providers>
       </body>
     </html>

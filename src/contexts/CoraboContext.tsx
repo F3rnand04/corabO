@@ -9,6 +9,7 @@ import { getFirestoreDb } from '@/lib/firebase';
 import { doc, onSnapshot, collection, query, where, orderBy, Unsubscribe, writeBatch, deleteField } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import * as Actions from '@/lib/actions';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 
 interface CoraboContextValue {
@@ -78,6 +79,7 @@ interface CoraboProviderProps {
 
 export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   const { toast } = useToast();
+  const { firebaseUser, isLoadingAuth } = useAuth(); // Depend on AuthProvider
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   
@@ -106,7 +108,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     }
     setIsLoadingUser(true);
     try {
-        const userInput = {
+        const userInput: FirebaseUserInput = {
           uid: fbUser.uid,
           displayName: fbUser.displayName,
           email: fbUser.email,
@@ -114,10 +116,11 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
           emailVerified: fbUser.emailVerified
         };
         const coraboProfile = await Actions.getOrCreateUser(userInput);
+
         if (coraboProfile) {
             setCurrentUser(coraboProfile);
         } else {
-           throw new Error("El perfil de Corabo es nulo.");
+           throw new Error("El perfil de Corabo es nulo o inválido.");
         }
     } catch (e) {
         console.error("Fatal error syncing user profile:", e);
@@ -127,6 +130,15 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         setIsLoadingUser(false);
     }
   }, [toast]);
+  
+  // Sync user profile when firebaseUser changes from AuthProvider
+  useEffect(() => {
+    // Don't sync if auth is still loading, wait for the final state.
+    if(!isLoadingAuth) {
+      syncCoraboUser(firebaseUser);
+    }
+  }, [firebaseUser, isLoadingAuth, syncCoraboUser]);
+
   
   useEffect(() => {
     const savedAddress = sessionStorage.getItem('coraboDeliveryAddress');

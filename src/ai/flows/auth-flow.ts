@@ -8,19 +8,9 @@
 
 import { ai } from '@/ai/genkit';
 import { getFirestore } from 'firebase-admin/firestore';
-import type { User } from '@/lib/types';
+import type { User, FirebaseUserInput } from '@/lib/types';
 import { z } from 'zod';
 import { credicoraLevels } from '@/lib/types';
-
-// Schema for the user object we expect from the client (FirebaseUser)
-const FirebaseUserSchema = z.object({
-  uid: z.string(),
-  displayName: z.string().nullable(),
-  email: z.string().nullable(),
-  photoURL: z.string().nullable(),
-  emailVerified: z.boolean(),
-});
-export type FirebaseUserInput = z.infer<typeof FirebaseUserSchema>;
 
 // The output MUST be a plain JSON-serializable object.
 const UserOutputSchema = z.any().nullable();
@@ -28,10 +18,10 @@ const UserOutputSchema = z.any().nullable();
 export const getOrCreateUserFlow = ai.defineFlow(
   {
     name: 'getOrCreateUserFlow',
-    inputSchema: FirebaseUserSchema,
+    inputSchema: z.any(), // Loosened for simplicity with FirebaseUser type
     outputSchema: UserOutputSchema,
   },
-  async (firebaseUser) => {
+  async (firebaseUser: FirebaseUserInput) => {
     const db = getFirestore();
     const userDocRef = db.collection('users').doc(firebaseUser.uid);
     const now = new Date();
@@ -55,7 +45,7 @@ export const getOrCreateUserFlow = ai.defineFlow(
             `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
           createdAt: now.toISOString(),
           lastActivityAt: now.toISOString(),
-          isInitialSetupComplete: false, // CRITICAL FIX: This must be false for new users.
+          isInitialSetupComplete: false, 
           lastName: '',
           idNumber: '',
           birthDate: '',
@@ -69,7 +59,7 @@ export const getOrCreateUserFlow = ai.defineFlow(
           isGpsActive: true,
           isSubscribed: false,
           isTransactionsActive: false,
-          idVerificationStatus: 'pending', // CRITICAL FIX: Was 'rejected', causing sync errors.
+          idVerificationStatus: 'pending', 
           profileSetupData: {
             location: '10.4806,-66.9036',
           },
