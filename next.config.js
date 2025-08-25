@@ -16,9 +16,15 @@ const nextConfig = {
       },
     ],
   },
-  // NEW: Explicitly mark server-only packages to prevent bundling issues.
-  // This is the correct modern approach for the App Router.
-  serverComponentsExternalPackages: ['@genkit-ai/googleai', 'handlebars'],
+  webpack: (config, { isServer }) => {
+    // This is the correct way to prevent server-only packages from being
+    // bundled into the client-side code.
+    if (!isServer) {
+      config.externals.push('@genkit-ai/googleai');
+      config.externals.push('handlebars');
+    }
+    return config;
+  },
 };
 
 export default nextConfig;
