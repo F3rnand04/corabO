@@ -9,6 +9,7 @@ import { getFirestoreDb } from '@/lib/firebase';
 import { doc, onSnapshot, collection, query, where, orderBy, Unsubscribe, writeBatch, deleteField } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import * as Actions from '@/lib/actions';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 interface CoraboContextValue {
   currentUser: User | null;
@@ -70,9 +71,12 @@ interface CoraboProviderProps {
 
 export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   const { toast } = useToast();
+  const { firebaseUser, isLoadingAuth } = useAuth(); // Depend on the AuthProvider state
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isLoadingUser, setIsLoadingUser] = useState(true); 
+  // isLoadingUser is now a combination of auth loading AND profile loading
+  const [isSyncingProfile, setIsSyncingProfile] = useState(true);
+  const isLoadingUser = isLoadingAuth || isSyncingProfile;
   
   const [users, setUsers] = useState<User[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -106,36 +110,44 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
       _setTempRecipientInfo(info);
   }, []);
 
-  const syncCoraboUser = useCallback(async (firebaseUser: FirebaseUser) => {
-    setIsLoadingUser(true);
+  const syncCoraboUser = useCallback(async (fbUser: FirebaseUser) => {
+    setIsSyncingProfile(true);
     try {
-        // The action now requires a simplified, serializable object.
         const userInput = {
-          uid: firebaseUser.uid,
-          displayName: firebaseUser.displayName,
-          email: firebaseUser.email,
-          photoURL: firebaseUser.photoURL,
-          emailVerified: firebaseUser.emailVerified
+          uid: fbUser.uid,
+          displayName: fbUser.displayName,
+          email: fbUser.email,
+          photoURL: fbUser.photoURL,
+          emailVerified: fbUser.emailVerified
         };
         const coraboProfile = await Actions.getOrCreateUser(userInput);
         if (coraboProfile) {
             setCurrentUser(coraboProfile);
         } else {
-           throw new Error("El perfil de Corabo devuelto es nulo.");
+           throw new Error("El perfil de Corabo es nulo.");
         }
     } catch (e) {
         console.error("Fatal error syncing user profile:", e);
         toast({ variant: 'destructive', title: "Error de Sincronización", description: "No se pudo cargar tu perfil de Corabo. Intenta recargar." });
         setCurrentUser(null);
     } finally {
-        setIsLoadingUser(false);
+        setIsSyncingProfile(false);
     }
   }, [toast]);
   
   const clearCoraboUser = useCallback(() => {
     setCurrentUser(null);
-    setIsLoadingUser(true); 
+    setIsSyncingProfile(false);
   }, []);
+
+  // Effect to sync user profile when firebaseUser changes
+  useEffect(() => {
+      if (firebaseUser) {
+          syncCoraboUser(firebaseUser);
+      } else {
+          clearCoraboUser();
+      }
+  }, [firebaseUser, syncCoraboUser, clearCoraboUser]);
 
   useEffect(() => {
     const savedAddress = sessionStorage.getItem('coraboDeliveryAddress');

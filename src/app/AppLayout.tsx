@@ -6,11 +6,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Loader2 } from 'lucide-react';
 import { Footer } from '@/components/Footer';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 // Este es el guardián de la aplicación. Su única responsabilidad es decidir
 // qué se debe renderizar basándose en el estado de autenticación y perfil del usuario.
 function LayoutController({ children }: { children: React.ReactNode }) {
   const { currentUser, isLoadingUser } = useCorabo();
+  const { firebaseUser, isLoadingAuth } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -18,19 +20,20 @@ function LayoutController({ children }: { children: React.ReactNode }) {
   const publicPaths = ['/login', '/cashier-login'];
 
   useEffect(() => {
-    // No hacer nada mientras el estado del usuario del contexto se está resolviendo.
+    // No hacer nada mientras el estado de autenticación o el perfil se está resolviendo.
     // Esto previene redirecciones prematuras antes de tener la información completa.
-    if (isLoadingUser) {
+    if (isLoadingAuth || isLoadingUser) {
       return; 
     }
 
     const currentPath = pathname || '';
-
     const isPublicPath = publicPaths.some(path => currentPath.startsWith(path));
     const isSetupPath = currentPath === '/initial-setup';
 
+    if (firebaseUser) {
+      // Si el usuario de Firebase existe, pero el perfil de Corabo aún no se ha cargado, esperamos.
+      if (!currentUser) return;
 
-    if (currentUser) {
       // Si el usuario está logueado...
       // ...pero no ha completado el setup, forzarlo a ir a la página de setup.
       // Esta es la lógica del "muro obligatorio".
@@ -47,13 +50,13 @@ function LayoutController({ children }: { children: React.ReactNode }) {
         router.replace('/login');
       }
     }
-  }, [currentUser, isLoadingUser, pathname, router]);
+  }, [firebaseUser, currentUser, isLoadingAuth, isLoadingUser, pathname, router]);
 
 
   // **Cortafuegos de Renderizado**
   // Muestra un loader a pantalla completa mientras se determina el estado del usuario.
   // Esto previene cualquier renderizado prematuro que cause errores de hidratación.
-  if (isLoadingUser) {
+  if (isLoadingAuth || isLoadingUser) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -62,9 +65,18 @@ function LayoutController({ children }: { children: React.ReactNode }) {
   }
 
   // Si no hay usuario y estamos en una ruta pública, renderiza la página (ej. /login).
-  const isAllowedPublic = !currentUser && publicPaths.some(path => (pathname || '').startsWith(path));
+  const isAllowedPublic = !firebaseUser && publicPaths.some(path => (pathname || '').startsWith(path));
   if (isAllowedPublic) {
       return <>{children}</>;
+  }
+  
+  // Si hay usuario pero no perfil (en el breve instante de carga), mostramos loader.
+  if(firebaseUser && !currentUser) {
+     return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
   }
 
   // Si hay un usuario pero está en el proceso de setup, permite renderizar la página de setup.
@@ -108,5 +120,3 @@ function LayoutController({ children }: { children: React.ReactNode }) {
 export function AppLayout({ children }: { children: React.ReactNode }) {
   return <LayoutController>{children}</LayoutController>;
 }
-
-    

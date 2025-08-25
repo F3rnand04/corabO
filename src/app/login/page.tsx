@@ -1,20 +1,26 @@
-
 'use client';
 
 import { useAuth } from '@/components/auth/AuthProvider';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
   const { signInWithGoogle, isLoadingAuth } = useAuth();
+  const { toast } = useToast();
 
   const handleSignIn = async () => {
     try {
       await signInWithGoogle();
-      // The reload is now handled inside signInWithGoogle
+      // La redirección ahora es manejada por el AppLayout al detectar el cambio de estado
     } catch (error: any) {
        console.error("Login page sign-in error:", error);
+       toast({
+         variant: 'destructive',
+         title: 'Error de Inicio de Sesión',
+         description: 'No se pudo completar el inicio de sesión. Por favor, inténtalo de nuevo.',
+       });
     }
   };
   

@@ -54,15 +54,15 @@ export default async function RootLayout({
         <meta name="theme-color" content="#FFFFFF" />
         <link rel="apple-touch-icon" href="https://i.postimg.cc/Wz1MTvWK/lg.png" />
       </head>
-      <body className={`${'\'\'\''}${inter.variable} antialiased bg-background`}>
+      <body className={`'${inter.variable}' antialiased bg-background`}>
         <Providers attribute="class" defaultTheme="system" enableSystem>
-           <CoraboProvider>
-             <AuthProvider serverFirebaseUser={serverFirebaseUser}>
+           <AuthProvider serverFirebaseUser={serverFirebaseUser}>
+             <CoraboProvider>
                 <AppLayout>
                     {children}
                 </AppLayout>
-            </AuthProvider>
-          </CoraboProvider>
+            </CoraboProvider>
+          </AuthProvider>
         </Providers>
       </body>
     </html>
