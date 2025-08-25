@@ -1,3 +1,4 @@
+
 // IMPORTANT: This file should NOT have the "use client" directive.
 // It's intended for server-side code, like Genkit flows.
 
@@ -11,6 +12,8 @@ function getFirebaseAdminApp(): App {
   if (getApps().length) {
     return getApp();
   }
+  // When running in a Google Cloud environment (like App Hosting),
+  // the Admin SDK can automatically discover credentials.
   return initializeApp({
       projectId: firebaseConfig.projectId
   });

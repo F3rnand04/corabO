@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview Central Genkit initialization.
  *
@@ -12,7 +13,7 @@ import { googleAI } from '@genkit-ai/googleai';
 
 export const ai = genkit({
   plugins: [
-    firebase(), // CRITICAL FIX: Restore the Firebase plugin.
+    firebase(),
     googleAI(),
   ],
   logLevel: 'debug',
