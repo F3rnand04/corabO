@@ -17,15 +17,6 @@ const nextConfig = {
       },
     ],
   },
-  webpack: (config, { isServer }) => {
-    // This is the correct way to prevent server-only packages from being
-    // bundled into the client-side code.
-    if (!isServer) {
-      config.externals.push('@genkit-ai/googleai');
-      config.externals.push('handlebars');
-    }
-    return config;
-  },
 };
 
 export default nextConfig;
