@@ -8,6 +8,7 @@ import { getFirestoreDb } from '@/lib/firebase';
 import { doc, onSnapshot, collection, query, where, orderBy, Unsubscribe, writeBatch, deleteField } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import * as Actions from '@/lib/actions';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 interface CoraboContextValue {
   currentUser: User | null;
@@ -125,7 +126,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   
   const clearCoraboUser = useCallback(() => {
     setCurrentUser(null);
-    setIsLoadingUser(false);
+    setIsLoadingUser(true); // Set to true on logout to show loader during redirect
   }, []);
 
   useEffect(() => {
@@ -177,18 +178,16 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     }));
 
     if (currentUser?.id) {
-        const userId = currentUser.id;
-        
-        // Update the current user from the live listener
+        // We already have the main user data, but we listen for realtime updates to it.
         const userDocRef = doc(db, 'users', userId);
         unsubscribes.push(onSnapshot(userDocRef, (doc) => {
             if (doc.exists()) {
-                setCurrentUser(doc.data() as User);
+                setCurrentUser(prev => ({ ...prev, ...doc.data() }));
             }
         }));
 
-        const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userId));
-        const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userId), orderBy("lastUpdated", "desc"));
+        const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
+        const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id), orderBy("lastUpdated", "desc"));
 
         unsubscribes.push(onSnapshot(transactionsQuery, (snapshot) => setTransactions(snapshot.docs.map(doc => doc.data() as Transaction))));
         unsubscribes.push(onSnapshot(conversationsQuery, (snapshot) => setConversations(snapshot.docs.map(doc => doc.data() as Conversation))));

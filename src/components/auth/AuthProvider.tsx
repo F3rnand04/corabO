@@ -31,9 +31,10 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
     const unsubscribe = onAuthStateChanged(getAuthInstance(), async (user) => {
         setFirebaseUser(user);
         if (user) {
-            // Only sync if the corabo user isn't loaded yet to avoid re-syncs
-            if (!currentUser) {
-                await syncCoraboUser(user);
+            // This is the key: sync the Corabo user profile whenever the Firebase user state changes.
+            // The CoraboContext will handle the logic of fetching or creating.
+            if (!currentUser || currentUser.id !== user.uid) {
+               await syncCoraboUser(user);
             }
         } else {
             clearCoraboUser();
@@ -50,25 +51,15 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
     try {
         const auth = getAuthInstance();
         const provider = new GoogleAuthProvider();
-        const result = await signInWithPopup(auth, provider);
-        const idToken = await result.user.getIdToken();
-        
-        await fetch('/api/auth/session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ idToken }),
-        });
-        
-        // After setting the cookie, we trigger a reload to ensure the server-side
-        // rendering picks up the new session state. This is a robust pattern.
-        window.location.reload();
-        
+        await signInWithPopup(auth, provider);
+        // The onAuthStateChanged listener will handle the rest of the logic,
+        // so we don't need to do anything else here.
     } catch (error: any) {
         if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
             console.error("Error signing in with Google:", error);
             toast({ variant: 'destructive', title: "Error de Inicio de Sesión", description: "No se pudo iniciar sesión con Google." });
         }
-        setIsLoadingAuth(false);
+        setIsLoadingAuth(false); // Ensure loading is stopped on error
     }
   };
 
@@ -76,12 +67,11 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
     setIsLoadingAuth(true);
     try {
         await signOut(getAuthInstance());
-        await fetch('/api/auth/session', { method: 'DELETE' });
-        clearCoraboUser();
-        window.location.href = '/login'; 
+        // The onAuthStateChanged listener will handle clearing the user state.
     } catch (error) {
          console.error("Error signing out:", error);
-         setIsLoadingAuth(false);
+    } finally {
+        window.location.href = '/login'; // Force a full redirect to clear all state
     }
   };
   

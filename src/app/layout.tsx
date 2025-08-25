@@ -1,4 +1,3 @@
-
 import type { Metadata } from 'next';
 import './globals.css';
 import { Providers } from './providers';
@@ -34,8 +33,13 @@ export default async function RootLayout({
       const { auth } = getFirebaseAdmin();
       const decodedClaims = await auth.verifySessionCookie(sessionCookie, true);
       
+      // Reconstruct a minimal FirebaseUser-like object for the client
       serverFirebaseUser = {
           uid: decodedClaims.uid,
+          email: decodedClaims.email,
+          displayName: decodedClaims.name,
+          photoURL: decodedClaims.picture,
+          emailVerified: decodedClaims.email_verified,
       } as FirebaseUser;
     }
   } catch (error) {
@@ -51,7 +55,7 @@ export default async function RootLayout({
         <meta name="theme-color" content="#FFFFFF" />
         <link rel="apple-touch-icon" href="https://i.postimg.cc/Wz1MTvWK/lg.png" />
       </head>
-      <body className={`${'\'\'\''}${inter.variable} antialiased bg-background`}>
+      <body className={`${inter.variable} antialiased bg-background`}>
         <Providers attribute="class" defaultTheme="system" enableSystem>
            <CoraboProvider>
              <AuthProvider serverFirebaseUser={serverFirebaseUser}>
