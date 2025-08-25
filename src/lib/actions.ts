@@ -11,20 +11,19 @@ import type { User, ProfileSetupData, Transaction, Product, CartItem, GalleryIma
 import { revalidatePath } from 'next/cache';
 
 // Import all flows statically.
-import * as authFlow from '@/ai/flows/auth-flow';
-import * as profileFlow from '@/ai/flows/profile-flow';
-import * as publicationFlow from '@/ai/flows/publication-flow';
-import * as messageFlow from '@/ai/flows/message-flow';
-import * as transactionFlow from '@/ai/flows/transaction-flow';
-import * as deliveryFlow from '@/ai/flows/delivery-flow';
-import * as affiliationFlow from '@/ai/flows/affiliation-flow';
-import * as cashierFlow from '@/ai/flows/cashier-flow';
-import * as verificationFlow from '@/ai/flows/verification-flow';
-import * as notificationFlow from '@/ai/flows/notification-flow';
-import * as cartFlow from '@/ai/flows/cart-flow';
-import * as feedFlow from '@/ai/flows/feed-flow';
-import * as campaignFlow from '@/ai/flows/campaign-flow';
-import { ai } from '@/ai/genkit';
+import { getOrCreateUserFlow } from '@/ai/flows/auth-flow';
+import { updateUserFlow, deleteUserFlow, getPublicProfileFlow, getProfileGalleryFlow, getProfileProductsFlow, completeInitialSetupFlow, checkIdUniquenessFlow, toggleGpsFlow } from '@/ai/flows/profile-flow';
+import { createPublicationFlow, createProductFlow, removeGalleryImageFlow, updateGalleryImageFlow, addCommentToImageFlow, removeCommentFromImageFlow } from '@/ai/flows/publication-flow';
+import { sendMessage as sendMessageFlow, acceptProposal as acceptProposalFlow } from '@/ai/flows/message-flow';
+import { createAppointmentRequest as createAppointmentRequestFlow, completeWork as completeWorkFlow, confirmWorkReceived as confirmWorkReceivedFlow, payCommitment as payCommitmentFlow, confirmPaymentReceived as confirmPaymentReceivedFlow, sendQuote as sendQuoteFlow, acceptAppointment as acceptAppointmentFlow, startDispute as startDisputeFlow, cancelSystemTransaction as cancelSystemTransactionFlow, downloadTransactionsPDF as downloadTransactionsPDFFlow, checkout as checkoutFlow, processDirectPayment } from '@/ai/flows/transaction-flow';
+import { findDeliveryProvider, resolveDeliveryAsPickup as resolveDeliveryAsPickupFlow } from '@/ai/flows/delivery-flow';
+import { requestAffiliationFlow, approveAffiliationFlow, rejectAffiliationFlow, revokeAffiliationFlow } from '@/ai/flows/affiliation-flow';
+import { createCashierBox as createCashierBoxFlow, regenerateCashierQr as regenerateCashierQrFlow } from '@/ai/flows/cashier-flow';
+import { autoVerifyIdWithAI as autoVerifyIdWithAIFlow } from '@/ai/flows/verification-flow';
+import { sendNewCampaignNotifications as sendNewCampaignNotificationsFlow } from '@/ai/flows/notification-flow';
+import { updateCartFlow } from '@/ai/flows/cart-flow';
+import { getFeedFlow } from '@/ai/flows/feed-flow';
+import { createCampaign as createCampaignFlow } from '@/ai/flows/campaign-flow';
 
 
 // =================================
@@ -32,34 +31,34 @@ import { ai } from '@/ai/genkit';
 // =================================
 
 export async function getOrCreateUser(firebaseUser: FirebaseUserInput): Promise<User | null> {
-  return authFlow.getOrCreateUserFlow(firebaseUser);
+  return getOrCreateUserFlow(firebaseUser);
 }
 
 export async function updateUser(userId: string, updates: Partial<User | { 'profileSetupData.serviceRadius': number } | { 'profileSetupData.cashierBoxes': CashierBox[] }>) {
-    await profileFlow.updateUserFlow({ userId, updates });
+    await updateUserFlow({ userId, updates });
     revalidatePath('/profile');
     revalidatePath('/admin');
 }
 
 export async function deleteUser(userId: string) {
-    await profileFlow.deleteUserFlow({ userId });
+    await deleteUserFlow({ userId });
     revalidatePath('/admin');
 }
 
 export async function getPublicProfile(userId: string): Promise<Partial<User> | null> {
-    return profileFlow.getPublicProfileFlow({ userId });
+    return getPublicProfileFlow({ userId });
 }
 
 export async function getFeed(params: { limitNum: number, startAfterDocId?: string }) {
-    return feedFlow.getFeedFlow(params);
+    return getFeedFlow(params);
 }
 
 export async function getProfileGallery(params: { userId: string; limitNum: number, startAfterDocId?: string }) {
-  return profileFlow.getProfileGalleryFlow(params);
+  return getProfileGalleryFlow(params);
 }
 
 export async function getProfileProducts(params: { userId: string; limitNum: number, startAfterDocId?: string }) {
-  return profileFlow.getProfileProductsFlow(params);
+  return getProfileProductsFlow(params);
 }
 
 
@@ -68,43 +67,43 @@ export async function getProfileProducts(params: { userId: string; limitNum: num
 // =================================
 
 export async function completeInitialSetup(userId: string, data: any): Promise<User | null> {
-    const user = await profileFlow.completeInitialSetupFlow({ userId, ...data });
+    const user = await completeInitialSetupFlow({ userId, ...data });
     revalidatePath('/initial-setup');
     revalidatePath('/');
     return user;
 }
 
 export async function checkIdUniqueness(data: { idNumber: string; country: string; currentUserId: string; }): Promise<boolean> {
-    return profileFlow.checkIdUniquenessFlow(data);
+    return checkIdUniquenessFlow(data);
 }
 
 export async function updateFullProfile(userId: string, profileData: ProfileSetupData, userType: User['type']) {
-    await profileFlow.updateUserFlow({ userId, updates: { profileSetupData: profileData, type: userType } });
+    await updateUserFlow({ userId, updates: { profileSetupData: profileData, type: userType } });
     revalidatePath('/profile-setup/details');
 }
 
 export async function updateUserProfileImage(userId: string, dataUrl: string) {
-    await profileFlow.updateUserFlow({ userId, updates: { profileImage: dataUrl } });
+    await updateUserFlow({ userId, updates: { profileImage: dataUrl } });
     revalidatePath('/profile');
 }
 
 export async function toggleGps(userId: string) {
-    await profileFlow.toggleGpsFlow({ userId });
+    await toggleGpsFlow({ userId });
     revalidatePath('/profile');
 }
 
 export async function deactivateTransactions(userId: string) {
-    await profileFlow.updateUserFlow({ userId, updates: { isTransactionsActive: false } });
+    await updateUserFlow({ userId, updates: { isTransactionsActive: false } });
     revalidatePath('/transactions/settings');
 }
 
 export async function verifyUserId(userId: string) {
-    await profileFlow.updateUserFlow({ userId, updates: { idVerificationStatus: 'verified', verified: true } });
+    await updateUserFlow({ userId, updates: { idVerificationStatus: 'verified', verified: true } });
     revalidatePath('/admin');
 }
 
 export async function rejectUserId(userId: string) {
-    await profileFlow.updateUserFlow({
+    await updateUserFlow({
         userId,
         updates: {
             idVerificationStatus: 'rejected',
@@ -123,7 +122,7 @@ export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput
     isCompany: user.profileSetupData?.providerType === 'company',
   };
   try {
-      return await verificationFlow.autoVerifyIdWithAIFlow(input);
+      return await autoVerifyIdWithAIFlow(input);
   } catch (e) {
       console.error("AI flow failed:", e);
       return null;
@@ -136,33 +135,33 @@ export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput
 // =================================
 
 export async function createPublication(data: CreatePublicationInput) {
-    await publicationFlow.createPublicationFlow(data);
+    await createPublicationFlow(data);
     revalidatePath('/profile/publications');
 }
 
 export async function createProduct(data: CreateProductInput) {
-    await publicationFlow.createProductFlow(data);
+    await createProductFlow(data);
     revalidatePath('/profile/catalog');
 }
 
 export async function removeGalleryImage(ownerId: string, imageId: string) {
-    await publicationFlow.removeGalleryImageFlow({ imageId });
+    await removeGalleryImageFlow({ imageId });
     revalidatePath(`/companies/${ownerId}`);
     revalidatePath('/profile/publications');
 }
 
 export async function updateGalleryImage(data: { ownerId: string; imageId: string; updates: { description?: string; imageDataUri?: string; }; }) {
-    await publicationFlow.updateGalleryImageFlow({ imageId: data.imageId, updates: data.updates });
+    await updateGalleryImageFlow({ imageId: data.imageId, updates: data.updates });
     revalidatePath(`/companies/${data.ownerId}`);
 }
 
 export async function addCommentToImage(data: { ownerId: string; imageId: string; commentText: string; author: { id: string; name: string; profileImage: string; }; }) {
-    await publicationFlow.addCommentToImageFlow({ imageId: data.imageId, commentText: data.commentText, author: data.author });
+    await addCommentToImageFlow({ imageId: data.imageId, commentText: data.commentText, author: data.author });
     revalidatePath(`/companies/${data.ownerId}`);
 }
 
 export async function removeCommentFromImage(data: { ownerId: string; imageId: string; commentIndex: number; }) {
-    await publicationFlow.removeCommentFromImageFlow({ imageId: data.imageId, commentIndex: data.commentIndex });
+    await removeCommentFromImageFlow({ imageId: data.imageId, commentIndex: data.commentIndex });
     revalidatePath(`/companies/${data.ownerId}`);
 }
 
@@ -171,13 +170,13 @@ export async function removeCommentFromImage(data: { ownerId: string; imageId: s
 // =================================
 
 export async function sendMessage(input: { conversationId: string; senderId: string; recipientId: string; text?: string; location?: { lat: number; lon: number; }; proposal?: any; }): Promise<string> {
-  await messageFlow.sendMessage(input);
+  await sendMessageFlow(input);
   revalidatePath(`/messages/${input.conversationId}`);
   return input.conversationId;
 }
 
 export async function acceptProposal(conversationId: string, messageId: string, acceptorId: string) {
-    await messageFlow.acceptProposal({ conversationId, messageId, acceptorId });
+    await acceptProposalFlow({ conversationId, messageId, acceptorId });
     revalidatePath(`/messages/${conversationId}`);
     revalidatePath('/transactions');
 }
@@ -187,53 +186,53 @@ export async function acceptProposal(conversationId: string, messageId: string, 
 // =================================
 
 export async function createAppointmentRequest(data: {providerId: string, clientId: string, date: string, details: string, amount: number}) {
-    await transactionFlow.createAppointmentRequest(data);
+    await createAppointmentRequestFlow(data);
     revalidatePath('/transactions');
 }
 
 export async function completeWork(data: { transactionId: string; userId: string; }) {
-  await transactionFlow.completeWork(data);
+  await completeWorkFlow(data);
   revalidatePath('/transactions');
 }
 
 export async function confirmWorkReceived(data: { transactionId: string; userId: string; rating: number; comment: string; }) {
-  await transactionFlow.confirmWorkReceived(data);
+  await confirmWorkReceivedFlow(data);
   revalidatePath('/transactions');
 }
 
 export async function payCommitment(data: { transactionId: string, userId: string, paymentDetails: any }) {
-  await transactionFlow.payCommitment(data);
+  await payCommitmentFlow(data);
   revalidatePath('/transactions');
 }
 
 
 export async function confirmPaymentReceived(data: { transactionId: string; userId: string; fromThirdParty: boolean; }) {
-  await transactionFlow.confirmPaymentReceived(data);
+  await confirmPaymentReceivedFlow(data);
   revalidatePath('/transactions');
 }
 
 export async function sendQuote(data: { transactionId: string; userId: string; breakdown: string; total: number; }) {
-  await transactionFlow.sendQuote(data);
+  await sendQuoteFlow(data);
   revalidatePath('/transactions');
 }
 
 export async function acceptAppointment(data: { transactionId: string; userId: string; }) {
-    await transactionFlow.acceptAppointment(data);
+    await acceptAppointmentFlow(data);
     revalidatePath('/transactions');
 }
 
 export async function startDispute(transactionId: string) {
-  await transactionFlow.startDispute(transactionId);
+  await startDisputeFlow(transactionId);
   revalidatePath('/transactions');
 }
 
 export async function cancelSystemTransaction(transactionId: string) {
-    await transactionFlow.cancelSystemTransaction(transactionId);
+    await cancelSystemTransactionFlow(transactionId);
     revalidatePath('/transactions');
 }
 
 export async function downloadTransactionsPDF(transactions: Transaction[]) {
-  return await transactionFlow.downloadTransactionsPDF(transactions);
+  return await downloadTransactionsPDFFlow(transactions);
 }
 
 export async function checkout(
@@ -244,7 +243,7 @@ export async function checkout(
   recipientInfo?: { name: string; phone: string },
   deliveryAddress?: string
 ) {
-  await transactionFlow.checkout({
+  await checkoutFlow({
     userId,
     providerId,
     deliveryMethod,
@@ -260,7 +259,7 @@ export async function updateCart(
   productId: string,
   newQuantity: number
 ) {
-    await cartFlow.updateCartFlow({ userId, productId, newQuantity });
+    await updateCartFlow({ userId, productId, newQuantity });
     revalidatePath('/'); // Revalidate main page to update cart icon
 }
 
@@ -270,7 +269,7 @@ export async function updateCart(
 // =================================
 
 export async function retryFindDelivery(data: { transactionId: string }) {
-    await deliveryFlow.findDeliveryProvider(data);
+    await findDeliveryProvider(data);
     revalidatePath('/transactions');
 }
 
@@ -284,7 +283,7 @@ export async function assignOwnDelivery(
 }
 
 export async function resolveDeliveryAsPickup(data: { transactionId: string }) {
-  await deliveryFlow.resolveDeliveryAsPickup(data);
+  await resolveDeliveryAsPickupFlow(data);
   revalidatePath('/transactions');
 }
 
@@ -292,22 +291,22 @@ export async function resolveDeliveryAsPickup(data: { transactionId: string }) {
 // AFFILIATION ACTIONS
 // =================================
 export async function requestAffiliation(providerId: string, companyId: string) {
-    await affiliationFlow.requestAffiliationFlow({ providerId, companyId });
+    await requestAffiliationFlow({ providerId, companyId });
     revalidatePath('/admin');
 }
 
 export async function approveAffiliation(affiliationId: string, actorId: string) {
-    await affiliationFlow.approveAffiliationFlow({ affiliationId, actorId });
+    await approveAffiliationFlow({ affiliationId, actorId });
     revalidatePath('/admin');
 }
 
 export async function rejectAffiliation(affiliationId: string, actorId: string) {
-    await affiliationFlow.rejectAffiliationFlow({ affiliationId, actorId });
+    await rejectAffiliationFlow({ affiliationId, actorId });
     revalidatePath('/admin');
 }
 
 export async function revokeAffiliation(affiliationId: string, actorId: string) {
-    await affiliationFlow.revokeAffiliationFlow({ affiliationId, actorId });
+    await revokeAffiliationFlow({ affiliationId, actorId });
     revalidatePath('/admin');
 }
 
@@ -317,7 +316,7 @@ export async function revokeAffiliation(affiliationId: string, actorId: string) 
 
 export async function createCampaign(userId: string, campaignData: any) {
     const input = { userId, ...campaignData };
-    await campaignFlow.createCampaign(input);
+    await createCampaignFlow(input);
     revalidatePath('/profile');
 }
 
@@ -327,7 +326,7 @@ export async function createCampaign(userId: string, campaignData: any) {
 // =================================
 
 export async function toggleUserPause(userId: string, isCurrentlyPaused: boolean) {
-  await profileFlow.updateUserFlow({ userId, updates: { isPaused: !isCurrentlyPaused } });
+  await updateUserFlow({ userId, updates: { isPaused: !isCurrentlyPaused } });
   revalidatePath('/admin');
 }
 
@@ -355,7 +354,7 @@ export async function verifyCampaignPayment(
 export async function sendNewCampaignNotifications(data: {
   campaignId: string;
 }) {
-  await notificationFlow.sendNewCampaignNotifications(data);
+  await sendNewCampaignNotificationsFlow(data);
 }
 
 // =================================
@@ -363,7 +362,7 @@ export async function sendNewCampaignNotifications(data: {
 // =================================
 
 export async function addCashierBox(userId: string, name: string, password: string) {
-    const newBox = await cashierFlow.createCashierBox({ userId, name, password });
+    const newBox = await createCashierBoxFlow({ userId, name, password });
     
     const { getFirebaseAdmin } = await import('./firebase-server');
     const { firestore } = getFirebaseAdmin();
@@ -403,7 +402,7 @@ export async function removeCashierBox(userId: string, boxId: string) {
 }
 
 export async function regenerateCashierBoxQr(userId: string, boxId: string) {
-    const newQrData = await cashierFlow.regenerateCashierQr({ userId, boxId });
+    const newQrData = await regenerateCashierQrFlow({ userId, boxId });
     await updateCashierBox(userId, boxId, newQrData as Partial<CashierBox>);
 }
 
@@ -482,7 +481,7 @@ export async function confirmMobilePayment(sessionId: string) {
 }
 
 export async function finalizeQrSession(sessionId: string) {
-    await transactionFlow.processDirectPayment({ sessionId });
+    await processDirectPayment({ sessionId });
     const { getFirebaseAdmin } = await import('./firebase-server');
     const { firestore } = getFirebaseAdmin();
     await firestore.collection('qr_sessions').doc(sessionId).update({

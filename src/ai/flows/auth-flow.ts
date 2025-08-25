@@ -47,7 +47,7 @@ export const getOrCreateUserFlow = ai.defineFlow(
         // Create a new, minimal user object.
         const newUser: User = {
           id: firebaseUser.uid,
-          coraboId: `${firebaseUser.displayName?.split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '') || 'user'}${Math.floor(1000 + Math.random() * 9000)}`,
+          coraboId: `${(firebaseUser.email || 'user').split('@')[0].replace(/[^a-z0-9]/g, '')}${Math.floor(1000 + Math.random() * 9000)}`,
           name: firebaseUser.displayName || 'Nuevo Usuario',
           email: firebaseUser.email || '',
           profileImage:
