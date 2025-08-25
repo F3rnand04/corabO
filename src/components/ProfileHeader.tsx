@@ -73,7 +73,7 @@ function ProfileStats({ user, metrics }: { user: any, metrics: any }) {
   const { paymentSpeed, responseTime, reputation, effectiveness } = metrics;
   const isNewProvider = responseTime === 'Nuevo';
   
-  const paymentSpeedColor = (speed: string | undefined) => {
+  const paymentSpeedColor = (speed: string | undefined | null) => {
     if (!speed) return 'text-muted-foreground';
     if (speed.includes('+')) {
       if (parseInt(speed.replace('+', '')) >= 45) return 'text-red-500';
@@ -97,11 +97,15 @@ function ProfileStats({ user, metrics }: { user: any, metrics: any }) {
           <TrendingUp className="w-4 h-4 text-green-500"/>
           <span className="font-semibold text-foreground">{effectiveness.toFixed(0)}%</span>
         </div>
-        <div className="w-px h-3 bg-border mx-1"></div>
-        <div className={cn("flex items-center gap-1 font-semibold", paymentSpeedColor(paymentSpeed))}>
-          <Timer className="w-4 h-4"/>
-          <span>{paymentSpeed || 'N/A'}</span>
-        </div>
+        {paymentSpeed && (
+            <>
+            <div className="w-px h-3 bg-border mx-1"></div>
+            <div className={cn("flex items-center gap-1 font-semibold", paymentSpeedColor(paymentSpeed))}>
+            <Timer className="w-4 h-4"/>
+            <span>{paymentSpeed || 'N/A'}</span>
+            </div>
+            </>
+        )}
       </>
       )}
     </div>
@@ -124,7 +128,7 @@ export function ProfileHeader() {
   const isProvider = currentUser.type === 'provider';
   const isCompany = isProvider && currentUser.profileSetupData?.providerType === 'company';
   
-  const metrics = useMemo(() => getUserMetrics(currentUser.id), [currentUser.id, getUserMetrics]);
+  const metrics = useMemo(() => getUserMetrics(currentUser.id), [currentUser.id, getUserMetrics, transactions]);
   
   const displayName = currentUser.profileSetupData?.useUsername && currentUser.profileSetupData.username 
     ? currentUser.profileSetupData.username 

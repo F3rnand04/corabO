@@ -2,6 +2,8 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo } from 'react';
+import { differenceInHours, formatDistanceToNowStrict } from 'date-fns';
+import { es } from 'date-fns/locale';
 import type { User, CartItem, Transaction, GalleryImage, Conversation, TempRecipientInfo, FirebaseUserInput } from '@/lib/types';
 import type { User as FirebaseUser } from 'firebase/auth';
 
@@ -64,7 +66,12 @@ interface CoraboContextValue {
   qrSession: any;
 
   fetchUser: (userId: string) => User | null;
-  getUserMetrics: (userId: string) => any;
+  getUserMetrics: (userId: string) => {
+    reputation: number;
+    effectiveness: number;
+    responseTime: string;
+    paymentSpeed: string | null;
+  };
   setSearchQuery: (query: string) => void;
   clearSearchHistory: () => void;
   setCategoryFilter: (category: string | null) => void;
@@ -113,6 +120,48 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     console.log("syncCoraboUser called, but is currently a no-op.");
   }, []);
   
+  const getUserMetrics = useCallback((userId: string) => {
+    const userTransactions = transactions.filter(tx => tx.providerId === userId || tx.clientId === userId);
+
+    if (userTransactions.length === 0) {
+      return { reputation: 5.0, effectiveness: 100, responseTime: 'Nuevo', paymentSpeed: null };
+    }
+
+    // Reputation (as provider)
+    const ratedTransactions = userTransactions.filter(tx => tx.providerId === userId && tx.details.clientRating);
+    const totalRating = ratedTransactions.reduce((acc, tx) => acc + (tx.details.clientRating || 0), 0);
+    const reputation = ratedTransactions.length > 0 ? totalRating / ratedTransactions.length : 5.0;
+
+    // Effectiveness (as provider)
+    const providerAgreements = userTransactions.filter(tx => tx.providerId === userId && (tx.type === 'Servicio' || tx.type === 'Compra Directa'));
+    const completedAgreements = providerAgreements.filter(tx => tx.status === 'Pagado' || tx.status === 'Resuelto');
+    const effectiveness = providerAgreements.length > 0 ? (completedAgreements.length / providerAgreements.length) * 100 : 100;
+    
+    // Response Time (as provider)
+    const quoteRequests = userTransactions.filter(tx => tx.providerId === userId && tx.status === 'Cotización Recibida');
+    // NOTE: This is a simplified simulation. A real implementation would compare request and response timestamps.
+    const responseTime = quoteRequests.length > 5 ? 'Rápido' : 'Normal';
+
+    // Payment Speed (as client)
+    const paidTransactions = userTransactions.filter(tx => tx.clientId === userId && tx.status === 'Pagado');
+    let totalPaymentHours = 0;
+    paidTransactions.forEach(tx => {
+        if (tx.details.paymentRequestedAt && tx.details.paymentSentAt) {
+            totalPaymentHours += differenceInHours(new Date(tx.details.paymentSentAt), new Date(tx.details.paymentRequestedAt));
+        }
+    });
+    const avgPaymentHours = paidTransactions.length > 0 ? totalPaymentHours / paidTransactions.length : 0;
+    
+    let paymentSpeed: string | null = null;
+    if (paidTransactions.length > 0) {
+        if (avgPaymentHours <= 1) paymentSpeed = '< 1 hr';
+        else if (avgPaymentHours <= 24) paymentSpeed = '< 24 hrs';
+        else paymentSpeed = `+${Math.round(avgPaymentHours / 24)} días`;
+    }
+
+    return { reputation, effectiveness, responseTime, paymentSpeed };
+  }, [transactions]);
+  
   const value: CoraboContextValue = {
     currentUser, isLoadingUser, syncCoraboUser,
     users, transactions, conversations, allPublications,
@@ -129,7 +178,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     getAgendaEvents: () => [],
     setDeliveryAddress: _setDeliveryAddress,
     setDeliveryAddressToCurrent: () => {},
-    getUserMetrics: () => ({ reputation: 5, effectiveness: 100, responseTime: 'Rápido', paymentSpeed: '<1 hr' }),
+    getUserMetrics,
     fetchUser: () => mockUser,
     getDistanceToProvider: () => '5 km',
     setTempRecipientInfo: _setTempRecipientInfo,
