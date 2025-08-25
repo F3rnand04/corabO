@@ -7,8 +7,8 @@
  * from client components MUST go through the functions defined and exported in this file.
  * All functions exported from this file are marked as server actions and will only execute on the server.
  */
-import { runFlow } from '@genkit-ai/core'; // Example of importing a Genkit flow runner
-import type { FirebaseUserInput, User, ProfileSetupData, Transaction, Product, CartItem, GalleryImage, CreatePublicationInput, CreateProductInput, VerificationOutput, CashierBox, QrSession, TempRecipientInfo } from '@/lib/types'; // Import necessary types
+import { runFlow } from '@genkit-ai/core';
+import type { User, ProfileSetupData, Transaction, Product, CartItem, GalleryImage, CreatePublicationInput, CreateProductInput, VerificationOutput, CashierBox, QrSession, TempRecipientInfo, FirebaseUserInput } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 
 // Import all flows statically, using aliases to prevent name collisions.
@@ -63,17 +63,18 @@ import {
     createCashierBox as createCashierBoxFlow, 
     regenerateCashierQr as regenerateCashierQrFlow
 } from '@/ai/flows/cashier-flow';
-import { autoVerifyIdWithAI as autoVerifyIdFlowImported } from '@/ai/flows/verification-flow';
+import { autoVerifyIdWithAI as autoVerifyIdWithAIFlow } from '@/ai/flows/verification-flow';
 import { sendNewCampaignNotifications as sendNewCampaignNotificationsFlow } from '@/ai/flows/notification-flow';
 import { updateCartFlow } from '@/ai/flows/cart-flow';
 import { getFeedFlow } from '@/ai/flows/feed-flow';
+import { createCampaign as createCampaignFlow } from '@/ai/flows/campaign-flow';
 
 // =================================
 // AUTH & USER ACTIONS
 // =================================
 
 export async function getOrCreateUser(firebaseUser: FirebaseUserInput): Promise<User | null> {
- return await getOrCreateUserFlow(firebaseUser);
+  return await runFlow(getOrCreateUserFlow, firebaseUser);
 }
 
 export async function updateUser(userId: string, updates: Partial<User | { 'profileSetupData.serviceRadius': number } | { 'profileSetupData.cashierBoxes': CashierBox[] }>) {
@@ -111,7 +112,7 @@ export async function checkIdUniqueness(data: { idNumber: string; country: strin
 }
 
 export async function updateFullProfile(userId: string, profileData: ProfileSetupData, userType: User['type']) {
-    await updateUser(userId, { profileSetupData: profileData, type: userType });
+    await updateUser(userId, { profileSetupData, type: userType });
     revalidatePath('/profile-setup/details');
 }
 
@@ -146,13 +147,13 @@ export async function rejectUserId(userId: string) {
 export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput | null> {
     const input = {
       userId: user.id,
-      nameInRecord: `${'\'\'\''}${user.name} ${user.lastName || ''}`.trim(),
+      nameInRecord: `${user.name} ${user.lastName || ''}`.trim(),
       idInRecord: user.idNumber || '',
       documentImageUrl: user.idDocumentUrl || '',
       isCompany: user.profileSetupData?.providerType === 'company',
     };
     try {
-        return await runFlow(autoVerifyIdFlowImported, input);
+        return await runFlow(autoVerifyIdWithAIFlow, input);
     } catch (e) {
         console.error("AI flow failed:", e);
         return null;
@@ -338,6 +339,17 @@ export async function revokeAffiliation(affiliationId: string, actorId: string) 
     await runFlow(revokeAffiliationFlow, { affiliationId, actorId });
     revalidatePath('/admin');
 }
+
+// =================================
+// CAMPAIGN ACTIONS
+// =================================
+
+export async function createCampaign(userId: string, campaignData: any) {
+    const input = { userId, ...campaignData };
+    await runFlow(createCampaignFlow, input);
+    revalidatePath('/profile');
+}
+
 
 // =================================
 // ADMIN & PAYMENT ACTIONS
