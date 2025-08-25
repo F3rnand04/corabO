@@ -2,18 +2,18 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef, useMemo } from 'react';
-import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest, PublicationOwner, CreatePublicationInput, CreateProductInput, QrSession, TempRecipientInfo, CashierBox } from '@/lib/types';
+import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest, PublicationOwner, CreatePublicationInput, CreateProductInput, QrSession, TempRecipientInfo, CashierBox, FirebaseUserInput } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast"
 import { getFirestoreDb } from '@/lib/firebase';
 import { doc, onSnapshot, collection, query, where, orderBy, Unsubscribe, writeBatch, deleteField } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import * as Actions from '@/lib/actions';
-import { useAuth } from '@/components/auth/AuthProvider';
 
 interface CoraboContextValue {
   currentUser: User | null;
   isLoadingUser: boolean; 
-  setIsLoadingUser: (isLoading: boolean) => void;
+  syncCoraboUser: (firebaseUser: FirebaseUserInput) => Promise<void>;
+  clearCoraboUser: () => void;
   
   users: User[];
   transactions: Transaction[];
@@ -31,7 +31,6 @@ interface CoraboContextValue {
   cart: CartItem[];
   qrSession: QrSession | null;
 
-  setCurrentUser: (user: User | null) => void;
   fetchUser: (userId: string) => User | null;
   getUserMetrics: (userId: string) => UserMetrics;
   setSearchQuery: (query: string) => void;
@@ -69,7 +68,6 @@ interface CoraboProviderProps {
 
 export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   const { toast } = useToast();
-  const { firebaseUser, isLoadingAuth } = useAuth();
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true); 
@@ -106,6 +104,25 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
       _setTempRecipientInfo(info);
   }, []);
 
+  const syncCoraboUser = useCallback(async (firebaseUser: FirebaseUserInput) => {
+    setIsLoadingUser(true);
+    try {
+        const coraboProfile = await Actions.getOrCreateUser(firebaseUser);
+        setCurrentUser(coraboProfile);
+    } catch (e) {
+        console.error("Fatal error syncing user profile:", e);
+        toast({ variant: 'destructive', title: "Error de Sincronización", description: "No se pudo cargar tu perfil de Corabo. Intenta recargar." });
+        setCurrentUser(null);
+    } finally {
+        setIsLoadingUser(false);
+    }
+  }, [toast]);
+  
+  const clearCoraboUser = useCallback(() => {
+    setCurrentUser(null);
+    setIsLoadingUser(false);
+  }, []);
+
   useEffect(() => {
     const savedAddress = sessionStorage.getItem('coraboDeliveryAddress');
     if (savedAddress) _setDeliveryAddress(savedAddress);
@@ -136,43 +153,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         return null;
   }, [users]);
   
-  // This effect listens to the authentication state from AuthProvider
-  useEffect(() => {
-    if (isLoadingAuth) {
-        setIsLoadingUser(true);
-        return;
-    }
-    if (!firebaseUser) {
-        setCurrentUser(null);
-        setIsLoadingUser(false);
-        return;
-    }
-
-    // At this point, firebaseUser is available. We now listen to the specific user's document.
-    const db = getFirestoreDb();
-    const unsubUser = onSnapshot(doc(db, "users", firebaseUser.uid), 
-        (docSnap) => {
-            if (docSnap.exists()) {
-                setCurrentUser(docSnap.data() as User);
-            } else {
-                // This case should be handled by getOrCreateUser on login, but it's a safeguard.
-                console.warn("User document not found for logged-in user, login flow might be incomplete.");
-                setCurrentUser(null);
-            }
-            setIsLoadingUser(false);
-        },
-        (error) => {
-            console.error("Error listening to user document:", error);
-            toast({ variant: "destructive", title: "Error de Conexión", description: "No se pudo sincronizar tu perfil." });
-            setIsLoadingUser(false);
-        }
-    );
-
-    return () => unsubUser();
-    
-  }, [firebaseUser, isLoadingAuth, toast]);
-
-
+  
   useEffect(() => {
     const db = getFirestoreDb();
     if (!db) return;
@@ -280,8 +261,8 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     const value: CoraboContextValue = {
         currentUser,
         isLoadingUser, 
-        setIsLoadingUser,
-        setCurrentUser,
+        syncCoraboUser,
+        clearCoraboUser,
         users, transactions, conversations, allPublications,
         searchQuery, categoryFilter, contacts, searchHistory, 
         deliveryAddress, exchangeRate, currentUserLocation, tempRecipientInfo, activeCartForCheckout,
