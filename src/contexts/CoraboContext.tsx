@@ -105,7 +105,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
             // Call the getOrCreateUser action to create the document.
             Actions.getOrCreateUser(firebaseUser).then(coraboUser => {
               if (coraboUser) {
-                setCurrentUser(coraboUser as User);
+                setCurrentUser(coraboUser);
               } else {
                 toast({ variant: "destructive", title: "Error de Perfil", description: "No se pudo crear tu perfil de Corabo. Intenta recargar." });
                 setCurrentUser(null);
@@ -189,7 +189,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         setUsers(userList);
         userList.forEach(user => userCache.current.set(user.id, user));
     }));
-    
+
     unsubscribes.push(onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
         const pubs = snapshot.docs.map(doc => doc.data() as GalleryImage);
         setAllPublications(pubs);
@@ -197,7 +197,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
 
     if (currentUser?.id) {
         const userId = currentUser.id;
-        
+
         const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userId));
         const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userId), orderBy("lastUpdated", "desc"));
 
@@ -210,7 +210,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
 
     return () => unsubscribes.forEach(unsub => unsub());
   }, [currentUser?.id]);
-  
+
   const getDistanceToProvider = useCallback((provider: User) => {
       if (!currentUserLocation || !provider.profileSetupData?.location) return null;
       const [lat2, lon2] = provider.profileSetupData.location.split(',').map(Number);

@@ -3,11 +3,12 @@
 /**
  * @fileOverview Server Actions for the Corabo application.
  * This file serves as the PRIMARY and SOLE bridge between client-side components and server-side Genkit flows.
+ * This means ALL data fetching, mutations, and interactions with the backend (Firebase, Genkit flows, etc.)
+ * from client components MUST go through the functions defined and exported in this file.
  * All functions exported from this file are marked as server actions and will only execute on the server.
- * Client components should ONLY import from this file to interact with the backend.
  */
-import { runFlow } from '@genkit-ai/core';
-import type { FirebaseUserInput, User, ProfileSetupData, Transaction, Product, CartItem, GalleryImage, CreatePublicationInput, CreateProductInput, VerificationOutput, CashierBox, QrSession, TempRecipientInfo } from '@/lib/types';
+import { runFlow } from '@genkit-ai/core'; // Example of importing a Genkit flow runner
+import type { FirebaseUserInput, User, ProfileSetupData, Transaction, Product, CartItem, GalleryImage, CreatePublicationInput, CreateProductInput, VerificationOutput, CashierBox, QrSession, TempRecipientInfo } from '@/lib/types'; // Import necessary types
 import { revalidatePath } from 'next/cache';
 
 // Import all flows statically, using aliases to prevent name collisions.
@@ -62,7 +63,7 @@ import {
     createCashierBox as createCashierBoxFlow, 
     regenerateCashierQr as regenerateCashierQrFlow
 } from '@/ai/flows/cashier-flow';
-import { autoVerifyIdWithAIFlow } from '@/ai/flows/verification-flow';
+import { autoVerifyIdWithAI as autoVerifyIdFlowImported } from '@/ai/flows/verification-flow';
 import { sendNewCampaignNotifications as sendNewCampaignNotificationsFlow } from '@/ai/flows/notification-flow';
 import { updateCartFlow } from '@/ai/flows/cart-flow';
 import { getFeedFlow } from '@/ai/flows/feed-flow';
@@ -72,7 +73,7 @@ import { getFeedFlow } from '@/ai/flows/feed-flow';
 // =================================
 
 export async function getOrCreateUser(firebaseUser: FirebaseUserInput): Promise<User | null> {
-  return await runFlow(getOrCreateUserFlow, firebaseUser);
+ return await getOrCreateUserFlow(firebaseUser);
 }
 
 export async function updateUser(userId: string, updates: Partial<User | { 'profileSetupData.serviceRadius': number } | { 'profileSetupData.cashierBoxes': CashierBox[] }>) {
@@ -110,7 +111,7 @@ export async function checkIdUniqueness(data: { idNumber: string; country: strin
 }
 
 export async function updateFullProfile(userId: string, profileData: ProfileSetupData, userType: User['type']) {
-    await updateUser(userId, { profileSetupData, type: userType });
+    await updateUser(userId, { profileSetupData: profileData, type: userType });
     revalidatePath('/profile-setup/details');
 }
 
@@ -151,7 +152,7 @@ export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput
       isCompany: user.profileSetupData?.providerType === 'company',
     };
     try {
-        return await runFlow(autoVerifyIdWithAIFlow, input);
+        return await runFlow(autoVerifyIdFlowImported, input);
     } catch (e) {
         console.error("AI flow failed:", e);
         return null;
