@@ -9,7 +9,8 @@
     "genkit:watch": "genkit start --watch",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "next lint"
   },
   "engines": {
     "node": "18"

@@ -24,8 +24,12 @@ function LayoutController({ children }: { children: React.ReactNode }) {
       return; 
     }
 
-    const isPublicPath = publicPaths.some(path => pathname.startsWith(path));
-    const isSetupPath = pathname === '/initial-setup';
+    // Asegúrate de que pathname no es null antes de usarlo
+    const currentPath = pathname || ''; // Usa una cadena vacía si pathname es null
+
+    const isPublicPath = publicPaths.some(path => currentPath.startsWith(path));
+    const isSetupPath = currentPath === '/initial-setup';
+
 
     if (currentUser) {
       // Si el usuario está logueado...
@@ -59,15 +63,15 @@ function LayoutController({ children }: { children: React.ReactNode }) {
   }
 
   // Si no hay usuario y estamos en una ruta pública, renderiza la página (ej. /login).
-  const isAllowedPublic = !currentUser && publicPaths.some(path => pathname.startsWith(path));
+  const isAllowedPublic = !currentUser && publicPaths.some(path => (pathname || '').startsWith(path));
   if (isAllowedPublic) {
       return <>{children}</>;
   }
-  
+
   // *** CORRECCIÓN CLAVE ***
   // Si hay un usuario pero está en el proceso de setup, permite renderizar la página de setup.
   // Esta condición faltaba y era la causa del bucle de carga.
-  const isAllowedSetup = currentUser && !currentUser.isInitialSetupComplete && pathname === '/initial-setup';
+  const isAllowedSetup = currentUser && !currentUser.isInitialSetupComplete && (pathname === '/initial-setup');
   if(isAllowedSetup) {
       return <>{children}</>;
   }
@@ -83,7 +87,7 @@ function LayoutController({ children }: { children: React.ReactNode }) {
         '/admin',
         '/videos',
       ];
-      const shouldHideFooter = hideFooterForPaths.some(path => pathname.startsWith(path));
+      const shouldHideFooter = hideFooterForPaths.some(path => (pathname || '').startsWith(path));
 
       return (
         <div className="flex flex-col min-h-screen">
