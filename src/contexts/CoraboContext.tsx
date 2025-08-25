@@ -1,21 +1,27 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo, useEffect } from 'react';
 import { differenceInMinutes, formatDistanceToNowStrict } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { User, CartItem, Transaction, GalleryImage, Conversation, TempRecipientInfo, FirebaseUserInput } from '@/lib/types';
 import type { User as FirebaseUser } from 'firebase/auth';
+import { getFirestoreDb }from '@/lib/firebase';
+import { collection, onSnapshot, query, where } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
+import { haversineDistance } from '@/lib/utils';
+import { credicoraLevels, credicoraCompanyLevels } from '@/lib/types';
 
-// --- MOCK DATA TO FORCE RENDER ---
+
+// --- MOCK USER FOR BYPASS ---
 const mockUser: User = {
-  id: 'user_placeholder_id',
+  id: 'Sy0C3G4a3a3d5G0e6F7g', // A real ID from your Firestore test data
   coraboId: 'corabo123',
   name: 'Usuario de Prueba',
   lastName: 'Corabo',
   email: 'test@corabo.app',
-  profileImage: 'https://i.pravatar.cc/150?u=user_placeholder_id',
-  type: 'client',
+  profileImage: 'https://i.pravatar.cc/150?u=testuser',
+  type: 'provider',
   reputation: 5,
   effectiveness: 100,
   isInitialSetupComplete: true,
@@ -36,13 +42,15 @@ const mockUser: User = {
     transactionsForNextLevel: 25,
   },
   profileSetupData: {
-      username: 'Usuario de Prueba',
+      username: 'Proveedor de Prueba',
       specialty: 'Probando la plataforma',
       providerType: 'professional',
-      offerType: 'both'
+      offerType: 'both',
+      hasPhysicalLocation: true,
+      location: "9.9678, -67.3622",
   }
 };
-// --- END MOCK DATA ---
+// --- END MOCK ---
 
 interface CoraboContextValue {
   currentUser: User | null;
@@ -95,17 +103,21 @@ interface CoraboProviderProps {
 }
 
 export const CoraboProvider = ({ children }: CoraboProviderProps) => {
-  // We force the user to be loaded and set a mock user.
-  const [currentUser, setCurrentUser] = useState<User | null>(mockUser);
-  const [isLoadingUser, setIsLoadingUser] = useState(false); // FORCED TO FALSE
+  const { toast } = useToast();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
 
-  // The rest of the state remains for the app to function minimally
-  const [users, setUsers] = useState<User[]>([mockUser]);
+  // Real-time data states
+  const [users, setUsers] = useState<User[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [allPublications, setAllPublications] = useState<GalleryImage[]>([]);
+  
+  // UI and Search states
   const [searchQuery, _setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  
+  // Local state
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   const [contacts, setContacts] = useState<User[]>([]);
   const [deliveryAddress, _setDeliveryAddress] = useState('');
@@ -115,8 +127,50 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   const [activeCartForCheckout, setActiveCartForCheckout] = useState<CartItem[] | null>(null);
   const [qrSession, setQrSession] = useState<any>(null);
 
-  // This function is now a no-op but needs to exist for AuthProvider
+  // ---- NEW: Load mock user and then fetch all data ----
+  useEffect(() => {
+    setIsLoadingUser(true);
+    setCurrentUser(mockUser); // Use the hardcoded mock user
+    
+    // Once the mock user is set, we consider the "session" started
+    const db = getFirestoreDb();
+
+    // Listen to all users
+    const usersUnsub = onSnapshot(collection(db, 'users'), (snapshot) => {
+        setUsers(snapshot.docs.map(doc => doc.data() as User));
+    });
+    
+    // Listen to all publications
+    const pubsUnsub = onSnapshot(collection(db, 'publications'), (snapshot) => {
+        setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage));
+    });
+    
+    // Listen to conversations where the mock user is a participant
+    const convosQuery = query(collection(db, 'conversations'), where('participantIds', 'array-contains', mockUser.id));
+    const convosUnsub = onSnapshot(convosQuery, (snapshot) => {
+        setConversations(snapshot.docs.map(doc => doc.data() as Conversation));
+    });
+
+    // Listen to transactions where the mock user is a participant
+    const transQuery = query(collection(db, 'transactions'), where('participantIds', 'array-contains', mockUser.id));
+    const transUnsub = onSnapshot(transQuery, (snapshot) => {
+        setTransactions(snapshot.docs.map(doc => doc.data() as Transaction));
+    });
+    
+    setIsLoadingUser(false); // Loading is complete
+
+    // Cleanup listeners
+    return () => {
+        usersUnsub();
+        pubsUnsub();
+        convosUnsub();
+        transUnsub();
+    };
+
+  }, []); // Run only once
+
   const syncCoraboUser = useCallback(async (fbUser: FirebaseUser | null) => {
+    // This is now a placeholder, the useEffect handles the data loading
     console.log("syncCoraboUser called, but is currently a no-op.");
   }, []);
   
@@ -124,30 +178,25 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     const userTransactions = transactions.filter(tx => tx.providerId === userId || tx.clientId === userId);
 
     if (userTransactions.length === 0) {
-        // **FIX**: Return a full metrics object with default values for new users
         return { 
             reputation: 5.0, 
             effectiveness: 100, 
-            responseTime: 'N/A', // Use 'N/A' to indicate not applicable yet
+            responseTime: 'N/A',
             paymentSpeed: null 
         };
     }
 
-    // Reputation (as provider)
     const ratedTransactions = userTransactions.filter(tx => tx.providerId === userId && tx.details.clientRating);
     const totalRating = ratedTransactions.reduce((acc, tx) => acc + (tx.details.clientRating || 0), 0);
     const reputation = ratedTransactions.length > 0 ? totalRating / ratedTransactions.length : 5.0;
 
-    // Effectiveness
     const relevantTransactions = userTransactions.filter(tx => tx.type !== 'Sistema' && tx.status !== 'Carrito Activo');
     const successfulTransactions = relevantTransactions.filter(tx => tx.status === 'Pagado' || tx.status === 'Resuelto');
     const effectiveness = relevantTransactions.length > 0 ? (successfulTransactions.length / relevantTransactions.length) * 100 : 100;
     
-    // Response Time (as provider, simulated)
     const quoteRequests = userTransactions.filter(tx => tx.providerId === userId && tx.status === 'Cotización Recibida');
     const responseTime = quoteRequests.length > 5 ? 'Rápido' : 'Normal';
 
-    // Payment Speed (as provider, confirming payments)
     const paidByClientTransactions = userTransactions.filter(tx => tx.providerId === userId && tx.status === 'Pagado' && tx.details.paymentSentAt && tx.details.paymentConfirmationDate);
     let totalPaymentMinutes = 0;
     paidByClientTransactions.forEach(tx => {
@@ -167,12 +216,17 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     return { reputation, effectiveness, responseTime, paymentSpeed };
   }, [transactions]);
   
+  const getCartItems = useMemo((): CartItem[] => {
+      const cartTx = transactions.find(tx => tx.status === 'Carrito Activo');
+      return cartTx?.details.items || [];
+  }, [transactions]);
+
   const value: CoraboContextValue = {
     currentUser, isLoadingUser, syncCoraboUser,
     users, transactions, conversations, allPublications,
     searchQuery, categoryFilter, contacts, searchHistory, 
     deliveryAddress, exchangeRate, currentUserLocation, tempRecipientInfo, activeCartForCheckout,
-    cart: [], qrSession,
+    cart: getCartItems, qrSession,
     setCurrentUser,
     setSearchQuery: (query: string) => _setSearchQuery(query),
     setCategoryFilter,
@@ -184,7 +238,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     setDeliveryAddress: _setDeliveryAddress,
     setDeliveryAddressToCurrent: () => {},
     getUserMetrics,
-    fetchUser: () => mockUser,
+    fetchUser: (userId: string) => users.find(u => u.id === userId) || null,
     getDistanceToProvider: () => '5 km',
     setTempRecipientInfo: _setTempRecipientInfo,
     setActiveCartForCheckout,

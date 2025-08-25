@@ -18,10 +18,11 @@ type AuthProviderProps = {
 };
 
 export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps) => {
-  // This provider is now completely neutered. It does nothing but render its children.
-  const value = {
+  // This provider is now completely neutered. It does not manage auth state.
+  // It simply provides a consistent context shape to prevent the app from crashing.
+  const value: AuthContextType = {
     firebaseUser: null,
-    isLoadingAuth: false, // FORCED TO FALSE
+    isLoadingAuth: false, // FORCED to false to prevent loading spinners.
     logout: async () => { console.log("Logout no-op"); },
   };
   

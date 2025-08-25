@@ -39,7 +39,7 @@ export default function LoginPage() {
             </div>
             <CardTitle className="text-2xl">Mantenimiento</CardTitle>
             <CardDescription>
-                El sistema de autenticación está siendo depurado. Por favor, intente más tarde.
+                El sistema de autenticación está siendo depurado. Por ahora, se te ha asignado un perfil de prueba para que puedas navegar la aplicación.
             </CardDescription>
         </CardHeader>
         <CardContent>
