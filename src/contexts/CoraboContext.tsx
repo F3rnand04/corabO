@@ -9,8 +9,6 @@ import { getFirestoreDb } from '@/lib/firebase';
 import { doc, onSnapshot, collection, query, where, orderBy, Unsubscribe, writeBatch, deleteField } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import * as Actions from '@/lib/actions';
-import { useAuth } from '@/components/auth/AuthProvider';
-
 
 interface CoraboContextValue {
   currentUser: User | null;
@@ -79,7 +77,6 @@ interface CoraboProviderProps {
 
 export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   const { toast } = useToast();
-  const { firebaseUser, isLoadingAuth } = useAuth(); // Depend on AuthProvider
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   
@@ -130,15 +127,6 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         setIsLoadingUser(false);
     }
   }, [toast]);
-  
-  // Sync user profile when firebaseUser changes from AuthProvider
-  useEffect(() => {
-    // Don't sync if auth is still loading, wait for the final state.
-    if(!isLoadingAuth) {
-      syncCoraboUser(firebaseUser);
-    }
-  }, [firebaseUser, isLoadingAuth, syncCoraboUser]);
-
   
   useEffect(() => {
     const savedAddress = sessionStorage.getItem('coraboDeliveryAddress');

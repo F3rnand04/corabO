@@ -5,7 +5,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User as FirebaseUser } from 'firebase/auth';
 import { getAuthInstance } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
-import * as Actions from '@/lib/actions';
+import { useCorabo } from '@/contexts/CoraboContext';
 
 interface AuthContextType {
   firebaseUser: FirebaseUser | null;
@@ -23,16 +23,19 @@ type AuthProviderProps = {
 
 export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps) => {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(serverFirebaseUser);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(!serverFirebaseUser);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const { toast } = useToast();
+  const { syncCoraboUser } = useCorabo();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(getAuthInstance(), (user) => {
-      setFirebaseUser(user);
-      setIsLoadingAuth(false);
+        setFirebaseUser(user);
+        syncCoraboUser(user);
+        setIsLoadingAuth(false);
     });
     return () => unsubscribe();
-  }, []);
+    // syncCoraboUser is a dependency to ensure it's available when auth state changes.
+  }, [syncCoraboUser]);
 
   const signInWithGoogle = useCallback(async (): Promise<void> => {
     const auth = getAuthInstance();
@@ -51,13 +54,13 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
       if (!response.ok) {
           throw new Error('Failed to create server session.');
       }
-      // onAuthStateChanged will handle setting user state and profile sync via CoraboContext
-      
+      // onAuthStateChanged will handle setting the user state and syncing the profile.
     } catch (error: any) {
         if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
             console.error("Error signing in with Google:", error);
             toast({ variant: 'destructive', title: "Error de Inicio de Sesión", description: "No se pudo iniciar sesión con Google." });
         }
+    } finally {
         setIsLoadingAuth(false);
     }
   }, [toast]);
@@ -66,7 +69,7 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
     try {
         await signOut(getAuthInstance());
         await fetch('/api/auth/session', { method: 'DELETE' });
-        // onAuthStateChanged will set firebaseUser to null
+        // onAuthStateChanged will set firebaseUser to null, which will trigger syncCoraboUser(null).
     } catch (error) {
          console.error("Error signing out:", error);
          toast({ variant: 'destructive', title: "Error", description: "No se pudo cerrar la sesión."});
