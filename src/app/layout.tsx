@@ -60,7 +60,7 @@ export default async function RootLayout({
         <meta name="format-detection" content="telephone=no, date=no, email=no, address=no" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#FFFFFF" />
-        <link rel="apple-touch-icon" href="/logo-192.png" />
+        <link rel="apple-touch-icon" href="https://i.postimg.cc/Wz1MTvWK/lg.png" />
       </head>
       <body className={`${inter.variable} antialiased bg-background`}>
         <Providers attribute="class" defaultTheme="system" enableSystem>
