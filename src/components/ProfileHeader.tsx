@@ -75,10 +75,8 @@ function ProfileStats({ user, metrics }: { user: any, metrics: any }) {
   
   const paymentSpeedColor = (speed: string | undefined | null) => {
     if (!speed) return 'text-muted-foreground';
-    if (speed.includes('+')) {
-      if (parseInt(speed.replace('+', '')) >= 45) return 'text-red-500';
-      return 'text-orange-500';
-    }
+    if (speed.includes('+')) return 'text-red-500';
+    if (speed.includes('5-15')) return 'text-orange-500';
     return 'text-green-500';
   };
 

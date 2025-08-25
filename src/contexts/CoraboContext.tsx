@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo } from 'react';
-import { differenceInHours, formatDistanceToNowStrict } from 'date-fns';
+import { differenceInMinutes, formatDistanceToNowStrict } from 'date-fns';
 import { es } from 'date-fns/locale';
 import type { User, CartItem, Transaction, GalleryImage, Conversation, TempRecipientInfo, FirebaseUserInput } from '@/lib/types';
 import type { User as FirebaseUser } from 'firebase/auth';
@@ -132,31 +132,30 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     const totalRating = ratedTransactions.reduce((acc, tx) => acc + (tx.details.clientRating || 0), 0);
     const reputation = ratedTransactions.length > 0 ? totalRating / ratedTransactions.length : 5.0;
 
-    // Effectiveness (as provider)
-    const providerAgreements = userTransactions.filter(tx => tx.providerId === userId && (tx.type === 'Servicio' || tx.type === 'Compra Directa'));
-    const completedAgreements = providerAgreements.filter(tx => tx.status === 'Pagado' || tx.status === 'Resuelto');
-    const effectiveness = providerAgreements.length > 0 ? (completedAgreements.length / providerAgreements.length) * 100 : 100;
+    // Effectiveness
+    const relevantTransactions = userTransactions.filter(tx => tx.type !== 'Sistema' && tx.status !== 'Carrito Activo');
+    const successfulTransactions = relevantTransactions.filter(tx => tx.status === 'Pagado' || tx.status === 'Resuelto');
+    const effectiveness = relevantTransactions.length > 0 ? (successfulTransactions.length / relevantTransactions.length) * 100 : 100;
     
-    // Response Time (as provider)
+    // Response Time (as provider, simulated)
     const quoteRequests = userTransactions.filter(tx => tx.providerId === userId && tx.status === 'Cotización Recibida');
-    // NOTE: This is a simplified simulation. A real implementation would compare request and response timestamps.
     const responseTime = quoteRequests.length > 5 ? 'Rápido' : 'Normal';
 
-    // Payment Speed (as client)
-    const paidTransactions = userTransactions.filter(tx => tx.clientId === userId && tx.status === 'Pagado');
-    let totalPaymentHours = 0;
-    paidTransactions.forEach(tx => {
-        if (tx.details.paymentRequestedAt && tx.details.paymentSentAt) {
-            totalPaymentHours += differenceInHours(new Date(tx.details.paymentSentAt), new Date(tx.details.paymentRequestedAt));
+    // Payment Speed (as provider, confirming payments)
+    const paidByClientTransactions = userTransactions.filter(tx => tx.providerId === userId && tx.status === 'Pagado' && tx.details.paymentSentAt && tx.details.paymentConfirmationDate);
+    let totalPaymentMinutes = 0;
+    paidByClientTransactions.forEach(tx => {
+        if (tx.details.paymentSentAt && tx.details.paymentConfirmationDate) {
+            totalPaymentMinutes += differenceInMinutes(new Date(tx.details.paymentConfirmationDate), new Date(tx.details.paymentSentAt));
         }
     });
-    const avgPaymentHours = paidTransactions.length > 0 ? totalPaymentHours / paidTransactions.length : 0;
+    const avgPaymentMinutes = paidByClientTransactions.length > 0 ? totalPaymentMinutes / paidByClientTransactions.length : 0;
     
     let paymentSpeed: string | null = null;
-    if (paidTransactions.length > 0) {
-        if (avgPaymentHours <= 1) paymentSpeed = '< 1 hr';
-        else if (avgPaymentHours <= 24) paymentSpeed = '< 24 hrs';
-        else paymentSpeed = `+${Math.round(avgPaymentHours / 24)} días`;
+    if (paidByClientTransactions.length > 2) { // Require a few tx to establish a pattern
+        if (avgPaymentMinutes <= 5) paymentSpeed = '0-5 min';
+        else if (avgPaymentMinutes <= 15) paymentSpeed = '5-15 min';
+        else if (avgPaymentMinutes > 45) paymentSpeed = '+45 min';
     }
 
     return { reputation, effectiveness, responseTime, paymentSpeed };
