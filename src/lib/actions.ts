@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Server Actions for the Corabo application.
@@ -12,132 +11,99 @@ import { revalidatePath } from 'next/cache';
 import { ai } from '@/ai/genkit';
 
 // Import all flows statically.
-import { getOrCreateUserFlow } from '@/ai/flows/auth-flow';
-import { 
-    updateUserFlow, 
-    deleteUserFlow, 
-    getPublicProfileFlow, 
-    checkIdUniquenessFlow, 
-    completeInitialSetupFlow, 
-    toggleGpsFlow, 
-    getProfileGalleryFlow, 
-    getProfileProductsFlow 
-} from '@/ai/flows/profile-flow';
-import { 
-    createPublicationFlow, 
-    createProductFlow, 
-    addCommentToImageFlow, 
-    removeCommentFromImageFlow, 
-    updateGalleryImageFlow, 
-    removeGalleryImageFlow 
-} from '@/ai/flows/publication-flow';
-import { 
-    sendMessage as sendMessageFlow, 
-    acceptProposal as acceptProposalFlow 
-} from '@/ai/flows/message-flow';
-import { 
-    completeWork as completeWorkFlow, 
-    confirmWorkReceived as confirmWorkReceivedFlow, 
-    payCommitment as payCommitmentFlow, 
-    confirmPaymentReceived as confirmPaymentReceivedFlow, 
-    sendQuote as sendQuoteFlow, 
-    acceptAppointment as acceptAppointmentFlow, 
-    startDispute as startDisputeFlow, 
-    cancelSystemTransaction as cancelSystemTransactionFlow, 
-    downloadTransactionsPDF as downloadTransactionsPDFFlow, 
-    checkout as checkoutFlow, 
-    processDirectPayment as processDirectPaymentFlow,
-    createAppointmentRequest as createAppointmentRequestFlow
-} from '@/ai/flows/transaction-flow';
-import { 
-    findDeliveryProvider as findDeliveryProviderFlow, 
-    resolveDeliveryAsPickup as resolveDeliveryAsPickupFlow 
-} from '@/ai/flows/delivery-flow';
-import { 
-    requestAffiliationFlow,
-    approveAffiliationFlow,
-    rejectAffiliationFlow,
-    revokeAffiliationFlow
-} from '@/ai/flows/affiliation-flow';
-import { 
-    createCashierBox as createCashierBoxFlow, 
-    regenerateCashierQr as regenerateCashierQrFlow
-} from '@/ai/flows/cashier-flow';
-import { autoVerifyIdWithAI as autoVerifyIdWithAIFlow } from '@/ai/flows/verification-flow';
-import { sendNewCampaignNotifications as sendNewCampaignNotificationsFlow } from '@/ai/flows/notification-flow';
-import { updateCartFlow } from '@/ai/flows/cart-flow';
-import { getFeed as getFeedFlow } from '@/ai/flows/feed-flow';
-import { createCampaign as createCampaignFlow } from '@/ai/flows/campaign-flow';
+import * as authFlow from '@/ai/flows/auth-flow';
+import * as profileFlow from '@/ai/flows/profile-flow';
+import * as publicationFlow from '@/ai/flows/publication-flow';
+import * as messageFlow from '@/ai/flows/message-flow';
+import * as transactionFlow from '@/ai/flows/transaction-flow';
+import * as deliveryFlow from '@/ai/flows/delivery-flow';
+import * as affiliationFlow from '@/ai/flows/affiliation-flow';
+import * as cashierFlow from '@/ai/flows/cashier-flow';
+import * as verificationFlow from '@/ai/flows/verification-flow';
+import * as notificationFlow from '@/ai/flows/notification-flow';
+import * as cartFlow from '@/ai/flows/cart-flow';
+import * as feedFlow from '@/ai/flows/feed-flow';
+import * as campaignFlow from '@/ai/flows/campaign-flow';
+
 
 // =================================
 // AUTH & USER ACTIONS
 // =================================
 
 export async function getOrCreateUser(firebaseUser: FirebaseUserInput): Promise<User | null> {
-  return getOrCreateUserFlow(firebaseUser);
+  return authFlow.getOrCreateUserFlow(firebaseUser);
 }
 
 export async function updateUser(userId: string, updates: Partial<User | { 'profileSetupData.serviceRadius': number } | { 'profileSetupData.cashierBoxes': CashierBox[] }>) {
-    await updateUserFlow({ userId, updates });
+    await profileFlow.updateUserFlow({ userId, updates });
     revalidatePath('/profile');
     revalidatePath('/admin');
 }
 
 export async function deleteUser(userId: string) {
-    await deleteUserFlow({ userId });
+    await profileFlow.deleteUserFlow({ userId });
     revalidatePath('/admin');
 }
 
 export async function getPublicProfile(userId: string): Promise<Partial<User> | null> {
-    return getPublicProfileFlow({ userId });
+    return profileFlow.getPublicProfileFlow({ userId });
 }
 
 export async function getFeed(params: { limitNum: number, startAfterDocId?: string }) {
-    return getFeedFlow(params);
+    return feedFlow.getFeedFlow(params);
 }
+
+export async function getProfileGallery(params: { userId: string; limitNum: number, startAfterDocId?: string }) {
+  return profileFlow.getProfileGalleryFlow(params);
+}
+
+export async function getProfileProducts(params: { userId: string; limitNum: number, startAfterDocId?: string }) {
+  return profileFlow.getProfileProductsFlow(params);
+}
+
 
 // =================================
 // SETUP ACTIONS
 // =================================
 
 export async function completeInitialSetup(userId: string, data: any): Promise<User | null> {
-    const user = await completeInitialSetupFlow({ userId, ...data });
+    const user = await profileFlow.completeInitialSetupFlow({ userId, ...data });
     revalidatePath('/initial-setup');
     revalidatePath('/');
     return user;
 }
 
 export async function checkIdUniqueness(data: { idNumber: string; country: string; currentUserId: string; }): Promise<boolean> {
-    return checkIdUniquenessFlow(data);
+    return profileFlow.checkIdUniquenessFlow(data);
 }
 
 export async function updateFullProfile(userId: string, profileData: ProfileSetupData, userType: User['type']) {
-    await updateUserFlow({ userId, updates: { profileSetupData: profileData, type: userType } });
+    await profileFlow.updateUserFlow({ userId, updates: { profileSetupData: profileData, type: userType } });
     revalidatePath('/profile-setup/details');
 }
 
 export async function updateUserProfileImage(userId: string, dataUrl: string) {
-    await updateUserFlow({ userId, updates: { profileImage: dataUrl } });
+    await profileFlow.updateUserFlow({ userId, updates: { profileImage: dataUrl } });
     revalidatePath('/profile');
 }
 
 export async function toggleGps(userId: string) {
-    await toggleGpsFlow({ userId });
+    await profileFlow.toggleGpsFlow({ userId });
     revalidatePath('/profile');
 }
 
 export async function deactivateTransactions(userId: string) {
-    await updateUserFlow({ userId, updates: { isTransactionsActive: false } });
+    await profileFlow.updateUserFlow({ userId, updates: { isTransactionsActive: false } });
     revalidatePath('/transactions/settings');
 }
 
 export async function verifyUserId(userId: string) {
-    await updateUserFlow({ userId, updates: { idVerificationStatus: 'verified', verified: true } });
+    await profileFlow.updateUserFlow({ userId, updates: { idVerificationStatus: 'verified', verified: true } });
     revalidatePath('/admin');
 }
 
 export async function rejectUserId(userId: string) {
-    await updateUserFlow({
+    await profileFlow.updateUserFlow({
         userId,
         updates: {
             idVerificationStatus: 'rejected',
@@ -156,7 +122,7 @@ export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput
     isCompany: user.profileSetupData?.providerType === 'company',
   };
   try {
-      return await autoVerifyIdWithAIFlow(input);
+      return await verificationFlow.autoVerifyIdWithAIFlow(input);
   } catch (e) {
       console.error("AI flow failed:", e);
       return null;
@@ -169,33 +135,33 @@ export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput
 // =================================
 
 export async function createPublication(data: CreatePublicationInput) {
-    await createPublicationFlow(data);
+    await publicationFlow.createPublicationFlow(data);
     revalidatePath('/profile/publications');
 }
 
 export async function createProduct(data: CreateProductInput) {
-    await createProductFlow(data);
+    await publicationFlow.createProductFlow(data);
     revalidatePath('/profile/catalog');
 }
 
 export async function removeGalleryImage(ownerId: string, imageId: string) {
-    await removeGalleryImageFlow({ imageId });
+    await publicationFlow.removeGalleryImageFlow({ imageId });
     revalidatePath(`/companies/${ownerId}`);
     revalidatePath('/profile/publications');
 }
 
 export async function updateGalleryImage(data: { ownerId: string; imageId: string; updates: { description?: string; imageDataUri?: string; }; }) {
-    await updateGalleryImageFlow({ imageId: data.imageId, updates: data.updates });
+    await publicationFlow.updateGalleryImageFlow({ imageId: data.imageId, updates: data.updates });
     revalidatePath(`/companies/${data.ownerId}`);
 }
 
 export async function addCommentToImage(data: { ownerId: string; imageId: string; commentText: string; author: { id: string; name: string; profileImage: string; }; }) {
-    await addCommentToImageFlow({ imageId: data.imageId, commentText: data.commentText, author: data.author });
+    await publicationFlow.addCommentToImageFlow({ imageId: data.imageId, commentText: data.commentText, author: data.author });
     revalidatePath(`/companies/${data.ownerId}`);
 }
 
 export async function removeCommentFromImage(data: { ownerId: string; imageId: string; commentIndex: number; }) {
-    await removeCommentFromImageFlow({ imageId: data.imageId, commentIndex: data.commentIndex });
+    await publicationFlow.removeCommentFromImageFlow({ imageId: data.imageId, commentIndex: data.commentIndex });
     revalidatePath(`/companies/${data.ownerId}`);
 }
 
@@ -204,13 +170,13 @@ export async function removeCommentFromImage(data: { ownerId: string; imageId: s
 // =================================
 
 export async function sendMessage(input: { conversationId: string; senderId: string; recipientId: string; text?: string; location?: { lat: number; lon: number; }; proposal?: any; }): Promise<string> {
-  await sendMessageFlow(input);
+  await messageFlow.sendMessageFlow(input);
   revalidatePath(`/messages/${input.conversationId}`);
   return input.conversationId;
 }
 
 export async function acceptProposal(conversationId: string, messageId: string, acceptorId: string) {
-    await acceptProposalFlow({ conversationId, messageId, acceptorId });
+    await messageFlow.acceptProposalFlow({ conversationId, messageId, acceptorId });
     revalidatePath(`/messages/${conversationId}`);
     revalidatePath('/transactions');
 }
@@ -220,56 +186,53 @@ export async function acceptProposal(conversationId: string, messageId: string, 
 // =================================
 
 export async function createAppointmentRequest(data: {providerId: string, clientId: string, date: string, details: string, amount: number}) {
-    await createAppointmentRequestFlow(data);
+    await transactionFlow.createAppointmentRequestFlow(data);
     revalidatePath('/transactions');
 }
 
 export async function completeWork(data: { transactionId: string; userId: string; }) {
-  await completeWorkFlow(data);
+  await transactionFlow.completeWorkFlow(data);
   revalidatePath('/transactions');
 }
 
 export async function confirmWorkReceived(data: { transactionId: string; userId: string; rating: number; comment: string; }) {
-  await confirmWorkReceivedFlow(data);
+  await transactionFlow.confirmWorkReceivedFlow(data);
   revalidatePath('/transactions');
 }
 
-export async function payCommitment(transactionId: string) {
-  // This is a simplified action now. The details are in the component.
-  const { getFirebaseAdmin } = await import('./firebase-server');
-  const { firestore } = getFirebaseAdmin();
-  const txRef = firestore.collection('transactions').doc(transactionId);
-  await txRef.update({ status: 'Pago Enviado - Esperando Confirmación' });
+export async function payCommitment(data: { transactionId: string, userId: string, paymentDetails: any }) {
+  await transactionFlow.payCommitmentFlow(data);
   revalidatePath('/transactions');
 }
+
 
 export async function confirmPaymentReceived(data: { transactionId: string; userId: string; fromThirdParty: boolean; }) {
-  await confirmPaymentReceivedFlow(data);
+  await transactionFlow.confirmPaymentReceivedFlow(data);
   revalidatePath('/transactions');
 }
 
 export async function sendQuote(data: { transactionId: string; userId: string; breakdown: string; total: number; }) {
-  await sendQuoteFlow(data);
+  await transactionFlow.sendQuoteFlow(data);
   revalidatePath('/transactions');
 }
 
 export async function acceptAppointment(data: { transactionId: string; userId: string; }) {
-    await acceptAppointmentFlow(data);
+    await transactionFlow.acceptAppointmentFlow(data);
     revalidatePath('/transactions');
 }
 
 export async function startDispute(transactionId: string) {
-  await startDisputeFlow(transactionId);
+  await transactionFlow.startDisputeFlow(transactionId);
   revalidatePath('/transactions');
 }
 
 export async function cancelSystemTransaction(transactionId: string) {
-    await cancelSystemTransactionFlow(transactionId);
+    await transactionFlow.cancelSystemTransactionFlow(transactionId);
     revalidatePath('/transactions');
 }
 
 export async function downloadTransactionsPDF(transactions: Transaction[]) {
-  return await downloadTransactionsPDFFlow(transactions);
+  return await transactionFlow.downloadTransactionsPDFFlow(transactions);
 }
 
 export async function checkout(
@@ -280,7 +243,7 @@ export async function checkout(
   recipientInfo?: { name: string; phone: string },
   deliveryAddress?: string
 ) {
-  await checkoutFlow({
+  await transactionFlow.checkoutFlow({
     userId,
     providerId,
     deliveryMethod,
@@ -296,7 +259,7 @@ export async function updateCart(
   productId: string,
   newQuantity: number
 ) {
-    await updateCartFlow({ userId, productId, newQuantity });
+    await cartFlow.updateCartFlow({ userId, productId, newQuantity });
     revalidatePath('/'); // Revalidate main page to update cart icon
 }
 
@@ -306,7 +269,7 @@ export async function updateCart(
 // =================================
 
 export async function retryFindDelivery(data: { transactionId: string }) {
-    await findDeliveryProviderFlow(data);
+    await deliveryFlow.findDeliveryProviderFlow(data);
     revalidatePath('/transactions');
 }
 
@@ -320,7 +283,7 @@ export async function assignOwnDelivery(
 }
 
 export async function resolveDeliveryAsPickup(data: { transactionId: string }) {
-  await resolveDeliveryAsPickupFlow(data);
+  await deliveryFlow.resolveDeliveryAsPickupFlow(data);
   revalidatePath('/transactions');
 }
 
@@ -328,22 +291,22 @@ export async function resolveDeliveryAsPickup(data: { transactionId: string }) {
 // AFFILIATION ACTIONS
 // =================================
 export async function requestAffiliation(providerId: string, companyId: string) {
-    await requestAffiliationFlow({ providerId, companyId });
+    await affiliationFlow.requestAffiliationFlow({ providerId, companyId });
     revalidatePath('/admin');
 }
 
 export async function approveAffiliation(affiliationId: string, actorId: string) {
-    await approveAffiliationFlow({ affiliationId, actorId });
+    await affiliationFlow.approveAffiliationFlow({ affiliationId, actorId });
     revalidatePath('/admin');
 }
 
 export async function rejectAffiliation(affiliationId: string, actorId: string) {
-    await rejectAffiliationFlow({ affiliationId, actorId });
+    await affiliationFlow.rejectAffiliationFlow({ affiliationId, actorId });
     revalidatePath('/admin');
 }
 
 export async function revokeAffiliation(affiliationId: string, actorId: string) {
-    await revokeAffiliationFlow({ affiliationId, actorId });
+    await affiliationFlow.revokeAffiliationFlow({ affiliationId, actorId });
     revalidatePath('/admin');
 }
 
@@ -353,7 +316,7 @@ export async function revokeAffiliation(affiliationId: string, actorId: string) 
 
 export async function createCampaign(userId: string, campaignData: any) {
     const input = { userId, ...campaignData };
-    await createCampaignFlow(input);
+    await campaignFlow.createCampaignFlow(input);
     revalidatePath('/profile');
 }
 
@@ -363,7 +326,7 @@ export async function createCampaign(userId: string, campaignData: any) {
 // =================================
 
 export async function toggleUserPause(userId: string, isCurrentlyPaused: boolean) {
-  await updateUserFlow({ userId, updates: { isPaused: !isCurrentlyPaused } });
+  await profileFlow.updateUserFlow({ userId, updates: { isPaused: !isCurrentlyPaused } });
   revalidatePath('/admin');
 }
 
@@ -391,7 +354,7 @@ export async function verifyCampaignPayment(
 export async function sendNewCampaignNotifications(data: {
   campaignId: string;
 }) {
-  await sendNewCampaignNotificationsFlow(data);
+  await notificationFlow.sendNewCampaignNotificationsFlow(data);
 }
 
 // =================================
@@ -399,7 +362,7 @@ export async function sendNewCampaignNotifications(data: {
 // =================================
 
 export async function addCashierBox(userId: string, name: string, password: string) {
-    const newBox = await createCashierBoxFlow({ userId, name, password });
+    const newBox = await cashierFlow.createCashierBoxFlow({ userId, name, password });
     
     const { getFirebaseAdmin } = await import('./firebase-server');
     const { firestore } = getFirebaseAdmin();
@@ -439,7 +402,7 @@ export async function removeCashierBox(userId: string, boxId: string) {
 }
 
 export async function regenerateCashierBoxQr(userId: string, boxId: string) {
-    const newQrData = await regenerateCashierQrFlow({ userId, boxId });
+    const newQrData = await cashierFlow.regenerateCashierQrFlow({ userId, boxId });
     await updateCashierBox(userId, boxId, newQrData as Partial<CashierBox>);
 }
 
@@ -518,7 +481,7 @@ export async function confirmMobilePayment(sessionId: string) {
 }
 
 export async function finalizeQrSession(sessionId: string) {
-    await processDirectPaymentFlow({ sessionId });
+    await transactionFlow.processDirectPaymentFlow({ sessionId });
     const { getFirebaseAdmin } = await import('./firebase-server');
     const { firestore } = getFirebaseAdmin();
     await firestore.collection('qr_sessions').doc(sessionId).update({
