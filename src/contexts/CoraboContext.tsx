@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef, useMemo } from 'react';
-import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest, PublicationOwner, CreatePublicationInput, CreateProductInput, QrSession, TempRecipientInfo, CashierBox, FirebaseUserInput } from '@/lib/types';
+import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest, PublicationOwner, CreatePublicationInput, CreateProductInput, QrSession, TempRecipientInfo, FirebaseUserInput } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast"
 import { getFirestoreDb } from '@/lib/firebase';
 import { doc, onSnapshot, collection, query, where, orderBy, Unsubscribe, writeBatch, deleteField } from 'firebase/firestore';
@@ -46,6 +46,7 @@ interface CoraboContextValue {
   setTempRecipientInfo: (info: TempRecipientInfo | null) => void;
   setActiveCartForCheckout: (cartItems: CartItem[] | null) => void;
   getAgendaEvents: (transactions: Transaction[]) => { date: Date; type: 'payment' | 'task'; description: string, transactionId: string }[];
+  setCurrentUser: (user: User | null) => void; // Expose setCurrentUser
 }
 
 interface GeolocationCoords {
@@ -108,7 +109,11 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     setIsLoadingUser(true);
     try {
         const coraboProfile = await Actions.getOrCreateUser(firebaseUser);
-        setCurrentUser(coraboProfile);
+        if (coraboProfile) {
+            setCurrentUser(coraboProfile);
+        } else {
+           throw new Error("El perfil de Corabo devuelto es nulo.");
+        }
     } catch (e) {
         console.error("Fatal error syncing user profile:", e);
         toast({ variant: 'destructive', title: "Error de Sincronización", description: "No se pudo cargar tu perfil de Corabo. Intenta recargar." });
@@ -173,6 +178,14 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
 
     if (currentUser?.id) {
         const userId = currentUser.id;
+        
+        // Update the current user from the live listener
+        const userDocRef = doc(db, 'users', userId);
+        unsubscribes.push(onSnapshot(userDocRef, (doc) => {
+            if (doc.exists()) {
+                setCurrentUser(doc.data() as User);
+            }
+        }));
 
         const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", userId));
         const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", userId), orderBy("lastUpdated", "desc"));
@@ -267,6 +280,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         searchQuery, categoryFilter, contacts, searchHistory, 
         deliveryAddress, exchangeRate, currentUserLocation, tempRecipientInfo, activeCartForCheckout,
         cart, qrSession,
+        setCurrentUser,
         setSearchQuery: (query: string) => {
             _setSearchQuery(query);
             if (query.trim() && !searchHistory.includes(query.trim())) setSearchHistory(prev => [query.trim(), ...prev].slice(0, 10));

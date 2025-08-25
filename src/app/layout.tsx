@@ -34,10 +34,8 @@ export default async function RootLayout({
       const { auth } = getFirebaseAdmin();
       const decodedClaims = await auth.verifySessionCookie(sessionCookie, true);
       
-      // We only need the UID on the server, the client will get the full user object
       serverFirebaseUser = {
           uid: decodedClaims.uid,
-          // The rest of the fields will be populated by the client-side onAuthStateChanged listener
       } as FirebaseUser;
     }
   } catch (error) {
