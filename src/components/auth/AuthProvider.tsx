@@ -46,14 +46,22 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
         
         const idToken = await result.user.getIdToken();
         // Llama a nuestra API route para crear la cookie de sesión.
-        await fetch('/api/auth/session', {
+        const response = await fetch('/api/auth/session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ idToken }),
         });
+
+        if (!response.ok) {
+          throw new Error('Failed to create session.');
+        }
         
         // Actualizamos el estado local para reflejar el login inmediatamente.
         setFirebaseUser(result.user);
+
+        // La recarga de la página post-login ahora es manejada por el router o un refresh.
+        // Esto asegura que el RootLayout del servidor lea la nueva cookie.
+        window.location.reload();
 
     } catch (error: any) {
         if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
@@ -65,9 +73,8 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
            });
         }
     } finally {
-      // La recarga de la página post-login ahora es manejada por el router o un refresh.
-      // Esto asegura que el RootLayout del servidor lea la nueva cookie.
-      window.location.reload();
+      // El finally se ejecuta incluso si hay un error, así que no queremos recargar aquí.
+      // Movemos setIsLoadingAuth al bloque catch para que el loader no desaparezca en caso de error.
     }
   };
 
