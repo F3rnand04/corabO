@@ -9,7 +9,6 @@ import { getFirestoreDb } from '@/lib/firebase';
 import { doc, onSnapshot, collection, query, where, orderBy, Unsubscribe, writeBatch, deleteField } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import * as Actions from '@/lib/actions';
-import { useAuth } from '@/components/auth/AuthProvider';
 
 
 interface CoraboContextValue {
@@ -98,8 +97,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   const [qrSession, setQrSession] = useState<QrSession | null>(null);
   
   const userCache = useRef<Map<string, User>>(new Map());
-  // CoraboContext no longer needs to know about firebaseUser or isLoadingAuth directly
-
+  
   const syncCoraboUser = useCallback(async (fbUser: FirebaseUser | null) => {
     if (!fbUser) {
         setCurrentUser(null);

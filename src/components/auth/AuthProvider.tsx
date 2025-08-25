@@ -23,13 +23,19 @@ type AuthProviderProps = {
 
 export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps) => {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(serverFirebaseUser);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(false);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(!serverFirebaseUser); // If no server user, we are loading.
   const { toast } = useToast();
   const { syncCoraboUser } = useCorabo();
 
-  // The onAuthStateChanged listener is no longer needed because the server-side
-  // session check in RootLayout is now the source of truth. signIn and logout
-  // will now manually trigger the profile sync.
+  // Effect to sync user on initial load and handle auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(getAuthInstance(), async (user) => {
+      setFirebaseUser(user);
+      await syncCoraboUser(user);
+      setIsLoadingAuth(false);
+    });
+    return () => unsubscribe();
+  }, [syncCoraboUser]);
 
   const signInWithGoogle = useCallback(async (): Promise<void> => {
     const auth = getAuthInstance();
@@ -48,17 +54,13 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
       if (!response.ok) {
           throw new Error('Failed to create server session.');
       }
-      
-      // Explicitly set the user and trigger profile sync
-      setFirebaseUser(result.user);
-      await syncCoraboUser(result.user);
+      // The onAuthStateChanged listener will handle setting the user and syncing the profile.
       
     } catch (error: any) {
         if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
             console.error("Error signing in with Google:", error);
             toast({ variant: 'destructive', title: "Error de Inicio de Sesión", description: "No se pudo iniciar sesión con Google." });
         }
-    } finally {
         setIsLoadingAuth(false);
     }
   }, [toast, syncCoraboUser]);
@@ -67,9 +69,7 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
     try {
         await signOut(getAuthInstance());
         await fetch('/api/auth/session', { method: 'DELETE' });
-        // Explicitly clear the user and profile
-        setFirebaseUser(null);
-        await syncCoraboUser(null);
+        // onAuthStateChanged will set firebaseUser to null and trigger syncCoraboUser(null)
     } catch (error) {
          console.error("Error signing out:", error);
          toast({ variant: 'destructive', title: "Error", description: "No se pudo cerrar la sesión."});
