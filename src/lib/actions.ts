@@ -10,7 +10,7 @@ import { runFlow } from '@genkit-ai/core';
 import type { FirebaseUserInput, User, ProfileSetupData, Transaction, Product, CartItem, GalleryImage, CreatePublicationInput, CreateProductInput, VerificationOutput, CashierBox, QrSession, TempRecipientInfo } from '@/lib/types';
 import { getFirestore, doc, updateDoc, writeBatch, deleteField } from 'firebase-admin/firestore';
 import { getFirebaseAdmin } from './firebase-server';
-import { defineFlow } from 'genkit'; // CORRECTED IMPORT
+import { defineFlow } from 'genkit';
 import { z } from 'zod';
 
 
@@ -90,7 +90,8 @@ export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput
       isCompany: user.profileSetupData?.providerType === 'company',
     };
     try {
-        return await runFlow('autoVerifyIdWithAIFlow', input);
+        const autoVerifyIdWithAIFlow = (await import('@/ai/flows/verification-flow')).autoVerifyIdWithAIFlow;
+        return await runFlow(autoVerifyIdWithAIFlow, input);
     } catch (e) {
         console.error("AI flow failed:", e);
         return null;
@@ -103,27 +104,33 @@ export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput
 // =================================
 
 export async function createPublication(data: CreatePublicationInput) {
-    await runFlow('createPublicationFlow', data);
+    const createPublicationFlow = (await import('@/ai/flows/publication-flow')).createPublicationFlow;
+    await runFlow(createPublicationFlow, data);
 }
 
 export async function createProduct(data: CreateProductInput) {
-    await runFlow('createProductFlow', data);
+    const createProductFlow = (await import('@/ai/flows/publication-flow')).createProductFlow;
+    await runFlow(createProductFlow, data);
 }
 
 export async function removeGalleryImage(ownerId: string, imageId: string) {
-    await runFlow('removeGalleryImageFlow', { imageId });
+    const removeGalleryImageFlow = (await import('@/ai/flows/publication-flow')).removeGalleryImageFlow;
+    await runFlow(removeGalleryImageFlow, { imageId });
 }
 
 export async function updateGalleryImage(data: { ownerId: string; imageId: string; updates: { description?: string; imageDataUri?: string; }; }) {
-    await runFlow('updateGalleryImageFlow', { imageId: data.imageId, updates: data.updates });
+    const updateGalleryImageFlow = (await import('@/ai/flows/publication-flow')).updateGalleryImageFlow;
+    await runFlow(updateGalleryImageFlow, { imageId: data.imageId, updates: data.updates });
 }
 
 export async function addCommentToImage(data: { ownerId: string; imageId: string; commentText: string; author: { id: string; name: string; profileImage: string; }; }) {
-    await runFlow('addCommentToImageFlow', { imageId: data.imageId, commentText: data.commentText, author: data.author });
+    const addCommentToImageFlow = (await import('@/ai/flows/publication-flow')).addCommentToImageFlow;
+    await runFlow(addCommentToImageFlow, { imageId: data.imageId, commentText: data.commentText, author: data.author });
 }
 
 export async function removeCommentFromImage(data: { ownerId: string; imageId: string; commentIndex: number; }) {
-    await runFlow('removeCommentFromImageFlow', { imageId: data.imageId, commentIndex: data.commentIndex });
+    const removeCommentFromImageFlow = (await import('@/ai/flows/publication-flow')).removeCommentFromImageFlow;
+    await runFlow(removeCommentFromImageFlow, { imageId: data.imageId, commentIndex: data.commentIndex });
 }
 
 // =================================
@@ -131,12 +138,14 @@ export async function removeCommentFromImage(data: { ownerId: string; imageId: s
 // =================================
 
 export async function sendMessage(input: { conversationId: string; senderId: string; recipientId: string; text?: string; location?: { lat: number; lon: number; }; proposal?: any; }): Promise<string> {
-  await runFlow('sendMessageFlow', input);
+  const sendMessageFlow = (await import('@/ai/flows/message-flow')).sendMessage;
+  await runFlow(sendMessageFlow, input);
   return input.conversationId;
 }
 
 export async function acceptProposal(conversationId: string, messageId: string, acceptorId: string) {
-    await runFlow('acceptProposalFlow', { conversationId, messageId, acceptorId });
+    const acceptProposalFlow = (await import('@/ai/flows/message-flow')).acceptProposal;
+    await runFlow(acceptProposalFlow, { conversationId, messageId, acceptorId });
 }
 
 export async function markConversationAsRead(conversationId: string) {
@@ -149,14 +158,16 @@ export async function markConversationAsRead(conversationId: string) {
 // =================================
 
 export async function createAppointmentRequest(data: any) {
-    await runFlow('createAppointmentRequestFlow', data);
+    const createAppointmentRequestFlow = (await import('@/ai/flows/transaction-flow')).createAppointmentRequest;
+    await runFlow(createAppointmentRequestFlow, data);
 }
 
 export async function completeWork(data: {
   transactionId: string;
   userId: string;
 }) {
-  await runFlow('completeWorkFlow', data);
+  const completeWorkFlow = (await import('@/ai/flows/transaction-flow')).completeWork;
+  await runFlow(completeWorkFlow, data);
 }
 
 export async function confirmWorkReceived(data: {
@@ -165,11 +176,13 @@ export async function confirmWorkReceived(data: {
   rating: number;
   comment: string;
 }) {
-  await runFlow('confirmWorkReceivedFlow', data);
+  const confirmWorkReceivedFlow = (await import('@/ai/flows/transaction-flow')).confirmWorkReceived;
+  await runFlow(confirmWorkReceivedFlow, data);
 }
 
 export async function payCommitment(transactionId: string, userId: string, paymentDetails: { paymentMethod: string; paymentReference?: string; paymentVoucherUrl?: string;}) {
-  await runFlow('payCommitmentFlow', { transactionId, userId, paymentDetails });
+    const payCommitmentFlow = (await import('@/ai/flows/transaction-flow')).payCommitment;
+    await runFlow(payCommitmentFlow, { transactionId, userId, paymentDetails });
 }
 
 export async function confirmPaymentReceived(data: {
@@ -177,30 +190,36 @@ export async function confirmPaymentReceived(data: {
   userId: string;
   fromThirdParty: boolean;
 }) {
-  await runFlow('confirmPaymentReceivedFlow', data);
+  const confirmPaymentReceivedFlow = (await import('@/ai/flows/transaction-flow')).confirmPaymentReceived;
+  await runFlow(confirmPaymentReceivedFlow, data);
 }
 
 export async function sendQuote(data: any) {
-  await runFlow('sendQuoteFlow', data);
+  const sendQuoteFlow = (await import('@/ai/flows/transaction-flow')).sendQuote;
+  await runFlow(sendQuoteFlow, data);
 }
 
 export async function acceptAppointment(data: {
   transactionId: string;
   userId: string;
 }) {
-  await runFlow('acceptAppointmentFlow', data);
+    const acceptAppointmentFlow = (await import('@/ai/flows/transaction-flow')).acceptAppointment;
+  await runFlow(acceptAppointmentFlow, data);
 }
 
 export async function startDispute(transactionId: string) {
-  await runFlow('startDisputeFlow', transactionId);
+  const startDisputeFlow = (await import('@/ai/flows/transaction-flow')).startDispute;
+  await runFlow(startDisputeFlow, transactionId);
 }
 
 export async function cancelSystemTransaction(transactionId: string) {
-    await runFlow('cancelSystemTransaction', { transactionId });
+    const cancelSystemTransactionFlow = (await import('@/ai/flows/transaction-flow')).cancelSystemTransaction;
+    await runFlow(cancelSystemTransactionFlow, { transactionId });
 }
 
 export async function downloadTransactionsPDF(transactions: Transaction[]) {
-  return await runFlow('downloadTransactionsPDFFlow', transactions);
+  const downloadTransactionsPDFFlow = (await import('@/ai/flows/transaction-flow')).downloadTransactionsPDF;
+  return await runFlow(downloadTransactionsPDFFlow, transactions);
 }
 
 export async function checkout(
@@ -211,7 +230,8 @@ export async function checkout(
   recipientInfo?: { name: string; phone: string },
   deliveryAddress?: string
 ) {
-  await runFlow('checkoutFlow', {
+    const checkoutFlow = (await import('@/ai/flows/transaction-flow')).checkout;
+  await runFlow(checkoutFlow, {
     userId,
     providerId,
     deliveryMethod,
@@ -226,7 +246,8 @@ export async function updateCart(
   productId: string,
   newQuantity: number
 ) {
-    await runFlow('updateCartFlow', { userId, productId, newQuantity });
+    const updateCartFlow = (await import('@/ai/flows/cart-flow')).updateCartFlow;
+    await runFlow(updateCartFlow, { userId, productId, newQuantity });
 }
 
 
@@ -235,7 +256,8 @@ export async function updateCart(
 // =================================
 
 export async function retryFindDelivery(data: { transactionId: string }) {
-  await runFlow('findDeliveryProviderFlow', data);
+    const findDeliveryProviderFlow = (await import('@/ai/flows/delivery-flow')).findDeliveryProvider;
+  await runFlow(findDeliveryProviderFlow, data);
 }
 
 export async function assignOwnDelivery(
@@ -246,26 +268,31 @@ export async function assignOwnDelivery(
 }
 
 export async function resolveDeliveryAsPickup(data: { transactionId: string }) {
-  await runFlow('resolveDeliveryAsPickupFlow', data);
+  const resolveDeliveryAsPickupFlow = (await import('@/ai/flows/delivery-flow')).resolveDeliveryAsPickup;
+  await runFlow(resolveDeliveryAsPickupFlow, data);
 }
 
 // =================================
 // AFFILIATION ACTIONS
 // =================================
 export async function requestAffiliation(providerId: string, companyId: string) {
-  await runFlow('requestAffiliationFlow', { providerId, companyId });
+    const requestAffiliationFlow = (await import('@/ai/flows/affiliation-flow')).requestAffiliationFlow;
+  await runFlow(requestAffiliationFlow, { providerId, companyId });
 }
 
 export async function approveAffiliation(affiliationId: string, actorId: string) {
-  await runFlow('approveAffiliationFlow', { affiliationId, actorId });
+    const approveAffiliationFlow = (await import('@/ai/flows/affiliation-flow')).approveAffiliationFlow;
+  await runFlow(approveAffiliationFlow, { affiliationId, actorId });
 }
 
 export async function rejectAffiliation(affiliationId: string, actorId: string) {
-  await runFlow('rejectAffiliationFlow', { affiliationId, actorId });
+    const rejectAffiliationFlow = (await import('@/ai/flows/affiliation-flow')).rejectAffiliationFlow;
+  await runFlow(rejectAffiliationFlow, { affiliationId, actorId });
 }
 
 export async function revokeAffiliation(affiliationId: string, actorId: string) {
-  await runFlow('revokeAffiliationFlow', { affiliationId, actorId });
+    const revokeAffiliationFlow = (await import('@/ai/flows/affiliation-flow')).revokeAffiliationFlow;
+  await runFlow(revokeAffiliationFlow, { affiliationId, actorId });
 }
 
 // =================================
@@ -286,7 +313,8 @@ export async function verifyCampaignPayment(
 export async function sendNewCampaignNotifications(data: {
   campaignId: string;
 }) {
-  await runFlow('sendNewCampaignNotificationsFlow', data);
+  const sendNewCampaignNotificationsFlow = (await import('@/ai/flows/notification-flow')).sendNewCampaignNotifications;
+  await runFlow(sendNewCampaignNotificationsFlow, data);
 }
 
 // =================================
@@ -294,7 +322,8 @@ export async function sendNewCampaignNotifications(data: {
 // =================================
 
 export async function addCashierBox(userId: string, name: string, password: string) {
-    const newBox = await runFlow('createCashierBoxFlow', { userId, name, password });
+    const createCashierBoxFlow = (await import('@/ai/flows/cashier-flow')).createCashierBox;
+    const newBox = await runFlow(createCashierBoxFlow, { userId, name, password });
     const user = await getPublicProfile(userId);
     const existingBoxes = user?.profileSetupData?.cashierBoxes || [];
     await updateUser(userId, { 'profileSetupData.cashierBoxes': [...existingBoxes, newBox as CashierBox] });
@@ -319,7 +348,8 @@ export async function removeCashierBox(userId: string, boxId: string) {
 }
 
 export async function regenerateCashierBoxQr(userId: string, boxId: string) {
-    const newQrData = await runFlow('regenerateCashierQrFlow', { userId, boxId });
+    const regenerateCashierQrFlow = (await import('@/ai/flows/cashier-flow')).regenerateCashierQr;
+    const newQrData = await runFlow(regenerateCashierQrFlow, { userId, boxId });
     await updateCashierBox(userId, boxId, newQrData as Partial<CashierBox>);
 }
 
@@ -387,7 +417,8 @@ export async function confirmMobilePayment(sessionId: string) {
 }
 
 export async function finalizeQrSession(sessionId: string) {
-    await runFlow('processDirectPaymentFlow', { sessionId });
+    const processDirectPaymentFlow = (await import('@/ai/flows/transaction-flow')).processDirectPayment;
+    await runFlow(processDirectPaymentFlow, { sessionId });
     const { firestore } = getFirebaseAdmin();
     await firestore.collection('qr_sessions').doc(sessionId).update({
       status: 'completed',
@@ -420,5 +451,6 @@ export async function registerSystemPayment(
 }
 
 export async function createCampaign(userId: string, data: any) {
-  return await runFlow('createCampaignFlow', { userId, ...data });
+  const createCampaignFlow = (await import('@/ai/flows/campaign-flow')).createCampaignFlow;
+  return await runFlow(createCampaignFlow, { userId, ...data });
 }
