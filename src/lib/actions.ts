@@ -24,6 +24,7 @@ import * as notificationFlow from '@/ai/flows/notification-flow';
 import * as cartFlow from '@/ai/flows/cart-flow';
 import * as feedFlow from '@/ai/flows/feed-flow';
 import * as campaignFlow from '@/ai/flows/campaign-flow';
+import { ai } from '@/ai/genkit';
 
 
 // =================================
