@@ -90,6 +90,7 @@ export async function rejectUserId(userId: string) {
 
 export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput | null> {
     const { runFlow } = await import('@genkit-ai/core');
+    const { autoVerifyIdWithAIFlow } = await import('@/ai/flows/verification-flow');
     const input = {
       userId: user.id,
       nameInRecord: `${user.name} ${user.lastName || ''}`.trim(),
@@ -98,7 +99,6 @@ export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput
       isCompany: user.profileSetupData?.providerType === 'company',
     };
     try {
-        const { autoVerifyIdWithAIFlow } = await import('@/ai/flows/verification-flow');
         return await runFlow(autoVerifyIdWithAIFlow, input);
     } catch (e) {
         console.error("AI flow failed:", e);
