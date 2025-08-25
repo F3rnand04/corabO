@@ -56,7 +56,7 @@ function LayoutController({ children }: { children: React.ReactNode }) {
   // **Cortafuegos de Renderizado**
   // Muestra un loader a pantalla completa mientras se determina el estado del usuario.
   // Esto previene cualquier renderizado prematuro que cause errores de hidratación.
-  if (isLoadingAuth || isLoadingUser) {
+  if (isLoadingAuth || (firebaseUser && isLoadingUser)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />

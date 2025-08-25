@@ -9,12 +9,12 @@ import { getFirestoreDb } from '@/lib/firebase';
 import { doc, onSnapshot, collection, query, where, orderBy, Unsubscribe, writeBatch, deleteField } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import * as Actions from '@/lib/actions';
-import { useAuth } from '@/components/auth/AuthProvider';
+
 
 interface CoraboContextValue {
   currentUser: User | null;
   isLoadingUser: boolean; 
-  syncCoraboUser: (fbUser: FirebaseUser) => Promise<void>;
+  syncCoraboUser: (fbUser: FirebaseUser | null) => Promise<void>;
   
   users: User[];
   transactions: Transaction[];
@@ -97,9 +97,13 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   const [qrSession, setQrSession] = useState<QrSession | null>(null);
   
   const userCache = useRef<Map<string, User>>(new Map());
-  const { firebaseUser, isLoadingAuth } = useAuth(); // Depend on AuthProvider
 
-  const syncCoraboUser = useCallback(async (fbUser: FirebaseUser) => {
+  const syncCoraboUser = useCallback(async (fbUser: FirebaseUser | null) => {
+    if (!fbUser) {
+        setCurrentUser(null);
+        setIsLoadingUser(false);
+        return;
+    }
     setIsLoadingUser(true);
     try {
         const userInput = {
@@ -124,26 +128,6 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     }
   }, [toast]);
   
-  // This effect now correctly listens to the AuthProvider's state.
-  useEffect(() => {
-    if (isLoadingAuth) {
-        setIsLoadingUser(true);
-        return;
-    }
-    if (firebaseUser) {
-        // If the currentUser is not yet loaded or doesn't match the firebaseUser, sync it.
-        if(!currentUser || currentUser.id !== firebaseUser.uid) {
-            syncCoraboUser(firebaseUser);
-        } else {
-            setIsLoadingUser(false);
-        }
-    } else {
-        // If there is no firebaseUser, clear the Corabo user and stop loading.
-        setCurrentUser(null);
-        setIsLoadingUser(false);
-    }
-  }, [firebaseUser, isLoadingAuth, syncCoraboUser, currentUser]);
-
 
   useEffect(() => {
     const savedAddress = sessionStorage.getItem('coraboDeliveryAddress');
@@ -260,8 +244,6 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     
     const cart: CartItem[] = useMemo(() => {
        if (!currentUser?.id) return [];
-       // This logic assumes one cart per user-provider pair.
-       // For a multi-provider cart, this needs adjustment. Let's find all active carts for the user.
        return transactions
         .filter(tx => tx.clientId === currentUser.id && tx.status === 'Carrito Activo')
         .flatMap(tx => tx.details.items || []);
