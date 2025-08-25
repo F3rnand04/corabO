@@ -70,8 +70,8 @@ const renderSpecializedBadges = (specializedData?: SpecializedData) => {
 };
 
 function ProfileStats({ user, metrics }: { user: any, metrics: any }) {
-  const { paymentSpeed, responseTime, reputation, effectiveness } = metrics;
-  const isNewProvider = responseTime === 'Nuevo';
+  const { reputation, effectiveness, responseTime, paymentSpeed } = metrics;
+  const isNewProvider = responseTime === 'N/A';
   
   const paymentSpeedColor = (speed: string | undefined | null) => {
     if (!speed) return 'text-muted-foreground';
@@ -86,25 +86,28 @@ function ProfileStats({ user, metrics }: { user: any, metrics: any }) {
         <Star className="w-4 h-4 text-yellow-400 fill-yellow-400"/>
         <span className="font-semibold text-foreground">{reputation.toFixed(1)}</span>
       </div>
-      {isNewProvider ? (
-        <Badge variant="secondary" className="px-1.5 py-0">Nuevo</Badge>
-      ) : (
-      <>
-        <div className="w-px h-3 bg-border mx-1"></div>
+      <div className="w-px h-3 bg-border mx-1"></div>
         <div className="flex items-center gap-1">
           <TrendingUp className="w-4 h-4 text-green-500"/>
           <span className="font-semibold text-foreground">{effectiveness.toFixed(0)}%</span>
-        </div>
-        {paymentSpeed && (
-            <>
+      </div>
+      {isNewProvider ? (
+        <>
             <div className="w-px h-3 bg-border mx-1"></div>
-            <div className={cn("flex items-center gap-1 font-semibold", paymentSpeedColor(paymentSpeed))}>
-            <Timer className="w-4 h-4"/>
-            <span>{paymentSpeed || 'N/A'}</span>
-            </div>
-            </>
-        )}
-      </>
+            <Badge variant="secondary" className="px-1.5 py-0">Nuevo</Badge>
+        </>
+      ) : (
+        <>
+            {paymentSpeed && (
+                <>
+                <div className="w-px h-3 bg-border mx-1"></div>
+                <div className={cn("flex items-center gap-1 font-semibold", paymentSpeedColor(paymentSpeed))}>
+                    <Timer className="w-4 h-4"/>
+                    <span>{paymentSpeed}</span>
+                </div>
+                </>
+            )}
+        </>
       )}
     </div>
   );

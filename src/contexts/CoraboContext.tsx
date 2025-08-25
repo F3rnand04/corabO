@@ -124,7 +124,13 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     const userTransactions = transactions.filter(tx => tx.providerId === userId || tx.clientId === userId);
 
     if (userTransactions.length === 0) {
-      return { reputation: 5.0, effectiveness: 100, responseTime: 'Nuevo', paymentSpeed: null };
+        // **FIX**: Return a full metrics object with default values for new users
+        return { 
+            reputation: 5.0, 
+            effectiveness: 100, 
+            responseTime: 'N/A', // Use 'N/A' to indicate not applicable yet
+            paymentSpeed: null 
+        };
     }
 
     // Reputation (as provider)
@@ -152,10 +158,10 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     const avgPaymentMinutes = paidByClientTransactions.length > 0 ? totalPaymentMinutes / paidByClientTransactions.length : 0;
     
     let paymentSpeed: string | null = null;
-    if (paidByClientTransactions.length > 2) { // Require a few tx to establish a pattern
+    if (paidByClientTransactions.length > 0) {
         if (avgPaymentMinutes <= 5) paymentSpeed = '0-5 min';
         else if (avgPaymentMinutes <= 15) paymentSpeed = '5-15 min';
-        else if (avgPaymentMinutes > 45) paymentSpeed = '+45 min';
+        else paymentSpeed = '+45 min';
     }
 
     return { reputation, effectiveness, responseTime, paymentSpeed };
