@@ -32,7 +32,8 @@ export const getOrCreateUserFlow = ai.defineFlow(
     outputSchema: UserOutputSchema,
   },
   async (firebaseUser) => {
-    const { firestore: db } = getFirebaseAdmin(); // This gets the ADMIN Firestore instance
+    // This correctly gets the ADMIN Firestore instance from our central server setup.
+    const db = getFirestore(); 
     const userDocRef = db.collection('users').doc(firebaseUser.uid);
     const now = new Date();
 

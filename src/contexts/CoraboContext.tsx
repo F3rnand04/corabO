@@ -67,12 +67,16 @@ interface CoraboProviderProps {
     children: ReactNode;
 }
 
+// CoraboProvider ahora es el ÚNICO responsable de cargar el perfil COMPLETO del usuario
+// una vez que el AuthProvider le entrega un usuario de Firebase válido.
 export const CoraboProvider = ({ children }: CoraboProviderProps) => {
-  const { firebaseUser, isLoadingAuth, logout } = useAuth();
+  // Obtiene el usuario base de Firebase y la función de logout.
+  const { firebaseUser, logout } = useAuth();
   const { toast } = useToast();
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
+  // Este es el estado de carga principal de la app. Es true hasta que el currentUser esté definido o sea nulo.
+  const [isLoadingUser, setIsLoadingUser] = useState(true); 
   
   const [users, setUsers] = useState<User[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -91,10 +95,12 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   
   const userCache = useRef<Map<string, User>>(new Map());
 
+  // Efecto CLAVE: Este es el motor central que carga el perfil.
   useEffect(() => {
-    setIsLoadingUser(true);
+    // Si hay un usuario de Firebase, procede a obtener el perfil completo de Corabo.
     if (firebaseUser) {
-      // Use the correctly decoupled server action
+      setIsLoadingUser(true);
+      // Llama a la acción del servidor para obtener o crear el documento del usuario en Firestore.
       Actions.getOrCreateUser({
         uid: firebaseUser.uid,
         displayName: firebaseUser.displayName,
@@ -103,11 +109,14 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         emailVerified: firebaseUser.emailVerified,
       }).then(coraboUser => {
         if (coraboUser) {
+            // Setea el usuario completo de Corabo.
             setCurrentUser(coraboUser as User);
         } else {
+            // Si falla, lo notifica y resetea.
             toast({ variant: "destructive", title: "Error de Perfil", description: "No se pudo cargar tu perfil de Corabo. Intenta recargar la página." });
             setCurrentUser(null);
         }
+        // Sea cual sea el resultado, la carga ha finalizado.
         setIsLoadingUser(false);
       }).catch(error => {
         console.error("Failed to fetch/create Corabo user:", error);
@@ -115,11 +124,12 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         setCurrentUser(null);
         setIsLoadingUser(false);
       });
-    } else if (!isLoadingAuth) {
+    } else {
+      // Si no hay usuario de Firebase, resetea el estado y finaliza la carga.
       setCurrentUser(null);
       setIsLoadingUser(false);
     }
-  }, [firebaseUser, isLoadingAuth, toast]);
+  }, [firebaseUser, toast]);
   
   const setDeliveryAddress = useCallback((address: string) => {
     sessionStorage.setItem('coraboDeliveryAddress', address);
