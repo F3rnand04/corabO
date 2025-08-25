@@ -1,14 +1,46 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef, useMemo } from 'react';
-import type { User, Product, CartItem, Transaction, GalleryImage, ProfileSetupData, Conversation, Message, AgreementProposal, CredicoraLevel, VerificationOutput, AppointmentRequest, PublicationOwner, CreatePublicationInput, CreateProductInput, QrSession, TempRecipientInfo, FirebaseUserInput } from '@/lib/types';
+import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo } from 'react';
+import type { User, CartItem, Transaction, GalleryImage, Conversation, TempRecipientInfo, FirebaseUserInput } from '@/lib/types';
 import type { User as FirebaseUser } from 'firebase/auth';
-import { useToast } from "@/hooks/use-toast"
-import { getFirestoreDb } from '@/lib/firebase';
-import { doc, onSnapshot, collection, query, where, orderBy, Unsubscribe, writeBatch, deleteField } from 'firebase/firestore';
-import { haversineDistance } from '@/lib/utils';
-import * as Actions from '@/lib/actions';
+
+// --- MOCK DATA TO FORCE RENDER ---
+const mockUser: User = {
+  id: 'user_placeholder_id',
+  coraboId: 'corabo123',
+  name: 'Usuario de Prueba',
+  lastName: 'Corabo',
+  email: 'test@corabo.app',
+  profileImage: 'https://i.pravatar.cc/150?u=user_placeholder_id',
+  type: 'client',
+  reputation: 5,
+  effectiveness: 100,
+  isInitialSetupComplete: true,
+  isTransactionsActive: true,
+  emailValidated: true,
+  phoneValidated: true,
+  isGpsActive: true,
+  isSubscribed: true,
+  credicoraLevel: 1,
+  credicoraLimit: 150,
+  credicoraDetails: {
+    level: 1,
+    name: 'Alfa',
+    color: '210 90% 54%',
+    creditLimit: 150,
+    initialPaymentPercentage: 0.60,
+    installments: 3,
+    transactionsForNextLevel: 25,
+  },
+  profileSetupData: {
+      username: 'Usuario de Prueba',
+      specialty: 'Probando la plataforma',
+      providerType: 'professional',
+      offerType: 'both'
+  }
+};
+// --- END MOCK DATA ---
 
 interface CoraboContextValue {
   currentUser: User | null;
@@ -25,14 +57,14 @@ interface CoraboContextValue {
   searchHistory: string[];
   deliveryAddress: string;
   exchangeRate: number;
-  currentUserLocation: GeolocationCoords | null;
+  currentUserLocation: any;
   tempRecipientInfo: TempRecipientInfo | null;
   activeCartForCheckout: CartItem[] | null;
   cart: CartItem[];
-  qrSession: QrSession | null;
+  qrSession: any;
 
   fetchUser: (userId: string) => User | null;
-  getUserMetrics: (userId: string) => UserMetrics;
+  getUserMetrics: (userId: string) => any;
   setSearchQuery: (query: string) => void;
   clearSearchHistory: () => void;
   setCategoryFilter: (category: string | null) => void;
@@ -45,20 +77,8 @@ interface CoraboContextValue {
   setDeliveryAddressToCurrent: () => void;
   setTempRecipientInfo: (info: TempRecipientInfo | null) => void;
   setActiveCartForCheckout: (cartItems: CartItem[] | null) => void;
-  getAgendaEvents: (transactions: Transaction[]) => { date: Date; type: 'payment' | 'task'; description: string, transactionId: string }[];
+  getAgendaEvents: (transactions: Transaction[]) => any[];
   setCurrentUser: (user: User | null) => void;
-}
-
-interface GeolocationCoords {
-    latitude: number;
-    longitude: number;
-}
-
-interface UserMetrics {
-    reputation: number;
-    effectiveness: number;
-    responseTime: string;
-    paymentSpeed: string;
 }
 
 export const CoraboContext = createContext<CoraboContextValue | undefined>(undefined);
@@ -68,11 +88,12 @@ interface CoraboProviderProps {
 }
 
 export const CoraboProvider = ({ children }: CoraboProviderProps) => {
-  const { toast } = useToast();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
-  
-  const [users, setUsers] = useState<User[]>([]);
+  // We force the user to be loaded and set a mock user.
+  const [currentUser, setCurrentUser] = useState<User | null>(mockUser);
+  const [isLoadingUser, setIsLoadingUser] = useState(false); // FORCED TO FALSE
+
+  // The rest of the state remains for the app to function minimally
+  const [users, setUsers] = useState<User[]>([mockUser]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [allPublications, setAllPublications] = useState<GalleryImage[]>([]);
@@ -82,216 +103,50 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   const [contacts, setContacts] = useState<User[]>([]);
   const [deliveryAddress, _setDeliveryAddress] = useState('');
   const [exchangeRate, setExchangeRate] = useState(36.54);
-  const [currentUserLocation, setCurrentUserLocation] = useState<GeolocationCoords | null>(null);
+  const [currentUserLocation, setCurrentUserLocation] = useState<any>(null);
   const [tempRecipientInfo, _setTempRecipientInfo] = useState<TempRecipientInfo | null>(null);
   const [activeCartForCheckout, setActiveCartForCheckout] = useState<CartItem[] | null>(null);
-  const [qrSession, setQrSession] = useState<QrSession | null>(null);
-  
-  const userCache = useRef<Map<string, User>>(new Map());
-  
+  const [qrSession, setQrSession] = useState<any>(null);
+
+  // This function is now a no-op but needs to exist for AuthProvider
   const syncCoraboUser = useCallback(async (fbUser: FirebaseUser | null) => {
-    if (!fbUser) {
-        setCurrentUser(null);
-        setIsLoadingUser(false);
-        return;
-    }
-    setIsLoadingUser(true);
-    try {
-        const userInput: FirebaseUserInput = {
-          uid: fbUser.uid,
-          displayName: fbUser.displayName,
-          email: fbUser.email,
-          photoURL: fbUser.photoURL,
-          emailVerified: fbUser.emailVerified
-        };
-        const coraboProfile = await Actions.getOrCreateUser(userInput);
-
-        if (coraboProfile) {
-            setCurrentUser(coraboProfile);
-        } else {
-           throw new Error("El perfil de Corabo es nulo o inválido.");
-        }
-    } catch (e) {
-        console.error("Fatal error syncing user profile:", e);
-        toast({ variant: 'destructive', title: "Error de Sincronización", description: "No se pudo cargar tu perfil de Corabo. Intenta recargar." });
-        setCurrentUser(null);
-    } finally {
-        setIsLoadingUser(false);
-    }
-  }, [toast]);
-  
-  useEffect(() => {
-    const savedAddress = sessionStorage.getItem('coraboDeliveryAddress');
-    if (savedAddress) _setDeliveryAddress(savedAddress);
-    
-    const savedRecipient = sessionStorage.getItem('tempRecipientInfo');
-    if(savedRecipient) _setTempRecipientInfo(JSON.parse(savedRecipient));
-
+    console.log("syncCoraboUser called, but is currently a no-op.");
   }, []);
-
-  useEffect(() => {
-    const savedContacts = localStorage.getItem('coraboContacts');
-    if (savedContacts) setContacts(JSON.parse(savedContacts));
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('coraboContacts', JSON.stringify(contacts));
-  }, [contacts]);
-
-  const fetchUser = useCallback((userId: string): User | null => {
-        if (userCache.current.has(userId)) return userCache.current.get(userId)!;
-        
-        const user = users.find(u => u.id === userId);
-        if (user) {
-            userCache.current.set(userId, user);
-            return user;
-        }
-
-        return null;
-  }, [users]);
   
+  const value: CoraboContextValue = {
+    currentUser, isLoadingUser, syncCoraboUser,
+    users, transactions, conversations, allPublications,
+    searchQuery, categoryFilter, contacts, searchHistory, 
+    deliveryAddress, exchangeRate, currentUserLocation, tempRecipientInfo, activeCartForCheckout,
+    cart: [], qrSession,
+    setCurrentUser,
+    setSearchQuery: (query: string) => _setSearchQuery(query),
+    setCategoryFilter,
+    clearSearchHistory: () => setSearchHistory([]),
+    addContact: (user: User) => { console.log("addContact no-op"); return false; },
+    removeContact: (userId: string) => { console.log("removeContact no-op"); },
+    isContact: (userId: string) => false,
+    getAgendaEvents: () => [],
+    setDeliveryAddress: _setDeliveryAddress,
+    setDeliveryAddressToCurrent: () => {},
+    getUserMetrics: () => ({ reputation: 5, effectiveness: 100, responseTime: 'Rápido', paymentSpeed: '<1 hr' }),
+    fetchUser: () => mockUser,
+    getDistanceToProvider: () => '5 km',
+    setTempRecipientInfo: _setTempRecipientInfo,
+    setActiveCartForCheckout,
+  };
   
-  useEffect(() => {
-    const db = getFirestoreDb();
-    if (!db) return;
-    
-    let unsubscribes: Unsubscribe[] = [];
-
-    unsubscribes.push(onSnapshot(collection(db, 'users'), (snapshot) => {
-        const userList = snapshot.docs.map(doc => doc.data() as User)
-        setUsers(userList);
-        userList.forEach(user => userCache.current.set(user.id, user));
-    }));
-
-    unsubscribes.push(onSnapshot(query(collection(db, 'publications'), orderBy('createdAt', 'desc')), (snapshot) => {
-        const pubs = snapshot.docs.map(doc => doc.data() as GalleryImage);
-        setAllPublications(pubs);
-    }));
-
-    if (currentUser?.id) {
-        const transactionsQuery = query(collection(db, "transactions"), where("participantIds", "array-contains", currentUser.id));
-        const conversationsQuery = query(collection(db, "conversations"), where("participantIds", "array-contains", currentUser.id), orderBy("lastUpdated", "desc"));
-
-        unsubscribes.push(onSnapshot(transactionsQuery, (snapshot) => setTransactions(snapshot.docs.map(doc => doc.data() as Transaction))));
-        unsubscribes.push(onSnapshot(conversationsQuery, (snapshot) => setConversations(snapshot.docs.map(doc => doc.data() as Conversation))));
-    } else {
-        setTransactions([]);
-        setConversations([]);
-    }
-
-    return () => unsubscribes.forEach(unsub => unsub());
-  }, [currentUser?.id]);
-
-  const getDistanceToProvider = useCallback((provider: User) => {
-      if (!currentUserLocation || !provider.profileSetupData?.location) return null;
-      const [lat2, lon2] = provider.profileSetupData.location.split(',').map(Number);
-      const distanceKm = haversineDistance(currentUserLocation.latitude, currentUserLocation.longitude, lat2, lon2);
-      if (provider.profileSetupData.showExactLocation === false) return `~${distanceKm.toFixed(0)} km`;
-      return `${distanceKm.toFixed(0)} km`;
-  }, [currentUserLocation]);
-  
-  const setDeliveryAddressToCurrent = useCallback(() => {
-    if ('geolocation' in navigator) {
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const newLocation = { latitude: position.coords.latitude, longitude: position.coords.longitude };
-                setCurrentUserLocation(newLocation);
-                _setDeliveryAddress(`${newLocation.latitude},${newLocation.longitude}`);
-            },
-            (error) => {
-                toast({ variant: 'destructive', title: 'Error de Ubicación', description: 'No se pudo obtener tu ubicación actual.'});
-                console.error("Error getting geolocation: ", error)
-            }
-        );
-    }
-  }, [toast]);
-
-    const getUserMetrics = useCallback((userId: string): UserMetrics => {
-        const userTxs = transactions.filter(tx => tx.providerId === userId && (tx.status === 'Pagado' || tx.status === 'Resuelto'));
-        const ratings = userTxs.map(tx => tx.details.clientRating || 0).filter(r => r > 0);
-        const reputation = ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 5.0;
-        const totalCompleted = userTxs.length;
-        const disputed = transactions.filter(tx => tx.providerId === userId && tx.status === 'En Disputa').length;
-        const effectiveness = totalCompleted + disputed > 0 ? (totalCompleted / (totalCompleted + disputed)) * 100 : 100;
-        let responseTime = 'Nuevo';
-        if (totalCompleted > 5) responseTime = 'Rápido';
-        if (totalCompleted > 15) responseTime = 'Muy Rápido';
-        const paymentTimes = userTxs.map(tx => tx.details.paymentSentAt && tx.details.paymentRequestedAt ? new Date(tx.details.paymentSentAt).getTime() - new Date(tx.details.paymentRequestedAt).getTime() : 0).filter(t => t > 0);
-        let paymentSpeed = 'N/A';
-        if(paymentTimes.length > 0) {
-            const avgMinutes = (paymentTimes.reduce((a, b) => a + b, 0) / paymentTimes.length) / 60000;
-            if(avgMinutes < 15) paymentSpeed = '<15 min';
-            else if (avgMinutes < 60) paymentSpeed = '<1 hr';
-            else paymentSpeed = `+${Math.floor(avgMinutes / 60)} hr`;
-        }
-        return { reputation, effectiveness, responseTime, paymentSpeed };
-    }, [transactions]);
-
-    const getAgendaEvents = useCallback((agendaTransactions: Transaction[]) => {
-      return agendaTransactions.filter(tx => tx.status === 'Finalizado - Pendiente de Pago').map(tx => ({
-        date: new Date(tx.date), type: 'payment' as 'payment' | 'task', description: `Pago a ${tx.providerId}`, transactionId: tx.id,
-      }));
-    }, []);
-    
-    const cart: CartItem[] = useMemo(() => {
-       if (!currentUser?.id) return [];
-       return transactions
-        .filter(tx => tx.clientId === currentUser.id && tx.status === 'Carrito Activo')
-        .flatMap(tx => tx.details.items || []);
-    }, [transactions, currentUser?.id]);
-
-    const addContact = (user: User): boolean => {
-        let isNew = false;
-        setContacts(prev => {
-            if (prev.some(c => c.id === user.id)) {
-                isNew = false;
-                return prev;
-            }
-            isNew = true;
-            return [...prev, user];
-        });
-        return isNew;
-    }
-
-    const value: CoraboContextValue = {
-        currentUser,
-        isLoadingUser,
-        syncCoraboUser,
-        users, transactions, conversations, allPublications,
-        searchQuery, categoryFilter, contacts, searchHistory, 
-        deliveryAddress, exchangeRate, currentUserLocation, tempRecipientInfo, activeCartForCheckout,
-        cart, qrSession,
-        setCurrentUser,
-        setSearchQuery: (query: string) => {
-            _setSearchQuery(query);
-            if (query.trim() && !searchHistory.includes(query.trim())) setSearchHistory(prev => [query.trim(), ...prev].slice(0, 10));
-        },
-        setCategoryFilter,
-        clearSearchHistory: () => setSearchHistory([]),
-        addContact,
-        removeContact: (userId: string) => setContacts(prev => prev.filter(c => c.id !== userId)),
-        isContact: (userId: string) => contacts.some(c => c.id === userId),
-        getAgendaEvents,
-        setDeliveryAddress: _setDeliveryAddress,
-        setDeliveryAddressToCurrent,
-        getUserMetrics,
-        fetchUser,
-        getDistanceToProvider,
-        setTempRecipientInfo: _setTempRecipientInfo,
-        setActiveCartForCheckout,
-    };
-  
-    return (
-        <CoraboContext.Provider value={value}>
-            {children}
-        </CoraboContext.Provider>
-    );
+  return (
+    <CoraboContext.Provider value={value}>
+      {children}
+    </CoraboContext.Provider>
+  );
 };
 
 export const useCorabo = () => {
     const context = useContext(CoraboContext);
-     if (context === undefined) {
+    if (context === undefined) {
         throw new Error('useCorabo must be used within a CoraboProvider');
     }
     return context;
-}
+};
