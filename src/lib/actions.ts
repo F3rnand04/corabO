@@ -9,6 +9,7 @@
  */
 import type { User, ProfileSetupData, Transaction, Product, CartItem, GalleryImage, CreatePublicationInput, CreateProductInput, VerificationOutput, CashierBox, QrSession, TempRecipientInfo, FirebaseUserInput } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
+import { ai } from '@/ai/genkit';
 
 // Import all flows statically.
 import { getOrCreateUserFlow } from '@/ai/flows/auth-flow';
@@ -111,12 +112,12 @@ export async function checkIdUniqueness(data: { idNumber: string; country: strin
 }
 
 export async function updateFullProfile(userId: string, profileData: ProfileSetupData, userType: User['type']) {
-    await updateUser(userId, { profileSetupData: profileData, type: userType });
+    await updateUserFlow({ userId, updates: { profileSetupData: profileData, type: userType } });
     revalidatePath('/profile-setup/details');
 }
 
 export async function updateUserProfileImage(userId: string, dataUrl: string) {
-    await updateUser(userId, { profileImage: dataUrl });
+    await updateUserFlow({ userId, updates: { profileImage: dataUrl } });
     revalidatePath('/profile');
 }
 
@@ -126,19 +127,22 @@ export async function toggleGps(userId: string) {
 }
 
 export async function deactivateTransactions(userId: string) {
-    await updateUser(userId, { isTransactionsActive: false });
+    await updateUserFlow({ userId, updates: { isTransactionsActive: false } });
     revalidatePath('/transactions/settings');
 }
 
 export async function verifyUserId(userId: string) {
-    await updateUser(userId, { idVerificationStatus: 'verified', verified: true });
+    await updateUserFlow({ userId, updates: { idVerificationStatus: 'verified', verified: true } });
     revalidatePath('/admin');
 }
 
 export async function rejectUserId(userId: string) {
-    await updateUser(userId, {
-        idVerificationStatus: 'rejected',
-        verified: false,
+    await updateUserFlow({
+        userId,
+        updates: {
+            idVerificationStatus: 'rejected',
+            verified: false,
+        }
     });
     revalidatePath('/admin');
 }
@@ -230,10 +234,8 @@ export async function confirmWorkReceived(data: { transactionId: string; userId:
   revalidatePath('/transactions');
 }
 
-export async function payCommitment(transactionId: string) {
-  // This is a placeholder as the full flow is complex.
-  // In a real app, you would pass more details.
-  console.log(`Paying commitment for tx: ${transactionId}`);
+export async function payCommitment(data: { transactionId: string, userId: string, paymentDetails: any }) {
+  await payCommitmentFlow(data);
   revalidatePath('/transactions');
 }
 
@@ -357,7 +359,7 @@ export async function createCampaign(userId: string, campaignData: any) {
 // =================================
 
 export async function toggleUserPause(userId: string, isCurrentlyPaused: boolean) {
-  await updateUser(userId, { isPaused: !isCurrentlyPaused });
+  await updateUserFlow({ userId, updates: { isPaused: !isCurrentlyPaused } });
   revalidatePath('/admin');
 }
 

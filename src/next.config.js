@@ -1,4 +1,3 @@
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -17,13 +16,9 @@ const nextConfig = {
       },
     ],
   },
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      // Exclude server-only packages from client-side bundles
-      config.externals = [...config.externals, '@genkit-ai/googleai'];
-    }
-    return config;
-  },
+  // NEW: Explicitly mark server-only packages to prevent bundling issues.
+  // This is the correct modern approach for the App Router.
+  serverComponentsExternalPackages: ['@genkit-ai/googleai', 'handlebars'],
 };
 
 export default nextConfig;

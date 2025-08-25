@@ -4,8 +4,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User as FirebaseUser } from 'firebase/auth';
 import { getAuthInstance } from '@/lib/firebase';
-import { CoraboContext } from '@/contexts/CoraboContext'; // Corrected import
 import { useToast } from '@/hooks/use-toast';
+import { useCorabo } from '@/contexts/CoraboContext';
 
 interface AuthContextType {
   firebaseUser: FirebaseUser | null;
@@ -24,16 +24,14 @@ type AuthProviderProps = {
 export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps) => {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(serverFirebaseUser);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  const coraboContext = useContext(CoraboContext); // Use the context
+  const { syncCoraboUser, clearCoraboUser, currentUser } = useCorabo();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!coraboContext) return; // Wait for context to be available
-    const { syncCoraboUser, clearCoraboUser, currentUser } = coraboContext;
-
     const unsubscribe = onAuthStateChanged(getAuthInstance(), async (user) => {
         setFirebaseUser(user);
         if (user) {
+            // Only sync if the corabo user is not yet loaded or doesn't match
             if (!currentUser || currentUser.id !== user.uid) {
                await syncCoraboUser(user);
             }
@@ -44,7 +42,7 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
     });
 
     return () => unsubscribe();
-  }, [coraboContext, toast]);
+  }, [syncCoraboUser, clearCoraboUser, currentUser]);
 
 
   const signInWithGoogle = async () => {
