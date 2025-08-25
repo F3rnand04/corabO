@@ -15,7 +15,7 @@ import { getOrCreateUserFlow } from '@/ai/flows/auth-flow';
 import { updateUserFlow, deleteUserFlow, getPublicProfileFlow, getProfileGalleryFlow, getProfileProductsFlow, completeInitialSetupFlow, checkIdUniquenessFlow, toggleGpsFlow } from '@/ai/flows/profile-flow';
 import { createPublicationFlow, createProductFlow, removeGalleryImageFlow, updateGalleryImageFlow, addCommentToImageFlow, removeCommentFromImageFlow } from '@/ai/flows/publication-flow';
 import { sendMessage as sendMessageFlow, acceptProposal as acceptProposalFlow } from '@/ai/flows/message-flow';
-import { createAppointmentRequest as createAppointmentRequestFlow, completeWork as completeWorkFlow, confirmWorkReceived as confirmWorkReceivedFlow, payCommitment as payCommitmentFlow, confirmPaymentReceived as confirmPaymentReceivedFlow, sendQuote as sendQuoteFlow, acceptAppointment as acceptAppointmentFlow, startDispute as startDisputeFlow, cancelSystemTransaction as cancelSystemTransactionFlow, downloadTransactionsPDF as downloadTransactionsPDFFlow, checkout as checkoutFlow, processDirectPayment } from '@/ai/flows/transaction-flow';
+import { createAppointmentRequest as createAppointmentRequestFlow, completeWork as completeWorkFlow, confirmWorkReceived as confirmWorkReceivedFlow, payCommitment as payCommitmentFlow, confirmPaymentReceived as confirmPaymentReceivedFlow, sendQuote as sendQuoteFlow, acceptAppointment as acceptAppointmentFlow, startDispute as startDisputeFlow, cancelSystemTransaction as cancelSystemTransactionFlow, downloadTransactionsPDF as downloadTransactionsPDFFlow, checkout as checkoutFlow, processDirectPayment as processDirectPaymentFlow } from '@/ai/flows/transaction-flow';
 import { findDeliveryProvider, resolveDeliveryAsPickup as resolveDeliveryAsPickupFlow } from '@/ai/flows/delivery-flow';
 import { requestAffiliationFlow, approveAffiliationFlow, rejectAffiliationFlow, revokeAffiliationFlow } from '@/ai/flows/affiliation-flow';
 import { createCashierBox as createCashierBoxFlow, regenerateCashierQr as regenerateCashierQrFlow } from '@/ai/flows/cashier-flow';
@@ -116,7 +116,7 @@ export async function rejectUserId(userId: string) {
 export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput | null> {
   const input = {
     userId: user.id,
-    nameInRecord: `${user.name} ${user.lastName || ''}`.trim(),
+    nameInRecord: `${'\'\'\''}${user.name} ${user.lastName || ''}`.trim(),
     idInRecord: user.idNumber || '',
     documentImageUrl: user.idDocumentUrl || '',
     isCompany: user.profileSetupData?.providerType === 'company',
@@ -263,6 +263,12 @@ export async function updateCart(
     revalidatePath('/'); // Revalidate main page to update cart icon
 }
 
+export async function processDirectPayment(sessionId: string) {
+  await processDirectPaymentFlow({ sessionId });
+  revalidatePath('/transactions');
+  revalidatePath('/show-qr');
+}
+
 
 // =================================
 // DELIVERY ACTIONS
@@ -278,7 +284,7 @@ export async function assignOwnDelivery(
   providerId: string
 ) {
    // Placeholder for a future flow
-   console.log(`Assigning own delivery for tx: ${transactionId} by provider: ${providerId}`);
+   console.log(`Assigning own delivery for tx: ${'\'\'\''}${transactionId} by provider: ${providerId}`);
    revalidatePath('/transactions');
 }
 
@@ -481,7 +487,7 @@ export async function confirmMobilePayment(sessionId: string) {
 }
 
 export async function finalizeQrSession(sessionId: string) {
-    await processDirectPayment({ sessionId });
+    await processDirectPaymentFlow({ sessionId });
     const { getFirebaseAdmin } = await import('./firebase-server');
     const { firestore } = getFirebaseAdmin();
     await firestore.collection('qr_sessions').doc(sessionId).update({

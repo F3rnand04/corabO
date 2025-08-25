@@ -2,10 +2,11 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User as FirebaseUser } from 'firebase/auth';
+import { signInWithPopup, GoogleAuthProvider, signOut, User as FirebaseUser } from 'firebase/auth';
 import { getAuthInstance } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useCorabo } from '@/contexts/CoraboContext';
+import * as Actions from '@/lib/actions';
 
 interface AuthContextType {
   firebaseUser: FirebaseUser | null;
@@ -23,19 +24,20 @@ type AuthProviderProps = {
 
 export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps) => {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(serverFirebaseUser);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(!serverFirebaseUser);
   const { toast } = useToast();
   const { syncCoraboUser } = useCorabo();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(getAuthInstance(), (user) => {
-        setFirebaseUser(user);
-        syncCoraboUser(user);
-        setIsLoadingAuth(false);
-    });
-    return () => unsubscribe();
-    // syncCoraboUser is a dependency to ensure it's available when auth state changes.
-  }, [syncCoraboUser]);
+    // This effect runs once on mount to sync the user if they were found on the server.
+    // Subsequent auth changes (login/logout on client) are handled by the methods below.
+    if (firebaseUser) {
+        syncCoraboUser(firebaseUser);
+    } else {
+        syncCoraboUser(null);
+    }
+    setIsLoadingAuth(false);
+  }, [firebaseUser, syncCoraboUser]);
 
   const signInWithGoogle = useCallback(async (): Promise<void> => {
     const auth = getAuthInstance();
@@ -54,25 +56,28 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
       if (!response.ok) {
           throw new Error('Failed to create server session.');
       }
-      // onAuthStateChanged will handle setting the user state and syncing the profile.
+      setFirebaseUser(result.user); // Trigger re-sync
+      toast({ title: "Inicio de Sesión Exitoso", description: `¡Bienvenido de nuevo!`});
+
     } catch (error: any) {
         if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
             console.error("Error signing in with Google:", error);
             toast({ variant: 'destructive', title: "Error de Inicio de Sesión", description: "No se pudo iniciar sesión con Google." });
         }
-    } finally {
-        setIsLoadingAuth(false);
+        setIsLoadingAuth(false); // Stop loading on error
     }
-  }, [toast]);
+  }, [toast, syncCoraboUser]);
 
   const logout = async () => {
+    setIsLoadingAuth(true);
     try {
         await signOut(getAuthInstance());
         await fetch('/api/auth/session', { method: 'DELETE' });
-        // onAuthStateChanged will set firebaseUser to null, which will trigger syncCoraboUser(null).
+        setFirebaseUser(null); // This will trigger the useEffect to call syncCoraboUser(null)
     } catch (error) {
          console.error("Error signing out:", error);
          toast({ variant: 'destructive', title: "Error", description: "No se pudo cerrar la sesión."});
+         setIsLoadingAuth(false);
     }
   };
   

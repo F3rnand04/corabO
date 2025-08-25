@@ -22,7 +22,7 @@ function LayoutController({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // No hacer nada mientras el estado de autenticación o el perfil se está resolviendo.
     // Esto previene redirecciones prematuras antes de tener la información completa.
-    if (isLoadingAuth || isLoadingUser) {
+    if (isLoadingAuth || (firebaseUser && isLoadingUser)) {
       return; 
     }
 
