@@ -2,10 +2,57 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // WARNING: These rules are open for development and are not secure.
-    // Restrict access before deploying to production.
-    match /{document=**} {
-      allow read, write: if true;
+
+    // Helper function to check if the user is authenticated
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if the user is the owner of the document
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // --- Users Collection ---
+    // Users can read any public profile, but can only write to their own document.
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if isOwner(userId);
+    }
+    
+    // --- Global Publications (Feed) ---
+    // Anyone can read publications. Only the owner can create/update/delete.
+    match /publications/{publicationId} {
+      allow read: if true;
+      allow create, update, delete: if isSignedIn() && isOwner(request.resource.data.providerId);
+    }
+
+    // --- Transactions & Conversations ---
+    // Participants can read/write their own transactions and conversations.
+    match /{collection}/{docId} {
+      allow read, write: if isSignedIn() && request.auth.uid in resource.data.participantIds;
+    }
+
+    // --- Notifications ---
+    // Only the designated user can access their notifications.
+    match /notifications/{notificationId} {
+        allow read, write: if isSignedIn() && isOwner(resource.data.userId);
+    }
+
+    // --- Affiliations ---
+    // The company or the provider can read it.
+    // The provider can create it (request).
+    // The company can update it (approve/reject/revoke).
+    match /affiliations/{affiliationId} {
+        allow read: if isSignedIn() && (request.auth.uid == resource.data.providerId || request.auth.uid == resource.data.companyId);
+        allow create: if isSignedIn() && isOwner(request.resource.data.providerId);
+        allow update, delete: if isSignedIn() && isOwner(request.resource.data.companyId);
+    }
+
+    // --- QR Sessions ---
+    // The participants (client and provider) can access the session document.
+    match /qr_sessions/{sessionId} {
+      allow read, write: if isSignedIn() && request.auth.uid in resource.data.participantIds;
     }
   }
 }
