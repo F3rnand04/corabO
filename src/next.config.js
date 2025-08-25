@@ -1,13 +1,8 @@
-
 /** @type {import('next').NextConfig} */
-
 const nextConfig = {
-  transpilePackages: [
-    '@genkit-ai/core',
-    '@genkit-ai/firebase',
-    'genkit',
-  ],
-
+  // The `transpilePackages` option is obsolete with the App Router.
+  // Next.js now handles this automatically.
+  // The custom webpack config is also no longer necessary.
   images: {
     remotePatterns: [
       {
@@ -23,20 +18,6 @@ const nextConfig = {
         hostname: 'placehold.co',
       },
     ],
-  },
-  
-  webpack: (
-    config,
-    { isServer }
-  ) => {
-    // Genkit, and its dependency Handlebars, use 'require.extensions' which is not
-    // supported by Webpack on the client side. Adding this to externals will prevent
-    // Webpack from trying to bundle it for the browser.
-    if (!isServer) {
-        config.externals.push('@genkit-ai/googleai');
-    }
-
-    return config
   },
 };
 

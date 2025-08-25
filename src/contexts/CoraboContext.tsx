@@ -101,29 +101,26 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     if (firebaseUser) {
       setIsLoadingUser(true);
       // Llama a la acción del servidor para obtener o crear el documento del usuario en Firestore.
-      Actions.getOrCreateUser({
-        uid: firebaseUser.uid,
-        displayName: firebaseUser.displayName,
-        email: firebaseUser.email,
-        photoURL: firebaseUser.photoURL,
-        emailVerified: firebaseUser.emailVerified,
-      }).then(coraboUser => {
-        if (coraboUser) {
-            // Setea el usuario completo de Corabo.
-            setCurrentUser(coraboUser as User);
-        } else {
-            // Si falla, lo notifica y resetea.
-            toast({ variant: "destructive", title: "Error de Perfil", description: "No se pudo cargar tu perfil de Corabo. Intenta recargar la página." });
-            setCurrentUser(null);
-        }
-        // Sea cual sea el resultado, la carga ha finalizado.
-        setIsLoadingUser(false);
-      }).catch(error => {
-        console.error("Failed to fetch/create Corabo user:", error);
-        toast({ variant: "destructive", title: "Error de Perfil", description: "No se pudo cargar tu perfil de Corabo." });
-        setCurrentUser(null);
-        setIsLoadingUser(false);
-      });
+      Actions.getOrCreateUser(firebaseUser)
+        .then(coraboUser => {
+          if (coraboUser) {
+              // Setea el usuario completo de Corabo.
+              setCurrentUser(coraboUser as User);
+          } else {
+              // Si falla, lo notifica y resetea.
+              toast({ variant: "destructive", title: "Error de Perfil", description: "No se pudo cargar tu perfil de Corabo. Intenta recargar la página." });
+              setCurrentUser(null);
+          }
+        })
+        .catch(error => {
+          console.error("Failed to fetch/create Corabo user:", error);
+          toast({ variant: "destructive", title: "Error de Perfil", description: "No se pudo cargar tu perfil de Corabo." });
+          setCurrentUser(null);
+        })
+        .finally(() => {
+           // Sea cual sea el resultado, la carga ha finalizado.
+           setIsLoadingUser(false);
+        });
     } else {
       // Si no hay usuario de Firebase, resetea el estado y finaliza la carga.
       setCurrentUser(null);
