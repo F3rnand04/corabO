@@ -11,7 +11,6 @@ import { getFirestore } from 'firebase-admin/firestore';
 import type { User } from '@/lib/types';
 import { z } from 'zod';
 import { credicoraLevels } from '@/lib/types';
-import { getFirebaseAdmin } from '@/lib/firebase-server';
 
 // Schema for the user object we expect from the client (FirebaseUser)
 const FirebaseUserSchema = z.object({
@@ -49,10 +48,10 @@ export const getOrCreateUserFlow = ai.defineFlow(
             // Create a new, minimal user object.
             const newUser: User = {
                 id: firebaseUser.uid,
-                coraboId: `${'\'\'\''}${firebaseUser.displayName?.split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '') || 'user'}${'\'\'\''}${Math.floor(1000 + Math.random() * 9000)}`,
+                coraboId: `${firebaseUser.displayName?.split(' ')[0].toLowerCase().replace(/[^a-z0-9]/g, '') || 'user'}${Math.floor(1000 + Math.random() * 9000)}`,
                 name: firebaseUser.displayName || 'Nuevo Usuario',
                 email: firebaseUser.email || '',
-                profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${'\'\'\''}${firebaseUser.uid}`,
+                profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
                 createdAt: now.toISOString(),
                 lastActivityAt: now.toISOString(),
                 isInitialSetupComplete: false, 
@@ -91,3 +90,5 @@ export const getOrCreateUserFlow = ai.defineFlow(
     }
   }
 );
+
+    
