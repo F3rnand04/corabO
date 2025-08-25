@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef, useMemo } from 'react';
@@ -9,7 +8,6 @@ import { getFirestoreDb } from '@/lib/firebase';
 import { doc, onSnapshot, collection, query, where, orderBy, Unsubscribe, writeBatch, deleteField } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import * as Actions from '@/lib/actions';
-import { useAuth } from '@/components/auth/AuthProvider';
 
 interface CoraboContextValue {
   currentUser: User | null;
@@ -71,12 +69,9 @@ interface CoraboProviderProps {
 
 export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   const { toast } = useToast();
-  const { firebaseUser, isLoadingAuth } = useAuth(); // Depend on the AuthProvider state
   
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  // isLoadingUser is now a combination of auth loading AND profile loading
-  const [isSyncingProfile, setIsSyncingProfile] = useState(true);
-  const isLoadingUser = isLoadingAuth || isSyncingProfile;
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
   
   const [users, setUsers] = useState<User[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -111,7 +106,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   }, []);
 
   const syncCoraboUser = useCallback(async (fbUser: FirebaseUser) => {
-    setIsSyncingProfile(true);
+    setIsLoadingUser(true);
     try {
         const userInput = {
           uid: fbUser.uid,
@@ -131,23 +126,14 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
         toast({ variant: 'destructive', title: "Error de Sincronización", description: "No se pudo cargar tu perfil de Corabo. Intenta recargar." });
         setCurrentUser(null);
     } finally {
-        setIsSyncingProfile(false);
+        setIsLoadingUser(false);
     }
   }, [toast]);
   
   const clearCoraboUser = useCallback(() => {
     setCurrentUser(null);
-    setIsSyncingProfile(false);
+    setIsLoadingUser(false); // Set loading to false when user is cleared
   }, []);
-
-  // Effect to sync user profile when firebaseUser changes
-  useEffect(() => {
-      if (firebaseUser) {
-          syncCoraboUser(firebaseUser);
-      } else {
-          clearCoraboUser();
-      }
-  }, [firebaseUser, syncCoraboUser, clearCoraboUser]);
 
   useEffect(() => {
     const savedAddress = sessionStorage.getItem('coraboDeliveryAddress');
@@ -222,8 +208,8 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
       if (!currentUserLocation || !provider.profileSetupData?.location) return null;
       const [lat2, lon2] = provider.profileSetupData.location.split(',').map(Number);
       const distanceKm = haversineDistance(currentUserLocation.latitude, currentUserLocation.longitude, lat2, lon2);
-      if (provider.profileSetupData.showExactLocation === false) return `~${distanceKm.toFixed(0)} km`;
-      return `${distanceKm.toFixed(0)} km`;
+      if (provider.profileSetupData.showExactLocation === false) return `~${'\'\'\''}${distanceKm.toFixed(0)} km`;
+      return `${'\'\'\''}${distanceKm.toFixed(0)} km`;
   }, [currentUserLocation]);
   
   const setDeliveryAddressToCurrent = useCallback(() => {
@@ -232,7 +218,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
             (position) => {
                 const newLocation = { latitude: position.coords.latitude, longitude: position.coords.longitude };
                 setCurrentUserLocation(newLocation);
-                setDeliveryAddress(`${newLocation.latitude},${newLocation.longitude}`);
+                setDeliveryAddress(`${'\'\'\''}${newLocation.latitude},${newLocation.longitude}`);
             },
             (error) => {
                 toast({ variant: 'destructive', title: 'Error de Ubicación', description: 'No se pudo obtener tu ubicación actual.'});
@@ -258,14 +244,14 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
             const avgMinutes = (paymentTimes.reduce((a, b) => a + b, 0) / paymentTimes.length) / 60000;
             if(avgMinutes < 15) paymentSpeed = '<15 min';
             else if (avgMinutes < 60) paymentSpeed = '<1 hr';
-            else paymentSpeed = `+${Math.floor(avgMinutes / 60)} hr`;
+            else paymentSpeed = `+${'\'\'\''}${Math.floor(avgMinutes / 60)} hr`;
         }
         return { reputation, effectiveness, responseTime, paymentSpeed };
     }, [transactions]);
 
     const getAgendaEvents = useCallback((agendaTransactions: Transaction[]) => {
       return agendaTransactions.filter(tx => tx.status === 'Finalizado - Pendiente de Pago').map(tx => ({
-        date: new Date(tx.date), type: 'payment' as 'payment' | 'task', description: `Pago a ${tx.providerId}`, transactionId: tx.id,
+        date: new Date(tx.date), type: 'payment' as 'payment' | 'task', description: `Pago a ${'\'\'\''}${tx.providerId}`, transactionId: tx.id,
       }));
     }, []);
     

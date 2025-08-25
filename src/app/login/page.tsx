@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useAuth } from '@/components/auth/AuthProvider';
@@ -15,12 +14,12 @@ export default function LoginPage() {
 
   const handleSignIn = async () => {
     try {
-      // signInWithGoogle now returns the user, but we don't need it here.
-      // The state change in AuthProvider and CoraboContext will trigger AppLayout's logic.
+      // signInWithGoogle now handles the full logic flow internally.
+      // We just need to call it. AppLayout will handle redirection
+      // based on the updated context state.
       await signInWithGoogle();
-      // No need to manually redirect. AppLayout will handle it.
     } catch (error: any) {
-       // Errors are already handled inside signInWithGoogle, but we catch here as a fallback.
+       // This catch block is a fallback, as errors are now handled inside the hook.
        console.error("Login page sign-in error:", error);
     }
   };
