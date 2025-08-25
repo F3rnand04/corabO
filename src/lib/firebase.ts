@@ -4,11 +4,13 @@
 import { initializeApp, getApp, getApps, type FirebaseApp } from "firebase/app";
 import { getFirestore, type Firestore } from "firebase/firestore";
 import { getAuth, type Auth } from "firebase/auth";
+import { getAnalytics, isSupported, type Analytics } from "firebase/analytics";
 import { firebaseConfig } from './firebase-config';
 
 let app: FirebaseApp;
 let db: Firestore;
 let auth: Auth;
+let analytics: Analytics | null = null;
 
 function getFirebaseAppInstance(): FirebaseApp {
     if (!getApps().length) {
@@ -40,4 +42,14 @@ export function getAuthInstance(): Auth {
         auth.languageCode = 'es';
     }
     return auth;
+}
+
+// Initialize Analytics and Crashlytics
+const appInstance = getFirebaseApp();
+if (typeof window !== 'undefined') {
+    isSupported().then((supported) => {
+        if (supported) {
+            analytics = getAnalytics(appInstance);
+        }
+    });
 }

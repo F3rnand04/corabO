@@ -8,6 +8,6 @@ export const firebaseConfig = {
   "storageBucket": "corabo-demo.appspot.com",
   "apiKey": "AIzaSyAOZ9eRQz1Sry6pdLNwCVZ3QNsr1pZgHnQ",
   "authDomain": "corabo-demo.firebaseapp.com",
-  "measurementId": "",
+  "measurementId": "G-XXXXXXXXXX",
   "messagingSenderId": "220291714642"
 };
