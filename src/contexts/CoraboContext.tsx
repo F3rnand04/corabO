@@ -179,7 +179,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
 
     if (currentUser?.id) {
         // We already have the main user data, but we listen for realtime updates to it.
-        const userDocRef = doc(db, 'users', userId);
+        const userDocRef = doc(db, 'users', currentUser.id);
         unsubscribes.push(onSnapshot(userDocRef, (doc) => {
             if (doc.exists()) {
                 setCurrentUser(prev => ({ ...prev, ...doc.data() }));

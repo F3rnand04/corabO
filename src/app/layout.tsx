@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { Providers } from './providers';
@@ -33,7 +34,6 @@ export default async function RootLayout({
       const { auth } = getFirebaseAdmin();
       const decodedClaims = await auth.verifySessionCookie(sessionCookie, true);
       
-      // Reconstruct a minimal FirebaseUser-like object for the client
       serverFirebaseUser = {
           uid: decodedClaims.uid,
           email: decodedClaims.email,
@@ -43,7 +43,7 @@ export default async function RootLayout({
       } as FirebaseUser;
     }
   } catch (error) {
-    console.log('Session cookie verification failed. This is expected on logout or expiration.');
+    console.log('Session cookie verification failed. Expected on logout/expiration.');
     serverFirebaseUser = null;
   }
 

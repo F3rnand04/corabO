@@ -1,8 +1,8 @@
 
 import { z } from 'zod';
 
-export type FirebaseUserInput = { uid: string; email?: string | null; displayName: string | null; photoURL?: string | null; phoneNumber?: string | null; emailVerified: boolean; };
-export type FirebaseUserInput = { uid: string; email?: string | null; displayName: string | null; photoURL?: string | null; phoneNumber?: string | null; emailVerified: boolean; };
+export type FirebaseUserInput = { uid: string; email?: string | null; displayName?: string | null; photoURL?: string | null; phoneNumber?: string | null; emailVerified: boolean; };
+
 export type Affiliation = {
   id: string;
   providerId: string;

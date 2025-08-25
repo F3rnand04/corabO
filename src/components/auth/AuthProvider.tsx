@@ -4,7 +4,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User as FirebaseUser } from 'firebase/auth';
 import { getAuthInstance } from '@/lib/firebase';
-import { useCorabo } from '@/contexts/CoraboContext';
+import { CoraboContext } from '@/contexts/CoraboContext'; // Corrected import
 import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
@@ -24,15 +24,16 @@ type AuthProviderProps = {
 export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps) => {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(serverFirebaseUser);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  const { syncCoraboUser, clearCoraboUser, currentUser } = useCorabo();
+  const coraboContext = useContext(CoraboContext); // Use the context
   const { toast } = useToast();
 
   useEffect(() => {
+    if (!coraboContext) return; // Wait for context to be available
+    const { syncCoraboUser, clearCoraboUser, currentUser } = coraboContext;
+
     const unsubscribe = onAuthStateChanged(getAuthInstance(), async (user) => {
         setFirebaseUser(user);
         if (user) {
-            // This is the key: sync the Corabo user profile whenever the Firebase user state changes.
-            // The CoraboContext will handle the logic of fetching or creating.
             if (!currentUser || currentUser.id !== user.uid) {
                await syncCoraboUser(user);
             }
@@ -43,23 +44,32 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
     });
 
     return () => unsubscribe();
-  }, [syncCoraboUser, clearCoraboUser, currentUser]);
+  }, [coraboContext, toast]);
 
 
   const signInWithGoogle = async () => {
     setIsLoadingAuth(true);
     try {
-        const auth = getAuthInstance();
-        const provider = new GoogleAuthProvider();
-        await signInWithPopup(auth, provider);
-        // The onAuthStateChanged listener will handle the rest of the logic,
-        // so we don't need to do anything else here.
+      const auth = getAuthInstance();
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const token = await result.user.getIdToken();
+      
+      // Call the API route to set the session cookie
+      await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken: token }),
+      });
+      // The onAuthStateChanged listener will handle the rest, but we can force a reload to be sure
+      window.location.assign('/');
+
     } catch (error: any) {
         if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
             console.error("Error signing in with Google:", error);
             toast({ variant: 'destructive', title: "Error de Inicio de Sesión", description: "No se pudo iniciar sesión con Google." });
         }
-        setIsLoadingAuth(false); // Ensure loading is stopped on error
+        setIsLoadingAuth(false);
     }
   };
 
@@ -67,11 +77,12 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
     setIsLoadingAuth(true);
     try {
         await signOut(getAuthInstance());
-        // The onAuthStateChanged listener will handle clearing the user state.
+        // Call the API route to clear the session cookie
+        await fetch('/api/auth/session', { method: 'DELETE' });
     } catch (error) {
          console.error("Error signing out:", error);
     } finally {
-        window.location.href = '/login'; // Force a full redirect to clear all state
+        window.location.href = '/login'; 
     }
   };
   
