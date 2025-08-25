@@ -234,8 +234,12 @@ export async function confirmWorkReceived(data: { transactionId: string; userId:
   revalidatePath('/transactions');
 }
 
-export async function payCommitment(data: { transactionId: string, userId: string, paymentDetails: any }) {
-  await payCommitmentFlow(data);
+export async function payCommitment(transactionId: string) {
+  // This is a simplified action now. The details are in the component.
+  const { getFirebaseAdmin } = await import('./firebase-server');
+  const { firestore } = getFirebaseAdmin();
+  const txRef = firestore.collection('transactions').doc(transactionId);
+  await txRef.update({ status: 'Pago Enviado - Esperando Confirmación' });
   revalidatePath('/transactions');
 }
 

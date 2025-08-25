@@ -8,7 +8,6 @@ import { getFirestoreDb } from '@/lib/firebase';
 import { doc, onSnapshot, collection, query, where, orderBy, Unsubscribe, writeBatch, deleteField } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import * as Actions from '@/lib/actions';
-import { useAuth } from '@/components/auth/AuthProvider';
 
 interface CoraboContextValue {
   currentUser: User | null;
