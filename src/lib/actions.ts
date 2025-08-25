@@ -9,10 +9,8 @@
  */
 import type { User, ProfileSetupData, Transaction, Product, CartItem, GalleryImage, CreatePublicationInput, CreateProductInput, VerificationOutput, CashierBox, QrSession, TempRecipientInfo, FirebaseUserInput } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
-import { ai } from '@/ai/genkit';
 
-
-// Import all flows statically, using aliases to prevent name collisions.
+// Import all flows statically.
 import { getOrCreateUserFlow } from '@/ai/flows/auth-flow';
 import { 
     updateUserFlow, 
