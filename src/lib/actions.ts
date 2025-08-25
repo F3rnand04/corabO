@@ -65,6 +65,7 @@ import {
 import { autoVerifyIdWithAIFlow } from '@/ai/flows/verification-flow';
 import { sendNewCampaignNotifications as sendNewCampaignNotificationsFlow } from '@/ai/flows/notification-flow';
 import { updateCartFlow } from '@/ai/flows/cart-flow';
+import { getFeedFlow } from '@/ai/flows/feed-flow';
 
 // =================================
 // AUTH & USER ACTIONS
@@ -90,7 +91,6 @@ export async function getPublicProfile(userId: string): Promise<Partial<User> | 
 }
 
 export async function getFeed(params: { limitNum: number, startAfterDocId?: string }) {
-   const { getFeedFlow } = await import('@/ai/flows/feed-flow');
    return await runFlow(getFeedFlow, params);
 }
 
@@ -145,7 +145,7 @@ export async function rejectUserId(userId: string) {
 export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput | null> {
     const input = {
       userId: user.id,
-      nameInRecord: `${user.name} ${user.lastName || ''}`.trim(),
+      nameInRecord: `${'\'\'\''}${user.name} ${user.lastName || ''}`.trim(),
       idInRecord: user.idNumber || '',
       documentImageUrl: user.idDocumentUrl || '',
       isCompany: user.profileSetupData?.providerType === 'company',

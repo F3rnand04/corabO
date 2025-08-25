@@ -2,35 +2,21 @@
 'use client';
 
 import { useAuth } from '@/components/auth/AuthProvider';
-import { useCorabo } from '@/contexts/CoraboContext';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { useToast } from '@/hooks/use-toast';
-import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
   const { signInWithGoogle, isLoadingAuth } = useAuth();
-  const { currentUser, isLoadingUser } = useCorabo();
 
   const handleSignIn = async () => {
     try {
       await signInWithGoogle();
-      // La redirección post-login es manejada centralmente por AppLayout.tsx
     } catch (error: any) {
-       // El manejo de errores ya se hace dentro de signInWithGoogle
+       console.error("Login page sign-in error:", error);
     }
   };
   
-  if (isLoadingUser || isLoadingAuth || currentUser) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-muted/40">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
-
   return (
     <div className="relative flex items-center justify-center min-h-screen bg-muted/40 p-4">
       <Image 

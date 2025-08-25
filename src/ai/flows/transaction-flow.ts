@@ -491,11 +491,18 @@ export const startDispute = ai.defineFlow(
 /**
  * Removes a system-generated transaction, such as a renewable subscription payment.
  */
-export async function cancelSystemTransaction(transactionId: string) {
-    const db = getFirestore();
-    const txRef = doc(db, 'transactions', transactionId);
-    await deleteDoc(txRef);
-}
+export const cancelSystemTransaction = ai.defineFlow(
+    {
+        name: 'cancelSystemTransactionFlow',
+        inputSchema: z.string(), // transactionId
+        outputSchema: z.void(),
+    },
+    async (transactionId: string) => {
+        const db = getFirestore();
+        const txRef = doc(db, 'transactions', transactionId);
+        await deleteDoc(txRef);
+    }
+);
 
 /**
  * Placeholder for a flow that would generate a PDF of transactions.

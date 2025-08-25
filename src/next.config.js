@@ -1,3 +1,4 @@
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // The `transpilePackages` option is obsolete with the App Router.

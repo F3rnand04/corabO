@@ -32,6 +32,7 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
 
   // Este efecto sincroniza el estado del cliente con el del servidor.
   useEffect(() => {
+    console.log("Auth state changed. firebaseUser:", serverFirebaseUser);
     setFirebaseUser(serverFirebaseUser);
   }, [serverFirebaseUser]);
 
