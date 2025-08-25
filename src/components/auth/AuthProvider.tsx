@@ -4,7 +4,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User as FirebaseUser } from 'firebase/auth';
 import { getAuthInstance } from '@/lib/firebase';
-import { useToast } from '@/hooks/use-toast';
 import * as Actions from '@/lib/actions';
 
 interface AuthContextType {
@@ -26,7 +25,6 @@ type AuthProviderProps = {
 // 2. Mantener ese estado sincronizado.
 // 3. Proveer las funciones de login/logout que interactúan con la API de sesión.
 export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps) => {
-  const { toast } = useToast();
   // El estado inicial del usuario se establece directamente desde la propiedad del servidor.
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(serverFirebaseUser);
   // isLoadingAuth ahora solo refleja el proceso de login/logout, no la carga inicial.
@@ -66,11 +64,6 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
     } catch (error: any) {
         if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
           console.error("Error signing in with Google:", error);
-           toast({
-              variant: "destructive",
-              title: "Error de Inicio de Sesión",
-              description: "No se pudo iniciar sesión con Google.",
-           });
         }
     } finally {
       // El finally se ejecuta incluso si hay un error, así que no queremos recargar aquí.
