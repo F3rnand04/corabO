@@ -6,7 +6,8 @@ getFirebaseAdmin(); // Ensure Firebase is initialized
 import type { CreatePublicationInput, CreateProductInput, User } from '@/lib/types';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
-import { createProductFlow, createPublicationFlow, addCommentToImageFlow, removeCommentFromImageFlow, updateGalleryImageFlow, removeGalleryImageFlow, sendNewContentNotificationFlow } from '@/ai/flows/publication-flow';
+import { createProductFlow, createPublicationFlow, addCommentToImageFlow, removeCommentFromImageFlow, updateGalleryImageFlow, removeGalleryImageFlow } from '@/ai/flows/publication-flow';
+import { sendNewContentNotificationFlow } from '@/ai/flows/notification-flow';
 
 
 export async function createPublication(input: CreatePublicationInput) {
