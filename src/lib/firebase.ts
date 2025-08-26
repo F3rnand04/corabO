@@ -42,10 +42,6 @@ export function getAuthInstance(): Auth {
     if (!auth) {
         const currentApp = getFirebaseApp();
         auth = getAuth(currentApp);
-        // Connect to the Auth Emulator only in development environment
-        if (process.env.NODE_ENV === 'development') {
-            connectAuthEmulator(auth, "http://127.0.0.1:9101", { disableWarnings: true });
-        }
         auth.languageCode = 'es';
     }
     return auth;
