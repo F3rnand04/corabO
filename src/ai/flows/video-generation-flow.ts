@@ -1,15 +1,17 @@
-
 'use server';
 
 /**
  * @fileOverview A video generation flow.
  */
 import {googleAI} from '@genkit-ai/googleai';
-import {genkit} from 'genkit';
 import {z} from 'zod';
 import {ai} from '@/ai/genkit';
+import {genkit} from 'genkit';
+import * as fs from 'fs';
+import {Readable} from 'stream';
+import type {MediaPart} from 'genkit';
 
-ai.defineFlow(
+const textToVideoFlow = ai.defineFlow(
   {
     name: 'textToVideoFlow',
     inputSchema: z.string(),
@@ -47,10 +49,9 @@ ai.defineFlow(
 
     const videoDownloadUrl = video.media.url;
     
-    // This example does not include saving or returning the video.
-    // In a real app, you would handle the video data here.
     console.log("Video generated, URL (requires API key to download):", videoDownloadUrl);
 
     return "Video generation process completed. See server logs for URL.";
   }
 );
+export {textToVideoFlow};
