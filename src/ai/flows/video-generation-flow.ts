@@ -1,7 +1,9 @@
 'use server';
 
 /**
- * @fileOverview A video generation flow.
+ * @fileOverview A simplified video generation flow.
+ * This flow ONLY handles the call to the AI model and returns the video URL.
+ * File system operations are moved to a separate server action.
  */
 import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'zod';
@@ -11,7 +13,8 @@ const textToVideoFlow = ai.defineFlow(
   {
     name: 'textToVideoFlow',
     inputSchema: z.string(),
-    outputSchema: z.string(),
+    // The output is now the raw media URL from the Genkit operation
+    outputSchema: z.string(), 
   },
   async (prompt) => {
     let {operation} = await ai.generate({
@@ -27,10 +30,9 @@ const textToVideoFlow = ai.defineFlow(
       throw new Error('Expected the model to return an operation');
     }
 
-    // Wait until the operation completes. Note that this may take some time, maybe even up to a minute. Design the UI accordingly.
+    // Wait until the operation completes.
     while (!operation.done) {
       operation = await ai.checkOperation(operation);
-      // Sleep for 5 seconds before checking again.
       await new Promise((resolve) => setTimeout(resolve, 5000));
     }
 
@@ -39,14 +41,16 @@ const textToVideoFlow = ai.defineFlow(
     }
 
     const video = operation.output?.message?.content.find((p) => !!p.media);
-    if (!video || !video.media) {
-      throw new Error('Failed to find the generated video');
+    if (!video || !video.media?.url) {
+      throw new Error('Failed to find the generated video URL in the operation result.');
     }
     
-    // Log the URL on the server. The client will get a simple confirmation message.
-    console.log("Video generated, URL (requires API key to download):", video.media.url);
-
-    return "Video generation process completed. See server logs for URL.";
+    // Return only the URL, let the action handle the download.
+    return video.media.url;
   }
 );
-export {textToVideoFlow};
+
+// This is the function that will be called from the server action.
+export async function generateVideoUrl(prompt: string): Promise<string> {
+    return await textToVideoFlow(prompt);
+}
