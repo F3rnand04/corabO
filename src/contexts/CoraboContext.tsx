@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo, useEffect } from 'react';
@@ -46,15 +45,16 @@ export const CoraboContext = createContext<CoraboContextValue | undefined>(undef
 
 interface CoraboProviderProps {
     children: ReactNode;
+    initialCoraboUser: User | null;
 }
 
-export const CoraboProvider = ({ children }: CoraboProviderProps) => {
+export const CoraboProvider = ({ children, initialCoraboUser }: CoraboProviderProps) => {
   const { firebaseUser, isLoadingAuth } = useAuth();
   const { toast } = useToast();
   
   // Raw data states from Firestore
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const [currentUser, setCurrentUser] = useState<User | null>(initialCoraboUser);
+  const [isLoadingUser, setIsLoadingUser] = useState(initialCoraboUser === null);
   const [users, setUsers] = useState<User[]>([]);
   const [allPublications, setAllPublications] = useState<GalleryImage[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -162,7 +162,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
       setContacts(newContacts);
       // Persist change to Firestore
       // await updateUser(currentUser.id, { contacts: newContacts });
-      toast({ title: "Contacto añadido", description: `${'\'\'\''}${contact.name} ha sido añadido a tu lista.` });
+      toast({ title: "Contacto añadido", description: `${contact.name} ha sido añadido a tu lista.` });
   }, [currentUser, contacts, toast]);
   
   const removeContact = useCallback(async (contactId: string) => {
@@ -178,7 +178,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   const setDeliveryAddressToCurrent = useCallback(() => {
     if (currentUserLocation) {
         // In a real app, you would use a geocoding service here.
-        const address = `Lat: ${'\'\'\''}${currentUserLocation.latitude.toFixed(4)}, Lon: ${currentUserLocation.longitude.toFixed(4)}`;
+        const address = `Lat: ${currentUserLocation.latitude.toFixed(4)}, Lon: ${currentUserLocation.longitude.toFixed(4)}`;
         setDeliveryAddress(address);
     } else {
         toast({

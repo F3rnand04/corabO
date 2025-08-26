@@ -5,7 +5,12 @@ import { Inter } from 'next/font/google';
 import { AuthProvider } from '@/components/auth/AuthProvider';
 import { AppLayout } from '@/app/AppLayout';
 import { CoraboProvider } from '@/contexts/CoraboContext';
-
+import { getFirebaseAdmin } from '@/lib/firebase-server';
+import { cookies } from 'next/headers';
+import type { User as FirebaseUserType } from 'firebase-admin/auth';
+import type { FirebaseUserInput, User } from '@/lib/types';
+import { getOrCreateUserFlow } from '@/ai/flows/auth-flow';
+import { AppRouter } from '@/components/AppRouter';
 
 export const metadata: Metadata = {
   title: 'corabO.app',
@@ -17,11 +22,41 @@ const inter = Inter({
   variable: '--font-inter',
 });
 
+// This function safely gets the initial user data on the server.
+async function getInitialUser(): Promise<{ serverFirebaseUser: FirebaseUserType | null, initialCoraboUser: User | null }> {
+    try {
+        const { auth } = getFirebaseAdmin();
+        const sessionCookie = cookies().get('session')?.value;
+        if (!sessionCookie) {
+            return { serverFirebaseUser: null, initialCoraboUser: null };
+        }
+        const decodedToken = await auth.verifySessionCookie(sessionCookie, true);
+        const serverFirebaseUser = await auth.getUser(decodedToken.uid);
+
+        const userInput: FirebaseUserInput = {
+            uid: serverFirebaseUser.uid,
+            email: serverFirebaseUser.email,
+            displayName: serverFirebaseUser.displayName,
+            photoURL: serverFirebaseUser.photoURL,
+            phoneNumber: serverFirebaseUser.phoneNumber,
+            emailVerified: serverFirebaseUser.emailVerified,
+        };
+        const initialCoraboUser = await getOrCreateUserFlow(userInput);
+
+        return { serverFirebaseUser, initialCoraboUser };
+    } catch (error) {
+        // This can happen if the cookie is expired or invalid. It's not an error.
+        return { serverFirebaseUser: null, initialCoraboUser: null };
+    }
+}
+
+
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const { serverFirebaseUser, initialCoraboUser } = await getInitialUser();
   
   return (
     <html lang="es" suppressHydrationWarning>
@@ -31,11 +66,13 @@ export default async function RootLayout({
       </head>
       <body className={`'__variable_e8ce0c' antialiased bg-background`}>
         <Providers attribute="class" defaultTheme="system" enableSystem>
-          <AuthProvider>
-            <CoraboProvider>
-              <AppLayout>
-                {children}
-              </AppLayout>
+          <AuthProvider serverFirebaseUser={serverFirebaseUser}>
+            <CoraboProvider initialCoraboUser={initialCoraboUser}>
+              <AppRouter>
+                 <AppLayout>
+                  {children}
+                </AppLayout>
+              </AppRouter>
             </CoraboProvider>
           </AuthProvider>
         </Providers>

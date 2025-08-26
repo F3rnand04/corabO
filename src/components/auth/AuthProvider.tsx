@@ -3,9 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { getAuthInstance } from '@/lib/firebase';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { getOrCreateUser } from '@/lib/actions/user.actions';
-import type { FirebaseUserInput } from '@/lib/types';
+import { onIdTokenChanged, signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
@@ -18,33 +16,28 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 type AuthProviderProps = {
     children: ReactNode;
+    serverFirebaseUser: FirebaseUser | null;
 };
 
-export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps) => {
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(serverFirebaseUser);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(serverFirebaseUser === null);
   const router = useRouter();
   
   useEffect(() => {
     const auth = getAuthInstance();
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setIsLoadingAuth(true);
-      if (user) {
-        setFirebaseUser(user);
-        const userData: FirebaseUserInput = {
-            uid: user.uid,
-            email: user.email,
-            displayName: user.displayName,
-            photoURL: user.photoURL,
-            phoneNumber: user.phoneNumber,
-            emailVerified: user.emailVerified,
-        };
-        // Ensure user document exists before proceeding
-        await getOrCreateUser(userData);
-      } else {
-        setFirebaseUser(null);
-      }
+    const unsubscribe = onIdTokenChanged(auth, async (user) => {
+      setFirebaseUser(user);
       setIsLoadingAuth(false);
+      
+      const idToken = user ? await user.getIdToken() : null;
+      // Send the token to the server to set a session cookie
+      // This is crucial for keeping the server and client in sync
+      await fetch('/api/auth/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken }),
+      });
     });
 
     return () => unsubscribe();
@@ -54,7 +47,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const auth = getAuthInstance();
     await signOut(auth);
     setFirebaseUser(null);
-    router.push('/login'); // Redirect to login on logout
+    // The fetch to clear the cookie is now handled by the onIdTokenChanged listener
+    router.push('/login');
   };
   
   const value: AuthContextType = {
