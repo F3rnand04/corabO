@@ -6,8 +6,8 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { getFirestore, writeBatch, doc, getDoc } from 'firebase-admin/firestore';
-import type { Transaction, CartItem, Product } from '@/lib/types';
+import { getFirestore } from 'firebase-admin/firestore';
+import type { Transaction, CartItem, Product, GalleryImage } from '@/lib/types';
 
 const UpdateCartInputSchema = z.object({
   userId: z.string(),
@@ -23,13 +23,13 @@ export const updateCartFlow = ai.defineFlow(
   },
   async ({ userId, productId, newQuantity }) => {
     const db = getFirestore();
-    const batch = writeBatch(db);
+    const batch = db.batch();
 
-    const productRef = doc(db, 'publications', productId);
-    const productSnap = await getDoc(productRef);
+    const productRef = db.collection('publications').doc(productId);
+    const productSnap = await productRef.get();
     if (!productSnap.exists()) throw new Error("Product not found");
     
-    const productData = productSnap.data();
+    const productData = productSnap.data() as GalleryImage;
     if(productData.type !== 'product' || !productData.productDetails) {
         throw new Error("Item is not a valid product.");
     }
@@ -64,7 +64,7 @@ export const updateCartFlow = ai.defineFlow(
     } else {
         // Create new cart transaction
         const cartId = `cart-${userId}-${providerId}`;
-        cartTxRef = doc(db, 'transactions', cartId);
+        cartTxRef = db.collection('transactions').doc(cartId);
     }
     
     const itemIndex = existingItems.findIndex(item => item.product.id === productId);

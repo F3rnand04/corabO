@@ -7,7 +7,6 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestore } from 'firebase-admin/firestore';
-import { doc, getDoc, updateDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import type { Transaction, User } from '@/lib/types';
 import { haversineDistance } from '@/lib/utils';
 import { sendMessage } from './message-flow';
@@ -31,18 +30,18 @@ export const findDeliveryProvider = ai.defineFlow(
   },
   async ({ transactionId }) => {
     const db = getFirestore();
-    const txRef = doc(db, 'transactions', transactionId);
-    const txSnap = await getDoc(txRef);
+    const txRef = db.collection('transactions').doc(transactionId);
+    const txSnap = await txRef.get();
 
     if (!txSnap.exists()) throw new Error('Transaction not found');
     const transaction = txSnap.data() as Transaction;
     
-    const providerRef = doc(db, 'users', transaction.providerId);
-    const providerSnap = await getDoc(providerRef);
-    if (!providerSnap.exists() || !providerSnap.data().profileSetupData?.location) {
+    const providerRef = db.collection('users').doc(transaction.providerId);
+    const providerSnap = await providerRef.get();
+    if (!providerSnap.exists() || !providerSnap.data()?.profileSetupData?.location) {
         throw new Error('Provider location not found');
     }
-    const [providerLat, providerLon] = providerSnap.data().profileSetupData!.location!.split(',').map(Number);
+    const [providerLat, providerLon] = (providerSnap.data() as User).profileSetupData!.location!.split(',').map(Number);
     
     let attempts = 0;
     const MAX_ATTEMPTS = 3;
@@ -51,13 +50,10 @@ export const findDeliveryProvider = ai.defineFlow(
         attempts++;
         console.log(`Delivery search attempt ${attempts} for tx: ${transactionId}`);
         
-        const q = query(
-            collection(db, 'users'),
-            where('type', '==', 'repartidor'),
-            where('isGpsActive', '==', true)
-            // More complex location queries would require a more advanced setup (e.g., GeoFire)
-        );
-        const repartidoresSnap = await getDocs(q);
+        const q = db.collection('users')
+            .where('type', '==', 'repartidor')
+            .where('isGpsActive', '==', true);
+        const repartidoresSnap = await q.get();
         
         const availableRepartidores = repartidoresSnap.docs
             .map(d => d.data() as User)
@@ -69,37 +65,32 @@ export const findDeliveryProvider = ai.defineFlow(
             });
 
         if (availableRepartidores.length > 0) {
-            // Found a delivery provider. In a real app, you'd have more logic here
-            // like choosing the closest one, checking their current load, etc.
             const assignedRepartidor = availableRepartidores[0];
 
-            await updateDoc(txRef, {
+            await txRef.update({
               'details.deliveryProviderId': assignedRepartidor.id,
               status: 'En Reparto',
             });
             
-            // This is a simplified notification for the prototype
             await sendMessage({
                 conversationId: [transaction.providerId, assignedRepartidor.id].sort().join('-'),
                 senderId: transaction.providerId,
                 recipientId: assignedRepartidor.id,
                 text: `¡Nuevo pedido para entregar! ID: ${transactionId}. Por favor, acéptalo en tu panel de transacciones.`
             });
-            return; // Exit the flow successfully
+            return;
         }
 
         if (attempts < MAX_ATTEMPTS) {
-            await sleep(10000); // Wait 10 seconds before retrying
+            await sleep(10000);
         }
     }
 
-    // If loop finishes without finding a provider
-    await updateDoc(txRef, { status: 'Error de Delivery - Acción Requerida' });
+    await txRef.update({ status: 'Error de Delivery - Acción Requerida' });
 
-    // Send a notification to the provider about the failure
     await sendNotification({
         userId: transaction.providerId,
-        type: 'admin_alert', // Use a high-priority type
+        type: 'admin_alert',
         title: 'Error en Asignación de Delivery',
         message: `No pudimos encontrar un repartidor para la orden ${transaction.id.slice(-6)}. Revisa la transacción para elegir una alternativa.`,
         link: `/transactions?tx=${transaction.id}`
@@ -120,20 +111,18 @@ export const resolveDeliveryAsPickup = ai.defineFlow(
     },
     async ({ transactionId }) => {
         const db = getFirestore();
-        const batch = writeBatch(db);
-        const txRef = doc(db, 'transactions', transactionId);
-        const txSnap = await getDoc(txRef);
+        const batch = db.batch();
+        const txRef = db.collection('transactions').doc(transactionId);
+        const txSnap = await txRef.get();
 
         if (!txSnap.exists()) throw new Error('Transaction not found');
         const transaction = txSnap.data() as Transaction;
         
-        // 1. Update original transaction to be a pickup
         batch.update(txRef, {
             status: 'Listo para Retirar en Tienda',
             'details.delivery.method': 'pickup',
         });
         
-        // 2. Create refund transaction if delivery was paid
         if (transaction.details.deliveryCost && transaction.details.deliveryCost > 0) {
             const refundTxId = `txn-refund-${transactionId.slice(-6)}`;
             const refundTx: Transaction = {
@@ -142,7 +131,6 @@ export const resolveDeliveryAsPickup = ai.defineFlow(
                 status: 'Finalizado - Pendiente de Pago',
                 date: new Date().toISOString(),
                 amount: transaction.details.deliveryCost,
-                // The provider owes the client the refund
                 clientId: transaction.providerId,
                 providerId: transaction.clientId, 
                 participantIds: [transaction.providerId, transaction.clientId],
@@ -150,10 +138,9 @@ export const resolveDeliveryAsPickup = ai.defineFlow(
                     system: `Reembolso por delivery fallido (Tx: ${transactionId})`,
                 }
             };
-            batch.set(doc(db, 'transactions', refundTxId), refundTx);
+            batch.set(db.collection('transactions').doc(refundTxId), refundTx);
         }
 
-        // 3. Notify the client
         await sendMessage({
             conversationId: [transaction.providerId, transaction.clientId].sort().join('-'),
             senderId: transaction.providerId,

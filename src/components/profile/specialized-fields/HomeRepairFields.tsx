@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -46,6 +47,7 @@ export const HomeRepairFields = ({ formData, onSpecializedChange }: SpecializedF
                 <div className="flex flex-wrap gap-2">
                     {homeRepairTradesOptions.map(trade => (
                         <Button
+                            type="button"
                             key={trade}
                             variant={(formData.specializedData?.mainTrades || []).includes(trade) ? 'default' : 'outline'}
                             onClick={() => handleTradeChange(trade)}
@@ -63,7 +65,7 @@ export const HomeRepairFields = ({ formData, onSpecializedChange }: SpecializedF
                 </div>
                 <div className="flex flex-wrap gap-2 pt-2">
                     {(formData.specializedData?.specificSkills || []).map(skill => (
-                        <Badge key={skill} variant="secondary">{skill}<button onClick={() => handleRemoveSkill(skill)} className="ml-2 rounded-full hover:bg-background/50"><X className="h-3 w-3"/></button></Badge>
+                        <Badge key={skill} variant="secondary">{skill}<button type="button" onClick={() => handleRemoveSkill(skill)} className="ml-2 rounded-full hover:bg-background/50"><X className="h-3 w-3"/></button></Badge>
                     ))}
                 </div>
             </div>

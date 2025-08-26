@@ -13,7 +13,7 @@ import { z } from 'zod';
 const VerificationInputSchema = z.object({
   userId: z.string(),
   nameInRecord: z.string(),
-  idInRecord: z.string(), // The ID number from the user's record
+  idInRecord: z.string(),
   documentImageUrl: z.string(),
   isCompany: z.boolean().optional(),
 });
@@ -31,26 +31,19 @@ const VerificationOutputSchema = z.object({
 export type VerificationOutput = z.infer<typeof VerificationOutputSchema>;
 
 export async function autoVerifyIdWithAI(input: VerificationInput): Promise<VerificationOutput> {
-  // This function is now the clean, exported wrapper.
   return autoVerifyIdWithAIFlow(input);
 }
 
-// ID normalization logic as per documentation
 const normalizeId = (id: string): string => {
     if (!id) return '';
     return id
         .trim()
         .toLowerCase()
-        // Common OCR error: 'o' instead of '0'
         .replace(/o/g, '0') 
-        // Remove common prefixes for Venezuelan IDs (V, E, J, G)
         .replace(/^[vejg]-?/, "") 
-        // Remove all non-digit characters (dots, dashes, spaces)
         .replace(/\D/g, ''); 
 };
 
-// **FIX**: Enhanced name comparison to be more flexible, inspired by SequenceMatcher logic.
-// This function calculates a similarity index between two strings.
 function calculateSimilarity(str1: string, str2: string): number {
     const s1 = str1.toLowerCase().replace(/\s+/g, '');
     const s2 = str2.toLowerCase().replace(/\s+/g, '');
@@ -86,7 +79,6 @@ function compareNamesFlexibly(nameA: string, nameB: string): boolean {
     
     const similarity = calculateSimilarity(normalizedA, normalizedB);
     
-    // If similarity is very high (e.g., > 80%), consider it a match.
     return similarity > 0.8;
 }
 
@@ -127,7 +119,6 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
         throw new Error('AI model did not return a text response.');
     }
     
-    // Manual parsing of the text response
     const nameMatchResult = responseText.match(/(?:Nombre|Razón Social):\s*(.*)/);
     const idMatchResult = responseText.match(/(?:ID|ID Fiscal):\s*(.*)/);
 
@@ -138,7 +129,6 @@ const autoVerifyIdWithAIFlow = ai.defineFlow(
         throw new Error('La IA no pudo extraer los campos necesarios del documento. Por favor, asegúrate de que la imagen sea clara y legible, o solicita una revisión manual.');
     }
 
-    // Apply the flexible and normalized comparison logic
     const idMatch = normalizeId(extractedId) === normalizeId(input.idInRecord);
     const nameMatch = compareNamesFlexibly(input.nameInRecord, extractedName);
 

@@ -6,6 +6,7 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { getAuthInstance } from '@/lib/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { getOrCreateUser } from '@/lib/actions';
+import type { FirebaseUserInput } from '@/lib/types';
 
 interface AuthContextType {
   firebaseUser: FirebaseUser | null;
@@ -17,11 +18,11 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 type AuthProviderProps = {
     children: ReactNode;
-    serverFirebaseUser: FirebaseUser | null; 
+    serverFirebaseUser?: FirebaseUser | null; 
 };
 
-export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
+export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps) => {
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(serverFirebaseUser || null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   
   useEffect(() => {
@@ -29,15 +30,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setFirebaseUser(user);
       if (user) {
-        // When a user signs in (including anonymously), ensure their profile exists in Firestore.
-        await getOrCreateUser({
+        const userData: FirebaseUserInput = {
             uid: user.uid,
             email: user.email,
             displayName: user.displayName,
             photoURL: user.photoURL,
             phoneNumber: user.phoneNumber,
             emailVerified: user.emailVerified,
-        });
+        };
+        await getOrCreateUser(userData);
       }
       setIsLoadingAuth(false);
     });

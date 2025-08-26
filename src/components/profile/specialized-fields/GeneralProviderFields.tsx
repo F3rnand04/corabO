@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -40,7 +41,7 @@ export const GeneralProviderFields = ({ formData, onSpecializedChange }: Special
                 </div>
                 <div className="flex flex-wrap gap-2 pt-2">
                     {formData.specializedData?.keySkills?.map(skill => (
-                        <Badge key={skill} variant="secondary">{skill}<button onClick={() => handleRemoveSkill(skill)} className="ml-2 rounded-full hover:bg-background/50"><X className="h-3 w-3"/></button></Badge>
+                        <Badge key={skill} variant="secondary">{skill}<button type="button" onClick={() => handleRemoveSkill(skill)} className="ml-2 rounded-full hover:bg-background/50"><X className="h-3 w-3"/></button></Badge>
                     ))}
                 </div>
             </div>

@@ -86,7 +86,7 @@ export const approveAffiliationFlow = ai.defineFlow(
     const providerRef = db.collection('users').doc(providerId);
     const companyRef = db.collection('users').doc(companyId);
     const companySnap = await companyRef.get();
-    if (!companySnap.exists) throw new Error("Company not found");
+    if (!companySnap.exists()) throw new Error("Company not found");
     const companyData = companySnap.data() as User;
 
     // Update affiliation status
@@ -151,4 +151,3 @@ export const revokeAffiliationFlow = ai.defineFlow(
      await batch.commit();
   }
 );
-

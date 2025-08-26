@@ -37,24 +37,11 @@ export const sendSmsVerificationCodeFlow = ai.defineFlow(
       phoneVerificationCode: verificationCode,
       phoneVerificationCodeExpires: codeExpiry.toISOString(),
     });
-
-    // const accountSid = env.TWILIO_ACCOUNT_SID;
-    // const authToken = env.TWILIO_AUTH_TOKEN;
-    // const twilioNumber = env.TWILIO_PHONE_NUMBER;
-    
-    // const twilioClient = new Twilio(accountSid, authToken);
     
     try {
-        // await twilioClient.messages.create({
-        //     body: `Tu código de verificación para Corabo es: ${'\'\'\''}${verificationCode}`,
-        //     from: twilioNumber,
-        //     to: phoneNumber,
-        // });
         console.log(`Simulating SMS to ${phoneNumber}: Your code is ${verificationCode}`);
     } catch (error) {
         console.error("Error sending SMS via Twilio in flow:", error);
-        // Do not re-throw the error to the client, just log it.
-        // The client will handle the "pending" state.
     }
   }
 );
@@ -91,10 +78,9 @@ export const verifySmsCodeFlow = ai.defineFlow(
             return { success: false, message: "El código de verificación es incorrecto." };
         }
 
-        // Code is correct and not expired. Mark phone as validated.
         await userRef.update({
             phoneValidated: true,
-            phoneVerificationCode: null, // Clear the code after use
+            phoneVerificationCode: null,
             phoneVerificationCodeExpires: null,
         });
 

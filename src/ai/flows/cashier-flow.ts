@@ -7,9 +7,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import QRCode from 'qrcode';
-import type { CashierBox, User, QrSession } from '@/lib/types';
-import { getFirestore } from 'firebase-admin/firestore';
-import { collection, doc, getDoc, getDocs, query, setDoc, where } from 'firebase/firestore';
+import type { CashierBox } from '@/lib/types';
 
 const CreateCashierBoxInputSchema = z.object({
   userId: z.string(),
@@ -22,13 +20,8 @@ const RegenerateQrInputSchema = z.object({
     boxId: z.string(),
 });
 
-const CashierBoxSchema = z.object({
-    id: z.string(),
-    name: z.string(),
-    passwordHash: z.string(),
-    qrValue: z.string(),
-    qrDataURL: z.string(),
-});
+const CashierBoxSchema = z.custom<CashierBox>();
+
 
 /**
  * Creates a new cashier box, generates a QR code for it, and returns the box object.

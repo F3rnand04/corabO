@@ -14,9 +14,8 @@ import {
   type User,
   type Campaign,
   type Transaction,
-  credicoraLevels,
 } from '@/lib/types';
-import { getFirestore, writeBatch, doc, getDoc } from 'firebase-admin/firestore';
+import { getFirestore } from 'firebase-admin/firestore';
 
 
 const CreateCampaignInputSchema = z.object({
@@ -37,36 +36,8 @@ const CreateCampaignInputSchema = z.object({
 export type CreateCampaignInput = z.infer<typeof CreateCampaignInputSchema>;
 
 // The campaign type is already defined in src/lib/types.ts, so we can reuse it.
-const CampaignOutputSchema = z.object({
-  id: z.string(),
-  providerId: z.string(),
-  publicationId: z.string(),
-  budget: z.number(),
-  durationDays: z.number(),
-  startDate: z.string(),
-  endDate: z.string(),
-  status: z.enum([
-    'pending_payment',
-    'active',
-    'completed',
-    'cancelled',
-    'verified',
-  ]),
-  stats: z.object({
-    impressions: z.number(),
-    reach: z.number(),
-    clicks: z.number(),
-    messages: z.number(),
-  }),
-  budgetLevel: z.enum(['basic', 'advanced', 'premium']),
-  dailyBudget: z.number(),
-  segmentation: z.object({
-    geographic: z.array(z.string()).optional(),
-    interests: z.array(z.string()).optional(),
-  }),
-  appliedSubscriptionDiscount: z.number().optional(),
-  financedWithCredicora: z.boolean(),
-});
+const CampaignOutputSchema = z.custom<Campaign>();
+
 
 export async function createCampaign(
   input: CreateCampaignInput
@@ -83,7 +54,7 @@ const createCampaignFlow = ai.defineFlow(
   async (input: CreateCampaignInput) => {
     const db = getFirestore();
     const userRef = db.collection('users').doc(input.userId);
-    const userSnap = await getDoc(userRef);
+    const userSnap = await userRef.get();
 
     if (!userSnap.exists() || userSnap.data()?.type !== 'provider') {
       throw new Error('User not found or is not a provider.');

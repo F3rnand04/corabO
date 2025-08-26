@@ -1,5 +1,4 @@
 
-
 'use server';
 /**
  * @fileOverview A notification management flow.
@@ -11,7 +10,6 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestore } from 'firebase-admin/firestore';
-import { collection, doc, setDoc, query, where, getDocs, getDoc, writeBatch } from 'firebase/firestore';
 import type { Notification, Transaction, User, Campaign } from '@/lib/types';
 import { addDays, differenceInDays, isFuture, isPast } from 'date-fns';
 
@@ -37,14 +35,14 @@ export const sendNotification = ai.defineFlow(
   async (input) => {
     const db = getFirestore();
     const notificationId = `notif-${input.userId}-${Date.now()}`;
-    const notificationRef = doc(db, 'notifications', notificationId);
+    const notificationRef = db.collection('notifications').doc(notificationId);
     const newNotification: Notification = {
       id: notificationId,
       ...input,
       isRead: false,
       timestamp: new Date().toISOString(),
     };
-    await setDoc(notificationRef, newNotification);
+    await notificationRef.set(newNotification);
   }
 );
 
@@ -61,19 +59,16 @@ export const checkPaymentDeadlines = ai.defineFlow(
     },
     async () => {
         const db = getFirestore();
-        const q = query(
-            collection(db, 'transactions'),
-            where('status', 'in', ['Finalizado - Pendiente de Pago', 'Pendiente de Confirmación del Cliente'])
-        );
+        const q = db.collection('transactions')
+            .where('status', 'in', ['Finalizado - Pendiente de Pago', 'Pendiente de Confirmación del Cliente']);
 
-        const querySnapshot = await getDocs(q);
+        const querySnapshot = await q.get();
         if (querySnapshot.empty) return;
 
         const now = new Date();
         
         for (const docSnap of querySnapshot.docs) {
             const tx = docSnap.data() as Transaction;
-            // For 'Pendiente de Confirmación', due date is when it was marked complete + grace period
             const dueDate = tx.status === 'Pendiente de Confirmación del Cliente' 
                 ? addDays(new Date(tx.date), 1) // 1 day grace period for client to confirm
                 : new Date(tx.date);
@@ -81,7 +76,6 @@ export const checkPaymentDeadlines = ai.defineFlow(
             if (isFuture(dueDate)) {
                 const daysUntilDue = differenceInDays(dueDate, now);
                 
-                // Proactive Reminders for clients to pay
                 if (tx.status === 'Finalizado - Pendiente de Pago' && [7, 2, 1].includes(daysUntilDue)) {
                     await sendNotification({
                         userId: tx.clientId,
@@ -103,7 +97,6 @@ export const checkPaymentDeadlines = ai.defineFlow(
             } else if (isPast(dueDate)) {
                 const daysOverdue = differenceInDays(now, dueDate);
                  
-                 // Alert for clients who haven't paid
                 if (tx.status === 'Finalizado - Pendiente de Pago' && daysOverdue >= 1) {
                     if (daysOverdue >= 1 && daysOverdue <= 2) {
                         await sendNotification({
@@ -124,7 +117,6 @@ export const checkPaymentDeadlines = ai.defineFlow(
                     }
                 }
                 
-                // Alert for providers who haven't confirmed a payment sent by client
                 if(tx.status === 'Pago Enviado - Esperando Confirmación' && daysOverdue >= 2) {
                     await sendNotification({
                         userId: tx.providerId,
@@ -148,43 +140,35 @@ export const sendNewCampaignNotifications = ai.defineFlow({
     outputSchema: z.void(),
 }, async ({ campaignId }) => {
     const db = getFirestore();
-    const campaignRef = doc(db, 'campaigns', campaignId);
-    const campaignSnap = await getDoc(campaignRef);
+    const campaignRef = db.collection('campaigns').doc(campaignId);
+    const campaignSnap = await campaignRef.get();
     if (!campaignSnap.exists()) return;
     const campaign = campaignSnap.data() as Campaign;
 
-    const providerRef = doc(db, 'users', campaign.providerId);
-    const providerSnap = await getDoc(providerRef);
+    const providerRef = db.collection('users').doc(campaign.providerId);
+    const providerSnap = await providerRef.get();
     if (!providerSnap.exists()) return;
     const provider = providerSnap.data() as User;
     
-    // Default to provider's primary category if no specific interests are segmented
     const targetInterests = campaign.segmentation.interests?.length 
         ? campaign.segmentation.interests 
-        : [provider.profileSetupData?.primaryCategory].filter(Boolean);
+        : (provider.profileSetupData?.primaryCategory ? [provider.profileSetupData.primaryCategory] : []);
 
     if (!targetInterests.length) return;
 
-    const usersRef = collection(db, 'users');
+    const usersRef = db.collection('users');
     
-    // Query users who are clients and have at least one of the target interests
-    const q = query(
-        usersRef, 
-        where('type', '==', 'client'), 
-        where('profileSetupData.categories', 'array-contains-any', targetInterests)
-    );
+    const q = usersRef
+        .where('type', '==', 'client')
+        .where('profileSetupData.categories', 'array-contains-any', targetInterests);
     
-    const querySnapshot = await getDocs(q);
-    const batch = writeBatch(db);
+    const querySnapshot = await q.get();
+    const batch = db.batch();
 
     querySnapshot.forEach(docSnap => {
         const client = docSnap.data() as User;
-        
-        // FUTURE: Add geographic segmentation logic here
-        // e.g., if (campaign.segmentation.geographic && !isInArea(client.location, campaign.segmentation.geographic)) return;
-
         const notificationId = `notif-${client.id}-${campaignId}`;
-        const notificationRef = doc(db, 'notifications', notificationId);
+        const notificationRef = db.collection('notifications').doc(notificationId);
         
         const newNotification: Notification = {
             id: notificationId,
@@ -213,20 +197,19 @@ export const sendNewPublicationNotification = ai.defineFlow({
 }, async ({ providerId, publicationId, publicationDescription }) => {
     const db = getFirestore();
     
-    const providerRef = doc(db, 'users', providerId);
-    const providerSnap = await getDoc(providerRef);
+    const providerRef = db.collection('users').doc(providerId);
+    const providerSnap = await providerRef.get();
     if (!providerSnap.exists()) return;
     const provider = providerSnap.data() as User;
 
-    // Fetch users who have the provider in their contacts
-    const q = query(collection(db, 'users'), where('contacts', 'array-contains', providerId));
-    const querySnapshot = await getDocs(q);
-    const batch = writeBatch(db);
+    const q = db.collection('users').where('contacts', 'array-contains', providerId);
+    const querySnapshot = await q.get();
+    const batch = db.batch();
 
     querySnapshot.forEach(docSnap => {
         const client = docSnap.data() as User;
         const notificationId = `notif-${client.id}-pub-${publicationId}`;
-        const notificationRef = doc(db, 'notifications', notificationId);
+        const notificationRef = db.collection('notifications').doc(notificationId);
 
         const newNotification: Notification = {
             id: notificationId,

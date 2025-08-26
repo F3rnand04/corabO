@@ -5,8 +5,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { getFirestore } from 'firebase-admin/firestore';
-import { collection, getDocs, query, where, limit, startAfter, doc, getDoc, orderBy, updateDoc, deleteDoc, setDoc } from 'firebase/firestore';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { GetProfileGalleryInputSchema, GetProfileGalleryOutputSchema, GetProfileProductsInputSchema, GetProfileProductsOutputSchema, credicoraCompanyLevels, credicoraLevels } from '@/lib/types';
 import type { GalleryImage, Product, User, ProfileSetupData } from '@/lib/types';
 import { z } from 'zod';
@@ -26,8 +25,8 @@ export const updateUserFlow = ai.defineFlow(
     },
     async ({ userId, updates }) => {
         const db = getFirestore();
-        const userRef = doc(db, 'users', userId);
-        await updateDoc(userRef, updates);
+        const userRef = db.collection('users').doc(userId);
+        await userRef.update(updates);
     }
 );
 
@@ -44,11 +43,11 @@ export const toggleGpsFlow = ai.defineFlow(
     },
     async ({ userId }) => {
         const db = getFirestore();
-        const userRef = doc(db, 'users', userId);
-        const userSnap = await getDoc(userRef);
+        const userRef = db.collection('users').doc(userId);
+        const userSnap = await userRef.get();
         if (userSnap.exists()) {
             const currentStatus = userSnap.data()?.isGpsActive || false;
-            await updateDoc(userRef, { isGpsActive: !currentStatus });
+            await userRef.update({ isGpsActive: !currentStatus });
         }
     }
 );
@@ -67,10 +66,8 @@ export const deleteUserFlow = ai.defineFlow(
   },
   async ({ userId }) => {
     const db = getFirestore();
-    const userRef = doc(db, 'users', userId);
-    // Note: In a production app, this would also trigger cleanup of related data
-    // (e.g., publications, transactions) for data integrity.
-    await deleteDoc(userRef);
+    const userRef = db.collection('users').doc(userId);
+    await userRef.delete();
   }
 );
 
@@ -92,16 +89,14 @@ export const checkIdUniquenessFlow = ai.defineFlow(
       return true; // Don't run check if data is incomplete
     }
     const db = getFirestore();
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where("idNumber", "==", idNumber), where("country", "==", country));
-    const querySnapshot = await getDocs(q);
+    const usersRef = db.collection('users');
+    const q = usersRef.where("idNumber", "==", idNumber).where("country", "==", country);
+    const querySnapshot = await q.get();
     
     if (querySnapshot.empty) {
       return true; // ID is unique
     }
 
-    // If a document is found, check if it belongs to the current user.
-    // This allows a user to re-submit their own ID without it being flagged as a duplicate.
     const isOwnDocument = querySnapshot.docs[0].id === currentUserId;
     return isOwnDocument;
   }
@@ -120,28 +115,25 @@ const CompleteInitialSetupInputSchema = z.object({
   providerType: z.enum(['professional', 'company']),
 });
 
-// The output schema now returns the full user object to update the context immediately.
-const UserOutputSchema = z.any().nullable();
-
+const UserOutputSchema = z.custom<User | null>();
 
 export const completeInitialSetupFlow = ai.defineFlow(
   {
     name: 'completeInitialSetupFlow',
     inputSchema: CompleteInitialSetupInputSchema,
-    outputSchema: UserOutputSchema, // The flow now returns the updated user
+    outputSchema: UserOutputSchema, 
   },
   async ({ userId, name, lastName, idNumber, birthDate, country, type, providerType }) => {
     const db = getFirestore();
-    const userRef = doc(db, 'users', userId);
+    const userRef = db.collection('users').doc(userId);
     
-    const userSnap = await getDoc(userRef);
+    const userSnap = await userRef.get();
     if (!userSnap.exists()) {
       throw new Error("User not found during setup completion.");
     }
     
     const existingData = userSnap.data() as User;
     
-    // Determine which credicora levels to use
     const isCompany = providerType === 'company';
     const activeCredicoraLevels = isCompany ? credicoraCompanyLevels : credicoraLevels;
     const initialCredicoraLevel = activeCredicoraLevels['1'];
@@ -153,7 +145,7 @@ export const completeInitialSetupFlow = ai.defineFlow(
       birthDate,
       country,
       isInitialSetupComplete: true,
-      type: isCompany ? 'provider' : type, // If it's a company, it must be a provider
+      type: isCompany ? 'provider' : type,
       credicoraLevel: initialCredicoraLevel.level,
       credicoraLimit: initialCredicoraLevel.creditLimit,
       credicoraDetails: initialCredicoraLevel,
@@ -163,12 +155,10 @@ export const completeInitialSetupFlow = ai.defineFlow(
       }
     };
 
-    await updateDoc(userRef, dataToUpdate as any);
+    await userRef.update(dataToUpdate);
 
-    // Return the full, updated user object so the client can update its state
-    const updatedUserDoc = await getDoc(userRef);
-    const updatedUser = updatedUserDoc.data();
-    return JSON.parse(JSON.stringify(updatedUser));
+    const updatedUserDoc = await userRef.get();
+    return updatedUserDoc.data() as User;
   }
 );
 
@@ -177,36 +167,18 @@ const GetPublicProfileInputSchema = z.object({
   userId: z.string(),
 });
 
-// Define only the public fields we want to expose
-const PublicUserOutputSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  lastName: z.string().optional(),
-  type: z.string(),
-  profileImage: z.string(),
-  reputation: z.number(),
-  effectiveness: z.number().optional(),
-  verified: z.boolean().optional(),
-  isSubscribed: z.boolean().optional(), // Added this field
-  isGpsActive: z.boolean().optional(),
-  isTransactionsActive: z.boolean().optional(),
-  profileSetupData: z.any().optional(), // Using any for simplicity, can be stricter
-  country: z.string().optional(),
-  credicoraLevel: z.number().optional(),
-  credicoraLimit: z.number().optional(),
-  activeAffiliation: z.any().optional(), // Pass affiliation data
-});
+const PublicUserOutputSchema = z.custom<Partial<User> | null>();
 
 export const getPublicProfileFlow = ai.defineFlow(
   {
     name: 'getPublicProfileFlow',
     inputSchema: GetPublicProfileInputSchema,
-    outputSchema: PublicUserOutputSchema.nullable(),
+    outputSchema: PublicUserOutputSchema,
   },
   async ({ userId }) => {
     const db = getFirestore();
-    const userRef = doc(db, 'users', userId);
-    const userSnap = await getDoc(userRef);
+    const userRef = db.collection('users').doc(userId);
+    const userSnap = await userRef.get();
 
     if (!userSnap.exists()) {
       return null;
@@ -214,7 +186,6 @@ export const getPublicProfileFlow = ai.defineFlow(
 
     const fullUser = userSnap.data() as User;
 
-    // Return only the public-facing data
     return {
       id: fullUser.id,
       name: fullUser.name,
@@ -247,24 +218,22 @@ export const getProfileGalleryFlow = ai.defineFlow(
     },
     async ({ userId, limitNum = 9, startAfterDocId }) => {
         const db = getFirestore();
-        const galleryCollection = collection(db, 'publications');
+        const galleryCollection = db.collection('publications');
         
-        const queryConstraints: any[] = [
-            where("providerId", "==", userId),
-            where("type", "in", ["image", "video"]),
-            orderBy('createdAt', 'desc'),
-            limit(limitNum)
-        ];
+        let q = galleryCollection
+            .where("providerId", "==", userId)
+            .where("type", "in", ["image", "video"])
+            .orderBy('createdAt', 'desc')
+            .limit(limitNum);
 
         if (startAfterDocId) {
-            const startAfterDocSnap = await getDoc(doc(db, 'publications', startAfterDocId));
-            if(startAfterDocSnap.exists()) {
-                queryConstraints.push(startAfter(startAfterDocSnap));
+            const startAfterDocSnap = await db.collection('publications').doc(startAfterDocId).get();
+            if(startAfterDocSnap.exists) {
+                q = q.startAfter(startAfterDocSnap);
             }
         }
         
-        const q = query(galleryCollection, ...queryConstraints);
-        const snapshot = await getDocs(q);
+        const snapshot = await q.get();
 
         const galleryItems = snapshot.docs.map(doc => doc.data() as GalleryImage);
 
@@ -290,24 +259,22 @@ export const getProfileProductsFlow = ai.defineFlow(
     },
     async ({ userId, limitNum = 10, startAfterDocId }) => {
         const db = getFirestore();
-        const publicationsCollection = collection(db, 'publications');
+        const publicationsCollection = db.collection('publications');
         
-        const queryConstraints: any[] = [
-            where("providerId", "==", userId),
-            where("type", "==", "product"),
-            orderBy('createdAt', 'desc'),
-            limit(limitNum)
-        ];
+        let q = publicationsCollection
+            .where("providerId", "==", userId)
+            .where("type", "==", "product")
+            .orderBy('createdAt', 'desc')
+            .limit(limitNum);
 
         if (startAfterDocId) {
-             const startAfterDocSnap = await getDoc(doc(db, 'publications', startAfterDocId));
-            if(startAfterDocSnap.exists()) {
-                queryConstraints.push(startAfter(startAfterDocSnap));
+             const startAfterDocSnap = await db.collection('publications').doc(startAfterDocId).get();
+            if(startAfterDocSnap.exists) {
+                q = q.startAfter(startAfterDocSnap);
             }
         }
 
-        const q = query(publicationsCollection, ...queryConstraints);
-        const snapshot = await getDocs(q);
+        const snapshot = await q.get();
 
         const userProductsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as GalleryImage));
         

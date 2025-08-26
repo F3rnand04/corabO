@@ -1,3 +1,5 @@
+
+'use server';
 /**
  * @fileOverview Central Genkit initialization.
  *
@@ -20,7 +22,7 @@ genkit({
     firebase,
     googleAI(),
   ],
-  enableTracingAndMetrics: false, // Disable telemetry to prevent startup issues in Next.js
+  enableTracingAndMetrics: false,
 });
 
 export { ai };

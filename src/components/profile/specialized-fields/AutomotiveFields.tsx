@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -46,6 +47,7 @@ export const AutomotiveFields = ({ formData, onSpecializedChange }: SpecializedF
                 <div className="flex flex-wrap gap-2">
                     {automotiveServicesOptions.map(service => (
                         <Button
+                            type="button"
                             key={service}
                             variant={(formData.specializedData?.mainServices || []).includes(service) ? 'default' : 'outline'}
                             onClick={() => handleServiceChange(service)}
@@ -63,7 +65,7 @@ export const AutomotiveFields = ({ formData, onSpecializedChange }: SpecializedF
                 </div>
                 <div className="flex flex-wrap gap-2 pt-2">
                     {(formData.specializedData?.brandsServed || []).map(brand => (
-                        <Badge key={brand} variant="secondary">{brand}<button onClick={() => handleRemoveBrand(brand)} className="ml-2 rounded-full hover:bg-background/50"><X className="h-3 w-3"/></button></Badge>
+                        <Badge key={brand} variant="secondary">{brand}<button type="button" onClick={() => handleRemoveBrand(brand)} className="ml-2 rounded-full hover:bg-background/50"><X className="h-3 w-3"/></button></Badge>
                     ))}
                 </div>
             </div>

@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Message and proposal management flows.
@@ -54,14 +55,13 @@ export const sendMessage = ai.defineFlow(
     const convoRef = db.collection('conversations').doc(input.conversationId);
     const convoSnap = await convoRef.get();
 
-    // Dynamically build the message object to avoid undefined fields
     const newMessage: Message = {
       id: `msg-${Date.now()}`,
       senderId: input.senderId,
       timestamp: new Date().toISOString(),
-      text: input.text || '', // Ensure text is always a string
+      text: input.text || '',
       isProposalAccepted: false,
-      isRead: false, // New messages are always unread
+      isRead: false,
     };
 
     if (input.proposal) {
@@ -77,29 +77,14 @@ export const sendMessage = ai.defineFlow(
     if (convoSnap.exists()) {
       const conversation = convoSnap.data() as Conversation;
 
-      // Repair logic for existing but potentially corrupted conversations.
-      if (
-        !conversation.participantIds ||
-        !Array.isArray(conversation.participantIds) ||
-        conversation.participantIds.length < 2
-      ) {
-        await convoRef.update({
-          participantIds: [input.senderId, input.recipientId].sort(),
-          messages: FieldValue.arrayUnion(newMessage),
-          lastUpdated: new Date().toISOString(),
-        });
-      } else {
-        // SECURITY CHECK: Ensure the sender is a participant of the conversation
-        if (!conversation.participantIds.includes(input.senderId)) {
-          throw new Error('Sender is not a participant of this conversation.');
-        }
-        await convoRef.update({
-          messages: FieldValue.arrayUnion(newMessage),
-          lastUpdated: new Date().toISOString(),
-        });
+      if (!conversation.participantIds?.includes(input.senderId)) {
+        throw new Error('Sender is not a participant of this conversation.');
       }
+      await convoRef.update({
+        messages: FieldValue.arrayUnion(newMessage),
+        lastUpdated: new Date().toISOString(),
+      });
     } else {
-      // Creating a new conversation requires both participants.
       await convoRef.set({
         id: input.conversationId,
         participantIds: [input.senderId, input.recipientId].sort(),
@@ -126,7 +111,6 @@ export const acceptProposal = ai.defineFlow(
 
     const conversation = convoSnap.data() as Conversation;
 
-    // SECURITY CHECK: Ensure the acceptor is a participant and is not the sender
     if (!conversation.participantIds.includes(acceptorId)) {
       throw new Error(
         'Permission Denied: Acceptor is not a participant of this conversation.'
@@ -142,35 +126,32 @@ export const acceptProposal = ai.defineFlow(
       throw new Error('Message is not a proposal');
     }
 
-    // --- Business Logic Enhancement ---
-    // Fetch the client's data to check their subscription status.
     const clientRef = db.collection('users').doc(acceptorId);
     const clientSnap = await clientRef.get();
     if (!clientSnap.exists()) throw new Error('Client user data not found.');
     const clientData = clientSnap.data() as User;
 
-    // Determine the initial transaction status based on the client's subscription.
     const isClientSubscribed = clientData.isSubscribed ?? false;
     const initialStatus = isClientSubscribed
       ? 'Acuerdo Aceptado - Pendiente de Ejecución'
-      : 'Finalizado - Pendiente de Pago'; // Requires upfront payment
+      : 'Finalizado - Pendiente de Pago';
 
-    // 1. Mark the proposal as accepted in the conversation
     const messageIndex = conversation.messages.findIndex(
       (m) => m.id === messageId
     );
     const updatedMessages = [...conversation.messages];
-    updatedMessages[messageIndex] = { ...message, isProposalAccepted: true };
-    batch.update(convoRef, { messages: updatedMessages });
+    if(messageIndex > -1) {
+      updatedMessages[messageIndex] = { ...message, isProposalAccepted: true };
+      batch.update(convoRef, { messages: updatedMessages });
+    }
 
-    // 2. Create a new transaction based on the proposal
     const providerId = message.senderId;
     const clientId = acceptorId;
 
     const newTransaction: Transaction = {
       id: `txn-prop-${Date.now()}`,
       type: 'Servicio',
-      status: initialStatus, // Use the dynamically determined status
+      status: initialStatus,
       date: new Date().toISOString(),
       amount: message.proposal.amount,
       clientId: clientId,

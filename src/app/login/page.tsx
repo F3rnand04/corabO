@@ -8,7 +8,8 @@ import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { getAuth, signInAnonymously } from 'firebase/auth';
+import { getAuthInstance } from '@/lib/firebase';
+import { signInAnonymously } from 'firebase/auth';
 
 export default function LoginPage() {
   const { isLoadingAuth } = useAuth();
@@ -16,7 +17,7 @@ export default function LoginPage() {
   const router = useRouter();
 
   const handleAnonymousLogin = async () => {
-    const auth = getAuth();
+    const auth = getAuthInstance();
     try {
       await signInAnonymously(auth);
       // The onAuthStateChanged listener in AuthProvider will handle the redirect.
