@@ -7,7 +7,6 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestore } from 'firebase-admin/firestore';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { addMinutes, isAfter } from 'date-fns';
 import type { User } from '@/lib/types';
 // import { Twilio } from 'twilio';
@@ -32,8 +31,8 @@ export const sendSmsVerificationCodeFlow = ai.defineFlow(
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit code
     const codeExpiry = addMinutes(new Date(), 10); // Code is valid for 10 minutes
 
-    const userRef = doc(db, 'users', userId);
-    await updateDoc(userRef, {
+    const userRef = db.collection('users').doc(userId);
+    await userRef.update({
       phone: phoneNumber,
       phoneVerificationCode: verificationCode,
       phoneVerificationCodeExpires: codeExpiry.toISOString(),
@@ -47,7 +46,7 @@ export const sendSmsVerificationCodeFlow = ai.defineFlow(
     
     try {
         // await twilioClient.messages.create({
-        //     body: `Tu código de verificación para Corabo es: ${verificationCode}`,
+        //     body: `Tu código de verificación para Corabo es: ${'\'\'\''}${verificationCode}`,
         //     from: twilioNumber,
         //     to: phoneNumber,
         // });
@@ -75,10 +74,10 @@ export const verifySmsCodeFlow = ai.defineFlow(
     },
     async ({ userId, code }) => {
         const db = getFirestore();
-        const userRef = doc(db, 'users', userId);
-        const userSnap = await getDoc(userRef);
+        const userRef = db.collection('users').doc(userId);
+        const userSnap = await userRef.get();
 
-        if (!userSnap.exists()) {
+        if (!userSnap.exists) {
             return { success: false, message: "Usuario no encontrado." };
         }
 
@@ -93,7 +92,7 @@ export const verifySmsCodeFlow = ai.defineFlow(
         }
 
         // Code is correct and not expired. Mark phone as validated.
-        await updateDoc(userRef, {
+        await userRef.update({
             phoneValidated: true,
             phoneVerificationCode: null, // Clear the code after use
             phoneVerificationCodeExpires: null,
