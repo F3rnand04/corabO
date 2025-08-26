@@ -6,7 +6,6 @@ import { Inter } from 'next/font/google';
 import { AuthProvider } from '@/components/auth/AuthProvider';
 import { AppLayout } from '@/app/AppLayout';
 import { CoraboProvider } from '@/contexts/CoraboContext';
-import type { User as FirebaseUser } from 'firebase/auth';
 
 
 export const metadata: Metadata = {
@@ -24,11 +23,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // The server-side session check has been removed.
-  // The client-side AuthProvider will now be the single source of truth
-  // for handling the initial authentication state, which correctly
-  // handles the redirect flow from Google sign-in.
-  const serverFirebaseUser: FirebaseUser | null = null;
   
   return (
     <html lang="es" suppressHydrationWarning>
@@ -38,7 +32,7 @@ export default async function RootLayout({
       </head>
       <body className={`'__variable_e8ce0c' antialiased bg-background`}>
         <Providers attribute="class" defaultTheme="system" enableSystem>
-          <AuthProvider serverFirebaseUser={serverFirebaseUser}>
+          <AuthProvider>
             <CoraboProvider>
               <AppLayout>
                 {children}

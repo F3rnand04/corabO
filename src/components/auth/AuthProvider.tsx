@@ -18,11 +18,10 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 type AuthProviderProps = {
     children: ReactNode;
-    serverFirebaseUser?: FirebaseUser | null; 
 };
 
-export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps) => {
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(serverFirebaseUser || null);
+export const AuthProvider = ({ children }: AuthProviderProps) => {
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   
   useEffect(() => {
