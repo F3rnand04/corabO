@@ -66,20 +66,20 @@ export default function LoginPage() {
                 <Image
                     src="https://i.postimg.cc/Wz1MTvWK/lg.png"
                     alt="Corabo logo"
-                    fill
+                    width={192}
+                    height={96}
                     priority
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     className="object-contain"
                 />
             </div>
             <CardTitle className="text-2xl">Bienvenido a Corabo</CardTitle>
             <CardDescription>
-                Elige tu método de ingreso para continuar.
+                Conecta, colabora y crece con confianza.
             </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
              <Button size="lg" className="w-full" onClick={handleGoogleLogin} disabled={isLoadingAuth}>
-              {isLoadingAuth ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Ingresar con Google'}
+              {isLoadingAuth ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Ingresar o Registrarse con Google'}
             </Button>
             <Button size="lg" className="w-full" variant="secondary" onClick={handleAnonymousLogin} disabled={isLoadingAuth}>
               {isLoadingAuth ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Ingresar como Invitado'}
