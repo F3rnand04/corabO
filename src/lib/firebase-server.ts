@@ -6,22 +6,29 @@ import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { getAuth, type Auth } from 'firebase-admin/auth';
 import { firebaseConfig } from './firebase-config';
 
+let app: App;
+
 // This function ensures a single instance of the Firebase Admin app is initialized and reused.
 function getFirebaseAdminApp(): App {
-  // Check if an app is already initialized. This is the key change.
-  if (getApps().length) {
-    return getApp();
+  if (app) {
+    return app;
   }
-  // If not, initialize it. This will now only happen once, managed by genkit.ts.
-  return initializeApp({
+  
+  if (getApps().length) {
+    app = getApp();
+    return app;
+  }
+  
+  app = initializeApp({
       projectId: firebaseConfig.projectId
   });
+  return app;
 }
 
 // This function provides the initialized Firebase Admin SDK instances.
 export function getFirebaseAdmin() {
-  const app = getFirebaseAdminApp();
-  const auth: Auth = getAuth(app);
-  const firestore: Firestore = getFirestore(app);
-  return { auth, firestore, app };
+  const currentApp = getFirebaseAdminApp();
+  const auth: Auth = getAuth(currentApp);
+  const firestore: Firestore = getFirestore(currentApp);
+  return { auth, firestore, app: currentApp };
 }

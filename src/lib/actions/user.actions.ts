@@ -7,6 +7,10 @@ import { revalidatePath } from 'next/cache';
 import type { FirebaseUserInput, ProfileSetupData, User } from '@/lib/types';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getOrCreateUserFlow, completeInitialSetupFlow } from '@/ai/flows/auth-flow';
+import { checkIdUniquenessFlow, deleteUserFlow, toggleGpsFlow, updateUserFlow } from '@/ai/flows/profile-flow';
+import { sendWelcomeToProviderNotificationFlow } from '@/ai/flows/notification-flow';
+import { autoVerifyIdWithAIFlow } from '@/ai/flows/verification-flow';
+
 
 // --- Exported Actions ---
 
@@ -17,56 +21,49 @@ export async function getOrCreateUser(firebaseUser: FirebaseUserInput): Promise<
 }
 
 export async function updateUser(userId: string, updates: Partial<User> | { [key: string]: any }) {
-    const db = getFirestore();
-    await db.collection('users').doc(userId).update(updates);
+    await updateUserFlow({ userId, updates });
     revalidatePath('/profile');
     revalidatePath(`/companies/${userId}`);
 }
 
 export async function updateUserProfileImage(userId: string, dataUrl: string) {
     await updateUser(userId, { profileImage: dataUrl });
-    revalidatePath('/profile');
-    revalidatePath(`/companies/${userId}`);
 }
 
 export async function updateFullProfile(userId: string, formData: ProfileSetupData, userType: User['type']) {
-    // Placeholder function, logic is not implemented as Genkit is disabled.
-    console.log("updateFullProfile action called, but Genkit is disabled.");
-    // In a real scenario, this would likely call a Genkit flow.
-    // For now, let's just update the user with the provided data.
-     await updateUser(userId, { 
+    const db = getFirestore();
+    const userRef = db.collection('users').doc(userId);
+    const becameProvider = userType === 'provider' && (await userRef.get()).data()?.type === 'client';
+
+    await userRef.update({ 
         'profileSetupData': formData, 
         'isTransactionsActive': true, 
         'type': userType 
     });
+
+    if(becameProvider) {
+        await sendWelcomeToProviderNotificationFlow({ userId });
+    }
+
     revalidatePath('/profile');
     revalidatePath(`/companies/${userId}`);
 }
 
 
 export async function toggleGps(userId: string) {
-    const db = getFirestore();
-    const userRef = db.collection('users').doc(userId);
-    const userSnap = await userRef.get();
-    if (userSnap.exists) {
-        const currentStatus = (userSnap.data() as User).isGpsActive;
-        await userRef.update({ isGpsActive: !currentStatus });
-    }
+    await toggleGpsFlow({ userId });
     revalidatePath('/');
     revalidatePath('/profile');
     revalidatePath(`/companies/${userId}`);
 }
 
-export async function deleteUser(userId: string) {
-    const db = getFirestore();
-    await db.collection('users').doc(userId).delete();
+export async function deleteUserAction(userId: string) {
+    await deleteUserFlow({ userId });
     revalidatePath('/admin');
 }
 
 export async function checkIdUniqueness(input: { idNumber: string; country: string; currentUserId: string; }): Promise<boolean> {
-    // Placeholder function, logic is not implemented as Genkit is disabled.
-    console.warn("checkIdUniqueness action called, but Genkit is disabled.");
-    return true; // Assume unique for now
+    return await checkIdUniquenessFlow(input);
 }
 
 export async function completeInitialSetup(userId: string, data: { name: string; lastName: string; idNumber: string; birthDate: string; country: string; type: User['type'], providerType: ProfileSetupData['providerType'] }): Promise<User> {
@@ -75,30 +72,66 @@ export async function completeInitialSetup(userId: string, data: { name: string;
     return updatedUser;
 }
 
-export async function sendSmsVerification(userId: string, phoneNumber: string) {
-    // Placeholder function, logic is not implemented as Genkit is disabled.
-    console.warn("sendSmsVerification action called, but Genkit is disabled.");
-}
-
-export async function verifySmsCode(userId: string, code: string): Promise<{ success: boolean; message: string; }> {
-    // Placeholder function, logic is not implemented as Genkit is disabled.
-    console.warn("verifySmsCode action called, but Genkit is disabled.");
-    return { success: false, message: "Verification flow is disabled." };
-}
-
 export async function autoVerifyIdWithAI(user: User): Promise<any> {
-    // Placeholder function, logic is not implemented as Genkit is disabled.
-    console.warn("autoVerifyIdWithAI action called, but Genkit is disabled.");
-    return { error: "AI Verification is disabled." };
+    return await autoVerifyIdWithAIFlow(user);
 }
 
 export async function subscribeUser(userId: string, planName: string, amount: number) {
-    // Placeholder function, logic is not implemented as Genkit is disabled.
-    console.warn("subscribeUser action called, but Genkit is disabled.");
+    const db = getFirestore();
+    const txId = `txn-sub-${Date.now()}`;
+    const newTransaction = {
+        id: txId,
+        type: 'Sistema',
+        status: 'Pago Enviado - Esperando Confirmación',
+        date: new Date().toISOString(),
+        amount: amount,
+        clientId: userId,
+        providerId: 'corabo-admin',
+        participantIds: [userId, 'corabo-admin'],
+        details: {
+            system: `Suscripción a ${planName}`,
+            isSubscription: true
+        },
+    };
+    await db.collection('transactions').doc(txId).set(newTransaction);
+    revalidatePath('/transactions');
 }
 
 export async function deactivateTransactions(userId: string) {
     await updateUser(userId, { isTransactionsActive: false });
     revalidatePath('/transactions/settings');
     revalidatePath('/profile');
+}
+
+export async function activatePromotion(userId: string, promotion: { imageId: string; promotionText: string; cost: number }) {
+    const db = getFirestore();
+    const expirationDate = new Date();
+    expirationDate.setHours(expirationDate.getHours() + 24);
+
+    await db.collection('users').doc(userId).update({
+        promotion: {
+            text: promotion.promotionText,
+            expires: expirationDate.toISOString(),
+            publicationId: promotion.imageId,
+        }
+    });
+
+    const txId = `txn-promo-${Date.now()}`;
+    const newTransaction = {
+        id: txId,
+        type: 'Sistema',
+        status: 'Pago Enviado - Esperando Confirmación',
+        date: new Date().toISOString(),
+        amount: promotion.cost,
+        clientId: userId,
+        providerId: 'corabo-admin',
+        participantIds: [userId, 'corabo-admin'],
+        details: {
+            system: `Activación de promoción 'Emprende por Hoy'`,
+        },
+    };
+    await db.collection('transactions').doc(txId).set(newTransaction);
+
+    revalidatePath('/profile');
+    revalidatePath(`/companies/${userId}`);
 }
