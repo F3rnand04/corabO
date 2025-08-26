@@ -4,7 +4,7 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo, useEffect } from 'react';
 import { differenceInMinutes, formatDistanceToNowStrict } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { User, CartItem, Transaction, GalleryImage, Conversation, TempRecipientInfo, FirebaseUserInput } from '@/lib/types';
+import type { User, CartItem, Transaction, GalleryImage, Conversation, TempRecipientInfo, FirebaseUserInput, AgreementProposal } from '@/lib/types';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { getFirestoreDb }from '@/lib/firebase';
 import { collection, onSnapshot, query, where, doc } from 'firebase/firestore';
@@ -56,6 +56,19 @@ interface CoraboContextValue {
   setActiveCartForCheckout: (cartItems: CartItem[] | null) => void;
   getAgendaEvents: (transactions: Transaction[]) => any[];
   setCurrentUser: (user: User | null) => void;
+  
+  // Explicitly add actions to the context type
+  logout: () => Promise<void>;
+  updateUser: (userId: string, updates: Partial<User>) => Promise<void>;
+  deactivateTransactions: (userId: string) => Promise<void>;
+  toggleGps: (userId: string) => Promise<void>;
+  sendMessage: (input: { conversationId: string; senderId: string; recipientId: string; text?: string; location?: { lat: number; lon: number; }; proposal?: AgreementProposal; }) => Promise<string>;
+  acceptProposal: (conversationId: string, messageId: string, acceptorId: string) => Promise<void>;
+  markConversationAsRead: (conversationId: string) => Promise<void>;
+  createAppointmentRequest: (data: { providerId: string; date: string; details: string; amount: number; }) => Promise<void>;
+  updateCartQuantity: (productId: string, newQuantity: number) => Promise<void>;
+  subscribeUser: (userId: string, plan: string, amount: number) => Promise<void>;
+  autoVerifyIdWithAI: (user: User) => Promise<VerificationOutput | null>;
 }
 
 export const CoraboContext = createContext<CoraboContextValue | undefined>(undefined);
@@ -65,7 +78,7 @@ interface CoraboProviderProps {
 }
 
 export const CoraboProvider = ({ children }: CoraboProviderProps) => {
-  const { firebaseUser, isLoadingAuth } = useAuth();
+  const { firebaseUser, isLoadingAuth, logout } = useAuth();
   const { toast } = useToast();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
@@ -151,7 +164,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     const effectiveness = relevantTransactions.length > 0 ? (successfulTransactions.length / relevantTransactions.length) * 100 : 100;
     
     const quoteRequests = userTransactions.filter(tx => tx.providerId === userId && tx.status === 'Cotización Recibida');
-    const responseTime = quoteRequests.length > 5 ? 'Rápido' : (userTransactions.length > 0 ? 'Normal' : 'N/A');
+    const responseTime = quoteRequests.length > 5 ? 'Rápido' : (userTransactions.length > 0 ? 'Normal' : 'Nuevo');
 
     const paidByClientTransactions = userTransactions.filter(tx => tx.providerId === userId && tx.status === 'Pagado' && tx.details.paymentSentAt && tx.details.paymentConfirmationDate);
     let totalPaymentMinutes = 0;
@@ -198,6 +211,17 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     getDistanceToProvider: () => '5 km',
     setTempRecipientInfo: _setTempRecipientInfo,
     setActiveCartForCheckout,
+    logout,
+    updateUser: (userId: string, updates: Partial<User>) => Actions.updateUser(userId, updates),
+    deactivateTransactions: Actions.deactivateTransactions,
+    toggleGps: Actions.toggleGps,
+    sendMessage: Actions.sendMessage,
+    acceptProposal: Actions.acceptProposal,
+    markConversationAsRead: Actions.markConversationAsRead,
+    createAppointmentRequest: (data) => Actions.createAppointmentRequest({ ...data, clientId: currentUser!.id }),
+    updateCartQuantity: (productId: string, newQuantity: number) => Actions.updateCart(currentUser!.id, productId, newQuantity),
+    subscribeUser: Actions.subscribeUser,
+    autoVerifyIdWithAI: Actions.autoVerifyIdWithAI,
   };
   
   return (

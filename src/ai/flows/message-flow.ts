@@ -3,14 +3,14 @@
 /**
  * @fileOverview Message and proposal management flows.
  *
- * - sendMessage - A function that handles sending messages and proposals.
- * - acceptProposal - A function that handles accepting a proposal and creating a transaction.
+ * - sendMessageFlow - A function that handles sending messages and proposals.
+ * - acceptProposalFlow - A function that handles accepting a proposal and creating a transaction.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import type { Conversation, Message, Transaction, User } from '@/lib/types';
+import type { Conversation, Message, Transaction, User, AgreementProposal } from '@/lib/types';
 
 // Schema for sending a message/proposal
 const SendMessageInputSchema = z.object({
@@ -24,15 +24,7 @@ const SendMessageInputSchema = z.object({
       lon: z.number(),
     })
     .optional(),
-  proposal: z
-    .object({
-      title: z.string(),
-      description: z.string(),
-      amount: z.number(),
-      deliveryDate: z.string(),
-      acceptsCredicora: z.boolean(),
-    })
-    .optional(),
+  proposal: z.custom<AgreementProposal>().optional(),
 });
 export type SendMessageInput = z.infer<typeof SendMessageInputSchema>;
 

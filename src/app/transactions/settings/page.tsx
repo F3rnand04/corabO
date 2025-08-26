@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useCorabo } from '@/contexts/CoraboContext';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import Link from 'next/link';
+import * as Actions from '@/lib/actions';
 
 function SettingsHeader() {
     const router = useRouter();
@@ -54,7 +56,7 @@ function SettingsLinkCard({
 }
 
 export default function TransactionsSettingsPage() {
-    const { currentUser, deactivateTransactions } = useCorabo();
+    const { currentUser } = useCorabo();
     const router = useRouter();
 
     if (!currentUser) {
@@ -114,7 +116,7 @@ export default function TransactionsSettingsPage() {
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                     <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => deactivateTransactions(currentUser.id)}>Sí, desactivar</AlertDialogAction>
+                                    <AlertDialogAction onClick={() => Actions.deactivateTransactions(currentUser.id)}>Sí, desactivar</AlertDialogAction>
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>

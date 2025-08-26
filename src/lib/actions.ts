@@ -7,23 +7,23 @@
  * from client components MUST go through the functions defined and exported in this file.
  * All functions exported from this file are marked as server actions and will only execute on the server.
  */
-import type { User, ProfileSetupData, Transaction, Product, CartItem, GalleryImage, CreatePublicationInput, CreateProductInput, VerificationOutput, CashierBox, QrSession, TempRecipientInfo, FirebaseUserInput } from '@/lib/types';
+import type { User, ProfileSetupData, Transaction, Product, CartItem, GalleryImage, CreatePublicationInput, CreateProductInput, VerificationOutput, CashierBox, QrSession, TempRecipientInfo, FirebaseUserInput, AgreementProposal } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 
 // Import all flows statically.
-import { getOrCreateUser as getOrCreateUserFlow } from '@/ai/flows/auth-flow';
+import { getOrCreateUserFlow } from '@/ai/flows/auth-flow';
 import { updateUserFlow, deleteUserFlow, getPublicProfileFlow, getProfileGalleryFlow, getProfileProductsFlow, completeInitialSetupFlow, checkIdUniquenessFlow, toggleGpsFlow } from '@/ai/flows/profile-flow';
 import { createPublicationFlow, createProductFlow, removeGalleryImageFlow, updateGalleryImageFlow, addCommentToImageFlow, removeCommentFromImageFlow } from '@/ai/flows/publication-flow';
-import { sendMessage as sendMessageFlow, acceptProposal as acceptProposalFlow } from '@/ai/flows/message-flow';
-import { createAppointmentRequest as createAppointmentRequestFlow, completeWork as completeWorkFlow, confirmWorkReceived as confirmWorkReceivedFlow, payCommitment as payCommitmentFlow, confirmPaymentReceived as confirmPaymentReceivedFlow, sendQuote as sendQuoteFlow, acceptAppointment as acceptAppointmentFlow, startDispute as startDisputeFlow, cancelSystemTransaction as cancelSystemTransactionFlow, downloadTransactionsPDF as downloadTransactionsPDFFlow, checkout as checkoutFlow, processDirectPayment as processDirectPaymentFlow } from '@/ai/flows/transaction-flow';
+import { sendMessageFlow, acceptProposalFlow } from '@/ai/flows/message-flow';
+import { createAppointmentRequestFlow, completeWorkFlow, confirmWorkReceivedFlow, payCommitmentFlow, confirmPaymentReceivedFlow, sendQuoteFlow, acceptAppointmentFlow, startDisputeFlow, cancelSystemTransactionFlow, downloadTransactionsPDFFlow, checkoutFlow, processDirectPaymentFlow } from '@/ai/flows/transaction-flow';
 import { findDeliveryProvider, resolveDeliveryAsPickup as resolveDeliveryAsPickupFlow } from '@/ai/flows/delivery-flow';
 import { requestAffiliationFlow, approveAffiliationFlow, rejectAffiliationFlow, revokeAffiliationFlow } from '@/ai/flows/affiliation-flow';
-import { createCashierBox as createCashierBoxFlow, regenerateCashierQr as regenerateCashierQrFlow } from '@/ai/flows/cashier-flow';
-import { autoVerifyIdWithAI as autoVerifyIdWithAIFlow } from '@/ai/flows/verification-flow';
-import { sendNewCampaignNotifications as sendNewCampaignNotificationsFlow } from '@/ai/flows/notification-flow';
+import { createCashierBoxFlow, regenerateCashierQrFlow } from '@/ai/flows/cashier-flow';
+import { autoVerifyIdWithAIFlow } from '@/ai/flows/verification-flow';
+import { sendNewCampaignNotificationsFlow } from '@/ai/flows/notification-flow';
 import { updateCartFlow } from '@/ai/flows/cart-flow';
 import { getFeedFlow } from '@/ai/flows/feed-flow';
-import { createCampaign as createCampaignFlow } from '@/ai/flows/campaign-flow';
+import { createCampaignFlow } from '@/ai/flows/campaign-flow';
 
 
 // =================================
@@ -54,11 +54,11 @@ export async function getFeed(params: { limitNum: number, startAfterDocId?: stri
     return getFeedFlow(params);
 }
 
-export async function getProfileGallery(params: { userId: string; limitNum: number, startAfterDocId?: string }) {
+export async function getProfileGallery(params: { userId: string; limitNum?: number, startAfterDocId?: string }) {
   return getProfileGalleryFlow(params);
 }
 
-export async function getProfileProducts(params: { userId: string; limitNum: number, startAfterDocId?: string }) {
+export async function getProfileProducts(params: { userId: string; limitNum?: number, startAfterDocId?: string }) {
   return getProfileProductsFlow(params);
 }
 
@@ -170,7 +170,7 @@ export async function removeCommentFromImage(data: { ownerId: string; imageId: s
 // MESSAGE ACTIONS
 // =================================
 
-export async function sendMessage(input: { conversationId: string; senderId: string; recipientId: string; text?: string; location?: { lat: number; lon: number; }; proposal?: any; }): Promise<string> {
+export async function sendMessage(input: { conversationId: string; senderId: string; recipientId: string; text?: string; location?: { lat: number; lon: number; }; proposal?: AgreementProposal; }): Promise<string> {
   await sendMessageFlow(input);
   revalidatePath(`/messages/${input.conversationId}`);
   return input.conversationId;
