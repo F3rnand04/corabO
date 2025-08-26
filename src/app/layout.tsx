@@ -7,8 +7,6 @@ import { AuthProvider } from '@/components/auth/AuthProvider';
 import { AppLayout } from '@/app/AppLayout';
 import { CoraboProvider } from '@/contexts/CoraboContext';
 import type { User as FirebaseUser } from 'firebase/auth';
-import { getFirebaseAdmin } from '@/lib/firebase-server';
-import { cookies } from 'next/headers';
 
 
 export const metadata: Metadata = {
@@ -26,23 +24,11 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  let serverFirebaseUser: FirebaseUser | null = null;
-  try {
-    const cookieStore = cookies();
-    const sessionCookie = cookieStore.get('session')?.value;
-    if (sessionCookie) {
-      const decodedIdToken = await getFirebaseAdmin().auth.verifySessionCookie(sessionCookie, true);
-      const userRecord = await getFirebaseAdmin().auth.getUser(decodedIdToken.uid);
-      serverFirebaseUser = {
-        ...userRecord,
-        getIdToken: async () => sessionCookie,
-      } as unknown as FirebaseUser;
-    }
-  } catch (error) {
-    // Session cookie is invalid or expired.
-    console.log("RootLayout auth error:", error);
-    serverFirebaseUser = null;
-  }
+  // The server-side session check has been removed.
+  // The client-side AuthProvider will now be the single source of truth
+  // for handling the initial authentication state, which correctly
+  // handles the redirect flow from Google sign-in.
+  const serverFirebaseUser: FirebaseUser | null = null;
   
   return (
     <html lang="es" suppressHydrationWarning>
