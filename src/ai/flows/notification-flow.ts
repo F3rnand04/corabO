@@ -22,6 +22,8 @@ const SendNotificationInputSchema = z.object({
   metadata: z.any().optional(),
 });
 
+type SendNotificationInput = z.infer<typeof SendNotificationInputSchema>;
+
 /**
  * Creates a notification document in Firestore. In a real implementation,
  * this flow would also trigger a push notification via a service like FCM.
@@ -32,7 +34,7 @@ export const sendNotification = ai.defineFlow(
     inputSchema: SendNotificationInputSchema,
     outputSchema: z.void(),
   },
-  async (input) => {
+  async (input: SendNotificationInput) => {
     const db = getFirestore();
     const notificationId = `notif-${input.userId}-${Date.now()}`;
     const notificationRef = db.collection('notifications').doc(notificationId);
@@ -134,7 +136,7 @@ export const checkPaymentDeadlines = ai.defineFlow(
 /**
  * Finds relevant users and notifies them about a new high-budget campaign.
  */
-export const sendNewCampaignNotifications = ai.defineFlow({
+export const sendNewCampaignNotificationsFlow = ai.defineFlow({
     name: 'sendNewCampaignNotificationsFlow',
     inputSchema: z.object({ campaignId: z.string() }),
     outputSchema: z.void(),
@@ -190,7 +192,7 @@ export const sendNewCampaignNotifications = ai.defineFlow({
  * Notifies relevant users about a new publication from a provider.
  * This is triggered for reputable providers and sent to a targeted audience.
  */
-export const sendNewPublicationNotification = ai.defineFlow({
+export const sendNewPublicationNotificationFlow = ai.defineFlow({
     name: 'sendNewPublicationNotificationFlow',
     inputSchema: z.object({ providerId: z.string(), publicationId: z.string(), publicationDescription: z.string() }),
     outputSchema: z.void(),
@@ -231,7 +233,7 @@ export const sendNewPublicationNotification = ai.defineFlow({
 /**
  * Sends a welcome notification to a user who just became a provider.
  */
-export const sendWelcomeToProviderNotification = ai.defineFlow({
+export const sendWelcomeToProviderNotificationFlow = ai.defineFlow({
     name: 'sendWelcomeToProviderNotificationFlow',
     inputSchema: z.object({ userId: z.string() }),
     outputSchema: z.void(),

@@ -2,13 +2,10 @@
 'use server';
 /**
  * @fileOverview Central Genkit initialization.
- *
- * This file is now the single source of truth for the Genkit `ai` instance.
- * It is configured to be server-only and should not be imported directly
- * into any client components. Flows will import the `ai` object from here.
+ * This file is the single source of truth for the Genkit `ai` instance.
  */
 
-import { genkit, ai } from '@genkit-ai/core';
+import { genkit, configureGenkit, ai } from '@genkit-ai/core';
 import { firebase } from '@genkit-ai/firebase';
 import { googleAI } from '@genkit-ai/googleai';
 
@@ -17,7 +14,7 @@ import { getFirebaseAdmin } from '@/lib/firebase-server';
 getFirebaseAdmin();
 
 
-genkit({
+configureGenkit({
   plugins: [
     firebase,
     googleAI(),

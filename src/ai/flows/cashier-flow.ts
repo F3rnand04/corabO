@@ -14,11 +14,15 @@ const CreateCashierBoxInputSchema = z.object({
   name: z.string(),
   password: z.string().min(4).max(6),
 });
+type CreateCashierBoxInput = z.infer<typeof CreateCashierBoxInputSchema>;
+
 
 const RegenerateQrInputSchema = z.object({
     userId: z.string(),
     boxId: z.string(),
 });
+type RegenerateQrInput = z.infer<typeof RegenerateQrInputSchema>;
+
 
 const CashierBoxSchema = z.custom<CashierBox>();
 
@@ -26,15 +30,15 @@ const CashierBoxSchema = z.custom<CashierBox>();
 /**
  * Creates a new cashier box, generates a QR code for it, and returns the box object.
  */
-export const createCashierBox = ai.defineFlow(
+export const createCashierBoxFlow = ai.defineFlow(
   {
     name: 'createCashierBoxFlow',
     inputSchema: CreateCashierBoxInputSchema,
     outputSchema: CashierBoxSchema,
   },
-  async ({ userId, name, password }) => {
+  async (input: CreateCashierBoxInput) => {
     const boxId = `caja-${Date.now()}`;
-    const qrValue = JSON.stringify({ providerId: userId, cashierBoxId: boxId });
+    const qrValue = JSON.stringify({ providerId: input.userId, cashierBoxId: boxId });
 
     try {
         const qrDataURL = await QRCode.toDataURL(qrValue, {
@@ -46,8 +50,8 @@ export const createCashierBox = ai.defineFlow(
 
         const newBox: CashierBox = {
             id: boxId,
-            name,
-            passwordHash: password, // In a real app, hash this password
+            name: input.name,
+            passwordHash: input.password, // In a real app, hash this password
             qrValue,
             qrDataURL,
         };
@@ -64,14 +68,14 @@ export const createCashierBox = ai.defineFlow(
 /**
  * Regenerates the QR code for an existing cashier box.
  */
-export const regenerateCashierQr = ai.defineFlow(
+export const regenerateCashierQrFlow = ai.defineFlow(
   {
     name: 'regenerateCashierQrFlow',
     inputSchema: RegenerateQrInputSchema,
     outputSchema: z.object({ qrValue: z.string(), qrDataURL: z.string() }),
   },
-  async ({ userId, boxId }) => {
-    const newQrValue = JSON.stringify({ providerId: userId, cashierBoxId: boxId, timestamp: Date.now() });
+  async (input: RegenerateQrInput) => {
+    const newQrValue = JSON.stringify({ providerId: input.userId, cashierBoxId: input.boxId, timestamp: Date.now() });
     
     try {
         const newQrDataURL = await QRCode.toDataURL(newQrValue, {

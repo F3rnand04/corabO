@@ -30,9 +30,6 @@ const VerificationOutputSchema = z.object({
 
 export type VerificationOutput = z.infer<typeof VerificationOutputSchema>;
 
-export async function autoVerifyIdWithAI(input: VerificationInput): Promise<VerificationOutput> {
-  return autoVerifyIdWithAIFlow(input);
-}
 
 const normalizeId = (id: string): string => {
     if (!id) return '';
@@ -83,13 +80,13 @@ function compareNamesFlexibly(nameA: string, nameB: string): boolean {
 }
 
 
-const autoVerifyIdWithAIFlow = ai.defineFlow(
+export const autoVerifyIdWithAIFlow = ai.defineFlow(
   {
     name: 'autoVerifyIdWithAIFlow',
     inputSchema: VerificationInputSchema,
     outputSchema: VerificationOutputSchema,
   },
-  async (input) => {
+  async (input: VerificationInput) => {
     
     const promptText = input.isCompany
     ? `You are an expert document analyst. Analyze the provided image of a company registration document (like a RIF).

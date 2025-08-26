@@ -16,6 +16,7 @@ const UpdateUserInputSchema = z.object({
     userId: z.string(),
     updates: z.any(), // Using z.any() for flexibility as updates can be of any shape
 });
+type UpdateUserInput = z.infer<typeof UpdateUserInputSchema>;
 
 export const updateUserFlow = ai.defineFlow(
     {
@@ -23,10 +24,10 @@ export const updateUserFlow = ai.defineFlow(
         inputSchema: UpdateUserInputSchema,
         outputSchema: z.void(),
     },
-    async ({ userId, updates }) => {
+    async (input: UpdateUserInput) => {
         const db = getFirestore();
-        const userRef = db.collection('users').doc(userId);
-        await userRef.update(updates);
+        const userRef = db.collection('users').doc(input.userId);
+        await userRef.update(input.updates);
     }
 );
 
@@ -34,6 +35,7 @@ export const updateUserFlow = ai.defineFlow(
 const ToggleGpsInputSchema = z.object({
     userId: z.string(),
 });
+type ToggleGpsInput = z.infer<typeof ToggleGpsInputSchema>;
 
 export const toggleGpsFlow = ai.defineFlow(
     {
@@ -41,9 +43,9 @@ export const toggleGpsFlow = ai.defineFlow(
         inputSchema: ToggleGpsInputSchema,
         outputSchema: z.void(),
     },
-    async ({ userId }) => {
+    async (input: ToggleGpsInput) => {
         const db = getFirestore();
-        const userRef = db.collection('users').doc(userId);
+        const userRef = db.collection('users').doc(input.userId);
         const userSnap = await userRef.get();
         if (userSnap.exists()) {
             const currentStatus = userSnap.data()?.isGpsActive || false;
@@ -57,6 +59,7 @@ export const toggleGpsFlow = ai.defineFlow(
 const DeleteUserInputSchema = z.object({
   userId: z.string(),
 });
+type DeleteUserInput = z.infer<typeof DeleteUserInputSchema>;
 
 export const deleteUserFlow = ai.defineFlow(
   {
@@ -64,9 +67,9 @@ export const deleteUserFlow = ai.defineFlow(
     inputSchema: DeleteUserInputSchema,
     outputSchema: z.void(),
   },
-  async ({ userId }) => {
+  async (input: DeleteUserInput) => {
     const db = getFirestore();
-    const userRef = db.collection('users').doc(userId);
+    const userRef = db.collection('users').doc(input.userId);
     await userRef.delete();
   }
 );
@@ -77,6 +80,7 @@ const CheckIdUniquenessInputSchema = z.object({
   country: z.string(),
   currentUserId: z.string(),
 });
+type CheckIdUniquenessInput = z.infer<typeof CheckIdUniquenessInputSchema>;
 
 export const checkIdUniquenessFlow = ai.defineFlow(
   {
@@ -84,20 +88,20 @@ export const checkIdUniquenessFlow = ai.defineFlow(
     inputSchema: CheckIdUniquenessInputSchema,
     outputSchema: z.boolean(), // Returns true if unique, false if not
   },
-  async ({ idNumber, country, currentUserId }) => {
-    if (!idNumber || !country) {
+  async (input: CheckIdUniquenessInput) => {
+    if (!input.idNumber || !input.country) {
       return true; // Don't run check if data is incomplete
     }
     const db = getFirestore();
     const usersRef = db.collection('users');
-    const q = usersRef.where("idNumber", "==", idNumber).where("country", "==", country);
+    const q = usersRef.where("idNumber", "==", input.idNumber).where("country", "==", input.country);
     const querySnapshot = await q.get();
     
     if (querySnapshot.empty) {
       return true; // ID is unique
     }
 
-    const isOwnDocument = querySnapshot.docs[0].id === currentUserId;
+    const isOwnDocument = querySnapshot.docs[0].id === input.currentUserId;
     return isOwnDocument;
   }
 );
@@ -114,6 +118,7 @@ const CompleteInitialSetupInputSchema = z.object({
   type: z.enum(['client', 'provider', 'repartidor']),
   providerType: z.enum(['professional', 'company']),
 });
+type CompleteInitialSetupInput = z.infer<typeof CompleteInitialSetupInputSchema>;
 
 const UserOutputSchema = z.custom<User | null>();
 
@@ -123,9 +128,9 @@ export const completeInitialSetupFlow = ai.defineFlow(
     inputSchema: CompleteInitialSetupInputSchema,
     outputSchema: UserOutputSchema, 
   },
-  async ({ userId, name, lastName, idNumber, birthDate, country, type, providerType }) => {
+  async (input: CompleteInitialSetupInput) => {
     const db = getFirestore();
-    const userRef = db.collection('users').doc(userId);
+    const userRef = db.collection('users').doc(input.userId);
     
     const userSnap = await userRef.get();
     if (!userSnap.exists()) {
@@ -134,24 +139,24 @@ export const completeInitialSetupFlow = ai.defineFlow(
     
     const existingData = userSnap.data() as User;
     
-    const isCompany = providerType === 'company';
+    const isCompany = input.providerType === 'company';
     const activeCredicoraLevels = isCompany ? credicoraCompanyLevels : credicoraLevels;
     const initialCredicoraLevel = activeCredicoraLevels['1'];
 
     const dataToUpdate: Partial<User> = {
-      name,
-      lastName,
-      idNumber,
-      birthDate,
-      country,
+      name: input.name,
+      lastName: input.lastName,
+      idNumber: input.idNumber,
+      birthDate: input.birthDate,
+      country: input.country,
       isInitialSetupComplete: true,
-      type: isCompany ? 'provider' : type,
+      type: isCompany ? 'provider' : input.type,
       credicoraLevel: initialCredicoraLevel.level,
       credicoraLimit: initialCredicoraLevel.creditLimit,
       credicoraDetails: initialCredicoraLevel,
       profileSetupData: {
         ...(existingData.profileSetupData || {}),
-        providerType: providerType,
+        providerType: input.providerType,
       }
     };
 
@@ -166,6 +171,7 @@ export const completeInitialSetupFlow = ai.defineFlow(
 const GetPublicProfileInputSchema = z.object({
   userId: z.string(),
 });
+type GetPublicProfileInput = z.infer<typeof GetPublicProfileInputSchema>;
 
 const PublicUserOutputSchema = z.custom<Partial<User> | null>();
 
@@ -175,9 +181,9 @@ export const getPublicProfileFlow = ai.defineFlow(
     inputSchema: GetPublicProfileInputSchema,
     outputSchema: PublicUserOutputSchema,
   },
-  async ({ userId }) => {
+  async (input: GetPublicProfileInput) => {
     const db = getFirestore();
-    const userRef = db.collection('users').doc(userId);
+    const userRef = db.collection('users').doc(input.userId);
     const userSnap = await userRef.get();
 
     if (!userSnap.exists()) {

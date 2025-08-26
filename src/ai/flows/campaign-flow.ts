@@ -35,23 +35,15 @@ const CreateCampaignInputSchema = z.object({
 
 export type CreateCampaignInput = z.infer<typeof CreateCampaignInputSchema>;
 
-// The campaign type is already defined in src/lib/types.ts, so we can reuse it.
 const CampaignOutputSchema = z.custom<Campaign>();
 
-
-export async function createCampaign(
-  input: CreateCampaignInput
-): Promise<Campaign> {
-  return createCampaignFlow(input);
-}
-
-const createCampaignFlow = ai.defineFlow(
+export const createCampaignFlow = ai.defineFlow(
   {
     name: 'createCampaignFlow',
     inputSchema: CreateCampaignInputSchema,
     outputSchema: CampaignOutputSchema,
   },
-  async (input: CreateCampaignInput) => {
+  async (input) => {
     const db = getFirestore();
     const userRef = db.collection('users').doc(input.userId);
     const userSnap = await userRef.get();

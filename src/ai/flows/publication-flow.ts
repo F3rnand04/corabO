@@ -8,7 +8,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import type { GalleryImage, User, GalleryImageComment, CreatePublicationInput, CreateProductInput } from '@/lib/types';
-import { sendNewPublicationNotification } from './notification-flow';
+import { sendNewPublicationNotificationFlow } from './notification-flow';
 
 
 const AddCommentInputSchema = z.object({
@@ -20,11 +20,14 @@ const AddCommentInputSchema = z.object({
     profileImage: z.string(),
   })
 });
+type AddCommentInput = z.infer<typeof AddCommentInputSchema>;
+
 
 const RemoveCommentInputSchema = z.object({
   imageId: z.string(),
   commentIndex: z.number(),
 });
+type RemoveCommentInput = z.infer<typeof RemoveCommentInputSchema>;
 
 const UpdateGalleryImageInputSchema = z.object({
   imageId: z.string(),
@@ -33,10 +36,13 @@ const UpdateGalleryImageInputSchema = z.object({
     imageDataUri: z.string().optional(),
   })
 });
+type UpdateGalleryImageInput = z.infer<typeof UpdateGalleryImageInputSchema>;
+
 
 const RemoveGalleryImageInputSchema = z.object({
   imageId: z.string()
 });
+type RemoveGalleryImageInput = z.infer<typeof RemoveGalleryImageInputSchema>;
 
 
 export const createPublicationFlow = ai.defineFlow(
@@ -45,10 +51,10 @@ export const createPublicationFlow = ai.defineFlow(
     inputSchema: z.custom<CreatePublicationInput>(),
     outputSchema: z.void(),
   },
-  async ({ userId, description, imageDataUri, aspectRatio, type }) => {
+  async (input: CreatePublicationInput) => {
     const db = getFirestore();
     
-    const userRef = db.collection('users').doc(userId);
+    const userRef = db.collection('users').doc(input.userId);
     const userSnap = await userRef.get();
     if (!userSnap.exists()) {
       throw new Error('User not found.');
@@ -59,25 +65,25 @@ export const createPublicationFlow = ai.defineFlow(
 
     const newPublication: GalleryImage = {
       id: publicationId,
-      providerId: userId,
-      type: type,
-      src: imageDataUri,
-      alt: description.slice(0, 50),
-      description,
+      providerId: input.userId,
+      type: input.type,
+      src: input.imageDataUri,
+      alt: input.description.slice(0, 50),
+      description: input.description,
       createdAt: new Date().toISOString(),
       comments: [],
       likes: 0,
-      aspectRatio,
+      aspectRatio: input.aspectRatio,
     };
     
     const publicationRef = db.collection('publications').doc(publicationId);
     await publicationRef.set(newPublication);
     
     if (user.verified || (user.reputation || 0) > 4.0) {
-      await sendNewPublicationNotification({
-        providerId: userId,
+      await sendNewPublicationNotificationFlow({
+        providerId: input.userId,
         publicationId: publicationId,
-        publicationDescription: description,
+        publicationDescription: input.description,
       });
     }
   }
@@ -89,9 +95,9 @@ export const createProductFlow = ai.defineFlow(
         inputSchema: z.custom<CreateProductInput>(),
         outputSchema: z.string(),
     },
-    async ({ userId, name, description, price, imageDataUri }) => {
+    async (input: CreateProductInput) => {
         const db = getFirestore();
-        const userRef = db.collection('users').doc(userId);
+        const userRef = db.collection('users').doc(input.userId);
         const userSnap = await userRef.get();
         if (!userSnap.exists()) {
             throw new Error('User not found.');
@@ -102,17 +108,17 @@ export const createProductFlow = ai.defineFlow(
         
         const newProductPublication: GalleryImage = {
             id: productId,
-            providerId: userId,
+            providerId: input.userId,
             type: 'product',
-            src: imageDataUri,
-            alt: name,
-            description: description,
+            src: input.imageDataUri,
+            alt: input.name,
+            description: input.description,
             createdAt: new Date().toISOString(),
             likes: 0,
             comments: [],
             productDetails: {
-              name: name,
-              price: price,
+              name: input.name,
+              price: input.price,
               category: user.profileSetupData?.primaryCategory || 'General',
             },
         };
@@ -121,10 +127,10 @@ export const createProductFlow = ai.defineFlow(
         await productRef.set(newProductPublication);
         
         if (user.verified || (user.reputation || 0) > 4.0) {
-          await sendNewPublicationNotification({
-            providerId: userId,
+          await sendNewPublicationNotificationFlow({
+            providerId: input.userId,
             publicationId: productId,
-            publicationDescription: `¡Nuevo producto disponible! ${'\'\'\''}${name}`,
+            publicationDescription: `¡Nuevo producto disponible! ${'\'\'\''}${input.name}`,
           });
         }
 
@@ -138,14 +144,14 @@ export const addCommentToImageFlow = ai.defineFlow(
         inputSchema: AddCommentInputSchema,
         outputSchema: z.void(),
     },
-    async ({ imageId, commentText, author }) => {
+    async (input: AddCommentInput) => {
         const db = getFirestore();
-        const imageRef = db.collection('publications').doc(imageId);
+        const imageRef = db.collection('publications').doc(input.imageId);
         
         const newComment: GalleryImageComment = {
-            author: author.name,
-            text: commentText,
-            profileImage: author.profileImage,
+            author: input.author.name,
+            text: input.commentText,
+            profileImage: input.author.profileImage,
             likes: 0,
             dislikes: 0,
         };
@@ -162,15 +168,15 @@ export const removeCommentFromImageFlow = ai.defineFlow(
         inputSchema: RemoveCommentInputSchema,
         outputSchema: z.void(),
     },
-    async ({ imageId, commentIndex }) => {
+    async (input: RemoveCommentInput) => {
         const db = getFirestore();
-        const imageRef = db.collection('publications').doc(imageId);
+        const imageRef = db.collection('publications').doc(input.imageId);
         const imageSnap = await imageRef.get();
 
         if (!imageSnap.exists()) throw new Error("Image not found.");
         
         const publication = imageSnap.data() as GalleryImage;
-        const updatedComments = publication.comments?.filter((_, index) => index !== commentIndex);
+        const updatedComments = publication.comments?.filter((_, index) => index !== input.commentIndex);
 
         await imageRef.update({ comments: updatedComments });
     }
@@ -183,13 +189,13 @@ export const updateGalleryImageFlow = ai.defineFlow(
         inputSchema: UpdateGalleryImageInputSchema,
         outputSchema: z.void(),
     },
-    async ({ imageId, updates }) => {
+    async (input: UpdateGalleryImageInput) => {
         const db = getFirestore();
-        const imageRef = db.collection('publications').doc(imageId);
+        const imageRef = db.collection('publications').doc(input.imageId);
         
         const dataToUpdate: Record<string, any> = {};
-        if (updates.description) dataToUpdate.description = updates.description;
-        if (updates.imageDataUri) dataToUpdate.src = updates.imageDataUri;
+        if (input.updates.description) dataToUpdate.description = input.updates.description;
+        if (input.updates.imageDataUri) dataToUpdate.src = input.updates.imageDataUri;
         
         await imageRef.update(dataToUpdate);
     }
@@ -202,8 +208,8 @@ export const removeGalleryImageFlow = ai.defineFlow(
         inputSchema: RemoveGalleryImageInputSchema,
         outputSchema: z.void(),
     },
-    async ({ imageId }) => {
+    async (input: RemoveGalleryImageInput) => {
         const db = getFirestore();
-        await db.collection('publications').doc(imageId).delete();
+        await db.collection('publications').doc(input.imageId).delete();
     }
 );

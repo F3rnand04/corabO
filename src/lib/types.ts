@@ -121,8 +121,6 @@ export type GalleryImage = {
   campaignId?: string;
   aspectRatio?: 'square' | 'horizontal' | 'vertical';
   likes?: number;
-  // DEPRECATED: owner data will now be fetched on demand.
-  // This helps prevent stale data and simplifies writes.
   owner?: PublicationOwner; 
   productDetails?: ProductDetails;
 };
@@ -472,7 +470,7 @@ export type Transaction = {
     // For products
     items?: CartItem[];
     delivery?: {
-      method: 'pickup' | 'home' | 'other_address';
+      method: 'pickup' | 'home' | 'other_address' | 'current_location';
       address?: string;
       recipientInfo?: {
         name: string;
@@ -522,7 +520,7 @@ export type Transaction = {
 
 export type AppointmentRequest = {
     providerId: string;
-    date: Date;
+    date: string;
     details: string;
     amount: number;
 };

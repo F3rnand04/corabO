@@ -10,13 +10,13 @@ import { getFirestore } from 'firebase-admin/firestore';
 import type { FirebaseUserInput, User } from '@/lib/types';
 
 
-export const getOrCreateUser = ai.defineFlow(
+export const getOrCreateUserFlow = ai.defineFlow(
   {
     name: 'getOrCreateUserFlow',
-    inputSchema: z.any(),
-    outputSchema: z.any().nullable(),
+    inputSchema: z.custom<FirebaseUserInput>(),
+    outputSchema: z.custom<User>(),
   },
-  async (firebaseUser: FirebaseUserInput) => {
+  async (firebaseUser) => {
     const db = getFirestore();
     const userRef = db.collection('users').doc(firebaseUser.uid);
     const userSnap = await userRef.get();

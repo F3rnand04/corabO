@@ -9,7 +9,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { getFirestore, writeBatch, FieldValue } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import type { Conversation, Message, Transaction, User } from '@/lib/types';
 
 // Schema for sending a message/proposal
@@ -44,13 +44,13 @@ const AcceptProposalInputSchema = z.object({
 });
 export type AcceptProposalInput = z.infer<typeof AcceptProposalInputSchema>;
 
-export const sendMessage = ai.defineFlow(
+export const sendMessageFlow = ai.defineFlow(
   {
     name: 'sendMessageFlow',
     inputSchema: SendMessageInputSchema,
     outputSchema: z.void(),
   },
-  async (input) => {
+  async (input: SendMessageInput) => {
     const db = getFirestore();
     const convoRef = db.collection('conversations').doc(input.conversationId);
     const convoSnap = await convoRef.get();
@@ -95,30 +95,30 @@ export const sendMessage = ai.defineFlow(
   }
 );
 
-export const acceptProposal = ai.defineFlow(
+export const acceptProposalFlow = ai.defineFlow(
   {
     name: 'acceptProposalFlow',
     inputSchema: AcceptProposalInputSchema,
     outputSchema: z.void(),
   },
-  async ({ conversationId, messageId, acceptorId }) => {
+  async (input: AcceptProposalInput) => {
     const db = getFirestore();
-    const batch = writeBatch(db);
-    const convoRef = db.collection('conversations').doc(conversationId);
+    const batch = db.batch();
+    const convoRef = db.collection('conversations').doc(input.conversationId);
 
     const convoSnap = await convoRef.get();
     if (!convoSnap.exists()) throw new Error('Conversation not found');
 
     const conversation = convoSnap.data() as Conversation;
 
-    if (!conversation.participantIds.includes(acceptorId)) {
+    if (!conversation.participantIds.includes(input.acceptorId)) {
       throw new Error(
         'Permission Denied: Acceptor is not a participant of this conversation.'
       );
     }
-    const message = conversation.messages.find((m) => m.id === messageId);
+    const message = conversation.messages.find((m) => m.id === input.messageId);
     if (!message) throw new Error('Message not found');
-    if (message.senderId === acceptorId) {
+    if (message.senderId === input.acceptorId) {
       throw new Error('Permission Denied: Cannot accept your own proposal.');
     }
 
@@ -126,7 +126,7 @@ export const acceptProposal = ai.defineFlow(
       throw new Error('Message is not a proposal');
     }
 
-    const clientRef = db.collection('users').doc(acceptorId);
+    const clientRef = db.collection('users').doc(input.acceptorId);
     const clientSnap = await clientRef.get();
     if (!clientSnap.exists()) throw new Error('Client user data not found.');
     const clientData = clientSnap.data() as User;
@@ -137,7 +137,7 @@ export const acceptProposal = ai.defineFlow(
       : 'Finalizado - Pendiente de Pago';
 
     const messageIndex = conversation.messages.findIndex(
-      (m) => m.id === messageId
+      (m) => m.id === input.messageId
     );
     const updatedMessages = [...conversation.messages];
     if(messageIndex > -1) {
@@ -146,7 +146,7 @@ export const acceptProposal = ai.defineFlow(
     }
 
     const providerId = message.senderId;
-    const clientId = acceptorId;
+    const clientId = input.acceptorId;
 
     const newTransaction: Transaction = {
       id: `txn-prop-${Date.now()}`,

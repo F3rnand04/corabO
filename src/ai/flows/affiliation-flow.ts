@@ -16,11 +16,14 @@ const AffiliationActionSchema = z.object({
   affiliationId: z.string(),
   actorId: z.string(), // ID of the user performing the action (e.g., company admin)
 });
+export type AffiliationActionInput = z.infer<typeof AffiliationActionSchema>;
+
 
 const RequestAffiliationSchema = z.object({
   providerId: z.string(),
   companyId: z.string(),
 });
+export type RequestAffiliationInput = z.infer<typeof RequestAffiliationSchema>;
 
 // --- Flows ---
 
@@ -34,13 +37,13 @@ export const requestAffiliationFlow = ai.defineFlow(
     inputSchema: RequestAffiliationSchema,
     outputSchema: z.void(),
   },
-  async ({ providerId, companyId }) => {
+  async (input: RequestAffiliationInput) => {
     const db = getFirestore();
 
     // Check if a pending or approved affiliation already exists
     const q = db.collection('affiliations')
-        .where('providerId', '==', providerId)
-        .where('companyId', '==', companyId)
+        .where('providerId', '==', input.providerId)
+        .where('companyId', '==', input.companyId)
         .where('status', 'in', ['pending', 'approved']);
         
     const existing = await q.get();
@@ -49,12 +52,12 @@ export const requestAffiliationFlow = ai.defineFlow(
         throw new Error("An affiliation request for this company already exists or has been approved.");
     }
     
-    const affiliationId = `affil-${providerId}-${companyId}`;
+    const affiliationId = `affil-${input.providerId}-${input.companyId}`;
     const now = new Date().toISOString();
     const newAffiliation: Affiliation = {
       id: affiliationId,
-      providerId,
-      companyId,
+      providerId: input.providerId,
+      companyId: input.companyId,
       status: 'pending',
       requestedAt: now,
       updatedAt: now,
@@ -73,15 +76,15 @@ export const approveAffiliationFlow = ai.defineFlow(
     inputSchema: AffiliationActionSchema,
     outputSchema: z.void(),
   },
-  async ({ affiliationId, actorId }) => {
+  async (input: AffiliationActionInput) => {
     const db = getFirestore();
     const batch = db.batch();
-    const affiliationRef = db.collection('affiliations').doc(affiliationId);
+    const affiliationRef = db.collection('affiliations').doc(input.affiliationId);
     
     // In a real app, you'd get the affiliation doc first to verify the actorId matches the companyId
     
-    const providerId = affiliationId.split('-')[1]; // Assuming the format is 'affil-providerId-companyId'
-    const companyId = affiliationId.split('-')[2];
+    const providerId = input.affiliationId.split('-')[1]; // Assuming the format is 'affil-providerId-companyId'
+    const companyId = input.affiliationId.split('-')[2];
 
     const providerRef = db.collection('users').doc(providerId);
     const companyRef = db.collection('users').doc(companyId);
@@ -115,9 +118,9 @@ export const rejectAffiliationFlow = ai.defineFlow(
       inputSchema: AffiliationActionSchema,
       outputSchema: z.void(),
     },
-    async ({ affiliationId }) => {
+    async (input: AffiliationActionInput) => {
         const db = getFirestore();
-        await db.collection('affiliations').doc(affiliationId).update({
+        await db.collection('affiliations').doc(input.affiliationId).update({
             status: 'rejected',
             updatedAt: FieldValue.serverTimestamp()
         });
@@ -134,12 +137,12 @@ export const revokeAffiliationFlow = ai.defineFlow(
     inputSchema: AffiliationActionSchema,
     outputSchema: z.void(),
   },
-  async ({ affiliationId, actorId }) => {
+  async (input: AffiliationActionInput) => {
      const db = getFirestore();
      const batch = db.batch();
 
-     const affiliationRef = db.collection('affiliations').doc(affiliationId);
-     const providerId = affiliationId.split('-')[1];
+     const affiliationRef = db.collection('affiliations').doc(input.affiliationId);
+     const providerId = input.affiliationId.split('-')[1];
      const providerRef = db.collection('users').doc(providerId);
      
      // Update affiliation to revoked

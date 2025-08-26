@@ -18,11 +18,14 @@ const BasicTransactionSchema = z.object({
   transactionId: z.string(),
   userId: z.string(),
 });
+type BasicTransactionInput = z.infer<typeof BasicTransactionSchema>;
 
 const ConfirmWorkReceivedSchema = BasicTransactionSchema.extend({
     rating: z.number().min(1).max(5),
     comment: z.string().optional(),
 });
+type ConfirmWorkReceivedInput = z.infer<typeof ConfirmWorkReceivedSchema>;
+
 
 const PayCommitmentSchema = z.object({
     transactionId: z.string(),
@@ -33,11 +36,15 @@ const PayCommitmentSchema = z.object({
         paymentVoucherUrl: z.string().optional(),
     }),
 });
+type PayCommitmentInput = z.infer<typeof PayCommitmentSchema>;
+
 
 const SendQuoteSchema = BasicTransactionSchema.extend({
     breakdown: z.string(),
     total: z.number(),
 });
+type SendQuoteInput = z.infer<typeof SendQuoteSchema>;
+
 
 const AppointmentRequestSchema = z.object({
     providerId: z.string(),
@@ -46,25 +53,44 @@ const AppointmentRequestSchema = z.object({
     details: z.string(),
     amount: z.number(),
 });
+type AppointmentRequestInput = z.infer<typeof AppointmentRequestSchema>;
 
 const ProcessDirectPaymentSchema = z.object({
   sessionId: z.string(),
 });
+type ProcessDirectPaymentInput = z.infer<typeof ProcessDirectPaymentSchema>;
+
+const ConfirmPaymentReceivedSchema = z.object({
+    transactionId: z.string(),
+    userId: z.string(),
+    fromThirdParty: z.boolean(),
+});
+type ConfirmPaymentReceivedInput = z.infer<typeof ConfirmPaymentReceivedSchema>;
+
+const CheckoutInputSchema = z.object({
+    userId: z.string(),
+    providerId: z.string(),
+    deliveryMethod: z.string(),
+    useCredicora: z.boolean(),
+    recipientInfo: z.object({ name: z.string(), phone: z.string() }).optional(),
+    deliveryAddress: z.string().optional(),
+});
+type CheckoutInput = z.infer<typeof CheckoutInputSchema>;
 
 
 // --- Flows ---
 
-export const processDirectPayment = ai.defineFlow(
+export const processDirectPaymentFlow = ai.defineFlow(
     {
         name: 'processDirectPaymentFlow',
         inputSchema: ProcessDirectPaymentSchema,
         outputSchema: z.object({ transactionId: z.string() }),
     },
-    async ({ sessionId }) => {
+    async (input: ProcessDirectPaymentInput) => {
         const db = getFirestore();
         const batch = db.batch();
 
-        const sessionRef = db.collection('qr_sessions').doc(sessionId);
+        const sessionRef = db.collection('qr_sessions').doc(input.sessionId);
         const sessionSnap = await sessionRef.get();
 
         if (!sessionSnap.exists()) {
@@ -100,7 +126,7 @@ export const processDirectPayment = ai.defineFlow(
         const taxAmountOnCommission = commissionAmount * taxRate;
         const providerCommitmentAmount = commissionAmount + taxAmountOnCommission;
 
-        const initialTxId = `txndp-${sessionId}`;
+        const initialTxId = `txndp-${input.sessionId}`;
         const initialTransaction: Transaction = {
             id: initialTxId,
             type: 'Compra Directa',
@@ -156,7 +182,7 @@ export const processDirectPayment = ai.defineFlow(
         if (session.financedAmount && session.installments && session.financedAmount > 0) {
             const installmentAmount = session.financedAmount / session.installments;
             for (let i = 1; i <= session.installments; i++) {
-                const installmentTxId = `txn-credicora-${sessionId.slice(-4)}-${i}`;
+                const installmentTxId = `txn-credicora-${input.sessionId.slice(-4)}-${i}`;
                 const dueDate = addDays(new Date(), i * 15);
                 const installmentTx: Transaction = {
                     id: installmentTxId,
@@ -185,20 +211,20 @@ export const processDirectPayment = ai.defineFlow(
 );
 
 
-export const completeWork = ai.defineFlow(
+export const completeWorkFlow = ai.defineFlow(
   {
     name: 'completeWorkFlow',
     inputSchema: BasicTransactionSchema,
     outputSchema: z.void(),
   },
-  async ({ transactionId, userId }) => {
+  async (input: BasicTransactionInput) => {
     const db = getFirestore();
-    const txRef = db.collection('transactions').doc(transactionId);
+    const txRef = db.collection('transactions').doc(input.transactionId);
     const txSnap = await txRef.get();
     if (!txSnap.exists()) throw new Error("Transaction not found.");
     
     const transaction = txSnap.data() as Transaction;
-    if (transaction.providerId !== userId) {
+    if (transaction.providerId !== input.userId) {
         throw new Error("Permission denied.");
     }
     if (transaction.status !== 'Acuerdo Aceptado - Pendiente de Ejecución') {
@@ -208,20 +234,20 @@ export const completeWork = ai.defineFlow(
   }
 );
 
-export const confirmWorkReceived = ai.defineFlow(
+export const confirmWorkReceivedFlow = ai.defineFlow(
     {
         name: 'confirmWorkReceivedFlow',
         inputSchema: ConfirmWorkReceivedSchema,
         outputSchema: z.void(),
     },
-    async ({ transactionId, userId, rating, comment }) => {
+    async (input: ConfirmWorkReceivedInput) => {
         const db = getFirestore();
-        const txRef = db.collection('transactions').doc(transactionId);
+        const txRef = db.collection('transactions').doc(input.transactionId);
         const txSnap = await txRef.get();
         if (!txSnap.exists()) throw new Error("Transaction not found.");
 
         const transaction = txSnap.data() as Transaction;
-        if (transaction.clientId !== userId) {
+        if (transaction.clientId !== input.userId) {
             throw new Error("Permission denied.");
         }
         if (transaction.status !== 'Pendiente de Confirmación del Cliente') {
@@ -232,8 +258,8 @@ export const confirmWorkReceived = ai.defineFlow(
 
         await txRef.update({ 
             status: 'Finalizado - Pendiente de Pago',
-            'details.clientRating': rating,
-            'details.clientComment': comment || '',
+            'details.clientRating': input.rating,
+            'details.clientComment': input.comment || '',
             'details.exchangeRate': rate,
             'details.amountUSD': transaction.amount / rate,
             'details.paymentRequestedAt': new Date().toISOString(),
@@ -241,49 +267,49 @@ export const confirmWorkReceived = ai.defineFlow(
     }
 );
 
-export const payCommitment = ai.defineFlow(
+export const payCommitmentFlow = ai.defineFlow(
     {
         name: 'payCommitmentFlow',
         inputSchema: PayCommitmentSchema,
         outputSchema: z.void(),
     },
-    async ({ transactionId, userId, paymentDetails }) => {
+    async (input: PayCommitmentInput) => {
         const db = getFirestore();
-        const txRef = db.collection('transactions').doc(transactionId);
+        const txRef = db.collection('transactions').doc(input.transactionId);
         const txSnap = await txRef.get();
         if (!txSnap.exists()) throw new Error("Transaction not found.");
 
         const transaction = txSnap.data() as Transaction;
-        if (transaction.clientId !== userId) {
+        if (transaction.clientId !== input.userId) {
             throw new Error("Permission denied.");
         }
         
         await txRef.update({ 
             status: 'Pago Enviado - Esperando Confirmación',
-            'details.paymentMethod': paymentDetails.paymentMethod,
-            'details.paymentReference': paymentDetails.paymentReference,
-            'details.paymentVoucherUrl': paymentDetails.paymentVoucherUrl,
+            'details.paymentMethod': input.paymentDetails.paymentMethod,
+            'details.paymentReference': input.paymentDetails.paymentReference,
+            'details.paymentVoucherUrl': input.paymentDetails.paymentVoucherUrl,
             'details.paymentSentAt': new Date().toISOString(),
         });
     }
 );
 
-export const confirmPaymentReceived = ai.defineFlow(
+export const confirmPaymentReceivedFlow = ai.defineFlow(
     {
         name: 'confirmPaymentReceivedFlow',
-        inputSchema: z.object({ transactionId: z.string(), userId: z.string(), fromThirdParty: z.boolean() }),
+        inputSchema: ConfirmPaymentReceivedSchema,
         outputSchema: z.void(),
     },
-    async ({ transactionId, userId, fromThirdParty }) => {
+    async (input: ConfirmPaymentReceivedInput) => {
         const db = getFirestore();
         const batch = db.batch();
         
-        const txRef = db.collection('transactions').doc(transactionId);
+        const txRef = db.collection('transactions').doc(input.transactionId);
         const txSnap = await txRef.get();
         if (!txSnap.exists()) throw new Error("Transaction not found.");
         
         const transaction = txSnap.data() as Transaction;
-        if (transaction.providerId !== userId) {
+        if (transaction.providerId !== input.userId) {
             throw new Error("Permission denied.");
         }
         if (transaction.status !== 'Pago Enviado - Esperando Confirmación') {
@@ -292,7 +318,7 @@ export const confirmPaymentReceived = ai.defineFlow(
         
         batch.update(txRef, { 
             status: 'Pagado',
-            'details.paymentFromThirdParty': fromThirdParty,
+            'details.paymentFromThirdParty': input.fromThirdParty,
         });
 
         const clientRef = db.collection('users').doc(transaction.clientId);
@@ -302,20 +328,20 @@ export const confirmPaymentReceived = ai.defineFlow(
     }
 );
 
-export const sendQuote = ai.defineFlow(
+export const sendQuoteFlow = ai.defineFlow(
     {
         name: 'sendQuoteFlow',
         inputSchema: SendQuoteSchema,
         outputSchema: z.void(),
     },
-    async ({ transactionId, userId, breakdown, total }) => {
+    async (input: SendQuoteInput) => {
         const db = getFirestore();
-        const txRef = db.collection('transactions').doc(transactionId);
+        const txRef = db.collection('transactions').doc(input.transactionId);
         const txSnap = await txRef.get();
         if (!txSnap.exists()) throw new Error("Transaction not found.");
         
         const transaction = txSnap.data() as Transaction;
-        if (transaction.providerId !== userId) {
+        if (transaction.providerId !== input.userId) {
             throw new Error("Permission denied.");
         }
         if (transaction.status !== 'Solicitud Pendiente') {
@@ -323,26 +349,26 @@ export const sendQuote = ai.defineFlow(
         }
         await txRef.update({
             status: 'Cotización Recibida',
-            amount: total,
-            'details.quote': { breakdown, total },
+            amount: input.total,
+            'details.quote': { breakdown: input.breakdown, total: input.total },
         });
     }
 );
 
-export const acceptQuote = ai.defineFlow(
+export const acceptQuoteFlow = ai.defineFlow(
     {
         name: 'acceptQuoteFlow',
         inputSchema: BasicTransactionSchema,
         outputSchema: z.void(),
     },
-    async ({ transactionId, userId }) => {
+    async (input: BasicTransactionInput) => {
         const db = getFirestore();
-        const txRef = db.collection('transactions').doc(transactionId);
+        const txRef = db.collection('transactions').doc(input.transactionId);
         const txSnap = await txRef.get();
         if (!txSnap.exists()) throw new Error("Transaction not found.");
         
         const transaction = txSnap.data() as Transaction;
-        if (transaction.clientId !== userId) {
+        if (transaction.clientId !== input.userId) {
             throw new Error("Permission denied.");
         }
         if (transaction.status !== 'Cotización Recibida') {
@@ -353,13 +379,13 @@ export const acceptQuote = ai.defineFlow(
 );
 
 
-export const createAppointmentRequest = ai.defineFlow(
+export const createAppointmentRequestFlow = ai.defineFlow(
     {
         name: 'createAppointmentRequestFlow',
         inputSchema: AppointmentRequestSchema,
         outputSchema: z.void(),
     },
-    async (request) => {
+    async (request: AppointmentRequestInput) => {
         const db = getFirestore();
         const txId = `txn-appt-${Date.now()}`;
         const newTransaction: Transaction = {
@@ -380,20 +406,20 @@ export const createAppointmentRequest = ai.defineFlow(
     }
 );
 
-export const acceptAppointment = ai.defineFlow(
+export const acceptAppointmentFlow = ai.defineFlow(
     {
         name: 'acceptAppointmentFlow',
         inputSchema: BasicTransactionSchema,
         outputSchema: z.void(),
     },
-    async ({ transactionId, userId }) => {
+    async (input: BasicTransactionInput) => {
         const db = getFirestore();
-        const txRef = db.collection('transactions').doc(transactionId);
+        const txRef = db.collection('transactions').doc(input.transactionId);
         const txSnap = await txRef.get();
         if (!txSnap.exists()) throw new Error("Transaction not found.");
 
         const transaction = txSnap.data() as Transaction;
-        if (transaction.providerId !== userId) {
+        if (transaction.providerId !== input.userId) {
             throw new Error("Permission denied.");
         }
         if (transaction.status !== 'Cita Solicitada') {
@@ -404,20 +430,20 @@ export const acceptAppointment = ai.defineFlow(
 );
 
 
-export const startDispute = ai.defineFlow(
+export const startDisputeFlow = ai.defineFlow(
     {
         name: 'startDisputeFlow',
         inputSchema: z.string(), // transactionId
         outputSchema: z.void(),
     },
-    async (transactionId) => {
+    async (transactionId: string) => {
         const db = getFirestore();
         const txRef = db.collection('transactions').doc(transactionId);
         await txRef.update({ status: 'En Disputa' });
     }
 );
 
-export const cancelSystemTransaction = ai.defineFlow(
+export const cancelSystemTransactionFlow = ai.defineFlow(
     {
         name: 'cancelSystemTransactionFlow',
         inputSchema: z.string(),
@@ -430,35 +456,28 @@ export const cancelSystemTransaction = ai.defineFlow(
     }
 );
 
-export const downloadTransactionsPDF = ai.defineFlow(
+export const downloadTransactionsPDFFlow = ai.defineFlow(
     {
         name: 'downloadTransactionsPDFFlow',
         inputSchema: z.array(z.any()), // Expects an array of transactions
         outputSchema: z.string(),
     },
-    async (transactions) => {
+    async (transactions: Transaction[]) => {
         console.log("Generating PDF for", transactions.length, "transactions.");
         return "base64-encoded-pdf-string-placeholder";
     }
 );
 
-export const checkout = ai.defineFlow({
+export const checkoutFlow = ai.defineFlow({
     name: 'checkoutFlow',
-    inputSchema: z.object({
-        userId: z.string(),
-        providerId: z.string(),
-        deliveryMethod: z.string(),
-        useCredicora: z.boolean(),
-        recipientInfo: z.object({ name: z.string(), phone: z.string() }).optional(),
-        deliveryAddress: z.string().optional(),
-    }),
+    inputSchema: CheckoutInputSchema,
     outputSchema: z.void(),
-}, async ({ userId, providerId, deliveryMethod, useCredicora, recipientInfo, deliveryAddress }) => {
+}, async (input: CheckoutInput) => {
     const db = getFirestore();
     
     const q = db.collection('transactions')
-        .where('clientId', '==', userId) 
-        .where('providerId', '==', providerId)
+        .where('clientId', '==', input.userId) 
+        .where('providerId', '==', input.providerId)
         .where('status', '==', 'Carrito Activo');
     const snapshot = await q.get();
     const cartTxDoc = snapshot.docs[0];
@@ -470,20 +489,19 @@ export const checkout = ai.defineFlow({
     const cartTx = cartTxDoc.data() as Transaction;
     
     const deliveryDetails = {
-        delivery: deliveryMethod !== 'pickup',
-        method: deliveryMethod,
-        address: deliveryAddress,
-        recipientInfo: recipientInfo,
+        method: input.deliveryMethod,
+        address: input.deliveryAddress,
+        recipientInfo: input.recipientInfo,
     };
     
     await db.collection('transactions').doc(cartTx.id).update({
         status: 'Buscando Repartidor',
         'details.delivery': deliveryDetails,
         'details.deliveryCost': 1.5,
-        'details.paymentMethod': useCredicora ? 'credicora' : 'direct',
+        'details.paymentMethod': input.useCredicora ? 'credicora' : 'direct',
     });
 
-    if (deliveryMethod !== 'pickup') {
+    if (input.deliveryMethod !== 'pickup') {
         ai.runFlow(findDeliveryProvider, { transactionId: cartTx.id });
     }
 });

@@ -14,6 +14,7 @@ const UpdateCartInputSchema = z.object({
   productId: z.string(),
   newQuantity: z.number().min(0),
 });
+type UpdateCartInput = z.infer<typeof UpdateCartInputSchema>;
 
 export const updateCartFlow = ai.defineFlow(
   {
@@ -21,11 +22,11 @@ export const updateCartFlow = ai.defineFlow(
     inputSchema: UpdateCartInputSchema,
     outputSchema: z.void(),
   },
-  async ({ userId, productId, newQuantity }) => {
+  async (input: UpdateCartInput) => {
     const db = getFirestore();
     const batch = db.batch();
 
-    const productRef = db.collection('publications').doc(productId);
+    const productRef = db.collection('publications').doc(input.productId);
     const productSnap = await productRef.get();
     if (!productSnap.exists()) throw new Error("Product not found");
     
@@ -36,7 +37,7 @@ export const updateCartFlow = ai.defineFlow(
     const providerId = productData.providerId;
 
     const product: Product = {
-      id: productId,
+      id: input.productId,
       name: productData.productDetails.name,
       description: productData.description,
       price: productData.productDetails.price,
@@ -48,7 +49,7 @@ export const updateCartFlow = ai.defineFlow(
     // Find an existing active cart transaction for this provider
     const cartCollection = db.collection('transactions');
     const q = cartCollection
-        .where('clientId', '==', userId)
+        .where('clientId', '==', input.userId)
         .where('providerId', '==', providerId)
         .where('status', '==', 'Carrito Activo');
         
@@ -63,19 +64,19 @@ export const updateCartFlow = ai.defineFlow(
         existingItems = cartDoc.data().details?.items || [];
     } else {
         // Create new cart transaction
-        const cartId = `cart-${userId}-${providerId}`;
+        const cartId = `cart-${input.userId}-${providerId}`;
         cartTxRef = db.collection('transactions').doc(cartId);
     }
     
-    const itemIndex = existingItems.findIndex(item => item.product.id === productId);
+    const itemIndex = existingItems.findIndex(item => item.product.id === input.productId);
 
-    if (newQuantity > 0) {
+    if (input.newQuantity > 0) {
       if (itemIndex > -1) {
         // Update quantity
-        existingItems[itemIndex].quantity = newQuantity;
+        existingItems[itemIndex].quantity = input.newQuantity;
       } else {
         // Add new item
-        existingItems.push({ product, quantity: newQuantity });
+        existingItems.push({ product, quantity: input.newQuantity });
       }
     } else {
       if (itemIndex > -1) {
@@ -88,9 +89,9 @@ export const updateCartFlow = ai.defineFlow(
     
     const cartData: Partial<Transaction> = {
         id: cartTxRef.id,
-        clientId: userId,
+        clientId: input.userId,
         providerId: providerId,
-        participantIds: [userId, providerId].sort(),
+        participantIds: [input.userId, providerId].sort(),
         status: 'Carrito Activo',
         type: 'Compra',
         date: new Date().toISOString(),
