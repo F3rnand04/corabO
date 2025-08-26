@@ -8,19 +8,22 @@ import { ActivationWarning } from "@/components/ActivationWarning";
 import { PublicationCard } from "@/components/PublicationCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getFeed } from '@/lib/actions/feed.actions';
+import { Button } from "./ui/button";
+import { useRouter } from "next/navigation";
+import { LogIn } from "lucide-react";
+import Image from "next/image";
 
 export function FeedClientComponent() {
   const { currentUser, isLoadingUser, searchQuery, categoryFilter } = useCorabo();
+  const router = useRouter();
   
-  // This component now manages its own state for publications
   const [publications, setPublications] = useState<GalleryImage[]>([]);
   const [isLoadingFeed, setIsLoadingFeed] = useState(true);
 
   useEffect(() => {
-    // Fetch feed only when currentUser is available and loaded.
     if (!isLoadingUser && currentUser) {
         setIsLoadingFeed(true);
-        getFeed({ limitNum: 20 }) // Fetch initial batch
+        getFeed({ limitNum: 20 })
             .then(result => {
                 if (result.publications) {
                     setPublications(result.publications as GalleryImage[]);
@@ -28,13 +31,12 @@ export function FeedClientComponent() {
             })
             .catch(error => {
                 console.error("Failed to fetch feed:", error);
-                setPublications([]); // Reset on error
+                setPublications([]);
             })
             .finally(() => {
                 setIsLoadingFeed(false);
             });
     } else if (!isLoadingUser && !currentUser) {
-        // If there's no user, we show nothing or a loading state.
         setIsLoadingFeed(false);
         setPublications([]);
     }
@@ -64,17 +66,9 @@ export function FeedClientComponent() {
 
 
   const renderFeedContent = () => {
-    if (isLoadingUser || isLoadingFeed) {
-      return (
-        <main className="space-y-4 container py-4">
-          {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[500px] w-full max-w-2xl mx-auto" />)}
-        </main>
-      );
-    }
-
     if (filteredPublications.length > 0) {
       return (
-        <div className="space-y-4">
+        <div className="space-y-4 container mx-auto max-w-2xl">
           {filteredPublications.map((item, index) => (
               <PublicationCard key={item.id || index} publication={item} />
           ))}
@@ -90,21 +84,46 @@ export function FeedClientComponent() {
     );
   };
 
-  if (!currentUser && !isLoadingUser) {
+  if (isLoadingUser || isLoadingFeed) {
     return (
-         <div className="text-center text-muted-foreground pt-16">
-            <p>Inicia sesión para ver el contenido.</p>
+      <main className="space-y-4 container py-4 mx-auto max-w-2xl">
+        {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[500px] w-full" />)}
+      </main>
+    );
+  }
+
+  if (!currentUser) {
+    return (
+        <div className="flex flex-col items-center justify-center min-h-[70vh] text-center p-4">
+            <div className="relative w-48 h-24 mx-auto mb-6">
+                <Image
+                    src="https://i.postimg.cc/Wz1MTvWK/lg.png"
+                    alt="Corabo logo"
+                    fill
+                    priority
+                    sizes="200px"
+                    className="object-contain"
+                />
+            </div>
+            <h1 className="text-2xl font-bold">Bienvenido a Corabo</h1>
+            <p className="text-muted-foreground mt-2 max-w-sm">
+                La plataforma donde conectas con profesionales y clientes de confianza.
+            </p>
+            <Button className="mt-8" size="lg" onClick={() => router.push('/login')}>
+                <LogIn className="mr-2 h-5 w-5" />
+                Iniciar Sesión o Registrarse
+            </Button>
         </div>
     );
   }
 
   return (
     <>
-      {currentUser && !currentUser.isTransactionsActive && (
-        <div className="container py-4">
+      <div className="container py-4 mx-auto max-w-2xl">
+        {!currentUser.isTransactionsActive && (
           <ActivationWarning userType={currentUser.type} />
-        </div>
-      )}
+        )}
+      </div>
       {renderFeedContent()}
     </>
   );
