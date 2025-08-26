@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getFeed } from '@/lib/actions/feed.actions';
 
 export function FeedClientComponent() {
-  const { currentUser, searchQuery, categoryFilter } = useCorabo();
+  const { currentUser, isLoadingUser, searchQuery, categoryFilter } = useCorabo();
   
   // This component now manages its own state for publications
   const [publications, setPublications] = useState<GalleryImage[]>([]);
@@ -19,7 +19,7 @@ export function FeedClientComponent() {
 
   useEffect(() => {
     // Fetch feed only when currentUser is available and loaded.
-    if (currentUser) {
+    if (!isLoadingUser && currentUser) {
         setIsLoadingFeed(true);
         getFeed({ limitNum: 20 }) // Fetch initial batch
             .then(result => {
@@ -34,13 +34,12 @@ export function FeedClientComponent() {
             .finally(() => {
                 setIsLoadingFeed(false);
             });
-    } else {
+    } else if (!isLoadingUser && !currentUser) {
         // If there's no user, we show nothing or a loading state.
-        // This is important for the initial anonymous load.
         setIsLoadingFeed(false);
         setPublications([]);
     }
-  }, [currentUser]); // Dependency on currentUser ensures we fetch data only after login.
+  }, [currentUser, isLoadingUser]);
   
   const filteredPublications = useMemo(() => {
     let results = publications;
@@ -66,7 +65,7 @@ export function FeedClientComponent() {
 
 
   const renderFeedContent = () => {
-    if (isLoadingFeed) {
+    if (isLoadingUser || isLoadingFeed) {
       return (
         <main className="space-y-4 container py-4">
           {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[500px] w-full max-w-2xl mx-auto" />)}
@@ -92,17 +91,17 @@ export function FeedClientComponent() {
     );
   };
 
-  if (!currentUser) {
+  if (!currentUser && !isLoadingUser) {
     return (
-      <main className="space-y-4 container py-4">
-        {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[500px] w-full max-w-2xl mx-auto" />)}
-      </main>
+         <div className="text-center text-muted-foreground pt-16">
+            <p>Inicia sesión para ver el contenido.</p>
+        </div>
     );
   }
 
   return (
     <>
-      {!currentUser.isTransactionsActive && (
+      {currentUser && !currentUser.isTransactionsActive && (
         <div className="container py-4">
           <ActivationWarning userType={currentUser.type} />
         </div>
