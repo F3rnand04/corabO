@@ -162,7 +162,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
       setContacts(newContacts);
       // Persist change to Firestore
       // await updateUser(currentUser.id, { contacts: newContacts });
-      toast({ title: "Contacto añadido", description: `${contact.name} ha sido añadido a tu lista.` });
+      toast({ title: "Contacto añadido", description: `${'\'\'\''}${contact.name} ha sido añadido a tu lista.` });
   }, [currentUser, contacts, toast]);
   
   const removeContact = useCallback(async (contactId: string) => {
@@ -178,7 +178,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   const setDeliveryAddressToCurrent = useCallback(() => {
     if (currentUserLocation) {
         // In a real app, you would use a geocoding service here.
-        const address = `Lat: ${currentUserLocation.latitude.toFixed(4)}, Lon: ${currentUserLocation.longitude.toFixed(4)}`;
+        const address = `Lat: ${'\'\'\''}${currentUserLocation.latitude.toFixed(4)}, Lon: ${currentUserLocation.longitude.toFixed(4)}`;
         setDeliveryAddress(address);
     } else {
         toast({
