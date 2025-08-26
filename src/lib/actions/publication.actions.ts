@@ -4,16 +4,9 @@ import { getFirebaseAdmin } from '@/lib/firebase-server';
 getFirebaseAdmin(); // Ensure Firebase is initialized
 
 import type { CreatePublicationInput, CreateProductInput, User } from '@/lib/types';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
-
-const createPublicationFlow = async (data: any) => { console.warn("Genkit flow 'createPublicationFlow' is disabled."); return { id: `pub-${Date.now()}`, ...data }; };
-const createProductFlow = async (data: any) => { console.warn("Genkit flow 'createProductFlow' is disabled."); return { id: `prod-${Date.now()}`, ...data, alt: data.name }; };
-const addCommentToImageFlow = async (data: any) => console.warn("Genkit flow 'addCommentToImageFlow' is disabled.");
-const removeCommentFromImageFlow = async (data: any) => console.warn("Genkit flow 'removeCommentFromImageFlow' is disabled.");
-const updateGalleryImageFlow = async (data: any) => console.warn("Genkit flow 'updateGalleryImageFlow' is disabled.");
-const removeGalleryImageFlow = async (data: any) => console.warn("Genkit flow 'removeGalleryImageFlow' is disabled.");
-const sendNewContentNotificationFlow = async (data: any) => console.warn("Genkit flow 'sendNewContentNotificationFlow' is disabled.");
+import { createProductFlow, createPublicationFlow, addCommentToImageFlow, removeCommentFromImageFlow, updateGalleryImageFlow, removeGalleryImageFlow, sendNewContentNotificationFlow } from '@/ai/flows/publication-flow';
 
 
 export async function createPublication(input: CreatePublicationInput) {
@@ -26,7 +19,7 @@ export async function createPublication(input: CreatePublicationInput) {
         if (userSnap.exists()) {
             const user = userSnap.data() as User;
             if (user.verified || (user.reputation || 0) > 4.0) {
-                 sendNewContentNotificationFlow({
+                 await sendNewContentNotificationFlow({
                     providerId: input.userId,
                     publicationId: newPublication.id,
                     publicationDescription: newPublication.description,
@@ -50,7 +43,7 @@ export async function createProduct(input: CreateProductInput) {
         if (userSnap.exists()) {
             const user = userSnap.data() as User;
             if (user.verified || (user.reputation || 0) > 4.0) {
-                 sendNewContentNotificationFlow({
+                 await sendNewContentNotificationFlow({
                     providerId: input.userId,
                     publicationId: newProduct.id,
                     publicationDescription: `¡Nuevo producto disponible! ${newProduct.alt}`,

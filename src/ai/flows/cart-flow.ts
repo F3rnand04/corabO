@@ -1,8 +1,6 @@
 /**
  * @fileOverview Flow for managing the user's shopping cart.
  */
-
-import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestore } from 'firebase-admin/firestore';
 import type { Transaction, CartItem, Product, GalleryImage } from '@/lib/types';
@@ -14,13 +12,7 @@ const UpdateCartInputSchema = z.object({
 });
 type UpdateCartInput = z.infer<typeof UpdateCartInputSchema>;
 
-export const updateCartFlow = ai.defineFlow(
-  {
-    name: 'updateCartFlow',
-    inputSchema: UpdateCartInputSchema,
-    outputSchema: z.void(),
-  },
-  async (input: UpdateCartInput) => {
+export async function updateCartFlow(input: UpdateCartInput) {
     const db = getFirestore();
     const batch = db.batch();
 
@@ -100,4 +92,3 @@ export const updateCartFlow = ai.defineFlow(
     batch.set(cartTxRef, cartData, { merge: true });
     await batch.commit();
   }
-);

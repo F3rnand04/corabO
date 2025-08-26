@@ -5,8 +5,6 @@
  * - CreateCampaignInput - The input type for the createCampaignFlow function.
  * - Campaign - The return type for the createCampaignFlow function.
  */
-
-import {ai} from '@/ai/genkit';
 import {z} from 'zod';
 import {
   type User,
@@ -33,15 +31,8 @@ const CreateCampaignInputSchema = z.object({
 
 export type CreateCampaignInput = z.infer<typeof CreateCampaignInputSchema>;
 
-const CampaignOutputSchema = z.custom<Campaign>();
 
-export const createCampaignFlow = ai.defineFlow(
-  {
-    name: 'createCampaignFlow',
-    inputSchema: CreateCampaignInputSchema,
-    outputSchema: CampaignOutputSchema,
-  },
-  async (input: CreateCampaignInput) => {
+export async function createCampaignFlow(input: CreateCampaignInput): Promise<Campaign> {
     const db = getFirestore();
     const userRef = db.collection('users').doc(input.userId);
     const userSnap = await userRef.get();
@@ -104,4 +95,3 @@ export const createCampaignFlow = ai.defineFlow(
         
     return newCampaign;
   }
-);

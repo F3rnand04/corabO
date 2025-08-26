@@ -4,8 +4,6 @@
  * - sendMessageFlow - A function that handles sending messages and proposals.
  * - acceptProposalFlow - A function that handles accepting a proposal and creating a transaction.
  */
-
-import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import type { Conversation, Message, Transaction, User, AgreementProposal } from '@/lib/types';
@@ -34,13 +32,7 @@ const AcceptProposalInputSchema = z.object({
 });
 export type AcceptProposalInput = z.infer<typeof AcceptProposalInputSchema>;
 
-export const sendMessageFlow = ai.defineFlow(
-  {
-    name: 'sendMessageFlow',
-    inputSchema: SendMessageInputSchema,
-    outputSchema: z.void(),
-  },
-  async (input: SendMessageInput) => {
+export async function sendMessageFlow(input: SendMessageInput) {
     const db = getFirestore();
     const convoRef = db.collection('conversations').doc(input.conversationId);
     const convoSnap = await convoRef.get();
@@ -83,15 +75,9 @@ export const sendMessageFlow = ai.defineFlow(
       });
     }
   }
-);
 
-export const acceptProposalFlow = ai.defineFlow(
-  {
-    name: 'acceptProposalFlow',
-    inputSchema: AcceptProposalInputSchema,
-    outputSchema: z.void(),
-  },
-  async (input: AcceptProposalInput) => {
+
+export async function acceptProposalFlow(input: AcceptProposalInput) {
     const db = getFirestore();
     const batch = db.batch();
     const convoRef = db.collection('conversations').doc(input.conversationId);
@@ -162,4 +148,3 @@ export const acceptProposalFlow = ai.defineFlow(
 
     await batch.commit();
   }
-);

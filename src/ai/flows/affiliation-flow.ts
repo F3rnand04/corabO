@@ -1,8 +1,6 @@
 /**
  * @fileOverview Flows for managing professional affiliations with companies.
  */
-
-import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import type { Affiliation, User } from '@/lib/types';
@@ -29,13 +27,7 @@ export type RequestAffiliationInput = z.infer<typeof RequestAffiliationSchema>;
  * A professional requests to be affiliated with a company.
  * This flow is now only responsible for creating the affiliation document.
  */
-export const requestAffiliationFlow = ai.defineFlow(
-  {
-    name: 'requestAffiliationFlow',
-    inputSchema: RequestAffiliationSchema,
-    outputSchema: z.void(),
-  },
-  async (input: RequestAffiliationInput) => {
+export async function requestAffiliationFlow (input: RequestAffiliationInput) {
     const db = getFirestore();
 
     // Check if a pending or approved affiliation already exists
@@ -62,19 +54,13 @@ export const requestAffiliationFlow = ai.defineFlow(
     };
     await db.collection('affiliations').doc(affiliationId).set(newAffiliation);
   }
-);
+
 
 
 /**
  * A company approves a professional's affiliation request.
  */
-export const approveAffiliationFlow = ai.defineFlow(
-  {
-    name: 'approveAffiliationFlow',
-    inputSchema: AffiliationActionSchema,
-    outputSchema: z.void(),
-  },
-  async (input: AffiliationActionInput) => {
+export async function approveAffiliationFlow(input: AffiliationActionInput) {
     const db = getFirestore();
     const batch = db.batch();
     const affiliationRef = db.collection('affiliations').doc(input.affiliationId);
@@ -105,37 +91,24 @@ export const approveAffiliationFlow = ai.defineFlow(
 
     await batch.commit();
   }
-);
+
 
 /**
  * A company rejects a professional's affiliation request.
  */
-export const rejectAffiliationFlow = ai.defineFlow(
-    {
-      name: 'rejectAffiliationFlow',
-      inputSchema: AffiliationActionSchema,
-      outputSchema: z.void(),
-    },
-    async (input: AffiliationActionInput) => {
-        const db = getFirestore();
-        await db.collection('affiliations').doc(input.affiliationId).update({
-            status: 'rejected',
-            updatedAt: FieldValue.serverTimestamp()
-        });
-    }
-);
+export async function rejectAffiliationFlow(input: AffiliationActionInput) {
+    const db = getFirestore();
+    await db.collection('affiliations').doc(input.affiliationId).update({
+        status: 'rejected',
+        updatedAt: FieldValue.serverTimestamp()
+    });
+}
 
 
 /**
  * A company revokes an existing affiliation.
  */
-export const revokeAffiliationFlow = ai.defineFlow(
-  {
-    name: 'revokeAffiliationFlow',
-    inputSchema: AffiliationActionSchema,
-    outputSchema: z.void(),
-  },
-  async (input: AffiliationActionInput) => {
+export async function revokeAffiliationFlow(input: AffiliationActionInput) {
      const db = getFirestore();
      const batch = db.batch();
 
@@ -151,4 +124,3 @@ export const revokeAffiliationFlow = ai.defineFlow(
      
      await batch.commit();
   }
-);

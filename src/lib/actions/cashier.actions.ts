@@ -5,11 +5,8 @@ getFirebaseAdmin(); // Ensure Firebase is initialized
 
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
-
-
-const createCashierBoxFlow = async (data: any) => { console.warn("Genkit flow 'createCashierBoxFlow' is disabled."); return { id: '', name: '', passwordHash: '', qrValue: '' }; };
-const regenerateCashierQrFlow = async (data: any) => { console.warn("Genkit flow 'regenerateCashierQrFlow' is disabled."); return { qrValue: '', qrDataURL: '' }; };
-const sendNotification = async (data: any) => console.warn("Genkit flow 'sendNotification' is disabled.");
+import { createCashierBoxFlow, regenerateCashierQrFlow } from '@/ai/flows/cashier-flow';
+import { sendNotification } from '@/ai/flows/notification-flow';
 
 
 export async function addCashierBox(userId: string, name: string, password: string) {

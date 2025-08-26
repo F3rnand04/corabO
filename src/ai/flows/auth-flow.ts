@@ -1,15 +1,11 @@
 /**
  * @fileOverview Authentication flow for creating and managing users.
  */
-
-// import { ai } from '@/ai/genkit';
-import { z } from 'zod';
 import { getFirestore } from 'firebase-admin/firestore';
 import type { FirebaseUserInput, User } from '@/lib/types';
 
 
 export async function getOrCreateUserFlow(firebaseUser: FirebaseUserInput): Promise<User> {
-    console.warn("Genkit flow 'getOrCreateUserFlow' is disabled. Using direct DB access.");
     const db = getFirestore();
     const userRef = db.collection('users').doc(firebaseUser.uid);
     const userSnap = await userRef.get();

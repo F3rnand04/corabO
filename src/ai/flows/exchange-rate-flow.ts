@@ -3,8 +3,6 @@
  *
  * - getExchangeRate - A function that returns the current official exchange rate.
  */
-
-import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { unstable_cache } from 'next/cache';
 
@@ -32,16 +30,9 @@ export async function getExchangeRate(): Promise<ExchangeRateOutput> {
   )();
 }
 
-const getExchangeRateFlow = ai.defineFlow(
-  {
-    name: 'getExchangeRateFlow',
-    inputSchema: z.void(),
-    outputSchema: ExchangeRateOutputSchema,
-  },
-  async () => {
+async function getExchangeRateFlow(): Promise<ExchangeRateOutput> {
     // In a real-world scenario, this flow would contain logic to scrape
     // a financial data API. For this prototype, we return a fixed, realistic value.
     // The caching mechanism is the important part here.
     return { rate: 36.54 };
   }
-);

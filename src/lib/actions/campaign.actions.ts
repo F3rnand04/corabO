@@ -5,12 +5,8 @@ getFirebaseAdmin(); // Ensure Firebase is initialized
 
 import type { CreateCampaignInput } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
+import { createCampaignFlow } from '@/ai/flows/campaign-flow';
 
-// Placeholder for the Genkit flow
-const createCampaignFlow = async (input: any) => {
-    console.warn("Genkit flow 'createCampaignFlow' is disabled.");
-    return null; // Return a value that matches the expected output schema
-};
 
 /**
  * Creates a new ad campaign for a provider.

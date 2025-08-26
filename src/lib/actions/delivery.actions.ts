@@ -4,9 +4,7 @@ import { getFirebaseAdmin } from '@/lib/firebase-server';
 getFirebaseAdmin(); // Ensure Firebase is initialized
 
 import { revalidatePath } from 'next/cache';
-
-const findDeliveryProviderFlow = async (data: any) => console.warn("Genkit flow 'findDeliveryProviderFlow' is disabled.");
-const resolveDeliveryAsPickupFlow = async (data: any) => console.warn("Genkit flow 'resolveDeliveryAsPickupFlow' is disabled.");
+import { findDeliveryProviderFlow, resolveDeliveryAsPickupFlow } from '@/ai/flows/delivery-flow';
 
 
 /**
@@ -15,7 +13,7 @@ const resolveDeliveryAsPickupFlow = async (data: any) => console.warn("Genkit fl
 export async function retryFindDelivery(input: { transactionId: string }) {
     // This action doesn't await the flow, allowing the UI to respond immediately.
     // The flow will run in the background.
-    findDeliveryProviderFlow(input);
+    await findDeliveryProviderFlow(input);
     revalidatePath('/transactions');
 }
 

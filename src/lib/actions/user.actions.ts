@@ -15,9 +15,7 @@ const verifySmsCodeFlow = async (data: any) => { console.warn("Genkit flow 'veri
 const autoVerifyIdWithAIFlow = async (data: any) => { console.warn("Genkit flow 'autoVerifyIdWithAIFlow' is disabled."); return { nameMatch: false, idMatch: false, extractedId: '', extractedName: '' }; };
 const sendWelcomeToProviderNotificationFlow = async (data: any) => console.warn("Genkit flow 'sendWelcomeToProviderNotificationFlow' is disabled.");
 const createTransactionFlow = async (data: any) => console.warn("Genkit flow 'createTransactionFlow' is disabled.");
-const completeInitialSetupFlow = async (data: any) => { console.warn("Genkit flow 'completeInitialSetupFlow' is disabled."); return null;};
 const checkIdUniquenessFlow = async (data: any) => { console.warn("Genkit flow 'checkIdUniquenessFlow' is disabled."); return true;};
-const toggleGpsFlow = async (data: any) => console.warn("Genkit flow 'toggleGpsFlow' is disabled.");
 
 
 // --- Exported Actions ---

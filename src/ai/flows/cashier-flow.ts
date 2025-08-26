@@ -1,8 +1,6 @@
 /**
  * @fileOverview Flows for managing cashier boxes, QR codes, and cashier sessions.
  */
-
-import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import QRCode from 'qrcode';
 import type { CashierBox } from '@/lib/types';
@@ -22,19 +20,10 @@ const RegenerateQrInputSchema = z.object({
 type RegenerateQrInput = z.infer<typeof RegenerateQrInputSchema>;
 
 
-const CashierBoxSchema = z.custom<CashierBox>();
-
-
 /**
  * Creates a new cashier box, generates a QR code for it, and returns the box object.
  */
-export const createCashierBoxFlow = ai.defineFlow(
-  {
-    name: 'createCashierBoxFlow',
-    inputSchema: CreateCashierBoxInputSchema,
-    outputSchema: CashierBoxSchema,
-  },
-  async (input: CreateCashierBoxInput) => {
+export async function createCashierBoxFlow(input: CreateCashierBoxInput): Promise<CashierBox> {
     const boxId = `caja-${Date.now()}`;
     const qrValue = JSON.stringify({ providerId: input.userId, cashierBoxId: boxId });
 
@@ -60,19 +49,13 @@ export const createCashierBoxFlow = ai.defineFlow(
         throw new Error("Could not generate QR code.");
     }
   }
-);
+
 
 
 /**
  * Regenerates the QR code for an existing cashier box.
  */
-export const regenerateCashierQrFlow = ai.defineFlow(
-  {
-    name: 'regenerateCashierQrFlow',
-    inputSchema: RegenerateQrInputSchema,
-    outputSchema: z.object({ qrValue: z.string(), qrDataURL: z.string() }),
-  },
-  async (input: RegenerateQrInput) => {
+export async function regenerateCashierQrFlow(input: RegenerateQrInput): Promise<{ qrValue: string, qrDataURL: string }> {
     const newQrValue = JSON.stringify({ providerId: input.userId, cashierBoxId: input.boxId, timestamp: Date.now() });
     
     try {
@@ -89,4 +72,3 @@ export const regenerateCashierQrFlow = ai.defineFlow(
         throw new Error("Could not regenerate QR code.");
     }
   }
-);

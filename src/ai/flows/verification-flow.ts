@@ -3,8 +3,6 @@
  *
  * - autoVerifyIdWithAIFlow - A function that uses a multimodal model to read an ID document and compare it with user data.
  */
-
-import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
 
@@ -78,60 +76,18 @@ function compareNamesFlexibly(nameA: string, nameB: string): boolean {
 }
 
 
-export const autoVerifyIdWithAIFlow = ai.defineFlow(
-  {
-    name: 'autoVerifyIdWithAIFlow',
-    inputSchema: VerificationInputSchema,
-    outputSchema: VerificationOutputSchema,
-  },
-  async (input: VerificationInput) => {
+export async function autoVerifyIdWithAIFlow(input: VerificationInput): Promise<VerificationOutput> {
     
-    const promptText = input.isCompany
-    ? `You are an expert document analyst. Analyze the provided image of a company registration document (like a RIF).
-       Extract the full company name (Razón Social) and the full fiscal identification number (RIF / ID Fiscal) exactly as they appear.
-       Provide the output STRICTLY in the following format, with each piece of data on a new line:
-       Razón Social: [Full Company Name Here]
-       ID Fiscal: [Full ID Number Here]`
-    : `You are an expert document analyst. Analyze the provided image of an identification document.
-       Extract the full name and the full identification number exactly as they appear.
-       Provide the output STRICTLY in the following format, with each piece of data on a new line:
-       Nombre: [Full Name Here]
-       ID: [Full ID Number Here]`;
+    // AI functionality is disabled. Returning a placeholder.
+    console.warn("Genkit flow 'autoVerifyIdWithAIFlow' is disabled.");
 
-    const response = await ai.generate({
-        model: 'googleai/gemini-1.5-flash',
-        prompt: [{
-            text: promptText
-        }, {
-            media: {
-                url: input.documentImageUrl
-            }
-        }],
-    });
-    
-    const responseText = response.text;
-    if (!responseText) {
-        throw new Error('AI model did not return a text response.');
-    }
-    
-    const nameMatchResult = responseText.match(/(?:Nombre|Razón Social):\s*(.*)/);
-    const idMatchResult = responseText.match(/(?:ID|ID Fiscal):\s*(.*)/);
-
-    const extractedName = nameMatchResult ? nameMatchResult[1].trim() : '';
-    const extractedId = idMatchResult ? idMatchResult[1].trim() : '';
-
-    if (!extractedName || !extractedId) {
-        throw new Error('La IA no pudo extraer los campos necesarios del documento. Por favor, asegúrate de que la imagen sea clara y legible, o solicita una revisión manual.');
-    }
-
-    const idMatch = normalizeId(extractedId) === normalizeId(input.idInRecord);
-    const nameMatch = compareNamesFlexibly(input.nameInRecord, extractedName);
+    const nameMatch = compareNamesFlexibly(input.nameInRecord, "Simulated Name");
+    const idMatch = normalizeId(input.idInRecord) === normalizeId("000000");
 
     return {
-      extractedName: extractedName,
-      extractedId: extractedId,
+      extractedName: "Simulated Name from AI",
+      extractedId: "V-00.000.000 (Simulated)",
       nameMatch,
       idMatch,
     };
   }
-);

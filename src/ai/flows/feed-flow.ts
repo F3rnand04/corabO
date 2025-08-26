@@ -3,8 +3,6 @@
  *
  * - getFeedFlow - A function that fetches publications with pagination.
  */
-
-import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestore, type DocumentSnapshot } from 'firebase-admin/firestore';
 import type { GalleryImage, User, PublicationOwner } from '@/lib/types';

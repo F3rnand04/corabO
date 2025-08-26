@@ -5,23 +5,22 @@ getFirebaseAdmin(); // Ensure Firebase is initialized
 
 import { revalidatePath } from 'next/cache';
 import type { AppointmentRequest, Transaction, User } from '@/lib/types';
-
-
-const createAppointmentRequestFlow = async (data: any) => console.warn("Genkit flow 'createAppointmentRequestFlow' is disabled.");
-const acceptAppointmentFlow = async (data: any) => console.warn("Genkit flow 'acceptAppointmentFlow' is disabled.");
-const acceptQuoteFlow = async (data: any) => console.warn("Genkit flow 'acceptQuoteFlow' is disabled.");
-const checkoutFlow = async (data: any) => console.warn("Genkit flow 'checkoutFlow' is disabled.");
-const completeWorkFlow = async (data: any) => console.warn("Genkit flow 'completeWorkFlow' is disabled.");
-const confirmPaymentReceivedFlow = async (data: any) => console.warn("Genkit flow 'confirmPaymentReceivedFlow' is disabled.");
-const confirmWorkReceivedFlow = async (data: any) => console.warn("Genkit flow 'confirmWorkReceivedFlow' is disabled.");
-const downloadTransactionsPDFFlow = async (data: any) => { console.warn("Genkit flow 'downloadTransactionsPDFFlow' is disabled."); return ""; };
-const payCommitmentFlow = async (data: any) => console.warn("Genkit flow 'payCommitmentFlow' is disabled.");
-const processDirectPaymentFlow = async (data: any) => { console.warn("Genkit flow 'processDirectPaymentFlow' is disabled."); return { transactionId: '' }; };
-const sendQuoteFlow = async (data: any) => console.warn("Genkit flow 'sendQuoteFlow' is disabled.");
-const startDisputeFlow = async (data: any) => console.warn("Genkit flow 'startDisputeFlow' is disabled.");
-const cancelSystemTransactionFlow = async (data: any) => console.warn("Genkit flow 'cancelSystemTransactionFlow' is disabled.");
-const findDeliveryProviderFlow = async (data: any) => console.warn("Genkit flow 'findDeliveryProviderFlow' is disabled.");
-const resolveDeliveryAsPickupFlow = async (data: any) => console.warn("Genkit flow 'resolveDeliveryAsPickupFlow' is disabled.");
+import { 
+    createAppointmentRequestFlow, 
+    acceptAppointmentFlow, 
+    acceptQuoteFlow, 
+    checkoutFlow, 
+    completeWorkFlow, 
+    confirmPaymentReceivedFlow, 
+    confirmWorkReceivedFlow, 
+    downloadTransactionsPDFFlow, 
+    payCommitmentFlow, 
+    processDirectPaymentFlow, 
+    sendQuoteFlow, 
+    startDisputeFlow, 
+    cancelSystemTransactionFlow 
+} from '@/ai/flows/transaction-flow';
+import { findDeliveryProviderFlow, resolveDeliveryAsPickupFlow } from '@/ai/flows/delivery-flow';
 
 
 export async function createAppointmentRequest(request: AppointmentRequest) {
@@ -88,8 +87,7 @@ export async function cancelSystemTransaction(transactionId: string) {
 }
 
 export async function downloadTransactionsPDF(transactions: Transaction[]) {
-    console.log("Generating PDF for", transactions.length, "transactions.");
-    return "base64-encoded-pdf-string-placeholder";
+    return await downloadTransactionsPDFFlow(transactions);
 }
 
 

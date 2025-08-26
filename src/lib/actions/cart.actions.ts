@@ -4,8 +4,7 @@ import { getFirebaseAdmin } from '@/lib/firebase-server';
 getFirebaseAdmin(); // Ensure Firebase is initialized
 
 import { revalidatePath } from 'next/cache';
-
-const updateCartFlow = async (data: any) => console.warn("Genkit flow 'updateCartFlow' is disabled.");
+import { updateCartFlow } from '@/ai/flows/cart-flow';
 
 /**
  * Updates the quantity of a product in the user's active cart.

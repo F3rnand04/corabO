@@ -4,12 +4,8 @@ import { getFirebaseAdmin } from '@/lib/firebase-server';
 getFirebaseAdmin(); // Ensure Firebase is initialized
 
 import { revalidatePath } from 'next/cache';
-
-const requestAffiliationFlow = async (data: any) => console.warn("Genkit flow 'requestAffiliationFlow' is disabled.");
-const approveAffiliationFlow = async (data: any) => console.warn("Genkit flow 'approveAffiliationFlow' is disabled.");
-const rejectAffiliationFlow = async (data: any) => console.warn("Genkit flow 'rejectAffiliationFlow' is disabled.");
-const revokeAffiliationFlow = async (data: any) => console.warn("Genkit flow 'revokeAffiliationFlow' is disabled.");
-const sendNotification = async (data: any) => console.warn("Genkit flow 'sendNotification' is disabled.");
+import { requestAffiliationFlow, approveAffiliationFlow, rejectAffiliationFlow, revokeAffiliationFlow } from '@/ai/flows/affiliation-flow';
+import { sendNotification } from '@/ai/flows/notification-flow';
 
 
 /**

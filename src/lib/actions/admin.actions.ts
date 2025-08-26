@@ -6,21 +6,8 @@ getFirebaseAdmin(); // Ensure Firebase is initialized
 import { getFirestore } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
 import type { User } from '@/lib/types';
-
-// Placeholder for flow calls
-const autoVerifyIdWithAIFlow = async (user: User) => { console.warn("Genkit flow 'autoVerifyIdWithAIFlow' is disabled."); return { nameMatch: false, idMatch: false, extractedId: '', extractedName: '' }; };
-const verifyCampaignPaymentFlow = async (txId: string, campaignId: string) => { console.warn("Genkit flow 'verifyCampaignPaymentFlow' is disabled.") };
-const sendNewCampaignNotificationsFlow = async (input: { campaignId: string }) => { console.warn("Genkit flow 'sendNewCampaignNotificationsFlow' is disabled.") };
-const deleteUserFlow = async (userId: string) => { 
-    console.warn("Genkit flow 'deleteUserFlow' is disabled. Deleting from DB directly."); 
-    const db = getFirestore();
-    await db.collection('users').doc(userId).delete();
-};
-const updateUserFlow = async (input: {userId: string, updates: any}) => { 
-    console.warn("Genkit flow 'updateUserFlow' is disabled. Updating DB directly."); 
-    const db = getFirestore();
-    await db.collection('users').doc(input.userId).update(input.updates);
-};
+import { autoVerifyIdWithAIFlow } from '@/ai/flows/verification-flow';
+import { sendNewCampaignNotificationsFlow } from '@/ai/flows/notification-flow';
 
 /**
  * Approves a user's identity verification.
@@ -76,21 +63,21 @@ export async function sendNewCampaignNotifications(input: { campaignId: string }
 
 
 export async function deleteUser(userId: string) {
-    await deleteUserFlow(userId);
+    const db = getFirestore();
+    await db.collection('users').doc(userId).delete();
     revalidatePath('/admin');
 }
 
 export async function toggleUserPause(userId: string, shouldUnpause: boolean) {
+    const db = getFirestore();
     const updates = shouldUnpause 
         ? { isPaused: false } 
         : { isPaused: true, pauseReason: 'Paused by admin' };
-    await updateUserFlow({ userId, updates });
+    await db.collection('users').doc(userId).update(updates);
     revalidatePath('/admin');
 }
 
 export async function registerSystemPayment(userId: string, concept: string, amount: number, isSubscription: boolean) {
-    // This action would normally call a flow to create the transaction.
-    // For now, it's disabled as Genkit is removed.
     console.log(`System payment registration for ${userId} is disabled.`);
     revalidatePath('/transactions');
 }
