@@ -1,4 +1,3 @@
-
 /**
  * @fileOverview Central Genkit initialization.
  *
@@ -7,9 +6,10 @@
  * into any client components. Flows will import the `ai` object from here.
  */
 
-import { genkit } from 'genkit';
+import { configureGenkit } from 'genkit';
 import { firebase } from '@genkit-ai/firebase';
 import { googleAI } from '@genkit-ai/googleai';
+import { ai } from '@genkit-ai/core';
 
 // Initialize Firebase Admin SDK separately for server-side environments.
 // This is crucial to avoid conflicts with Next.js server runtime.
@@ -17,11 +17,13 @@ import { getFirebaseAdmin } from '@/lib/firebase-server';
 getFirebaseAdmin();
 
 
-export const ai = genkit({
+configureGenkit({
   plugins: [
-    firebase, // Correct: pass the plugin object directly
+    firebase,
     googleAI(),
   ],
   logLevel: 'debug',
   enableTracingAndMetrics: true,
 });
+
+export { ai };
