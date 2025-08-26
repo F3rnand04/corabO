@@ -377,6 +377,22 @@ export const acceptQuoteFlow = ai.defineFlow(
     }
 );
 
+export const createTransactionFlow = ai.defineFlow({
+    name: 'createTransactionFlow',
+    inputSchema: z.custom<Omit<Transaction, 'id'>>(),
+    outputSchema: z.custom<Transaction>(),
+  }, async (txData: Omit<Transaction, 'id'>) => {
+    const db = getFirestore();
+    const txId = `txn-sys-${Date.now()}`;
+    const newTransaction: Transaction = {
+      id: txId,
+      ...txData,
+    };
+    const txRef = db.collection('transactions').doc(txId);
+    await txRef.set(newTransaction);
+    return newTransaction;
+});
+
 
 export const createAppointmentRequestFlow = ai.defineFlow(
     {
