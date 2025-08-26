@@ -8,8 +8,16 @@ import type { User } from '@/lib/types';
 const autoVerifyIdWithAIFlow = async (user: User) => { console.warn("Genkit flow 'autoVerifyIdWithAIFlow' is disabled."); return { nameMatch: false, idMatch: false, extractedId: '', extractedName: '' }; };
 const verifyCampaignPaymentFlow = async (txId: string, campaignId: string) => { console.warn("Genkit flow 'verifyCampaignPaymentFlow' is disabled.") };
 const sendNewCampaignNotificationsFlow = async (input: { campaignId: string }) => { console.warn("Genkit flow 'sendNewCampaignNotificationsFlow' is disabled.") };
-const deleteUserFlow = async (userId: string) => { console.warn("Genkit flow 'deleteUserFlow' is disabled.") };
-const updateUserFlow = async (input: {userId: string, updates: any}) => { console.warn("Genkit flow 'updateUserFlow' is disabled.") };
+const deleteUserFlow = async (userId: string) => { 
+    console.warn("Genkit flow 'deleteUserFlow' is disabled. Deleting from DB directly."); 
+    const db = getFirestore();
+    await db.collection('users').doc(userId).delete();
+};
+const updateUserFlow = async (input: {userId: string, updates: any}) => { 
+    console.warn("Genkit flow 'updateUserFlow' is disabled. Updating DB directly."); 
+    const db = getFirestore();
+    await db.collection('users').doc(input.userId).update(input.updates);
+};
 
 /**
  * Approves a user's identity verification.

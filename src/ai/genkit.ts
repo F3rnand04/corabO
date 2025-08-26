@@ -19,10 +19,17 @@ export const ai = genkit({
       firestore: {
         useGoogleCloudProject: true,
       },
+      enableTracingAndMetrics: false, // Explicitly disable tracing here
     }),
     googleAI(),
   ],
   enableTracingAndMetrics: false,
 });
 */
-export const ai: any = {}; // Placeholder to avoid breaking imports
+
+// Genkit is temporarily disabled to resolve build issues.
+export const ai: any = {
+    defineFlow: (config: any, implementation: any) => implementation,
+    defineTool: (config: any, implementation: any) => implementation,
+    definePrompt: (config: any, implementation: any) => async () => ({ output: null }),
+};
