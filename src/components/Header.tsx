@@ -56,7 +56,7 @@ export function Header() {
         <header className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b">
             <div className="container px-4 sm:px-6">
                 <div className="flex h-16 items-center justify-between">
-                    <Image src="https://i.postimg.cc/8zWvkhxS/Sin-t-tulo-3.png" alt="Corabo Logo" width={120} height={40} className="h-10 w-auto" />
+                    <Image src="https://i.postimg.cc/8zWvkhxS/Sin-t-tulo-3.png" alt="Corabo Logo" width={120} height={40} />
                     <Button onClick={() => router.push('/login')}>
                       <LogInIcon className="mr-2 h-4 w-4" />
                       Iniciar Sesión
