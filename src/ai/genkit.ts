@@ -15,7 +15,7 @@ getFirebaseAdmin();
 
 genkit({
   plugins: [
-    firebase(),
+    firebase,
     googleAI(),
   ],
   enableTracingAndMetrics: false,
