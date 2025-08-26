@@ -7,7 +7,7 @@
  * into any client components. Flows will import the `ai` object from here.
  */
 
-import { configureGenkit } from 'genkit';
+import { genkit } from 'genkit';
 import { firebase } from '@genkit-ai/firebase';
 import { googleAI } from '@genkit-ai/googleai';
 import { ai } from '@genkit-ai/core';
@@ -17,9 +17,9 @@ import { getFirebaseAdmin } from '@/lib/firebase-server';
 getFirebaseAdmin();
 
 
-configureGenkit({
+genkit({
   plugins: [
-    firebase,
+    firebase(),
     googleAI(),
   ],
   logLevel: 'debug',
