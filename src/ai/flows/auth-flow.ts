@@ -2,7 +2,8 @@
  * @fileOverview Authentication flow for creating and managing users.
  */
 import { getFirestore } from 'firebase-admin/firestore';
-import type { FirebaseUserInput, User } from '@/lib/types';
+import type { FirebaseUserInput, User, ProfileSetupData } from '@/lib/types';
+import { credicoraLevels, credicoraCompanyLevels } from '@/lib/types';
 
 
 export async function getOrCreateUserFlow(firebaseUser: FirebaseUserInput): Promise<User> {
@@ -36,4 +37,42 @@ export async function getOrCreateUserFlow(firebaseUser: FirebaseUserInput): Prom
 
     await userRef.set(newUser);
     return newUser;
+}
+
+
+export async function completeInitialSetupFlow(userId: string, data: { name: string; lastName: string; idNumber: string; birthDate: string; country: string; type: User['type'], providerType: ProfileSetupData['providerType'] }): Promise<User> {
+    const db = getFirestore();
+    const userRef = db.collection('users').doc(userId);
+    
+    const userSnap = await userRef.get();
+    if (!userSnap.exists) {
+      throw new Error("User not found during setup completion.");
+    }
+    const existingData = userSnap.data() as User;
+    
+    const isCompany = data.providerType === 'company';
+    const activeCredicoraLevels = isCompany ? credicoraCompanyLevels : credicoraLevels;
+    const initialCredicoraLevel = activeCredicoraLevels['1'];
+    
+    const dataToUpdate: Partial<User> = {
+      name: data.name,
+      lastName: data.lastName,
+      idNumber: data.idNumber,
+      birthDate: data.birthDate,
+      country: data.country,
+      isInitialSetupComplete: true,
+      type: isCompany ? 'provider' : data.type,
+      credicoraLevel: initialCredicoraLevel.level,
+      credicoraLimit: initialCredicoraLevel.creditLimit,
+      credicoraDetails: initialCredicoraLevel,
+      profileSetupData: {
+        ...(existingData.profileSetupData || {}),
+        providerType: data.providerType,
+      }
+    };
+
+    await userRef.update(dataToUpdate);
+
+    const updatedUserDoc = await userRef.get();
+    return updatedUserDoc.data() as User;
 }

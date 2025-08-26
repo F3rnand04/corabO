@@ -6,9 +6,7 @@ getFirebaseAdmin(); // Ensure Firebase is initialized
 import { revalidatePath } from 'next/cache';
 import type { FirebaseUserInput, ProfileSetupData, User } from '@/lib/types';
 import { getFirestore } from 'firebase-admin/firestore';
-import { getOrCreateUserFlow } from '@/ai/flows/auth-flow';
-import { credicoraCompanyLevels, credicoraLevels } from '@/lib/types';
-
+import { getOrCreateUserFlow, completeInitialSetupFlow } from '@/ai/flows/auth-flow';
 
 // --- Exported Actions ---
 
@@ -72,41 +70,9 @@ export async function checkIdUniqueness(input: { idNumber: string; country: stri
 }
 
 export async function completeInitialSetup(userId: string, data: { name: string; lastName: string; idNumber: string; birthDate: string; country: string; type: User['type'], providerType: ProfileSetupData['providerType'] }): Promise<User> {
-    const db = getFirestore();
-    const userRef = db.collection('users').doc(userId);
-    
-    const userSnap = await userRef.get();
-    if (!userSnap.exists) {
-      throw new Error("User not found during setup completion.");
-    }
-    const existingData = userSnap.data() as User;
-    
-    const isCompany = data.providerType === 'company';
-    const activeCredicoraLevels = isCompany ? credicoraCompanyLevels : credicoraLevels;
-    const initialCredicoraLevel = activeCredicoraLevels['1'];
-    
-    const dataToUpdate: Partial<User> = {
-      name: data.name,
-      lastName: data.lastName,
-      idNumber: data.idNumber,
-      birthDate: data.birthDate,
-      country: data.country,
-      isInitialSetupComplete: true,
-      type: isCompany ? 'provider' : data.type,
-      credicoraLevel: initialCredicoraLevel.level,
-      credicoraLimit: initialCredicoraLevel.creditLimit,
-      credicoraDetails: initialCredicoraLevel,
-      profileSetupData: {
-        ...(existingData.profileSetupData || {}),
-        providerType: data.providerType,
-      }
-    };
-
-    await userRef.update(dataToUpdate);
-
-    const updatedUserDoc = await userRef.get();
+    const updatedUser = await completeInitialSetupFlow(userId, data);
     revalidatePath('/'); // Revalidate the home page to reflect login status
-    return updatedUserDoc.data() as User;
+    return updatedUser;
 }
 
 export async function sendSmsVerification(userId: string, phoneNumber: string) {
