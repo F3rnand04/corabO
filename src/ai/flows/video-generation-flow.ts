@@ -6,10 +6,6 @@
 import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'zod';
 import {ai} from '@/ai/genkit';
-import {genkit} from 'genkit';
-import * as fs from 'fs';
-import {Readable} from 'stream';
-import type {MediaPart} from 'genkit';
 
 const textToVideoFlow = ai.defineFlow(
   {
@@ -46,10 +42,9 @@ const textToVideoFlow = ai.defineFlow(
     if (!video || !video.media) {
       throw new Error('Failed to find the generated video');
     }
-
-    const videoDownloadUrl = video.media.url;
     
-    console.log("Video generated, URL (requires API key to download):", videoDownloadUrl);
+    // Log the URL on the server. The client will get a simple confirmation message.
+    console.log("Video generated, URL (requires API key to download):", video.media.url);
 
     return "Video generation process completed. See server logs for URL.";
   }
