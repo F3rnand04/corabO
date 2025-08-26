@@ -21,7 +21,7 @@ genkit({
     firebase,
     googleAI(),
   ],
-  enableTracingAndMetrics: true,
+  enableTracingAndMetrics: false, // Disable telemetry to prevent startup issues in Next.js
 });
 
 export { ai };
