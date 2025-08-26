@@ -12,13 +12,10 @@ import { getFirebaseAdmin } from '@/lib/firebase-server';
 getFirebaseAdmin();
 
 
-// export const ai = genkit({
-//   plugins: [
-//     firebase(),
-//     googleAI(),
-//   ],
-//   enableTracingAndMetrics: false,
-// });
-
-// Placeholder export to avoid breaking other files during diagnosis
-export const ai = {};
+export const ai = genkit({
+  plugins: [
+    firebase(),
+    googleAI(),
+  ],
+  enableTracingAndMetrics: false,
+});
