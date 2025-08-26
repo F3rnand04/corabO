@@ -1,4 +1,3 @@
-
 import type { Metadata } from 'next';
 import './globals.css';
 import { Providers } from './providers';
@@ -7,6 +6,9 @@ import { AuthProvider } from '@/components/auth/AuthProvider';
 import { AppLayout } from '@/app/AppLayout';
 import { CoraboProvider } from '@/contexts/CoraboContext';
 import type { User as FirebaseUser } from 'firebase/auth';
+import { getFirebaseAdmin } from '@/lib/firebase-server';
+import { cookies } from 'next/headers';
+
 
 export const metadata: Metadata = {
   title: 'corabO.app',
@@ -24,8 +26,24 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Authentication logic is removed from server-side rendering for cleanup.
-  const serverFirebaseUser: FirebaseUser | null = null;
+  let serverFirebaseUser: FirebaseUser | null = null;
+  try {
+    const cookieStore = cookies();
+    const sessionCookie = cookieStore.get('session')?.value;
+    if (sessionCookie) {
+      const decodedIdToken = await getFirebaseAdmin().auth.verifySessionCookie(sessionCookie, true);
+      // Construct a FirebaseUser-like object for the client
+      const userRecord = await getFirebaseAdmin().auth.getUser(decodedIdToken.uid);
+      serverFirebaseUser = {
+        ...userRecord,
+        getIdToken: async () => sessionCookie,
+      } as FirebaseUser;
+    }
+  } catch (error) {
+    // Session cookie is invalid or expired.
+    console.log("RootLayout auth error:", error);
+    serverFirebaseUser = null;
+  }
   
   return (
     <html lang="es" suppressHydrationWarning>
