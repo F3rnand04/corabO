@@ -266,8 +266,8 @@ export async function updateCart(
 
 export async function processDirectPayment(sessionId: string) {
   await processDirectPaymentFlow({ sessionId });
-  revalidatePath('/transactions');
   revalidatePath('/show-qr');
+  revalidatePath('/transactions');
 }
 
 
