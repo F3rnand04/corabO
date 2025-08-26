@@ -6,44 +6,16 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { credicoraCompanyLevels, credicoraLevels } from '@/lib/types';
 import type { GalleryImage, Product, User, ProfileSetupData, FirebaseUserInput } from '@/lib/types';
 import { z } from 'zod';
+import { getFirebaseAdmin } from '@/lib/firebase-server';
 
 // --- Get or Create User Flow ---
-export async function getOrCreateUserFlow(firebaseUser: FirebaseUserInput): Promise<User> {
-    const db = getFirestore();
-    const userRef = db.collection('users').doc(firebaseUser.uid);
-    const userSnap = await userRef.get();
-
-    if (userSnap.exists()) {
-      return userSnap.data() as User;
-    }
-
-    const coraboId = `corabo${Math.floor(Math.random() * 9000) + 1000}`;
-    
-    const newUser: User = {
-      id: firebaseUser.uid,
-      coraboId: coraboId,
-      name: firebaseUser.displayName || 'Invitado',
-      lastName: '',
-      email: firebaseUser.email || `${coraboId}@corabo.app`,
-      profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
-      phone: firebaseUser.phoneNumber || '',
-      type: 'client',
-      reputation: 5,
-      effectiveness: 100,
-      isGpsActive: true,
-      emailValidated: firebaseUser.emailVerified || false,
-      phoneValidated: false,
-      isInitialSetupComplete: false,
-      createdAt: new Date().toISOString(),
-    };
-
-    await userRef.set(newUser);
-    return newUser;
-}
+// This logic has been moved to auth-flow.ts to resolve architectural issues.
+// We keep the file for other profile-related flows.
 
 
 // --- Update User Flow ---
 export async function updateUserFlow(input: { userId: string, updates: any }) {
+    getFirebaseAdmin(); // Ensure initialized
     const db = getFirestore();
     const userRef = db.collection('users').doc(input.userId);
     await userRef.update(input.updates);
@@ -51,6 +23,7 @@ export async function updateUserFlow(input: { userId: string, updates: any }) {
 
 // --- Toggle GPS Flow ---
 export async function toggleGpsFlow(input: { userId: string }) {
+    getFirebaseAdmin(); // Ensure initialized
     const db = getFirestore();
     const userRef = db.collection('users').doc(input.userId);
     const userSnap = await userRef.get();
@@ -63,6 +36,7 @@ export async function toggleGpsFlow(input: { userId: string }) {
 
 // --- Delete User Flow ---
 export async function deleteUserFlow(input: { userId: string }) {
+    getFirebaseAdmin(); // Ensure initialized
     const db = getFirestore();
     const userRef = db.collection('users').doc(input.userId);
     await userRef.delete();
@@ -70,6 +44,7 @@ export async function deleteUserFlow(input: { userId: string }) {
 
 // --- Check ID Uniqueness Flow ---
 export async function checkIdUniquenessFlow(input: { idNumber: string; country: string; currentUserId: string; }): Promise<boolean> {
+    getFirebaseAdmin(); // Ensure initialized
     if (!input.idNumber || !input.country) {
       return true; // Don't run check if data is incomplete
     }
@@ -89,6 +64,7 @@ export async function checkIdUniquenessFlow(input: { idNumber: string; country: 
 
 // --- Complete Initial Setup ---
 export async function completeInitialSetupFlow(input: { userId: string, name: string, lastName: string, idNumber: string, birthDate: string, country: string, type: 'client' | 'provider' | 'repartidor', providerType: 'professional' | 'company' }): Promise<User | null> {
+    getFirebaseAdmin(); // Ensure initialized
     const db = getFirestore();
     const userRef = db.collection('users').doc(input.userId);
     
@@ -128,6 +104,7 @@ export async function completeInitialSetupFlow(input: { userId: string, name: st
 
 // --- Get Public Profile Flow ---
 export async function getPublicProfileFlow(input: { userId: string }): Promise<Partial<User> | null> {
+    getFirebaseAdmin(); // Ensure initialized
     const db = getFirestore();
     const userRef = db.collection('users').doc(input.userId);
     const userSnap = await userRef.get();
@@ -161,6 +138,7 @@ export async function getPublicProfileFlow(input: { userId: string }): Promise<P
 
 // --- Get Gallery with Pagination ---
 export async function getProfileGalleryFlow(input: { userId: string, limitNum?: number, startAfterDocId?: string }) {
+    getFirebaseAdmin(); // Ensure initialized
     const { userId, limitNum = 9, startAfterDocId } = input;
     const db = getFirestore();
     const galleryCollection = db.collection('publications');
@@ -193,6 +171,7 @@ export async function getProfileGalleryFlow(input: { userId: string, limitNum?: 
 
 // --- Get Products with Pagination ---
 export async function getProfileProductsFlow(input: { userId: string, limitNum?: number, startAfterDocId?: string }) {
+    getFirebaseAdmin(); // Ensure initialized
     const { userId, limitNum = 10, startAfterDocId } = input;
     const db = getFirestore();
     const publicationsCollection = db.collection('publications');

@@ -5,8 +5,14 @@ getFirebaseAdmin(); // Ensure Firebase is initialized
 
 import { revalidatePath } from 'next/cache';
 import type { FirebaseUserInput, ProfileSetupData, User, VerificationOutput } from '@/lib/types';
+
+// Correctly importing the single flow from the refactored auth-flow
+import { getOrCreateUserFlow } from '@/ai/flows/auth-flow'; 
+
+// Removed the direct DB logic from here to respect the architecture.
+// Flows that are not being used immediately are commented out to prevent compilation errors.
 import { 
-    getOrCreateUserFlow, 
+    // getOrCreateUserFlow, 
     completeInitialSetupFlow, 
     checkIdUniquenessFlow, 
     updateUserFlow,
@@ -25,8 +31,9 @@ const createTransactionFlow = async (data: any) => console.warn("Genkit flow 'cr
 // --- Exported Actions ---
 
 export async function getOrCreateUser(firebaseUser: FirebaseUserInput): Promise<User> {
+    // This action now correctly calls the single, dedicated flow for user creation/retrieval.
     const user = await getOrCreateUserFlow(firebaseUser);
-    revalidatePath('/');
+    revalidatePath('/'); // Revalidate the home page to reflect login state
     return user;
 }
 
