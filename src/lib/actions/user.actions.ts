@@ -2,10 +2,14 @@
 
 import { revalidatePath } from 'next/cache';
 import type { FirebaseUserInput, ProfileSetupData, User, VerificationOutput } from '@/lib/types';
-import { getFirestore } from 'firebase-admin/firestore';
-import { addMinutes, isAfter } from 'date-fns';
-import { getOrCreateUser as getOrCreateUserFlow, completeInitialSetup as completeInitialSetupFlow, checkIdUniqueness as checkIdUniquenessFlow, updateUser as updateUserFlow } from '@/ai/flows/profile-flow';
-
+import { 
+    getOrCreateUserFlow, 
+    completeInitialSetupFlow, 
+    checkIdUniquenessFlow, 
+    updateUserFlow,
+    toggleGpsFlow,
+    deleteUserFlow
+} from '@/ai/flows/profile-flow';
 
 // --- Placeholder flows ---
 const sendSmsVerificationCodeFlow = async (data: any) => console.warn("Genkit flow 'sendSmsVerificationCodeFlow' is disabled.");
@@ -13,17 +17,6 @@ const verifySmsCodeFlow = async (data: any) => { console.warn("Genkit flow 'veri
 const autoVerifyIdWithAIFlow = async (data: any) => { console.warn("Genkit flow 'autoVerifyIdWithAIFlow' is disabled."); return { nameMatch: false, idMatch: false, extractedId: '', extractedName: '' }; };
 const sendWelcomeToProviderNotificationFlow = async (data: any) => console.warn("Genkit flow 'sendWelcomeToProviderNotificationFlow' is disabled.");
 const createTransactionFlow = async (data: any) => console.warn("Genkit flow 'createTransactionFlow' is disabled.");
-const deleteUserFlow = async (data: any) => console.warn("Genkit flow 'deleteUserFlow' is disabled.");
-const toggleGpsFlow = async (data: any) => {
-    console.warn("Genkit flow 'toggleGpsFlow' is disabled. Updating DB directly.");
-    const db = getFirestore();
-    const userRef = db.collection('users').doc(data.userId);
-    const userSnap = await userRef.get();
-    if (userSnap.exists()) {
-        const currentStatus = (userSnap.data() as User).isGpsActive;
-        await userRef.update({ isGpsActive: !currentStatus });
-    }
-};
 
 
 // --- Exported Actions ---
