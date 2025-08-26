@@ -3,7 +3,7 @@
  * @fileOverview Central Genkit initialization.
  * This file is the single source of truth for the Genkit `ai` instance.
  */
-import { genkit } from 'genkit';
+import { genkit, type Genkit } from 'genkit';
 import { firebase } from '@genkit-ai/firebase';
 import { googleAI } from '@genkit-ai/googleai';
 
@@ -12,7 +12,7 @@ import { getFirebaseAdmin } from '@/lib/firebase-server';
 getFirebaseAdmin();
 
 
-export const ai = genkit({
+export const ai: Genkit = genkit({
   plugins: [
     firebase(),
     googleAI(),
