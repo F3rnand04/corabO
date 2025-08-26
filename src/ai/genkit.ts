@@ -5,20 +5,14 @@
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
 import {firebase} from '@genkit-ai/firebase';
-import { getFirebaseAdmin } from '@/lib/firebase-server';
 
-// Initialize Firebase Admin SDK through our centralized function
-// This ensures it's ready before any flows that might use it are defined.
-getFirebaseAdmin();
+// IMPORTANT: The manual getFirebaseAdmin() call is REMOVED.
+// Genkit's firebase() plugin will now handle the initialization.
 
-// IMPORTANT: The firebase() plugin is intentionally REMOVED to resolve a critical
-// server-side authentication issue where multiple initializations were
-// conflicting. The application will now rely on a single, manual Firebase
-// Admin SDK initialization managed by `firebase-server.ts`.
 export const ai = genkit({
   plugins: [
     googleAI(),
-    firebase(), // DO NOT RE-ENABLE THIS.
+    firebase(),
   ],
   logLevel: 'debug',
   enableTracingAndMetrics: false,
