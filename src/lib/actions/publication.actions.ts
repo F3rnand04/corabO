@@ -1,8 +1,7 @@
 'use server';
 
-import { getFirebaseAdmin } from '@/lib/firebase-server';
-getFirebaseAdmin(); // Ensure Firebase is initialized
-
+// The getFirebaseAdmin() call is removed. The action now relies on the
+// globally initialized Firebase instance managed by Genkit.
 import type { CreatePublicationInput, CreateProductInput, User } from '@/lib/types';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';

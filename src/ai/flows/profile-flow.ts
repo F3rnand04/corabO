@@ -1,9 +1,6 @@
 /**
  * @fileOverview Flows for fetching profile-specific data securely with pagination.
  */
-import { getFirebaseAdmin } from '@/lib/firebase-server';
-getFirebaseAdmin(); // Ensure initialized
-
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import type { GalleryImage, Product, User, ProfileSetupData, FirebaseUserInput } from '@/lib/types';
 import { z } from 'zod';

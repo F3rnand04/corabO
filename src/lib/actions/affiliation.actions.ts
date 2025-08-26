@@ -1,8 +1,7 @@
 'use server';
 
-import { getFirebaseAdmin } from '@/lib/firebase-server';
-getFirebaseAdmin(); // Ensure Firebase is initialized
-
+// The getFirebaseAdmin() call is removed. The action now relies on the
+// globally initialized Firebase instance managed by Genkit.
 import { revalidatePath } from 'next/cache';
 import { requestAffiliationFlow, approveAffiliationFlow, rejectAffiliationFlow, revokeAffiliationFlow } from '@/ai/flows/affiliation-flow';
 import { sendNotification } from '@/ai/flows/notification-flow';

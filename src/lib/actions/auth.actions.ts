@@ -1,8 +1,7 @@
 'use server';
 
-import { getFirebaseAdmin } from '@/lib/firebase-server';
-getFirebaseAdmin(); // Ensure Firebase is initialized
-
+// The getFirebaseAdmin() call is removed. The action now relies on the
+// globally initialized Firebase instance managed by Genkit.
 import { signInAsGuestFlow } from '@/ai/flows/auth-flow';
 import { getAuth } from 'firebase-admin/auth';
 import { cookies } from 'next/headers';
@@ -28,7 +27,7 @@ export async function createSessionCookie(idToken: string) {
     const auth = getAuth();
     const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
     const sessionCookie = await auth.createSessionCookie(idToken, { expiresIn });
-    cookies().set('session', sessionCookie, { maxAge: expiresIn, httpOnly: true, secure: true });
+    cookies().set('session', sessionCookie, { maxAge: expiresIn, httpOnly: true, secure: process.env.NODE_ENV === 'production', path: '/', sameSite: 'lax' });
 }
 
 /**
