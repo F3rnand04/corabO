@@ -5,7 +5,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import type { User as FirebaseUser } from 'firebase/auth';
 import { getAuthInstance } from '@/lib/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { getOrCreateUser } from '@/lib/actions';
+import { getOrCreateUser } from '@/lib/actions/user.actions';
 import type { FirebaseUserInput } from '@/lib/types';
 
 interface AuthContextType {

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -12,7 +13,7 @@ import { PrintableQrDisplay } from '@/components/PrintableQrDisplay';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import * as Actions from '@/lib/actions';
+import { addCashierBox, removeCashierBox, updateCashierBox, regenerateCashierBoxQr } from '@/lib/actions/cashier.actions';
 
 
 function CashierSettingsHeader() {
@@ -48,7 +49,7 @@ function CashierManagementCard() {
     const handleAddBox = async () => {
         if (newBoxName && newBoxPassword && currentUser) {
             setIsProcessing('new');
-            await Actions.addCashierBox(currentUser.id, newBoxName, newBoxPassword);
+            await addCashierBox(currentUser.id, newBoxName, newBoxPassword);
             setNewBoxName('');
             setNewBoxPassword('');
             setIsProcessing(null);
@@ -63,7 +64,7 @@ function CashierManagementCard() {
         const newPassword = editingPasswords[boxId];
         if (newPassword && currentUser) {
             setIsProcessing(boxId);
-            await Actions.updateCashierBox(currentUser.id, boxId, { passwordHash: newPassword });
+            await updateCashierBox(currentUser.id, boxId, { passwordHash: newPassword });
             setEditingPasswords(prev => {
                 const newState = {...prev};
                 delete newState[boxId];
@@ -76,14 +77,14 @@ function CashierManagementCard() {
     const handleRegenerateQr = async (boxId: string) => {
       if (!currentUser) return;
       setIsProcessing(boxId);
-      await Actions.regenerateCashierBoxQr(currentUser.id, boxId);
+      await regenerateCashierBoxQr(currentUser.id, boxId);
       setIsProcessing(null);
     }
     
     const handleRemoveBox = async (boxId: string) => {
        if (!currentUser) return;
        setIsProcessing(boxId);
-       await Actions.removeCashierBox(currentUser.id, boxId);
+       await removeCashierBox(currentUser.id, boxId);
        setIsProcessing(null);
     }
 

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRef, ChangeEvent } from 'react';
@@ -6,7 +7,7 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import * as Actions from '@/lib/actions';
+import { updateUserProfileImage } from '@/lib/actions/user.actions';
 
 interface EditableAvatarProps {
   user: {
@@ -51,7 +52,7 @@ export function EditableAvatar({ user }: EditableAvatarProps) {
 
           const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
           
-          Actions.updateUserProfileImage(user.id, dataUrl).then(() => {
+          updateUserProfileImage(user.id, dataUrl).then(() => {
               toast({
                   title: "¡Foto de Perfil Actualizada!",
                   description: "Tu nueva foto de perfil está visible.",

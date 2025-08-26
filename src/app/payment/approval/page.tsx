@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
@@ -12,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { getFirestoreDb } from '@/lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
-import * as Actions from '@/lib/actions';
+import { handleClientCopyAndPay, cancelQrSession } from '@/lib/actions/cashier.actions';
 
 
 function ApprovalContent() {
@@ -62,13 +63,13 @@ function ApprovalContent() {
     navigator.clipboard.writeText(textToCopy);
     toast({ title: 'Datos de Pago Copiados', description: 'Realiza el pago desde tu app bancaria.' });
     
-    await Actions.handleClientCopyAndPay(sessionId);
+    await handleClientCopyAndPay(sessionId);
   };
 
 
   const handleCancel = async () => {
     if(sessionId) {
-      await Actions.cancelQrSession(sessionId);
+      await cancelQrSession(sessionId);
       router.back();
     }
   }

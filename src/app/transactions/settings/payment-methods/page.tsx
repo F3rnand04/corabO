@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertTitle, AlertDescription as AlertDialogAlertDescription } from "@/components/ui/alert";
 import { venezuelanBanks } from "@/lib/data/options";
 import Link from 'next/link';
-import * as Actions from '@/lib/actions';
+import { updateUser } from '@/lib/actions/user.actions';
 
 function PaymentMethodsHeader() {
     const router = useRouter();
@@ -40,7 +41,7 @@ function PaymentMethodsHeader() {
 }
 
 export default function PaymentMethodsPage() {
-    const { currentUser, updateUser } = useCorabo();
+    const { currentUser } = useCorabo();
     const { toast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
     
@@ -77,7 +78,7 @@ export default function PaymentMethodsPage() {
         if (!currentUser) return;
         setIsSaving(true);
         try {
-            await Actions.updateUser(currentUser.id, { 
+            await updateUser(currentUser.id, { 
                 'profileSetupData.paymentDetails': paymentDetails 
             });
             toast({ title: 'Éxito', description: 'Tus métodos de pago han sido actualizados.' });

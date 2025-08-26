@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -13,7 +14,8 @@ import type { Transaction } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { getFirestoreDb } from '@/lib/firebase';
 import { setDoc, doc } from 'firebase/firestore';
-import * as Actions from '@/lib/actions';
+import { registerSystemPayment } from '@/lib/actions/admin.actions';
+import { payCommitment } from '@/lib/actions/transaction.actions';
 
 
 function PaymentHeader() {
@@ -79,10 +81,10 @@ function PaymentPageContent() {
         try {
              // For direct payments (subscriptions, campaigns), we create a system transaction
             if (directPaymentAmount && paymentConcept) {
-                 await Actions.registerSystemPayment(currentUser.id, paymentConcept, directPaymentAmount, isSubscription);
+                 await registerSystemPayment(currentUser.id, paymentConcept, directPaymentAmount, isSubscription);
             } else if (commitment) {
                 // Regular commitment payment, handled by payCommitment which will update the status
-                 await Actions.payCommitment(commitment.id, currentUser.id, {
+                 await payCommitment(commitment.id, currentUser.id, {
                      paymentMethod: 'Transferencia', // Defaulting for now
                      paymentReference,
                      paymentVoucherUrl: 'https://i.postimg.cc/L8y2zWc2/vzla-id.png' // Placeholder

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -19,7 +20,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from '@/lib/utils';
 import type { Transaction } from '@/lib/types';
 import { credicoraLevels, credicoraCompanyLevels } from '@/lib/types';
-import * as Actions from '@/lib/actions';
+import { subscribeUser, updateUser } from '@/lib/actions/user.actions';
 
 
 interface SubscriptionDialogProps {
@@ -114,9 +115,9 @@ export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogP
     // Set the user's credicora details upon subscribing
     const currentCredicoraLevel = currentUser.credicoraLevel || 1;
     const credicoraDetails = isCompany ? credicoraCompanyLevels[currentCredicoraLevel.toString()] : credicoraLevels[currentCredicoraLevel.toString()];
-    await Actions.updateUser(currentUser.id, { credicoraDetails });
+    await updateUser(currentUser.id, { credicoraDetails });
     
-    await Actions.subscribeUser(currentUser.id, `Plan ${currentPlan.title} (${paymentCycle === 'monthly' ? 'Mensual' : 'Anual'})`, amount);
+    await subscribeUser(currentUser.id, `Plan ${currentPlan.title} (${paymentCycle === 'monthly' ? 'Mensual' : 'Anual'})`, amount);
     onOpenChange(false);
   }
 

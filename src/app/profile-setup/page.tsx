@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8,7 +9,7 @@ import type { ProfileSetupData } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { useRouter } from 'next/navigation';
-import * as Actions from '@/lib/actions';
+import { updateFullProfile } from '@/lib/actions/user.actions';
 
 // Import Step Components
 import Step2_CompanyInfo from '@/components/profile-setup/Step2_CompanyInfo';
@@ -53,7 +54,7 @@ export default function ProfileSetupPage() {
   const handleFinalSubmit = async () => {
     setIsSubmitting(true);
     try {
-        await Actions.updateFullProfile(currentUser.id, formData, 'provider');
+        await updateFullProfile(currentUser.id, formData, 'provider');
         toast({ title: "¡Perfil de Empresa Configurado!", description: "Tus datos han sido guardados."});
         router.push('/profile');
     } catch(error) {

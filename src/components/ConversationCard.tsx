@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import Link from 'next/link';
@@ -11,7 +12,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import * as Actions from '@/lib/actions';
+import { markConversationAsRead } from '@/lib/actions/messaging.actions';
 
 interface ConversationCardProps {
     conversation: Conversation;
@@ -54,7 +55,7 @@ export function ConversationCard({ conversation, otherParticipant }: Conversatio
 
         // Optimistically mark as read on client before navigating
         if(unreadCount > 0) {
-            Actions.markConversationAsRead(conversationId);
+            markConversationAsRead(conversationId);
         }
 
         router.push(`/messages/${conversationId}`);

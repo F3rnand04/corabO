@@ -12,7 +12,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Affiliation, User } from '@/lib/types';
 import { getFirestore, collection, query, where, onSnapshot } from 'firebase/firestore';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
-import * as Actions from '@/lib/actions';
+import { sendMessage } from '@/lib/actions/messaging.actions';
+import { approveAffiliation, rejectAffiliation, revokeAffiliation } from '@/lib/actions/affiliation.actions';
 
 export function AffiliationManagementTab() {
   const { currentUser, users } = useCorabo();
@@ -40,7 +41,7 @@ export function AffiliationManagementTab() {
   const handleContactProfessional = (professionalId: string) => {
     if (!currentUser) return;
     const conversationId = [currentUser.id, professionalId].sort().join('-');
-    Actions.sendMessage({ 
+    sendMessage({ 
       recipientId: professionalId, 
       senderId: currentUser.id,
       conversationId,
@@ -51,17 +52,17 @@ export function AffiliationManagementTab() {
   
   const handleApprove = (affiliationId: string) => {
       if(!currentUser) return;
-      Actions.approveAffiliation(affiliationId, currentUser.id);
+      approveAffiliation(affiliationId, currentUser.id);
   }
   
   const handleReject = (affiliationId: string) => {
       if(!currentUser) return;
-      Actions.rejectAffiliation(affiliationId, currentUser.id);
+      rejectAffiliation(affiliationId, currentUser.id);
   }
   
   const handleRevoke = (affiliationId: string) => {
       if(!currentUser) return;
-      Actions.revokeAffiliation(affiliationId, currentUser.id);
+      revokeAffiliation(affiliationId, currentUser.id);
   }
 
   const pendingAffiliations = affiliations.filter(a => a.status === 'pending');

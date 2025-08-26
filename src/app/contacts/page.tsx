@@ -14,7 +14,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { ContactSupportCard } from '@/components/ContactSupportCard';
-import * as Actions from '@/lib/actions'; 
+import { updateUser } from '@/lib/actions/user.actions';
+import { sendMessage } from '@/lib/actions/messaging.actions';
 
 
 function ContactsHeader({ onSubscribeClick }: { onSubscribeClick: () => void }) {
@@ -59,7 +60,7 @@ export default function ContactsPage() {
   const handleDirectMessage = (contactId: string) => {
     if (!currentUser) return;
     const conversationId = [currentUser.id, contactId].sort().join('-');
-    Actions.sendMessage({ recipientId: contactId, text: "", conversationId, senderId: currentUser.id });
+    sendMessage({ recipientId: contactId, text: "", conversationId, senderId: currentUser.id });
     router.push(`/messages/${conversationId}`);
   };
 
@@ -95,14 +96,14 @@ export default function ContactsPage() {
                     label="Correo:"
                     value={currentUser.email}
                     initialStatus={currentUser.emailValidated ? 'validated' : 'idle'}
-                    onValueChange={(value) => Actions.updateUser(currentUser.id, { email: value })}
+                    onValueChange={(value) => updateUser(currentUser.id, { email: value })}
                     type="email"
                 />
                 <ValidationItem
                     label="Teléfono:"
                     value={currentUser.phone}
                     initialStatus={currentUser.phoneValidated ? 'validated' : 'idle'}
-                    onValueChange={(value) => Actions.updateUser(currentUser.id, { phone: value })}
+                    onValueChange={(value) => updateUser(currentUser.id, { phone: value })}
                     type="phone"
                 />
             </div>

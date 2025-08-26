@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -8,7 +9,7 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import { ProfileGalleryView } from '@/components/ProfileGalleryView';
 import type { GalleryImage } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { getProfileGallery } from '@/ai/flows/profile-flow';
+
 
 export default function PublicationsPage() {
   const router = useRouter();

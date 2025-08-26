@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -9,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import * as Actions from '@/lib/actions';
+import { startQrSession } from '@/lib/actions/cashier.actions';
 
 
 // --- Placeholder for QR Scanner Library ---
@@ -69,7 +70,7 @@ function ScanQrContent() {
             title: "¡QR Escaneado!",
             description: `Conectando con el proveedor...`,
           });
-          const sessionId = await Actions.startQrSession(currentUser.id, qrData.providerId, qrData.cashierBoxId);
+          const sessionId = await startQrSession(currentUser.id, qrData.providerId, qrData.cashierBoxId);
           if (sessionId) {
             router.push(`/payment/approval?sessionId=${sessionId}`);
           } else {

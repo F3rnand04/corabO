@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui
 import { Separator } from "../ui/separator";
 import SetLocationButton from "./SetLocationButton";
 import { SpecializedFields } from "./SpecializedFields";
-import * as Actions from '@/lib/actions';
+import { updateUser } from "@/lib/actions/user.actions";
 
 interface Step3_LogisticsProps {
   formData: ProfileSetupData;
@@ -35,7 +36,7 @@ export default function Step3_Logistics({ formData, onUpdate, onNext }: Step3_Lo
   
   const handleUpdateRadius = (radius: number) => {
     if (!currentUser) return;
-    Actions.updateUser(currentUser.id, { 'profileSetupData.serviceRadius': radius });
+    updateUser(currentUser.id, { 'profileSetupData.serviceRadius': radius });
   }
 
   const showSubscriptionIncentive = (formData.serviceRadius || 0) > 10 && !currentUser?.isSubscribed;

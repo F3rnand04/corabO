@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -20,7 +21,7 @@ import { cn } from '@/lib/utils';
 import { Badge } from './ui/badge';
 import { Switch } from './ui/switch';
 import { Separator } from './ui/separator';
-import * as Actions from '@/lib/actions';
+import { createCampaign } from '@/lib/actions/campaign.actions';
 import { Label } from './ui/label';
 
 interface CampaignDialogProps {
@@ -84,7 +85,7 @@ export function CampaignDialog({ isOpen, onOpenChange }: CampaignDialogProps) {
     const handleCreateCampaign = () => {
         if (!selectedPublicationId || !currentUser) return;
 
-        Actions.createCampaign(currentUser.id, {
+        createCampaign(currentUser.id, {
             publicationId: selectedPublicationId,
             budget: calculatedCosts.finalCost,
             durationDays: durationDays,
@@ -128,7 +129,7 @@ export function CampaignDialog({ isOpen, onOpenChange }: CampaignDialogProps) {
                                         className={cn("relative aspect-square rounded-md overflow-hidden cursor-pointer border-4", selectedPublicationId === img.id ? 'border-primary' : 'border-transparent')}
                                         onClick={() => setSelectedPublicationId(img.id)}
                                     >
-                                        <Image src={img.src} alt={img.alt} fill objectFit="cover" />
+                                        <Image src={img.src} alt={img.alt} fill style={{objectFit: 'cover'}} />
                                     </div>
                                 ))}
                             </div>

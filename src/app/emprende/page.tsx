@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, ChangeEvent, useEffect } from 'react';
@@ -15,7 +16,8 @@ import { useCorabo } from '@/contexts/CoraboContext';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import * as Actions from '@/lib/actions';
+import { activatePromotion } from '@/lib/actions/user.actions';
+import { createPublication } from '@/lib/actions/publication.actions';
 
 const promotionSuggestions = ["10% OFF", "2x1 Hoy", "Envío Gratis", "Oferta Especial", "Nuevo"];
 
@@ -97,18 +99,18 @@ export default function EmprendePage() {
 
     setIsSubmitting(true);
     
-    const newTempImage = {
-      id: `temp-${Date.now()}`,
-      src: tempImagePreview!,
-      alt: tempDescription.slice(0, 30),
-      description: tempDescription,
-      comments: [],
-      isTemporary: true,
-    };
-    
     try {
-        await Actions.updateUserProfileAndGallery(currentUser.id, newTempImage as any);
-        await Actions.activatePromotion(currentUser.id, { imageId: newTempImage.id, promotionText, cost: promotionCost });
+        const newPublicationId = `temp-pub-${Date.now()}`;
+        await createPublication({
+          userId: currentUser.id,
+          description: tempDescription,
+          imageDataUri: tempImagePreview!,
+          aspectRatio: 'square', // Default for now
+          type: 'image',
+          id: newPublicationId,
+        });
+
+        await activatePromotion(currentUser.id, { imageId: newPublicationId, promotionText, cost: promotionCost });
 
         toast({ title: "¡Promoción Activada!", description: "Tu oferta destacará por 24 horas." });
         router.push('/profile');

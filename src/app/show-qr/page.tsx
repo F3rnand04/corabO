@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -15,7 +16,7 @@ import Image from 'next/image';
 import { getFirestoreDb } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, Unsubscribe, doc } from 'firebase/firestore';
 import type { QrSession } from '@/lib/types';
-import * as Actions from '@/lib/actions';
+import { setQrSessionAmount, cancelQrSession, confirmMobilePayment, finalizeQrSession } from '@/lib/actions/cashier.actions';
 import { credicoraLevels } from '@/lib/types';
 
 export default function ShowQrPage() {
@@ -67,12 +68,12 @@ export default function ShowQrPage() {
       const level = currentUser.credicoraDetails || credicoraLevels['1'];
       const financedAmount = Math.min(parsedAmount * (1 - level.initialPaymentPercentage), currentUser.credicoraLimit || 0);
       const initialPayment = parsedAmount - financedAmount;
-      await Actions.setQrSessionAmount(qrSession.id, parsedAmount, initialPayment, financedAmount, level.installments);
+      await setQrSessionAmount(qrSession.id, parsedAmount, initialPayment, financedAmount, level.installments);
     }
   };
 
   const handleCancelSession = async () => {
-    if(qrSession) await Actions.cancelQrSession(qrSession.id);
+    if(qrSession) await cancelQrSession(qrSession.id);
   }
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -87,13 +88,13 @@ export default function ShowQrPage() {
 
   const handleConfirmMobilePayment = async () => {
     if (qrSession) {
-      await Actions.confirmMobilePayment(qrSession.id);
+      await confirmMobilePayment(qrSession.id);
     }
   };
   
   const handleFinalizeSession = async () => {
     if (qrSession) {
-        await Actions.finalizeQrSession(qrSession.id);
+        await finalizeQrSession(qrSession.id);
     }
   }
 

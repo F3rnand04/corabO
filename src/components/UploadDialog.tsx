@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useRef, ChangeEvent, useEffect } from 'react';
@@ -21,7 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { UploadCloud, X, Image as ImageIcon, Video, PackagePlus, Loader2, Crop, RotateCw, Check } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import type { CreatePublicationInput, CreateProductInput } from '@/lib/types';
-import * as Actions from '@/lib/actions';
+import { createProduct, createPublication } from '@/lib/actions/publication.actions';
 
 function ImageEditor({ src, onConfirm, onCancel, isVideo }: { src: string, onConfirm: (dataUrl: string, aspectRatio: 'square' | 'horizontal' | 'vertical') => void, onCancel: () => void, isVideo: boolean }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -229,7 +230,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
             aspectRatio: galleryAspectRatio,
             type: isVideoFile ? 'video' : 'image',
         };
-        await Actions.createPublication(publicationData);
+        await createPublication(publicationData);
         toast({ title: "¡Publicación Exitosa!", description: "Tu nuevo contenido ya está en tu galería." });
         handleClose();
         router.refresh();
@@ -256,7 +257,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
             price: parseFloat(productPrice),
             imageDataUri: productImagePreview,
         };
-        await Actions.createProduct(productData);
+        await createProduct(productData);
         toast({ title: "¡Producto Añadido!", description: `${productName} ya está en tu catálogo.` });
         handleClose();
         router.push('/profile/catalog');

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -8,7 +9,7 @@ import Link from 'next/link';
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { useCorabo } from "../contexts/CoraboContext";
-import * as Actions from '@/lib/actions';
+import { sendMessage } from "@/lib/actions/messaging.actions";
 
 export function ContactSupportCard() {
     const { toast } = useToast();
@@ -31,7 +32,7 @@ export function ContactSupportCard() {
             return;
         }
         const conversationId = [currentUser.id, 'corabo-admin'].sort().join('-');
-        Actions.sendMessage({ recipientId: 'corabo-admin', text: "Hola, necesito ayuda con la plataforma.", conversationId, senderId: currentUser.id });
+        sendMessage({ recipientId: 'corabo-admin', text: "Hola, necesito ayuda con la plataforma.", conversationId, senderId: currentUser.id });
         router.push(`/messages/${conversationId}`);
     }
 

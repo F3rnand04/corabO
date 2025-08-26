@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import * as Actions from '@/lib/actions';
+import { verifyCampaignPayment, sendNewCampaignNotifications } from '@/lib/actions/admin.actions';
 
 export function PaymentVerificationTab() {
   const { transactions, users } = useCorabo();
@@ -20,11 +20,11 @@ export function PaymentVerificationTab() {
 
   const handleVerifyAndNotify = async (transactionId: string, campaignId: string) => {
       // First, verify the payment and activate the campaign
-      await Actions.verifyCampaignPayment(transactionId, campaignId);
+      await verifyCampaignPayment(transactionId, campaignId);
       
       // Then, send the notifications
       try {
-        await Actions.sendNewCampaignNotifications({ campaignId });
+        await sendNewCampaignNotifications({ campaignId });
         toast({ title: "Campaña Activada y Notificada", description: "La campaña está activa y los usuarios han sido notificados." });
       } catch (error) {
         console.error("Error sending campaign notifications:", error);
@@ -71,7 +71,7 @@ export function PaymentVerificationTab() {
                                 handleVerifyAndNotify(tx.id, campaignId);
                             } else if (isSubscription) {
                                 // Just verify the payment for subscriptions, no notification needed from here
-                                Actions.verifyCampaignPayment(tx.id, ''); // Pass empty campaignId
+                                verifyCampaignPayment(tx.id, ''); // Pass empty campaignId
                                 toast({ title: "Suscripción Activada", description: "El pago del usuario ha sido verificado."});
                             }
                           }}

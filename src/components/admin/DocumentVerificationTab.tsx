@@ -12,7 +12,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import type { User, VerificationOutput } from '@/lib/types';
-import * as Actions from '@/lib/actions';
+import { autoVerifyIdWithAI, rejectUserId, verifyUserId } from '@/lib/actions/admin.actions';
 
 export function DocumentVerificationTab() {
   const { users } = useCorabo();
@@ -27,7 +27,7 @@ export function DocumentVerificationTab() {
       setIsVerifying(true);
       setVerificationResult(null);
       try {
-          const result = await Actions.autoVerifyIdWithAI(user);
+          const result = await autoVerifyIdWithAI(user);
           setVerificationResult(result);
       } catch (error) {
           console.error(error);
@@ -140,10 +140,10 @@ export function DocumentVerificationTab() {
                         </div>
                   </div>
                   <AlertDialogFooter>
-                      <Button variant="destructive" onClick={() => { selectedUser && Actions.rejectUserId(selectedUser.id); setIsDialogOpen(false);}}>Rechazar</Button>
+                      <Button variant="destructive" onClick={() => { selectedUser && rejectUserId(selectedUser.id); setIsDialogOpen(false);}}>Rechazar</Button>
                       <div className="flex-grow"></div>
                       <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => { selectedUser && Actions.verifyUserId(selectedUser.id); setIsDialogOpen(false);}}>Aprobar Verificación</AlertDialogAction>
+                      <AlertDialogAction onClick={() => { selectedUser && verifyUserId(selectedUser.id); setIsDialogOpen(false);}}>Aprobar Verificación</AlertDialogAction>
                   </AlertDialogFooter>
               </>
           )}

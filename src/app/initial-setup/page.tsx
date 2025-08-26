@@ -15,10 +15,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRouter } from 'next/navigation';
-import * as Actions from '@/lib/actions';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { useCorabo } from '@/contexts/CoraboContext';
 import type { User } from '@/lib/types';
+import { checkIdUniqueness, completeInitialSetup } from '@/lib/actions/user.actions';
+import { sendMessage } from '@/lib/actions/messaging.actions';
 
 
 const countries = [
@@ -75,7 +76,7 @@ export default function InitialSetupPage() {
     setIdInUseError(false);
 
     try {
-        const isUnique = await Actions.checkIdUniqueness({ idNumber, country, currentUserId: firebaseUser.uid });
+        const isUnique = await checkIdUniqueness({ idNumber, country, currentUserId: firebaseUser.uid });
         
         if (!isUnique) {
             setIdInUseError(true);
@@ -96,7 +97,7 @@ export default function InitialSetupPage() {
             return; // Stop submission
         }
         
-        const updatedUser = await Actions.completeInitialSetup(
+        const updatedUser = await completeInitialSetup(
           firebaseUser.uid, 
           { 
             name, 
@@ -132,7 +133,7 @@ export default function InitialSetupPage() {
   const handleContactSupport = () => {
     if(!firebaseUser) return;
     const conversationId = [firebaseUser.uid, 'corabo-admin'].sort().join('-');
-    Actions.sendMessage({ recipientId: 'corabo-admin', text: "Hola, mi número de documento de identidad ya está en uso y necesito ayuda para verificar mi cuenta.", conversationId, senderId: firebaseUser.uid });
+    sendMessage({ recipientId: 'corabo-admin', text: "Hola, mi número de documento de identidad ya está en uso y necesito ayuda para verificar mi cuenta.", conversationId, senderId: firebaseUser.uid });
     router.push(`/messages/${'\'\'\''}${conversationId}`);
   };
 

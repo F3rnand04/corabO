@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -23,7 +24,7 @@ import { Calendar } from './ui/calendar';
 import { cn } from '@/lib/utils';
 import { Switch } from './ui/switch';
 import { useCorabo } from '@/contexts/CoraboContext';
-import * as Actions from '@/lib/actions';
+import { sendMessage } from '@/lib/actions/messaging.actions';
 
 
 interface ProposalDialogProps {
@@ -66,7 +67,7 @@ const placeholderMap: Record<string, { title: string; description: string }> = {
 };
 
 export function ProposalDialog({ isOpen, onOpenChange, conversationId }: ProposalDialogProps) {
-    const { currentUser, sendMessage } = useCorabo();
+    const { currentUser } = useCorabo();
 
     const form = useForm<ProposalFormValues>({
         resolver: zodResolver(proposalSchema),
