@@ -15,7 +15,7 @@ getFirebaseAdmin();
 
 export const ai = genkit({
   plugins: [
-    firebase(),
+    firebase,
     googleAI(),
   ],
   enableTracingAndMetrics: false,
