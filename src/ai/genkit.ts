@@ -19,7 +19,7 @@ getFirebaseAdmin();
 
 export const ai = genkit({
   plugins: [
-    firebase(),
+    firebase, // Correct: pass the plugin object directly
     googleAI(),
   ],
   logLevel: 'debug',
