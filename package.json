@@ -11,9 +11,6 @@
     "lint": "next lint",
     "test": "next lint"
   },
-  "engines": {
-    "node": "18"
-  },
   "dependencies": {
     "@genkit-ai/core": "^1.17.1",
     "@genkit-ai/firebase": "^1.17.1",
@@ -48,9 +45,9 @@
     "firebase-admin": "^12.2.0",
     "genkit": "^1.17.1",
     "html2canvas": "^1.4.1",
-    "jspdf": "^2.5.1",
+    "jspdf": "^3.0.2",
     "lucide-react": "^0.417.0",
-    "next": "14.2.4",
+    "next": "^14.2.32",
     "next-themes": "^0.2.1",
     "qrcode": "^1.5.3",
     "qrcode.react": "^3.1.0",
