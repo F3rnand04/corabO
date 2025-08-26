@@ -13,7 +13,6 @@ import { cookies } from 'next/headers';
 export const metadata: Metadata = {
   title: 'corabO.app',
   description: 'Aplicación Funcional corabO',
-  manifest: '/manifest.json', // Correct path to manifest
 };
 
 const inter = Inter({
@@ -48,9 +47,6 @@ export default async function RootLayout({
     <html lang="es" suppressHydrationWarning>
       <head>
         <meta name="format-detection" content="telephone=no, date=no, email=no, address=no" />
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#FFFFFF" />
-        <link rel="apple-touch-icon" href="https://i.postimg.cc/Wz1MTvWK/lg.png" />
       </head>
       <body className={`'__variable_e8ce0c' antialiased bg-background`}>
         <Providers attribute="class" defaultTheme="system" enableSystem>
