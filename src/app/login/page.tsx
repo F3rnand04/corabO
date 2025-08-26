@@ -8,7 +8,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getAuthInstance } from '@/lib/firebase';
-import { signInAnonymously, GoogleAuthProvider, signInWithRedirect } from 'firebase/auth';
+import { signInWithCustomToken, GoogleAuthProvider, signInWithRedirect } from 'firebase/auth';
+import { signInAsGuest } from '@/lib/actions/auth.actions';
 
 export default function LoginPage() {
   const { isLoadingAuth } = useAuth();
@@ -18,9 +19,15 @@ export default function LoginPage() {
   const handleAnonymousLogin = async () => {
     const auth = getAuthInstance();
     try {
-      await signInAnonymously(auth);
-      // The onAuthStateChanged listener in AuthProvider will handle the redirect.
-      toast({ title: '¡Bienvenido!', description: 'Has iniciado sesión como invitado.' });
+      // Use the new secure server-side flow
+      const result = await signInAsGuest();
+      if (result.customToken) {
+        await signInWithCustomToken(auth, result.customToken);
+        // The onAuthStateChanged listener in AuthProvider will handle the redirect.
+        toast({ title: '¡Bienvenido!', description: 'Has iniciado sesión como invitado.' });
+      } else {
+        throw new Error(result.error || 'No se pudo obtener el token de invitado.');
+      }
     } catch (error: any) {
       console.error(error);
       toast({ variant: 'destructive', title: 'Error de Inicio de Sesión', description: error.message });
