@@ -19,10 +19,9 @@ getFirebaseAdmin();
 
 genkit({
   plugins: [
-    firebase(),
+    firebase,
     googleAI(),
   ],
-  logLevel: 'debug',
   enableTracingAndMetrics: true,
 });
 
