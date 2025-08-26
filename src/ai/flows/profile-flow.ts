@@ -1,21 +1,16 @@
 /**
  * @fileOverview Flows for fetching profile-specific data securely with pagination.
  */
+import { getFirebaseAdmin } from '@/lib/firebase-server';
+getFirebaseAdmin(); // Ensure initialized
 
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import { credicoraCompanyLevels, credicoraLevels } from '@/lib/types';
 import type { GalleryImage, Product, User, ProfileSetupData, FirebaseUserInput } from '@/lib/types';
 import { z } from 'zod';
-import { getFirebaseAdmin } from '@/lib/firebase-server';
-
-// --- Get or Create User Flow ---
-// This logic has been moved to auth-flow.ts to resolve architectural issues.
-// We keep the file for other profile-related flows.
 
 
 // --- Update User Flow ---
 export async function updateUserFlow(input: { userId: string, updates: any }) {
-    getFirebaseAdmin(); // Ensure initialized
     const db = getFirestore();
     const userRef = db.collection('users').doc(input.userId);
     await userRef.update(input.updates);
@@ -23,11 +18,10 @@ export async function updateUserFlow(input: { userId: string, updates: any }) {
 
 // --- Toggle GPS Flow ---
 export async function toggleGpsFlow(input: { userId: string }) {
-    getFirebaseAdmin(); // Ensure initialized
     const db = getFirestore();
     const userRef = db.collection('users').doc(input.userId);
     const userSnap = await userRef.get();
-    if (userSnap.exists()) {
+    if (userSnap.exists) {
         const currentStatus = (userSnap.data() as User).isGpsActive;
         await userRef.update({ isGpsActive: !currentStatus });
     }
@@ -36,7 +30,6 @@ export async function toggleGpsFlow(input: { userId: string }) {
 
 // --- Delete User Flow ---
 export async function deleteUserFlow(input: { userId: string }) {
-    getFirebaseAdmin(); // Ensure initialized
     const db = getFirestore();
     const userRef = db.collection('users').doc(input.userId);
     await userRef.delete();
@@ -44,7 +37,6 @@ export async function deleteUserFlow(input: { userId: string }) {
 
 // --- Check ID Uniqueness Flow ---
 export async function checkIdUniquenessFlow(input: { idNumber: string; country: string; currentUserId: string; }): Promise<boolean> {
-    getFirebaseAdmin(); // Ensure initialized
     if (!input.idNumber || !input.country) {
       return true; // Don't run check if data is incomplete
     }
@@ -61,55 +53,13 @@ export async function checkIdUniquenessFlow(input: { idNumber: string; country: 
     return isOwnDocument;
 }
 
-
-// --- Complete Initial Setup ---
-export async function completeInitialSetupFlow(input: { userId: string, name: string, lastName: string, idNumber: string, birthDate: string, country: string, type: 'client' | 'provider' | 'repartidor', providerType: 'professional' | 'company' }): Promise<User | null> {
-    getFirebaseAdmin(); // Ensure initialized
-    const db = getFirestore();
-    const userRef = db.collection('users').doc(input.userId);
-    
-    const userSnap = await userRef.get();
-    if (!userSnap.exists()) {
-      throw new Error("User not found during setup completion.");
-    }
-    
-    const existingData = userSnap.data() as User;
-    
-    const isCompany = input.providerType === 'company';
-    const activeCredicoraLevels = isCompany ? credicoraCompanyLevels : credicoraLevels;
-    const initialCredicoraLevel = activeCredicoraLevels['1'];
-
-    const dataToUpdate: Partial<User> = {
-      name: input.name,
-      lastName: input.lastName,
-      idNumber: input.idNumber,
-      birthDate: input.birthDate,
-      country: input.country,
-      isInitialSetupComplete: true,
-      type: isCompany ? 'provider' : input.type,
-      credicoraLevel: initialCredicoraLevel.level,
-      credicoraLimit: initialCredicoraLevel.creditLimit,
-      credicoraDetails: initialCredicoraLevel,
-      profileSetupData: {
-        ...(existingData.profileSetupData || {}),
-        providerType: input.providerType,
-      }
-    };
-
-    await userRef.update(dataToUpdate);
-
-    const updatedUserDoc = await userRef.get();
-    return updatedUserDoc.data() as User;
-}
-
 // --- Get Public Profile Flow ---
 export async function getPublicProfileFlow(input: { userId: string }): Promise<Partial<User> | null> {
-    getFirebaseAdmin(); // Ensure initialized
     const db = getFirestore();
     const userRef = db.collection('users').doc(input.userId);
     const userSnap = await userRef.get();
 
-    if (!userSnap.exists()) {
+    if (!userSnap.exists) {
       return null;
     }
 
@@ -138,7 +88,6 @@ export async function getPublicProfileFlow(input: { userId: string }): Promise<P
 
 // --- Get Gallery with Pagination ---
 export async function getProfileGalleryFlow(input: { userId: string, limitNum?: number, startAfterDocId?: string }) {
-    getFirebaseAdmin(); // Ensure initialized
     const { userId, limitNum = 9, startAfterDocId } = input;
     const db = getFirestore();
     const galleryCollection = db.collection('publications');
@@ -171,7 +120,6 @@ export async function getProfileGalleryFlow(input: { userId: string, limitNum?: 
 
 // --- Get Products with Pagination ---
 export async function getProfileProductsFlow(input: { userId: string, limitNum?: number, startAfterDocId?: string }) {
-    getFirebaseAdmin(); // Ensure initialized
     const { userId, limitNum = 10, startAfterDocId } = input;
     const db = getFirestore();
     const publicationsCollection = db.collection('publications');

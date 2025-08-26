@@ -6,9 +6,8 @@ getFirebaseAdmin(); // Ensure Firebase is initialized
 import { revalidatePath } from 'next/cache';
 import type { FirebaseUserInput, ProfileSetupData, User, VerificationOutput } from '@/lib/types';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-
-// Genkit flows are temporarily disabled. Using direct DB logic.
-import { getOrCreateUserFlow } from '@/ai/flows/auth-flow'; 
+import { getOrCreateUserFlow } from '@/ai/flows/auth-flow';
+import { credicoraCompanyLevels, credicoraLevels } from '@/lib/types';
 
 const sendSmsVerificationCodeFlow = async (data: any) => console.warn("Genkit flow 'sendSmsVerificationCodeFlow' is disabled.");
 const verifySmsCodeFlow = async (data: any) => { console.warn("Genkit flow 'verifySmsCodeFlow' is disabled."); return { success: false, message: 'Flow disabled' }; };
@@ -54,7 +53,7 @@ export async function toggleGps(userId: string) {
     const db = getFirestore();
     const userRef = db.collection('users').doc(userId);
     const userSnap = await userRef.get();
-    if (userSnap.exists()) {
+    if (userSnap.exists) {
         const currentStatus = (userSnap.data() as User).isGpsActive;
         await userRef.update({ isGpsActive: !currentStatus });
     }
@@ -78,11 +77,14 @@ export async function completeInitialSetup(userId: string, data: { name: string;
     const userRef = db.collection('users').doc(userId);
     
     const userSnap = await userRef.get();
-    if (!userSnap.exists()) {
+    if (!userSnap.exists) {
       throw new Error("User not found during setup completion.");
     }
+    const existingData = userSnap.data() as User;
     
     const isCompany = data.providerType === 'company';
+    const activeCredicoraLevels = isCompany ? credicoraCompanyLevels : credicoraLevels;
+    const initialCredicoraLevel = activeCredicoraLevels['1'];
     
     const dataToUpdate: Partial<User> = {
       name: data.name,
@@ -92,8 +94,11 @@ export async function completeInitialSetup(userId: string, data: { name: string;
       country: data.country,
       isInitialSetupComplete: true,
       type: isCompany ? 'provider' : data.type,
+      credicoraLevel: initialCredicoraLevel.level,
+      credicoraLimit: initialCredicoraLevel.creditLimit,
+      credicoraDetails: initialCredicoraLevel,
       profileSetupData: {
-        ...(userSnap.data()?.profileSetupData || {}),
+        ...(existingData.profileSetupData || {}),
         providerType: data.providerType,
       }
     };
