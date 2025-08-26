@@ -10,7 +10,6 @@ import { cookies } from 'next/headers';
 import type { User as FirebaseUserType } from 'firebase-admin/auth';
 import type { FirebaseUserInput, User } from '@/lib/types';
 import { getOrCreateUserFlow } from '@/ai/flows/auth-flow';
-import { AppRouter } from '@/components/AppRouter';
 
 export const metadata: Metadata = {
   title: 'corabO.app',
@@ -68,11 +67,9 @@ export default async function RootLayout({
         <Providers attribute="class" defaultTheme="system" enableSystem>
           <AuthProvider serverFirebaseUser={serverFirebaseUser}>
             <CoraboProvider initialCoraboUser={initialCoraboUser}>
-              <AppRouter>
-                 <AppLayout>
-                  {children}
-                </AppLayout>
-              </AppRouter>
+               <AppLayout>
+                {children}
+              </AppLayout>
             </CoraboProvider>
           </AuthProvider>
         </Providers>
