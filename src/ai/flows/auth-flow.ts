@@ -1,4 +1,3 @@
-'use server';
 /**
  * @fileOverview Authentication flow for creating and managing users.
  */

@@ -1,4 +1,3 @@
-'use server';
 /**
  * @fileOverview Flows for managing delivery provider assignment.
  */

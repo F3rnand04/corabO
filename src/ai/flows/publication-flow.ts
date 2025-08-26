@@ -1,4 +1,3 @@
-'use server';
 /**
  * @fileOverview Flows for creating and managing publications and products securely on the backend.
  */

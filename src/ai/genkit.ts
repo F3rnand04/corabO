@@ -1,4 +1,3 @@
-'use server';
 /**
  * @fileOverview Central Genkit initialization.
  * This file is the single source of truth for the Genkit `ai` instance.

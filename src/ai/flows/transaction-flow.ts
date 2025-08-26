@@ -1,4 +1,3 @@
-'use server';
 /**
  * @fileOverview Transaction management flows.
  */

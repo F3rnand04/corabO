@@ -1,4 +1,3 @@
-'use server';
 /**
  * @fileOverview A flow for calculating directions and estimated time of arrival (ETA).
  */

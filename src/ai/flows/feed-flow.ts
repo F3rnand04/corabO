@@ -1,4 +1,3 @@
-'use server';
 /**
  * @fileOverview A feed generation flow for fetching publications.
  *

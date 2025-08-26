@@ -1,4 +1,3 @@
-'use server';
 /**
  * @fileOverview A notification management flow.
  * - sendNotification: Creates a notification document in Firestore.

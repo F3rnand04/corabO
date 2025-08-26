@@ -1,4 +1,3 @@
-'use server';
 /**
  * @fileOverview A flow for managing SMS verification codes, including sending the SMS.
  */

@@ -1,4 +1,3 @@
-'use server';
 /**
  * @fileOverview Message and proposal management flows.
  *
