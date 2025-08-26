@@ -4,6 +4,7 @@
  */
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
+import {firebase} from '@genkit-ai/firebase';
 import { getFirebaseAdmin } from '@/lib/firebase-server';
 
 // Initialize Firebase Admin SDK through our centralized function
@@ -17,7 +18,7 @@ getFirebaseAdmin();
 export const ai = genkit({
   plugins: [
     googleAI(),
-    // firebase(), // DO NOT RE-ENABLE THIS.
+    firebase(), // DO NOT RE-ENABLE THIS.
   ],
   logLevel: 'debug',
   enableTracingAndMetrics: false,
