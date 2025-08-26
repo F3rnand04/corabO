@@ -1,5 +1,8 @@
 'use server';
 
+import { getFirebaseAdmin } from '@/lib/firebase-server';
+getFirebaseAdmin(); // Ensure Firebase is initialized
+
 import type { CreateCampaignInput } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 

@@ -1,6 +1,8 @@
 'use server';
 
-// import { sendMessageFlow, acceptProposalFlow } from '@/ai/flows/message-flow';
+import { getFirebaseAdmin } from '@/lib/firebase-server';
+getFirebaseAdmin(); // Ensure Firebase is initialized
+
 import { revalidatePath } from 'next/cache';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import type { Conversation, Message, Transaction } from '@/lib/types';

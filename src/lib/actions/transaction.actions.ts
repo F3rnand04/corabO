@@ -1,26 +1,8 @@
 'use server';
 
-/*
-import {
-    createAppointmentRequestFlow,
-    acceptAppointmentFlow,
-    acceptQuoteFlow,
-    checkoutFlow,
-    completeWorkFlow,
-    confirmPaymentReceivedFlow,
-    confirmWorkReceivedFlow,
-    downloadTransactionsPDFFlow,
-    payCommitmentFlow,
-    processDirectPaymentFlow,
-    sendQuoteFlow,
-    startDisputeFlow,
-    cancelSystemTransactionFlow,
-} from '@/ai/flows/transaction-flow';
-import { 
-    findDeliveryProviderFlow, 
-    resolveDeliveryAsPickupFlow 
-} from '@/ai/flows/delivery-flow';
-*/
+import { getFirebaseAdmin } from '@/lib/firebase-server';
+getFirebaseAdmin(); // Ensure Firebase is initialized
+
 import { revalidatePath } from 'next/cache';
 import type { AppointmentRequest, Transaction, User } from '@/lib/types';
 

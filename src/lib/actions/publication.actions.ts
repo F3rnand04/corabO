@@ -1,16 +1,8 @@
 'use server';
 
-/*
-import { 
-    createPublicationFlow, 
-    createProductFlow,
-    addCommentToImageFlow,
-    removeCommentFromImageFlow,
-    updateGalleryImageFlow,
-    removeGalleryImageFlow
-} from '@/ai/flows/publication-flow';
-import { sendNewContentNotificationFlow } from '@/ai/flows/notification-flow';
-*/
+import { getFirebaseAdmin } from '@/lib/firebase-server';
+getFirebaseAdmin(); // Ensure Firebase is initialized
+
 import type { CreatePublicationInput, CreateProductInput, User } from '@/lib/types';
 import { getFirestore } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';

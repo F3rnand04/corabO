@@ -1,13 +1,8 @@
 'use server';
-/*
-import { 
-    requestAffiliationFlow,
-    approveAffiliationFlow,
-    rejectAffiliationFlow,
-    revokeAffiliationFlow
-} from '@/ai/flows/affiliation-flow';
-import { sendNotification } from '@/ai/flows/notification-flow';
-*/
+
+import { getFirebaseAdmin } from '@/lib/firebase-server';
+getFirebaseAdmin(); // Ensure Firebase is initialized
+
 import { revalidatePath } from 'next/cache';
 
 const requestAffiliationFlow = async (data: any) => console.warn("Genkit flow 'requestAffiliationFlow' is disabled.");

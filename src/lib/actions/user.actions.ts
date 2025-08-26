@@ -1,5 +1,8 @@
 'use server';
 
+import { getFirebaseAdmin } from '@/lib/firebase-server';
+getFirebaseAdmin(); // Ensure Firebase is initialized
+
 import { revalidatePath } from 'next/cache';
 import type { FirebaseUserInput, ProfileSetupData, User, VerificationOutput } from '@/lib/types';
 import { 

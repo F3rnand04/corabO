@@ -1,10 +1,8 @@
 'use server';
-/*
-import { 
-    findDeliveryProviderFlow, 
-    resolveDeliveryAsPickupFlow 
-} from '@/ai/flows/delivery-flow';
-*/
+
+import { getFirebaseAdmin } from '@/lib/firebase-server';
+getFirebaseAdmin(); // Ensure Firebase is initialized
+
 import { revalidatePath } from 'next/cache';
 
 const findDeliveryProviderFlow = async (data: any) => console.warn("Genkit flow 'findDeliveryProviderFlow' is disabled.");

@@ -1,14 +1,11 @@
 'use server';
 
+import { getFirebaseAdmin } from '@/lib/firebase-server';
+getFirebaseAdmin(); // Ensure Firebase is initialized
+
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
-/*
-import {
-  createCashierBoxFlow,
-  regenerateCashierQrFlow,
-} from '@/ai/flows/cashier-flow';
-import { sendNotification } from '@/ai/flows/notification-flow';
-*/
+
 
 const createCashierBoxFlow = async (data: any) => { console.warn("Genkit flow 'createCashierBoxFlow' is disabled."); return { id: '', name: '', passwordHash: '', qrValue: '' }; };
 const regenerateCashierQrFlow = async (data: any) => { console.warn("Genkit flow 'regenerateCashierQrFlow' is disabled."); return { qrValue: '', qrDataURL: '' }; };

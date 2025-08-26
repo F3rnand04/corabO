@@ -1,6 +1,8 @@
 'use server';
 
-// import { updateCartFlow } from '@/ai/flows/cart-flow';
+import { getFirebaseAdmin } from '@/lib/firebase-server';
+getFirebaseAdmin(); // Ensure Firebase is initialized
+
 import { revalidatePath } from 'next/cache';
 
 const updateCartFlow = async (data: any) => console.warn("Genkit flow 'updateCartFlow' is disabled.");
