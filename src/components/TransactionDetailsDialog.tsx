@@ -25,7 +25,8 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription as AlertDialogAlertDescription } from './ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { sendQuote, confirmPaymentReceived, completeWork, acceptAppointment, startDispute, cancelSystemTransaction, downloadTransactionsPDF, confirmWorkReceived, payCommitment, retryFindDelivery, assignOwnDelivery, resolveDeliveryAsPickup } from '@/lib/actions/transaction.actions';
+import { sendQuote, confirmPaymentReceived, completeWork, acceptAppointment, startDispute, cancelSystemTransaction, downloadTransactionsPDF, confirmWorkReceived, payCommitment } from '@/lib/actions/transaction.actions';
+import { retryFindDelivery, assignOwnDelivery, resolveDeliveryAsPickup } from '@/lib/actions/delivery.actions';
 
 
 // --- Sub-components for Actions ---
@@ -124,10 +125,7 @@ function ClientActions({ tx, onAction }: { tx: Transaction; onAction: () => void
     setIsSubmittingPayment(true);
     let voucherUrl = 'https://i.postimg.cc/L8y2zWc2/vzla-id.png'; // Placeholder
     
-    await payCommitment({
-      transactionId: tx.id, userId: currentUser.id, 
-      paymentDetails: { paymentMethod, paymentReference, paymentVoucherUrl: voucherUrl }
-    });
+    await payCommitment(tx.id, currentUser.id, { paymentMethod, paymentReference, paymentVoucherUrl: voucherUrl });
     setIsSubmittingPayment(false);
     onAction();
   };

@@ -16,7 +16,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
-import * as Actions from '@/lib/actions';
+import { updateCart } from '@/lib/actions/cart.actions';
+import { sendMessage } from '@/lib/actions/messaging.actions';
 
 
 interface PublicationCardProps {
@@ -125,14 +126,14 @@ export function PublicationCard({ publication, className }: PublicationCardProps
             });
             return;
         }
-        Actions.updateCart(currentUser.id, publication.id, 1);
+        updateCart(currentUser.id, publication.id, 1);
         toast({ title: "Producto añadido", description: `${'\'\'\''}${productDetails.name} fue añadido a tu carrito.` });
     };
     
     const handleContact = () => {
       if (!currentUser) return;
       const conversationId = [currentUser.id, owner.id].sort().join('-');
-      Actions.sendMessage({ 
+      sendMessage({ 
           senderId: currentUser.id,
           recipientId: owner.id, 
           conversationId: conversationId,

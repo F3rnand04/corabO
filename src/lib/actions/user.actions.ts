@@ -14,6 +14,7 @@ import { revalidatePath } from 'next/cache';
 import type { FirebaseUserInput, ProfileSetupData, User, VerificationOutput } from '@/lib/types';
 import { autoVerifyIdWithAIFlow } from '@/ai/flows/verification-flow';
 import { sendWelcomeToProviderNotificationFlow } from '@/ai/flows/notification-flow';
+import { createTransactionFlow } from '@/ai/flows/transaction-flow';
 
 export async function getOrCreateUser(firebaseUser: FirebaseUserInput): Promise<User> {
     const user = await getOrCreateUserFlow(firebaseUser);
@@ -96,10 +97,23 @@ export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput
 }
 
 export async function subscribeUser(userId: string, planName: string, amount: number) {
-    // In a real app, this would create a subscription record and initiate a payment flow.
-    // For now, it just revalidates the path to reflect UI changes.
-    console.log(`User ${userId} subscribing to ${planName} for $${amount}`);
-    revalidatePath('/profile');
+    // This creates a system transaction that needs to be paid.
+    await createTransactionFlow({
+        type: 'Sistema',
+        status: 'Finalizado - Pendiente de Pago',
+        date: new Date().toISOString(),
+        amount: amount,
+        clientId: userId,
+        providerId: 'corabo-admin', // System as provider
+        participantIds: [userId, 'corabo-admin'],
+        details: {
+            system: `Suscripción: ${planName}`,
+            isSubscription: true,
+        }
+    });
+
+    revalidatePath('/transactions');
+    revalidatePath('/payment', 'layout'); // Navigate to payment page layout
 }
 
 export async function deactivateTransactions(userId: string) {
