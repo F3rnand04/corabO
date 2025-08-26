@@ -4,17 +4,10 @@ import { getFirebaseAdmin } from '@/lib/firebase-server';
 getFirebaseAdmin(); // Ensure Firebase is initialized
 
 import { revalidatePath } from 'next/cache';
-import type { FirebaseUserInput, ProfileSetupData, User, VerificationOutput } from '@/lib/types';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import type { FirebaseUserInput, ProfileSetupData, User } from '@/lib/types';
+import { getFirestore } from 'firebase-admin/firestore';
 import { getOrCreateUserFlow } from '@/ai/flows/auth-flow';
 import { credicoraCompanyLevels, credicoraLevels } from '@/lib/types';
-
-const sendSmsVerificationCodeFlow = async (data: any) => console.warn("Genkit flow 'sendSmsVerificationCodeFlow' is disabled.");
-const verifySmsCodeFlow = async (data: any) => { console.warn("Genkit flow 'verifySmsCodeFlow' is disabled."); return { success: false, message: 'Flow disabled' }; };
-const autoVerifyIdWithAIFlow = async (data: any) => { console.warn("Genkit flow 'autoVerifyIdWithAIFlow' is disabled."); return { nameMatch: false, idMatch: false, extractedId: '', extractedName: '' }; };
-const sendWelcomeToProviderNotificationFlow = async (data: any) => console.warn("Genkit flow 'sendWelcomeToProviderNotificationFlow' is disabled.");
-const createTransactionFlow = async (data: any) => console.warn("Genkit flow 'createTransactionFlow' is disabled.");
-const checkIdUniquenessFlow = async (data: any) => { console.warn("Genkit flow 'checkIdUniquenessFlow' is disabled."); return true;};
 
 
 // --- Exported Actions ---
@@ -39,11 +32,15 @@ export async function updateUserProfileImage(userId: string, dataUrl: string) {
 }
 
 export async function updateFullProfile(userId: string, formData: ProfileSetupData, userType: User['type']) {
-    const updates = { 'profileSetupData': formData, 'isTransactionsActive': true, 'type': userType };
-    await updateUser(userId, updates);
-    if(userType === 'provider' || userType === 'repartidor') {
-        await sendWelcomeToProviderNotificationFlow({ userId });
-    }
+    // Placeholder function, logic is not implemented as Genkit is disabled.
+    console.log("updateFullProfile action called, but Genkit is disabled.");
+    // In a real scenario, this would likely call a Genkit flow.
+    // For now, let's just update the user with the provided data.
+     await updateUser(userId, { 
+        'profileSetupData': formData, 
+        'isTransactionsActive': true, 
+        'type': userType 
+    });
     revalidatePath('/profile');
     revalidatePath(`/companies/${userId}`);
 }
@@ -69,10 +66,12 @@ export async function deleteUser(userId: string) {
 }
 
 export async function checkIdUniqueness(input: { idNumber: string; country: string; currentUserId: string; }): Promise<boolean> {
-    return await checkIdUniquenessFlow(input);
+    // Placeholder function, logic is not implemented as Genkit is disabled.
+    console.warn("checkIdUniqueness action called, but Genkit is disabled.");
+    return true; // Assume unique for now
 }
 
-export async function completeInitialSetup(userId: string, data: { name: string; lastName: string; idNumber: string; birthDate: string; country: string; type: User['type'], providerType: ProfileSetupData['providerType'] }): Promise<User | null> {
+export async function completeInitialSetup(userId: string, data: { name: string; lastName: string; idNumber: string; birthDate: string; country: string; type: User['type'], providerType: ProfileSetupData['providerType'] }): Promise<User> {
     const db = getFirestore();
     const userRef = db.collection('users').doc(userId);
     
@@ -106,44 +105,30 @@ export async function completeInitialSetup(userId: string, data: { name: string;
     await userRef.update(dataToUpdate);
 
     const updatedUserDoc = await userRef.get();
+    revalidatePath('/'); // Revalidate the home page to reflect login status
     return updatedUserDoc.data() as User;
 }
 
 export async function sendSmsVerification(userId: string, phoneNumber: string) {
-    await sendSmsVerificationCodeFlow({ userId, phoneNumber });
+    // Placeholder function, logic is not implemented as Genkit is disabled.
+    console.warn("sendSmsVerification action called, but Genkit is disabled.");
 }
 
 export async function verifySmsCode(userId: string, code: string): Promise<{ success: boolean; message: string; }> {
-    const result = await verifySmsCodeFlow({ userId, code });
-    if(result.success) {
-        revalidatePath('/contacts');
-    }
-    return result;
+    // Placeholder function, logic is not implemented as Genkit is disabled.
+    console.warn("verifySmsCode action called, but Genkit is disabled.");
+    return { success: false, message: "Verification flow is disabled." };
 }
 
-export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput | { error: string }> {
-    if (!user.idDocumentUrl || !user.name || !user.idNumber) {
-        return { error: "Missing required user data for verification." };
-    }
-    const result = await autoVerifyIdWithAIFlow({
-        userId: user.id,
-        nameInRecord: `${user.name} ${user.lastName || ''}`.trim(),
-        idInRecord: user.idNumber,
-        documentImageUrl: user.idDocumentUrl,
-        isCompany: user.profileSetupData?.providerType === 'company',
-    });
-    return result;
+export async function autoVerifyIdWithAI(user: User): Promise<any> {
+    // Placeholder function, logic is not implemented as Genkit is disabled.
+    console.warn("autoVerifyIdWithAI action called, but Genkit is disabled.");
+    return { error: "AI Verification is disabled." };
 }
 
 export async function subscribeUser(userId: string, planName: string, amount: number) {
-    await createTransactionFlow({
-        type: 'Sistema', status: 'Finalizado - Pendiente de Pago',
-        date: new Date().toISOString(), amount: amount, clientId: userId,
-        providerId: 'corabo-admin', participantIds: [userId, 'corabo-admin'],
-        details: { system: `Suscripción: ${planName}`, isSubscription: true }
-    });
-    revalidatePath('/transactions');
-    revalidatePath('/payment', 'layout');
+    // Placeholder function, logic is not implemented as Genkit is disabled.
+    console.warn("subscribeUser action called, but Genkit is disabled.");
 }
 
 export async function deactivateTransactions(userId: string) {

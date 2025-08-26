@@ -86,7 +86,7 @@ export default function InitialSetupPage() {
             if (newAttemptCount >= MAX_ATTEMPTS) {
                 toast({
                     variant: 'destructive',
-                    title: `Demasiados Intentos Fallidos (${'\'\'\''}${MAX_ATTEMPTS})`,
+                    title: `Demasiados Intentos Fallidos (${MAX_ATTEMPTS})`,
                     description: 'Su documento ya está en uso. Será redirigido al inicio de sesión para proteger su cuenta y la de otros usuarios.',
                     duration: 5000,
                 });
@@ -94,7 +94,8 @@ export default function InitialSetupPage() {
                     logout();
                 }, 5000);
             }
-            return; // Stop submission
+            setIsSubmitting(false); // Stop submission but don't clear form
+            return; 
         }
         
         const updatedUser = await completeInitialSetup(
@@ -110,9 +111,8 @@ export default function InitialSetupPage() {
           }
         );
         
-        if (updatedUser) {
-            setCurrentUser(updatedUser as User);
-        }
+        // ** THE FIX **: Update client state before redirecting
+        setCurrentUser(updatedUser);
 
         toast({ title: "Perfil Guardado", description: "Tus datos han sido guardados correctamente."});
         
@@ -126,7 +126,10 @@ export default function InitialSetupPage() {
             description: 'No se pudo guardar tu información. Inténtalo de nuevo.'
         });
     } finally {
-        setIsSubmitting(false);
+        // This will now only be set to false if the operation was successful or had a non-ID related error
+        if (idInUseError === false) {
+           setIsSubmitting(false);
+        }
     }
   };
 
@@ -134,7 +137,7 @@ export default function InitialSetupPage() {
     if(!firebaseUser) return;
     const conversationId = [firebaseUser.uid, 'corabo-admin'].sort().join('-');
     sendMessage({ recipientId: 'corabo-admin', text: "Hola, mi número de documento de identidad ya está en uso y necesito ayuda para verificar mi cuenta.", conversationId, senderId: firebaseUser.uid });
-    router.push(`/messages/${'\'\'\''}${conversationId}`);
+    router.push(`/messages/${conversationId}`);
   };
 
   if (!firebaseUser) {
@@ -214,7 +217,7 @@ export default function InitialSetupPage() {
         )}
         <div className="space-y-2">
           <Label htmlFor="idNumber">{idLabel}</Label>
-          <Input id="idNumber" placeholder={`Tu ${'\'\'\''}${idLabel}`} value={idNumber} onChange={(e) => setIdNumber(e.target.value)} />
+          <Input id="idNumber" placeholder={`Tu ${idLabel}`} value={idNumber} onChange={(e) => setIdNumber(e.target.value)} />
         </div>
         
         <div className="flex items-center space-x-2 pt-4">
