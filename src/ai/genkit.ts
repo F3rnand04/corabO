@@ -4,8 +4,13 @@
  */
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
+import { getFirebaseAdmin } from '@/lib/firebase-server';
 
-// IMPORTANT: The firebase() plugin has been removed to resolve a critical
+// Initialize Firebase Admin SDK through our centralized function
+// This ensures it's ready before any flows that might use it are defined.
+getFirebaseAdmin();
+
+// IMPORTANT: The firebase() plugin is intentionally REMOVED to resolve a critical
 // server-side authentication issue where multiple initializations were
 // conflicting. The application will now rely on a single, manual Firebase
 // Admin SDK initialization managed by `firebase-server.ts`.

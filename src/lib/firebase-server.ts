@@ -10,13 +10,8 @@ let app: App;
 
 // This function ensures a single instance of the Firebase Admin app is initialized and reused.
 function getFirebaseAdminApp(): App {
-  if (app) {
-    return app;
-  }
-  
   if (getApps().length) {
-    app = getApp();
-    return app;
+    return getApp();
   }
   
   app = initializeApp({
