@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getAuthInstance } from '@/lib/firebase';
-import { signInAnonymously, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { signInAnonymously, GoogleAuthProvider, signInWithRedirect } from 'firebase/auth';
 
 export default function LoginPage() {
   const { isLoadingAuth } = useAuth();
@@ -31,9 +31,9 @@ export default function LoginPage() {
     const auth = getAuthInstance();
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
-      // The onAuthStateChanged listener in AuthProvider will handle the redirect.
-      toast({ title: '¡Bienvenido!', description: 'Has iniciado sesión con Google.' });
+      // Use signInWithRedirect instead of signInWithPopup
+      await signInWithRedirect(auth, provider);
+      // After redirect, onAuthStateChanged in AuthProvider will detect the session.
     } catch (error: any) {
       console.error(error);
       toast({ variant: 'destructive', title: 'Error de Inicio de Sesión', description: error.message });
