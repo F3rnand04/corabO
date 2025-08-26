@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MapPin, FileText, Menu, Search, LogOut, User, Wallet, History as HistoryIcon, Shield, HelpCircle, Contact, ShoppingCart, ChevronDown, KeyRound } from "lucide-react";
+import { MapPin, FileText, Menu, Search, LogOut, User, Wallet, History as HistoryIcon, Shield, HelpCircle, Contact, ShoppingCart, ChevronDown, KeyRound, LogInIcon } from "lucide-react";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useRouter } from "next/navigation";
@@ -55,8 +55,12 @@ export function Header() {
     return (
         <header className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b">
             <div className="container px-4 sm:px-6">
-                <div className="flex h-16 items-center justify-center gap-4">
+                <div className="flex h-16 items-center justify-between">
                     <Image src="https://i.postimg.cc/8zWvkhxS/Sin-t-tulo-3.png" alt="Corabo Logo" width={120} height={40} className="h-10 w-auto" />
+                    <Button onClick={() => router.push('/login')}>
+                      <LogInIcon className="mr-2 h-4 w-4" />
+                      Iniciar Sesión
+                    </Button>
                 </div>
             </div>
         </header>

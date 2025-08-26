@@ -161,7 +161,8 @@ export default function InitialSetupPage() {
                 src="https://i.postimg.cc/Wz1MTvWK/lg.png"
                 alt="Corabo logo"
                 fill
-                style={{objectFit: 'contain'}}
+                priority
+                className="object-contain"
             />
         </div>
         <CardTitle className="text-2xl">¡Bienvenido a Corabo!</CardTitle>
