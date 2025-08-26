@@ -4,7 +4,7 @@
  * This file is the single source of truth for the Genkit `ai` instance.
  */
 
-import { genkit } from '@genkit-ai/core';
+import { genkit, configureGenkit } from '@genkit-ai/core';
 import { firebase } from '@genkit-ai/firebase';
 import { googleAI } from '@genkit-ai/googleai';
 
@@ -13,10 +13,12 @@ import { getFirebaseAdmin } from '@/lib/firebase-server';
 getFirebaseAdmin();
 
 
-export const ai = genkit({
+configureGenkit({
   plugins: [
     firebase,
     googleAI(),
   ],
   enableTracingAndMetrics: false,
 });
+
+export { genkit as ai };
