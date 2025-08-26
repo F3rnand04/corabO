@@ -10,7 +10,7 @@ export async function getOrCreateUserFlow(firebaseUser: FirebaseUserInput): Prom
     const userRef = db.collection('users').doc(firebaseUser.uid);
     const userSnap = await userRef.get();
 
-    if (userSnap.exists()) {
+    if (userSnap.exists) {
       return userSnap.data() as User;
     }
 
