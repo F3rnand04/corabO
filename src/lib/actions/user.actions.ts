@@ -5,54 +5,45 @@ getFirebaseAdmin(); // Ensure Firebase is initialized
 
 import { revalidatePath } from 'next/cache';
 import type { FirebaseUserInput, ProfileSetupData, User, VerificationOutput } from '@/lib/types';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 
-// Correctly importing the single flow from the refactored auth-flow
+// Genkit flows are temporarily disabled. Using direct DB logic.
 import { getOrCreateUserFlow } from '@/ai/flows/auth-flow'; 
 
-// Removed the direct DB logic from here to respect the architecture.
-// Flows that are not being used immediately are commented out to prevent compilation errors.
-import { 
-    // getOrCreateUserFlow, 
-    completeInitialSetupFlow, 
-    checkIdUniquenessFlow, 
-    updateUserFlow,
-    toggleGpsFlow,
-    deleteUserFlow
-} from '@/ai/flows/profile-flow';
-
-// --- Placeholder flows ---
 const sendSmsVerificationCodeFlow = async (data: any) => console.warn("Genkit flow 'sendSmsVerificationCodeFlow' is disabled.");
 const verifySmsCodeFlow = async (data: any) => { console.warn("Genkit flow 'verifySmsCodeFlow' is disabled."); return { success: false, message: 'Flow disabled' }; };
 const autoVerifyIdWithAIFlow = async (data: any) => { console.warn("Genkit flow 'autoVerifyIdWithAIFlow' is disabled."); return { nameMatch: false, idMatch: false, extractedId: '', extractedName: '' }; };
 const sendWelcomeToProviderNotificationFlow = async (data: any) => console.warn("Genkit flow 'sendWelcomeToProviderNotificationFlow' is disabled.");
 const createTransactionFlow = async (data: any) => console.warn("Genkit flow 'createTransactionFlow' is disabled.");
+const completeInitialSetupFlow = async (data: any) => { console.warn("Genkit flow 'completeInitialSetupFlow' is disabled."); return null;};
+const checkIdUniquenessFlow = async (data: any) => { console.warn("Genkit flow 'checkIdUniquenessFlow' is disabled."); return true;};
+const toggleGpsFlow = async (data: any) => console.warn("Genkit flow 'toggleGpsFlow' is disabled.");
 
 
 // --- Exported Actions ---
 
 export async function getOrCreateUser(firebaseUser: FirebaseUserInput): Promise<User> {
-    // This action now correctly calls the single, dedicated flow for user creation/retrieval.
     const user = await getOrCreateUserFlow(firebaseUser);
-    revalidatePath('/'); // Revalidate the home page to reflect login state
+    revalidatePath('/'); 
     return user;
 }
 
-
 export async function updateUser(userId: string, updates: Partial<User> | { [key: string]: any }) {
-    await updateUserFlow({ userId, updates });
+    const db = getFirestore();
+    await db.collection('users').doc(userId).update(updates);
     revalidatePath('/profile');
     revalidatePath(`/companies/${userId}`);
 }
 
 export async function updateUserProfileImage(userId: string, dataUrl: string) {
-    await updateUserFlow({ userId, updates: { profileImage: dataUrl }});
+    await updateUser(userId, { profileImage: dataUrl });
     revalidatePath('/profile');
     revalidatePath(`/companies/${userId}`);
 }
 
 export async function updateFullProfile(userId: string, formData: ProfileSetupData, userType: User['type']) {
     const updates = { 'profileSetupData': formData, 'isTransactionsActive': true, 'type': userType };
-    await updateUserFlow({ userId, updates });
+    await updateUser(userId, updates);
     if(userType === 'provider' || userType === 'repartidor') {
         await sendWelcomeToProviderNotificationFlow({ userId });
     }
@@ -62,14 +53,21 @@ export async function updateFullProfile(userId: string, formData: ProfileSetupDa
 
 
 export async function toggleGps(userId: string) {
-    await toggleGpsFlow({ userId });
+    const db = getFirestore();
+    const userRef = db.collection('users').doc(userId);
+    const userSnap = await userRef.get();
+    if (userSnap.exists()) {
+        const currentStatus = (userSnap.data() as User).isGpsActive;
+        await userRef.update({ isGpsActive: !currentStatus });
+    }
     revalidatePath('/');
     revalidatePath('/profile');
     revalidatePath(`/companies/${userId}`);
 }
 
 export async function deleteUser(userId: string) {
-    await deleteUserFlow({ userId });
+    const db = getFirestore();
+    await db.collection('users').doc(userId).delete();
     revalidatePath('/admin');
 }
 
@@ -78,9 +76,34 @@ export async function checkIdUniqueness(input: { idNumber: string; country: stri
 }
 
 export async function completeInitialSetup(userId: string, data: { name: string; lastName: string; idNumber: string; birthDate: string; country: string; type: User['type'], providerType: ProfileSetupData['providerType'] }): Promise<User | null> {
-    const user = await completeInitialSetupFlow({ userId, ...data });
-    revalidatePath('/');
-    return user;
+    const db = getFirestore();
+    const userRef = db.collection('users').doc(userId);
+    
+    const userSnap = await userRef.get();
+    if (!userSnap.exists()) {
+      throw new Error("User not found during setup completion.");
+    }
+    
+    const isCompany = data.providerType === 'company';
+    
+    const dataToUpdate: Partial<User> = {
+      name: data.name,
+      lastName: data.lastName,
+      idNumber: data.idNumber,
+      birthDate: data.birthDate,
+      country: data.country,
+      isInitialSetupComplete: true,
+      type: isCompany ? 'provider' : data.type,
+      profileSetupData: {
+        ...(userSnap.data()?.profileSetupData || {}),
+        providerType: data.providerType,
+      }
+    };
+
+    await userRef.update(dataToUpdate);
+
+    const updatedUserDoc = await userRef.get();
+    return updatedUserDoc.data() as User;
 }
 
 export async function sendSmsVerification(userId: string, phoneNumber: string) {
@@ -121,7 +144,7 @@ export async function subscribeUser(userId: string, planName: string, amount: nu
 }
 
 export async function deactivateTransactions(userId: string) {
-    await updateUserFlow({ userId, updates: { isTransactionsActive: false } });
+    await updateUser(userId, { isTransactionsActive: false });
     revalidatePath('/transactions/settings');
     revalidatePath('/profile');
 }

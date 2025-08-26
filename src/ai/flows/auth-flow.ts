@@ -2,19 +2,14 @@
  * @fileOverview Authentication flow for creating and managing users.
  */
 
-import { ai } from '@/ai/genkit';
+// import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestore } from 'firebase-admin/firestore';
 import type { FirebaseUserInput, User } from '@/lib/types';
 
 
-export const getOrCreateUserFlow = ai.defineFlow(
-  {
-    name: 'getOrCreateUserFlow',
-    inputSchema: z.custom<FirebaseUserInput>(),
-    outputSchema: z.custom<User>(),
-  },
-  async (firebaseUser: FirebaseUserInput) => {
+export async function getOrCreateUserFlow(firebaseUser: FirebaseUserInput): Promise<User> {
+    console.warn("Genkit flow 'getOrCreateUserFlow' is disabled. Using direct DB access.");
     const db = getFirestore();
     const userRef = db.collection('users').doc(firebaseUser.uid);
     const userSnap = await userRef.get();
@@ -23,7 +18,6 @@ export const getOrCreateUserFlow = ai.defineFlow(
       return userSnap.data() as User;
     }
 
-    // User does not exist, create a new one.
     const coraboId = `corabo${Math.floor(Math.random() * 9000) + 1000}`;
     
     const newUser: User = {
@@ -46,5 +40,4 @@ export const getOrCreateUserFlow = ai.defineFlow(
 
     await userRef.set(newUser);
     return newUser;
-  }
-);
+}
