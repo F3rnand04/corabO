@@ -474,7 +474,7 @@ export const cancelSystemTransactionFlow = ai.defineFlow(
 export const downloadTransactionsPDFFlow = ai.defineFlow(
     {
         name: 'downloadTransactionsPDFFlow',
-        inputSchema: z.array(z.any()), // Expects an array of transactions
+        inputSchema: z.array(z.custom<Transaction>()),
         outputSchema: z.string(),
     },
     async (transactions: Transaction[]) => {

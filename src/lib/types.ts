@@ -103,6 +103,7 @@ export type ProductDetails = {
     category: string;
 };
 
+export const GalleryImageSchema = z.custom<GalleryImage>();
 export type GalleryImage = {
   id: string;
   providerId: string;
@@ -545,7 +546,7 @@ export const GetFeedOutputSchema = z.object({
 });
 
 // Schemas from profile-flow
-const GalleryImageSchema = z.any();
+const GalleryImageRequestSchema = z.any();
 const ProductSchema = z.any();
 
 export const GetProfileGalleryInputSchema = z.object({
@@ -555,7 +556,7 @@ export const GetProfileGalleryInputSchema = z.object({
 });
 
 export const GetProfileGalleryOutputSchema = z.object({
-    gallery: z.array(GalleryImageSchema),
+    gallery: z.array(GalleryImageRequestSchema),
     lastVisibleDocId: z.string().optional(),
 });
 

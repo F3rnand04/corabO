@@ -6,6 +6,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { CreatePublicationInputSchema, CreateProductInputSchema, GalleryImageSchema } from '@/lib/types';
 import type { GalleryImage, User, GalleryImageComment, CreatePublicationInput, CreateProductInput } from '@/lib/types';
 
 
@@ -46,8 +47,8 @@ type RemoveGalleryImageInput = z.infer<typeof RemoveGalleryImageInputSchema>;
 export const createPublicationFlow = ai.defineFlow(
   {
     name: 'createPublicationFlow',
-    inputSchema: z.custom<CreatePublicationInput>(),
-    outputSchema: z.custom<GalleryImage>(),
+    inputSchema: CreatePublicationInputSchema,
+    outputSchema: GalleryImageSchema,
   },
   async (input: CreatePublicationInput) => {
     const db = getFirestore();
@@ -84,8 +85,8 @@ export const createPublicationFlow = ai.defineFlow(
 export const createProductFlow = ai.defineFlow(
     {
         name: 'createProductFlow',
-        inputSchema: z.custom<CreateProductInput>(),
-        outputSchema: z.custom<GalleryImage>(),
+        inputSchema: CreateProductInputSchema,
+        outputSchema: GalleryImageSchema,
     },
     async (input: CreateProductInput) => {
         const db = getFirestore();
