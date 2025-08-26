@@ -7,6 +7,9 @@ import { getAuth, type Auth } from "firebase/auth";
 import { getAnalytics, isSupported, type Analytics } from "firebase/analytics";
 import { firebaseConfig } from './firebase-config';
 
+// This file is simplified to only connect to the production Firebase services.
+// The emulator connection logic has been removed as it was causing deployment failures.
+
 let app: FirebaseApp;
 let db: Firestore;
 let auth: Auth;

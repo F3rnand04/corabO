@@ -30,8 +30,7 @@ import { createCampaign as createCampaignFlow } from '@/ai/flows/campaign-flow';
 // AUTH & USER ACTIONS
 // =================================
 
-// Note: getOrCreateUser is now a placeholder until a new auth method is implemented.
-export async function getOrCreateUser(firebaseUser: FirebaseUserInput | null): Promise<User | null> {
+export async function getOrCreateUser(firebaseUser: FirebaseUserInput): Promise<User | null> {
   if (!firebaseUser) return null;
   return getOrCreateUserFlow(firebaseUser);
 }

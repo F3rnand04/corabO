@@ -8,10 +8,25 @@ import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { getAuth, signInAnonymously } from 'firebase/auth';
 
 export default function LoginPage() {
   const { isLoadingAuth } = useAuth();
-  
+  const { toast } = useToast();
+  const router = useRouter();
+
+  const handleAnonymousLogin = async () => {
+    const auth = getAuth();
+    try {
+      await signInAnonymously(auth);
+      // The onAuthStateChanged listener in AuthProvider will handle the redirect.
+      toast({ title: '¡Bienvenido!', description: 'Has iniciado sesión como invitado.' });
+    } catch (error: any) {
+      console.error(error);
+      toast({ variant: 'destructive', title: 'Error de Inicio de Sesión', description: error.message });
+    }
+  };
+
   return (
     <div className="relative flex items-center justify-center min-h-screen bg-muted/40 p-4">
       <Image 
@@ -37,14 +52,14 @@ export default function LoginPage() {
                     className="object-contain"
                 />
             </div>
-            <CardTitle className="text-2xl">Mantenimiento</CardTitle>
+            <CardTitle className="text-2xl">Bienvenido a Corabo</CardTitle>
             <CardDescription>
-                El sistema de autenticación está siendo depurado. Por ahora, se te ha asignado un perfil de prueba para que puedas navegar la aplicación.
+                Ingresa como invitado para explorar la plataforma.
             </CardDescription>
         </CardHeader>
         <CardContent>
-             <Button size="lg" className="w-full" disabled={true}>
-              {isLoadingAuth ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Inicio de Sesión Deshabilitado'}
+             <Button size="lg" className="w-full" onClick={handleAnonymousLogin} disabled={isLoadingAuth}>
+              {isLoadingAuth ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Ingresar como Invitado'}
             </Button>
         </CardContent>
       </Card>

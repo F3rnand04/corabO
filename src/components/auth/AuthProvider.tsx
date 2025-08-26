@@ -3,6 +3,9 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import type { User as FirebaseUser } from 'firebase/auth';
+import { getAuthInstance } from '@/lib/firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { getOrCreateUser } from '@/lib/actions';
 
 interface AuthContextType {
   firebaseUser: FirebaseUser | null;
@@ -17,13 +20,41 @@ type AuthProviderProps = {
     serverFirebaseUser: FirebaseUser | null; 
 };
 
-export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps) => {
-  // This provider is now completely neutered. It does not manage auth state.
-  // It simply provides a consistent context shape to prevent the app from crashing.
+export const AuthProvider = ({ children }: AuthProviderProps) => {
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  
+  useEffect(() => {
+    const auth = getAuthInstance();
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setFirebaseUser(user);
+      if (user) {
+        // When a user signs in (including anonymously), ensure their profile exists in Firestore.
+        await getOrCreateUser({
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            phoneNumber: user.phoneNumber,
+            emailVerified: user.emailVerified,
+        });
+      }
+      setIsLoadingAuth(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const logout = async () => {
+    const auth = getAuthInstance();
+    await signOut(auth);
+    setFirebaseUser(null);
+  };
+  
   const value: AuthContextType = {
-    firebaseUser: null,
-    isLoadingAuth: false, // FORCED to false to prevent loading spinners.
-    logout: async () => { console.log("Logout no-op"); },
+    firebaseUser,
+    isLoadingAuth,
+    logout,
   };
   
   return (

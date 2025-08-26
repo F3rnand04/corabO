@@ -45,8 +45,8 @@ const CountrySelector = memo(function CountrySelector({ value, onValueChange }: 
 
 
 export default function InitialSetupPage() {
-  const { logout } = useAuth();
-  const { currentUser, setCurrentUser } = useCorabo();
+  const { logout, firebaseUser } = useAuth();
+  const { setCurrentUser } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -63,23 +63,19 @@ export default function InitialSetupPage() {
   const MAX_ATTEMPTS = 3;
 
   useEffect(() => {
-    if (currentUser) {
-      setName(currentUser.name || '');
-      setLastName(currentUser.lastName || '');
-      setCountry(currentUser.country || '');
-      if (currentUser.profileSetupData?.providerType === 'company') {
-        setIsCompany(true);
-      }
+    if (firebaseUser) {
+      setName(firebaseUser.displayName?.split(' ')[0] || '');
+      setLastName(firebaseUser.displayName?.split(' ').slice(1).join(' ') || '');
     }
-  }, [currentUser]);
+  }, [firebaseUser]);
   
   const handleSubmit = async () => {
-    if (!currentUser) return;
+    if (!firebaseUser) return;
     setIsSubmitting(true);
     setIdInUseError(false);
 
     try {
-        const isUnique = await Actions.checkIdUniqueness({ idNumber, country, currentUserId: currentUser.id });
+        const isUnique = await Actions.checkIdUniqueness({ idNumber, country, currentUserId: firebaseUser.uid });
         
         if (!isUnique) {
             setIdInUseError(true);
@@ -101,7 +97,7 @@ export default function InitialSetupPage() {
         }
         
         const updatedUser = await Actions.completeInitialSetup(
-          currentUser.id, 
+          firebaseUser.uid, 
           { 
             name, 
             lastName, 
@@ -113,7 +109,7 @@ export default function InitialSetupPage() {
           }
         );
         
-        if (updatedUser && setCurrentUser) {
+        if (updatedUser) {
             setCurrentUser(updatedUser as User);
         }
 
@@ -134,23 +130,17 @@ export default function InitialSetupPage() {
   };
 
   const handleContactSupport = () => {
-    if(!currentUser) return;
-    const conversationId = [currentUser.id, 'corabo-admin'].sort().join('-');
-    Actions.sendMessage({ recipientId: 'corabo-admin', text: "Hola, mi número de documento de identidad ya está en uso y necesito ayuda para verificar mi cuenta.", conversationId, senderId: currentUser.id });
+    if(!firebaseUser) return;
+    const conversationId = [firebaseUser.uid, 'corabo-admin'].sort().join('-');
+    Actions.sendMessage({ recipientId: 'corabo-admin', text: "Hola, mi número de documento de identidad ya está en uso y necesito ayuda para verificar mi cuenta.", conversationId, senderId: firebaseUser.uid });
     router.push(`/messages/${'\'\'\''}${conversationId}`);
   };
 
-  // Temporarily show a message because auth is disabled.
-  if (!currentUser) {
+  if (!firebaseUser) {
     return (
-        <Card className="w-full max-w-md shadow-2xl">
-           <CardHeader className="text-center">
-             <CardTitle>Página en Mantenimiento</CardTitle>
-             <CardDescription>
-               El registro de usuarios está temporalmente desactivado para depuración.
-             </CardDescription>
-           </CardHeader>
-        </Card>
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="w-8 h-8 animate-spin" />
+        </div>
     );
   }
   

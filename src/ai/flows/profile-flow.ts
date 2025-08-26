@@ -166,7 +166,8 @@ export const completeInitialSetupFlow = ai.defineFlow(
     await updateDoc(userRef, dataToUpdate as any);
 
     // Return the full, updated user object so the client can update its state
-    const updatedUser = { ...existingData, ...dataToUpdate };
+    const updatedUserDoc = await getDoc(userRef);
+    const updatedUser = updatedUserDoc.data();
     return JSON.parse(JSON.stringify(updatedUser));
   }
 );
