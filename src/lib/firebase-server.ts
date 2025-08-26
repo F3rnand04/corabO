@@ -8,11 +8,11 @@ import { firebaseConfig } from './firebase-config';
 
 // This function ensures a single instance of the Firebase Admin app is initialized and reused.
 function getFirebaseAdminApp(): App {
+  // Check if an app is already initialized. This is the key change.
   if (getApps().length) {
     return getApp();
   }
-  // When running in a Google Cloud environment (like App Hosting),
-  // the Admin SDK can automatically discover credentials.
+  // If not, initialize it. This will now only happen once, managed by genkit.ts.
   return initializeApp({
       projectId: firebaseConfig.projectId
   });
