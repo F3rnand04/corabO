@@ -17,7 +17,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "./ui/input";
 import Image from "next/image";
 import { ScrollArea } from "./ui/scroll-area";
-import * as Actions from '@/lib/actions';
+import { checkout } from '@/lib/actions/transaction.actions';
+import { updateCart } from '@/lib/actions/cart.actions';
 
 export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (open: boolean) => void }) {
     const { currentUser, users, deliveryAddress, setDeliveryAddressToCurrent, tempRecipientInfo, setTempRecipientInfo, activeCartForCheckout, setActiveCartForCheckout } = useCorabo();
@@ -67,7 +68,7 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
     
     const handleCheckout = () => {
         if(!currentUser.id) return;
-        Actions.checkout(
+        checkout(
             currentUser.id, 
             providerId, 
             deliveryMethod, 
@@ -93,7 +94,7 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
     const handleRemoveProviderCart = () => {
         if(!currentUser.id) return;
         activeCartForCheckout.forEach(item => {
-            Actions.updateCart(currentUser.id, item.product.id, 0);
+            updateCart(currentUser.id, item.product.id, 0);
         });
         onOpenChange(false);
         setActiveCartForCheckout(null);
@@ -137,9 +138,9 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
                                 <p className="text-sm text-muted-foreground">${item.product.price.toFixed(2)}</p>
                             </div>
                              <div className="flex items-center gap-1">
-                                <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => Actions.updateCart(currentUser.id, item.product.id, item.quantity - 1)}><Minus className="h-3 w-3"/></Button>
+                                <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateCart(currentUser.id, item.product.id, item.quantity - 1)}><Minus className="h-3 w-3"/></Button>
                                 <span className="font-bold text-sm w-4 text-center">{item.quantity}</span>
-                                <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => Actions.updateCart(currentUser.id, item.product.id, item.quantity + 1)}><Plus className="h-3 w-3"/></Button>
+                                <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => updateCart(currentUser.id, item.product.id, item.quantity + 1)}><Plus className="h-3 w-3"/></Button>
                             </div>
                         </div>
                     ))}

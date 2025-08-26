@@ -107,7 +107,6 @@ export default function EmprendePage() {
           imageDataUri: tempImagePreview!,
           aspectRatio: 'square', // Default for now
           type: 'image',
-          id: newPublicationId,
         });
 
         await activatePromotion(currentUser.id, { imageId: newPublicationId, promotionText, cost: promotionCost });

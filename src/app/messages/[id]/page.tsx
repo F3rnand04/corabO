@@ -21,7 +21,8 @@ import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
-import * as Actions from '@/lib/actions';
+import { createAppointmentRequest, acceptProposal } from '@/lib/actions/transaction.actions';
+import { sendMessage, markConversationAsRead } from '@/lib/actions/messaging.actions';
 
 
 function ChatHeader({ 
@@ -288,7 +289,7 @@ export default function ChatPage() {
         console.error("Conversation is missing a valid other participant.");
     }
     
-    Actions.markConversationAsRead(conversationId);
+    markConversationAsRead(conversationId);
 
   }, [conversationId, currentUser, conversation, otherParticipant?.id, users]);
 
@@ -321,7 +322,7 @@ export default function ChatPage() {
     e.preventDefault();
     if (newMessage.trim()) {
       if(!currentUser) return;
-      Actions.sendMessage({ recipientId: otherParticipant.id, text: newMessage, conversationId, senderId: currentUser.id });
+      sendMessage({ recipientId: otherParticipant.id, text: newMessage, conversationId, senderId: currentUser.id });
       setNewMessage('');
     }
   };
@@ -332,7 +333,7 @@ export default function ChatPage() {
       
       if(!currentUser) return;
 
-      Actions.createAppointmentRequest({
+      createAppointmentRequest({
           providerId: otherParticipant.id,
           clientId: currentUser.id,
           date: date.toISOString(),
@@ -340,7 +341,7 @@ export default function ChatPage() {
           amount: otherParticipant.profileSetupData?.appointmentCost || 0,
       });
 
-      Actions.sendMessage({ 
+      sendMessage({ 
           recipientId: otherParticipant.id, 
           text: `¡Hola! Me gustaría solicitar una cita para el ${formattedDate}. ¿Estás disponible?`,
           conversationId,
@@ -357,7 +358,7 @@ export default function ChatPage() {
       if(!currentUser) return;
       if (type === 'current') {
           if (currentUserLocation) {
-              Actions.sendMessage({
+              sendMessage({
                   recipientId: otherParticipant.id,
                   location: { lat: currentUserLocation.latitude, lon: currentUserLocation.longitude },
                   conversationId,
@@ -369,7 +370,7 @@ export default function ChatPage() {
       } else { // 'saved'
           if (currentUser.profileSetupData?.location) {
               const [lat, lon] = currentUser.profileSetupData.location.split(',').map(Number);
-              Actions.sendMessage({
+              sendMessage({
                   recipientId: otherParticipant.id,
                   location: { lat, lon },
                   conversationId,
@@ -383,7 +384,7 @@ export default function ChatPage() {
   
   const handleAcceptProposal = (messageId: string) => {
       if(!currentUser) return;
-      Actions.acceptProposal(conversationId, messageId, currentUser.id);
+      acceptProposal(conversationId, messageId, currentUser.id);
   }
 
   return (
@@ -417,7 +418,7 @@ export default function ChatPage() {
                   isCurrentUser={isCurrentUserMsg} 
                   onAccept={handleAcceptProposal} 
                   canAcceptProposal={canAcceptProposal} 
-                  onForwardLocation={(loc) => Actions.sendMessage({ recipientId: otherParticipant.id, location: loc, conversationId, senderId: currentUser.id })}
+                  onForwardLocation={(loc) => sendMessage({ recipientId: otherParticipant.id, location: loc, conversationId, senderId: currentUser.id })}
                 />
               )
             })}

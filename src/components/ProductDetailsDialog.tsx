@@ -20,7 +20,8 @@ import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
-import * as Actions from '@/lib/actions';
+import { updateCart } from '@/lib/actions/cart.actions';
+import { removeGalleryImage } from '@/lib/actions/publication.actions';
 
 
 interface ProductDetailsDialogProps {
@@ -61,7 +62,7 @@ export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductD
           });
           return;
       }
-      Actions.updateCart(currentUser.id, product.id, (quantityInCart || 0) + 1);
+      updateCart(currentUser.id, product.id, (quantityInCart || 0) + 1);
   }
 
   const handleUpdateQuantity = (newQuantity: number) => {
@@ -73,7 +74,7 @@ export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductD
           });
           return;
       }
-      Actions.updateCart(currentUser.id, product.id, newQuantity);
+      updateCart(currentUser.id, product.id, newQuantity);
   }
 
   const handlePostComment = () => {
@@ -112,7 +113,7 @@ export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductD
   };
 
   const handleDeleteProduct = () => {
-    Actions.removeGalleryImage(product.providerId, product.id);
+    removeGalleryImage(product.providerId, product.id);
     onOpenChange(false);
   }
 

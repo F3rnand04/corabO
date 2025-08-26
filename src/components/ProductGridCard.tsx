@@ -10,7 +10,7 @@ import type { Product } from "@/lib/types";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import * as Actions from '@/lib/actions';
+import { updateCart } from '@/lib/actions/cart.actions';
 
 interface ProductGridCardProps {
     product: Product;
@@ -45,12 +45,12 @@ export function ProductGridCard({ product, onDoubleClick }: ProductGridCardProps
             return;
         }
         if(!currentUser.id) return;
-        Actions.updateCart(currentUser.id, product.id, 1);
+        updateCart(currentUser.id, product.id, 1);
     }
     
     const handleUpdateQuantity = (newQuantity: number) => {
         if (!isTransactionReady || !currentUser.id) return;
-        Actions.updateCart(currentUser.id, product.id, newQuantity);
+        updateCart(currentUser.id, product.id, newQuantity);
     }
 
 

@@ -7,7 +7,6 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import type { GalleryImage, User, GalleryImageComment, CreatePublicationInput, CreateProductInput } from '@/lib/types';
-import { sendNewPublicationNotificationFlow } from './notification-flow';
 
 
 const AddCommentInputSchema = z.object({
@@ -48,7 +47,7 @@ export const createPublicationFlow = ai.defineFlow(
   {
     name: 'createPublicationFlow',
     inputSchema: z.custom<CreatePublicationInput>(),
-    outputSchema: z.void(),
+    outputSchema: z.custom<GalleryImage>(),
   },
   async (input: CreatePublicationInput) => {
     const db = getFirestore();
@@ -58,7 +57,6 @@ export const createPublicationFlow = ai.defineFlow(
     if (!userSnap.exists()) {
       throw new Error('User not found.');
     }
-    const user = userSnap.data() as User;
     
     const publicationId = `pub-${Date.now()}`;
 
@@ -78,13 +76,8 @@ export const createPublicationFlow = ai.defineFlow(
     const publicationRef = db.collection('publications').doc(publicationId);
     await publicationRef.set(newPublication);
     
-    if (user.verified || (user.reputation || 0) > 4.0) {
-      await sendNewPublicationNotificationFlow({
-        providerId: input.userId,
-        publicationId: publicationId,
-        publicationDescription: input.description,
-      });
-    }
+    // Return the full publication object so the action layer can decide what to do next (e.g., notify).
+    return newPublication;
   }
 );
 
@@ -92,7 +85,7 @@ export const createProductFlow = ai.defineFlow(
     {
         name: 'createProductFlow',
         inputSchema: z.custom<CreateProductInput>(),
-        outputSchema: z.string(),
+        outputSchema: z.custom<GalleryImage>(),
     },
     async (input: CreateProductInput) => {
         const db = getFirestore();
@@ -101,7 +94,6 @@ export const createProductFlow = ai.defineFlow(
         if (!userSnap.exists()) {
             throw new Error('User not found.');
         }
-        const user = userSnap.data() as User;
         
         const productId = `prod-${Date.now()}`;
         
@@ -118,22 +110,14 @@ export const createProductFlow = ai.defineFlow(
             productDetails: {
               name: input.name,
               price: input.price,
-              category: user.profileSetupData?.primaryCategory || 'General',
+              category: (userSnap.data() as User).profileSetupData?.primaryCategory || 'General',
             },
         };
         
         const productRef = db.collection('publications').doc(productId);
         await productRef.set(newProductPublication);
         
-        if (user.verified || (user.reputation || 0) > 4.0) {
-          await sendNewPublicationNotificationFlow({
-            providerId: input.userId,
-            publicationId: productId,
-            publicationDescription: `¡Nuevo producto disponible! ${input.name}`,
-          });
-        }
-
-        return productId;
+        return newProductPublication;
     }
 );
 

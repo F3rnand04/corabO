@@ -10,7 +10,7 @@ import { Card, CardContent } from "./ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Badge } from "./ui/badge";
 import { X } from "lucide-react";
-import * as Actions from '@/lib/actions';
+import { updateCart } from '@/lib/actions/cart.actions';
 
 interface MultiProviderCartProps {
     onCheckoutClick: () => void;
@@ -47,7 +47,7 @@ export function MultiProviderCart({ onCheckoutClick }: MultiProviderCartProps) {
     const handleRemoveProviderFromCart = (items: any[]) => {
         if (!currentUser?.id) return;
         items.forEach(item => {
-            Actions.updateCart(currentUser.id, item.product.id, 0);
+            updateCart(currentUser.id, item.product.id, 0);
         });
     };
 

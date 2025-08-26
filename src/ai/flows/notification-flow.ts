@@ -188,21 +188,16 @@ export const sendNewCampaignNotificationsFlow = ai.defineFlow({
 });
 
 /**
- * Notifies relevant users about a new publication from a provider.
+ * Notifies relevant users about a new publication or product from a provider.
  * This is triggered for reputable providers and sent to a targeted audience.
  */
-export const sendNewPublicationNotificationFlow = ai.defineFlow({
-    name: 'sendNewPublicationNotificationFlow',
-    inputSchema: z.object({ providerId: z.string(), publicationId: z.string(), publicationDescription: z.string() }),
+export const sendNewContentNotificationFlow = ai.defineFlow({
+    name: 'sendNewContentNotificationFlow',
+    inputSchema: z.object({ providerId: z.string(), publicationId: z.string(), publicationDescription: z.string(), providerName: z.string() }),
     outputSchema: z.void(),
-}, async ({ providerId, publicationId, publicationDescription }: { providerId: string; publicationId: string; publicationDescription: string; }) => {
+}, async ({ providerId, publicationId, publicationDescription, providerName }) => {
     const db = getFirestore();
     
-    const providerRef = db.collection('users').doc(providerId);
-    const providerSnap = await providerRef.get();
-    if (!providerSnap.exists()) return;
-    const provider = providerSnap.data() as User;
-
     const q = db.collection('users').where('contacts', 'array-contains', providerId);
     const querySnapshot = await q.get();
     const batch = db.batch();
@@ -216,9 +211,9 @@ export const sendNewPublicationNotificationFlow = ai.defineFlow({
             id: notificationId,
             userId: client.id,
             type: 'new_publication',
-            title: `📣 ${provider.name} tiene algo nuevo para ti`,
+            title: `📣 ${providerName} tiene algo nuevo para ti`,
             message: `"${publicationDescription.slice(0, 50)}..."`,
-            link: `/companies/${provider.id}`,
+            link: `/companies/${providerId}`,
             isRead: false,
             timestamp: new Date().toISOString(),
         };

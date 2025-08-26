@@ -25,7 +25,8 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertTitle, AlertDescription as AlertDialogAlertDescription } from './ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import * as Actions from '@/lib/actions';
+import { sendQuote, confirmPaymentReceived, completeWork, acceptAppointment, startDispute, cancelSystemTransaction, downloadTransactionsPDF, confirmWorkReceived, payCommitment, retryFindDelivery, assignOwnDelivery, resolveDeliveryAsPickup } from '@/lib/actions/transaction.actions';
+
 
 // --- Sub-components for Actions ---
 
@@ -38,23 +39,23 @@ function ProviderActions({ tx, onAction }: { tx: Transaction; onAction: () => vo
 
   const handleSendQuote = () => {
     if (quoteTotal > 0 && quoteBreakdown) {
-      Actions.sendQuote({ transactionId: tx.id, userId: currentUser.id, breakdown: quoteBreakdown, total: quoteTotal });
+      sendQuote({ transactionId: tx.id, userId: currentUser.id, breakdown: quoteBreakdown, total: quoteTotal });
       onAction();
     }
   };
 
   const handleConfirmPayment = (fromThirdParty: boolean) => {
-    Actions.confirmPaymentReceived({ transactionId: tx.id, userId: currentUser.id, fromThirdParty });
+    confirmPaymentReceived({ transactionId: tx.id, userId: currentUser.id, fromThirdParty });
     onAction();
   };
 
   const handleCompleteWork = () => {
-    Actions.completeWork({ transactionId: tx.id, userId: currentUser.id });
+    completeWork({ transactionId: tx.id, userId: currentUser.id });
     onAction();
   };
 
   const handleAcceptAppointment = () => {
-    Actions.acceptAppointment({transactionId: tx.id, userId: currentUser.id});
+    acceptAppointment({transactionId: tx.id, userId: currentUser.id});
     onAction();
   }
 
@@ -112,7 +113,7 @@ function ClientActions({ tx, onAction }: { tx: Transaction; onAction: () => void
 
   const handleConfirmWorkReceived = () => {
     if (rating === 0) return;
-    Actions.confirmWorkReceived({transactionId: tx.id, userId: currentUser.id, rating, comment});
+    confirmWorkReceived({transactionId: tx.id, userId: currentUser.id, rating, comment});
     setShowRatingScreen(false);
     setShowPaymentScreen(true);
     onAction();
@@ -123,7 +124,7 @@ function ClientActions({ tx, onAction }: { tx: Transaction; onAction: () => void
     setIsSubmittingPayment(true);
     let voucherUrl = 'https://i.postimg.cc/L8y2zWc2/vzla-id.png'; // Placeholder
     
-    await Actions.payCommitment({
+    await payCommitment({
       transactionId: tx.id, userId: currentUser.id, 
       paymentDetails: { paymentMethod, paymentReference, paymentVoucherUrl: voucherUrl }
     });
@@ -191,7 +192,7 @@ interface TransactionDetailsDialogProps {
 
 
 export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: TransactionDetailsDialogProps) {
-  const { currentUser, fetchUser, exchangeRate } = useCorabo();
+  const { currentUser, users, exchangeRate } = useCorabo();
   const router = useRouter();
 
   const [otherParty, setOtherParty] = useState<User | null>(null);
@@ -201,13 +202,21 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   useEffect(() => {
     if (transaction && currentUser) {
         const otherId = transaction.providerId === currentUser.id ? transaction.clientId : transaction.providerId;
-        if (otherId) fetchUser(otherId).then(setOtherParty);
-        if(transaction.details.deliveryProviderId) fetchUser(transaction.details.deliveryProviderId).then(setDeliveryProvider);
-        if (transaction.status === 'Error de Delivery - Acción Requerida') setIsDeliveryFailedDialogOpen(true);
+        if (otherId) {
+            const foundUser = users.find(u => u.id === otherId);
+            setOtherParty(foundUser || null);
+        }
+        if(transaction.details.deliveryProviderId) {
+            const foundDelivery = users.find(u => u.id === transaction.details.deliveryProviderId);
+            setDeliveryProvider(foundDelivery || null);
+        }
+        if (transaction.status === 'Error de Delivery - Acción Requerida') {
+            setIsDeliveryFailedDialogOpen(true);
+        }
     } else {
         setIsDeliveryFailedDialogOpen(false);
     }
-  }, [transaction, currentUser, fetchUser]);
+  }, [transaction, currentUser, users]);
 
   if (!transaction || !currentUser) return null;
   
@@ -261,9 +270,9 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>No se encontró un repartidor</AlertDialogTitle><AlertDialogDescription>Elige una opción para continuar.</AlertDialogDescription></AlertDialogHeader>
           <div className="flex flex-col gap-4 py-4">
-            <Button onClick={() => { Actions.retryFindDelivery({transactionId: transaction.id}); handleClose(); }}><Repeat className="mr-2 h-4 w-4"/>Volver a Intentar Búsqueda</Button>
-            <Button onClick={() => { Actions.assignOwnDelivery(transaction.id, currentUser.id); handleClose(); }} variant="outline"><Truck className="mr-2 h-4 w-4"/>Asignarme el Delivery</Button>
-            <Button onClick={() => { Actions.resolveDeliveryAsPickup({ transactionId: transaction.id }); handleClose(); }} variant="secondary"><Handshake className="mr-2 h-4 w-4"/>Convertir a Retiro en Tienda</Button>
+            <Button onClick={() => { retryFindDelivery({transactionId: transaction.id}); handleClose(); }}><Repeat className="mr-2 h-4 w-4"/>Volver a Intentar Búsqueda</Button>
+            <Button onClick={() => { assignOwnDelivery(transaction.id, currentUser.id); handleClose(); }} variant="outline"><Truck className="mr-2 h-4 w-4"/>Asignarme el Delivery</Button>
+            <Button onClick={() => { resolveDeliveryAsPickup({ transactionId: transaction.id }); handleClose(); }} variant="secondary"><Handshake className="mr-2 h-4 w-4"/>Convertir a Retiro en Tienda</Button>
           </div>
           <AlertDialogFooter><AlertDialogCancel>Cerrar</AlertDialogCancel></AlertDialogFooter>
         </AlertDialogContent>
@@ -303,9 +312,9 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
 
           <DialogFooter className="flex-wrap sm:justify-between gap-2 pt-4 border-t">
             <div className="flex gap-2">
-              {!isSystemTx && <Button variant="outline" onClick={() => Actions.startDispute(transaction.id)} disabled={transaction.status === 'En Disputa'}><ShieldAlert className="mr-2 h-4 w-4" /> Disputa</Button>}
-              {isRenewableTx && <Button variant="destructive" onClick={() => Actions.cancelSystemTransaction(transaction.id)}><XCircle className="mr-2 h-4 w-4" /> Cancelar Renovación</Button>}
-              {transaction.status === 'Pagado' && <Button variant="outline" onClick={() => Actions.downloadTransactionsPDF([transaction])}><FileText className="mr-2 h-4 w-4" /> PDF</Button>}
+              {!isSystemTx && <Button variant="outline" onClick={() => startDispute(transaction.id)} disabled={transaction.status === 'En Disputa'}><ShieldAlert className="mr-2 h-4 w-4" /> Disputa</Button>}
+              {isRenewableTx && <Button variant="destructive" onClick={() => cancelSystemTransaction(transaction.id)}><XCircle className="mr-2 h-4 w-4" /> Cancelar Renovación</Button>}
+              {transaction.status === 'Pagado' && <Button variant="outline" onClick={() => downloadTransactionsPDF([transaction])}><FileText className="mr-2 h-4 w-4" /> PDF</Button>}
             </div>
             <DialogClose asChild><Button variant="secondary">Cerrar</Button></DialogClose>
           </DialogFooter>

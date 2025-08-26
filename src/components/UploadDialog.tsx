@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useRef, ChangeEvent, useEffect } from 'react';
@@ -119,12 +117,10 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
-  if (!currentUser) return null;
-  
   const [currentView, setCurrentView] = useState<'selection' | 'upload_gallery' | 'upload_product' | 'edit'>('selection');
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && currentUser) {
         const canOfferProducts = currentUser.profileSetupData?.offerType === 'product' || currentUser.profileSetupData?.offerType === 'both';
         const canOfferServices = currentUser.profileSetupData?.offerType === 'service' || currentUser.profileSetupData?.offerType === 'both';
 
@@ -132,7 +128,7 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
         else if (canOfferProducts) setCurrentView('upload_product');
         else setCurrentView('upload_gallery');
     }
-  }, [isOpen, currentUser?.profileSetupData?.offerType]);
+  }, [isOpen, currentUser]);
 
 
   // Common state
@@ -233,7 +229,6 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
         await createPublication(publicationData);
         toast({ title: "¡Publicación Exitosa!", description: "Tu nuevo contenido ya está en tu galería." });
         handleClose();
-        router.refresh();
     } catch (error) {
         console.error("Error creating publication:", error);
         toast({ variant: "destructive", title: "Error al Publicar", description: "No se pudo crear la publicación." });
@@ -422,6 +417,8 @@ export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
             return null;
       }
   }
+
+  if (!currentUser) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>

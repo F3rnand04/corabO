@@ -1,35 +1,11 @@
 
-'use client';
-
-import { useCorabo } from "@/contexts/CoraboContext";
-import { Loader2 } from "lucide-react";
-import { ProfileHeader } from "@/components/ProfileHeader";
-import { usePathname } from "next/navigation";
-
+// This layout file is no longer needed as the profile pages are being unified.
+// It will be deleted in a future step if confirmed.
+// For now, it will just pass children through.
 export default function ProfileLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-    const { currentUser } = useCorabo();
-    const pathname = usePathname();
-
-    if (!currentUser) {
-        return (
-          <div className="flex items-center justify-center min-h-screen">
-              <Loader2 className="h-12 w-12 animate-spin text-primary" />
-          </div>
-        );
-    }
-    
-  return (
-    <div className="flex flex-col min-h-screen bg-background">
-       <div className="container mx-auto px-0 md:px-2 max-w-2xl pb-24">
-          <ProfileHeader />
-          <main className="flex-grow py-4 px-2">
-            {children}
-          </main>
-        </div>
-    </div>
-  );
+  return <>{children}</>;
 }

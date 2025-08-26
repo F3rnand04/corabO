@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useState, useEffect } from "react";
 import type { ProfileSetupData } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { Alert, AlertTitle, AlertDescription as AlertDialogAlertDescription } from "@/components/ui/alert";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { venezuelanBanks } from "@/lib/data/options";
 import Link from 'next/link';
 import { updateUser } from '@/lib/actions/user.actions';
@@ -98,9 +98,9 @@ export default function PaymentMethodsPage() {
                 <Alert>
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>Información Importante</AlertTitle>
-                    <AlertDialogAlertDescription>
+                    <AlertDescription>
                         Asegúrate de que los datos de pago que registres coincidan <strong>exactamente</strong> con los del titular de la cuenta Corabo ({currentUser.name}) para evitar problemas con la validación de transacciones.
-                    </AlertDialogAlertDescription>
+                    </AlertDescription>
                 </Alert>
 
                 <Card>

@@ -8,33 +8,77 @@ import {
     updateGalleryImageFlow,
     removeGalleryImageFlow
 } from '@/ai/flows/publication-flow';
-import type { CreatePublicationInput, CreateProductInput } from '@/lib/types';
+import { sendNewContentNotificationFlow } from '@/ai/flows/notification-flow';
+import type { CreatePublicationInput, CreateProductInput, User } from '@/lib/types';
+import { getFirestore } from 'firebase-admin/firestore';
+import { revalidatePath } from 'next/cache';
 
 
 export async function createPublication(input: CreatePublicationInput) {
-  return await createPublicationFlow(input);
+    const newPublication = await createPublicationFlow(input);
+    
+    // Asynchronously send notification without blocking the response
+    if (newPublication) {
+        const db = getFirestore();
+        const userSnap = await db.collection('users').doc(input.userId).get();
+        if (userSnap.exists()) {
+            const user = userSnap.data() as User;
+            if (user.verified || (user.reputation || 0) > 4.0) {
+                 sendNewContentNotificationFlow({
+                    providerId: input.userId,
+                    publicationId: newPublication.id,
+                    publicationDescription: newPublication.description,
+                    providerName: user.name,
+                });
+            }
+        }
+    }
+
+    revalidatePath('/profile');
+    revalidatePath(`/companies/${input.userId}`);
+    return newPublication;
 }
 
 export async function createProduct(input: CreateProductInput) {
-  return await createProductFlow(input);
+    const newProduct = await createProductFlow(input);
+
+    if (newProduct) {
+        const db = getFirestore();
+        const userSnap = await db.collection('users').doc(input.userId).get();
+        if (userSnap.exists()) {
+            const user = userSnap.data() as User;
+            if (user.verified || (user.reputation || 0) > 4.0) {
+                 sendNewContentNotificationFlow({
+                    providerId: input.userId,
+                    publicationId: newProduct.id,
+                    publicationDescription: `¡Nuevo producto disponible! ${newProduct.alt}`,
+                    providerName: user.name,
+                });
+            }
+        }
+    }
+
+    revalidatePath('/profile');
+    revalidatePath(`/companies/${input.userId}`);
+    return newProduct;
 }
 
 export async function addCommentToImage(input: {ownerId: string, imageId: string, commentText: string, author: {id: string, name: string, profileImage: string}}) {
-    // Note: ownerId is not used in the flow, but keeping it for potential future permission checks
-    return await addCommentToImageFlow({imageId: input.imageId, commentText: input.commentText, author: input.author});
+    await addCommentToImageFlow({imageId: input.imageId, commentText: input.commentText, author: input.author});
+    revalidatePath(`/companies/${input.ownerId}`);
 }
 
 export async function removeCommentFromImage(input: {ownerId: string, imageId: string, commentIndex: number}) {
-    // Note: ownerId is not used in the flow
-    return await removeCommentFromImageFlow({imageId: input.imageId, commentIndex: input.commentIndex});
+    await removeCommentFromImageFlow({imageId: input.imageId, commentIndex: input.commentIndex});
+    revalidatePath(`/companies/${input.ownerId}`);
 }
 
 export async function updateGalleryImage(input: {ownerId: string, imageId: string, updates: { description?: string, imageDataUri?: string }}) {
-    // Note: ownerId is not used in the flow
-    return await updateGalleryImageFlow({imageId: input.imageId, updates: input.updates});
+    await updateGalleryImageFlow({imageId: input.imageId, updates: input.updates});
+    revalidatePath(`/companies/${input.ownerId}`);
 }
 
 export async function removeGalleryImage(ownerId: string, imageId: string) {
-    // Note: ownerId is not used in the flow
-    return await removeGalleryImageFlow({imageId: imageId});
+    await removeGalleryImageFlow({imageId: imageId});
+    revalidatePath(`/companies/${ownerId}`);
 }
