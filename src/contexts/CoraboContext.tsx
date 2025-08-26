@@ -1,11 +1,9 @@
-
-"use client";
+'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo, useEffect } from 'react';
 import { differenceInMinutes, formatDistanceToNowStrict } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { User, CartItem, Transaction, GalleryImage, Conversation, TempRecipientInfo, FirebaseUserInput, AgreementProposal } from '@/lib/types';
-import type { User as FirebaseUser } from 'firebase/auth';
+import type { User, CartItem, Transaction, GalleryImage, Conversation, TempRecipientInfo, FirebaseUserInput, AgreementProposal, VerificationOutput } from '@/lib/types';
 import { getFirestoreDb }from '@/lib/firebase';
 import { collection, onSnapshot, query, where, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -35,7 +33,6 @@ interface CoraboContextValue {
   cart: CartItem[];
   qrSession: any;
 
-  fetchUser: (userId: string) => User | null;
   getUserMetrics: (userId: string) => {
     reputation: number;
     effectiveness: number;
@@ -56,19 +53,6 @@ interface CoraboContextValue {
   setActiveCartForCheckout: (cartItems: CartItem[] | null) => void;
   getAgendaEvents: (transactions: Transaction[]) => any[];
   setCurrentUser: (user: User | null) => void;
-  
-  // Explicitly add actions to the context type
-  logout: () => Promise<void>;
-  updateUser: (userId: string, updates: Partial<User>) => Promise<void>;
-  deactivateTransactions: (userId: string) => Promise<void>;
-  toggleGps: (userId: string) => Promise<void>;
-  sendMessage: (input: { conversationId: string; senderId: string; recipientId: string; text?: string; location?: { lat: number; lon: number; }; proposal?: AgreementProposal; }) => Promise<string>;
-  acceptProposal: (conversationId: string, messageId: string, acceptorId: string) => Promise<void>;
-  markConversationAsRead: (conversationId: string) => Promise<void>;
-  createAppointmentRequest: (data: { providerId: string; date: string; details: string; amount: number; }) => Promise<void>;
-  updateCartQuantity: (productId: string, newQuantity: number) => Promise<void>;
-  subscribeUser: (userId: string, plan: string, amount: number) => Promise<void>;
-  autoVerifyIdWithAI: (user: User) => Promise<VerificationOutput | null>;
 }
 
 export const CoraboContext = createContext<CoraboContextValue | undefined>(undefined);
@@ -78,7 +62,7 @@ interface CoraboProviderProps {
 }
 
 export const CoraboProvider = ({ children }: CoraboProviderProps) => {
-  const { firebaseUser, isLoadingAuth, logout } = useAuth();
+  const { firebaseUser, isLoadingAuth } = useAuth();
   const { toast } = useToast();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
@@ -186,8 +170,7 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
   }, [transactions]);
   
   const getCartItems = useMemo((): CartItem[] => {
-      const cartTx = transactions.find(tx => tx.status === 'Carrito Activo');
-      return cartTx?.details.items || [];
+      return transactions.filter(tx => tx.status === 'Carrito Activo').flatMap(tx => tx.details.items || []);
   }, [transactions]);
 
   const value: CoraboContextValue = {
@@ -207,21 +190,8 @@ export const CoraboProvider = ({ children }: CoraboProviderProps) => {
     setDeliveryAddress: _setDeliveryAddress,
     setDeliveryAddressToCurrent: () => {},
     getUserMetrics,
-    fetchUser: (userId: string) => users.find(u => u.id === userId) || null,
-    getDistanceToProvider: () => '5 km',
     setTempRecipientInfo: _setTempRecipientInfo,
     setActiveCartForCheckout,
-    logout,
-    updateUser: (userId: string, updates: Partial<User>) => Actions.updateUser(userId, updates),
-    deactivateTransactions: Actions.deactivateTransactions,
-    toggleGps: Actions.toggleGps,
-    sendMessage: Actions.sendMessage,
-    acceptProposal: Actions.acceptProposal,
-    markConversationAsRead: Actions.markConversationAsRead,
-    createAppointmentRequest: (data) => Actions.createAppointmentRequest({ ...data, clientId: currentUser!.id }),
-    updateCartQuantity: (productId: string, newQuantity: number) => Actions.updateCart(currentUser!.id, productId, newQuantity),
-    subscribeUser: Actions.subscribeUser,
-    autoVerifyIdWithAI: Actions.autoVerifyIdWithAI,
   };
   
   return (

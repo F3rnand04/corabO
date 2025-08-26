@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
@@ -19,14 +18,14 @@ import * as Actions from '@/lib/actions';
 function ApprovalContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { fetchUser, exchangeRate } = useCorabo();
+  const { exchangeRate, users } = useCorabo();
   const { toast } = useToast();
   
   const [provider, setProvider] = useState<User | null>(null);
   const [qrSession, setQrSession] = useState<QrSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const sessionId = searchParams.get('sessionId');
+  const sessionId = searchParams?.get('sessionId');
 
   useEffect(() => {
     if (!sessionId) {
@@ -39,10 +38,9 @@ function ApprovalContent() {
       setQrSession(session);
 
       if (session && session.providerId && !provider) {
-        fetchUser(session.providerId).then(p => {
-          setProvider(p);
-          setIsLoading(false);
-        });
+        const p = users.find(u => u.id === session.providerId)
+        setProvider(p || null);
+        setIsLoading(false);
       } else {
         setIsLoading(false);
       }
@@ -50,7 +48,7 @@ function ApprovalContent() {
 
     return () => unsub();
 
-  }, [sessionId, fetchUser, provider]);
+  }, [sessionId, users, provider]);
 
   const handleCopyAndPay = async () => {
     if (!sessionId || !provider || !provider.profileSetupData?.paymentDetails?.mobile) return;

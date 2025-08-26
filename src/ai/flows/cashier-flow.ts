@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Flows for managing cashier boxes, QR codes, and cashier sessions.

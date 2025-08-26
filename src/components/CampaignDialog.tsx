@@ -1,6 +1,4 @@
-
-
-"use client";
+'use client';
 
 import { useState, useMemo } from 'react';
 import { useCorabo } from '@/contexts/CoraboContext';
@@ -23,6 +21,7 @@ import { Badge } from './ui/badge';
 import { Switch } from './ui/switch';
 import { Separator } from './ui/separator';
 import * as Actions from '@/lib/actions';
+import { Label } from './ui/label';
 
 interface CampaignDialogProps {
     isOpen: boolean;
@@ -30,7 +29,7 @@ interface CampaignDialogProps {
 }
 
 export function CampaignDialog({ isOpen, onOpenChange }: CampaignDialogProps) {
-    const { currentUser } = useCorabo();
+    const { currentUser, allPublications } = useCorabo();
     const [step, setStep] = useState(1);
     const [selectedPublicationId, setSelectedPublicationId] = useState<string | null>(null);
     
@@ -123,13 +122,13 @@ export function CampaignDialog({ isOpen, onOpenChange }: CampaignDialogProps) {
                         <DialogDescription>Elige la publicación de tu galería que quieres impulsar.</DialogDescription>
                         <ScrollArea className="h-72">
                             <div className="grid grid-cols-3 gap-2 pr-4">
-                                {currentUser.profileSetupData?.gallery?.map(img => (
+                                {allPublications.filter(p => p.providerId === currentUser.id).map(img => (
                                     <div 
                                         key={img.id} 
                                         className={cn("relative aspect-square rounded-md overflow-hidden cursor-pointer border-4", selectedPublicationId === img.id ? 'border-primary' : 'border-transparent')}
                                         onClick={() => setSelectedPublicationId(img.id)}
                                     >
-                                        <Image src={img.src} alt={img.alt} layout="fill" objectFit="cover" />
+                                        <Image src={img.src} alt={img.alt} fill objectFit="cover" />
                                     </div>
                                 ))}
                             </div>

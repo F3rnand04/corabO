@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,6 +8,7 @@ import type { ProfileSetupData } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { useRouter } from 'next/navigation';
+import * as Actions from '@/lib/actions';
 
 // Import Step Components
 import Step2_CompanyInfo from '@/components/profile-setup/Step2_CompanyInfo';
@@ -18,7 +17,7 @@ import Step4_LegalInfo from '@/components/profile-setup/Step4_LegalInfo';
 import Step5_Review from '@/components/profile-setup/Step5_Review';
 
 export default function ProfileSetupPage() {
-  const { currentUser, updateFullProfile, deliveryAddress, setDeliveryAddress } = useCorabo();
+  const { currentUser, setDeliveryAddress } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
   
@@ -33,17 +32,7 @@ export default function ProfileSetupPage() {
       setFormData(prev => ({ ...prev, ...currentUser.profileSetupData }));
     }
   }, [currentUser]);
-
-  useEffect(() => {
-    // This effect specifically handles the return from the map page
-    // by listening to changes in the context's deliveryAddress.
-    if (deliveryAddress) {
-        setFormData(prev => ({ ...prev, location: deliveryAddress }));
-        // Clean the address from context to prevent re-triggering
-        setDeliveryAddress('');
-    }
-  }, [deliveryAddress, setDeliveryAddress]);
-
+  
   if (!currentUser) {
     return (
         <div className="flex items-center justify-center min-h-screen">
@@ -64,7 +53,7 @@ export default function ProfileSetupPage() {
   const handleFinalSubmit = async () => {
     setIsSubmitting(true);
     try {
-        await updateFullProfile(currentUser.id, formData, 'provider');
+        await Actions.updateFullProfile(currentUser.id, formData, 'provider');
         toast({ title: "¡Perfil de Empresa Configurado!", description: "Tus datos han sido guardados."});
         router.push('/profile');
     } catch(error) {

@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Flows for managing delivery provider assignment.
@@ -9,7 +8,7 @@ import { z } from 'zod';
 import { getFirestore } from 'firebase-admin/firestore';
 import type { Transaction, User } from '@/lib/types';
 import { haversineDistance } from '@/lib/utils';
-import { sendMessage } from './message-flow';
+import { sendMessageFlow } from './message-flow';
 import { sendNotification } from './notification-flow';
 
 const FindDeliveryInputSchema = z.object({
@@ -22,13 +21,13 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
  * Finds an available delivery provider for a given transaction.
  * It searches in a 3km radius and retries up to 3 times.
  */
-export const findDeliveryProvider = ai.defineFlow(
+export const findDeliveryProviderFlow = ai.defineFlow(
   {
     name: 'findDeliveryProviderFlow',
     inputSchema: FindDeliveryInputSchema,
     outputSchema: z.void(),
   },
-  async ({ transactionId }) => {
+  async ({ transactionId }: { transactionId: string }) => {
     const db = getFirestore();
     const txRef = db.collection('transactions').doc(transactionId);
     const txSnap = await txRef.get();
@@ -72,7 +71,7 @@ export const findDeliveryProvider = ai.defineFlow(
               status: 'En Reparto',
             });
             
-            await sendMessage({
+            await sendMessageFlow({
                 conversationId: [transaction.providerId, assignedRepartidor.id].sort().join('-'),
                 senderId: transaction.providerId,
                 recipientId: assignedRepartidor.id,
@@ -103,13 +102,13 @@ export const findDeliveryProvider = ai.defineFlow(
  * Resolves a failed delivery attempt by converting it to a pickup order.
  * Notifies the client and creates a refund transaction for the delivery fee if applicable.
  */
-export const resolveDeliveryAsPickup = ai.defineFlow(
+export const resolveDeliveryAsPickupFlow = ai.defineFlow(
     {
         name: 'resolveDeliveryAsPickupFlow',
         inputSchema: FindDeliveryInputSchema, // Just needs transactionId
         outputSchema: z.void(),
     },
-    async ({ transactionId }) => {
+    async ({ transactionId }: { transactionId: string }) => {
         const db = getFirestore();
         const batch = db.batch();
         const txRef = db.collection('transactions').doc(transactionId);
@@ -141,7 +140,7 @@ export const resolveDeliveryAsPickup = ai.defineFlow(
             batch.set(db.collection('transactions').doc(refundTxId), refundTx);
         }
 
-        await sendMessage({
+        await sendMessageFlow({
             conversationId: [transaction.providerId, transaction.clientId].sort().join('-'),
             senderId: transaction.providerId,
             recipientId: transaction.clientId,

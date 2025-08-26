@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Authentication flow for creating and managing users.
@@ -16,7 +15,7 @@ export const getOrCreateUserFlow = ai.defineFlow(
     inputSchema: z.custom<FirebaseUserInput>(),
     outputSchema: z.custom<User>(),
   },
-  async (firebaseUser) => {
+  async (firebaseUser: FirebaseUserInput) => {
     const db = getFirestore();
     const userRef = db.collection('users').doc(firebaseUser.uid);
     const userSnap = await userRef.get();
@@ -40,7 +39,7 @@ export const getOrCreateUserFlow = ai.defineFlow(
       reputation: 5,
       effectiveness: 100,
       isGpsActive: true,
-      emailValidated: firebaseUser.emailVerified,
+      emailValidated: firebaseUser.emailVerified || false,
       phoneValidated: false,
       isInitialSetupComplete: false,
       createdAt: new Date().toISOString(),

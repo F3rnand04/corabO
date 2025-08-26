@@ -1,4 +1,3 @@
-
 import { z } from 'zod';
 
 export type FirebaseUserInput = { uid: string; email?: string | null; displayName?: string | null; photoURL?: string | null; phoneNumber?: string | null; emailVerified: boolean; };
@@ -519,6 +518,7 @@ export type Transaction = {
 };
 
 export type AppointmentRequest = {
+    clientId: string;
     providerId: string;
     date: string;
     details: string;
@@ -541,7 +541,7 @@ export const GetFeedInputSchema = z.object({
 
 export const GetFeedOutputSchema = z.object({
     publications: z.array(PublicationSchema),
-    lastVisibleDocId: z.string().nullable(),
+    lastVisibleDocId: z.string().optional(),
 });
 
 // Schemas from profile-flow

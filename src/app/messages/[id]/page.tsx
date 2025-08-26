@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -22,6 +21,7 @@ import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
+import * as Actions from '@/lib/actions';
 
 
 function ChatHeader({ 
@@ -38,7 +38,7 @@ function ChatHeader({
 
 
   const disabledDays = Object.entries(participant.profileSetupData?.schedule || {})
-    .filter(([, dayDetails]) => !dayDetails.active)
+    .filter(([, dayDetails]) => !(dayDetails as any).active)
     .map(([dayName]) => {
         // Map day name to day of the week index (0=Sunday, 6=Saturday)
         const dayMap: { [key: string]: number } = {
@@ -242,7 +242,7 @@ function MessageBubble({ msg, isCurrentUser, onAccept, canAcceptProposal, onForw
 export default function ChatPage() {
   const params = useParams();
   const router = useRouter();
-  const { currentUser, conversations, sendMessage, acceptProposal, markConversationAsRead, fetchUser, createAppointmentRequest, setDeliveryAddressToCurrent, currentUserLocation } = useCorabo();
+  const { currentUser, conversations, users, setDeliveryAddressToCurrent, currentUserLocation } = useCorabo();
   const { toast } = useToast();
   
   const [otherParticipant, setOtherParticipant] = useState<User | null>(null);
@@ -253,7 +253,7 @@ export default function ChatPage() {
   const [isProposalDialogOpen, setIsProposalDialogOpen] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   
-  const conversationId = params.id as string;
+  const conversationId = params?.id as string;
 
   // Get the specific conversation from the global state
   const conversation = conversations.find(c => c.id === conversationId);
@@ -276,10 +276,9 @@ export default function ChatPage() {
     } else if (otherId) {
         setIsSelfChat(false);
         if (otherId !== otherParticipant?.id) {
-            fetchUser(otherId).then(participantData => {
-                setOtherParticipant(participantData);
-                setIsLoading(false);
-            });
+            const participantData = users.find(u => u.id === otherId);
+            setOtherParticipant(participantData || null);
+            setIsLoading(false);
         } else {
              setIsLoading(false);
         }
@@ -289,9 +288,9 @@ export default function ChatPage() {
         console.error("Conversation is missing a valid other participant.");
     }
     
-    markConversationAsRead(conversationId);
+    Actions.markConversationAsRead(conversationId);
 
-  }, [conversationId, currentUser, conversation, otherParticipant?.id, fetchUser, markConversationAsRead, conversations]);
+  }, [conversationId, currentUser, conversation, otherParticipant?.id, users]);
 
   
   useEffect(() => {
@@ -321,7 +320,8 @@ export default function ChatPage() {
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (newMessage.trim()) {
-      sendMessage({ recipientId: otherParticipant.id, text: newMessage });
+      if(!currentUser) return;
+      Actions.sendMessage({ recipientId: otherParticipant.id, text: newMessage, conversationId, senderId: currentUser.id });
       setNewMessage('');
     }
   };
@@ -330,16 +330,21 @@ export default function ChatPage() {
       const formattedDate = format(date, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: es });
       const requestDetails = `Solicitud de cita para el ${formattedDate}.`;
       
-      createAppointmentRequest({
+      if(!currentUser) return;
+
+      Actions.createAppointmentRequest({
           providerId: otherParticipant.id,
+          clientId: currentUser.id,
           date: date.toISOString(),
           details: requestDetails,
           amount: otherParticipant.profileSetupData?.appointmentCost || 0,
       });
 
-      sendMessage({ 
+      Actions.sendMessage({ 
           recipientId: otherParticipant.id, 
-          text: `¡Hola! Me gustaría solicitar una cita para el ${formattedDate}. ¿Estás disponible?` 
+          text: `¡Hola! Me gustaría solicitar una cita para el ${formattedDate}. ¿Estás disponible?`,
+          conversationId,
+          senderId: currentUser.id
       });
 
       toast({
@@ -349,11 +354,14 @@ export default function ChatPage() {
   };
   
   const handleSendLocation = (type: 'current' | 'saved') => {
+      if(!currentUser) return;
       if (type === 'current') {
           if (currentUserLocation) {
-              sendMessage({
+              Actions.sendMessage({
                   recipientId: otherParticipant.id,
                   location: { lat: currentUserLocation.latitude, lon: currentUserLocation.longitude },
+                  conversationId,
+                  senderId: currentUser.id
               });
           } else {
               toast({ variant: 'destructive', title: 'Ubicación no disponible', description: 'Activa los permisos de GPS para compartir tu ubicación actual.' });
@@ -361,15 +369,22 @@ export default function ChatPage() {
       } else { // 'saved'
           if (currentUser.profileSetupData?.location) {
               const [lat, lon] = currentUser.profileSetupData.location.split(',').map(Number);
-              sendMessage({
+              Actions.sendMessage({
                   recipientId: otherParticipant.id,
                   location: { lat, lon },
+                  conversationId,
+                  senderId: currentUser.id
               });
           } else {
               toast({ variant: 'destructive', title: 'Sin dirección guardada', description: 'No tienes una dirección guardada en tu perfil.' });
           }
       }
   };
+  
+  const handleAcceptProposal = (messageId: string) => {
+      if(!currentUser) return;
+      Actions.acceptProposal(conversationId, messageId, currentUser.id);
+  }
 
   return (
     <>
@@ -400,9 +415,9 @@ export default function ChatPage() {
                   key={msg.id} 
                   msg={msg} 
                   isCurrentUser={isCurrentUserMsg} 
-                  onAccept={acceptProposal.bind(null, conversationId)} 
+                  onAccept={handleAcceptProposal} 
                   canAcceptProposal={canAcceptProposal} 
-                  onForwardLocation={(loc) => sendMessage({ recipientId: otherParticipant.id, location: loc })}
+                  onForwardLocation={(loc) => Actions.sendMessage({ recipientId: otherParticipant.id, location: loc, conversationId, senderId: currentUser.id })}
                 />
               )
             })}

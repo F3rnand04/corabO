@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Flows for creating and managing publications and products securely on the backend.
@@ -130,7 +129,7 @@ export const createProductFlow = ai.defineFlow(
           await sendNewPublicationNotificationFlow({
             providerId: input.userId,
             publicationId: productId,
-            publicationDescription: `¡Nuevo producto disponible! ${'\'\'\''}${input.name}`,
+            publicationDescription: `¡Nuevo producto disponible! ${input.name}`,
           });
         }
 

@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Server Actions for the Corabo application.
@@ -16,7 +15,7 @@ import { updateUserFlow, deleteUserFlow, getPublicProfileFlow, getProfileGallery
 import { createPublicationFlow, createProductFlow, removeGalleryImageFlow, updateGalleryImageFlow, addCommentToImageFlow, removeCommentFromImageFlow } from '@/ai/flows/publication-flow';
 import { sendMessageFlow, acceptProposalFlow } from '@/ai/flows/message-flow';
 import { createAppointmentRequestFlow, completeWorkFlow, confirmWorkReceivedFlow, payCommitmentFlow, confirmPaymentReceivedFlow, sendQuoteFlow, acceptAppointmentFlow, startDisputeFlow, cancelSystemTransactionFlow, downloadTransactionsPDFFlow, checkoutFlow, processDirectPaymentFlow } from '@/ai/flows/transaction-flow';
-import { findDeliveryProvider, resolveDeliveryAsPickup as resolveDeliveryAsPickupFlow } from '@/ai/flows/delivery-flow';
+import { findDeliveryProviderFlow, resolveDeliveryAsPickupFlow } from '@/ai/flows/delivery-flow';
 import { requestAffiliationFlow, approveAffiliationFlow, rejectAffiliationFlow, revokeAffiliationFlow } from '@/ai/flows/affiliation-flow';
 import { createCashierBoxFlow, regenerateCashierQrFlow } from '@/ai/flows/cashier-flow';
 import { autoVerifyIdWithAIFlow } from '@/ai/flows/verification-flow';
@@ -117,7 +116,7 @@ export async function rejectUserId(userId: string) {
 export async function autoVerifyIdWithAI(user: User): Promise<VerificationOutput | null> {
   const input = {
     userId: user.id,
-    nameInRecord: `${'\'\'\''}${user.name} ${user.lastName || ''}`.trim(),
+    nameInRecord: `${user.name} ${user.lastName || ''}`.trim(),
     idInRecord: user.idNumber || '',
     documentImageUrl: user.idDocumentUrl || '',
     isCompany: user.profileSetupData?.providerType === 'company',
@@ -180,6 +179,23 @@ export async function acceptProposal(conversationId: string, messageId: string, 
     await acceptProposalFlow({ conversationId, messageId, acceptorId });
     revalidatePath(`/messages/${conversationId}`);
     revalidatePath('/transactions');
+}
+
+export async function markConversationAsRead(conversationId: string) {
+    const { getFirebaseAdmin } = await import('./firebase-server');
+    const { auth, firestore } = getFirebaseAdmin();
+    // This action needs the current user's ID, which it can't get directly.
+    // This logic should be handled client-side or passed the user ID.
+    // For now, this is a placeholder for a more secure implementation.
+    console.log(`Marking conversation as read: ${conversationId}`);
+    // In a real implementation:
+    // const user = await auth.verifyIdToken(...);
+    // const conversationRef = firestore.collection('conversations').doc(conversationId);
+    // const conversationSnap = await conversationRef.get();
+    // const conversation = conversationSnap.data();
+    // const updatedMessages = conversation.messages.map(m => m.senderId !== user.uid ? { ...m, isRead: true } : m);
+    // await conversationRef.update({ messages: updatedMessages });
+    revalidatePath(`/messages`);
 }
 
 // =================================
@@ -276,7 +292,7 @@ export async function processDirectPayment(sessionId: string) {
 // =================================
 
 export async function retryFindDelivery(data: { transactionId: string }) {
-    await findDeliveryProvider(data);
+    await findDeliveryProviderFlow(data);
     revalidatePath('/transactions');
 }
 
@@ -285,7 +301,7 @@ export async function assignOwnDelivery(
   providerId: string
 ) {
    // Placeholder for a future flow
-   console.log(`Assigning own delivery for tx: ${'\'\'\''}${transactionId} by provider: ${providerId}`);
+   console.log(`Assigning own delivery for tx: ${transactionId} by provider: ${providerId}`);
    revalidatePath('/transactions');
 }
 
@@ -559,21 +575,4 @@ export async function registerSystemPayment(
     };
     await firestore.collection('transactions').doc(txId).set(newTransaction);
     revalidatePath('/transactions');
-}
-
-export async function markConversationAsRead(conversationId: string) {
-    const { getFirebaseAdmin } = await import('./firebase-server');
-    const { auth, firestore } = getFirebaseAdmin();
-    // This action needs the current user's ID, which it can't get directly.
-    // This logic should be handled client-side or passed the user ID.
-    // For now, this is a placeholder for a more secure implementation.
-    console.log(`Marking conversation as read: ${conversationId}`);
-    // In a real implementation:
-    // const user = await auth.verifyIdToken(...);
-    // const conversationRef = firestore.collection('conversations').doc(conversationId);
-    // const conversationSnap = await conversationRef.get();
-    // const conversation = conversationSnap.data();
-    // const updatedMessages = conversation.messages.map(m => m.senderId !== user.uid ? { ...m, isRead: true } : m);
-    // await conversationRef.update({ messages: updatedMessages });
-    revalidatePath(`/messages`);
 }

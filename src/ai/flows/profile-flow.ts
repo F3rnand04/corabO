@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Flows for fetching profile-specific data securely with pagination.
@@ -48,7 +47,7 @@ export const toggleGpsFlow = ai.defineFlow(
         const userRef = db.collection('users').doc(input.userId);
         const userSnap = await userRef.get();
         if (userSnap.exists()) {
-            const currentStatus = userSnap.data()?.isGpsActive || false;
+            const currentStatus = (userSnap.data() as User).isGpsActive;
             await userRef.update({ isGpsActive: !currentStatus });
         }
     }
@@ -222,7 +221,7 @@ export const getProfileGalleryFlow = ai.defineFlow(
         inputSchema: GetProfileGalleryInputSchema,
         outputSchema: GetProfileGalleryOutputSchema,
     },
-    async ({ userId, limitNum = 9, startAfterDocId }) => {
+    async ({ userId, limitNum = 9, startAfterDocId }: z.infer<typeof GetProfileGalleryInputSchema>) => {
         const db = getFirestore();
         const galleryCollection = db.collection('publications');
         
@@ -263,7 +262,7 @@ export const getProfileProductsFlow = ai.defineFlow(
         inputSchema: GetProfileProductsInputSchema,
         outputSchema: GetProfileProductsOutputSchema,
     },
-    async ({ userId, limitNum = 10, startAfterDocId }) => {
+    async ({ userId, limitNum = 10, startAfterDocId }: z.infer<typeof GetProfileProductsInputSchema>) => {
         const db = getFirestore();
         const publicationsCollection = db.collection('publications');
         

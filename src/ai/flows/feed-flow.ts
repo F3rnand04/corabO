@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A feed generation flow for fetching publications.
@@ -13,29 +12,18 @@ import type { GalleryImage, User, PublicationOwner } from '@/lib/types';
 import { GetFeedInputSchema, GetFeedOutputSchema } from '@/lib/types';
 
 
-export async function getFeed(input: z.infer<typeof GetFeedInputSchema>): Promise<z.infer<typeof GetFeedOutputSchema>> {
-    return getFeedFlow(input);
-}
-
-
-export const getFeedFlow = ai.defineFlow(
-    {
-        name: 'getFeedFlow',
-        inputSchema: GetFeedInputSchema,
-        outputSchema: GetFeedOutputSchema,
-    },
-    async ({ limitNum = 10, startAfterDocId }) => {
+export async function getFeedFlow(input: z.infer<typeof GetFeedInputSchema>): Promise<z.infer<typeof GetFeedOutputSchema>> {
         const db = getFirestore();
         const publicationsCollection = db.collection('publications');
         
-        let q = publicationsCollection.orderBy('createdAt', 'desc').limit(limitNum);
+        let q = publicationsCollection.orderBy('createdAt', 'desc').limit(input.limitNum || 10);
 
-        if (startAfterDocId) {
-            const startAfterDoc = await db.collection('publications').doc(startAfterDocId).get();
+        if (input.startAfterDocId) {
+            const startAfterDoc = await db.collection('publications').doc(input.startAfterDocId).get();
             if(startAfterDoc.exists) {
                 q = q.startAfter(startAfterDoc);
             } else {
-                console.warn(`Cursor document with ID ${startAfterDocId} not found. Fetching from the beginning.`);
+                console.warn(`Cursor document with ID ${input.startAfterDocId} not found. Fetching from the beginning.`);
             }
         }
         
@@ -84,11 +72,10 @@ export const getFeedFlow = ai.defineFlow(
         });
 
         const lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
-        const nextCursor = snapshot.docs.length === limitNum ? lastVisibleDoc?.id : null;
+        const nextCursor: string | undefined = snapshot.docs.length === (input.limitNum || 10) ? lastVisibleDoc?.id : undefined;
 
         return { 
             publications: enrichedPublications, 
             lastVisibleDocId: nextCursor
         };
-    }
-);
+}

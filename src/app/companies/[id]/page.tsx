@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
@@ -29,12 +27,13 @@ import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ActivationWarning } from '@/components/ActivationWarning';
 import { Input } from '@/components/ui/input';
-import { getProfileGallery, getProfileProducts } from '@/ai/flows/profile-flow';
 import { CartPopoverContent } from '@/components/CartPopoverContent';
 import { CheckoutAlertDialogContent } from '@/components/CheckoutAlertDialogContent';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { getFirestore, collection, query, where, onSnapshot } from 'firebase/firestore';
+import * as Actions from '@/lib/actions';
+import { AlertCircle } from 'lucide-react';
 
 const DetailItem = ({ icon: Icon, label, value }: { icon?: React.ElementType, label: string, value: string | string[] | undefined | null }) => {
     if (!value || (Array.isArray(value) && value.length === 0)) return null;
@@ -57,11 +56,11 @@ const DetailItem = ({ icon: Icon, label, value }: { icon?: React.ElementType, la
 
 export default function CompanyProfilePage() {
   const params = useParams();
-  const { addContact, isContact, transactions, createAppointmentRequest, currentUser, cart, updateCartQuantity, sendMessage, toggleGps, fetchUser, getDistanceToProvider, getUserMetrics, users } = useCorabo();
+  const { addContact, isContact, transactions, currentUser, cart, getUserMetrics, users } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
 
-  const providerId = params.id as string;
+  const providerId = params?.id as string;
 
   const [provider, setProvider] = useState<User | null>(null);
   const [providerProducts, setProviderProducts] = useState<Product[]>([]);
@@ -79,15 +78,15 @@ export default function CompanyProfilePage() {
     const loadProfileData = async () => {
         setIsLoading(true);
         try {
-            const fetchedProvider = await fetchUser(providerId);
-            setProvider(fetchedProvider);
+            const fetchedProvider = await Actions.getPublicProfile(providerId);
+            setProvider(fetchedProvider as User);
 
             if (fetchedProvider) {
               if (fetchedProvider.profileSetupData?.offerType === 'product' || fetchedProvider.profileSetupData?.offerType === 'both') {
-                  const productsResult = await getProfileProducts({ userId: providerId, limitNum: 50 });
+                  const productsResult = await Actions.getProfileProducts({ userId: providerId, limitNum: 50 });
                   setProviderProducts(productsResult.products || []);
               } else {
-                  const galleryResult = await getProfileGallery({ userId: providerId, limitNum: 50 });
+                  const galleryResult = await Actions.getProfileGallery({ userId: providerId, limitNum: 50 });
                   setProviderGallery(galleryResult.gallery || []);
               }
             }
@@ -101,7 +100,7 @@ export default function CompanyProfilePage() {
     
     loadProfileData();
 
-  }, [providerId, fetchUser, toast]);
+  }, [providerId, toast]);
 
   useEffect(() => {
     if (provider?.profileSetupData?.providerType === 'company') {
@@ -198,9 +197,10 @@ export default function CompanyProfilePage() {
   const isProviderTransactionReady = provider.isTransactionsActive;
 
   const handleDirectMessage = () => {
-    if(isSelfProfile) return;
-    const conversationId = sendMessage({recipientId: provider.id, text: `¡Hola! Me interesa tu publicación.`});
-    router.push(`/messages/${conversationId}`);
+    if(isSelfProfile || !currentUser) return;
+    Actions.sendMessage({recipientId: provider.id, text: `¡Hola! Me interesa tu publicación.`, conversationId: [currentUser.id, provider.id].sort().join('-'), senderId: currentUser.id}).then(conversationId => {
+        router.push(`/messages/${conversationId}`);
+    });
   };
 
   const paymentCommitmentDates = transactions
@@ -249,7 +249,7 @@ export default function CompanyProfilePage() {
                 details: appointmentDetails,
                 amount: provider.profileSetupData?.appointmentCost || 0,
             };
-            createAppointmentRequest(request);
+            Actions.createAppointmentRequest({ ...request, clientId: currentUser.id });
             setIsAppointmentDialogOpen(false);
             setAppointmentDetails('');
             toast({
@@ -281,7 +281,7 @@ export default function CompanyProfilePage() {
 
   const specialty = provider.profileSetupData?.specialty || "Especialidad de la Empresa";
   
-  const distance = getDistanceToProvider(provider);
+  const distance = 'N/A';
   
   const { reputation, effectiveness, responseTime } = getUserMetrics(provider.id);
   const isNewProvider = responseTime === 'Nuevo';
@@ -296,7 +296,7 @@ export default function CompanyProfilePage() {
     completedJobs: transactions.filter(t => t.providerId === provider.id && (t.status === 'Pagado' || t.status === 'Resuelto')).length,
     distance: distance,
     profileImage: provider.profileImage,
-    mainImage: gallery.length > 0 ? gallery[currentImageIndex].src : "https://placehold.co/600x400.png",
+    mainImage: gallery.length > 0 ? gallery[currentImageIndex]?.src : "https://placehold.co/600x400.png",
     gallery: gallery
   };
 

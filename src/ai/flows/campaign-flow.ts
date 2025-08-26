@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A campaign management flow.
@@ -43,12 +42,12 @@ export const createCampaignFlow = ai.defineFlow(
     inputSchema: CreateCampaignInputSchema,
     outputSchema: CampaignOutputSchema,
   },
-  async (input) => {
+  async (input: CreateCampaignInput) => {
     const db = getFirestore();
     const userRef = db.collection('users').doc(input.userId);
     const userSnap = await userRef.get();
 
-    if (!userSnap.exists() || userSnap.data()?.type !== 'provider') {
+    if (!userSnap.exists() || (userSnap.data() as User).type !== 'provider') {
       throw new Error('User not found or is not a provider.');
     }
 

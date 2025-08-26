@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Transaction management flows.
@@ -10,7 +9,7 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import type { Transaction, User, AppointmentRequest, QrSession } from '@/lib/types';
 import { addDays, endOfMonth } from 'date-fns';
 import { getExchangeRate } from './exchange-rate-flow';
-import { findDeliveryProvider } from './delivery-flow';
+import { findDeliveryProviderFlow } from './delivery-flow';
 
 // --- Schemas ---
 
@@ -502,6 +501,6 @@ export const checkoutFlow = ai.defineFlow({
     });
 
     if (input.deliveryMethod !== 'pickup') {
-        ai.runFlow(findDeliveryProvider, { transactionId: cartTx.id });
+        await findDeliveryProviderFlow({ transactionId: cartTx.id });
     }
 });

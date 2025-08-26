@@ -1,4 +1,3 @@
-
 'use client';
 
 import { CategoryHub } from '@/components/CategoryHub';
@@ -9,7 +8,7 @@ import { useRouter } from 'next/navigation';
 
 export default function SearchPage() {
     const router = useRouter();
-    const { setSearchQuery, setFeedView } = useCorabo();
+    const { setSearchQuery, setCategoryFilter } = useCorabo();
 
     const handleCategorySelect = (categoryName: string) => {
         // Neutralized: This no longer updates the feed.
@@ -20,7 +19,7 @@ export default function SearchPage() {
 
     const handleShowAll = () => {
         setSearchQuery('');
-        setFeedView('servicios');
+        setCategoryFilter(null);
         router.push('/');
     }
 

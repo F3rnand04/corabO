@@ -32,12 +32,11 @@ export default async function RootLayout({
     const sessionCookie = cookieStore.get('session')?.value;
     if (sessionCookie) {
       const decodedIdToken = await getFirebaseAdmin().auth.verifySessionCookie(sessionCookie, true);
-      // Construct a FirebaseUser-like object for the client
       const userRecord = await getFirebaseAdmin().auth.getUser(decodedIdToken.uid);
       serverFirebaseUser = {
         ...userRecord,
         getIdToken: async () => sessionCookie,
-      } as FirebaseUser;
+      } as unknown as FirebaseUser;
     }
   } catch (error) {
     // Session cookie is invalid or expired.

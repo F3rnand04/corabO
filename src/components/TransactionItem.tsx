@@ -1,5 +1,4 @@
-
-"use client";
+'use client';
 
 import type { Transaction, User } from "@/lib/types";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -46,9 +45,9 @@ export const TransactionItem = ({ transaction, otherParty, onClick }: { transact
         description = transaction.details.serviceName || transaction.details.items?.map(i => i.product.name).join(', ') || '';
     } else {
         description = transaction.type === 'Servicio' 
-            ? transaction.details.serviceName
+            ? transaction.details.serviceName || 'Servicio sin nombre'
             : (transaction.type === 'Compra' || transaction.type === 'Compra Directa')
-                ? transaction.details.items?.map(i => `${i.quantity}x ${i.product.name}`).join(', ') || transaction.details.system
+                ? transaction.details.items?.map(i => `${i.quantity}x ${i.product.name}`).join(', ') || transaction.details.system || 'Compra sin detalle'
                 : 'Transacción del sistema';
     }
 

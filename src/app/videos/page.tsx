@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useCorabo } from '@/contexts/CoraboContext';
@@ -136,14 +135,15 @@ function ReelItem({ video, owner }: { video: GalleryImage, owner: User }) {
 
 
 export default function VideosPage() {
-  const { users } = useCorabo();
+  const { users, allPublications } = useCorabo();
 
   // Create a dynamic feed by finding all videos from all users' galleries
-  const videoFeed = users.flatMap(user => 
-    (user.gallery || [])
-        .filter(item => item.type === 'video')
-        .map(video => ({ video, owner: user }))
-  );
+  const videoFeed = allPublications
+    .filter(item => item.type === 'video')
+    .map(video => {
+        const owner = users.find(u => u.id === video.providerId);
+        return { video, owner };
+    }).filter(item => item.owner); // Filter out any videos where the owner wasn't found
   
   // Shuffle the feed for variety on each load
   const shuffledFeed = videoFeed.sort(() => Math.random() - 0.5);
@@ -152,7 +152,7 @@ export default function VideosPage() {
     <div className="h-screen w-screen overflow-y-scroll snap-y snap-mandatory bg-black">
       {shuffledFeed.length > 0 ? (
           shuffledFeed.map(({ video, owner }) => (
-            <ReelItem key={video.id} video={video} owner={owner} />
+            <ReelItem key={video.id} video={video} owner={owner as User} />
           ))
       ) : (
         <div className="h-full w-full flex items-center justify-center text-white">

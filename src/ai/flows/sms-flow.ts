@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A flow for managing SMS verification codes, including sending the SMS.
@@ -66,7 +65,7 @@ export const verifySmsCodeFlow = ai.defineFlow(
         const userRef = db.collection('users').doc(input.userId);
         const userSnap = await userRef.get();
 
-        if (!userSnap.exists) {
+        if (!userSnap.exists()) {
             return { success: false, message: "Usuario no encontrado." };
         }
 

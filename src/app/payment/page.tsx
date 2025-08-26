@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -55,10 +53,10 @@ function PaymentPageContent() {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
-        const commitmentId = searchParams.get('commitmentId');
-        const amount = searchParams.get('amount');
-        const concept = searchParams.get('concept');
-        const subscriptionFlag = searchParams.get('isSubscription');
+        const commitmentId = searchParams?.get('commitmentId');
+        const amount = searchParams?.get('amount');
+        const concept = searchParams?.get('concept');
+        const subscriptionFlag = searchParams?.get('isSubscription');
 
         if (commitmentId) {
             const foundTx = transactions.find(tx => tx.id === commitmentId);
@@ -84,7 +82,11 @@ function PaymentPageContent() {
                  await Actions.registerSystemPayment(currentUser.id, paymentConcept, directPaymentAmount, isSubscription);
             } else if (commitment) {
                 // Regular commitment payment, handled by payCommitment which will update the status
-                 await Actions.payCommitment(commitment.id);
+                 await Actions.payCommitment(commitment.id, currentUser.id, {
+                     paymentMethod: 'Transferencia', // Defaulting for now
+                     paymentReference,
+                     paymentVoucherUrl: 'https://i.postimg.cc/L8y2zWc2/vzla-id.png' // Placeholder
+                 });
             }
             
             toast({ title: 'Pago Registrado', description: 'Tu pago será verificado por un administrador.' });

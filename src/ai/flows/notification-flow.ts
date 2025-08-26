@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview A notification management flow.
@@ -53,7 +52,7 @@ export const sendNotification = ai.defineFlow(
  * Scans for upcoming and overdue payments and sends notifications accordingly.
  * This flow is designed to be triggered by a scheduled job (e.g., daily cron).
  */
-export const checkPaymentDeadlines = ai.defineFlow(
+export const checkPaymentDeadlinesFlow = ai.defineFlow(
     {
         name: 'checkPaymentDeadlinesFlow',
         inputSchema: z.void(),
@@ -140,7 +139,7 @@ export const sendNewCampaignNotificationsFlow = ai.defineFlow({
     name: 'sendNewCampaignNotificationsFlow',
     inputSchema: z.object({ campaignId: z.string() }),
     outputSchema: z.void(),
-}, async ({ campaignId }) => {
+}, async ({ campaignId }: { campaignId: string }) => {
     const db = getFirestore();
     const campaignRef = db.collection('campaigns').doc(campaignId);
     const campaignSnap = await campaignRef.get();
@@ -196,7 +195,7 @@ export const sendNewPublicationNotificationFlow = ai.defineFlow({
     name: 'sendNewPublicationNotificationFlow',
     inputSchema: z.object({ providerId: z.string(), publicationId: z.string(), publicationDescription: z.string() }),
     outputSchema: z.void(),
-}, async ({ providerId, publicationId, publicationDescription }) => {
+}, async ({ providerId, publicationId, publicationDescription }: { providerId: string; publicationId: string; publicationDescription: string; }) => {
     const db = getFirestore();
     
     const providerRef = db.collection('users').doc(providerId);
@@ -237,7 +236,7 @@ export const sendWelcomeToProviderNotificationFlow = ai.defineFlow({
     name: 'sendWelcomeToProviderNotificationFlow',
     inputSchema: z.object({ userId: z.string() }),
     outputSchema: z.void(),
-}, async ({ userId }) => {
+}, async ({ userId }: { userId: string }) => {
     await sendNotification({
         userId: userId,
         type: 'welcome',

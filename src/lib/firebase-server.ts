@@ -21,7 +21,7 @@ function getFirebaseAdminApp(): App {
 // This function provides the initialized Firebase Admin SDK instances.
 export function getFirebaseAdmin() {
   const app = getFirebaseAdminApp();
-  const auth = getAuth(app);
-  const firestore = getFirestore(app);
+  const auth: Auth = getAuth(app);
+  const firestore: Firestore = getFirestore(app);
   return { auth, firestore, app };
 }

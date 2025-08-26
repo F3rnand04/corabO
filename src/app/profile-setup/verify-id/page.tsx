@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, ChangeEvent, useEffect } from 'react';
@@ -10,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, UploadCloud, X, CheckCircle, AlertTriangle, Sparkles, FileText } from 'lucide-react';
-import type { VerificationOutput } from '@/lib/types';
+import type { VerificationOutput, User } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import * as Actions from '@/lib/actions';
 import { deleteField } from 'firebase/firestore';
@@ -25,7 +24,7 @@ const countriesInfo = [
 ];
 
 export default function VerifyIdPage() {
-  const { currentUser, autoVerifyIdWithAI, updateUser } = useCorabo();
+  const { currentUser } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -75,7 +74,7 @@ export default function VerifyIdPage() {
         const dataUrl = reader.result as string;
         setImagePreview(dataUrl);
         // Also update the document URL in the user's profile immediately
-        await updateUser(currentUser.id, { idDocumentUrl: dataUrl });
+        await Actions.updateUser(currentUser.id, { idDocumentUrl: dataUrl });
       };
       reader.readAsDataURL(file);
       setVerificationResult(null); // Reset previous results
@@ -88,7 +87,7 @@ export default function VerifyIdPage() {
     setVerificationResult(null);
     setIsPdf(false);
     if(currentUser) {
-        updateUser(currentUser.id, { idDocumentUrl: deleteField() as any });
+        Actions.updateUser(currentUser.id, { idDocumentUrl: deleteField() as any });
     }
   }
 
@@ -102,7 +101,8 @@ export default function VerifyIdPage() {
     setIsVerifying(true);
     setVerificationResult(null);
     try {
-        const result = await autoVerifyIdWithAI(currentUser);
+        const result = await Actions.autoVerifyIdWithAI(currentUser);
+        if(!result) throw new Error("AI verification returned null.");
         setVerificationResult(result);
         if (result.idMatch && result.nameMatch) {
             toast({
@@ -110,7 +110,7 @@ export default function VerifyIdPage() {
                 description: "Tus datos han sido confirmados. Ahora puedes activar tus transacciones.",
                 className: "bg-green-100 border-green-200"
             });
-            await updateUser(currentUser.id, { idVerificationStatus: 'verified', verified: true });
+            await Actions.updateUser(currentUser.id, { idVerificationStatus: 'verified', verified: true });
             router.push('/transactions/settings');
         } else {
              toast({
@@ -118,7 +118,7 @@ export default function VerifyIdPage() {
                 title: "Verificación Automática Fallida",
                 description: "Los datos no coinciden. Tu solicitud pasará a revisión manual.",
             });
-            await updateUser(currentUser.id, { idVerificationStatus: 'pending' });
+            await Actions.updateUser(currentUser.id, { idVerificationStatus: 'pending' });
         }
     } catch (error: any) {
         setVerificationResult({ error: 'Fallo al ejecutar la verificación por IA.' });
@@ -130,7 +130,7 @@ export default function VerifyIdPage() {
 
   const handleManualReview = async () => {
     if(!currentUser || !currentUser.idDocumentUrl) return;
-    await updateUser(currentUser.id, { idVerificationStatus: 'pending' });
+    await Actions.updateUser(currentUser.id, { idVerificationStatus: 'pending' });
     toast({
         title: "Solicitud Enviada a Revisión",
         description: "Nuestro equipo revisará tu documento en las próximas 24-48 horas."

@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Message and proposal management flows.
@@ -123,7 +122,7 @@ export const acceptProposalFlow = ai.defineFlow(
     if (!clientSnap.exists()) throw new Error('Client user data not found.');
     const clientData = clientSnap.data() as User;
 
-    const isClientSubscribed = clientData.isSubscribed ?? false;
+    const isClientSubscribed = clientData.isSubscribed === true;
     const initialStatus = isClientSubscribed
       ? 'Acuerdo Aceptado - Pendiente de Ejecución'
       : 'Finalizado - Pendiente de Pago';
