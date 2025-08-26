@@ -74,7 +74,7 @@ export default function LoginPage() {
             </div>
             <CardTitle className="text-2xl">Bienvenido a Corabo</CardTitle>
             <CardDescription>
-                Conecta, colabora y crece con confianza.
+                La plataforma donde profesionales y clientes se encuentran para realizar proyectos de forma segura y eficiente. Ingresa para descubrir oportunidades.
             </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -82,7 +82,7 @@ export default function LoginPage() {
               {isLoadingAuth ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Ingresar o Registrarse con Google'}
             </Button>
             <Button size="lg" className="w-full" variant="secondary" onClick={handleAnonymousLogin} disabled={isLoadingAuth}>
-              {isLoadingAuth ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Ingresar como Invitado'}
+              {isLoadingAuth ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Ingreso de Prueba'}
             </Button>
         </CardContent>
       </Card>
