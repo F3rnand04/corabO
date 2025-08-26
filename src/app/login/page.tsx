@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useAuth } from '@/components/auth/AuthProvider';
@@ -9,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getAuthInstance } from '@/lib/firebase';
-import { signInAnonymously } from 'firebase/auth';
+import { signInAnonymously, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 
 export default function LoginPage() {
   const { isLoadingAuth } = useAuth();
@@ -28,9 +27,22 @@ export default function LoginPage() {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    const auth = getAuthInstance();
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+      // The onAuthStateChanged listener in AuthProvider will handle the redirect.
+      toast({ title: '¡Bienvenido!', description: 'Has iniciado sesión con Google.' });
+    } catch (error: any) {
+      console.error(error);
+      toast({ variant: 'destructive', title: 'Error de Inicio de Sesión', description: error.message });
+    }
+  };
+
   return (
     <div className="relative flex items-center justify-center min-h-screen bg-muted/40 p-4">
-      <Image 
+      <Image
         src="https://i.postimg.cc/C1sxJnNT/bv.png"
         alt="Fondo de bienvenida"
         fill
@@ -44,7 +56,7 @@ export default function LoginPage() {
       <Card className="relative z-10 text-center p-8 bg-background rounded-2xl shadow-xl max-w-sm w-full border">
          <CardHeader>
             <div className="relative w-48 h-24 mx-auto mb-6">
-                <Image 
+                <Image
                     src="https://i.postimg.cc/Wz1MTvWK/lg.png"
                     alt="Corabo logo"
                     fill
@@ -55,11 +67,14 @@ export default function LoginPage() {
             </div>
             <CardTitle className="text-2xl">Bienvenido a Corabo</CardTitle>
             <CardDescription>
-                Ingresa como invitado para explorar la plataforma.
+                Elige tu método de ingreso para continuar.
             </CardDescription>
         </CardHeader>
-        <CardContent>
-             <Button size="lg" className="w-full" onClick={handleAnonymousLogin} disabled={isLoadingAuth}>
+        <CardContent className="space-y-4">
+             <Button size="lg" className="w-full" onClick={handleGoogleLogin} disabled={isLoadingAuth}>
+              {isLoadingAuth ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Ingresar con Google'}
+            </Button>
+            <Button size="lg" className="w-full" variant="secondary" onClick={handleAnonymousLogin} disabled={isLoadingAuth}>
               {isLoadingAuth ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Ingresar como Invitado'}
             </Button>
         </CardContent>
