@@ -6,8 +6,54 @@
 import { ai } from '@/ai/genkit';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { GetProfileGalleryInputSchema, GetProfileGalleryOutputSchema, GetProfileProductsInputSchema, GetProfileProductsOutputSchema, credicoraCompanyLevels, credicoraLevels } from '@/lib/types';
-import type { GalleryImage, Product, User, ProfileSetupData } from '@/lib/types';
+import type { GalleryImage, Product, User, ProfileSetupData, FirebaseUserInput } from '@/lib/types';
 import { z } from 'zod';
+
+// --- Get or Create User Flow ---
+const getOrCreateUserFlow = ai.defineFlow(
+  {
+    name: 'getOrCreateUserFlow',
+    inputSchema: z.custom<FirebaseUserInput>(),
+    outputSchema: z.custom<User>(),
+  },
+  async (firebaseUser: FirebaseUserInput) => {
+    const db = getFirestore();
+    const userRef = db.collection('users').doc(firebaseUser.uid);
+    const userSnap = await userRef.get();
+
+    if (userSnap.exists()) {
+      return userSnap.data() as User;
+    }
+
+    // User does not exist, create a new one.
+    const coraboId = `corabo${Math.floor(Math.random() * 9000) + 1000}`;
+    
+    const newUser: User = {
+      id: firebaseUser.uid,
+      coraboId: coraboId,
+      name: firebaseUser.displayName || 'Invitado',
+      lastName: '',
+      email: firebaseUser.email || `${coraboId}@corabo.app`,
+      profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
+      phone: firebaseUser.phoneNumber || '',
+      type: 'client',
+      reputation: 5,
+      effectiveness: 100,
+      isGpsActive: true,
+      emailValidated: firebaseUser.emailVerified || false,
+      phoneValidated: false,
+      isInitialSetupComplete: false,
+      createdAt: new Date().toISOString(),
+    };
+
+    await userRef.set(newUser);
+    return newUser;
+  }
+);
+// Exported wrapper function for the action to call
+export async function getOrCreateUser(firebaseUser: FirebaseUserInput): Promise<User> {
+  return getOrCreateUserFlow(firebaseUser);
+}
 
 
 // --- Update User Flow ---

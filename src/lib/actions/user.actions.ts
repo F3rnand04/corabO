@@ -2,7 +2,7 @@
 'use server';
 
 import { 
-    getOrCreateUserFlow, 
+    getOrCreateUser, 
     updateUserFlow, 
     toggleGpsFlow,
     deleteUserFlow,
@@ -17,7 +17,7 @@ import { sendWelcomeToProviderNotificationFlow } from '@/ai/flows/notification-f
 import { createTransactionFlow } from '@/ai/flows/transaction-flow';
 
 export async function getOrCreateUser(firebaseUser: FirebaseUserInput): Promise<User> {
-    const user = await getOrCreateUserFlow(firebaseUser);
+    const user = await getOrCreateUser(firebaseUser);
     revalidatePath('/');
     return user;
 }

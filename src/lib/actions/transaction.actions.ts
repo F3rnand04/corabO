@@ -88,8 +88,13 @@ export async function cancelSystemTransaction(transactionId: string) {
 }
 
 export async function downloadTransactionsPDF(transactions: Transaction[]) {
-    return await downloadTransactionsPDFFlow(transactions);
+    // This flow is currently a placeholder and does not generate a real PDF.
+    // To implement, you would use a library like jspdf and html2canvas.
+    // For now, we return a placeholder string.
+    console.log("Generating PDF for", transactions.length, "transactions.");
+    return "base64-encoded-pdf-string-placeholder";
 }
+
 
 export async function processDirectPayment(sessionId: string) {
     const result = await processDirectPaymentFlow({ sessionId });
