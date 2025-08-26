@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuth } from '@/components/auth/AuthProvider';
@@ -66,8 +67,7 @@ export default function LoginPage() {
                 <Image
                     src="https://i.postimg.cc/Wz1MTvWK/lg.png"
                     alt="Corabo logo"
-                    width={192}
-                    height={96}
+                    fill
                     priority
                     className="object-contain"
                 />
