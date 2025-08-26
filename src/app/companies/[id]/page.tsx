@@ -1,8 +1,7 @@
-
 'use client';
 
 import { UserProfilePage } from '@/components/UserProfilePage';
-import { useParams }s from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
 export default function CompanyProfileEntry() {
