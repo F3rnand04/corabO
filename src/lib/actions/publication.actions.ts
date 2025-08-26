@@ -1,5 +1,6 @@
 'use server';
 
+/*
 import { 
     createPublicationFlow, 
     createProductFlow,
@@ -9,9 +10,18 @@ import {
     removeGalleryImageFlow
 } from '@/ai/flows/publication-flow';
 import { sendNewContentNotificationFlow } from '@/ai/flows/notification-flow';
+*/
 import type { CreatePublicationInput, CreateProductInput, User } from '@/lib/types';
 import { getFirestore } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
+
+const createPublicationFlow = async (data: any) => { console.warn("Genkit flow 'createPublicationFlow' is disabled."); return { id: `pub-${Date.now()}`, ...data }; };
+const createProductFlow = async (data: any) => { console.warn("Genkit flow 'createProductFlow' is disabled."); return { id: `prod-${Date.now()}`, ...data, alt: data.name }; };
+const addCommentToImageFlow = async (data: any) => console.warn("Genkit flow 'addCommentToImageFlow' is disabled.");
+const removeCommentFromImageFlow = async (data: any) => console.warn("Genkit flow 'removeCommentFromImageFlow' is disabled.");
+const updateGalleryImageFlow = async (data: any) => console.warn("Genkit flow 'updateGalleryImageFlow' is disabled.");
+const removeGalleryImageFlow = async (data: any) => console.warn("Genkit flow 'removeGalleryImageFlow' is disabled.");
+const sendNewContentNotificationFlow = async (data: any) => console.warn("Genkit flow 'sendNewContentNotificationFlow' is disabled.");
 
 
 export async function createPublication(input: CreatePublicationInput) {

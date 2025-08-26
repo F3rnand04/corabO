@@ -1,11 +1,15 @@
-
 'use server';
-
+/*
 import { 
     findDeliveryProviderFlow, 
     resolveDeliveryAsPickupFlow 
 } from '@/ai/flows/delivery-flow';
+*/
 import { revalidatePath } from 'next/cache';
+
+const findDeliveryProviderFlow = async (data: any) => console.warn("Genkit flow 'findDeliveryProviderFlow' is disabled.");
+const resolveDeliveryAsPickupFlow = async (data: any) => console.warn("Genkit flow 'resolveDeliveryAsPickupFlow' is disabled.");
+
 
 /**
  * Initiates the search for an available delivery provider for a transaction.

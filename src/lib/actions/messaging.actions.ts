@@ -1,10 +1,12 @@
-
 'use server';
 
-import { sendMessageFlow, acceptProposalFlow } from '@/ai/flows/message-flow';
+// import { sendMessageFlow, acceptProposalFlow } from '@/ai/flows/message-flow';
 import { revalidatePath } from 'next/cache';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import type { Conversation, Message } from '@/lib/types';
+import type { Conversation, Message, Transaction } from '@/lib/types';
+
+const sendMessageFlow = async (data: any) => console.warn("Genkit flow 'sendMessageFlow' is disabled.");
+const acceptProposalFlow = async (data: any) => console.warn("Genkit flow 'acceptProposalFlow' is disabled.");
 
 
 /**
@@ -19,7 +21,43 @@ export async function sendMessage(input: {
   proposal?: any; // Consider creating a Zod schema for this
   location?: { lat: number; lon: number };
 }): Promise<string> {
-    await sendMessageFlow(input);
+    const db = getFirestore();
+    const convoRef = db.collection('conversations').doc(input.conversationId);
+    const convoSnap = await convoRef.get();
+
+    const newMessage: Message = {
+      id: `msg-${Date.now()}`,
+      senderId: input.senderId,
+      timestamp: new Date().toISOString(),
+      text: input.text || '',
+      isProposalAccepted: false,
+      isRead: false,
+    };
+
+    if (input.proposal) {
+      newMessage.type = 'proposal';
+      newMessage.proposal = input.proposal;
+    } else if (input.location) {
+      newMessage.type = 'location';
+      newMessage.location = input.location;
+    } else {
+      newMessage.type = 'text';
+    }
+
+    if (convoSnap.exists()) {
+      await convoRef.update({
+        messages: FieldValue.arrayUnion(newMessage),
+        lastUpdated: new Date().toISOString(),
+      });
+    } else {
+      await convoRef.set({
+        id: input.conversationId,
+        participantIds: [input.senderId, input.recipientId].sort(),
+        messages: [newMessage],
+        lastUpdated: new Date().toISOString(),
+      });
+    }
+    
     revalidatePath(`/messages/${input.conversationId}`);
     return input.conversationId;
 }

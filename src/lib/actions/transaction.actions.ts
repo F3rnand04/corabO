@@ -1,5 +1,6 @@
 'use server';
 
+/*
 import {
     createAppointmentRequestFlow,
     acceptAppointmentFlow,
@@ -15,13 +16,30 @@ import {
     startDisputeFlow,
     cancelSystemTransactionFlow,
 } from '@/ai/flows/transaction-flow';
-
 import { 
     findDeliveryProviderFlow, 
     resolveDeliveryAsPickupFlow 
 } from '@/ai/flows/delivery-flow';
+*/
 import { revalidatePath } from 'next/cache';
 import type { AppointmentRequest, Transaction, User } from '@/lib/types';
+
+
+const createAppointmentRequestFlow = async (data: any) => console.warn("Genkit flow 'createAppointmentRequestFlow' is disabled.");
+const acceptAppointmentFlow = async (data: any) => console.warn("Genkit flow 'acceptAppointmentFlow' is disabled.");
+const acceptQuoteFlow = async (data: any) => console.warn("Genkit flow 'acceptQuoteFlow' is disabled.");
+const checkoutFlow = async (data: any) => console.warn("Genkit flow 'checkoutFlow' is disabled.");
+const completeWorkFlow = async (data: any) => console.warn("Genkit flow 'completeWorkFlow' is disabled.");
+const confirmPaymentReceivedFlow = async (data: any) => console.warn("Genkit flow 'confirmPaymentReceivedFlow' is disabled.");
+const confirmWorkReceivedFlow = async (data: any) => console.warn("Genkit flow 'confirmWorkReceivedFlow' is disabled.");
+const downloadTransactionsPDFFlow = async (data: any) => { console.warn("Genkit flow 'downloadTransactionsPDFFlow' is disabled."); return ""; };
+const payCommitmentFlow = async (data: any) => console.warn("Genkit flow 'payCommitmentFlow' is disabled.");
+const processDirectPaymentFlow = async (data: any) => { console.warn("Genkit flow 'processDirectPaymentFlow' is disabled."); return { transactionId: '' }; };
+const sendQuoteFlow = async (data: any) => console.warn("Genkit flow 'sendQuoteFlow' is disabled.");
+const startDisputeFlow = async (data: any) => console.warn("Genkit flow 'startDisputeFlow' is disabled.");
+const cancelSystemTransactionFlow = async (data: any) => console.warn("Genkit flow 'cancelSystemTransactionFlow' is disabled.");
+const findDeliveryProviderFlow = async (data: any) => console.warn("Genkit flow 'findDeliveryProviderFlow' is disabled.");
+const resolveDeliveryAsPickupFlow = async (data: any) => console.warn("Genkit flow 'resolveDeliveryAsPickupFlow' is disabled.");
 
 
 export async function createAppointmentRequest(request: AppointmentRequest) {
@@ -88,9 +106,6 @@ export async function cancelSystemTransaction(transactionId: string) {
 }
 
 export async function downloadTransactionsPDF(transactions: Transaction[]) {
-    // This flow is currently a placeholder and does not generate a real PDF.
-    // To implement, you would use a library like jspdf and html2canvas.
-    // For now, we return a placeholder string.
     console.log("Generating PDF for", transactions.length, "transactions.");
     return "base64-encoded-pdf-string-placeholder";
 }
@@ -109,10 +124,7 @@ export async function retryFindDelivery(input: { transactionId: string }) {
 }
 
 export async function assignOwnDelivery(transactionId: string, providerId: string) {
-    // This would ideally be a dedicated flow, but for now we can simulate the logic here or in a new flow.
-    // For now, let's assume a flow exists or logic is handled directly.
     console.log(`Assigning delivery for TX ${transactionId} to provider ${providerId} themselves.`);
-    // await assignSelfDeliveryFlow({ transactionId, providerId });
     revalidatePath('/transactions');
 }
 

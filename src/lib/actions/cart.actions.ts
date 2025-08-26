@@ -1,7 +1,9 @@
 'use server';
 
-import { updateCartFlow } from '@/ai/flows/cart-flow';
+// import { updateCartFlow } from '@/ai/flows/cart-flow';
 import { revalidatePath } from 'next/cache';
+
+const updateCartFlow = async (data: any) => console.warn("Genkit flow 'updateCartFlow' is disabled.");
 
 /**
  * Updates the quantity of a product in the user's active cart.
