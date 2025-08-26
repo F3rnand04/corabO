@@ -3,7 +3,7 @@
 /**
  * @fileOverview A simplified video generation flow.
  * This flow ONLY handles the call to the AI model and returns the video URL.
- * File system operations are moved to a separate server action.
+ * All file system operations have been moved to a separate server action.
  */
 import {googleAI} from '@genkit-ai/googleai';
 import {z} from 'zod';
@@ -13,8 +13,8 @@ const textToVideoFlow = ai.defineFlow(
   {
     name: 'textToVideoFlow',
     inputSchema: z.string(),
-    // The output is now the raw media URL from the Genkit operation
-    outputSchema: z.string(), 
+    // The output is now the media URL as a string.
+    outputSchema: z.string(),
   },
   async (prompt) => {
     let {operation} = await ai.generate({
@@ -45,12 +45,17 @@ const textToVideoFlow = ai.defineFlow(
       throw new Error('Failed to find the generated video URL in the operation result.');
     }
     
-    // Return only the URL, let the action handle the download.
+    // Return the video URL.
     return video.media.url;
   }
 );
 
-// This is the function that will be called from the server action.
+/**
+ * This function will be called from a server action. 
+ * It runs the Genkit flow and returns the resulting video URL.
+ * @param prompt The text prompt for video generation.
+ * @returns A promise that resolves to the video URL string.
+ */
 export async function generateVideoUrl(prompt: string): Promise<string> {
     return await textToVideoFlow(prompt);
 }

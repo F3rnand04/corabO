@@ -8,7 +8,6 @@ import { generateVideoUrl } from '@/ai/flows/video-generation-flow';
 import * as fs from 'fs/promises';
 import { Readable } from 'stream';
 
-// This is a placeholder for where you might want to save videos.
 // In a real App Hosting environment, you'd use a writable directory like /tmp.
 const VIDEO_STORAGE_PATH = './public/videos';
 
@@ -37,7 +36,16 @@ async function downloadVideo(videoUrl: string, fileName: string): Promise<string
     const filePath = `${VIDEO_STORAGE_PATH}/${fileName}`;
     
     // @ts-ignore - response.body is a ReadableStream which is compatible
-    await Readable.fromWeb(response.body).pipe((await fs.open(filePath, 'w')).createWriteStream());
+    const webStream = response.body;
+    const nodeStream = Readable.fromWeb(webStream as any);
+    const fileStream = (await fs.open(filePath, 'w')).createWriteStream();
+    
+    await new Promise((resolve, reject) => {
+        nodeStream.pipe(fileStream);
+        nodeStream.on('error', reject);
+        fileStream.on('finish', resolve);
+        fileStream.on('error', reject);
+    });
 
     return `/videos/${fileName}`; // Return a public URL path
 }
