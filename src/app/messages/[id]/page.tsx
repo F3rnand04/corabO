@@ -291,7 +291,7 @@ export default function ChatPage() {
     
     markConversationAsRead(conversationId);
 
-  }, [conversationId, currentUser, conversation, otherParticipant?.id, users, conversations.length]);
+  }, [conversationId, currentUser, conversation, otherParticipant?.id, users, conversations]);
 
   
   useEffect(() => {
@@ -304,35 +304,20 @@ export default function ChatPage() {
     }
   }, [conversation?.messages]);
 
-
-  if (isLoading || !currentUser || !otherParticipant || !conversation) {
-    return (
-      <div className="flex flex-col h-screen items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin"/>
-      </div>
-    );
-  }
-
-  const isProvider = currentUser?.type === 'provider';
-  const canAcceptProposal = currentUser?.isTransactionsActive ?? false;
-  const showProviderWarning = isProvider && !isSelfChat && (!otherParticipant?.isTransactionsActive);
-
-
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (newMessage.trim()) {
-      if(!currentUser) return;
+    if (newMessage.trim() && currentUser && otherParticipant) {
       sendMessage({ recipientId: otherParticipant.id, text: newMessage, conversationId, senderId: currentUser.id });
       setNewMessage('');
     }
   };
 
   const handleDateSelect = (date: Date) => {
+      if(!currentUser || !otherParticipant) return;
+      
       const formattedDate = format(date, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: es });
       const requestDetails = `Solicitud de cita para el ${formattedDate}.`;
       
-      if(!currentUser) return;
-
       createAppointmentRequest({
           providerId: otherParticipant.id,
           clientId: currentUser.id,
@@ -355,7 +340,8 @@ export default function ChatPage() {
   };
   
   const handleSendLocation = (type: 'current' | 'saved') => {
-      if(!currentUser) return;
+      if(!currentUser || !otherParticipant) return;
+
       if (type === 'current') {
           if (currentUserLocation) {
               sendMessage({
@@ -386,6 +372,19 @@ export default function ChatPage() {
       if(!currentUser) return;
       acceptProposal(conversationId, messageId, currentUser.id);
   }
+
+  if (isLoading || !currentUser || !otherParticipant || !conversation) {
+    return (
+      <div className="flex flex-col h-screen items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin"/>
+      </div>
+    );
+  }
+
+  const isProvider = currentUser?.type === 'provider';
+  const canAcceptProposal = currentUser?.isTransactionsActive ?? false;
+  const showProviderWarning = isProvider && !isSelfChat && (!otherParticipant?.isTransactionsActive);
+
 
   return (
     <>
