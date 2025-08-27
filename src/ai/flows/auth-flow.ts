@@ -77,7 +77,7 @@ export async function completeInitialSetupFlow(userId: string, data: { name: str
       birthDate: data.birthDate,
       country: data.country,
       isInitialSetupComplete: true,
-      type: isCompany ? 'provider' : data.type,
+      type: isCompany ? 'provider' : data.type, // If it's a company, force the type to 'provider'.
       credicoraLevel: initialCredicoraLevel.level,
       credicoraLimit: initialCredicoraLevel.creditLimit,
       credicoraDetails: initialCredicoraLevel,
