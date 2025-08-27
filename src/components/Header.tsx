@@ -51,20 +51,8 @@ export function Header() {
   const [isCheckoutAlertOpen, setIsCheckoutAlertOpen] = useState(false);
   
   if (!currentUser) {
-    // Show a simplified header for the unauthenticated state
-    return (
-        <header className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b">
-            <div className="container px-4 sm:px-6">
-                <div className="flex h-16 items-center justify-between">
-                    <Image src="https://i.postimg.cc/8zWvkhxS/Sin-t-tulo-3.png" alt="Corabo Logo" width={120} height={40} />
-                    <Button onClick={() => router.push('/login')}>
-                      <LogInIcon className="mr-2 h-4 w-4" />
-                      Iniciar Sesión
-                    </Button>
-                </div>
-            </div>
-        </header>
-    );
+    // The header for unauthenticated users is removed to create a cleaner landing page experience.
+    return null;
   }
   
   const isCompany = currentUser.profileSetupData?.providerType === 'company';

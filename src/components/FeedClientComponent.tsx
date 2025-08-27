@@ -94,25 +94,36 @@ export function FeedClientComponent() {
 
   if (!currentUser) {
     return (
-        <div className="flex flex-col items-center justify-center min-h-[70vh] text-center p-4">
-            <div className="relative w-48 h-24 mx-auto mb-6">
-                <Image
-                    src="https://i.postimg.cc/Wz1MTvWK/lg.png"
-                    alt="Corabo logo"
-                    fill
-                    priority
-                    sizes="200px"
-                    className="object-contain"
-                />
+        <div className="relative h-screen flex flex-col items-center justify-center text-center p-4 bg-black text-white overflow-hidden">
+            <Image
+                src="https://i.postimg.cc/C1sxJnNT/bv.png"
+                alt="Fondo de bienvenida"
+                fill
+                priority
+                className="object-cover opacity-50"
+                data-ai-hint="background office"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent" />
+            <div className="relative z-10 flex flex-col items-center">
+                 <div className="relative w-48 h-24 mx-auto mb-6">
+                    <Image
+                        src="https://i.postimg.cc/Wz1MTvWK/lg.png"
+                        alt="Corabo logo"
+                        fill
+                        priority
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        className="object-contain"
+                    />
+                </div>
+                <h1 className="text-4xl font-bold tracking-tight drop-shadow-lg">Conecta. Colabora. Crece.</h1>
+                <p className="mt-4 max-w-xl text-lg text-white/80 drop-shadow-md">
+                    Tu nueva plataforma de confianza para encontrar profesionales talentosos y clientes que valoran tu trabajo. Únete a la comunidad y lleva tus proyectos al siguiente nivel.
+                </p>
+                <Button className="mt-8" size="lg" onClick={() => router.push('/login')}>
+                    <LogIn className="mr-2 h-5 w-5" />
+                    Iniciar Sesión o Registrarse
+                </Button>
             </div>
-            <h1 className="text-2xl font-bold">Bienvenido a Corabo</h1>
-            <p className="text-muted-foreground mt-2 max-w-sm">
-                La plataforma donde conectas con profesionales y clientes de confianza.
-            </p>
-            <Button className="mt-8" size="lg" onClick={() => router.push('/login')}>
-                <LogIn className="mr-2 h-5 w-5" />
-                Iniciar Sesión o Registrarse
-            </Button>
         </div>
     );
   }
