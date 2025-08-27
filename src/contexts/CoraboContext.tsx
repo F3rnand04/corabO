@@ -85,34 +85,37 @@ export const CoraboProvider = ({ children, initialCoraboUser }: CoraboProviderPr
   }, []);
 
   useEffect(() => {
-    // Set loading state based on auth loading status
+    // This effect now correctly handles loading states and data fetching.
     setIsLoadingUser(isLoadingAuth);
     
-    if (isLoadingAuth) return;
+    if (isLoadingAuth) {
+        // While auth is loading, we keep the user data loading as well.
+        // We also clear previous user data to prevent flashes of old content.
+        setCurrentUser(null);
+        setConversations([]);
+        setTransactions([]);
+        setContacts([]);
+        return;
+    }
     
     const db = getFirestoreDb();
-    
-    // Unsubscribe listeners when effect cleans up
     let unsubs: (() => void)[] = [];
 
-    // Listen to all users
+    // Global listener for all users, always active
     const usersUnsub = onSnapshot(collection(db, 'users'), (snapshot) => {
         setUsers(snapshot.docs.map(doc => doc.data() as User));
     });
     unsubs.push(usersUnsub);
 
     if (firebaseUser) {
-        // --- User-specific listeners ---
+        // --- User-specific listeners, only attach if a user is logged in ---
         const userUnsub = onSnapshot(doc(db, 'users', firebaseUser.uid), (docSnap) => {
-            if(docSnap.exists()){
-                const userData = docSnap.data() as User;
-                setCurrentUser(userData);
-                setContacts(userData.contacts || []);
-            } else {
-                // This case handles a logged-in user whose document might have been deleted
-                setCurrentUser(null);
+            const userData = docSnap.exists() ? docSnap.data() as User : null;
+            setCurrentUser(userData);
+            if (userData) {
+              setContacts(userData.contacts || []);
             }
-            setIsLoadingUser(false); // User data loaded or confirmed non-existent
+            setIsLoadingUser(false);
         });
         unsubs.push(userUnsub);
 
@@ -129,7 +132,7 @@ export const CoraboProvider = ({ children, initialCoraboUser }: CoraboProviderPr
         unsubs.push(transUnsub);
 
     } else {
-        // No user, reset all user-specific data
+        // No user, ensure all user-specific data is cleared and loading is false
         setCurrentUser(null);
         setConversations([]);
         setTransactions([]);
@@ -145,8 +148,9 @@ export const CoraboProvider = ({ children, initialCoraboUser }: CoraboProviderPr
 
   // --- Derived State (Cart) ---
   const cart = useMemo((): CartItem[] => {
+      if (!currentUser?.id) return [];
       return transactions
-        .filter(tx => tx.clientId === currentUser?.id && tx.status === 'Carrito Activo')
+        .filter(tx => tx.clientId === currentUser.id && tx.status === 'Carrito Activo')
         .flatMap(tx => tx.details.items || []);
   }, [transactions, currentUser?.id]);
 
