@@ -37,7 +37,7 @@ export default function LoginPage() {
       // Inicia el proceso de redirección a la página de login de Google.
       // El resultado se gestionará en AuthProvider cuando el usuario regrese a la app.
       await signInWithRedirect(auth, provider);
-    } catch (error: any)
+    } catch (error: any) {
       console.error("Google sign-in redirect error:", error);
       toast({ 
         variant: 'destructive', 
