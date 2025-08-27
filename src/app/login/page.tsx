@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getAuthInstance } from '@/lib/firebase';
-import { signInWithCustomToken, GoogleAuthProvider, signInWithRedirect } from 'firebase/auth';
+import { signInWithCustomToken, GoogleAuthProvider, signInWithRedirect, AuthError } from 'firebase/auth';
 import { signInAsGuest } from '@/lib/actions/auth.actions';
 
 export default function LoginPage() {
@@ -26,7 +26,7 @@ export default function LoginPage() {
       }
     } catch (error: any) {
       console.error("Guest login error:", error);
-      toast({ variant: 'destructive', title: 'Error de Inicio de Sesión', description: error.message });
+      toast({ variant: 'destructive', title: 'Error de Inicio de Sesión', description: 'No se pudo completar el ingreso de invitado. Por favor, contacta a soporte.' });
     }
   };
 
@@ -34,16 +34,22 @@ export default function LoginPage() {
     const auth = getAuthInstance();
     const provider = new GoogleAuthProvider();
     try {
-      // Inicia el proceso de redirección a la página de login de Google.
-      // El resultado se gestionará en AuthProvider cuando el usuario regrese a la app.
       await signInWithRedirect(auth, provider);
     } catch (error: any) {
       console.error("Google sign-in redirect error:", error);
-      toast({ 
-        variant: 'destructive', 
-        title: 'Error de Inicio de Sesión con Google', 
-        description: error.message || 'No se pudo iniciar el proceso de autenticación. Por favor, intenta de nuevo.'
-      });
+       if (error.code === 'auth/unauthorized-domain') {
+           toast({ 
+            variant: 'destructive', 
+            title: 'Dominio no Autorizado', 
+            description: 'Este dominio no está autorizado para la autenticación. Por favor, contacta al administrador.'
+          });
+       } else {
+           toast({ 
+            variant: 'destructive', 
+            title: 'Error de Inicio de Sesión con Google', 
+            description: 'No se pudo iniciar la autenticación. Intenta de nuevo.'
+          });
+       }
     }
   };
 
