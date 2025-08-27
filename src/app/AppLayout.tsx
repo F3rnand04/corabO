@@ -1,22 +1,43 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Footer } from '@/components/Footer';
 import { Header } from '@/components/Header';
 import { useCorabo } from '@/contexts/CoraboContext';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/components/auth/AuthProvider';
+import { useEffect } from 'react';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { isLoadingUser } = useCorabo();
-  const { isLoadingAuth } = useAuth();
+  const router = useRouter();
+  const { isLoadingUser, currentUser } = useCorabo();
+  const { isLoadingAuth, firebaseUser } = useAuth();
+
+  // New useEffect to handle redirection based on auth state
+  useEffect(() => {
+    // If auth is done loading and there's no firebase user, force to login
+    if (!isLoadingAuth && !firebaseUser) {
+      if(pathname !== '/login') {
+         router.push('/login');
+      }
+      return;
+    }
+    
+    // If we have a firebase user but not the full Corabo user yet, we wait.
+    // If after waiting there is a user and they haven't completed setup, redirect them.
+    if (firebaseUser && !isLoadingUser && currentUser) {
+        if (!currentUser.isInitialSetupComplete && pathname !== '/initial-setup') {
+            router.push('/initial-setup');
+        } else if (currentUser.isInitialSetupComplete && (pathname === '/login' || pathname === '/initial-setup')) {
+            router.push('/');
+        }
+    }
+
+  }, [isLoadingAuth, firebaseUser, isLoadingUser, currentUser, pathname, router]);
 
 
-  // The complex useEffect for redirection has been REMOVED.
-  // This responsibility is now handled at a higher level (middleware or page-level logic if needed).
-
-  if (isLoadingAuth || isLoadingUser) {
+  if (isLoadingAuth || (firebaseUser && isLoadingUser)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -48,6 +69,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const shouldHideHeader = hideHeaderForPaths.some(path => (pathname || '').startsWith(path));
   const shouldHideFooter = hideFooterForPaths.some(path => (pathname || '').startsWith(path));
+
+  // Don't render layout for login/setup pages to avoid flashes of content
+  if (pathname === '/login' || pathname === '/initial-setup') {
+      return <>{children}</>;
+  }
+
 
   return (
     <div className="flex flex-col min-h-screen">
