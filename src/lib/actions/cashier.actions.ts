@@ -1,7 +1,6 @@
 'use server';
 
-// The getFirebaseAdmin() call is removed. The action now relies on the
-// globally initialized Firebase instance managed by Genkit.
+import '@/ai/genkit'; // Import for side effects to ensure Firebase is initialized
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
 import { createCashierBoxFlow, regenerateCashierQrFlow } from '@/ai/flows/cashier-flow';

@@ -1,8 +1,7 @@
 
 'use server';
 
-// The getFirebaseAdmin() call is removed. The action now relies on the
-// globally initialized Firebase instance managed by Genkit.
+import '@/ai/genkit'; // Import for side effects to ensure Firebase is initialized
 import { getFeedFlow } from '@/ai/flows/feed-flow';
 import { getProfileGalleryFlow, getProfileProductsFlow, getPublicProfileFlow } from '@/ai/flows/profile-flow';
 import { GetFeedInputSchema, GetProfileGalleryInputSchema, GetProfileProductsInputSchema } from '@/lib/types';

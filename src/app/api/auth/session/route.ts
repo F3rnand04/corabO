@@ -2,7 +2,7 @@
 import { getAuth } from 'firebase-admin/auth';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { ai } from '@/ai/genkit'; // Import the centralized ai instance
+import '@/ai/genkit'; // Import for side effects to ensure Firebase is initialized
 
 // The Firebase Admin app is initialized by Genkit, so we don't need getFirebaseAdmin()
 

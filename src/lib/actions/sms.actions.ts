@@ -1,5 +1,6 @@
 'use server';
 
+import '@/ai/genkit'; // Import for side effects to ensure Firebase is initialized
 import { sendSmsVerificationCodeFlow, verifySmsCodeFlow } from '@/ai/flows/sms-flow';
 
 export async function sendSmsVerificationCode(userId: string, phoneNumber: string) {

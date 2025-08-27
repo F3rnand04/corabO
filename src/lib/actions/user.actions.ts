@@ -1,8 +1,6 @@
 'use server';
 
-// The redundant getFirebaseAdmin() call is removed from here.
-// The actions will use the Firebase instance initialized by Genkit.
-
+import '@/ai/genkit'; // Import for side effects to ensure Firebase is initialized
 import { revalidatePath } from 'next/cache';
 import type { FirebaseUserInput, ProfileSetupData, User } from '@/lib/types';
 import { getFirestore } from 'firebase-admin/firestore';
