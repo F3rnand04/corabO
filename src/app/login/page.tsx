@@ -36,20 +36,12 @@ export default function LoginPage() {
     try {
       await signInWithRedirect(auth, provider);
     } catch (error: any) {
-      console.error("Google sign-in redirect error:", error);
-       if (error.code === 'auth/unauthorized-domain') {
-           toast({ 
-            variant: 'destructive', 
-            title: 'Dominio no Autorizado', 
-            description: 'Este dominio no está autorizado para la autenticación. Por favor, contacta al administrador.'
-          });
-       } else {
-           toast({ 
-            variant: 'destructive', 
-            title: 'Error de Inicio de Sesión con Google', 
-            description: 'No se pudo iniciar la autenticación. Intenta de nuevo.'
-          });
-       }
+       console.error("Google sign-in redirect error:", error);
+       toast({ 
+        variant: 'destructive', 
+        title: 'Error de Inicio de Sesión con Google', 
+        description: 'No se pudo iniciar la autenticación. Intenta de nuevo.'
+      });
     }
   };
 
