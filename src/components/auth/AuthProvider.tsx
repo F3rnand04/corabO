@@ -27,16 +27,21 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
   useEffect(() => {
     const auth = getAuthInstance();
 
-    // Primero, procesa el resultado de la redirección para capturar el usuario
+    // First, process the redirect result to capture the user from Google's redirect.
+    // This is crucial to run before the onIdTokenChanged listener is fully relied upon.
     getRedirectResult(auth)
       .then((result) => {
         if (result) {
-            // Usuario ha iniciado sesión exitosamente a través de la redirección.
-            // onIdTokenChanged se encargará del resto.
+            // User has successfully signed in through redirect.
+            // onIdTokenChanged will handle the rest.
+             toast({
+              title: "¡Bienvenido de vuelta!",
+              description: "Has iniciado sesión correctamente.",
+            });
         }
       })
       .catch((error) => {
-        // Manejar errores aquí si es necesario, como problemas de red.
+        // Handle errors here if necessary, such as network issues.
         console.error("Error getting redirect result:", error);
         toast({
           variant: "destructive",
@@ -45,34 +50,30 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
         });
       })
       .finally(() => {
-         // onIdTokenChanged se ejecutará de todas formas. Aquí nos aseguramos de que el estado de carga
-         // se actualice correctamente después de intentar obtener el resultado de la redirección.
-         // En el caso de que no haya redirección, el listener de abajo se encargará.
+        // Now, set up the primary listener.
+        const unsubscribe = onIdTokenChanged(auth, async (user) => {
+          setFirebaseUser(user);
+          setIsLoadingAuth(false);
+          
+          const idToken = user ? await user.getIdToken() : null;
+          // Update the session cookie on the server.
+          fetch('/api/auth/session', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ idToken }),
+          }).catch(error => {
+              console.error("Failed to sync session cookie:", error);
+          });
+        });
+
+        // Cleanup subscription on unmount
+        return () => unsubscribe();
       });
-
-
-    const unsubscribe = onIdTokenChanged(auth, async (user) => {
-      setFirebaseUser(user);
-      setIsLoadingAuth(false);
-      
-      const idToken = user ? await user.getIdToken() : null;
-      // Actualiza la cookie de sesión en el servidor. Esto es "fire-and-forget".
-      fetch('/api/auth/session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ idToken }),
-      }).catch(error => {
-          console.error("Failed to sync session cookie:", error);
-      });
-    });
-
-    // Cleanup subscription on unmount
-    return () => unsubscribe();
   }, [toast]);
 
   const logout = async () => {
     const auth = getAuthInstance();
-    await auth.signOut(); // Esto activará onIdTokenChanged, poniendo el usuario a null.
+    await auth.signOut(); // This will trigger onIdTokenChanged, setting the user to null.
   };
   
   const value: AuthContextType = {
