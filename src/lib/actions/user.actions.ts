@@ -1,9 +1,10 @@
+
 'use server';
 
 import '@/ai/genkit';
 import { revalidatePath } from 'next/cache';
 import type { FirebaseUserInput, ProfileSetupData, User } from '@/lib/types';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getOrCreateUserFlow, completeInitialSetupFlow } from '@/ai/flows/auth-flow';
 import { checkIdUniquenessFlow, deleteUserFlow, toggleGpsFlow, updateUserFlow } from '@/ai/flows/profile-flow';
 import { sendWelcomeToProviderNotificationFlow } from '@/ai/flows/notification-flow';
@@ -25,18 +26,22 @@ export async function updateUser(userId: string, updates: Partial<User> | { [key
 }
 
 export async function updateUserProfileImage(userId: string, dataUrl: string) {
-    await updateUser(userId, { profileImage: dataUrl });
+    await updateUserFlow({ userId, updates: { profileImage: dataUrl } });
 }
 
 export async function updateFullProfile(userId: string, formData: ProfileSetupData, userType: User['type']) {
     const db = getFirestore();
     const userRef = db.collection('users').doc(userId);
-    const becameProvider = userType === 'provider' && (await userRef.get()).data()?.type === 'client';
+    const userSnap = await userRef.get();
+    const becameProvider = userType === 'provider' && userSnap.exists() && userSnap.data()?.type === 'client';
 
-    await userRef.update({ 
-        'profileSetupData': formData, 
-        'isTransactionsActive': true, 
-        'type': userType 
+    await updateUserFlow({
+        userId,
+        updates: {
+            'profileSetupData': formData, 
+            'isTransactionsActive': true, 
+            'type': userType 
+        }
     });
 
     if(becameProvider) {
