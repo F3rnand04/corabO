@@ -6,7 +6,7 @@
  */
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/googleai';
-import * as firebase from '@genkit-ai/firebase';
+import { firebase } from '@genkit-ai/firebase';
 
 // By including the firebase() plugin here, Genkit handles the initialization
 // of the Firebase Admin SDK for all backend operations, including functions
