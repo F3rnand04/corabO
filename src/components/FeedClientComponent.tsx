@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useMemo, useEffect, useState } from "react";
+import { useMemo, useEffect, useState, useCallback } from "react";
 import type { GalleryImage } from "@/lib/types";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { ActivationWarning } from "@/components/ActivationWarning";
@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getFeed } from '@/lib/actions/feed.actions';
 import { Button } from "./ui/button";
 import { useRouter } from "next/navigation";
-import { LogIn } from "lucide-react";
+import { LogIn, Loader2 } from "lucide-react";
 import Image from "next/image";
 
 export function FeedClientComponent() {
@@ -19,14 +19,44 @@ export function FeedClientComponent() {
   
   const [publications, setPublications] = useState<GalleryImage[]>([]);
   const [isLoadingFeed, setIsLoadingFeed] = useState(true);
+  const [lastVisibleDocId, setLastVisibleDocId] = useState<string | undefined>(undefined);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  const loadMorePublications = useCallback(async () => {
+    if (!hasMore || isLoadingMore) return;
+
+    setIsLoadingMore(true);
+    try {
+        const result = await getFeed({ limitNum: 10, startAfterDocId: lastVisibleDocId });
+        if (result.publications) {
+            setPublications(prev => [...prev, ...result.publications as GalleryImage[]]);
+            setLastVisibleDocId(result.lastVisibleDocId);
+            setHasMore(!!result.lastVisibleDocId);
+        } else {
+            setHasMore(false);
+        }
+    } catch (error) {
+        console.error("Failed to fetch more feed:", error);
+    } finally {
+        setIsLoadingMore(false);
+    }
+  }, [hasMore, isLoadingMore, lastVisibleDocId]);
+
 
   useEffect(() => {
     if (!isLoadingUser && currentUser) {
         setIsLoadingFeed(true);
-        getFeed({ limitNum: 20 })
+        setPublications([]);
+        setLastVisibleDocId(undefined);
+        setHasMore(true);
+
+        getFeed({ limitNum: 10 })
             .then(result => {
                 if (result.publications) {
                     setPublications(result.publications as GalleryImage[]);
+                    setLastVisibleDocId(result.lastVisibleDocId);
+                    setHasMore(!!result.lastVisibleDocId);
                 }
             })
             .catch(error => {
@@ -72,6 +102,13 @@ export function FeedClientComponent() {
           {filteredPublications.map((item, index) => (
               <PublicationCard key={item.id || index} publication={item} />
           ))}
+          {hasMore && !searchQuery && !categoryFilter && (
+            <div className="text-center py-4">
+                <Button onClick={loadMorePublications} disabled={isLoadingMore}>
+                    {isLoadingMore ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : 'Cargar más'}
+                </Button>
+            </div>
+          )}
         </div>
       );
     }
@@ -84,7 +121,7 @@ export function FeedClientComponent() {
     );
   };
 
-  if (isLoadingUser || isLoadingFeed) {
+  if (isLoadingUser || (isLoadingFeed && publications.length === 0)) {
     return (
       <main className="space-y-4 container py-4 mx-auto max-w-2xl">
         {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[500px] w-full" />)}
