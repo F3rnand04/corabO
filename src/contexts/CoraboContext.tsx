@@ -15,7 +15,6 @@ interface CoraboContextValue {
   isLoadingUser: boolean; 
   
   users: User[];
-  allPublications: GalleryImage[];
   transactions: Transaction[];
   conversations: Conversation[];
   
@@ -56,7 +55,6 @@ export const CoraboProvider = ({ children, initialCoraboUser }: CoraboProviderPr
   const [currentUser, setCurrentUser] = useState<User | null>(initialCoraboUser);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [users, setUsers] = useState<User[]>([]);
-  const [allPublications, setAllPublications] = useState<GalleryImage[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   
@@ -103,12 +101,6 @@ export const CoraboProvider = ({ children, initialCoraboUser }: CoraboProviderPr
     });
     unsubs.push(usersUnsub);
 
-    // Listen to all publications
-    const publicationsUnsub = onSnapshot(collection(db, 'publications'), (snapshot) => {
-        setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage));
-    });
-    unsubs.push(publicationsUnsub);
-    
     if (firebaseUser) {
         // --- User-specific listeners ---
         const userUnsub = onSnapshot(doc(db, 'users', firebaseUser.uid), (docSnap) => {
@@ -120,6 +112,7 @@ export const CoraboProvider = ({ children, initialCoraboUser }: CoraboProviderPr
                 // This case handles a logged-in user whose document might have been deleted
                 setCurrentUser(null);
             }
+            setIsLoadingUser(false); // User data loaded or confirmed non-existent
         });
         unsubs.push(userUnsub);
 
@@ -141,6 +134,7 @@ export const CoraboProvider = ({ children, initialCoraboUser }: CoraboProviderPr
         setConversations([]);
         setTransactions([]);
         setContacts([]);
+        setIsLoadingUser(false);
     }
 
     return () => {
@@ -198,7 +192,7 @@ export const CoraboProvider = ({ children, initialCoraboUser }: CoraboProviderPr
   // --- Context Value ---
   const value: CoraboContextValue = {
     currentUser, isLoadingUser,
-    users, allPublications, transactions, conversations,
+    users, transactions, conversations,
     searchQuery, categoryFilter,
     deliveryAddress, currentUserLocation, tempRecipientInfo, activeCartForCheckout,
     cart, qrSession,

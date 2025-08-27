@@ -7,7 +7,7 @@ import type { GalleryImage, User } from "@/lib/types";
 import { Star, Bookmark, Send, MessageCircle, Flag, CheckCircle, MapPin, Plus, Heart } from "lucide-react";
 import Link from "next/link";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { ReportDialog } from "./ReportDialog";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
@@ -26,12 +26,12 @@ interface PublicationCardProps {
 }
 
 export function PublicationCard({ publication, className }: PublicationCardProps) {
-    const { isContact, currentUser, getUserMetrics, getDistanceToProvider, addContact } = useCorabo();
+    const { isContact, currentUser, addContact, transactions } = useCorabo();
     const router = useRouter();
     const { toast } = useToast();
     
     // The owner is now passed directly in the publication prop.
-    const owner = publication.owner as User | null;
+    const owner = publication.owner;
 
     const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
     const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
@@ -50,6 +50,24 @@ export function PublicationCard({ publication, className }: PublicationCardProps
         // No need to fetch owner here anymore.
     }, [isContact, publication, currentUser, owner]);
 
+    const { reputation, effectiveness, responseTime, isNewProvider } = useMemo(() => {
+        if (!owner) return { reputation: 0, effectiveness: 0, responseTime: 'N/A', isNewProvider: true };
+
+        const userTransactions = transactions.filter(tx => tx.providerId === owner.id || tx.clientId === owner.id);
+        const ratedTransactions = userTransactions.filter(tx => tx.providerId === owner.id && tx.details.clientRating);
+        const totalRating = ratedTransactions.reduce((acc, tx) => acc + (tx.details.clientRating || 0), 0);
+        const rep = ratedTransactions.length > 0 ? totalRating / ratedTransactions.length : 5.0;
+
+        const relevantTransactions = userTransactions.filter(tx => tx.type !== 'Sistema' && tx.status !== 'Carrito Activo');
+        const successfulTransactions = relevantTransactions.filter(tx => tx.status === 'Pagado' || tx.status === 'Resuelto');
+        const eff = relevantTransactions.length > 0 ? (successfulTransactions.length / relevantTransactions.length) * 100 : 100;
+        
+        const quoteRequests = userTransactions.filter(tx => tx.providerId === owner.id && tx.status === 'Cotización Recibida');
+        const respTime = quoteRequests.length > 5 ? 'Rápido' : (userTransactions.length > 0 ? 'Normal' : 'Nuevo');
+        
+        return { reputation: rep, effectiveness: eff, responseTime: respTime, isNewProvider: respTime === 'Nuevo' };
+    }, [owner, transactions]);
+
     if (!owner || !owner.id) {
         // This can be a skeleton or null, but shouldn't happen if the backend enriches data correctly.
         return null; 
@@ -61,19 +79,14 @@ export function PublicationCard({ publication, className }: PublicationCardProps
     const isWithinDeliveryRange = true; 
 
     const profileLink = `/companies/${owner.id}`;
-    const { reputation, effectiveness, responseTime } = getUserMetrics(owner.id);
-    const isNewProvider = responseTime === 'Nuevo';
-    const distance = getDistanceToProvider(owner);
-
-    const showLocationInfo = currentUser?.country === owner?.country;
-
+    
     const displayName = owner.profileSetupData?.username || owner.name;
         
     const specialty = owner.profileSetupData?.specialty || "Especialidad no definida";
     const affiliation = owner.activeAffiliation;
 
     const handleSaveContact = () => {
-        addContact(owner);
+        addContact(owner as User);
         setIsSaved(true);
         toast({
             title: "¡Contacto Guardado!",
@@ -177,7 +190,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
                         <Link href={profileLink} passHref>
                             <p className="font-semibold text-sm hover:underline flex items-center gap-1.5">
                                 {displayName}
-                                {owner.isSubscribed && <CheckCircle className="w-4 h-4 text-blue-500" />}
+                                {owner.verified && <CheckCircle className="w-4 h-4 text-blue-500" />}
                             </p>
                         </Link>
                         <p className="text-xs text-muted-foreground">{specialty}</p>
@@ -214,15 +227,9 @@ export function PublicationCard({ publication, className }: PublicationCardProps
                 </div>
 
                 <div className="flex flex-col items-end">
-                    <Button variant="ghost" size="sm" onClick={handleContact}>
+                    <Button variant="link" size="sm" onClick={handleContact}>
                         Contactar
                     </Button>
-                     {showLocationInfo && distance && (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                            <MapPin className={cn("h-3 w-3", owner.isGpsActive && "text-green-500")} />
-                            <span>{distance}</span>
-                        </div>
-                    )}
                 </div>
             </div>
 
@@ -305,7 +312,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
             isOpen={isDetailsDialogOpen}
             onOpenChange={setIsDetailsDialogOpen}
             gallery={[publication]}
-            owner={owner}
+            owner={owner as User}
             startIndex={0}
         />
         </>
