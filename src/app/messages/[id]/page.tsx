@@ -139,7 +139,6 @@ function LocationBubble({ lat, lon, onForward }: { lat: number, lon: number, onF
 
 
 function ProposalBubble({ msg, onAccept, canAccept }: { msg: Message, onAccept: (messageId: string) => void, canAccept: boolean }) {
-    if (!msg.proposal) return null;
     const { currentUser } = useCorabo();
     const isClient = currentUser?.type === 'client';
     const isAccepted = msg.isProposalAccepted;
@@ -151,14 +150,16 @@ function ProposalBubble({ msg, onAccept, canAccept }: { msg: Message, onAccept: 
         }
     }, [msg.proposal?.deliveryDate]);
 
+    if (!currentUser) return null;
+
     return (
         <div className="flex justify-center w-full my-2">
             <div className="w-full max-w-sm rounded-lg border bg-background shadow-lg p-4 space-y-3">
                 <div className="flex items-center gap-2">
                     <Handshake className="w-6 h-6 text-primary" />
-                    <h3 className="font-bold text-lg">{msg.proposal.title}</h3>
+                    <h3 className="font-bold text-lg">{msg.proposal?.title}</h3>
                 </div>
-                <p className="text-sm text-muted-foreground line-clamp-3">{msg.proposal.description}</p>
+                <p className="text-sm text-muted-foreground line-clamp-3">{msg.proposal?.description}</p>
                 <Separator />
                 <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Fecha:</span>
@@ -166,9 +167,9 @@ function ProposalBubble({ msg, onAccept, canAccept }: { msg: Message, onAccept: 
                 </div>
                  <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Costo:</span>
-                    <span className="font-bold text-lg">${msg.proposal.amount.toFixed(2)}</span>
+                    <span className="font-bold text-lg">${msg.proposal?.amount.toFixed(2)}</span>
                 </div>
-                 {msg.proposal.acceptsCredicora && (
+                 {msg.proposal?.acceptsCredicora && (
                      <div className="flex items-center gap-2 text-blue-600">
                         <Star className="w-4 h-4 fill-current"/>
                         <span className="text-sm font-semibold">Acepta Credicora</span>
@@ -241,6 +242,7 @@ function MessageBubble({ msg, isCurrentUser, onAccept, canAcceptProposal, onForw
 
 
 export default function ChatPage() {
+  // All hooks are now at the top level
   const params = useParams();
   const router = useRouter();
   const { currentUser, conversations, users, setDeliveryAddressToCurrent, currentUserLocation } = useCorabo();
@@ -255,8 +257,6 @@ export default function ChatPage() {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   
   const conversationId = params?.id as string;
-
-  // Get the specific conversation from the global state
   const conversation = conversations.find(c => c.id === conversationId);
 
   useEffect(() => {
@@ -266,30 +266,23 @@ export default function ChatPage() {
     }
 
     const otherId = conversation.participantIds?.find(pId => pId !== currentUser.id);
-    
-    // Explicitly check for self-chat
     const selfChatDetected = conversation.participantIds?.every(pId => pId === currentUser.id);
 
     if (selfChatDetected) {
         setIsSelfChat(true);
         setOtherParticipant(currentUser);
-        setIsLoading(false);
     } else if (otherId) {
         setIsSelfChat(false);
         if (otherId !== otherParticipant?.id) {
             const participantData = users.find(u => u.id === otherId);
             setOtherParticipant(participantData || null);
-            setIsLoading(false);
-        } else {
-             setIsLoading(false);
         }
     } else {
-        // Handle case where participantIds is corrupted but conversation exists
-        setIsLoading(false);
         console.error("Conversation is missing a valid other participant.");
     }
     
     markConversationAsRead(conversationId);
+    setIsLoading(false);
 
   }, [conversationId, currentUser, conversation, otherParticipant?.id, users, conversations]);
 
@@ -303,6 +296,15 @@ export default function ChatPage() {
         }
     }
   }, [conversation?.messages]);
+
+  // Early return is now AFTER all hooks have been called
+  if (isLoading || !currentUser || !otherParticipant || !conversation) {
+    return (
+      <div className="flex flex-col h-screen items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin"/>
+      </div>
+    );
+  }
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -371,14 +373,6 @@ export default function ChatPage() {
   const handleAcceptProposal = (messageId: string) => {
       if(!currentUser) return;
       acceptProposal(conversationId, messageId, currentUser.id);
-  }
-
-  if (isLoading || !currentUser || !otherParticipant || !conversation) {
-    return (
-      <div className="flex flex-col h-screen items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin"/>
-      </div>
-    );
   }
 
   const isProvider = currentUser?.type === 'provider';
