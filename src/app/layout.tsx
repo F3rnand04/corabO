@@ -1,4 +1,3 @@
-
 import type { Metadata } from 'next';
 import './globals.css';
 import { Providers } from './providers';
@@ -11,7 +10,6 @@ import { cookies } from 'next/headers';
 import type { User as FirebaseUserType } from 'firebase-admin/auth';
 import type { FirebaseUserInput, User } from '@/lib/types';
 import { getOrCreateUserFlow } from '@/ai/flows/auth-flow';
-import '@/ai/genkit'; // Ensures firebase-admin is initialized on server
 
 export const metadata: Metadata = {
   title: 'corabO.app',
