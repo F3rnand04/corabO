@@ -25,8 +25,13 @@ initializeFirebaseAdmin();
 // Configure and export the Genkit AI instance.
 export const ai = genkit({
   plugins: [
-    googleAI(),
-    // The @genkit-ai/firebase plugin is removed. Initialization is now handled above.
+    googleAI({
+      // THIS IS THE FIX:
+      // It explicitly tells the Google AI plugin NOT to interfere with
+      // Firebase's authentication, allowing the firebase-admin SDK to handle it
+      // exclusively. This resolves the token refresh conflict.
+      firebaseAuth: 'DISABLED',
+    }),
   ],
   enableTracingAndMetrics: false,
 });
