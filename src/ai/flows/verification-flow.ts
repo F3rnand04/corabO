@@ -1,9 +1,11 @@
+
 /**
  * @fileOverview An AI-powered document verification flow.
  *
  * - autoVerifyIdWithAIFlow - A function that uses a multimodal model to read an ID document and compare it with user data.
  */
 import { z } from 'zod';
+import { ai } from '@/ai/genkit';
 
 
 const VerificationInputSchema = z.object({
@@ -18,8 +20,8 @@ export type VerificationInput = z.infer<typeof VerificationInputSchema>;
 
 
 const VerificationOutputSchema = z.object({
-  extractedName: z.string(),
-  extractedId: z.string(),
+  extractedName: z.string().describe("The full name of the person or company as it appears on the document."),
+  extractedId: z.string().describe("The ID number (cédula, RIF, NIT, etc.) as it appears on the document."),
   nameMatch: z.boolean(),
   idMatch: z.boolean(),
 });
@@ -75,19 +77,40 @@ function compareNamesFlexibly(nameA: string, nameB: string): boolean {
     return similarity > 0.8;
 }
 
+const verificationPrompt = ai.definePrompt({
+    name: 'idVerificationPrompt',
+    input: { schema: VerificationInputSchema },
+    output: { schema: VerificationOutputSchema },
+    prompt: `
+        You are an expert document verification agent. Your task is to extract the full name and ID number from the provided document image.
+        Then, you must compare the extracted information with the user's recorded data.
+
+        Document Type: {{{#if isCompany}}}Company Registration Document (RIF, NIT, etc.){{{else}}}Personal ID Card (Cédula, DNI, etc.){{{/if}}}
+
+        Follow these steps:
+        1.  Analyze the image: {{media url=documentImageUrl}}
+        2.  Extract the full name and the main identification number. Be precise.
+        3.  The user's recorded name is: '{{nameInRecord}}'
+        4.  The user's recorded ID is: '{{idInRecord}}'
+        5.  Compare the extracted name with the recorded name. Set 'nameMatch' to true if they are reasonably similar (e.g., ignoring middle names or suffixes like 'C.A.').
+        6.  Compare the extracted ID with the recorded ID. Normalize both IDs by removing prefixes (V, E, J, G), dashes, and dots before comparing. Set 'idMatch' to true if the normalized numbers are identical.
+        7.  Return the final JSON object.
+    `,
+});
 
 export async function autoVerifyIdWithAIFlow(input: VerificationInput): Promise<VerificationOutput> {
-    
-    // AI functionality is disabled. Returning a placeholder.
-    console.warn("Genkit flow 'autoVerifyIdWithAIFlow' is disabled.");
+    const { output } = await verificationPrompt(input);
+    if (!output) {
+        throw new Error("AI verification failed to produce an output.");
+    }
 
-    const nameMatch = compareNamesFlexibly(input.nameInRecord, "Simulated Name");
-    const idMatch = normalizeId(input.idInRecord) === normalizeId("000000");
+    // Overwrite the AI's comparison with our more robust backend comparison logic
+    const backendNameMatch = compareNamesFlexibly(input.nameInRecord, output.extractedName);
+    const backendIdMatch = normalizeId(input.idInRecord) === normalizeId(output.extractedId);
 
     return {
-      extractedName: "Simulated Name from AI",
-      extractedId: "V-00.000.000 (Simulated)",
-      nameMatch,
-      idMatch,
+        ...output,
+        nameMatch: backendNameMatch,
+        idMatch: backendIdMatch,
     };
-  }
+}

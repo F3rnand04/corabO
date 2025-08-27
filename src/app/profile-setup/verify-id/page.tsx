@@ -46,6 +46,9 @@ export default function VerifyIdPage() {
       if (currentUser.idDocumentUrl && currentUser.idDocumentUrl.startsWith('data:application/pdf')) {
           setIsPdf(true);
           setImagePreview(currentUser.idDocumentUrl);
+      } else if (currentUser.idDocumentUrl) {
+          setIsPdf(false);
+          setImagePreview(currentUser.idDocumentUrl);
       }
     } else if (currentUser) {
         // If user exists but data is missing, redirect to setup
@@ -63,7 +66,7 @@ export default function VerifyIdPage() {
   const docLabel = isCompany ? (countryInfo?.companyIdLabel || 'Documento Fiscal') : (countryInfo?.idLabel || 'Documento de Identidad');
 
 
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setImageFile(file);
@@ -82,13 +85,13 @@ export default function VerifyIdPage() {
     }
   };
 
-  const handleClearFile = () => {
+  const handleClearFile = async () => {
     setImagePreview(null); 
     setImageFile(null); 
     setVerificationResult(null);
     setIsPdf(false);
     if(currentUser) {
-        updateUser(currentUser.id, { idDocumentUrl: deleteField() as any });
+        await updateUser(currentUser.id, { idDocumentUrl: deleteField() as any });
     }
   }
 
@@ -140,7 +143,7 @@ export default function VerifyIdPage() {
   }
 
   const allChecksPass = verificationResult && !('error' in verificationResult) && verificationResult.idMatch && verificationResult.nameMatch;
-  const canVerify = !!currentUser.idDocumentUrl && !isLoading;
+  const canVerify = !!imagePreview && !isLoading;
 
 
   return (
@@ -156,7 +159,7 @@ export default function VerifyIdPage() {
           <div className="space-y-2">
             <Label htmlFor="id-document">{docLabel} (PDF o Imagen)</Label>
             <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*,application/pdf" />
-            {imagePreview || currentUser.idDocumentUrl ? (
+            {imagePreview ? (
                 <div className="relative group w-full aspect-[1.58] rounded-md overflow-hidden bg-black flex items-center justify-center">
                     {isPdf ? (
                         <div className="text-center text-white p-4">
@@ -164,7 +167,7 @@ export default function VerifyIdPage() {
                             <p className="font-semibold mt-2">Documento PDF Cargado</p>
                         </div>
                     ) : (
-                         <Image src={imagePreview || currentUser.idDocumentUrl!} alt="Vista previa del documento" fill style={{ objectFit: 'contain' }} sizes="400px"/>
+                         <Image src={imagePreview} alt="Vista previa del documento" fill style={{ objectFit: 'contain' }} sizes="400px"/>
                     )}
                     <Button 
                       variant="destructive" 
