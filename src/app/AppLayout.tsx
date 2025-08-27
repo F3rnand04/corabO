@@ -45,7 +45,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Simplified logic to just show the layout
+  // Determine if the header and footer should be hidden
   const hideHeaderForPaths = [
     '/login',
     '/initial-setup',
@@ -70,11 +70,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const shouldHideHeader = hideHeaderForPaths.some(path => (pathname || '').startsWith(path));
   const shouldHideFooter = hideFooterForPaths.some(path => (pathname || '').startsWith(path));
 
-  // Don't render layout for login/setup pages to avoid flashes of content
-  if (pathname === '/login' || pathname === '/initial-setup') {
-      return <>{children}</>;
-  }
-
+  // The problematic conditional rendering that caused the 404 is removed.
+  // The layout is now rendered consistently, and visibility is handled by shouldHideHeader/Footer.
 
   return (
     <div className="flex flex-col min-h-screen">
