@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect, useMemo } from "react";
@@ -7,16 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { Home, Settings, Wallet, ListChecks, History, CalendarClock, ChevronLeft, Loader2, Star, TrendingUp, Calendar as CalendarIcon, Link2, ShoppingCart, Plus, Minus, X, Truck, Building } from "lucide-react";
+import { Home, Settings, Wallet, ListChecks, History, CalendarClock, ChevronLeft, Loader2, Star, TrendingUp, Calendar as CalendarIcon, ShoppingCart } from "lucide-react";
 import { useRouter } from "next/navigation";
 import TransactionsLineChart from "@/components/charts/TransactionsLineChart";
 import { TransactionDetailsDialog } from "@/components/TransactionDetailsDialog";
 import type { Transaction } from "@/lib/types";
-import { useToast } from "@/hooks/use-toast";
 import { TransactionList } from "@/components/TransactionList";
 import { ActivationWarning } from "@/components/ActivationWarning";
-import { getFirestoreDb } from "@/lib/firebase";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { credicoraLevels, credicoraCompanyLevels } from "@/lib/types";
 import Link from "next/link";
@@ -24,11 +19,6 @@ import { SubscriptionDialog } from "@/components/SubscriptionDialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { CheckoutAlertDialogContent } from "@/components/CheckoutAlertDialogContent";
 import { CartPopoverContent } from "@/components/CartPopoverContent";
 
@@ -66,8 +56,7 @@ const ActionButton = ({ icon: Icon, label, count, onClick }: { icon: React.Eleme
 
 
 export default function TransactionsPage() {
-    const { currentUser, getUserMetrics, getAgendaEvents, cart, users, transactions } = useCorabo();
-    const { toast } = useToast();
+    const { currentUser, transactions, cart, getUserMetrics, getAgendaEvents } = useCorabo();
     
     const [isLoading, setIsLoading] = useState(true);
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
@@ -78,12 +67,72 @@ export default function TransactionsPage() {
     const [isCheckoutAlertOpen, setIsCheckoutAlertOpen] = useState(false);
 
     useEffect(() => {
-        // We consider loading to be finished once the currentUser is available.
-        // The transaction listener will update the state reactively.
         if (currentUser) {
             setIsLoading(false);
         }
     }, [currentUser]);
+
+
+    const isModuleActive = currentUser?.isTransactionsActive ?? false;
+
+    // Memoize derived data to prevent re-calculations on every render
+    const { 
+        agendaEvents, 
+        paymentDates, 
+        totalCartItems, 
+        pendingTx, 
+        historyTx, 
+        commitmentTx,
+        reputation,
+        effectiveness,
+        credicoraLevelDetails,
+        nextCredicoraLevelDetails,
+        completedTransactionsCount,
+        transactionsNeeded,
+        progressToNextLevel
+    } = useMemo(() => {
+        if (!currentUser) {
+            return {
+                agendaEvents: [], paymentDates: [], totalCartItems: 0,
+                pendingTx: [], historyTx: [], commitmentTx: [],
+                reputation: 0, effectiveness: 0, credicoraLevelDetails: null,
+                nextCredicoraLevelDetails: null, completedTransactionsCount: 0,
+                transactionsNeeded: 1, progressToNextLevel: 0
+            };
+        }
+
+        const isCompany = currentUser.profileSetupData?.providerType === 'company';
+        const activeCredicoraLevels = isCompany ? credicoraCompanyLevels : credicoraLevels;
+        
+        const metrics = getUserMetrics(currentUser.id);
+        const events = getAgendaEvents(transactions);
+        const dates = events.filter(e => e.type === 'payment').map(e => e.date);
+        const cartTotal = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+        const pending = transactions.filter(t => {
+            if (currentUser.type === 'provider') {
+                return t.providerId === currentUser.id && ['Solicitud Pendiente', 'Acuerdo Aceptado - Pendiente de Ejecución', 'Cita Solicitada', 'Pago Enviado - Esperando Confirmación'].includes(t.status);
+            }
+            return t.clientId === currentUser.id && ['Cotización Recibida', 'Finalizado - Pendiente de Pago', 'Pendiente de Confirmación del Cliente'].includes(t.status);
+        });
+
+        const history = transactions.filter(t => ['Pagado', 'Resuelto'].includes(t.status));
+        const commitments = transactions.filter(t => ['Acuerdo Aceptado - Pendiente de Ejecución', 'Finalizado - Pendiente de Pago'].includes(t.status));
+        
+        const credicoraLvl = activeCredicoraLevels[(currentUser.credicoraLevel || 1).toString()];
+        const nextCredicoraLvl = activeCredicoraLevels[((currentUser.credicoraLevel || 1) + 1).toString()];
+        const completedCount = transactions.filter(tx => tx.clientId === currentUser.id && ['Pagado', 'Resuelto'].includes(tx.status)).length;
+        const needed = credicoraLvl?.transactionsForNextLevel ?? 1;
+        const progress = (completedCount / needed) * 100;
+
+        return {
+            agendaEvents: events, paymentDates: dates, totalCartItems: cartTotal,
+            pendingTx: pending, historyTx: history, commitmentTx: commitments,
+            reputation: metrics.reputation, effectiveness: metrics.effectiveness,
+            credicoraLevelDetails: credicoraLvl, nextCredicoraLevelDetails: nextCredicoraLvl,
+            completedTransactionsCount: completedCount, transactionsNeeded: needed, progressToNextLevel: progress
+        };
+    }, [currentUser, transactions, cart, getUserMetrics, getAgendaEvents]);
 
 
     if (!currentUser) {
@@ -94,13 +143,6 @@ export default function TransactionsPage() {
         );
     }
     
-    const isCompany = currentUser.profileSetupData?.providerType === 'company';
-    const activeCredicoraLevels = isCompany ? credicoraCompanyLevels : credicoraLevels;
-
-    const agendaEvents = useMemo(() => getAgendaEvents(transactions), [transactions, getAgendaEvents]);
-    const paymentDates = useMemo(() => agendaEvents.filter(e => e.type === 'payment').map(e => e.date), [agendaEvents]);
-    const totalCartItems = useMemo(() => cart.reduce((sum, item) => sum + item.quantity, 0), [cart]);
-
     const handleDayClick = (day: Date) => {
         const eventOnDay = agendaEvents.find(e => format(e.date, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd'));
         if(eventOnDay) {
@@ -108,38 +150,6 @@ export default function TransactionsPage() {
             if(tx) setSelectedTransaction(tx);
         }
     }
-
-
-    const isModuleActive = currentUser.isTransactionsActive ?? false;
-    
-    const { reputation, effectiveness } = useMemo(() => getUserMetrics(currentUser.id), [currentUser.id, getUserMetrics]);
-
-    const pendingTx = useMemo(() => transactions.filter(t => {
-        if (currentUser.type === 'provider') {
-            return (t.providerId === currentUser.id && (
-                t.status === 'Solicitud Pendiente' || 
-                t.status === 'Acuerdo Aceptado - Pendiente de Ejecución' ||
-                t.status === 'Cita Solicitada' ||
-                t.status === 'Pago Enviado - Esperando Confirmación'
-            ));
-        } else {
-            return (t.clientId === currentUser.id && (
-                t.status === 'Cotización Recibida' || 
-                t.status === 'Finalizado - Pendiente de Pago' ||
-                t.status === 'Pendiente de Confirmación del Cliente'
-            ));
-        }
-    }), [transactions, currentUser]);
-
-    const historyTx = useMemo(() => transactions.filter(t => t.status === 'Pagado' || t.status === 'Resuelto'), [transactions]);
-    const commitmentTx = useMemo(() => transactions.filter(t => t.status === 'Acuerdo Aceptado - Pendiente de Ejecución' || t.status === 'Finalizado - Pendiente de Pago'), [transactions]);
-    
-    const credicoraLevelDetails = activeCredicoraLevels[(currentUser.credicoraLevel || 1).toString()];
-    const nextCredicoraLevelDetails = activeCredicoraLevels[((currentUser.credicoraLevel || 1) + 1).toString()];
-
-    const completedTransactionsCount = useMemo(() => transactions.filter(tx => tx.clientId === currentUser.id && (tx.status === 'Pagado' || tx.status === 'Resuelto')).length, [transactions, currentUser.id]);
-    const transactionsNeeded = credicoraLevelDetails?.transactionsForNextLevel ?? 1; // Avoid division by zero
-    const progressToNextLevel = (completedTransactionsCount / transactionsNeeded) * 100;
     
     const renderContent = () => {
         if (isLoading) {
@@ -255,21 +265,18 @@ export default function TransactionsPage() {
                                     <ActionButton icon={History} label="Historial" count={0} onClick={() => setView('history')} />
                                     <ActionButton icon={CalendarClock} label="Compromisos" count={commitmentTx.length} onClick={() => setView('commitments')} />
                                     
-                                    <AlertDialog open={isCheckoutAlertOpen} onOpenChange={setIsCheckoutAlertOpen}>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                 <Button variant="outline" className="flex flex-col h-24 w-full items-center justify-center gap-1 relative">
-                                                    {totalCartItems > 0 && <span className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">{totalCartItems}</span>}
-                                                    <ShoppingCart className="w-8 h-8 text-primary" />
-                                                    <span className="text-xs text-center">Carrito</span>
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-80">
-                                                <CartPopoverContent onCheckoutClick={() => setIsCheckoutAlertOpen(true)} />
-                                            </PopoverContent>
-                                        </Popover>
-                                        <CheckoutAlertDialogContent onOpenChange={setIsCheckoutAlertOpen} />
-                                    </AlertDialog>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                                <Button variant="outline" className="flex flex-col h-24 w-full items-center justify-center gap-1 relative">
+                                                {totalCartItems > 0 && <span className="absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">{totalCartItems}</span>}
+                                                <ShoppingCart className="w-8 h-8 text-primary" />
+                                                <span className="text-xs text-center">Carrito</span>
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-80">
+                                            <CartPopoverContent onCheckoutClick={() => setIsCheckoutAlertOpen(true)} />
+                                        </PopoverContent>
+                                    </Popover>
                                 </div>
                             </CardContent>
                         </Card>
@@ -299,16 +306,17 @@ export default function TransactionsPage() {
         <div className="bg-muted/20 min-h-screen">
             <TransactionsHeader onBackToSummary={() => setView('summary')} currentView={view} />
             <main className="container py-6">
-                 {isModuleActive ? renderContent() : (
+                 {!isModuleActive ? (
                     <div className="space-y-4">
+                        <ActivationWarning userType={currentUser.type} />
                         <div className="text-center py-12">
                             <Wallet className="mx-auto h-16 w-16 text-muted-foreground" />
                             <h2 className="mt-4 text-2xl font-semibold">Módulo Desactivado</h2>
                             <p className="mt-2 text-muted-foreground">Activa el módulo para ver tus finanzas.</p>
-                            <Button className="mt-4" onClick={() => router.push('/transactions/settings')}>Activar Módulo</Button>
+                            <Button className="mt-4" onClick={() => useRouter().push('/transactions/settings')}>Activar Módulo</Button>
                         </div>
                     </div>
-                )}
+                ) : renderContent()}
             </main>
             <TransactionDetailsDialog 
                 isOpen={!!selectedTransaction}
@@ -316,6 +324,7 @@ export default function TransactionsPage() {
                 transaction={selectedTransaction}
             />
             <SubscriptionDialog isOpen={isSubscriptionDialogOpen} onOpenChange={setIsSubscriptionDialogOpen} />
+             <CheckoutAlertDialogContent onOpenChange={setIsCheckoutAlertOpen} />
         </div>
     );
 }

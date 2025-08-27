@@ -1,5 +1,4 @@
-
-"use client";
+'use client';
 
 import type { Transaction, User } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -16,8 +15,6 @@ interface TransactionListProps {
 
 export function TransactionList({ title, transactions, onTransactionClick }: TransactionListProps) {
   const { currentUser, users } = useCorabo();
-
-  if(!transactions) return null;
 
   return (
     <Card>

@@ -4,9 +4,8 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo, useEffect } from 'react';
 import type { User, CartItem, Transaction, GalleryImage, Conversation, TempRecipientInfo } from '@/lib/types';
 import { getFirestoreDb }from '@/lib/firebase';
-import { collection, onSnapshot, query, where, doc } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, doc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { haversineDistance } from '@/lib/utils';
 import { useAuth } from '@/components/auth/AuthProvider';
 
 // This context is now simplified to focus on providing real-time data.
@@ -76,35 +75,15 @@ export const CoraboProvider = ({ children, initialCoraboUser }: CoraboProviderPr
   // --- Effects for Data Fetching ---
 
   useEffect(() => {
-    // Attempt to get user's location, with a fallback.
-    const fetchLocation = async () => {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => setCurrentUserLocation(position.coords),
-          (error) => {
-            // Fallback to IP-based location if GPS is denied
-            fetch('https://ipapi.co/json/')
-              .then(res => res.json())
-              .then(data => {
-                if(data.latitude && data.longitude){
-                    const coords: GeolocationCoordinates = {
-                        latitude: data.latitude,
-                        longitude: data.longitude,
-                        accuracy: 1000, // Lower accuracy for IP-based
-                        altitude: null,
-                        altitudeAccuracy: null,
-                        heading: null,
-                        speed: null,
-                    };
-                    setCurrentUserLocation(coords);
-                }
-              }).catch(ipError => console.error("IP Geolocation failed:", ipError));
-          }
-        );
-      }
-    };
-  
-    fetchLocation();
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => setCurrentUserLocation(position.coords),
+        (error) => {
+            console.warn("Geolocation Error:", error.message);
+            // Fallback to IP-based location can be added here if needed
+        }
+      );
+    }
   }, []);
 
   useEffect(() => {
@@ -183,8 +162,7 @@ export const CoraboProvider = ({ children, initialCoraboUser }: CoraboProviderPr
       if (!currentUser) return;
       const newContacts = [...contacts, contact];
       setContacts(newContacts);
-      // Persist change to Firestore
-      // await updateUser(currentUser.id, { contacts: newContacts });
+      await updateDoc(doc(getFirestoreDb(), 'users', currentUser.id), { contacts: newContacts });
       toast({ title: "Contacto añadido", description: `${contact.name} ha sido añadido a tu lista.` });
   }, [currentUser, contacts, toast]);
   
@@ -192,8 +170,7 @@ export const CoraboProvider = ({ children, initialCoraboUser }: CoraboProviderPr
      if (!currentUser) return;
      const newContacts = contacts.filter(c => c.id !== contactId);
      setContacts(newContacts);
-     // Persist change to Firestore
-     // await updateUser(currentUser.id, { contacts: newContacts });
+     await updateDoc(doc(getFirestoreDb(), 'users', currentUser.id), { contacts: newContacts });
      toast({ title: "Contacto eliminado" });
   }, [currentUser, contacts, toast]);
 

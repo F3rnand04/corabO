@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, ReactNode } from 'react';
@@ -16,14 +15,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "./ui/badge";
 import type { Transaction, User } from "@/lib/types";
 import { useCorabo } from "@/contexts/CoraboContext";
-import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert, Truck, Banknote, ClipboardCheck, CalendarCheck, Contact, Star, Upload, MapPin, XCircle, FileText, Repeat } from "lucide-react";
+import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert, Truck, Banknote, ClipboardCheck, CalendarCheck, Star, XCircle, FileText, Repeat } from "lucide-react";
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
-import { Label } from './ui/label';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
-import { Alert, AlertTitle, AlertDescription as AlertDialogAlertDescription } from './ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { sendQuote, confirmPaymentReceived, completeWork, acceptAppointment, startDispute, cancelSystemTransaction, downloadTransactionsPDF, confirmWorkReceived, payCommitment } from '@/lib/actions/transaction.actions';
 import { retryFindDelivery, assignOwnDelivery, resolveDeliveryAsPickup } from '@/lib/actions/delivery.actions';
@@ -156,7 +151,7 @@ function ClientActions({ tx, onAction }: { tx: Transaction; onAction: () => void
             <SelectContent><SelectItem value="Transferencia">Transferencia</SelectItem><SelectItem value="Pago Móvil">Pago Móvil</SelectItem><SelectItem value="Binance">Binance</SelectItem><SelectItem value="Efectivo">Efectivo</SelectItem></SelectContent>
         </Select>
         {paymentMethod !== 'Efectivo' && <Input placeholder="Número de referencia" value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)}/>}
-        <Input type="file" onChange={(e) => setPaymentVoucher(e.target.files?.[0] || null)} />
+        {paymentMethod !== 'Efectivo' && <Input type="file" onChange={(e) => setPaymentVoucher(e.target.files?.[0] || null)} />}
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => setShowPaymentScreen(false)}>Atrás</Button>
           <Button onClick={handleProcessPayment} disabled={isSubmittingPayment}>Confirmar y Enviar</Button>
@@ -190,11 +185,9 @@ interface TransactionDetailsDialogProps {
 
 
 export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: TransactionDetailsDialogProps) {
-  const { currentUser, users, exchangeRate } = useCorabo();
-  const router = useRouter();
+  const { currentUser, users } = useCorabo();
 
   const [otherParty, setOtherParty] = useState<User | null>(null);
-  const [deliveryProvider, setDeliveryProvider] = useState<User | null>(null);
   const [isDeliveryFailedDialogOpen, setIsDeliveryFailedDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -203,10 +196,6 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
         if (otherId) {
             const foundUser = users.find(u => u.id === otherId);
             setOtherParty(foundUser || null);
-        }
-        if(transaction.details.deliveryProviderId) {
-            const foundDelivery = users.find(u => u.id === transaction.details.deliveryProviderId);
-            setDeliveryProvider(foundDelivery || null);
         }
         if (transaction.status === 'Error de Delivery - Acción Requerida') {
             setIsDeliveryFailedDialogOpen(true);
@@ -224,7 +213,6 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   const isClient = currentUser.type === 'client';
   const isSystemTx = transaction.type === 'Sistema';
   const isRenewableTx = isSystemTx && transaction.details.isRenewable;
-  const isCrossBorder = currentUser.country !== otherParty?.country;
 
   const statusInfo: Record<string, { icon: React.ElementType, color: string }> = {
     'Solicitud Pendiente': { icon: MessageSquare, color: 'bg-yellow-500' },
@@ -248,9 +236,6 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   const CurrentIcon = statusInfo[transaction.status]?.icon || AlertTriangle;
   const iconColor = statusInfo[transaction.status]?.color || 'bg-gray-500';
   
-  const originalAmountUSD = transaction.details.amountUSD || (transaction.amount / (transaction.details.exchangeRate || exchangeRate));
-  const adjustedAmountLocal = originalAmountUSD * exchangeRate;
-  const rateHasChanged = transaction.details.exchangeRate && Math.abs(transaction.details.exchangeRate - exchangeRate) > 0.01;
 
   const renderActionButtons = () => {
     if (isProvider) {
@@ -286,7 +271,6 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
           </DialogHeader>
           
           <div className="grid gap-4 py-4 text-sm">
-            {isCrossBorder && <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertTitle>¡Aviso de Comercio Internacional!</AlertTitle><AlertDialogAlertDescription>Transacción entre países. Se recomienda usar pagos internacionales.</AlertDialogAlertDescription></Alert>}
             <div className="grid grid-cols-2 gap-2">
               <div><span className="font-semibold">Estado:</span> <Badge variant="secondary">{transaction.status}</Badge></div>
               <div><span className="font-semibold">Fecha:</span> {new Date(transaction.date).toLocaleDateString()}</div>
@@ -296,7 +280,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
                   <div className="flex justify-between"><span>Subtotal:</span> <span className="font-mono">Bs. {transaction.details.baseAmount.toFixed(2)}</span></div>
                   <div className="flex justify-between"><span>Comisión ({(transaction.details.commissionRate || 0) * 100}%):</span> <span className="font-mono">Bs. {transaction.details.commission?.toFixed(2) || '0.00'}</span></div>
                   <div className="flex justify-between"><span>IVA ({(transaction.details.taxRate || 0) * 100}%):</span> <span className="font-mono">Bs. {transaction.details.tax?.toFixed(2) || '0.00'}</span></div>
-                  <div className="flex justify-between font-bold"><span>Total Factura:</span> <span className="font-mono">Bs. {(transaction.details.baseAmount * (1 + (transaction.details.commissionRate || 0)) * (1 + (transaction.details.taxRate || 0))).toFixed(2)}</span></div>
+                  <div className="flex justify-between font-bold"><span>Total Factura:</span> <span className="font-mono">Bs. {(transaction.amount).toFixed(2)}</span></div>
                   <div className="text-xs text-muted-foreground text-right">Tasa de cambio: Bs. {transaction.details.exchangeRate?.toFixed(2)} / USD</div>
                 </div>
               ) : (<div><span className="font-semibold">Monto:</span> ${transaction.amount.toFixed(2)}</div>)}

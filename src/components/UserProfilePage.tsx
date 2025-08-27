@@ -1,13 +1,10 @@
-
-
 'use client';
 
 import { useRouter } from 'next/navigation';
 import { useCorabo } from '@/contexts/CoraboContext';
 import Image from 'next/image';
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, ChevronRight, MessageCircle, CheckCircle, Flag, Package, Hand, ShoppingCart, Plus, Minus, X, Truck, AlertTriangle, Loader2, Search, Building, Users, BadgeCheck, Stethoscope, Utensils, Link as LinkIcon, Home as HomeIcon, Briefcase, Scissors, MoreHorizontal, Wrench, Car, BrainCircuit, UserRoundCog, Wallet, Megaphone, Zap, Handshake, Timer, TrendingUp } from 'lucide-react';
+import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, MessageCircle, CheckCircle, Flag, Package, Hand, MoreHorizontal, Wallet, Megaphone, Zap, Timer, TrendingUp, UserRoundCog, BrainCircuit, Wrench, Car, Scissors, Home as HomeIcon, Utensils, Briefcase, Building, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
@@ -18,15 +15,14 @@ import { useToast } from '@/hooks/use-toast';
 import { ReportDialog } from '@/components/ReportDialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogFooter, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { format, differenceInMinutes } from 'date-fns';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogFooter, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { BusinessHoursStatus } from '@/components/BusinessHoursStatus';
 import { ProductGridCard } from '@/components/ProductGridCard';
 import { Badge } from '@/components/ui/badge';
 import { ProductDetailsDialog } from '@/components/ProductDetailsDialog';
 import Link from 'next/link';
-import { ActivationWarning } from '@/components/ActivationWarning';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -40,17 +36,18 @@ import { CampaignDialog } from './CampaignDialog';
 import { SubscriptionDialog } from './SubscriptionDialog';
 import { EditableAvatar } from './EditableAvatar';
 import { TransactionDetailsDialog } from './TransactionDetailsDialog';
+import { haversineDistance } from '@/lib/utils';
 
 
 const categoryIcons: { [key: string]: React.ElementType } = {
-    'Salud y Bienestar': Stethoscope,
+    'Salud y Bienestar': BrainCircuit,
     'Alimentos y Restaurantes': Utensils,
     'Hogar y Reparaciones': HomeIcon,
     'Tecnología y Soporte': Briefcase,
     'Eventos': Briefcase,
     'Belleza': Scissors,
     'Automotriz y Repuestos': Car,
-    'Transporte y Asistencia': Truck,
+    'Transporte y Asistencia': Wrench,
 };
 
 const DetailBadge = ({ value, icon }: { value: string; icon?: React.ElementType }) => {
@@ -126,7 +123,7 @@ function ProfileStats({ metrics, isNew }: { metrics: any, isNew: boolean }) {
 
 
 export function UserProfilePage({ userId }: { userId: string}) {
-  const { transactions, currentUser, users, isContact, addContact, currentUserLocation } = useCorabo();
+  const { currentUser, users, transactions, isContact, addContact, currentUserLocation } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -205,49 +202,47 @@ export function UserProfilePage({ userId }: { userId: string}) {
     return providerProducts.filter(p => p.name.toLowerCase().includes(catalogSearchQuery.toLowerCase()));
   }, [providerProducts, catalogSearchQuery]);
 
-  const getUserMetrics = useMemo(() => {
-    return (userIdToGet: string) => {
-        const userTransactions = transactions.filter(tx => tx.providerId === userIdToGet || tx.clientId === userIdToGet);
-        const ratedTransactions = userTransactions.filter(tx => tx.providerId === userIdToGet && tx.details.clientRating);
-        const totalRating = ratedTransactions.reduce((acc, tx) => acc + (tx.details.clientRating || 0), 0);
-        const reputation = ratedTransactions.length > 0 ? totalRating / ratedTransactions.length : 5.0;
-        const relevantTransactions = userTransactions.filter(tx => tx.type !== 'Sistema' && tx.status !== 'Carrito Activo');
-        const successfulTransactions = relevantTransactions.filter(tx => tx.status === 'Pagado' || tx.status === 'Resuelto');
-        const effectiveness = relevantTransactions.length > 0 ? (successfulTransactions.length / relevantTransactions.length) * 100 : 100;
-        const quoteRequests = userTransactions.filter(tx => tx.providerId === userIdToGet && tx.status === 'Cotización Recibida');
-        const responseTime = quoteRequests.length > 5 ? 'Rápido' : (userTransactions.length > 0 ? 'Normal' : 'Nuevo');
-        return { reputation, effectiveness, responseTime };
-    }
-  }, [transactions]);
+  const { reputation, effectiveness, responseTime, agendaEvents, eventDates } = useMemo(() => {
+    if (!provider) return { reputation: 0, effectiveness: 0, responseTime: 'N/A', agendaEvents: [], eventDates: [] };
+
+    const userTransactions = transactions.filter(tx => tx.providerId === provider.id || tx.clientId === provider.id);
+    const ratedTransactions = userTransactions.filter(tx => tx.providerId === provider.id && tx.details.clientRating);
+    const totalRating = ratedTransactions.reduce((acc, tx) => acc + (tx.details.clientRating || 0), 0);
+    const rep = ratedTransactions.length > 0 ? totalRating / ratedTransactions.length : 5.0;
+
+    const relevantTransactions = userTransactions.filter(tx => tx.type !== 'Sistema' && tx.status !== 'Carrito Activo');
+    const successfulTransactions = relevantTransactions.filter(tx => tx.status === 'Pagado' || tx.status === 'Resuelto');
+    const eff = relevantTransactions.length > 0 ? (successfulTransactions.length / relevantTransactions.length) * 100 : 100;
+    
+    const quoteRequests = userTransactions.filter(tx => tx.providerId === provider.id && tx.status === 'Cotización Recibida');
+    const respTime = quoteRequests.length > 5 ? 'Rápido' : (userTransactions.length > 0 ? 'Normal' : 'Nuevo');
+    
+    const events = userTransactions
+        .filter(tx => ['Finalizado - Pendiente de Pago', 'Cita Solicitada'].includes(tx.status))
+        .map(tx => ({
+            date: new Date(tx.date),
+            type: tx.status === 'Finalizado - Pendiente de Pago' ? 'payment' : 'appointment',
+            transactionId: tx.id,
+        }));
+    const dates = events.map(e => e.date);
+
+    return { reputation: rep, effectiveness: eff, responseTime: respTime, agendaEvents: events, eventDates: dates };
+}, [provider, transactions]);
   
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isProductDetailsDialogOpen, setIsProductDetailsDialogOpen] = useState(false);
   const [isAppointmentDialogOpen, setIsAppointmentDialogOpen] = useState(false);
   const [appointmentDate, setAppointmentDate] = useState<Date | null>(null);
   const [appointmentDetails, setAppointmentDetails] = useState('');
-  
-  const getAgendaEvents = useMemo(() => {
-      return (txs: Transaction[]) => {
-          return txs
-            .filter(tx => ['Finalizado - Pendiente de Pago', 'Cita Solicitada'].includes(tx.status))
-            .map(tx => ({
-                date: new Date(tx.date),
-                type: tx.status === 'Finalizado - Pendiente de Pago' ? 'payment' : 'appointment',
-                transactionId: tx.id,
-            }));
-      }
-  }, []);
 
-  const getDistanceToProvider = useMemo(() => {
-    return (providerToCheck: User) => {
-        if (currentUserLocation && providerToCheck.profileSetupData?.location) {
-            const [lat, lon] = providerToCheck.profileSetupData.location.split(',').map(Number);
-            const dist = haversineDistance(currentUserLocation.latitude, currentUserLocation.longitude, lat, lon);
-            return dist < 1 ? `${(dist * 1000).toFixed(0)} m` : `${dist.toFixed(1)} km`;
-        }
-        return null;
+  const distance = useMemo(() => {
+    if (currentUserLocation && provider?.profileSetupData?.location) {
+        const [lat, lon] = provider.profileSetupData.location.split(',').map(Number);
+        const dist = haversineDistance(currentUserLocation.latitude, currentUserLocation.longitude, lat, lon);
+        return dist < 1 ? `${(dist * 1000).toFixed(0)} m` : `${dist.toFixed(1)} km`;
     }
-  }, [currentUserLocation]);
+    return null;
+  }, [currentUserLocation, provider?.profileSetupData?.location]);
 
 
   if (isLoading) {
@@ -306,9 +301,6 @@ export function UserProfilePage({ userId }: { userId: string}) {
     }
   };
   
-  const agendaEvents = getAgendaEvents(transactions);
-  const eventDates = agendaEvents.map(e => e.date);
-  const { reputation, effectiveness, responseTime } = getUserMetrics(provider.id);
   const isNewProvider = responseTime === 'Nuevo';
   const disabledDays = Object.entries(provider.profileSetupData?.schedule || {}).filter(([, dayDetails]) => !(dayDetails as any).active).map(([dayName]) => ({ 'Domingo': 0, 'Lunes': 1, 'Martes': 2, 'Miércoles': 3, 'Jueves': 4, 'Viernes': 5, 'Sábado': 6 }[dayName] as number));
   const displayName = provider.profileSetupData?.useUsername && provider.profileSetupData.username ? provider.profileSetupData.username : provider.name;
@@ -320,10 +312,6 @@ export function UserProfilePage({ userId }: { userId: string}) {
   return (
     <div className="bg-background min-h-screen">
       <div className="container mx-auto px-0 md:px-2 max-w-2xl pb-24">
-        
-        {currentUser?.type === 'client' && !currentUser?.isTransactionsActive && (
-             <div className="p-2"><ActivationWarning userType="client" /></div>
-        )}
         
         {/* Profile Header */}
         <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm pt-4 px-2">
@@ -398,9 +386,6 @@ export function UserProfilePage({ userId }: { userId: string}) {
                         </div>
                     ) : ( <p className='text-center text-muted-foreground py-8'>No se encontraron productos.</p> )}
                 </div>
-            )}
-            {isCompany && affiliatedProfessionals.length > 0 && (
-              <Card className="mt-4"><CardContent className="p-4"><h3 className="font-bold text-lg mb-2 flex items-center gap-2"><Users className="w-5 h-5"/> Talentos Asociados</h3><div className="space-y-2">{affiliatedProfessionals.map(prof => (<Link key={prof.id} href={`/companies/${prof.id}`} className="flex items-center gap-3 p-2 rounded-md hover:bg-muted"><Avatar><AvatarImage src={prof.profileImage} /><AvatarFallback>{prof.name.charAt(0)}</AvatarFallback></Avatar><div><p className="font-semibold text-sm">{prof.name}</p><p className="text-xs text-muted-foreground">{prof.profileSetupData?.specialty}</p></div></Link>))}</div></CardContent></Card>
             )}
         </main>
       </div>
