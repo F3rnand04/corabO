@@ -1,7 +1,5 @@
 'use server';
 
-// The getFirebaseAdmin() call is removed. The action now relies on the
-// globally initialized Firebase instance managed by Genkit.
 import { signInAsGuestFlow } from '@/ai/flows/auth-flow';
 import { getAuth } from 'firebase-admin/auth';
 import { cookies } from 'next/headers';
