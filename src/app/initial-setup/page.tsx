@@ -62,9 +62,10 @@ export default function InitialSetupPage() {
   const MAX_ATTEMPTS = 3;
 
   useEffect(() => {
+    // DO NOT PREFILL. User must enter their legal name manually for verification.
     if (currentUser) {
-      setName(currentUser.name?.split(' ')[0] || '');
-      setLastName(currentUser.name?.split(' ').slice(1).join(' ') || '');
+        setName(currentUser.name || '');
+        setLastName(currentUser.lastName || '');
     }
   }, [currentUser]);
   
