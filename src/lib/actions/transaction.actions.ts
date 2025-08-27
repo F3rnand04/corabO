@@ -94,19 +94,3 @@ export async function processDirectPayment(sessionId: string) {
     revalidatePath('/transactions');
     return result;
 }
-
-// Delivery related actions, forwarded from transaction context
-export async function retryFindDelivery(input: { transactionId: string }) {
-    await findDeliveryProviderFlow(input);
-    revalidatePath('/transactions');
-}
-
-export async function assignOwnDelivery(transactionId: string, providerId: string) {
-    console.log(`Assigning delivery for TX ${transactionId} to provider ${providerId} themselves.`);
-    revalidatePath('/transactions');
-}
-
-export async function resolveDeliveryAsPickup(input: { transactionId: string }) {
-    await resolveDeliveryAsPickupFlow(input);
-    revalidatePath('/transactions');
-}

@@ -16,6 +16,7 @@ import '@/ai/genkit'; // Ensures firebase-admin is initialized on server
 export const metadata: Metadata = {
   title: 'corabO.app',
   description: 'Conecta, Colabora y Crece. La plataforma para profesionales y clientes.',
+  manifest: '/manifest.webmanifest',
 };
 
 const inter = Inter({

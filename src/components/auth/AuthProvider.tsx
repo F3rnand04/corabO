@@ -5,6 +5,7 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { getAuthInstance } from '@/lib/firebase';
 import { onIdTokenChanged, getRedirectResult } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
+import { clearSessionCookie, createSessionCookie } from '@/lib/actions/auth.actions';
 
 interface AuthContextType {
   firebaseUser: FirebaseUser | null;
@@ -56,14 +57,11 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
           setIsLoadingAuth(false);
           
           const idToken = user ? await user.getIdToken() : null;
-          // Update the session cookie on the server.
-          fetch('/api/auth/session', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ idToken }),
-          }).catch(error => {
-              console.error("Failed to sync session cookie:", error);
-          });
+          if (idToken) {
+            await createSessionCookie(idToken);
+          } else {
+            await clearSessionCookie();
+          }
         });
 
         // Cleanup subscription on unmount

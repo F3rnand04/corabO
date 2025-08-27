@@ -23,10 +23,15 @@ export async function signInAsGuest(): Promise<{ customToken?: string; error?: s
  * Creates a session cookie from the client's ID token.
  */
 export async function createSessionCookie(idToken: string) {
-    const auth = getAuth();
-    const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
-    const sessionCookie = await auth.createSessionCookie(idToken, { expiresIn });
-    cookies().set('session', sessionCookie, { maxAge: expiresIn, httpOnly: true, secure: process.env.NODE_ENV === 'production', path: '/', sameSite: 'lax' });
+    try {
+        const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
+        const sessionCookie = await getAuth().createSessionCookie(idToken, { expiresIn });
+        cookies().set('session', sessionCookie, { maxAge: expiresIn, httpOnly: true, secure: process.env.NODE_ENV === 'production', path: '/', sameSite: 'lax' });
+        return { success: true };
+    } catch (error) {
+        console.error("Error creating session cookie", error);
+        return { success: false };
+    }
 }
 
 /**
