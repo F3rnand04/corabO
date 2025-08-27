@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from "./ui/button";
@@ -7,7 +6,7 @@ import { AlertDialogFooter, AlertDialogCancel } from "./ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useCallback, useState, useRef } from "react";
 import html2canvas from 'html2canvas';
-import QRComponent from "./QRComponent"; 
+import { QRCodeSVG } from 'qrcode.react';
 import Image from "next/image";
 
 interface PrintableQrDisplayProps {
@@ -70,7 +69,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
                     
                     <div className="flex justify-center items-center my-8 flex-grow">
                         <div className="bg-white p-6 rounded-xl shadow-md">
-                            <QRComponent value={qrValue} size={300} />
+                            <QRCodeSVG value={qrValue} size={300} />
                         </div>
                     </div>
                     
@@ -115,7 +114,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
                     </div>
                     <div className="flex justify-center items-center my-4">
                         <div className="bg-white p-2 rounded-md shadow-sm">
-                            <QRComponent value={qrValue} />
+                           <QRCodeSVG value={qrValue} size={128} />
                         </div>
                     </div>
                      <p className="text-xl font-bold text-[#1E3A8A] mt-2">Compra lo que amas.</p>
