@@ -410,19 +410,60 @@ export async function downloadTransactionsPDFFlow(transactions: Transaction[]): 
 
 export async function checkoutFlow(input: CheckoutInput) {
     const db = getFirestore();
-    
+    const batch = db.batch();
+
     const q = db.collection('transactions')
-        .where('clientId', '==', input.userId) 
+        .where('clientId', '==', input.userId)
         .where('providerId', '==', input.providerId)
         .where('status', '==', 'Carrito Activo');
     const snapshot = await q.get();
     const cartTxDoc = snapshot.docs[0];
-    
+
     if (!cartTxDoc) {
         throw new Error("Cart not found for checkout.");
     }
-    
+
+    const cartTxRef = cartTxDoc.ref;
     const cartTx = cartTxDoc.data() as Transaction;
+    const clientRef = db.collection('users').doc(input.userId);
+    const clientSnap = await clientRef.get();
+    const client = clientSnap.data() as User;
+    
+    let financedAmount = 0;
+    let initialPayment = cartTx.amount;
+    let installments = 0;
+    
+    if (input.useCredicora && client.credicoraDetails) {
+        const potentialFinancing = cartTx.amount * (1 - client.credicoraDetails.initialPaymentPercentage);
+        financedAmount = Math.min(potentialFinancing, client.credicoraLimit || 0);
+        initialPayment = cartTx.amount - financedAmount;
+        installments = client.credicoraDetails.installments;
+
+        if (financedAmount > 0) {
+            const newCredicoraLimit = (client.credicoraLimit || 0) - financedAmount;
+            batch.update(clientRef, { credicoraLimit: newCredicoraLimit });
+
+            const installmentAmount = financedAmount / installments;
+            for (let i = 1; i <= installments; i++) {
+                const installmentTxId = `txn-credicora-cart-${cartTx.id.slice(-4)}-${i}`;
+                const dueDate = addDays(new Date(), i * 15);
+                const installmentTx: Transaction = {
+                    id: installmentTxId,
+                    type: 'Sistema',
+                    status: 'Finalizado - Pendiente de Pago',
+                    date: dueDate.toISOString(),
+                    amount: installmentAmount,
+                    clientId: input.userId,
+                    providerId: 'corabo-admin',
+                    participantIds: [input.userId, 'corabo-admin'],
+                    details: {
+                        system: `Cuota ${i}/${installments} de Compra`,
+                    },
+                };
+                batch.set(db.collection('transactions').doc(installmentTxId), installmentTx);
+            }
+        }
+    }
     
     const deliveryDetails = {
         method: input.deliveryMethod,
@@ -430,14 +471,20 @@ export async function checkoutFlow(input: CheckoutInput) {
         recipientInfo: input.recipientInfo,
     };
     
-    await db.collection('transactions').doc(cartTx.id).update({
-        status: 'Buscando Repartidor',
+    batch.update(cartTxRef, {
+        status: input.deliveryMethod === 'pickup' ? 'Listo para Retirar en Tienda' : 'Buscando Repartidor',
         'details.delivery': deliveryDetails,
-        'details.deliveryCost': 1.5,
+        'details.deliveryCost': input.deliveryMethod === 'pickup' ? 0 : 1.5,
         'details.paymentMethod': input.useCredicora ? 'credicora' : 'direct',
+        'details.financedAmount': financedAmount,
+        'details.initialPayment': initialPayment,
+        amount: cartTx.amount + (input.deliveryMethod === 'pickup' ? 0 : 1.5) // Update total amount with delivery cost
     });
 
+    await batch.commit();
+
     if (input.deliveryMethod !== 'pickup') {
-        await findDeliveryProviderFlow({ transactionId: cartTx.id });
+        // Run delivery search in the background
+        findDeliveryProviderFlow({ transactionId: cartTx.id });
     }
 }
