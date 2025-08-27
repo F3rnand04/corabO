@@ -14,16 +14,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { isLoadingUser, currentUser } = useCorabo();
   const { isLoadingAuth, firebaseUser } = useAuth();
 
-  // New useEffect to handle redirection based on auth state
+  // This useEffect handles redirection AFTER a user is confirmed to exist.
   useEffect(() => {
-    // If auth is done loading and there's no firebase user, force to login
-    if (!isLoadingAuth && !firebaseUser) {
-      if(pathname !== '/login') {
-         router.push('/login');
-      }
-      return;
-    }
-    
     // If we have a firebase user but not the full Corabo user yet, we wait.
     // If after waiting there is a user and they haven't completed setup, redirect them.
     if (firebaseUser && !isLoadingUser && currentUser) {
@@ -32,11 +24,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         } else if (currentUser.isInitialSetupComplete && (pathname === '/login' || pathname === '/initial-setup')) {
             router.push('/');
         }
+    } else if (!isLoadingAuth && !firebaseUser && pathname !== '/login') {
+        // Fallback for edge cases, pushing to login if no user is found after loading.
+        router.push('/login');
     }
 
   }, [isLoadingAuth, firebaseUser, isLoadingUser, currentUser, pathname, router]);
 
 
+  // Show a global loader while authentication or user data is being fetched.
   if (isLoadingAuth || (firebaseUser && isLoadingUser)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -45,7 +41,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Determine if the header and footer should be hidden
+  // Determine if the header and footer should be hidden based on the current path.
+  // This approach is more declarative and avoids conditional rendering of the main layout structure.
   const hideHeaderForPaths = [
     '/login',
     '/initial-setup',
@@ -69,9 +66,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const shouldHideHeader = hideHeaderForPaths.some(path => (pathname || '').startsWith(path));
   const shouldHideFooter = hideFooterForPaths.some(path => (pathname || '').startsWith(path));
-
-  // The problematic conditional rendering that caused the 404 is removed.
-  // The layout is now rendered consistently, and visibility is handled by shouldHideHeader/Footer.
+  
+  // If no user is authenticated and we are not on the login page, render nothing until redirect happens.
+  // This prevents flashing content. The useEffect above will handle the redirect.
+  if (!firebaseUser && pathname !== '/login') {
+      return null;
+  }
 
   return (
     <div className="flex flex-col min-h-screen">

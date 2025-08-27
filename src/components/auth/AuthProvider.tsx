@@ -31,8 +31,9 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
       setIsLoadingAuth(false);
       
       const idToken = user ? await user.getIdToken() : null;
-      // The fetch is a "fire and forget" call to update the session cookie on the server.
+      // This fetch is a "fire and forget" call to update the session cookie on the server.
       // We don't need to block rendering for it.
+      // This also handles logout by sending a null token.
       fetch('/api/auth/session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -51,6 +52,7 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
     const auth = getAuthInstance();
     await auth.signOut(); // This will trigger onIdTokenChanged, setting user to null.
     // The AppLayout will handle the redirect to /login
+    router.push('/login'); // Explicitly redirect on logout
   };
   
   const value: AuthContextType = {
