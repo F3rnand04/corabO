@@ -45,8 +45,7 @@ const CountrySelector = memo(function CountrySelector({ value, onValueChange }: 
 
 
 export default function InitialSetupPage() {
-  // logout and firebaseUser are now correctly sourced from useCorabo
-  const { currentUser: firebaseUser, setCurrentUser, logout } = useCorabo(); 
+  const { currentUser, logout } = useCorabo(); 
   const { toast } = useToast();
   const router = useRouter();
 
@@ -63,19 +62,19 @@ export default function InitialSetupPage() {
   const MAX_ATTEMPTS = 3;
 
   useEffect(() => {
-    if (firebaseUser) {
-      setName(firebaseUser.name?.split(' ')[0] || '');
-      setLastName(firebaseUser.name?.split(' ').slice(1).join(' ') || '');
+    if (currentUser) {
+      setName(currentUser.name?.split(' ')[0] || '');
+      setLastName(currentUser.name?.split(' ').slice(1).join(' ') || '');
     }
-  }, [firebaseUser]);
+  }, [currentUser]);
   
   const handleSubmit = async () => {
-    if (!firebaseUser) return;
+    if (!currentUser) return;
     setIsSubmitting(true);
     setIdInUseError(false);
 
     try {
-        const isUnique = await checkIdUniqueness({ idNumber, country, currentUserId: firebaseUser.id });
+        const isUnique = await checkIdUniqueness({ idNumber, country, currentUserId: currentUser.id });
         
         if (!isUnique) {
             setIdInUseError(true);
@@ -93,29 +92,27 @@ export default function InitialSetupPage() {
                     logout();
                 }, 5000);
             }
-            setIsSubmitting(false); // Stop submission but don't clear form
+            setIsSubmitting(false);
             return; 
         }
         
-        const updatedUser = await completeInitialSetup(
-          firebaseUser.id, 
+        // The action will update the user in the database.
+        // The AppLayout component will handle redirection based on the updated user state from the context.
+        await completeInitialSetup(
+          currentUser.id, 
           { 
             name, 
             lastName, 
             idNumber, 
             birthDate, 
             country,
-            type: 'client', // Defaults to client, logic in flow might change it
+            type: 'client',
             providerType: isCompany ? 'company' : 'professional'
           }
         );
         
-        // ** THE FIX **: Update client state before redirecting
-        setCurrentUser(updatedUser);
-
-        toast({ title: "Perfil Guardado", description: "Tus datos han sido guardados correctamente."});
-        
-        router.push('/');
+        toast({ title: "Perfil Guardado", description: "Tus datos han sido guardados. Serás redirigido."});
+        // Let the AppLayout handle the redirection. No router.push here.
 
     } catch (error: any) {
         console.error("Failed to complete setup:", error);
@@ -125,7 +122,6 @@ export default function InitialSetupPage() {
             description: 'No se pudo guardar tu información. Inténtalo de nuevo.'
         });
     } finally {
-        // This will now only be set to false if the operation was successful or had a non-ID related error
         if (idInUseError === false) {
            setIsSubmitting(false);
         }
@@ -133,13 +129,13 @@ export default function InitialSetupPage() {
   };
 
   const handleContactSupport = () => {
-    if(!firebaseUser) return;
-    const conversationId = [firebaseUser.id, 'corabo-admin'].sort().join('-');
-    sendMessage({ recipientId: 'corabo-admin', text: "Hola, mi número de documento de identidad ya está en uso y necesito ayuda para verificar mi cuenta.", conversationId, senderId: firebaseUser.id });
+    if(!currentUser) return;
+    const conversationId = [currentUser.id, 'corabo-admin'].sort().join('-');
+    sendMessage({ recipientId: 'corabo-admin', text: "Hola, mi número de documento de identidad ya está en uso y necesito ayuda para verificar mi cuenta.", conversationId, senderId: currentUser.id });
     router.push(`/messages/${conversationId}`);
   };
 
-  if (!firebaseUser) {
+  if (!currentUser) {
     return (
         <div className="flex items-center justify-center min-h-screen">
           <Loader2 className="w-8 h-8 animate-spin" />

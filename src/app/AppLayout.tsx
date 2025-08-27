@@ -1,3 +1,4 @@
+
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
@@ -14,21 +15,26 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { isLoadingUser, currentUser } = useCorabo();
   const { isLoadingAuth, firebaseUser } = useAuth();
 
-  // This useEffect handles redirection AFTER a user is confirmed to exist.
+  // This useEffect handles all redirection logic based on authentication and profile completion state.
   useEffect(() => {
-    // If we have a firebase user but not the full Corabo user yet, we wait.
-    // If after waiting there is a user and they haven't completed setup, redirect them.
-    if (firebaseUser && !isLoadingUser && currentUser) {
-        if (!currentUser.isInitialSetupComplete && pathname !== '/initial-setup') {
-            router.push('/initial-setup');
-        } else if (currentUser.isInitialSetupComplete && (pathname === '/login' || pathname === '/initial-setup')) {
-            router.push('/');
-        }
-    } else if (!isLoadingAuth && !firebaseUser && pathname !== '/login') {
-        // Fallback for edge cases, pushing to login if no user is found after loading.
-        router.push('/login');
+    // Wait until both auth and user data are loaded to make a decision
+    if (isLoadingAuth || (firebaseUser && isLoadingUser)) {
+      return; // Do nothing while loading
     }
 
+    if (firebaseUser && currentUser) {
+      // User is authenticated and we have their Corabo profile
+      if (!currentUser.isInitialSetupComplete && pathname !== '/initial-setup') {
+        // If setup is not complete, they MUST be on the setup page
+        router.push('/initial-setup');
+      } else if (currentUser.isInitialSetupComplete && (pathname === '/login' || pathname === '/initial-setup')) {
+        // If setup is complete, they should NOT be on login or setup pages
+        router.push('/');
+      }
+    } else if (!firebaseUser && pathname !== '/login') {
+      // If no user is authenticated, they should be on the login page
+      router.push('/login');
+    }
   }, [isLoadingAuth, firebaseUser, isLoadingUser, currentUser, pathname, router]);
 
 
@@ -42,7 +48,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   // Determine if the header and footer should be hidden based on the current path.
-  // This approach is more declarative and avoids conditional rendering of the main layout structure.
   const hideHeaderForPaths = [
     '/login',
     '/initial-setup',
