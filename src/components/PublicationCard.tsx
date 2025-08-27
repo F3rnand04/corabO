@@ -60,7 +60,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
 
     const isWithinDeliveryRange = true; 
 
-    const profileLink = `/companies/${'\'\'\''}${owner.id}`;
+    const profileLink = `/companies/${owner.id}`;
     const { reputation, effectiveness, responseTime } = getUserMetrics(owner.id);
     const isNewProvider = responseTime === 'Nuevo';
     const distance = getDistanceToProvider(owner);
@@ -77,7 +77,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
         setIsSaved(true);
         toast({
             title: "¡Contacto Guardado!",
-            description: `Has añadido a ${'\'\'\''}${owner.name} a tus contactos.`
+            description: `Has añadido a ${owner.name} a tus contactos.`
         });
     };
     
@@ -88,7 +88,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
 
     const handleShare = async () => {
         const shareData = {
-          title: `Mira esta publicación de ${'\'\'\''}${owner.name}`,
+          title: `Mira esta publicación de ${owner.name}`,
           text: publication.description,
           url: window.location.origin + profileLink,
         };
@@ -127,7 +127,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
             return;
         }
         updateCart(currentUser.id, publication.id, 1);
-        toast({ title: "Producto añadido", description: `${'\'\'\''}${productDetails.name} fue añadido a tu carrito.` });
+        toast({ title: "Producto añadido", description: `${productDetails.name} fue añadido a tu carrito.` });
     };
     
     const handleContact = () => {
@@ -139,7 +139,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
           conversationId: conversationId,
           text: `¡Hola! Me interesa tu publicación.`
       });
-      router.push(`/messages/${'\'\'\''}${conversationId}`);
+      router.push(`/messages/${conversationId}`);
     };
     
     return (
@@ -157,7 +157,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
                     </Link>
                     {affiliation && (
                         <>
-                        <Link href={`/companies/${'\'\'\''}${affiliation.companyId}`} passHref>
+                        <Link href={`/companies/${affiliation.companyId}`} passHref>
                             <Avatar className="w-12 h-12 border-2 border-background absolute top-0 left-0 transition-transform duration-300 ease-in-out" style={{ transform: isAvatarExpanded ? 'translateX(16px)' : 'translateX(0)', zIndex: isAvatarExpanded ? 10 : -1, opacity: isAvatarExpanded ? 1 : 0 }}>
                                 <AvatarImage src={affiliation.companyProfileImage} alt={affiliation.companyName} />
                                 <AvatarFallback>{affiliation.companyName.charAt(0)}</AvatarFallback>
@@ -184,7 +184,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
                     </div>
 
                     {isAvatarExpanded && affiliation && (
-                         <Link href={`/companies/${'\'\'\''}${affiliation.companyId}`} passHref>
+                         <Link href={`/companies/${affiliation.companyId}`} passHref>
                             <div className="transition-transform duration-300 ease-in-out -translate-y-2 cursor-pointer">
                                 <p className="text-xs text-muted-foreground">Verificado por:</p>
                                 <p className="font-semibold text-sm hover:underline">{affiliation.companyName}</p>
@@ -255,7 +255,7 @@ export function PublicationCard({ publication, className }: PublicationCardProps
                 {isProduct && (
                      <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/60 to-transparent flex justify-between items-center text-white">
                         <div>
-                            <p className="font-bold text-lg drop-shadow-md">${'\'\'\''}${productDetails?.price.toFixed(2)}</p>
+                            <p className="font-bold text-lg drop-shadow-md">${productDetails?.price.toFixed(2)}</p>
                         </div>
                         <Button onClick={handleAddToCart} disabled={!isWithinDeliveryRange} size="sm" className="bg-white/90 text-black hover:bg-white">
                             <Plus className="h-4 w-4 mr-1"/> Añadir al Carrito
