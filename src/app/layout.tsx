@@ -14,7 +14,7 @@ import { ai } from '@/ai/genkit'; // Import the centralized ai instance
 
 export const metadata: Metadata = {
   title: 'corabO.app',
-  description: 'Aplicación Funcional corabO',
+  description: 'Conecta, Colabora y Crece. La plataforma para profesionales y clientes.',
 };
 
 const inter = Inter({

@@ -1,8 +1,9 @@
 
 {
-  "name": "corabo.app",
+  "name": "corabo-app",
   "private": true,
   "type": "module",
+  "description": "Plataforma de conexión entre profesionales y clientes.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

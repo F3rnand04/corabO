@@ -76,7 +76,7 @@ export default function LoginPage() {
                     className="object-contain"
                 />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight">Bienvenido de nuevo</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Bienvenido a corabO.app</h1>
             <p className="text-muted-foreground mt-2">
                 Ingresa para descubrir oportunidades.
             </p>
