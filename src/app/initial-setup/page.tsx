@@ -15,7 +15,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/components/auth/AuthProvider';
 import { useCorabo } from '@/contexts/CoraboContext';
 import type { User } from '@/lib/types';
 import { checkIdUniqueness, completeInitialSetup } from '@/lib/actions/user.actions';
@@ -46,8 +45,8 @@ const CountrySelector = memo(function CountrySelector({ value, onValueChange }: 
 
 
 export default function InitialSetupPage() {
-  const { logout, firebaseUser } = useAuth();
-  const { setCurrentUser } = useCorabo();
+  // logout and firebaseUser are now correctly sourced from useCorabo
+  const { currentUser: firebaseUser, setCurrentUser, logout } = useCorabo(); 
   const { toast } = useToast();
   const router = useRouter();
 
@@ -65,8 +64,8 @@ export default function InitialSetupPage() {
 
   useEffect(() => {
     if (firebaseUser) {
-      setName(firebaseUser.displayName?.split(' ')[0] || '');
-      setLastName(firebaseUser.displayName?.split(' ').slice(1).join(' ') || '');
+      setName(firebaseUser.name?.split(' ')[0] || '');
+      setLastName(firebaseUser.name?.split(' ').slice(1).join(' ') || '');
     }
   }, [firebaseUser]);
   
@@ -76,7 +75,7 @@ export default function InitialSetupPage() {
     setIdInUseError(false);
 
     try {
-        const isUnique = await checkIdUniqueness({ idNumber, country, currentUserId: firebaseUser.uid });
+        const isUnique = await checkIdUniqueness({ idNumber, country, currentUserId: firebaseUser.id });
         
         if (!isUnique) {
             setIdInUseError(true);
@@ -99,7 +98,7 @@ export default function InitialSetupPage() {
         }
         
         const updatedUser = await completeInitialSetup(
-          firebaseUser.uid, 
+          firebaseUser.id, 
           { 
             name, 
             lastName, 
@@ -135,8 +134,8 @@ export default function InitialSetupPage() {
 
   const handleContactSupport = () => {
     if(!firebaseUser) return;
-    const conversationId = [firebaseUser.uid, 'corabo-admin'].sort().join('-');
-    sendMessage({ recipientId: 'corabo-admin', text: "Hola, mi número de documento de identidad ya está en uso y necesito ayuda para verificar mi cuenta.", conversationId, senderId: firebaseUser.uid });
+    const conversationId = [firebaseUser.id, 'corabo-admin'].sort().join('-');
+    sendMessage({ recipientId: 'corabo-admin', text: "Hola, mi número de documento de identidad ya está en uso y necesito ayuda para verificar mi cuenta.", conversationId, senderId: firebaseUser.id });
     router.push(`/messages/${conversationId}`);
   };
 

@@ -1,10 +1,10 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { getAuthInstance } from '@/lib/firebase';
 import { onIdTokenChanged } from 'firebase/auth';
-import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
   firebaseUser: FirebaseUser | null;
@@ -22,7 +22,6 @@ type AuthProviderProps = {
 export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps) => {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(serverFirebaseUser);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  const router = useRouter();
   
   useEffect(() => {
     const auth = getAuthInstance();
@@ -51,8 +50,6 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
   const logout = async () => {
     const auth = getAuthInstance();
     await auth.signOut(); // This will trigger onIdTokenChanged, setting user to null.
-    // The AppLayout will handle the redirect to /login
-    router.push('/login'); // Explicitly redirect on logout
   };
   
   const value: AuthContextType = {
