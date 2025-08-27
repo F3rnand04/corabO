@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useMemo, useEffect, useState, useCallback } from "react";
+import { useMemo, useEffect, useState, useCallback, useRef } from "react";
 import type { GalleryImage } from "@/lib/types";
 import { useCorabo } from "@/contexts/CoraboContext";
 import { ActivationWarning } from "@/components/ActivationWarning";
@@ -22,14 +22,16 @@ export function FeedClientComponent() {
   const [lastVisibleDocId, setLastVisibleDocId] = useState<string | undefined>(undefined);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
   const loadMorePublications = useCallback(async () => {
-    if (!hasMore || isLoadingMore) return;
+    if (!hasMore || isLoadingMore || isLoadingFeed) return;
 
     setIsLoadingMore(true);
     try {
-        const result = await getFeed({ limitNum: 10, startAfterDocId: lastVisibleDocId });
-        if (result.publications) {
+        const result = await getFeed({ limitNum: 5, startAfterDocId: lastVisibleDocId });
+        if (result.publications && result.publications.length > 0) {
             setPublications(prev => [...prev, ...result.publications as GalleryImage[]]);
             setLastVisibleDocId(result.lastVisibleDocId);
             setHasMore(!!result.lastVisibleDocId);
@@ -41,7 +43,20 @@ export function FeedClientComponent() {
     } finally {
         setIsLoadingMore(false);
     }
-  }, [hasMore, isLoadingMore, lastVisibleDocId]);
+  }, [hasMore, isLoadingMore, isLoadingFeed, lastVisibleDocId]);
+
+  const lastElementRef = useCallback((node: HTMLDivElement) => {
+    if (isLoadingMore || isLoadingFeed) return;
+    if (observerRef.current) observerRef.current.disconnect();
+
+    observerRef.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        loadMorePublications();
+      }
+    });
+
+    if (node) observerRef.current.observe(node);
+  }, [isLoadingMore, isLoadingFeed, hasMore, loadMorePublications]);
 
 
   useEffect(() => {
@@ -51,7 +66,7 @@ export function FeedClientComponent() {
         setLastVisibleDocId(undefined);
         setHasMore(true);
 
-        getFeed({ limitNum: 10 })
+        getFeed({ limitNum: 5 })
             .then(result => {
                 if (result.publications) {
                     setPublications(result.publications as GalleryImage[]);
@@ -99,16 +114,13 @@ export function FeedClientComponent() {
     if (filteredPublications.length > 0) {
       return (
         <div className="space-y-4 container mx-auto max-w-2xl">
-          {filteredPublications.map((item, index) => (
-              <PublicationCard key={item.id || index} publication={item} />
-          ))}
-          {hasMore && !searchQuery && !categoryFilter && (
-            <div className="text-center py-4">
-                <Button onClick={loadMorePublications} disabled={isLoadingMore}>
-                    {isLoadingMore ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : 'Cargar más'}
-                </Button>
-            </div>
-          )}
+          {filteredPublications.map((item, index) => {
+            if (index === filteredPublications.length - 1) {
+              return <div ref={lastElementRef} key={item.id || index}><PublicationCard publication={item} /></div>
+            }
+            return <PublicationCard key={item.id || index} publication={item} />
+          })}
+          {isLoadingMore && <div className="flex justify-center py-4"><Loader2 className="h-6 w-6 animate-spin"/></div>}
         </div>
       );
     }
