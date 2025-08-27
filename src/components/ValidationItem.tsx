@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { CheckCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
-import { sendSmsVerificationCodeFlow, verifySmsCodeFlow } from '@/ai/flows/sms-flow'; 
+import { sendSmsVerificationCode, verifySmsCode } from '@/lib/actions/sms.actions'; 
 import { useAuth } from './auth/AuthProvider';
 
 type ValidationStatus = 'idle' | 'pending' | 'validated';
@@ -47,7 +47,7 @@ export function ValidationItem({
         setIsLoading(true);
         try {
             if (type === 'phone') {
-                await sendSmsVerificationCodeFlow({ userId: firebaseUser.uid, phoneNumber: currentValue });
+                await sendSmsVerificationCode(firebaseUser.uid, currentValue);
                 setStatus('pending');
                 toast({ title: 'Código Enviado', description: 'Revisa tu teléfono para obtener el código de 6 dígitos.'});
             } else if (onValidate) {
@@ -68,7 +68,7 @@ export function ValidationItem({
         setIsLoading(true);
         try {
             if (type === 'phone') {
-                const result = await verifySmsCodeFlow({ userId: firebaseUser.uid, code: inputCode });
+                const result = await verifySmsCode(firebaseUser.uid, inputCode);
                 if(result.success) {
                     setStatus('validated');
                 } else {
