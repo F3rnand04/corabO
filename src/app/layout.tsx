@@ -10,7 +10,7 @@ import { cookies } from 'next/headers';
 import type { User as FirebaseUserType } from 'firebase-admin/auth';
 import type { FirebaseUserInput, User } from '@/lib/types';
 import { getOrCreateUserFlow } from '@/ai/flows/auth-flow';
-import { ai } from '@/ai/genkit'; // Import the centralized ai instance
+import '@/ai/genkit'; // Import for side effects to ensure Firebase is initialized
 
 export const metadata: Metadata = {
   title: 'corabO.app',

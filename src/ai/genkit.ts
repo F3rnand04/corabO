@@ -14,7 +14,7 @@ import { firebase } from '@genkit-ai/firebase';
 export const ai = genkit({
   plugins: [
     googleAI(),
-    firebase(), // This plugin initializes Firebase Admin SDK
+    firebase, // This plugin initializes Firebase Admin SDK
   ],
   enableTracingAndMetrics: false,
 });
