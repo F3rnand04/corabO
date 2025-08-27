@@ -1,3 +1,4 @@
+
 // This file contains the shared Firebase configuration object.
 // It is environment-agnostic and can be safely imported by both client and server modules.
 
