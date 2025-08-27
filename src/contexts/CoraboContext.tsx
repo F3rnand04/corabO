@@ -82,7 +82,6 @@ export const CoraboProvider = ({ children, initialCoraboUser }: CoraboProviderPr
         navigator.geolocation.getCurrentPosition(
           (position) => setCurrentUserLocation(position.coords),
           (error) => {
-            console.warn("Geolocation Error:", error.message);
             // Fallback to IP-based location if GPS is denied
             fetch('https://ipapi.co/json/')
               .then(res => res.json())
