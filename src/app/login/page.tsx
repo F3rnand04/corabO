@@ -34,13 +34,15 @@ export default function LoginPage() {
     const auth = getAuthInstance();
     const provider = new GoogleAuthProvider();
     try {
+      // Inicia el proceso de redirección. El código no continuará aquí.
+      // El navegador redirigirá a Google y luego de vuelta a esta página.
       await signInWithRedirect(auth, provider);
     } catch (error: any) {
        console.error("Google sign-in redirect error:", error);
        toast({ 
         variant: 'destructive', 
         title: 'Error de Inicio de Sesión con Google', 
-        description: 'No se pudo iniciar la autenticación. Intenta de nuevo.'
+        description: 'No se pudo iniciar la autenticación. Revisa que el dominio esté autorizado en la consola de Firebase.'
       });
     }
   };
