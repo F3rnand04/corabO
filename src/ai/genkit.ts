@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview Central Genkit initialization.
  * This file is the single source of truth for the Genkit `ai` instance.
@@ -15,6 +16,5 @@ export const ai = genkit({
     googleAI(),
     firebase(), // This plugin initializes Firebase Admin SDK
   ],
-  logLevel: 'debug',
   enableTracingAndMetrics: false,
 });
