@@ -4,7 +4,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { getAuthInstance } from '@/lib/firebase';
-import { onIdTokenChanged } from 'firebase/auth';
+import { onIdTokenChanged, getRedirectResult } from 'firebase/auth';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthContextType {
   firebaseUser: FirebaseUser | null;
@@ -22,34 +23,57 @@ type AuthProviderProps = {
 export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps) => {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(serverFirebaseUser);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const { toast } = useToast();
   
   useEffect(() => {
     const auth = getAuthInstance();
+
+    // Primero, procesa el resultado de la redirección para capturar el usuario
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result) {
+            // Usuario ha iniciado sesión exitosamente a través de la redirección.
+            // onIdTokenChanged se encargará del resto.
+        }
+      })
+      .catch((error) => {
+        // Manejar errores aquí si es necesario, como problemas de red.
+        console.error("Error getting redirect result:", error);
+        toast({
+          variant: "destructive",
+          title: "Error de Autenticación",
+          description: "No se pudo completar el inicio de sesión. Por favor, inténtalo de nuevo."
+        });
+      })
+      .finally(() => {
+         // onIdTokenChanged se ejecutará de todas formas. Aquí nos aseguramos de que el estado de carga
+         // se actualice correctamente después de intentar obtener el resultado de la redirección.
+         // En el caso de que no haya redirección, el listener de abajo se encargará.
+      });
+
+
     const unsubscribe = onIdTokenChanged(auth, async (user) => {
       setFirebaseUser(user);
       setIsLoadingAuth(false);
       
       const idToken = user ? await user.getIdToken() : null;
-      // This fetch is a "fire and forget" call to update the session cookie on the server.
-      // We don't need to block rendering for it.
-      // This also handles logout by sending a null token.
+      // Actualiza la cookie de sesión en el servidor. Esto es "fire-and-forget".
       fetch('/api/auth/session', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ idToken }),
       }).catch(error => {
-          // It's good to log this error, but we don't need to show it to the user.
           console.error("Failed to sync session cookie:", error);
       });
     });
 
     // Cleanup subscription on unmount
     return () => unsubscribe();
-  }, []); // This effect should only run once on mount.
+  }, [toast]);
 
   const logout = async () => {
     const auth = getAuthInstance();
-    await auth.signOut(); // This will trigger onIdTokenChanged, setting user to null.
+    await auth.signOut(); // Esto activará onIdTokenChanged, poniendo el usuario a null.
   };
   
   const value: AuthContextType = {

@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
 import { getAuthInstance } from '@/lib/firebase';
 import { signInWithCustomToken, GoogleAuthProvider, signInWithRedirect } from 'firebase/auth';
 import { signInAsGuest } from '@/lib/actions/auth.actions';
@@ -26,7 +25,7 @@ export default function LoginPage() {
         throw new Error(result.error || 'No se pudo obtener el token de invitado.');
       }
     } catch (error: any) {
-      console.error(error);
+      console.error("Guest login error:", error);
       toast({ variant: 'destructive', title: 'Error de Inicio de Sesión', description: error.message });
     }
   };
@@ -35,10 +34,16 @@ export default function LoginPage() {
     const auth = getAuthInstance();
     const provider = new GoogleAuthProvider();
     try {
+      // Inicia el proceso de redirección a la página de login de Google.
+      // El resultado se gestionará en AuthProvider cuando el usuario regrese a la app.
       await signInWithRedirect(auth, provider);
-    } catch (error: any) {
-      console.error(error);
-      toast({ variant: 'destructive', title: 'Error de Inicio de Sesión', description: error.message });
+    } catch (error: any)
+      console.error("Google sign-in redirect error:", error);
+      toast({ 
+        variant: 'destructive', 
+        title: 'Error de Inicio de Sesión con Google', 
+        description: error.message || 'No se pudo iniciar el proceso de autenticación. Por favor, intenta de nuevo.'
+      });
     }
   };
 
