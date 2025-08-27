@@ -3,7 +3,7 @@
 import '@/ai/genkit';
 import { getFeedFlow } from '@/ai/flows/feed-flow';
 import { getProfileGalleryFlow, getProfileProductsFlow, getPublicProfileFlow } from '@/ai/flows/profile-flow';
-import { GetFeedInputSchema, GetProfileGalleryInputSchema, GetProfileProductsInputSchema } from '@/lib/types';
+import { GetFeedInputSchema } from '@/lib/types';
 import { z } from 'zod';
 
 export async function getFeed(input: z.infer<typeof GetFeedInputSchema>) {
@@ -14,11 +14,11 @@ export async function getPublicProfile(userId: string) {
     return await getPublicProfileFlow({ userId });
 }
 
-export async function getProfileGallery(input: z.infer<typeof GetProfileGalleryInputSchema>) {
+export async function getProfileGallery(input: { userId: string, limitNum?: number, startAfterDocId?: string }) {
    return await getProfileGalleryFlow(input);
 }
 
 
-export async function getProfileProducts(input: z.infer<typeof GetProfileProductsInputSchema>) {
+export async function getProfileProducts(input: { userId: string, limitNum?: number, startAfterDocId?: string }) {
     return await getProfileProductsFlow(input);
 }

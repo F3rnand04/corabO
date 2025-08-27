@@ -44,7 +44,7 @@ export async function checkout(
     recipientInfo: { name: string; phone: string } | undefined, 
     deliveryAddress: string
 ) {
-    await checkoutFlow({ userId, providerId, deliveryMethod, useCredicora, recipientInfo, deliveryAddress });
+    await checkoutFlow({ userId, providerId, deliveryMethod, useCredicora, recipientInfo, deliveryAddress: deliveryAddress || undefined });
     revalidatePath('/transactions');
     revalidatePath('/cart'); // Assuming a cart page or component
 }

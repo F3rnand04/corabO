@@ -2,6 +2,7 @@
 
 import '@/ai/genkit';
 import { sendSmsVerificationCodeFlow, verifySmsCodeFlow } from '@/ai/flows/sms-flow';
+import { revalidatePath } from 'next/cache';
 
 export async function sendSmsVerificationCode(userId: string, phoneNumber: string) {
     try {
@@ -16,6 +17,9 @@ export async function sendSmsVerificationCode(userId: string, phoneNumber: strin
 export async function verifySmsCode(userId: string, code: string) {
     try {
         const result = await verifySmsCodeFlow({ userId, code });
+        if (result.success) {
+            revalidatePath('/contacts');
+        }
         return result;
     } catch (error) {
         console.error('Error verifying SMS code:', error);

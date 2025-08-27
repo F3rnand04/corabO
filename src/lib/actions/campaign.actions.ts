@@ -1,7 +1,7 @@
 'use server';
 
 import '@/ai/genkit';
-import type { CreateCampaignInput } from '@/lib/types';
+import type { CreateCampaignInput } from '@/ai/flows/campaign-flow';
 import { revalidatePath } from 'next/cache';
 import { createCampaignFlow } from '@/ai/flows/campaign-flow';
 
@@ -15,13 +15,9 @@ export async function createCampaign(userId: string, campaignData: Omit<CreateCa
         const input = { ...campaignData, userId };
         const newCampaign = await createCampaignFlow(input);
         
-        // Even if the flow is disabled, revalidation can be kept
         revalidatePath('/profile'); 
         revalidatePath('/transactions');
-        
-        // This would redirect to a payment page for the campaign budget
-        // redirect(`/payment?amount=${newCampaign.budget}&concept=Pago de Campaña ${newCampaign.id}`);
-        console.log("Redirect to payment page would happen here.");
+        revalidatePath('/payment');
 
     } catch (error) {
         console.error(`[ACTION_ERROR] createCampaign:`, error);

@@ -18,7 +18,7 @@ export async function createPublication(input: CreatePublicationInput) {
         if (userSnap.exists()) {
             const user = userSnap.data() as User;
             if (user.verified || (user.reputation || 0) > 4.0) {
-                 await sendNewContentNotificationFlow({
+                 sendNewContentNotificationFlow({
                     providerId: input.userId,
                     publicationId: newPublication.id,
                     publicationDescription: newPublication.description,
@@ -42,7 +42,7 @@ export async function createProduct(input: CreateProductInput) {
         if (userSnap.exists()) {
             const user = userSnap.data() as User;
             if (user.verified || (user.reputation || 0) > 4.0) {
-                 await sendNewContentNotificationFlow({
+                 sendNewContentNotificationFlow({
                     providerId: input.userId,
                     publicationId: newProduct.id,
                     publicationDescription: `¡Nuevo producto disponible! ${newProduct.alt}`,

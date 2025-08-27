@@ -5,6 +5,7 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
 import { createCashierBoxFlow, regenerateCashierQrFlow } from '@/ai/flows/cashier-flow';
 import { sendNotification } from '@/ai/flows/notification-flow';
+import { processDirectPaymentFlow } from '@/ai/flows/transaction-flow';
 
 
 export async function addCashierBox(userId: string, name: string, password: string) {
@@ -122,13 +123,15 @@ export async function confirmMobilePayment(sessionId: string) {
 }
 
 export async function finalizeQrSession(sessionId: string) {
-    // This is where the transaction flow would be called.
-    // Since it's disabled, we just update the status.
+    const { transactionId } = await processDirectPaymentFlow({sessionId});
+    
     const db = getFirestore();
     await db.collection('qr_sessions').doc(sessionId).update({
         status: 'completed',
+        transactionId: transactionId,
         updatedAt: new Date().toISOString(),
     });
+
     revalidatePath('/transactions');
 }
 

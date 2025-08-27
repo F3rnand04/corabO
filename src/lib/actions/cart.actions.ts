@@ -14,6 +14,7 @@ export async function updateCart(userId: string, productId: string, newQuantity:
         await updateCartFlow({ userId, productId, newQuantity });
         // Revalidate the transactions path because carts are a type of transaction
         revalidatePath('/transactions');
+        revalidatePath('/profile'); // For product grid cards to update
     } catch (error) {
         console.error(`[ACTION_ERROR] updateCart:`, error);
         // In a real app, you might want to return a structured error object

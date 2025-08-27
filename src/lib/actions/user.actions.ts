@@ -26,6 +26,8 @@ export async function updateUser(userId: string, updates: Partial<User> | { [key
 
 export async function updateUserProfileImage(userId: string, dataUrl: string) {
     await updateUserFlow({ userId, updates: { profileImage: dataUrl } });
+    revalidatePath('/profile');
+    revalidatePath(`/companies/${userId}`);
 }
 
 export async function updateFullProfile(userId: string, formData: ProfileSetupData, userType: User['type']) {
@@ -44,7 +46,7 @@ export async function updateFullProfile(userId: string, formData: ProfileSetupDa
     });
 
     if(becameProvider) {
-        await sendWelcomeToProviderNotificationFlow({ userId });
+        sendWelcomeToProviderNotificationFlow({ userId });
     }
 
     revalidatePath('/profile');

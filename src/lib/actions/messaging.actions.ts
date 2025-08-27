@@ -37,6 +37,7 @@ export async function markConversationAsRead(conversationId: string) {
         const updatedMessages = conversation.messages.map(msg => ({ ...msg, isRead: true }));
         await convoRef.update({ messages: updatedMessages });
         revalidatePath('/messages');
+        revalidatePath(`/messages/${conversationId}`);
     }
 }
 

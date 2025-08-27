@@ -15,7 +15,7 @@ export async function requestAffiliation(providerId: string, companyId: string) 
         await requestAffiliationFlow({ providerId, companyId });
 
         // Notify the company admin
-        await sendNotification({
+        sendNotification({
             userId: companyId,
             type: 'affiliation_request',
             title: 'Nueva Solicitud de Asociación',
@@ -38,7 +38,7 @@ export async function approveAffiliation(affiliationId: string, actorId: string)
         await approveAffiliationFlow({ affiliationId, actorId });
 
         const providerId = affiliationId.split('-')[1];
-        await sendNotification({
+        sendNotification({
             userId: providerId,
             type: 'admin_alert', // Re-using for simplicity
             title: '¡Asociación Aprobada!',
@@ -61,7 +61,7 @@ export async function rejectAffiliation(affiliationId: string, actorId: string) 
     try {
         await rejectAffiliationFlow({ affiliationId, actorId });
         const providerId = affiliationId.split('-')[1];
-         await sendNotification({
+         sendNotification({
             userId: providerId,
             type: 'admin_alert',
             title: 'Solicitud de Asociación Rechazada',
@@ -82,7 +82,7 @@ export async function revokeAffiliation(affiliationId: string, actorId: string) 
     try {
         await revokeAffiliationFlow({ affiliationId, actorId });
         const providerId = affiliationId.split('-')[1];
-        await sendNotification({
+        sendNotification({
             userId: providerId,
             type: 'admin_alert',
             title: 'Asociación Revocada',

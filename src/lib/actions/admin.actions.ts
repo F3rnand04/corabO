@@ -50,6 +50,7 @@ export async function verifyCampaignPayment(transactionId: string, campaignId?: 
 
     await batch.commit();
     revalidatePath('/admin');
+    revalidatePath('/transactions');
 }
 
 /**
