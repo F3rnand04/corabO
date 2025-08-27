@@ -6,17 +6,23 @@
  */
 import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
-import {initializeApp, getApps, App} from 'firebase-admin/app';
+import {initializeApp, getApps, App, type AppOptions} from 'firebase-admin/app';
+import { firebaseConfig } from '@/lib/firebase-config';
 
 // This function ensures that Firebase Admin is initialized only once.
 function initializeFirebaseAdmin(): App {
   if (getApps().length > 0) {
     return getApps()[0];
   }
-  // By initializing without arguments in a Google Cloud environment (like App Hosting),
-  // the SDK automatically uses the environment's default service account, which has the
-  // necessary IAM permissions.
-  return initializeApp();
+  
+  // Explicitly provide the project configuration to the SDK.
+  // This removes ambiguity and ensures the server authenticates with the correct project.
+  const appOptions: AppOptions = {
+      projectId: firebaseConfig.projectId,
+      storageBucket: firebaseConfig.storageBucket,
+  };
+
+  return initializeApp(appOptions);
 }
 
 // Initialize Firebase Admin immediately when this file is imported.
