@@ -9,7 +9,8 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import type { Transaction, User, AppointmentRequest, QrSession } from '@/lib/types';
 import { addDays, endOfMonth } from 'date-fns';
 import { getExchangeRate } from './exchange-rate-flow';
-import { findDeliveryProviderFlow } from './delivery-flow';
+import { findDeliveryProviderFlow, calculateDeliveryCostFlow } from './delivery-flow';
+import { haversineDistance } from '@/lib/utils';
 
 // --- Schemas ---
 
@@ -429,6 +430,10 @@ export async function checkoutFlow(input: CheckoutInput) {
     const clientSnap = await clientRef.get();
     const client = clientSnap.data() as User;
     
+    const providerRef = db.collection('users').doc(input.providerId);
+    const providerSnap = await providerRef.get();
+    const provider = providerSnap.data() as User;
+
     let financedAmount = 0;
     let initialPayment = cartTx.amount;
     let installments = 0;
@@ -470,15 +475,23 @@ export async function checkoutFlow(input: CheckoutInput) {
         address: input.deliveryAddress,
         recipientInfo: input.recipientInfo,
     };
+
+    let deliveryCost = 0;
+    if (input.deliveryMethod !== 'pickup' && provider.profileSetupData?.location && client.profileSetupData?.location) {
+        const [provLat, provLon] = provider.profileSetupData.location.split(',').map(Number);
+        const [clientLat, clientLon] = client.profileSetupData.location.split(',').map(Number);
+        const distance = haversineDistance(provLat, provLon, clientLat, clientLon);
+        deliveryCost = await calculateDeliveryCostFlow({ distanceInKm: distance });
+    }
     
     batch.update(cartTxRef, {
         status: input.deliveryMethod === 'pickup' ? 'Listo para Retirar en Tienda' : 'Buscando Repartidor',
         'details.delivery': deliveryDetails,
-        'details.deliveryCost': input.deliveryMethod === 'pickup' ? 0 : 1.5,
+        'details.deliveryCost': deliveryCost,
         'details.paymentMethod': input.useCredicora ? 'credicora' : 'direct',
         'details.financedAmount': financedAmount,
         'details.initialPayment': initialPayment,
-        amount: cartTx.amount + (input.deliveryMethod === 'pickup' ? 0 : 1.5) // Update total amount with delivery cost
+        amount: cartTx.amount + deliveryCost
     });
 
     await batch.commit();

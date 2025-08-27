@@ -32,6 +32,9 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
     const [recipientName, setRecipientName] = useState(tempRecipientInfo?.name || '');
     const [recipientPhone, setRecipientPhone] = useState(tempRecipientInfo?.phone || '');
     const [isRecipientDialogOpen, setIsRecipientDialogOpen] = useState(false);
+    
+    // Delivery cost is now an estimate and will be confirmed on the backend
+    const deliveryCostEstimate = 1.50; // Placeholder estimate
 
     useEffect(() => {
         const fromMap = searchParams.get('fromMap');
@@ -104,7 +107,6 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
     const providerHasLocation = provider.profileSetupData?.hasPhysicalLocation || false;
 
     const subtotal = activeCartForCheckout.reduce((total, item) => total + item.product.price * item.quantity, 0);
-    const deliveryCost = 0;
     
     const userCredicoraLevel = currentUser.credicoraLevel || 1;
     const credicoraDetails = credicoraLevels[userCredicoraLevel.toString()];
@@ -114,7 +116,7 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
     const potentialFinancing = subtotal * financingPercentage;
     const financedAmount = useCredicora ? Math.min(potentialFinancing, creditLimit) : 0;
     const productInitialPayment = subtotal - financedAmount;
-    const totalToPayToday = productInitialPayment + deliveryCost;
+    const totalToPayToday = productInitialPayment + (deliveryMethod === 'pickup' ? 0 : deliveryCostEstimate);
     const installmentAmount = financedAmount > 0 ? financedAmount / credicoraDetails.installments : 0;
     
     const isCheckoutDisabled = deliveryMethod !== 'pickup' && !deliveryAddress;
@@ -207,7 +209,7 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
                 </div>
                 <div className="flex justify-between text-sm">
                     <span>Costo de envío (aprox):</span>
-                    <span className="font-semibold">${deliveryCost.toFixed(2)}</span>
+                    <span className="font-semibold">{deliveryMethod === 'pickup' ? '$0.00' : `$${deliveryCostEstimate.toFixed(2)}`}</span>
                 </div>
 
                 {providerAcceptsCredicora && (
@@ -223,7 +225,7 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
                 <Separator />
                 <div className="flex justify-between text-lg font-bold">
                     <span>Total a Pagar Hoy:</span>
-                    <span>${useCredicora ? totalToPayToday.toFixed(2) : (subtotal + deliveryCost).toFixed(2)}</span>
+                    <span>${useCredicora ? totalToPayToday.toFixed(2) : (subtotal + (deliveryMethod === 'pickup' ? 0 : deliveryCostEstimate)).toFixed(2)}</span>
                 </div>
                 {useCredicora && financedAmount > 0 && (
                     <p className="text-xs text-muted-foreground -mt-2 text-right">
