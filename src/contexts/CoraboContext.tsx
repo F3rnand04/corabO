@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo, useEffect } from 'react';
@@ -75,13 +76,36 @@ export const CoraboProvider = ({ children, initialCoraboUser }: CoraboProviderPr
   // --- Effects for Data Fetching ---
 
   useEffect(() => {
-    // Attempt to get user's location
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => setCurrentUserLocation(position.coords),
-        (error) => console.error("Geolocation error:", error)
-      );
-    }
+    // Attempt to get user's location, with a fallback.
+    const fetchLocation = async () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => setCurrentUserLocation(position.coords),
+          (error) => {
+            console.warn("Geolocation Error:", error.message);
+            // Fallback to IP-based location if GPS is denied
+            fetch('https://ipapi.co/json/')
+              .then(res => res.json())
+              .then(data => {
+                if(data.latitude && data.longitude){
+                    const coords: GeolocationCoordinates = {
+                        latitude: data.latitude,
+                        longitude: data.longitude,
+                        accuracy: 1000, // Lower accuracy for IP-based
+                        altitude: null,
+                        altitudeAccuracy: null,
+                        heading: null,
+                        speed: null,
+                    };
+                    setCurrentUserLocation(coords);
+                }
+              }).catch(ipError => console.error("IP Geolocation failed:", ipError));
+          }
+        );
+      }
+    };
+  
+    fetchLocation();
   }, []);
 
   useEffect(() => {
