@@ -24,22 +24,19 @@ Este diagrama ilustra la nueva arquitectura de comunicación, que es unidireccio
 
 ```mermaid
 graph TD
-    subgraph "Servidor (Node.js)"
-        A[Request a /] --> B{RootLayout (Server Component)};
-        B -- "1. Verifica cookie de sesión" --> C[Firebase Admin SDK];
-        C -- "2. Devuelve Firebase User o null" --> B;
-    end
-
     subgraph "Cliente (Navegador)"
-        B -- "3. Renderiza HTML con serverFirebaseUser" --> D[AuthProvider];
-        D -- "4. Inicializa estado con serverFirebaseUser" --> E[CoraboProvider];
-        E -- "5. Obtiene currentUser de Firestore" --> F[Componente de UI];
-        F -- "6. Usuario interactúa" --> G[Función de Acción en actions.ts];
-        H[Firestore] -- "9. Sincroniza en tiempo real" --> E;
-        E -- "10. Actualiza estado global" --> F;
+        A[Usuario visita la App] --> B(FeedClientComponent);
+        B -- "1. Llama a Server Action 'getFeed'" --> C{Server Action: getFeed};
+        F[Componente de UI] -- "6. Usuario interactúa" --> G[Función de Acción en actions.ts];
+        H[Firestore] -- "9. Sincroniza datos del usuario" --> J[CoraboContext];
+        J -- "10. Actualiza estado global" --> F;
     end
     
     subgraph "Backend (Server Actions)"
+        C -- "2. Consulta publicaciones en Firestore" --> H[Firestore];
+        C -- "3. Consulta usuarios (propietarios)" --> H;
+        C -- "4. Enriquece datos de publicaciones" --> D[Publicaciones con 'owner'];
+        D -- "5. Retorna datos al cliente" --> B;
         G -- "7. Llama a Flujo de Genkit" --> I[Genkit Flow];
         I -- "8. Modifica datos" --> H;
     end
@@ -47,15 +44,15 @@ graph TD
 
 ### Descripción del Flujo:
 
-1.  **Verificación en el Servidor:** Una petición llega al `RootLayout`, que verifica la cookie de sesión del usuario con Firebase Admin.
-2.  **Estado Inicial:** El `RootLayout` renderiza el HTML inicial, pasando el objeto de usuario (o `null`) al `AuthProvider`.
-3.  **Hidratación Consistente:** El `AuthProvider` en el cliente se inicializa con el mismo estado que el servidor, evitando errores de hidratación.
-4.  **Carga del Perfil:** El `CoraboProvider`, al recibir un usuario de Firebase, obtiene el perfil completo (`currentUser`) desde Firestore.
-5.  **Interacción del Usuario:** El usuario hace clic en un botón en un componente de React.
-6.  **Llamada a la Acción:** El componente llama a una función `async` importada desde `src/lib/actions.ts`.
-7.  **Ejecución en el Servidor:** La acción ejecuta la lógica de negocio correspondiente llamando a un flujo de Genkit.
-8.  **Actualización de Datos:** El flujo de Genkit modifica los datos en Firestore.
-9.  **Sincronización Reactiva:** El listener de Firestore en `CoraboContext` detecta el cambio en la base de datos y actualiza el estado global.
+1.  **Petición de Datos:** El `FeedClientComponent` en el navegador del cliente solicita una página de publicaciones llamando a la Server Action `getFeed`.
+2.  **Consulta de Publicaciones:** La Server Action ejecuta una consulta en Firestore para obtener un lote de publicaciones.
+3.  **Consulta de Propietarios:** La acción identifica los `providerId` de ese lote y realiza una única consulta optimizada para obtener los perfiles de los propietarios.
+4.  **Enriquecimiento de Datos:** El servidor combina los datos, incrustando la información del propietario dentro de cada objeto de publicación.
+5.  **Respuesta al Cliente:** El servidor devuelve el lote de publicaciones enriquecidas al `FeedClientComponent`.
+6.  **Interacción del Usuario:** El usuario hace clic en un botón en un componente de React.
+7.  **Llamada a la Acción:** El componente llama a una función `async` importada desde `src/lib/actions.ts`.
+8.  **Ejecución en el Servidor:** La acción ejecuta la lógica de negocio correspondiente llamando a un flujo de Genkit.
+9.  **Sincronización Reactiva:** El listener de Firestore en `CoraboContext` detecta cambios en datos específicos del usuario (como su perfil o notificaciones) y actualiza el estado global.
 10. **Re-renderizado:** React re-renderiza los componentes que dependen de ese estado, mostrando la información actualizada.
 
-Esta arquitectura elimina las condiciones de carrera y los fallos de renderizado, garantizando una aplicación estable y de alto rendimiento.
+Esta arquitectura elimina las consultas ineficientes del lado del cliente y las condiciones de carrera, garantizando una aplicación estable y de alto rendimiento.
