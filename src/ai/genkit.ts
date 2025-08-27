@@ -13,9 +13,9 @@ function initializeFirebaseAdmin(): App {
   if (getApps().length > 0) {
     return getApps()[0];
   }
-  // Environment variables for Firebase config are automatically read by
-  // the Firebase Admin SDK in many environments (like Cloud Functions, App Engine).
-  // If running locally, you'd need a service account file set via GOOGLE_APPLICATION_CREDENTIALS.
+  // By initializing without arguments in a Google Cloud environment (like App Hosting),
+  // the SDK automatically uses the environment's default service account, which has the
+  // necessary IAM permissions.
   return initializeApp();
 }
 
