@@ -15,19 +15,13 @@ const FindDeliveryInputSchema = z.object({
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
- * Calculates the delivery cost based on distance.
+ * Calculates the delivery cost based on distance at a rate of $1 per km.
  * @param distanceInKm The distance in kilometers.
  * @returns The calculated delivery cost.
  */
 export async function calculateDeliveryCostFlow({ distanceInKm }: { distanceInKm: number }): Promise<number> {
-    const baseFare = 1.00; // Base fee for any delivery
-    const perKmRate = 0.25; // Cost per kilometer
-    
-    if (distanceInKm <= 2) {
-        return 1.50; // Minimum flat rate for short distances
-    }
-    
-    const cost = baseFare + (distanceInKm * perKmRate);
+    const perKmRate = 1.00; // $1 per kilometer
+    const cost = distanceInKm * perKmRate;
     
     // Return cost rounded to two decimal places
     return Math.round(cost * 100) / 100;
