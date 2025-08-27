@@ -1,5 +1,4 @@
-
-'use client';
+"use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import type { User as FirebaseUser } from 'firebase/auth';
