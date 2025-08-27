@@ -1,20 +1,32 @@
 
 /**
- * @fileOverview Central Genkit initialization.
- * This file is the single source of truth for the Genkit `ai` instance.
- * It replaces the need for a separate firebase-server.ts file.
+ * @fileOverview Central Genkit initialization and Firebase Admin SDK setup.
+ * This file is the single source of truth for the Genkit `ai` instance and
+ * ensures Firebase Admin is initialized once for all server-side operations.
  */
-import {genkit} from 'genkit';
-import {googleAI} from '@genkit-ai/googleai';
-import { firebase } from '@genkit-ai/firebase';
+import { genkit } from 'genkit';
+import { googleAI } from '@genkit-ai/googleai';
+import {initializeApp, getApps, App} from 'firebase-admin/app';
 
-// By including the firebase() plugin here, Genkit handles the initialization
-// of the Firebase Admin SDK for all backend operations, including functions
-// and flows. This ensures a single, consistent initialization.
+// This function ensures that Firebase Admin is initialized only once.
+function initializeFirebaseAdmin(): App {
+  if (getApps().length > 0) {
+    return getApps()[0];
+  }
+  // Environment variables for Firebase config are automatically read by
+  // the Firebase Admin SDK in many environments (like Cloud Functions, App Engine).
+  // If running locally, you'd need a service account file set via GOOGLE_APPLICATION_CREDENTIALS.
+  return initializeApp();
+}
+
+// Initialize Firebase Admin immediately.
+initializeFirebaseAdmin();
+
+// Configure and export the Genkit AI instance.
 export const ai = genkit({
   plugins: [
     googleAI(),
-    firebase, // This plugin initializes Firebase Admin SDK
+    // The @genkit-ai/firebase plugin is removed. Initialization is now handled above.
   ],
   enableTracingAndMetrics: false,
 });
