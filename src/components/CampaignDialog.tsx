@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -29,6 +28,12 @@ interface CampaignDialogProps {
     onOpenChange: (isOpen: boolean) => void;
 }
 
+const budgetLevelsData = {
+    basic: { name: 'Básico', dailyRate: 2, impressions: 1500, icon: Megaphone },
+    advanced: { name: 'Avanzado', dailyRate: 7, impressions: 8000, icon: Zap },
+    premium: { name: 'Premium', dailyRate: 16, impressions: 20000, icon: Sparkles }
+};
+
 export function CampaignDialog({ isOpen, onOpenChange }: CampaignDialogProps) {
     const { currentUser, allPublications } = useCorabo();
     const [step, setStep] = useState(1);
@@ -45,11 +50,7 @@ export function CampaignDialog({ isOpen, onOpenChange }: CampaignDialogProps) {
     // Step 4 state
     const [useCredicora, setUseCredicora] = useState(false);
 
-    const budgetLevels = {
-        basic: { name: 'Básico', dailyRate: 2, impressions: 1500, icon: Megaphone },
-        advanced: { name: 'Avanzado', dailyRate: 7, impressions: 8000, icon: Zap },
-        premium: { name: 'Premium', dailyRate: 16, impressions: 20000, icon: Sparkles }
-    };
+    const budgetLevels = useMemo(() => budgetLevelsData, []);
     
     const calculatedCosts = useMemo(() => {
         let dailyCost = budgetLevels[budgetLevel].dailyRate;
@@ -66,7 +67,6 @@ export function CampaignDialog({ isOpen, onOpenChange }: CampaignDialogProps) {
         let initialPayment = finalCost;
         let financedAmount = 0;
         if(useCredicora && finalCost >= 20){
-            const crediLevel = currentUser.credicoraLevel || 1;
             const crediDetails = currentUser.credicoraDetails;
             if(crediDetails){
                  const potentialFinancing = finalCost * (1 - crediDetails.initialPaymentPercentage);
@@ -76,7 +76,7 @@ export function CampaignDialog({ isOpen, onOpenChange }: CampaignDialogProps) {
         }
 
         return { dailyCost, totalCost, discount, finalCost, initialPayment, financedAmount };
-    }, [budgetLevel, durationDays, useGeo, useInterests, useCredicora, currentUser]);
+    }, [budgetLevel, durationDays, useGeo, useInterests, useCredicora, currentUser, budgetLevels]);
 
 
     const handleNext = () => setStep(s => s + 1);

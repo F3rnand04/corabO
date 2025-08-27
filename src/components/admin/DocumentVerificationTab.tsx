@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState } from 'react';
@@ -132,9 +130,9 @@ export function DocumentVerificationTab() {
                                 <div className="mt-4 p-3 rounded-md border text-sm">
                                     <h5 className="font-semibold mb-2">Resultado de la IA:</h5>
                                     {verificationResult.nameMatch === true && <p className="text-green-600 flex items-center gap-2"><CheckCircle className="h-4 w-4"/> Nombre Coincide</p>}
-                                    {verificationResult.nameMatch === false && <p className="text-destructive flex items-center gap-2"><XCircle className="h-4 w-4"/> Nombre NO Coincide (IA leyó: "{verificationResult.extractedName}")</p>}
+                                    {verificationResult.nameMatch === false && <p className="text-destructive flex items-center gap-2"><XCircle className="h-4 w-4"/> Nombre NO Coincide (IA leyó: &quot;{verificationResult.extractedName}&quot;)</p>}
                                     {verificationResult.idMatch === true && <p className="text-green-600 flex items-center gap-2"><CheckCircle className="h-4 w-4"/> ID Coincide</p>}
-                                    {verificationResult.idMatch === false && <p className="text-destructive flex items-center gap-2"><XCircle className="h-4 w-4"/> ID NO Coincide (IA leyó: "{verificationResult.extractedId}")</p>}
+                                    {verificationResult.idMatch === false && <p className="text-destructive flex items-center gap-2"><XCircle className="h-4 w-4"/> ID NO Coincide (IA leyó: &quot;{verificationResult.extractedId}&quot;)</p>}
                                 </div>
                             )}
                         </div>

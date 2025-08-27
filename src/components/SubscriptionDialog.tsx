@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -177,7 +175,7 @@ export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogP
             <Info className="h-4 w-4" />
             <AlertTitle>¡Invierte en tu tranquilidad!</AlertTitle>
             <AlertDescription>
-                En CorabO, recomendamos siempre transaccionar con usuarios verificados. La insignia azul de 'Verificado' es tu confirmación de que este usuario ha completado un riguroso proceso de validación, brindando una capa adicional de seguridad y confianza en todas tus interacciones.
+                En CorabO, recomendamos siempre transaccionar con usuarios verificados. La insignia azul de &apos;Verificado&apos; es tu confirmación de que este usuario ha completado un riguroso proceso de validación, brindando una capa adicional de seguridad y confianza en todas tus interacciones.
             </AlertDescription>
         </Alert>
 

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -134,7 +133,7 @@ function CashierManagementCard() {
                                             </AlertDialogTrigger>
                                             <AlertDialogContent>
                                                 <AlertDialogHeader>
-                                                    <AlertDialogTitle>¿Eliminar la caja "{box.name}"?</AlertDialogTitle>
+                                                    <AlertDialogTitle>¿Eliminar la caja &quot;{box.name}&quot;?</AlertDialogTitle>
                                                     <AlertDialogDescription>
                                                         Esta acción es permanente y no se puede deshacer.
                                                     </AlertDialogDescription>
@@ -170,7 +169,7 @@ function CashierManagementCard() {
                                             </AlertDialogTrigger>
                                             <AlertDialogContent>
                                                 <AlertDialogHeader>
-                                                    <AlertDialogTitle>¿Generar nuevo QR para "{box.name}"?</AlertDialogTitle>
+                                                    <AlertDialogTitle>¿Generar nuevo QR para &quot;{box.name}&quot;?</AlertDialogTitle>
                                                     <AlertDialogDescription>
                                                         Esta acción invalidará el código QR anterior. Asegúrate de reemplazar cualquier QR físico que estés usando.
                                                     </AlertDialogDescription>

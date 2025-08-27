@@ -28,10 +28,11 @@ import { retryFindDelivery, assignOwnDelivery, resolveDeliveryAsPickup } from '@
 
 function ProviderActions({ tx, onAction }: { tx: Transaction; onAction: () => void }) {
   const { currentUser } = useCorabo();
-  if (!currentUser) return null;
-
+  
   const [quoteBreakdown, setQuoteBreakdown] = useState('');
   const [quoteTotal, setQuoteTotal] = useState(0);
+
+  if (!currentUser) return null;
 
   const handleSendQuote = () => {
     if (quoteTotal > 0 && quoteBreakdown) {
@@ -95,8 +96,7 @@ function ProviderActions({ tx, onAction }: { tx: Transaction; onAction: () => vo
 
 function ClientActions({ tx, onAction }: { tx: Transaction; onAction: () => void }) {
   const { currentUser } = useCorabo();
-  if (!currentUser) return null;
-
+  
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [showRatingScreen, setShowRatingScreen] = useState(false);
@@ -106,6 +106,8 @@ function ClientActions({ tx, onAction }: { tx: Transaction; onAction: () => void
   const [paymentReference, setPaymentReference] = useState('');
   const [paymentVoucher, setPaymentVoucher] = useState<File | null>(null);
   const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
+
+  if (!currentUser) return null;
 
   const handleConfirmWorkReceived = () => {
     if (rating === 0) return;

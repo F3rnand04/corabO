@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -31,6 +30,7 @@ export function ProfileGalleryView({ gallery, owner, isLoading }: ProfileGallery
   const [isLiked, setIsLiked] = useState(false);
   const [shareCount, setShareCount] = useState(0);
   const [messageCount, setMessageCount] = useState(0);
+  const [detailsDialogStartIndex, setDetailsDialogStartIndex] = useState(0);
 
   useEffect(() => {
     if(gallery.length > 0 && currentImageIndex < gallery.length) {
@@ -55,8 +55,6 @@ export function ProfileGalleryView({ gallery, owner, isLoading }: ProfileGallery
     setDetailsDialogStartIndex(index);
     setIsDetailsDialogOpen(true);
   };
-  
-  const [detailsDialogStartIndex, setDetailsDialogStartIndex] = useState(0);
   
   const handleStarClick = () => {
     setIsLiked(prev => !prev);

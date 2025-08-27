@@ -291,7 +291,7 @@ export default function ChatPage() {
     
     markConversationAsRead(conversationId);
 
-  }, [conversationId, currentUser, conversation, otherParticipant?.id, users]);
+  }, [conversationId, currentUser, conversation, otherParticipant?.id, users, conversations.length]);
 
   
   useEffect(() => {

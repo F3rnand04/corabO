@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useCorabo } from '@/contexts/CoraboContext';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, MessageCircle, CheckCircle, Flag, Package, Hand, MoreHorizontal, Wallet, Megaphone, Zap, Timer, TrendingUp, UserRoundCog, BrainCircuit, Wrench, Car, Scissors, Home as HomeIcon, Utensils, Briefcase, Building, Users } from 'lucide-react';
+import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, MessageCircle, CheckCircle, Flag, Package, Hand, MoreHorizontal, Wallet, Megaphone, Zap, Timer, TrendingUp, UserRoundCog, BrainCircuit, Wrench, Car, Scissors, Home as HomeIcon, Utensils, Briefcase, Building, Users, Search, Loader2, Handshake } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
@@ -140,6 +140,11 @@ export function UserProfilePage({ userId }: { userId: string}) {
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
   
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [isProductDetailsDialogOpen, setIsProductDetailsDialogOpen] = useState(false);
+  const [isAppointmentDialogOpen, setIsAppointmentDialogOpen] = useState(false);
+  const [appointmentDate, setAppointmentDate] = useState<Date | null>(null);
+  const [appointmentDetails, setAppointmentDetails] = useState('');
 
   const isSelfProfile = currentUser?.id === userId;
 
@@ -229,12 +234,6 @@ export function UserProfilePage({ userId }: { userId: string}) {
     return { reputation: rep, effectiveness: eff, responseTime: respTime, agendaEvents: events, eventDates: dates };
 }, [provider, transactions]);
   
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [isProductDetailsDialogOpen, setIsProductDetailsDialogOpen] = useState(false);
-  const [isAppointmentDialogOpen, setIsAppointmentDialogOpen] = useState(false);
-  const [appointmentDate, setAppointmentDate] = useState<Date | null>(null);
-  const [appointmentDetails, setAppointmentDetails] = useState('');
-
   const distance = useMemo(() => {
     if (currentUserLocation && provider?.profileSetupData?.location) {
         const [lat, lon] = provider.profileSetupData.location.split(',').map(Number);
