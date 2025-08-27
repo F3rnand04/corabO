@@ -19,7 +19,7 @@ function initializeFirebaseAdmin(): App {
   return initializeApp();
 }
 
-// Initialize Firebase Admin immediately.
+// Initialize Firebase Admin immediately when this file is imported.
 initializeFirebaseAdmin();
 
 // Configure and export the Genkit AI instance.

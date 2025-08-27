@@ -10,7 +10,7 @@ import { cookies } from 'next/headers';
 import type { User as FirebaseUserType } from 'firebase-admin/auth';
 import type { FirebaseUserInput, User } from '@/lib/types';
 import { getOrCreateUserFlow } from '@/ai/flows/auth-flow';
-import '@/ai/genkit'; // This MUST be the only import of genkit in a layout/page
+import '@/lib/actions/auth.actions'; // Ensures firebase-admin is initialized on server
 
 export const metadata: Metadata = {
   title: 'corabO.app',
