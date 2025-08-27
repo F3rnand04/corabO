@@ -54,7 +54,7 @@ export const CoraboProvider = ({ children, initialCoraboUser }: CoraboProviderPr
   
   // Raw data states from Firestore
   const [currentUser, setCurrentUser] = useState<User | null>(initialCoraboUser);
-  const [isLoadingUser, setIsLoadingUser] = useState(initialCoraboUser === null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [users, setUsers] = useState<User[]>([]);
   const [allPublications, setAllPublications] = useState<GalleryImage[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -87,6 +87,9 @@ export const CoraboProvider = ({ children, initialCoraboUser }: CoraboProviderPr
   }, []);
 
   useEffect(() => {
+    // Set loading state based on auth loading status
+    setIsLoadingUser(isLoadingAuth);
+    
     if (isLoadingAuth) return;
     
     const db = getFirestoreDb();
@@ -113,8 +116,10 @@ export const CoraboProvider = ({ children, initialCoraboUser }: CoraboProviderPr
                 const userData = docSnap.data() as User;
                 setCurrentUser(userData);
                 setContacts(userData.contacts || []);
+            } else {
+                // This case handles a logged-in user whose document might have been deleted
+                setCurrentUser(null);
             }
-            setIsLoadingUser(false);
         });
         unsubs.push(userUnsub);
 
@@ -135,7 +140,7 @@ export const CoraboProvider = ({ children, initialCoraboUser }: CoraboProviderPr
         setCurrentUser(null);
         setConversations([]);
         setTransactions([]);
-        setIsLoadingUser(false);
+        setContacts([]);
     }
 
     return () => {
