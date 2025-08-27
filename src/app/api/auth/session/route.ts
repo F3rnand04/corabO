@@ -4,8 +4,6 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import '@/ai/genkit'; // Import for side effects to ensure Firebase is initialized
 
-// The Firebase Admin app is initialized by Genkit, so we don't need getFirebaseAdmin()
-
 export async function POST(request: Request) {
   try {
     const body = await request.json();

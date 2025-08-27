@@ -1,6 +1,6 @@
 'use server';
 
-import '@/ai/genkit'; // Import for side effects to ensure Firebase is initialized
+import '@/ai/genkit';
 import { getFirestore } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
 import type { User } from '@/lib/types';

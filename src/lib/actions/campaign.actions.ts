@@ -1,6 +1,6 @@
 'use server';
 
-import '@/ai/genkit'; // Import for side effects to ensure Firebase is initialized
+import '@/ai/genkit';
 import type { CreateCampaignInput } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { createCampaignFlow } from '@/ai/flows/campaign-flow';

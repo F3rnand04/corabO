@@ -1,7 +1,6 @@
-
 'use server';
 
-import '@/ai/genkit'; // Import for side effects to ensure Firebase is initialized
+import '@/ai/genkit';
 import { signInAsGuestFlow } from '@/ai/flows/auth-flow';
 import { getAuth } from 'firebase-admin/auth';
 import { cookies } from 'next/headers';
