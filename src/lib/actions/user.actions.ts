@@ -1,3 +1,4 @@
+
 'use server';
 
 import '@/ai/genkit';
@@ -77,6 +78,10 @@ export async function completeInitialSetup(userId: string, data: { name: string;
 }
 
 export async function autoVerifyIdWithAI(user: User): Promise<any> {
+    // Ensure the flow is only called if the document URL exists
+    if (!user.idDocumentUrl) {
+        throw new Error("El documento de identidad no ha sido cargado.");
+    }
     return await autoVerifyIdWithAIFlow(user);
 }
 
