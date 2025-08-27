@@ -79,8 +79,8 @@ export const CoraboProvider = ({ children, initialCoraboUser }: CoraboProviderPr
       navigator.geolocation.getCurrentPosition(
         (position) => setCurrentUserLocation(position.coords),
         (error) => {
-            console.warn("Geolocation Error:", error.message);
-            // Fallback to IP-based location can be added here if needed
+            // Geolocation is blocked by permissions policy in the dev environment.
+            // This is expected, so we don't log an error to the console.
         }
       );
     }
