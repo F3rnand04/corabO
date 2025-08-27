@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getAuthInstance } from '@/lib/firebase';
-import { signInWithCustomToken, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { signInWithCustomToken, GoogleAuthProvider, signInWithRedirect } from 'firebase/auth';
 import { signInAsGuest } from '@/lib/actions/auth.actions';
 
 export default function LoginPage() {
@@ -39,9 +39,9 @@ export default function LoginPage() {
     const auth = getAuthInstance();
     const provider = new GoogleAuthProvider();
     try {
-      // Use signInWithPopup instead of signInWithRedirect
-      await signInWithPopup(auth, provider);
-      // After popup, onAuthStateChanged in AuthProvider will detect the session.
+      // Use signInWithRedirect instead of signInWithPopup to avoid popup blockers
+      await signInWithRedirect(auth, provider);
+      // After redirect, onIdTokenChanged in AuthProvider will detect the session.
     } catch (error: any) {
       console.error(error);
       toast({ variant: 'destructive', title: 'Error de Inicio de Sesión', description: error.message });
