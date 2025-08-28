@@ -19,7 +19,7 @@ export default function LoginPage() {
   const router = useRouter();
 
   const handleGoogleLogin = () => {
-    // Do not set processing state here. Call the popup immediately
+    // DO NOT set processing state here. Call the popup immediately
     // to prevent the browser from blocking it.
     const auth = getAuthInstance();
     const provider = new GoogleAuthProvider();

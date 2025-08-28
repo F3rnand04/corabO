@@ -7,8 +7,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "test:auth": "node auth-test.js"
+    "start": "next start"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.1.0",
