@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -7,46 +8,17 @@ import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getAuthInstance } from '@/lib/firebase';
-import { signInWithCustomToken, GoogleAuthProvider, signInWithRedirect, getRedirectResult, type UserCredential } from 'firebase/auth';
+import { signInWithCustomToken, GoogleAuthProvider, signInWithPopup, type UserCredential } from 'firebase/auth';
 import { signInAsGuest } from '@/lib/actions/auth.actions';
 
 export default function LoginPage() {
   const { firebaseUser, isLoadingAuth } = useAuth();
   const { toast } = useToast();
-  const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
-
-  // This effect will run when the component mounts after a redirect from Google.
-  useEffect(() => {
-    const auth = getAuthInstance();
-    getRedirectResult(auth)
-      .then((result: UserCredential | null) => {
-        if (result) {
-          // User successfully signed in.
-          // The onIdTokenChanged listener in AuthProvider will handle the session cookie.
-          toast({ title: "¡Autenticación exitosa!", description: "Bienvenido a Corabo." });
-          // The AppLayout will handle redirecting the user to the correct page.
-        }
-        // If result is null, it means the user has just landed on the login page
-        // without a redirect. We can stop showing the loader.
-        setIsProcessingRedirect(false);
-      })
-      .catch((error) => {
-        // Handle Errors here.
-        console.error("Redirect result error:", error);
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        toast({
-          variant: "destructive",
-          title: `Error de Autenticación (${errorCode})`,
-          description: errorMessage,
-        });
-        setIsProcessingRedirect(false);
-      });
-  }, [toast]);
-
+  const [isProcessingLogin, setIsProcessingLogin] = useState(false);
 
   const handleAnonymousLogin = async () => {
     const auth = getAuthInstance();
+    setIsProcessingLogin(true);
     try {
       const result = await signInAsGuest();
       if (result.customToken) {
@@ -58,19 +30,46 @@ export default function LoginPage() {
     } catch (error: any) {
       console.error("Guest login error:", error);
       toast({ variant: 'destructive', title: 'Error de Inicio de Sesión', description: 'No se pudo completar el ingreso de invitado. Por favor, contacta a soporte.' });
+    } finally {
+        setIsProcessingLogin(false);
     }
   };
 
   const handleGoogleLogin = async () => {
     const auth = getAuthInstance();
     const provider = new GoogleAuthProvider();
-    // Set processing to true before redirecting away
-    setIsProcessingRedirect(true); 
-    await signInWithRedirect(auth, provider);
+    setIsProcessingLogin(true);
+    try {
+        const result: UserCredential = await signInWithPopup(auth, provider);
+        // The onIdTokenChanged listener in AuthProvider will handle the session cookie.
+        toast({ title: "¡Autenticación exitosa!", description: `Bienvenido a Corabo, ${result.user.displayName}.` });
+        // AppLayout will handle redirection automatically upon successful auth state change.
+    } catch (error: any) {
+        // Handle Errors here.
+        console.error("Popup sign-in error:", error);
+        const errorCode = error.code;
+        const errorMessage = error.message;
+
+        if (errorCode === 'auth/popup-closed-by-user') {
+             toast({
+                variant: "default",
+                title: "Inicio de sesión cancelado",
+                description: "La ventana de inicio de sesión fue cerrada.",
+            });
+        } else {
+             toast({
+                variant: "destructive",
+                title: `Error de Autenticación (${errorCode})`,
+                description: errorMessage,
+            });
+        }
+    } finally {
+        setIsProcessingLogin(false);
+    }
   };
 
-  // While checking for redirect result or if auth is still loading, show a full-page loader.
-  if (isProcessingRedirect || isLoadingAuth) {
+  // While checking for auth state or processing a login, show a loader.
+  if (isLoadingAuth || isProcessingLogin) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -124,11 +123,11 @@ export default function LoginPage() {
             </p>
 
             <div className="space-y-4 mt-8">
-                <Button size="lg" className="w-full" onClick={handleGoogleLogin} disabled={isLoadingAuth}>
-                    {isLoadingAuth ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Ingresar o Registrarse con Google'}
+                <Button size="lg" className="w-full" onClick={handleGoogleLogin} disabled={isProcessingLogin}>
+                    {isProcessingLogin ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Ingresar o Registrarse con Google'}
                 </Button>
-                <Button size="lg" className="w-full" variant="secondary" onClick={handleAnonymousLogin} disabled={isLoadingAuth}>
-                    {isLoadingAuth ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Ingreso de Prueba'}
+                <Button size="lg" className="w-full" variant="secondary" onClick={handleAnonymousLogin} disabled={isProcessingLogin}>
+                    {isProcessingLogin ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Ingreso de Prueba'}
                 </Button>
             </div>
 
