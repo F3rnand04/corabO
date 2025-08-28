@@ -10,7 +10,8 @@ import { getFirebaseAuth } from '@/ai/genkit';
 export async function signInAsGuest(): Promise<{ customToken?: string; error?: string }> {
     try {
         const auth = getFirebaseAuth();
-        const uid = `guest_${Date.now()}`;
+        // Use a consistent but unique UID for the guest session to avoid creating new users on every click
+        const uid = `guest_user_session`; 
         const customToken = await auth.createCustomToken(uid);
         return { customToken };
     } catch (error: any) {
