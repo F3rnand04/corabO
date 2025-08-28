@@ -1,18 +1,49 @@
-
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getAuthInstance } from '@/lib/firebase';
-import { signInWithCustomToken, GoogleAuthProvider, signInWithRedirect } from 'firebase/auth';
+import { signInWithCustomToken, GoogleAuthProvider, signInWithRedirect, getRedirectResult, UserCredential } from 'firebase/auth';
 import { signInAsGuest } from '@/lib/actions/auth.actions';
 
 export default function LoginPage() {
-  const { isLoadingAuth } = useAuth();
+  const { firebaseUser, isLoadingAuth } = useAuth();
   const { toast } = useToast();
+  const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
+
+  // This effect will run when the component mounts after a redirect from Google.
+  useEffect(() => {
+    const auth = getAuthInstance();
+    getRedirectResult(auth)
+      .then((result: UserCredential | null) => {
+        if (result) {
+          // User successfully signed in.
+          // The onIdTokenChanged listener in AuthProvider will handle the session cookie.
+          toast({ title: "¡Autenticación exitosa!", description: "Bienvenido a Corabo." });
+          // The AppLayout will handle redirecting the user to the correct page.
+        }
+        // If result is null, it means the user has just landed on the login page
+        // without a redirect. We can stop showing the loader.
+        setIsProcessingRedirect(false);
+      })
+      .catch((error) => {
+        // Handle Errors here.
+        console.error("Redirect result error:", error);
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        toast({
+          variant: "destructive",
+          title: `Error de Autenticación (${errorCode})`,
+          description: errorMessage,
+        });
+        setIsProcessingRedirect(false);
+      });
+  }, [toast]);
+
 
   const handleAnonymousLogin = async () => {
     const auth = getAuthInstance();
@@ -33,19 +64,25 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     const auth = getAuthInstance();
     const provider = new GoogleAuthProvider();
-    try {
-      // Inicia el proceso de redirección. El código no continuará aquí.
-      // El navegador redirigirá a Google y luego de vuelta a esta página.
-      await signInWithRedirect(auth, provider);
-    } catch (error: any) {
-       console.error("Google sign-in redirect error:", error);
-       toast({ 
-        variant: 'destructive', 
-        title: 'Error de Inicio de Sesión con Google', 
-        description: 'No se pudo iniciar la autenticación. Revisa que el dominio esté autorizado en la consola de Firebase.'
-      });
-    }
+    // Set processing to true before redirecting away
+    setIsProcessingRedirect(true); 
+    await signInWithRedirect(auth, provider);
   };
+
+  // While checking for redirect result or if auth is still loading, show a full-page loader.
+  if (isProcessingRedirect || isLoadingAuth) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // If user is already logged in, AppLayout will redirect them.
+  // We render null here to avoid flashing the login page.
+  if (firebaseUser) {
+    return null;
+  }
 
   return (
     <div className="relative w-full h-screen grid grid-cols-1 md:grid-cols-2">
