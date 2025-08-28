@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getAuthInstance } from '@/lib/firebase';
-import { signInWithCustomToken, GoogleAuthProvider, signInWithRedirect, getRedirectResult, UserCredential } from 'firebase/auth';
+import { signInWithCustomToken, GoogleAuthProvider, signInWithRedirect, getRedirectResult, type UserCredential } from 'firebase/auth';
 import { signInAsGuest } from '@/lib/actions/auth.actions';
 
 export default function LoginPage() {
