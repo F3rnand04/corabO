@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -9,7 +8,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ChevronLeft, Check, X, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCorabo } from '@/contexts/CoraboContext';
-import { getFirestore, collection, query, where, onSnapshot, Unsubscribe, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { collection, query, where, onSnapshot, Unsubscribe, doc, getDoc, updateDoc } from 'firebase/firestore';
 import type { Notification, User } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
@@ -38,7 +38,6 @@ export default function CashierRequestsPage() {
     
     useEffect(() => {
         if (!currentUser) return;
-        const db = getFirestore();
         const q = query(collection(db, "notifications"), where("userId", "==", currentUser.id), where("type", "==", "cashier_request"));
         
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -52,7 +51,6 @@ export default function CashierRequestsPage() {
     }, [currentUser]);
 
     const handleRequest = async (requestId: string, approved: boolean) => {
-        const db = getFirestore();
         const requestRef = doc(db, "notifications", requestId);
         const requestSnap = await getDoc(requestRef);
         if (requestSnap.exists()) {
@@ -120,3 +118,5 @@ export default function CashierRequestsPage() {
         </div>
     );
 }
+
+    

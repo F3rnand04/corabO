@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { ChevronLeft, Banknote, Upload, Smartphone, Loader2 } from 'lucide-react';
 import type { Transaction } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { getFirestoreDb } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { setDoc, doc } from 'firebase/firestore';
 import { registerSystemPayment } from '@/lib/actions/admin.actions';
 import { payCommitment } from '@/lib/actions/transaction.actions';
@@ -217,3 +217,5 @@ export default function PaymentPage() {
         </Suspense>
     )
 }
+
+    

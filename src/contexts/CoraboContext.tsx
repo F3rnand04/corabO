@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo, useEffect } from 'react';
 import type { User, CartItem, Transaction, GalleryImage, Conversation, TempRecipientInfo } from '@/lib/types';
-import { getFirestoreDb }from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { collection, onSnapshot, query, where, doc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/components/auth/AuthProvider';
@@ -117,7 +117,6 @@ export const CoraboProvider = ({ children, initialCoraboUser }: CoraboProviderPr
         return;
     }
     
-    const db = getFirestoreDb();
     let unsubs: (() => void)[] = [];
 
     // Global listeners - always active
@@ -189,7 +188,7 @@ export const CoraboProvider = ({ children, initialCoraboUser }: CoraboProviderPr
       if (!currentUser) return;
       const newContacts = [...contacts, contact];
       setContacts(newContacts);
-      await updateDoc(doc(getFirestoreDb(), 'users', currentUser.id), { contacts: newContacts });
+      await updateDoc(doc(db, 'users', currentUser.id), { contacts: newContacts });
       toast({ title: "Contacto añadido", description: `${contact.name} ha sido añadido a tu lista.` });
   }, [currentUser, contacts, toast]);
   
@@ -197,7 +196,7 @@ export const CoraboProvider = ({ children, initialCoraboUser }: CoraboProviderPr
      if (!currentUser) return;
      const newContacts = contacts.filter(c => c.id !== contactId);
      setContacts(newContacts);
-     await updateDoc(doc(getFirestoreDb(), 'users', currentUser.id), { contacts: newContacts });
+     await updateDoc(doc(db, 'users', currentUser.id), { contacts: newContacts });
      toast({ title: "Contacto eliminado" });
   }, [currentUser, contacts, toast]);
 
@@ -290,3 +289,5 @@ export const useCorabo = () => {
     }
     return context;
 };
+
+    

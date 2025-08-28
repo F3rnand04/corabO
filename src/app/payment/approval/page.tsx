@@ -11,7 +11,7 @@ import { User, credicoraLevels, QrSession } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
-import { getFirestoreDb } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { handleClientCopyAndPay, cancelQrSession } from '@/lib/actions/cashier.actions';
 
@@ -33,7 +33,6 @@ function ApprovalContent() {
       setIsLoading(false);
       return;
     }
-    const db = getFirestoreDb();
     const unsub = onSnapshot(doc(db, 'qr_sessions', sessionId), (doc) => {
       const session = doc.data() as QrSession;
       setQrSession(session);
@@ -186,3 +185,5 @@ export default function ApprovalPage() {
         </Suspense>
     )
 }
+
+    
