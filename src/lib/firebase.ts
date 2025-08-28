@@ -28,6 +28,7 @@ try {
     db = getFirestore(app);
 } catch (error) {
     console.error("Firebase initialization failed:", error);
+    // In a real app, you might want to handle this more gracefully
 }
 
 // Export getter functions to ensure singletons are used throughout the app.

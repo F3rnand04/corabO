@@ -94,6 +94,9 @@ export default function LoginPage() {
   }
 
   if (firebaseUser) {
+    // router.push('/') would cause a redirect loop here.
+    // The AppLayout component is now responsible for all redirection logic
+    // once the user state is confirmed. We just render nothing here.
     return null;
   }
 
