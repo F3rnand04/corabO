@@ -8,13 +8,43 @@ import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getAuthInstance } from '@/lib/firebase';
-import { signInWithCustomToken, GoogleAuthProvider, signInWithPopup, type UserCredential } from 'firebase/auth';
+import { signInWithCustomToken, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 import { signInAsGuest } from '@/lib/actions/auth.actions';
 
 export default function LoginPage() {
   const { firebaseUser, isLoadingAuth } = useAuth();
   const { toast } = useToast();
   const [isProcessingLogin, setIsProcessingLogin] = useState(false);
+
+  // Effect to handle the result of a redirect operation
+  useEffect(() => {
+    const auth = getAuthInstance();
+    setIsProcessingLogin(true);
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result) {
+          // User successfully signed in.
+          // The onIdTokenChanged listener in AuthProvider will handle session creation.
+          toast({ title: "¡Autenticación exitosa!", description: `Bienvenido de nuevo a Corabo.` });
+        }
+      })
+      .catch((error) => {
+        console.error("Redirect sign-in error:", error);
+        toast({
+          variant: "destructive",
+          title: `Error de Autenticación (${error.code})`,
+          description: error.message,
+        });
+      })
+      .finally(() => {
+        // Set processing to false only if there's no user,
+        // otherwise let the redirect to the app happen.
+        if (!auth.currentUser) {
+            setIsProcessingLogin(false);
+        }
+      });
+  }, [toast]);
+
 
   const handleAnonymousLogin = async () => {
     const auth = getAuthInstance();
@@ -38,43 +68,10 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     const auth = getAuthInstance();
     const provider = new GoogleAuthProvider();
-    
-    // Do not set isProcessingLogin before the popup call to avoid popup blockers.
-    try {
-        setIsProcessingLogin(true);
-        const result: UserCredential = await signInWithPopup(auth, provider);
-        // The onIdTokenChanged listener in AuthProvider will handle the session cookie.
-        toast({ title: "¡Autenticación exitosa!", description: `Bienvenido a Corabo, ${result.user.displayName}.` });
-        // AppLayout will handle redirection automatically upon successful auth state change.
-    } catch (error: any) {
-        // Handle Errors here.
-        console.error("Popup sign-in error:", error);
-        const errorCode = error.code;
-        const errorMessage = error.message;
-
-        if (errorCode === 'auth/popup-closed-by-user' || errorCode === 'auth/cancelled-popup-request') {
-             toast({
-                variant: "default",
-                title: "Inicio de sesión cancelado",
-                description: "La ventana de inicio de sesión fue cerrada.",
-            });
-        } else if (errorCode === 'auth/popup-blocked') {
-            toast({
-                variant: "destructive",
-                title: "Ventana Emergente Bloqueada",
-                description: "Tu navegador bloqueó la ventana de inicio de sesión. Por favor, habilita las ventanas emergentes para este sitio e inténtalo de nuevo.",
-            });
-        }
-        else {
-             toast({
-                variant: "destructive",
-                title: `Error de Autenticación (${errorCode})`,
-                description: errorMessage,
-            });
-        }
-    } finally {
-        setIsProcessingLogin(false);
-    }
+    setIsProcessingLogin(true);
+    // This will redirect the user to the Google sign-in page.
+    // The result is handled by the useEffect hook when they are redirected back.
+    await signInWithRedirect(auth, provider);
   };
 
   // While checking for auth state or processing a login, show a loader.
