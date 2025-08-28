@@ -8,7 +8,7 @@
  * 1. Instala Puppeteer: npm install puppeteer
  * 2. Ejecuta el script: node auth-test.js
  */
-const puppeteer = require('puppeteer');
+import puppeteer from 'puppeteer';
 
 // URL del entorno de desarrollo de Firebase Studio
 const APP_URL = 'http://localhost:3000/login';
