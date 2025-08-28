@@ -9,7 +9,7 @@ import { CheckCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { sendSmsVerificationCode, verifySmsCode } from '@/lib/actions/sms.actions'; 
-import { getAuthInstance } from '@/lib/firebase'; // Import auth instance
+import { auth } from '@/lib/firebase';
 
 type ValidationStatus = 'idle' | 'pending' | 'validated';
 
@@ -30,7 +30,6 @@ export function ValidationItem({
     onValueChange,
     type,
 }: ValidationItemProps) {
-    const auth = getAuthInstance(); // Get auth instance
     const firebaseUser = auth.currentUser; // Get current user directly
 
     const [status, setStatus] = useState<ValidationStatus>(initialStatus);
