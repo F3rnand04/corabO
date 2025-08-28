@@ -16,27 +16,44 @@ const initializeFirebaseApp = (): FirebaseApp => {
   return initializeApp(firebaseConfig);
 };
 
-const app: FirebaseApp = initializeFirebaseApp();
-const auth: Auth = getAuth(app);
-const db: Firestore = getFirestore(app);
+// Singleton instances
+let app: FirebaseApp;
+let auth: Auth;
+let db: Firestore;
 let analytics: Analytics | null = null;
 
-if (typeof window !== 'undefined') {
-  try {
-    analytics = getAnalytics(app);
-  } catch (error) {
-    console.error("Could not initialize Analytics:", error);
-  }
+// Initialize Firebase and its services
+try {
+    app = initializeFirebaseApp();
+    auth = getAuth(app);
+    db = getFirestore(app);
+    if (typeof window !== 'undefined') {
+        analytics = getAnalytics(app);
+    }
+} catch (error) {
+    console.error("Firebase initialization failed:", error);
+    // In a real app, you might want to show a more user-friendly error message
+    // or attempt to recover, but for now, we log the error.
 }
 
+
 export function getFirebaseApp(): FirebaseApp {
+    if (!app) {
+        app = initializeFirebaseApp();
+    }
     return app;
 }
 
 export function getFirestoreDb(): Firestore {
+    if (!db) {
+        db = getFirestore(getFirebaseApp());
+    }
     return db;
 }
 
 export function getAuthInstance(): Auth {
+    if (!auth) {
+        auth = getAuth(getFirebaseApp());
+    }
     return auth;
 }
