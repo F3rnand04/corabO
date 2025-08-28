@@ -8,18 +8,16 @@ import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getAuthInstance } from '@/lib/firebase';
-import { signInWithCustomToken, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from 'firebase/auth';
-import { signInAsGuest } from '@/lib/actions/auth.actions';
+import { GoogleAuthProvider, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 
 export default function LoginPage() {
   const { firebaseUser, isLoadingAuth } = useAuth();
   const { toast } = useToast();
-  const [isProcessingLogin, setIsProcessingLogin] = useState(false);
+  const [isProcessingLogin, setIsProcessingLogin] = useState(true); // Start as true to handle redirect result
 
   // Effect to handle the result of a redirect operation
   useEffect(() => {
     const auth = getAuthInstance();
-    setIsProcessingLogin(true);
     getRedirectResult(auth)
       .then((result) => {
         if (result) {
@@ -27,6 +25,8 @@ export default function LoginPage() {
           // The onIdTokenChanged listener in AuthProvider will handle session creation.
           toast({ title: "¡Autenticación exitosa!", description: `Bienvenido de nuevo a Corabo.` });
         }
+        // If result is null, it means the user just landed on the page without a redirect.
+        setIsProcessingLogin(false);
       })
       .catch((error) => {
         console.error("Redirect sign-in error:", error);
@@ -35,42 +35,15 @@ export default function LoginPage() {
           title: `Error de Autenticación (${error.code})`,
           description: error.message,
         });
-      })
-      .finally(() => {
-        // Set processing to false only if there's no user,
-        // otherwise let the redirect to the app happen.
-        if (!auth.currentUser) {
-            setIsProcessingLogin(false);
-        }
+        setIsProcessingLogin(false);
       });
   }, [toast]);
 
 
-  const handleAnonymousLogin = async () => {
-    const auth = getAuthInstance();
-    setIsProcessingLogin(true);
-    try {
-      const result = await signInAsGuest();
-      if (result.customToken) {
-        await signInWithCustomToken(auth, result.customToken);
-        toast({ title: '¡Bienvenido!', description: 'Has iniciado sesión como invitado.' });
-      } else {
-        throw new Error(result.error || 'No se pudo obtener el token de invitado.');
-      }
-    } catch (error: any) {
-      console.error("Guest login error:", error);
-      toast({ variant: 'destructive', title: 'Error de Inicio de Sesión', description: 'No se pudo completar el ingreso de invitado. Por favor, contacta a soporte.' });
-    } finally {
-        setIsProcessingLogin(false);
-    }
-  };
-
   const handleGoogleLogin = async () => {
     const auth = getAuthInstance();
     const provider = new GoogleAuthProvider();
-    setIsProcessingLogin(true);
-    // This will redirect the user to the Google sign-in page.
-    // The result is handled by the useEffect hook when they are redirected back.
+    // No need to set processing state, the page will navigate away
     await signInWithRedirect(auth, provider);
   };
 
@@ -129,11 +102,8 @@ export default function LoginPage() {
             </p>
 
             <div className="space-y-4 mt-8">
-                <Button size="lg" className="w-full" onClick={handleGoogleLogin} disabled={isProcessingLogin}>
-                    {isProcessingLogin ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Ingresar o Registrarse con Google'}
-                </Button>
-                <Button size="lg" className="w-full" variant="secondary" onClick={handleAnonymousLogin} disabled={isProcessingLogin}>
-                    {isProcessingLogin ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Ingreso de Prueba'}
+                <Button size="lg" className="w-full" onClick={handleGoogleLogin}>
+                    Ingresar o Registrarse con Google
                 </Button>
             </div>
 
