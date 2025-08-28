@@ -9,18 +9,6 @@ import { getAuth } from 'firebase-admin/auth';
 import type { FirebaseUserInput, User, ProfileSetupData } from '@/lib/types';
 import { credicoraLevels, credicoraCompanyLevels } from '@/lib/types';
 
-/**
- * Creates a custom authentication token for an anonymous guest user.
- * This is the secure way to handle guest logins from the server side.
- */
-export async function signInAsGuestFlow(): Promise<{ customToken: string }> {
-    const auth = getAuth();
-    // Create a temporary, unique ID for the anonymous user.
-    const uid = `guest_${Date.now()}`;
-    const customToken = await auth.createCustomToken(uid, { isGuest: true });
-    return { customToken };
-}
-
 
 export async function getOrCreateUserFlow(firebaseUser: FirebaseUserInput): Promise<User> {
     const db = getFirestore();

@@ -2,16 +2,30 @@
 'use server';
 
 import '@/ai/genkit';
-import { signInAsGuestFlow } from '@/ai/flows/auth-flow';
 import { getAuth } from 'firebase-admin/auth';
 import { cookies } from 'next/headers';
+import { getApps, initializeApp, type App } from 'firebase-admin/app';
+import { firebaseConfig } from '@/lib/firebase-config';
+
+
+function initializeFirebaseAdmin(): App {
+  if (getApps().length > 0) {
+    return getApps()[0];
+  }
+  return initializeApp({ projectId: firebaseConfig.projectId });
+}
+
 
 /**
  * Securely signs in a user as a guest by generating a custom token on the server.
  */
 export async function signInAsGuest(): Promise<{ customToken?: string; error?: string }> {
     try {
-        const { customToken } = await signInAsGuestFlow();
+        initializeFirebaseAdmin();
+        const auth = getAuth();
+        // Create a temporary, unique ID for the anonymous user.
+        const uid = `guest_${Date.now()}`;
+        const customToken = await auth.createCustomToken(uid, { isGuest: true });
         return { customToken };
     } catch (error: any) {
         console.error('[ACTION_ERROR] signInAsGuest:', error);
