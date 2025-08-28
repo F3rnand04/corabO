@@ -24,7 +24,10 @@ async function runAuthTest() {
       headless: "new", // "new" es la opción moderna para headless
       args: [
         '--no-sandbox',
-        '--disable-setuid-sandbox'
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--disable-gpu'
       ]
     });
 
