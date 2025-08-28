@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -19,14 +18,14 @@ export default function LoginPage() {
   const router = useRouter();
 
   const handleGoogleLogin = () => {
-    // DO NOT set processing state here. Call the popup immediately
-    // to prevent the browser from blocking it.
+    // NO establecer estado aquí para evitar el bloqueo del popup.
     const auth = getAuthInstance();
     const provider = new GoogleAuthProvider();
 
+    // La llamada a signInWithPopup debe ser lo más directa posible tras el clic.
     signInWithPopup(auth, provider)
       .then(async (result) => {
-        // Set processing state only AFTER the popup has closed and we have a result.
+        // Ahora que el popup se cerró y tenemos respuesta, podemos poner el estado de carga.
         setIsProcessingLogin(true);
         const user = result.user;
         if (user) {
@@ -35,7 +34,7 @@ export default function LoginPage() {
           
           if (response.success) {
             toast({ title: "¡Autenticación exitosa!", description: `Bienvenido de nuevo a Corabo.` });
-            // The AuthProvider and AppLayout will now handle the redirection automatically.
+            // El AuthProvider y AppLayout se encargarán de la redirección.
           } else {
             throw new Error(response.error || 'Failed to create session.');
           }
@@ -44,7 +43,8 @@ export default function LoginPage() {
         }
       })
       .catch((error) => {
-        // This will catch genuine errors, including the user closing the popup.
+        // Este catch maneja errores de red, si el usuario cierra el popup, etc.
+        // El error auth/popup-blocked se previene con esta estructura.
         console.error("Popup sign-in error:", error);
         toast({
           variant: "destructive",
@@ -53,12 +53,12 @@ export default function LoginPage() {
         });
       })
       .finally(() => {
-        // Always ensure the loading state is turned off.
+        // Asegurarse de que el estado de carga siempre se desactive.
         setIsProcessingLogin(false);
       });
   };
 
-  // While checking for auth state or processing a login, show a loader.
+  // El resto del componente permanece igual...
   if (isLoadingAuth || isProcessingLogin) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -67,15 +67,12 @@ export default function LoginPage() {
     );
   }
 
-  // If user is already logged in, AppLayout will redirect them.
-  // We render null here to avoid flashing the login page.
   if (firebaseUser) {
     return null;
   }
 
   return (
     <div className="relative w-full h-screen grid grid-cols-1 md:grid-cols-2">
-      {/* Columna Izquierda - Imagen */}
       <div className="relative hidden md:block">
          <Image
             src="https://i.postimg.cc/C1sxJnNT/bv.png"
@@ -93,8 +90,6 @@ export default function LoginPage() {
             <p className="mt-2 max-w-md">La plataforma donde profesionales y clientes se encuentran para realizar proyectos de forma segura y eficiente.</p>
           </div>
       </div>
-
-      {/* Columna Derecha - Formulario de Login */}
       <div className="relative flex items-center justify-center bg-background p-8">
         <div className="w-full max-w-sm text-center">
             <div className="relative w-48 h-24 mx-auto mb-8">
@@ -111,13 +106,11 @@ export default function LoginPage() {
             <p className="text-muted-foreground mt-2">
                 Ingresa para descubrir oportunidades.
             </p>
-
             <div className="space-y-4 mt-8">
                 <Button size="lg" className="w-full" onClick={handleGoogleLogin} disabled={isProcessingLogin}>
                     {isProcessingLogin ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Ingresar o Registrarse con Google'}
                 </Button>
             </div>
-
              <p className="px-8 text-center text-xs text-muted-foreground mt-10">
                 Al continuar, aceptas nuestros{' '}
                 <a href="/terms" className="underline underline-offset-4 hover:text-primary">
