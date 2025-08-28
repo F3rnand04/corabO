@@ -202,5 +202,3 @@ export function AffiliationManagementTab() {
     </div>
   );
 }
-
-    
