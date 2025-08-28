@@ -6,11 +6,11 @@ import { Inter } from 'next/font/google';
 import { AuthProvider } from '@/components/auth/AuthProvider';
 import { AppLayout } from '@/app/AppLayout';
 import { CoraboProvider } from '@/contexts/CoraboContext';
-import { getAuth } from 'firebase-admin/auth';
+import { getFirebaseAuth } from '@/ai/genkit';
 import { cookies } from 'next/headers';
 import type { User as FirebaseUserType } from 'firebase-admin/auth';
 import type { FirebaseUserInput, User } from '@/lib/types';
-import { getOrCreateUserFlow } from '@/ai/flows/auth-flow';
+import { getOrCreateUser } from '@/lib/actions/user.actions';
 
 export const metadata: Metadata = {
   title: 'corabO.app',
@@ -25,7 +25,7 @@ const inter = Inter({
 // This function safely gets the initial user data on the server.
 async function getInitialUser(): Promise<{ serverFirebaseUser: FirebaseUserType | null, initialCoraboUser: User | null }> {
     try {
-        const auth = getAuth();
+        const auth = getFirebaseAuth();
         const sessionCookie = cookies().get('session')?.value;
         if (!sessionCookie) {
             return { serverFirebaseUser: null, initialCoraboUser: null };
@@ -41,7 +41,7 @@ async function getInitialUser(): Promise<{ serverFirebaseUser: FirebaseUserType 
             phoneNumber: serverFirebaseUser.phoneNumber,
             emailVerified: serverFirebaseUser.emailVerified,
         };
-        const initialCoraboUser = await getOrCreateUserFlow(userInput);
+        const initialCoraboUser = await getOrCreateUser(userInput);
 
         return { serverFirebaseUser, initialCoraboUser };
     } catch (error) {

@@ -1,4 +1,3 @@
-
 'use server';
 
 import { cookies } from 'next/headers';
@@ -10,14 +9,13 @@ import { getFirebaseAuth } from '@/ai/genkit'; // Import the single admin auth i
  */
 export async function signInAsGuest(): Promise<{ customToken?: string; error?: string }> {
     try {
-        const auth = getFirebaseAuth(); // Use the central auth instance
-        // Create a temporary, unique ID for the anonymous user.
+        const auth = getFirebaseAuth();
         const uid = `guest_${Date.now()}`;
-        const customToken = await auth.createCustomToken(uid, { isGuest: true });
+        const customToken = await auth.createCustomToken(uid);
         return { customToken };
     } catch (error: any) {
         console.error('[ACTION_ERROR] signInAsGuest:', error.message);
-        return { error: 'Failed to sign in as guest.' };
+        return { error: 'Failed to create guest token.' };
     }
 }
 

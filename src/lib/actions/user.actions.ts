@@ -14,9 +14,38 @@ import { autoVerifyIdWithAIFlow } from '@/ai/flows/verification-flow';
 // --- Exported Actions ---
 
 export async function getOrCreateUser(firebaseUser: FirebaseUserInput): Promise<User> {
-    const user = await getOrCreateUserFlow(firebaseUser);
+    const db = getFirestore();
+    const userRef = db.collection('users').doc(firebaseUser.uid);
+    const userSnap = await userRef.get();
+
+    if (userSnap.exists()) {
+      revalidatePath('/');
+      return userSnap.data() as User;
+    }
+
+    const coraboId = `corabo${Math.floor(Math.random() * 9000) + 1000}`;
+    
+    const newUser: User = {
+      id: firebaseUser.uid,
+      coraboId: coraboId,
+      name: firebaseUser.displayName || 'Invitado',
+      lastName: '',
+      email: firebaseUser.email || `${coraboId}@corabo.app`,
+      profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
+      phone: firebaseUser.phoneNumber || '',
+      type: 'client',
+      reputation: 5,
+      effectiveness: 100,
+      isGpsActive: true,
+      emailValidated: firebaseUser.emailVerified || false,
+      phoneValidated: false,
+      isInitialSetupComplete: false,
+      createdAt: new Date().toISOString(),
+    };
+
+    await userRef.set(newUser);
     revalidatePath('/'); 
-    return user;
+    return newUser;
 }
 
 export async function updateUser(userId: string, updates: Partial<User> | { [key: string]: any }) {

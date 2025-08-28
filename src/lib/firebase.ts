@@ -1,4 +1,3 @@
-
 "use client";
 
 import { initializeApp, getApp, getApps, type FirebaseApp } from "firebase/app";
@@ -9,46 +8,23 @@ import { firebaseConfig } from './firebase-config';
 // This function ensures that the Firebase app is initialized only once (Singleton pattern).
 // By passing the full firebaseConfig object, we ensure that critical properties like 
 // authDomain are correctly set, which is the definitive solution for redirect_uri_mismatch errors.
-const initializeFirebaseApp = (): FirebaseApp => {
-  if (getApps().length) {
-    return getApp();
-  }
-  return initializeApp(firebaseConfig);
-};
+const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
-// Singleton instances
-let app: FirebaseApp;
-let auth: Auth;
-let db: Firestore;
+const auth: Auth = getAuth(app);
+const db: Firestore = getFirestore(app);
 
-// Initialize Firebase and its services
-try {
-    app = initializeFirebaseApp();
-    auth = getAuth(app);
-    db = getFirestore(app);
-} catch (error) {
-    console.error("Firebase initialization failed:", error);
-    // In a real app, you might want to handle this more gracefully
-}
+// Export the initialized instances directly.
+export { app, auth, db };
 
-// Export getter functions to ensure singletons are used throughout the app.
+// Export getter functions for legacy compatibility if needed, though direct imports are preferred.
 export function getFirebaseApp(): FirebaseApp {
-    if (!app) {
-        app = initializeFirebaseApp();
-    }
     return app;
 }
 
 export function getFirestoreDb(): Firestore {
-    if (!db) {
-        db = getFirestore(getFirebaseApp());
-    }
     return db;
 }
 
 export function getAuthInstance(): Auth {
-    if (!auth) {
-        auth = getAuth(getFirebaseApp());
-    }
     return auth;
 }
