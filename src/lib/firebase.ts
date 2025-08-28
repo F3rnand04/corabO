@@ -8,11 +8,12 @@ import { getAnalytics, type Analytics } from "firebase/analytics";
 import { firebaseConfig } from './firebase-config';
 
 // This function ensures that the Firebase app is initialized only once (Singleton pattern).
+// By passing the full firebaseConfig object, we ensure that critical properties like 
+// authDomain are correctly set, which is the definitive solution for redirect_uri_mismatch errors.
 const initializeFirebaseApp = (): FirebaseApp => {
   if (getApps().length) {
     return getApp();
   }
-  // Passing the full config object, including authDomain, is crucial.
   return initializeApp(firebaseConfig);
 };
 
@@ -28,7 +29,7 @@ try {
     auth = getAuth(app);
     db = getFirestore(app);
     if (typeof window !== 'undefined') {
-        // Check if analytics should be initialized
+        // Analytics can be initialized here if needed
     }
 } catch (error) {
     console.error("Firebase initialization failed:", error);

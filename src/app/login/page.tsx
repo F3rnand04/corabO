@@ -18,48 +18,46 @@ export default function LoginPage() {
   const [isProcessingLogin, setIsProcessingLogin] = useState(false);
   const router = useRouter();
 
-  const handleGoogleLogin = () => {
-    // NO establecer estado aquí para evitar el bloqueo del popup.
+  const handleGoogleLogin = async () => {
+    setIsProcessingLogin(true);
     const auth = getAuthInstance();
     const provider = new GoogleAuthProvider();
 
-    // La llamada a signInWithPopup debe ser lo más directa posible tras el clic.
-    signInWithPopup(auth, provider)
-      .then(async (result) => {
-        // Ahora que el popup se cerró y tenemos respuesta, podemos poner el estado de carga.
-        setIsProcessingLogin(true);
-        const user = result.user;
-        if (user) {
-          const idToken = await user.getIdToken();
-          const response = await createSessionCookie(idToken);
-          
-          if (response.success) {
-            toast({ title: "¡Autenticación exitosa!", description: `Bienvenido de nuevo a Corabo.` });
-            // El AuthProvider y AppLayout se encargarán de la redirección.
-          } else {
-            throw new Error(response.error || 'Failed to create session.');
-          }
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      if (user) {
+        const idToken = await user.getIdToken();
+        const response = await createSessionCookie(idToken);
+        
+        if (response.success) {
+          toast({ title: "¡Autenticación exitosa!", description: `Bienvenido de nuevo a Corabo.` });
+          // The AuthProvider and AppLayout will handle redirection automatically.
         } else {
-          throw new Error('No user returned from sign-in');
+          throw new Error(response.error || 'Failed to create session cookie.');
         }
-      })
-      .catch((error) => {
-        // Este catch maneja errores de red, si el usuario cierra el popup, etc.
-        // El error auth/popup-blocked se previene con esta estructura.
-        console.error("Popup sign-in error:", error);
-        toast({
-          variant: "destructive",
-          title: `Error de Autenticación (${error.code})`,
-          description: "El inicio de sesión fue cancelado o ha fallado. Por favor, inténtalo de nuevo.",
-        });
-      })
-      .finally(() => {
-        // Asegurarse de que el estado de carga siempre se desactive.
-        setIsProcessingLogin(false);
+      } else {
+        throw new Error('No user returned from Google Sign-In.');
+      }
+    } catch (error: any) {
+      console.error("Google Sign-In Error:", error);
+      let description = "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.";
+      if (error.code === 'auth/popup-closed-by-user') {
+        description = "La ventana de inicio de sesión fue cerrada. Inténtalo de nuevo.";
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        description = "Se canceló la solicitud de inicio de sesión.";
+      }
+      toast({
+        variant: "destructive",
+        title: "Error de Autenticación",
+        description: description,
       });
+    } finally {
+      setIsProcessingLogin(false);
+    }
   };
 
-  // El resto del componente permanece igual...
   if (isLoadingAuth || isProcessingLogin) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -68,6 +66,8 @@ export default function LoginPage() {
     );
   }
 
+  // If a user is already logged in, AppLayout will redirect them.
+  // Returning null prevents a flash of the login page.
   if (firebaseUser) {
     return null;
   }

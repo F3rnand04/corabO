@@ -33,9 +33,7 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
       setFirebaseUser(user);
       setIsLoadingAuth(false);
       
-      // No need to create the cookie here anymore.
-      // The login page explicitly calls the server action to do it.
-      // We only need to handle the sign-out case.
+      // If the user logs out on the client, ensure the server-side session is cleared.
       if (!user) {
         await clearSessionCookie();
       }
@@ -48,8 +46,8 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
   const logout = async () => {
     const auth = getAuthInstance();
     await auth.signOut();
-    // The onIdTokenChanged listener will fire, clearing the cookie and updating state.
-    // The AppLayout will then handle the redirection.
+    // The onIdTokenChanged listener will fire, clearing the cookie and updating the state.
+    // The AppLayout component will then handle the redirection.
   };
   
   const value: AuthContextType = {
