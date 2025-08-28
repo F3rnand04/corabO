@@ -7,6 +7,7 @@ import { getAuthInstance } from '@/lib/firebase';
 import { onIdTokenChanged } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { clearSessionCookie, createSessionCookie } from '@/lib/actions/auth.actions';
+import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
   firebaseUser: FirebaseUser | null;
@@ -24,6 +25,7 @@ type AuthProviderProps = {
 export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps) => {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(serverFirebaseUser);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const router = useRouter();
   
   useEffect(() => {
     const auth = getAuthInstance();
@@ -46,7 +48,10 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
 
   const logout = async () => {
     const auth = getAuthInstance();
-    await auth.signOut(); // This will trigger onIdTokenChanged, setting the user to null.
+    await auth.signOut();
+    // After signing out, the onIdTokenChanged listener will fire, clearing the cookie.
+    // We then explicitly navigate to the login page.
+    router.push('/login');
   };
   
   const value: AuthContextType = {

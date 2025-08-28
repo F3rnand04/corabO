@@ -57,9 +57,14 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
   
-  // If no user is authenticated and we are not on the login page, render nothing until redirect happens.
+  // If no user is authenticated and we are on an auth page, allow rendering login/setup
+  if (!firebaseUser && isAuthPage) {
+    return <>{children}</>;
+  }
+  
+  // If no user is authenticated and we are NOT on an auth page, render nothing until redirect happens.
   // This prevents flashing content on protected routes before redirecting.
-  if (!firebaseUser && pathname !== '/login') {
+  if (!firebaseUser && !isAuthPage) {
       return null;
   }
 
