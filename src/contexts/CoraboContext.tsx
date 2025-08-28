@@ -103,18 +103,6 @@ export const CoraboProvider = ({ children, initialCoraboUser }: CoraboProviderPr
   }
 
   useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => setCurrentUserLocation(position.coords),
-        (error) => {
-            // Geolocation is blocked by permissions policy in the dev environment.
-            // This is expected, so we don't log an error to the console.
-        }
-      );
-    }
-  }, []);
-
-  useEffect(() => {
     // This effect now correctly handles loading states and data fetching.
     setIsLoadingUser(isLoadingAuth);
     
@@ -215,18 +203,34 @@ export const CoraboProvider = ({ children, initialCoraboUser }: CoraboProviderPr
 
 
   const setDeliveryAddressToCurrent = useCallback(() => {
-    if (currentUserLocation) {
-        // In a real app, you would use a geocoding service here.
-        const address = `Lat: ${currentUserLocation.latitude.toFixed(4)}, Lon: ${currentUserLocation.longitude.toFixed(4)}`;
-        setDeliveryAddress(address);
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                setCurrentUserLocation(position.coords);
+                // In a real app, you would use a geocoding service here.
+                const address = `Lat: ${position.coords.latitude.toFixed(4)}, Lon: ${position.coords.longitude.toFixed(4)}`;
+                setDeliveryAddress(address);
+                toast({
+                    title: "Ubicación Actualizada",
+                    description: "Se está usando tu ubicación GPS actual.",
+                });
+            },
+            (error) => {
+                toast({
+                    variant: "destructive",
+                    title: "Error de Geolocalización",
+                    description: "No se pudo obtener tu ubicación. Asegúrate de tener los permisos activados.",
+                });
+            }
+        );
     } else {
         toast({
             variant: "destructive",
-            title: "Ubicación no disponible",
-            description: "Activa el GPS o los servicios de ubicación de tu dispositivo.",
+            title: "Navegador no compatible",
+            description: "Tu navegador no soporta geolocalización.",
         });
     }
-  }, [currentUserLocation, toast]);
+  }, [toast]);
   
   const getUserMetrics = useCallback((userId: string) => {
       const userTransactions = transactions.filter(tx => tx.providerId === userId || tx.clientId === userId);
