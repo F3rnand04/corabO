@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -17,43 +18,45 @@ export default function LoginPage() {
   const [isProcessingLogin, setIsProcessingLogin] = useState(false);
   const router = useRouter();
 
-  const handleGoogleLogin = async () => {
-    setIsProcessingLogin(true);
+  const handleGoogleLogin = () => {
+    // No set processing state here, call the popup immediately
     const auth = getAuthInstance();
     const provider = new GoogleAuthProvider();
 
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-      
-      if (user) {
-        const idToken = await user.getIdToken();
-        const response = await createSessionCookie(idToken);
-        
-        if (response.success) {
-          toast({ title: "¡Autenticación exitosa!", description: `Bienvenido de nuevo a Corabo.` });
-          // The AuthProvider and AppLayout will now handle the redirection automatically
-          // because the session cookie is set and the auth state has changed.
+    signInWithPopup(auth, provider)
+      .then(async (result) => {
+        setIsProcessingLogin(true); // Set processing state only after popup closes
+        const user = result.user;
+        if (user) {
+          const idToken = await user.getIdToken();
+          const response = await createSessionCookie(idToken);
+          
+          if (response.success) {
+            toast({ title: "¡Autenticación exitosa!", description: `Bienvenido de nuevo a Corabo.` });
+            // The AuthProvider and AppLayout will now handle the redirection automatically.
+          } else {
+            throw new Error(response.error || 'Failed to create session.');
+          }
         } else {
-          throw new Error(response.error || 'Failed to create session.');
+          throw new Error('No user returned from sign-in');
         }
-      } else {
-         throw new Error('No user returned from sign-in');
-      }
-    } catch (error: any) {
-      console.error("Popup sign-in error:", error);
-      toast({
-        variant: "destructive",
-        title: `Error de Autenticación (${error.code})`,
-        description: error.message,
+      })
+      .catch((error) => {
+        // Catch errors like user closing the popup
+        console.error("Popup sign-in error:", error);
+        toast({
+          variant: "destructive",
+          title: `Error de Autenticación (${error.code})`,
+          description: error.message,
+        });
+      })
+      .finally(() => {
+        setIsProcessingLogin(false);
       });
-    } finally {
-      setIsProcessingLogin(false);
-    }
   };
 
   // While checking for auth state or processing a login, show a loader.
-  if (isLoadingAuth) {
+  if (isLoadingAuth || isProcessingLogin) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
