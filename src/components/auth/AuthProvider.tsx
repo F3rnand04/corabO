@@ -1,12 +1,10 @@
-
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { getAuthInstance } from '@/lib/firebase';
 import { onIdTokenChanged } from 'firebase/auth';
-import { clearSessionCookie, createSessionCookie } from '@/lib/actions/auth.actions';
-import { useRouter } from 'next/navigation';
+import { clearSessionCookie } from '@/lib/actions/auth.actions';
 
 interface AuthContextType {
   firebaseUser: FirebaseUser | null;
@@ -24,19 +22,20 @@ type AuthProviderProps = {
 export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps) => {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(serverFirebaseUser);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  const router = useRouter();
   
   useEffect(() => {
     const auth = getAuthInstance();
 
+    // onIdTokenChanged is the recommended listener for session management.
+    // It fires when the user signs in, signs out, or the token is refreshed.
     const unsubscribe = onIdTokenChanged(auth, async (user) => {
       setFirebaseUser(user);
       setIsLoadingAuth(false);
       
-      if (user) {
-        const idToken = await user.getIdToken();
-        await createSessionCookie(idToken);
-      } else {
+      // No need to create the cookie here anymore.
+      // The login page explicitly calls the server action to do it.
+      // We only need to handle the sign-out case.
+      if (!user) {
         await clearSessionCookie();
       }
     });

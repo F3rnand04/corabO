@@ -1,53 +1,59 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getAuthInstance } from '@/lib/firebase';
-import { GoogleAuthProvider, signInWithRedirect, getRedirectResult } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { createSessionCookie } from '@/lib/actions/auth.actions';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const { firebaseUser, isLoadingAuth } = useAuth();
   const { toast } = useToast();
-  const [isProcessingLogin, setIsProcessingLogin] = useState(true); // Start as true to handle redirect result
-
-  // Effect to handle the result of a redirect operation
-  useEffect(() => {
-    const auth = getAuthInstance();
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result) {
-          // User successfully signed in.
-          // The onIdTokenChanged listener in AuthProvider will handle session creation.
-          toast({ title: "¡Autenticación exitosa!", description: `Bienvenido de nuevo a Corabo.` });
-        }
-        // If result is null, it means the user just landed on the page without a redirect.
-        setIsProcessingLogin(false);
-      })
-      .catch((error) => {
-        console.error("Redirect sign-in error:", error);
-        toast({
-          variant: "destructive",
-          title: `Error de Autenticación (${error.code})`,
-          description: error.message,
-        });
-        setIsProcessingLogin(false);
-      });
-  }, [toast]);
-
+  const [isProcessingLogin, setIsProcessingLogin] = useState(false);
+  const router = useRouter();
 
   const handleGoogleLogin = async () => {
+    setIsProcessingLogin(true);
     const auth = getAuthInstance();
     const provider = new GoogleAuthProvider();
-    // No need to set processing state, the page will navigate away
-    await signInWithRedirect(auth, provider);
+
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      
+      if (user) {
+        const idToken = await user.getIdToken();
+        const response = await createSessionCookie(idToken);
+        
+        if (response.success) {
+          toast({ title: "¡Autenticación exitosa!", description: `Bienvenido de nuevo a Corabo.` });
+          // The AuthProvider and AppLayout will now handle the redirection automatically
+          // because the session cookie is set and the auth state has changed.
+        } else {
+          throw new Error(response.error || 'Failed to create session.');
+        }
+      } else {
+         throw new Error('No user returned from sign-in');
+      }
+    } catch (error: any) {
+      console.error("Popup sign-in error:", error);
+      toast({
+        variant: "destructive",
+        title: `Error de Autenticación (${error.code})`,
+        description: error.message,
+      });
+    } finally {
+      setIsProcessingLogin(false);
+    }
   };
 
   // While checking for auth state or processing a login, show a loader.
-  if (isLoadingAuth || isProcessingLogin) {
+  if (isLoadingAuth) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -101,8 +107,8 @@ export default function LoginPage() {
             </p>
 
             <div className="space-y-4 mt-8">
-                <Button size="lg" className="w-full" onClick={handleGoogleLogin}>
-                    Ingresar o Registrarse con Google
+                <Button size="lg" className="w-full" onClick={handleGoogleLogin} disabled={isProcessingLogin}>
+                    {isProcessingLogin ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Ingresar o Registrarse con Google'}
                 </Button>
             </div>
 

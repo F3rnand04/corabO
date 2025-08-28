@@ -21,6 +21,7 @@ export async function signInAsGuest(): Promise<{ customToken?: string; error?: s
 
 /**
  * Creates a session cookie from the client's ID token.
+ * This is the crucial server-side step to establish a persistent session.
  */
 export async function createSessionCookie(idToken: string) {
     try {
@@ -30,7 +31,7 @@ export async function createSessionCookie(idToken: string) {
         return { success: true };
     } catch (error) {
         console.error("Error creating session cookie", error);
-        return { success: false };
+        return { success: false, error: 'Could not create session cookie.' };
     }
 }
 
@@ -38,5 +39,11 @@ export async function createSessionCookie(idToken: string) {
  * Clears the session cookie on logout.
  */
 export async function clearSessionCookie() {
-    cookies().delete('session');
+    try {
+        cookies().delete('session');
+        return { success: true };
+    } catch (error) {
+        console.error("Error clearing session cookie", error);
+        return { success: false, error: 'Could not clear session cookie.' };
+    }
 }
