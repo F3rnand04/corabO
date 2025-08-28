@@ -7,6 +7,7 @@
 import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
 import {initializeApp, getApps, App, type AppOptions} from 'firebase-admin/app';
+import { getAuth as getAdminAuth, type Auth } from 'firebase-admin/auth';
 import { firebaseConfig } from '@/lib/firebase-config';
 
 // This function ensures that Firebase Admin is initialized only once.
@@ -25,8 +26,14 @@ function initializeFirebaseAdmin(): App {
   return initializeApp(appOptions);
 }
 
-// Initialize Firebase Admin immediately when this file is imported.
-initializeFirebaseAdmin();
+// --- Firebase Admin Singleton ---
+const adminApp = initializeFirebaseAdmin();
+const adminAuth = getAdminAuth(adminApp);
+
+// Export a getter function for the admin auth instance
+export function getFirebaseAuth(): Auth {
+    return adminAuth;
+}
 
 // Configure and export the Genkit AI instance.
 export const ai = genkit({

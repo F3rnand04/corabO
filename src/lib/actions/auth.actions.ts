@@ -1,19 +1,8 @@
 
 'use server';
 
-import '@/ai/genkit';
-import { getAuth } from 'firebase-admin/auth';
 import { cookies } from 'next/headers';
-import { getApps, initializeApp, type App } from 'firebase-admin/app';
-import { firebaseConfig } from '@/lib/firebase-config';
-
-
-function initializeFirebaseAdmin(): App {
-  if (getApps().length > 0) {
-    return getApps()[0];
-  }
-  return initializeApp({ projectId: firebaseConfig.projectId });
-}
+import { getFirebaseAuth } from '@/ai/genkit'; // Import the single admin auth instance
 
 
 /**
@@ -21,14 +10,13 @@ function initializeFirebaseAdmin(): App {
  */
 export async function signInAsGuest(): Promise<{ customToken?: string; error?: string }> {
     try {
-        initializeFirebaseAdmin();
-        const auth = getAuth();
+        const auth = getFirebaseAuth(); // Use the central auth instance
         // Create a temporary, unique ID for the anonymous user.
         const uid = `guest_${Date.now()}`;
         const customToken = await auth.createCustomToken(uid, { isGuest: true });
         return { customToken };
     } catch (error: any) {
-        console.error('[ACTION_ERROR] signInAsGuest:', error);
+        console.error('[ACTION_ERROR] signInAsGuest:', error.message);
         return { error: 'Failed to sign in as guest.' };
     }
 }
@@ -40,8 +28,9 @@ export async function signInAsGuest(): Promise<{ customToken?: string; error?: s
  */
 export async function createSessionCookie(idToken: string) {
     try {
+        const auth = getFirebaseAuth();
         const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
-        const sessionCookie = await getAuth().createSessionCookie(idToken, { expiresIn });
+        const sessionCookie = await auth.createSessionCookie(idToken, { expiresIn });
         cookies().set('session', sessionCookie, { maxAge: expiresIn, httpOnly: true, secure: process.env.NODE_ENV === 'production', path: '/', sameSite: 'lax' });
         return { success: true };
     } catch (error) {
