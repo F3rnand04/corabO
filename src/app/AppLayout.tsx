@@ -1,4 +1,3 @@
-
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
@@ -14,6 +13,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { currentUser } = useCorabo();
   const { isLoadingAuth, firebaseUser } = useAuth();
+  
+  const isAuthPage = pathname === '/login' || pathname === '/initial-setup';
 
   // This useEffect handles all redirection logic based on authentication and profile completion state.
   useEffect(() => {
@@ -21,8 +22,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     if (isLoadingAuth) {
       return; 
     }
-
-    const isAuthPage = pathname === '/login' || pathname === '/initial-setup';
 
     if (firebaseUser) {
       // User is authenticated
@@ -45,7 +44,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         router.push('/login');
       }
     }
-  }, [isLoadingAuth, firebaseUser, currentUser, pathname, router]);
+  }, [isLoadingAuth, firebaseUser, currentUser, pathname, router, isAuthPage]);
 
 
   // Show a global loader while authentication or the initial user profile is being fetched.
