@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { getAuthInstance } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import { GoogleAuthProvider, signInWithPopup, signInWithCustomToken } from 'firebase/auth';
 import { createSessionCookie, signInAsGuest } from '@/lib/actions/auth.actions';
 import { useRouter } from 'next/navigation';
@@ -21,7 +21,6 @@ export default function LoginPage() {
 
   const handleGoogleLogin = () => {
     setIsProcessingLogin(true);
-    const auth = getAuthInstance();
     const provider = new GoogleAuthProvider();
 
     signInWithPopup(auth, provider)
@@ -33,6 +32,7 @@ export default function LoginPage() {
           
           if (response.success) {
             toast({ title: "¡Autenticación exitosa!", description: `Bienvenido de nuevo a Corabo.` });
+            // AppLayout will handle the redirect
           } else {
             throw new Error(response.error || 'Failed to create session cookie.');
           }
@@ -63,12 +63,12 @@ export default function LoginPage() {
   
   const handleGuestLogin = async () => {
     setIsGuestProcessing(true);
-    const auth = getAuthInstance();
     try {
         const response = await signInAsGuest();
         if (response.customToken) {
             await signInWithCustomToken(auth, response.customToken);
             toast({ title: "Acceso de invitado", description: "Bienvenido a Corabo." });
+             // AppLayout will handle the redirect
         } else {
             throw new Error(response.error || "No se pudo obtener el token de invitado.");
         }
@@ -94,9 +94,8 @@ export default function LoginPage() {
   }
 
   if (firebaseUser) {
-    // router.push('/') would cause a redirect loop here.
-    // The AppLayout component is now responsible for all redirection logic
-    // once the user state is confirmed. We just render nothing here.
+    // The AppLayout component is now responsible for all redirection logic.
+    // We render nothing here while waiting for the redirect.
     return null;
   }
 
