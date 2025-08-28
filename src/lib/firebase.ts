@@ -7,7 +7,7 @@ import { getFirestore, type Firestore } from "firebase/firestore";
 import { getAnalytics, type Analytics } from "firebase/analytics";
 import { firebaseConfig } from './firebase-config';
 
-// This function ensures that the Firebase app is initialized only once.
+// This function ensures that the Firebase app is initialized only once (Singleton pattern).
 const initializeFirebaseApp = (): FirebaseApp => {
   const apps = getApps();
   if (apps.length > 0) {
