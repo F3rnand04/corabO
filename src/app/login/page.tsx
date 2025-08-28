@@ -18,44 +18,45 @@ export default function LoginPage() {
   const [isProcessingLogin, setIsProcessingLogin] = useState(false);
   const router = useRouter();
 
-  const handleGoogleLogin = async () => {
+  const handleGoogleLogin = () => {
     setIsProcessingLogin(true);
     const auth = getAuthInstance();
     const provider = new GoogleAuthProvider();
 
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-
-      if (user) {
-        const idToken = await user.getIdToken();
-        const response = await createSessionCookie(idToken);
-        
-        if (response.success) {
-          toast({ title: "¡Autenticación exitosa!", description: `Bienvenido de nuevo a Corabo.` });
-          // The AuthProvider and AppLayout will handle redirection automatically.
+    signInWithPopup(auth, provider)
+      .then(async (result) => {
+        const user = result.user;
+        if (user) {
+          const idToken = await user.getIdToken();
+          const response = await createSessionCookie(idToken);
+          
+          if (response.success) {
+            toast({ title: "¡Autenticación exitosa!", description: `Bienvenido de nuevo a Corabo.` });
+            // The AuthProvider and AppLayout will handle redirection automatically.
+          } else {
+            throw new Error(response.error || 'Failed to create session cookie.');
+          }
         } else {
-          throw new Error(response.error || 'Failed to create session cookie.');
+          throw new Error('No user returned from Google Sign-In.');
         }
-      } else {
-        throw new Error('No user returned from Google Sign-In.');
-      }
-    } catch (error: any) {
-      console.error("Google Sign-In Error:", error);
-      let description = "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.";
-      if (error.code === 'auth/popup-closed-by-user') {
-        description = "La ventana de inicio de sesión fue cerrada. Inténtalo de nuevo.";
-      } else if (error.code === 'auth/cancelled-popup-request') {
-        description = "Se canceló la solicitud de inicio de sesión.";
-      }
-      toast({
-        variant: "destructive",
-        title: "Error de Autenticación",
-        description: description,
+      })
+      .catch((error) => {
+        console.error("Google Sign-In Error:", error);
+        let description = "Ocurrió un error inesperado. Por favor, inténtalo de nuevo.";
+        if (error.code === 'auth/popup-blocked') {
+          description = "El navegador bloqueó la ventana de inicio de sesión. Por favor, permite las ventanas emergentes para este sitio e inténtalo de nuevo.";
+        } else if (error.code === 'auth/popup-closed-by-user') {
+          description = "La ventana de inicio de sesión fue cerrada. Inténtalo de nuevo.";
+        }
+        toast({
+          variant: "destructive",
+          title: "Error de Autenticación",
+          description: description,
+        });
+      })
+      .finally(() => {
+        setIsProcessingLogin(false);
       });
-    } finally {
-      setIsProcessingLogin(false);
-    }
   };
 
   if (isLoadingAuth || isProcessingLogin) {
