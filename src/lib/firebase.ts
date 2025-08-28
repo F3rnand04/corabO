@@ -14,18 +14,5 @@ const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseCon
 const auth: Auth = getAuth(app);
 const db: Firestore = getFirestore(app);
 
-// Export the initialized instances directly.
+// Export the initialized instances directly for robust and consistent access across the client-side app.
 export { app, auth, db };
-
-// Export getter functions for legacy compatibility if needed, though direct imports are preferred.
-export function getFirebaseApp(): FirebaseApp {
-    return app;
-}
-
-export function getFirestoreDb(): Firestore {
-    return db;
-}
-
-export function getAuthInstance(): Auth {
-    return auth;
-}

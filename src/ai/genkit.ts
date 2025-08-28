@@ -6,34 +6,28 @@
  */
 import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
-import {initializeApp, getApps, App, type AppOptions, deleteApp} from 'firebase-admin/app';
+import {initializeApp, getApps, App, type AppOptions} from 'firebase-admin/app';
 import { getAuth as getAdminAuth, type Auth } from 'firebase-admin/auth';
 import { firebaseConfig } from '@/lib/firebase-config';
 
 let adminApp: App;
 let adminAuth: Auth;
 
-function initializeFirebaseAdmin(): App {
-  const an_app = getApps().find((app) => app.name === 'admin');
-  if (an_app) {
-    deleteApp(an_app);
-  }
-
-  // Explicitly provide the project configuration to the SDK.
-  // This removes ambiguity and ensures the server authenticates with the correct project.
+// This pattern ensures that Firebase Admin is initialized only once.
+if (!getApps().some(app => app.name === 'admin')) {
   const appOptions: AppOptions = {
       projectId: firebaseConfig.projectId,
       storageBucket: firebaseConfig.storageBucket,
   };
-
-  return initializeApp(appOptions, 'admin');
+  adminApp = initializeApp(appOptions, 'admin');
+} else {
+  adminApp = getApps().find(app => app.name === 'admin')!;
 }
 
-// --- Firebase Admin Singleton ---
-adminApp = initializeFirebaseAdmin();
 adminAuth = getAdminAuth(adminApp);
 
-// Export a getter function for the admin auth instance
+// Export a getter function for the admin auth instance. This is the single, reliable
+// way for other server-side modules to get the auth instance.
 export function getFirebaseAuth(): Auth {
     return adminAuth;
 }

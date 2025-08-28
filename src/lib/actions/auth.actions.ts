@@ -2,8 +2,7 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import { getFirebaseAuth } from '@/ai/genkit'; // Import the single admin auth instance
-
+import { getFirebaseAuth } from '@/ai/genkit';
 
 /**
  * Securely signs in a user as a guest by generating a custom token on the server.
