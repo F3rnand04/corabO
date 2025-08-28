@@ -48,8 +48,8 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
   const logout = async () => {
     const auth = getAuthInstance();
     await auth.signOut();
-    // After signing out, the onIdTokenChanged listener will fire, clearing the cookie.
-    router.push('/login');
+    // The onIdTokenChanged listener will fire, clearing the cookie and updating state.
+    // The AppLayout will then handle the redirection.
   };
   
   const value: AuthContextType = {

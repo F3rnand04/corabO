@@ -38,8 +38,10 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     const auth = getAuthInstance();
     const provider = new GoogleAuthProvider();
-    setIsProcessingLogin(true);
+    
+    // Do not set isProcessingLogin before the popup call to avoid popup blockers.
     try {
+        setIsProcessingLogin(true);
         const result: UserCredential = await signInWithPopup(auth, provider);
         // The onIdTokenChanged listener in AuthProvider will handle the session cookie.
         toast({ title: "¡Autenticación exitosa!", description: `Bienvenido a Corabo, ${result.user.displayName}.` });
@@ -50,13 +52,20 @@ export default function LoginPage() {
         const errorCode = error.code;
         const errorMessage = error.message;
 
-        if (errorCode === 'auth/popup-closed-by-user') {
+        if (errorCode === 'auth/popup-closed-by-user' || errorCode === 'auth/cancelled-popup-request') {
              toast({
                 variant: "default",
                 title: "Inicio de sesión cancelado",
                 description: "La ventana de inicio de sesión fue cerrada.",
             });
-        } else {
+        } else if (errorCode === 'auth/popup-blocked') {
+            toast({
+                variant: "destructive",
+                title: "Ventana Emergente Bloqueada",
+                description: "Tu navegador bloqueó la ventana de inicio de sesión. Por favor, habilita las ventanas emergentes para este sitio e inténtalo de nuevo.",
+            });
+        }
+        else {
              toast({
                 variant: "destructive",
                 title: `Error de Autenticación (${errorCode})`,
