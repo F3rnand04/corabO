@@ -8,14 +8,15 @@ import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getAuthInstance } from '@/lib/firebase';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { createSessionCookie } from '@/lib/actions/auth.actions';
+import { GoogleAuthProvider, signInWithPopup, signInWithCustomToken } from 'firebase/auth';
+import { createSessionCookie, signInAsGuest } from '@/lib/actions/auth.actions';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const { firebaseUser, isLoadingAuth } = useAuth();
   const { toast } = useToast();
   const [isProcessingLogin, setIsProcessingLogin] = useState(false);
+  const [isGuestProcessing, setIsGuestProcessing] = useState(false);
   const router = useRouter();
 
   const handleGoogleLogin = () => {
@@ -32,7 +33,6 @@ export default function LoginPage() {
           
           if (response.success) {
             toast({ title: "¡Autenticación exitosa!", description: `Bienvenido de nuevo a Corabo.` });
-            // The AuthProvider and AppLayout will handle redirection automatically.
           } else {
             throw new Error(response.error || 'Failed to create session cookie.');
           }
@@ -47,6 +47,8 @@ export default function LoginPage() {
           description = "El navegador bloqueó la ventana de inicio de sesión. Por favor, permite las ventanas emergentes para este sitio e inténtalo de nuevo.";
         } else if (error.code === 'auth/popup-closed-by-user') {
           description = "La ventana de inicio de sesión fue cerrada. Inténtalo de nuevo.";
+        } else if (error.code === 'auth/unauthorized-domain') {
+            description = "El dominio no está autorizado para esta operación. Contacta a soporte."
         }
         toast({
           variant: "destructive",
@@ -58,8 +60,32 @@ export default function LoginPage() {
         setIsProcessingLogin(false);
       });
   };
+  
+  const handleGuestLogin = async () => {
+    setIsGuestProcessing(true);
+    const auth = getAuthInstance();
+    try {
+        const response = await signInAsGuest();
+        if (response.customToken) {
+            await signInWithCustomToken(auth, response.customToken);
+            toast({ title: "Acceso de invitado", description: "Bienvenido a Corabo." });
+        } else {
+            throw new Error(response.error || "No se pudo obtener el token de invitado.");
+        }
+    } catch (error: any) {
+        console.error("Guest Sign-In Error:", error);
+        toast({
+          variant: "destructive",
+          title: "Error de Invitado",
+          description: error.message || "No se pudo iniciar sesión como invitado.",
+        });
+    } finally {
+        setIsGuestProcessing(false);
+    }
+  };
 
-  if (isLoadingAuth || isProcessingLogin) {
+
+  if (isLoadingAuth || isProcessingLogin || isGuestProcessing) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -67,8 +93,6 @@ export default function LoginPage() {
     );
   }
 
-  // If a user is already logged in, AppLayout will redirect them.
-  // Returning null prevents a flash of the login page.
   if (firebaseUser) {
     return null;
   }
@@ -111,6 +135,9 @@ export default function LoginPage() {
             <div className="space-y-4 mt-8">
                 <Button size="lg" className="w-full" onClick={handleGoogleLogin} disabled={isProcessingLogin}>
                     {isProcessingLogin ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Ingresar o Registrarse con Google'}
+                </Button>
+                <Button size="lg" variant="secondary" className="w-full" onClick={handleGuestLogin} disabled={isGuestProcessing}>
+                    {isGuestProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Ingresar como Invitado'}
                 </Button>
             </div>
              <p className="px-8 text-center text-xs text-muted-foreground mt-10">
