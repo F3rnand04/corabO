@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import type { User as FirebaseUser } from 'firebase/auth';
-import { getAuthInstance } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import { onIdTokenChanged } from 'firebase/auth';
 import { clearSessionCookie } from '@/lib/actions/auth.actions';
 
@@ -25,8 +25,6 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   
   useEffect(() => {
-    const auth = getAuthInstance();
-
     // onIdTokenChanged is the recommended listener for session management.
     // It fires when the user signs in, signs out, or the token is refreshed.
     const unsubscribe = onIdTokenChanged(auth, async (user) => {
@@ -44,7 +42,6 @@ export const AuthProvider = ({ children, serverFirebaseUser }: AuthProviderProps
   }, []);
 
   const logout = async () => {
-    const auth = getAuthInstance();
     await auth.signOut();
     // The onIdTokenChanged listener will fire, clearing the cookie and updating the state.
     // The AppLayout component will then handle the redirection.
