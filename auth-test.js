@@ -21,9 +21,11 @@ async function runAuthTest() {
   try {
     console.log('[1/5] Lanzando navegador...');
     browser = await puppeteer.launch({
-      headless: false, // Lo hacemos visible para ver qué pasa
-      slowMo: 50, // Ralentiza las operaciones para verlas mejor
-      args: ['--window-size=1280,800']
+      headless: "new", // "new" es la opción moderna para headless
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox'
+      ]
     });
 
     const page = await browser.newPage();
