@@ -9,9 +9,8 @@ import { firebaseConfig } from './firebase-config';
 
 // This function ensures that the Firebase app is initialized only once (Singleton pattern).
 const initializeFirebaseApp = (): FirebaseApp => {
-  const apps = getApps();
-  if (apps.length > 0) {
-    return apps[0];
+  if (getApps().length) {
+    return getApp();
   }
   return initializeApp(firebaseConfig);
 };
@@ -28,15 +27,13 @@ try {
     auth = getAuth(app);
     db = getFirestore(app);
     if (typeof window !== 'undefined') {
-        analytics = getAnalytics(app);
+        // Check if analytics should be initialized
     }
 } catch (error) {
     console.error("Firebase initialization failed:", error);
-    // In a real app, you might want to show a more user-friendly error message
-    // or attempt to recover, but for now, we log the error.
 }
 
-
+// Export getter functions to ensure singletons are used throughout the app.
 export function getFirebaseApp(): FirebaseApp {
     if (!app) {
         app = initializeFirebaseApp();
