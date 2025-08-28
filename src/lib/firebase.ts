@@ -12,6 +12,7 @@ const initializeFirebaseApp = (): FirebaseApp => {
   if (getApps().length) {
     return getApp();
   }
+  // Passing the full config object, including authDomain, is crucial.
   return initializeApp(firebaseConfig);
 };
 
