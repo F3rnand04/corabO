@@ -19,13 +19,15 @@ export default function LoginPage() {
   const router = useRouter();
 
   const handleGoogleLogin = () => {
-    // No set processing state here, call the popup immediately
+    // Do not set processing state here. Call the popup immediately
+    // to prevent the browser from blocking it.
     const auth = getAuthInstance();
     const provider = new GoogleAuthProvider();
 
     signInWithPopup(auth, provider)
       .then(async (result) => {
-        setIsProcessingLogin(true); // Set processing state only after popup closes
+        // Set processing state only AFTER the popup has closed and we have a result.
+        setIsProcessingLogin(true);
         const user = result.user;
         if (user) {
           const idToken = await user.getIdToken();
@@ -42,15 +44,16 @@ export default function LoginPage() {
         }
       })
       .catch((error) => {
-        // Catch errors like user closing the popup
+        // This will catch genuine errors, including the user closing the popup.
         console.error("Popup sign-in error:", error);
         toast({
           variant: "destructive",
           title: `Error de Autenticación (${error.code})`,
-          description: error.message,
+          description: "El inicio de sesión fue cancelado o ha fallado. Por favor, inténtalo de nuevo.",
         });
       })
       .finally(() => {
+        // Always ensure the loading state is turned off.
         setIsProcessingLogin(false);
       });
   };
