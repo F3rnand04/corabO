@@ -4,7 +4,6 @@
 import { initializeApp, getApp, getApps, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
-import { getAnalytics, type Analytics } from "firebase/analytics";
 import { firebaseConfig } from './firebase-config';
 
 // This function ensures that the Firebase app is initialized only once (Singleton pattern).
@@ -21,16 +20,12 @@ const initializeFirebaseApp = (): FirebaseApp => {
 let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
-let analytics: Analytics | null = null;
 
 // Initialize Firebase and its services
 try {
     app = initializeFirebaseApp();
     auth = getAuth(app);
     db = getFirestore(app);
-    if (typeof window !== 'undefined') {
-        // Analytics can be initialized here if needed
-    }
 } catch (error) {
     console.error("Firebase initialization failed:", error);
 }
