@@ -7,23 +7,27 @@ import { getFirestore, type Firestore } from "firebase/firestore";
 import { getAnalytics, type Analytics } from "firebase/analytics";
 import { firebaseConfig } from './firebase-config';
 
-let app: FirebaseApp;
-let auth: Auth;
-let db: Firestore;
+// This function ensures that the Firebase app is initialized only once.
+const initializeFirebaseApp = (): FirebaseApp => {
+  const apps = getApps();
+  if (apps.length > 0) {
+    return apps[0];
+  }
+  return initializeApp(firebaseConfig);
+};
+
+const app: FirebaseApp = initializeFirebaseApp();
+const auth: Auth = getAuth(app);
+const db: Firestore = getFirestore(app);
 let analytics: Analytics | null = null;
 
-try {
-    app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    db = getFirestore(app);
-    if (typeof window !== "undefined") {
-        analytics = getAnalytics(app);
-    }
-} catch (error) {
-    console.error("Error initializing Firebase:", error);
-    // Handle initialization error gracefully, maybe show a message to the user
+if (typeof window !== 'undefined') {
+  try {
+    analytics = getAnalytics(app);
+  } catch (error) {
+    console.error("Could not initialize Analytics:", error);
+  }
 }
-
 
 export function getFirebaseApp(): FirebaseApp {
     return app;
