@@ -27,6 +27,7 @@ import { AlertDialog, AlertDialogTrigger } from "./ui/alert-dialog";
 import { Badge } from "./ui/badge";
 import { CartPopoverContent } from "./CartPopoverContent";
 import { CheckoutAlertDialogContent } from "./CheckoutAlertDialogContent";
+import { toggleGps } from "@/lib/actions/user.actions";
 
 
 const serviceGroups = [
@@ -44,7 +45,7 @@ const serviceGroups = [
 
 
 export function Header() {
-  const { cart, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, toggleGps, currentUser } = useCorabo();
+  const { cart, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, currentUser } = useCorabo();
   const { logout } = useAuth();
   const router = useRouter();
 
