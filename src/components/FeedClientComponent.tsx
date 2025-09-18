@@ -3,7 +3,7 @@
 
 import { useMemo, useEffect, useState, useCallback, useRef } from "react";
 import type { GalleryImage } from "@/lib/types";
-import { useCorabo } from "@/contexts/CoraboContext";
+import { useAuth } from "@/hooks/use-auth";
 import { ActivationWarning } from "@/components/ActivationWarning";
 import { PublicationCard } from "@/components/PublicationCard";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,7 +14,7 @@ import { LogIn, Loader2 } from "lucide-react";
 import Image from "next/image";
 
 export function FeedClientComponent() {
-  const { currentUser, isLoadingUser, searchQuery, categoryFilter } = useCorabo();
+  const { currentUser, isLoadingAuth, searchQuery, categoryFilter } = useAuth();
   const router = useRouter();
   
   const [publications, setPublications] = useState<GalleryImage[]>([]);
@@ -60,32 +60,28 @@ export function FeedClientComponent() {
 
 
   useEffect(() => {
-    if (!isLoadingUser && currentUser) {
-        setIsLoadingFeed(true);
-        setPublications([]);
-        setLastVisibleDocId(undefined);
-        setHasMore(true);
+    // This effect handles the INITIAL loading of the feed.
+    setIsLoadingFeed(true);
+    setPublications([]);
+    setLastVisibleDocId(undefined);
+    setHasMore(true);
 
-        getFeed({ limitNum: 5 })
-            .then(result => {
-                if (result.publications) {
-                    setPublications(result.publications as GalleryImage[]);
-                    setLastVisibleDocId(result.lastVisibleDocId);
-                    setHasMore(!!result.lastVisibleDocId);
-                }
-            })
-            .catch(error => {
-                console.error("Failed to fetch feed:", error);
-                setPublications([]);
-            })
-            .finally(() => {
-                setIsLoadingFeed(false);
-            });
-    } else if (!isLoadingUser && !currentUser) {
-        setIsLoadingFeed(false);
-        setPublications([]);
-    }
-  }, [currentUser, isLoadingUser]);
+    getFeed({ limitNum: 5 })
+        .then(result => {
+            if (result.publications) {
+                setPublications(result.publications as GalleryImage[]);
+                setLastVisibleDocId(result.lastVisibleDocId);
+                setHasMore(!!result.lastVisibleDocId);
+            }
+        })
+        .catch(error => {
+            console.error("Failed to fetch feed:", error);
+            setPublications([]);
+        })
+        .finally(() => {
+            setIsLoadingFeed(false);
+        });
+  }, []);
   
   const filteredPublications = useMemo(() => {
     let results = publications;
@@ -133,7 +129,7 @@ export function FeedClientComponent() {
     );
   };
 
-  if (isLoadingUser || (isLoadingFeed && publications.length === 0)) {
+  if (isLoadingAuth || (isLoadingFeed && publications.length === 0)) {
     return (
       <main className="space-y-4 container py-4 mx-auto max-w-2xl">
         {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[500px] w-full" />)}
@@ -142,7 +138,7 @@ export function FeedClientComponent() {
   }
 
   if (!currentUser) {
-    return (
+     return (
         <div className="relative h-screen flex flex-col items-center justify-center text-center p-4 bg-black text-white overflow-hidden">
             <Image
                 src="https://i.postimg.cc/C1sxJnNT/bv.png"

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useCorabo } from '@/contexts/CoraboContext';
+import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { Shield, Home, Users, Banknote, ShieldAlert, BadgeInfo, Handshake } from 'lucide-react';
@@ -13,7 +13,7 @@ import { AffiliationManagementTab } from '@/components/admin/AffiliationManageme
 
 function AdminHeader() {
   const router = useRouter();
-  const { logout, currentUser } = useCorabo();
+  const { logout, currentUser } = useAuth();
 
   return (
     <header className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b">
@@ -39,7 +39,7 @@ function AdminHeader() {
 
 
 export default function AdminPage() {
-    const { currentUser } = useCorabo();
+    const { currentUser } = useAuth();
 
     if(currentUser?.role !== 'admin') {
         // This is a fallback, AppLayout should prevent this render.

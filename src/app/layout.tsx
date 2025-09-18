@@ -1,79 +1,38 @@
 
-import type { Metadata } from 'next';
-import './globals.css';
-import { Providers } from './providers';
-import { Inter } from 'next/font/google';
-import { AuthProvider } from '@/components/auth/AuthProvider';
-import { AppLayout } from '@/app/AppLayout';
-import { CoraboProvider } from '@/contexts/CoraboContext';
-import { getFirebaseAuth } from '@/ai/genkit';
-import { cookies } from 'next/headers';
-import type { User as FirebaseUserType } from 'firebase-admin/auth';
-import type { FirebaseUserInput, User } from '@/lib/types';
-import { getOrCreateUser } from '@/lib/actions/user.actions';
+'use client';
 
-export const metadata: Metadata = {
-  title: 'corabO.app',
-  description: 'Conecta, Colabora y Crece. La plataforma para profesionales y clientes.',
-};
+import type { Metadata } from 'next';
+import '@/app/globals.css';
+import { Inter } from 'next/font/google';
+import { ThemeProvider } from '@/components/ThemeProvider';
+import { Toaster } from '@/components/ui/toaster';
+import { AuthProvider } from '@/hooks/use-auth-provider'; // CAMBIO IMPORTANTE
+
+// export const metadata: Metadata = {
+//   title: 'corabO.app',
+//   description: 'Conecta, Colabora y Crece. La plataforma para profesionales y clientes.',
+// };
 
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
 });
 
-// This function safely gets the initial user data on the server.
-async function getInitialUser(): Promise<{ serverFirebaseUser: FirebaseUserType | null, initialCoraboUser: User | null }> {
-    try {
-        const auth = getFirebaseAuth();
-        const sessionCookie = cookies().get('session')?.value;
-        if (!sessionCookie) {
-            return { serverFirebaseUser: null, initialCoraboUser: null };
-        }
-        const decodedToken = await auth.verifySessionCookie(sessionCookie, true);
-        const serverFirebaseUser = await auth.getUser(decodedToken.uid);
-
-        const userInput: FirebaseUserInput = {
-            uid: serverFirebaseUser.uid,
-            email: serverFirebaseUser.email,
-            displayName: serverFirebaseUser.displayName,
-            photoURL: serverFirebaseUser.photoURL,
-            phoneNumber: serverFirebaseUser.phoneNumber,
-            emailVerified: serverFirebaseUser.emailVerified,
-        };
-        const initialCoraboUser = await getOrCreateUser(userInput);
-
-        return { serverFirebaseUser, initialCoraboUser };
-    } catch (error) {
-        // This can happen if the cookie is expired or invalid. It's not an error.
-        return { serverFirebaseUser: null, initialCoraboUser: null };
-    }
-}
-
-
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const { serverFirebaseUser, initialCoraboUser } = await getInitialUser();
-  
+
   return (
     <html lang="es" suppressHydrationWarning>
-      <head>
-        <meta name="format-detection" content="telephone=no, date=no, email=no, address=no" />
-        
-      </head>
-      <body className={`'__variable_e8ce0c' antialiased bg-background`}>
-        <Providers attribute="class" defaultTheme="system" enableSystem>
-          <AuthProvider serverFirebaseUser={serverFirebaseUser}>
-            <CoraboProvider initialCoraboUser={initialCoraboUser}>
-               <AppLayout>
+      <body className={`${inter.variable} antialiased bg-background`}>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+            <AuthProvider>
                 {children}
-              </AppLayout>
-            </CoraboProvider>
-          </AuthProvider>
-        </Providers>
+                <Toaster />
+            </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

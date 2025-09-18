@@ -4,35 +4,25 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { Footer } from '@/components/Footer';
 import { Header } from '@/components/Header';
-import { useCorabo } from '@/contexts/CoraboContext';
 import { Loader2 } from 'lucide-react';
-import { useAuth } from '@/components/auth/AuthProvider';
+import { useAuth } from '@/hooks/use-auth';
 import { useEffect } from 'react';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { currentUser, isLoadingUser } = useCorabo();
-  const { firebaseUser, isLoadingAuth } = useAuth();
+  const { currentUser, isLoadingAuth } = useAuth();
   
   const isAuthPage = pathname === '/login' || pathname === '/initial-setup';
 
   // This useEffect handles all redirection logic based on authentication and profile completion state.
   useEffect(() => {
     // Don't run redirection logic until auth and user profiles are fully resolved
-    if (isLoadingAuth || isLoadingUser) {
+    if (isLoadingAuth) {
       return; 
     }
 
-    if (firebaseUser) {
-      // User is authenticated
-      if (currentUser === null) {
-          // This case shouldn't be hit if isLoadingUser is false, but as a safeguard:
-          // If we have a firebase user but no corabo user, something is wrong.
-          // Forcing a logout might be an option, but for now, we wait.
-          return;
-      }
-
+    if (currentUser) {
       if (!currentUser.isInitialSetupComplete && pathname !== '/initial-setup') {
         // If setup is not complete, they MUST be on the setup page
         router.push('/initial-setup');
@@ -46,11 +36,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         router.push('/login');
       }
     }
-  }, [isLoadingAuth, isLoadingUser, firebaseUser, currentUser, pathname, router, isAuthPage]);
+  }, [isLoadingAuth, currentUser, pathname, router, isAuthPage]);
 
 
   // Show a global loader while authentication or the initial user profile is being fetched.
-  if (isLoadingAuth || (firebaseUser && isLoadingUser)) {
+  if (isLoadingAuth) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -59,22 +49,22 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   }
   
   // If no user is authenticated and we are on an auth page, allow rendering login/setup
-  if (!firebaseUser && isAuthPage) {
+  if (!currentUser && isAuthPage) {
     return <>{children}</>;
   }
   
   // If no user is authenticated and we are NOT on an auth page, render nothing until redirect happens.
-  if (!firebaseUser && !isAuthPage) {
+  if (!currentUser && !isAuthPage) {
       return null;
   }
   
   // If user is authenticated but their profile is not complete, and they are on the setup page, show the page.
-  if (firebaseUser && currentUser && !currentUser.isInitialSetupComplete && pathname === '/initial-setup') {
+  if (currentUser && !currentUser.isInitialSetupComplete && pathname === '/initial-setup') {
       return <>{children}</>;
   }
 
   // If user is authenticated and their profile IS complete, render the full app layout.
-  if (firebaseUser && currentUser && currentUser.isInitialSetupComplete) {
+  if (currentUser && currentUser.isInitialSetupComplete) {
       const hideHeaderForPaths = [
         '/login',
         '/initial-setup',

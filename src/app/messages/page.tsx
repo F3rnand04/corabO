@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useCorabo } from '@/contexts/CoraboContext';
+import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ChevronLeft, Search, SquarePen, Loader2 } from 'lucide-react';
@@ -32,17 +33,9 @@ function MessagesHeader() {
 
 
 export default function MessagesPage() {
-    const { currentUser, conversations, users } = useCorabo();
+    const { currentUser, conversations, users, isLoadingAuth } = useAuth();
     const [searchQuery, setSearchQuery] = useState('');
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        if (currentUser) {
-            setIsLoading(false);
-        }
-    }, [currentUser]);
-
-
+    
     const isClientWithInactiveTransactions = currentUser?.type === 'client' && !currentUser?.isTransactionsActive;
     
     const sortedConversations = useMemo(() => {
@@ -68,7 +61,7 @@ export default function MessagesPage() {
     }, [sortedConversations, searchQuery, currentUser, users]);
     
     const renderContent = () => {
-        if (isLoading) {
+        if (isLoadingAuth) {
             return (
                  <div className="space-y-2 px-4">
                     {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}

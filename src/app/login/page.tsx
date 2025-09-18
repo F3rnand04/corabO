@@ -2,14 +2,14 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth } from '@/components/auth/AuthProvider';
+import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { auth } from '@/lib/firebase';
 import { signInWithCustomToken } from 'firebase/auth';
-import { createSessionCookie, signInAsGuest } from '@/lib/actions/auth.actions';
+import { signInAsGuest } from '@/lib/actions/auth.actions';
 
 export default function LoginPage() {
   const { firebaseUser, isLoadingAuth } = useAuth();

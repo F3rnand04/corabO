@@ -1,13 +1,13 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { useCorabo } from "@/contexts/CoraboContext";
+import { useAuth } from "@/hooks/use-auth";
 import { Home, Settings, Wallet, ListChecks, History, CalendarClock, ChevronLeft, Loader2, Star, TrendingUp, Calendar as CalendarIcon, ShoppingCart } from "lucide-react";
 import { useRouter } from "next/navigation";
-import TransactionsLineChart from "@/components/charts/TransactionsLineChart";
 import { TransactionDetailsDialog } from "@/components/TransactionDetailsDialog";
 import type { Transaction } from "@/lib/types";
 import { TransactionList } from "@/components/TransactionList";
@@ -56,24 +56,16 @@ const ActionButton = ({ icon: Icon, label, count, onClick }: { icon: React.Eleme
 
 
 export default function TransactionsPage() {
-    const { currentUser, transactions, cart, getUserMetrics, getAgendaEvents } = useCorabo();
+    const { currentUser, transactions, cart, getUserMetrics, getAgendaEvents, isLoadingAuth } = useAuth();
     const router = useRouter();
     
-    const [isLoading, setIsLoading] = useState(true);
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
     const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
     const [view, setView] = useState<'summary' | 'pending' | 'history' | 'commitments'>('summary');
     
     // State for cart popover & dialog
     const [isCheckoutAlertOpen, setIsCheckoutAlertOpen] = useState(false);
-
-    useEffect(() => {
-        if (currentUser) {
-            setIsLoading(false);
-        }
-    }, [currentUser]);
-
-
+    
     const isModuleActive = currentUser?.isTransactionsActive ?? false;
 
     // Memoize derived data to prevent re-calculations on every render
@@ -105,7 +97,7 @@ export default function TransactionsPage() {
         const isCompany = currentUser.profileSetupData?.providerType === 'company';
         const activeCredicoraLevels = isCompany ? credicoraCompanyLevels : credicoraLevels;
         
-        const metrics = getUserMetrics(currentUser.id);
+        const metrics = getUserMetrics(currentUser.id, currentUser.type, transactions);
         const events = getAgendaEvents(transactions);
         const dates = events.filter(e => e.type === 'payment').map(e => e.date);
         const cartTotal = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -136,7 +128,7 @@ export default function TransactionsPage() {
     }, [currentUser, transactions, cart, getUserMetrics, getAgendaEvents]);
 
 
-    if (!currentUser) {
+    if (isLoadingAuth || !currentUser) {
         return (
             <div className="flex items-center justify-center min-h-screen">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -153,15 +145,6 @@ export default function TransactionsPage() {
     }
     
     const renderContent = () => {
-        if (isLoading) {
-            return (
-                <div className="space-y-4">
-                    <Skeleton className="h-64 w-full" />
-                    <Skeleton className="h-48 w-full" />
-                    <Skeleton className="h-32 w-full" />
-                </div>
-            );
-        }
         switch (view) {
             case 'pending':
                 return <TransactionList title="Lista de Pendientes" transactions={pendingTx} onTransactionClick={setSelectedTransaction} />;
@@ -173,16 +156,6 @@ export default function TransactionsPage() {
             default:
                 return (
                     <div className="space-y-6">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Resumen de Movimientos</CardTitle>
-                                <CardDescription>Últimos 6 meses</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <TransactionsLineChart transactions={transactions} />
-                            </CardContent>
-                        </Card>
-                         
                         <Card>
                              <CardHeader>
                                 <CardTitle className="flex items-center gap-2">

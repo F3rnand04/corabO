@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, memo } from 'react';
@@ -14,10 +15,10 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRouter } from 'next/navigation';
-import { useCorabo } from '@/contexts/CoraboContext';
 import type { User } from '@/lib/types';
 import { checkIdUniqueness, completeInitialSetup } from '@/lib/actions/user.actions';
 import { sendMessage } from '@/lib/actions/messaging.actions';
+import { useAuth } from '@/hooks/use-auth';
 
 
 const countries = [
@@ -44,7 +45,7 @@ const CountrySelector = memo(function CountrySelector({ value, onValueChange }: 
 
 
 export default function InitialSetupPage() {
-  const { currentUser, logout } = useCorabo(); 
+  const { currentUser, logout } = useAuth(); 
   const { toast } = useToast();
   const router = useRouter();
 
@@ -130,7 +131,7 @@ export default function InitialSetupPage() {
 
   const handleContactSupport = () => {
     if(!currentUser) return;
-    const conversationId = [currentUser.id, 'corabo-admin'].sort().join('-');
+    const conversationId = [currentUser.id, 'corabo-admin'].sort().join('-')
     sendMessage({ recipientId: 'corabo-admin', text: "Hola, mi número de documento de identidad ya está en uso y necesito ayuda para verificar mi cuenta.", conversationId, senderId: currentUser.id });
     router.push(`/messages/${conversationId}`);
   };

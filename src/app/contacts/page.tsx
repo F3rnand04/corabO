@@ -1,8 +1,7 @@
 
-
 'use client';
 
-import { useCorabo } from '@/contexts/CoraboContext';
+import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,7 +19,7 @@ import { sendMessage } from '@/lib/actions/messaging.actions';
 
 function ContactsHeader({ onSubscribeClick }: { onSubscribeClick: () => void }) {
   const router = useRouter();
-  const { currentUser } = useCorabo();
+  const { currentUser } = useAuth();
 
   if (!currentUser) return null;
 
@@ -48,7 +47,7 @@ function ContactsHeader({ onSubscribeClick }: { onSubscribeClick: () => void }) 
 
 
 export default function ContactsPage() {
-  const { currentUser, contacts, removeContact } = useCorabo();
+  const { currentUser, contacts, removeContact } = useAuth();
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
@@ -59,7 +58,7 @@ export default function ContactsPage() {
 
   const handleDirectMessage = (contactId: string) => {
     if (!currentUser) return;
-    const conversationId = [currentUser.id, contactId].sort().join('-');
+    const conversationId = [currentUser.id, contactId].sort().join('-')
     sendMessage({ recipientId: contactId, text: "", conversationId, senderId: currentUser.id });
     router.push(`/messages/${conversationId}`);
   };

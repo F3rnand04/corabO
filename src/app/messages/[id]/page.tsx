@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useCorabo } from '@/contexts/CoraboContext';
+import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -139,7 +140,7 @@ function LocationBubble({ lat, lon, onForward }: { lat: number, lon: number, onF
 
 
 function ProposalBubble({ msg, onAccept, canAccept }: { msg: Message, onAccept: (messageId: string) => void, canAccept: boolean }) {
-    const { currentUser } = useCorabo();
+    const { currentUser } = useAuth();
     const isClient = currentUser?.type === 'client';
     const isAccepted = msg.isProposalAccepted;
     const [formattedDate, setFormattedDate] = useState<string | null>(null);
@@ -245,7 +246,7 @@ export default function ChatPage() {
   // All hooks are now at the top level
   const params = useParams();
   const router = useRouter();
-  const { currentUser, conversations, users, setDeliveryAddressToCurrent, currentUserLocation } = useCorabo();
+  const { currentUser, conversations, users, setDeliveryAddressToCurrent, currentUserLocation } = useAuth();
   const { toast } = useToast();
   
   const [otherParticipant, setOtherParticipant] = useState<User | null>(null);
