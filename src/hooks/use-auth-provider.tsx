@@ -1,13 +1,13 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { signOut, onIdTokenChanged, type User as FirebaseUser } from 'firebase/auth';
 import type { User, Transaction, GalleryImage, CartItem, Product, TempRecipientInfo, QrSession, Notification, Conversation } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase-client';
 import { addContactToUser, removeContactFromUser, updateCartInFirestore } from '@/lib/actions/user.actions';
-import { createSessionCookie, clearSessionCookie } from '@/lib/actions/auth.actions';
+import { createSessionCookie, clearSessionCookie, getOrCreateUser } from '@/lib/actions/auth.actions';
 import { collection, doc, onSnapshot, query, where } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import { differenceInMilliseconds } from 'date-fns';
@@ -20,13 +20,13 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
-  // `currentUser` is now initialized from the server-provided `initialUser`.
   const [currentUser, setCurrentUser] = useState<User | null>(initialUser);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(!initialUser);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const { toast } = useToast();
   const router = useRouter();
   const pathname = usePathname();
+  const initialAuthChecked = useRef(false);
 
   // Data states
   const [users, setUsers] = useState<User[]>([]);
@@ -45,33 +45,41 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   
-  // This listener now syncs the Firebase Auth state and manages the session cookie.
   useEffect(() => {
     const unsubscribe = onIdTokenChanged(auth, async (user) => {
+      const wasUser = !!firebaseUser;
       setFirebaseUser(user);
+
       if (user) {
         const idToken = await user.getIdToken();
-        // Set the session cookie when the token changes
         await createSessionCookie(idToken);
+        const userProfile = await getOrCreateUser(user);
+        setCurrentUser(userProfile);
       } else {
-        // Clear the cookie on sign-out
         await clearSessionCookie();
+        setCurrentUser(null);
       }
-      // Reload the page on auth state change to ensure server/client sync.
-      // This is a robust way to handle logins/logouts in the App Router.
-      if (pathname !== '/login') { // Avoid reload loops on login page
-          window.location.reload();
+
+      // Only trigger a reload if the auth state *changes* (login/logout), not on initial load.
+      if (initialAuthChecked.current && wasUser !== !!user) {
+        window.location.reload();
       }
+      
+      // Mark initial check as complete and stop the main loader
+      initialAuthChecked.current = true;
+      setIsLoadingAuth(false);
     });
 
     return () => unsubscribe();
-  }, [pathname]);
+  }, [firebaseUser]);
 
-  // Data listeners (unchanged but now depend on `currentUser` being set correctly from server)
   useEffect(() => {
-    if (!currentUser?.id || !db) return;
+    if (!currentUser?.id || !db) {
+        // If there's no user, we can confidently say auth loading is done.
+        if(!currentUser) setIsLoadingAuth(false);
+        return;
+    };
 
-    // Listen to the current user's document for real-time updates
     const unsubUser = onSnapshot(doc(db, "users", currentUser.id), (doc) => {
       if (doc.exists()) {
         const updatedUser = doc.data() as User;
@@ -117,9 +125,6 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
            setQrSession(null);
        }
     });
-
-    // We can finally set loading to false once we have a user and listeners are attached.
-    setIsLoadingAuth(false);
 
     return () => {
       unsubUser();
