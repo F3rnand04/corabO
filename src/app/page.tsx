@@ -25,4 +25,3 @@ export default function HomePage() {
   
   // If the user is fully authenticated and setup is complete, show the feed.
   return <FeedClientComponent />;
-}
