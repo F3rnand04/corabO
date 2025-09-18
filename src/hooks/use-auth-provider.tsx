@@ -1,28 +1,34 @@
 
 'use client';
 
-import React, { createContext, useState, useEffect, ReactNode, useContext, useCallback } from 'react';
-import { User as FirebaseUser, signOut, onAuthStateChanged, signInWithCustomToken } from 'firebase/auth';
+import React, { useState, useEffect, useCallback } from 'react';
+import { signOut, onIdTokenChanged, type User as FirebaseUser } from 'firebase/auth';
 import type { User, Transaction, GalleryImage, CartItem, Product, TempRecipientInfo, QrSession, Notification, Conversation } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase-client';
 import { addContactToUser, removeContactFromUser, updateCartInFirestore } from '@/lib/actions/user.actions';
-import { getOrCreateUser } from '@/lib/actions/auth.actions';
+import { createSessionCookie, clearSessionCookie } from '@/lib/actions/auth.actions';
 import { collection, doc, onSnapshot, query, where } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import { differenceInMilliseconds } from 'date-fns';
-import Cookies from 'js-cookie';
+import { usePathname, useRouter } from 'next/navigation';
+import { AuthContext, type AuthContextValue } from './use-auth';
 
-// Re-export original AuthContextValue to avoid breaking dependent components
-export type { AuthContextValue } from './use-auth';
-import { AuthContext } from './use-auth';
+interface AuthProviderProps {
+  initialUser: User | null;
+  children: React.ReactNode;
+}
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
+export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
+  // `currentUser` is now initialized from the server-provided `initialUser`.
+  const [currentUser, setCurrentUser] = useState<User | null>(initialUser);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(!initialUser);
   const { toast } = useToast();
+  const router = useRouter();
+  const pathname = usePathname();
 
+  // Data states
   const [users, setUsers] = useState<User[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [allPublications, setAllPublications] = useState<GalleryImage[]>([]);
@@ -39,63 +45,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   
-  // New logic to handle custom token from cookie
+  // This listener now syncs the Firebase Auth state and manages the session cookie.
   useEffect(() => {
-    const customToken = Cookies.get('custom-token');
-    if (customToken) {
-      signInWithCustomToken(auth, customToken)
-        .then(() => {
-          // The onAuthStateChanged listener will now pick up the user
-          Cookies.remove('custom-token'); // Clean up the cookie
-        })
-        .catch((error) => {
-          console.error("Error signing in with custom token:", error);
-          setIsLoadingAuth(false);
-        });
-    } else {
-        // If no token, we can stop the loading state for auth
-        // We set it true again inside onAuthStateChanged to handle user profile loading
-        setIsLoadingAuth(false); 
-    }
-  }, []);
-
-  // Core Authentication Listener
-  useEffect(() => {
-    setIsLoadingAuth(true);
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onIdTokenChanged(auth, async (user) => {
       setFirebaseUser(user);
       if (user) {
-        try {
-          const userProfile = await getOrCreateUser(user);
-          setCurrentUser(userProfile);
-        } catch (error) {
-          console.error("Failed to get or create Corabo user:", error);
-          toast({
-              variant: 'destructive',
-              title: 'Error de Perfil',
-              description: 'No se pudo cargar tu perfil. Intenta de nuevo.',
-          });
-          setCurrentUser(null);
-          await signOut(auth); // Sign out if profile fetch fails
-        }
+        const idToken = await user.getIdToken();
+        // Set the session cookie when the token changes
+        await createSessionCookie(idToken);
       } else {
-        setCurrentUser(null);
-        setFirebaseUser(null);
-        setUsers([]);
-        setTransactions([]);
-        setAllPublications([]);
-        setCart([]);
-        setContacts([]);
-        setNotifications([]);
-        setConversations([]);
-        setQrSession(null);
+        // Clear the cookie on sign-out
+        await clearSessionCookie();
       }
-      setIsLoadingAuth(false);
+      // Reload the page on auth state change to ensure server/client sync.
+      // This is a robust way to handle logins/logouts in the App Router.
+      if (pathname !== '/login') { // Avoid reload loops on login page
+          window.location.reload();
+      }
     });
-    return () => unsubscribe();
-  }, [toast]);
 
-  // Data listeners
+    return () => unsubscribe();
+  }, [pathname]);
+
+  // Data listeners (unchanged but now depend on `currentUser` being set correctly from server)
   useEffect(() => {
     if (!currentUser?.id || !db) return;
 
@@ -108,9 +80,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         if (updatedUser.contacts && updatedUser.contacts.length > 0) {
             const contactsQuery = query(collection(db, "users"), where('id', 'in', updatedUser.contacts));
-            onSnapshot(contactsQuery, (snapshot) => {
+            const unsubContacts = onSnapshot(contactsQuery, (snapshot) => {
                 setContacts(snapshot.docs.map(d => d.data() as User));
             });
+            return () => unsubContacts();
         } else {
             setContacts([]);
         }
@@ -125,6 +98,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setTransactions(snapshot.docs.map(doc => doc.data() as Transaction).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     });
     
+    const unsubPublications = onSnapshot(collection(db, "publications"), (snapshot) => {
+      setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage));
+    });
+
     const unsubNotifications = onSnapshot(query(collection(db, "notifications"), where('userId', '==', currentUser.id)), (snapshot) => {
         setNotifications(snapshot.docs.map(doc => doc.data() as Notification));
     });
@@ -141,16 +118,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
        }
     });
 
+    // We can finally set loading to false once we have a user and listeners are attached.
+    setIsLoadingAuth(false);
+
     return () => {
       unsubUser();
       unsubUsers();
       unsubTransactions();
+      unsubPublications();
       unsubNotifications();
       unsubConversations();
       unsubQrSession();
     };
   }, [currentUser?.id]);
   
+  const logout = useCallback(async () => {
+    try {
+        await signOut(auth); // This will trigger onIdTokenChanged
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cerrar la sesión.' });
+    }
+  }, [toast]);
   
   const getCurrentLocation = useCallback(() => {
     if (typeof window !== 'undefined' && navigator.geolocation) {
@@ -193,16 +181,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           localStorage.setItem('coraboSearchHistory', JSON.stringify(newHistory));
       }
   }, [searchQuery, searchHistory]);
-
-  const logout = useCallback(async () => {
-    try {
-        await signOut(auth);
-        window.location.href = '/api/auth/logout';
-        toast({ title: 'Sesión Cerrada' });
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cerrar la sesión.' });
-    }
-  }, [toast]);
   
   const addContact = useCallback(async (user: User) => {
     if (!currentUser) return;
@@ -249,7 +227,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const setDeliveryAddressToCurrent = useCallback(() => {
     getCurrentLocation();
     if (currentUserLocation) {
-        setDeliveryAddress(`${'${currentUserLocation.latitude}'},${'${currentUserLocation.longitude}'}`);
+        setDeliveryAddress(`${currentUserLocation.latitude},${currentUserLocation.longitude}`);
     } else {
         toast({
             variant: "destructive",
@@ -285,7 +263,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         ? paymentConfirmations.reduce((a, b) => a + b, 0) / paymentConfirmations.length
         : 0;
         
-    return { reputation: isNaN(reputation) ? 0 : reputation, effectiveness: isNaN(effectiveness) ? 0 : effectiveness, averagePaymentTimeMs };
+    return { reputation: isNaN(reputation) ? 5 : reputation, effectiveness: isNaN(effectiveness) ? 100 : effectiveness, averagePaymentTimeMs };
   }, []);
   
   const getAgendaEvents = useCallback((transactions: Transaction[]) => {
@@ -297,11 +275,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }));
   }, []);
 
-  const value = {
+  const value: AuthContextValue = {
     currentUser,
     firebaseUser,
     isLoadingAuth,
-    // handleGoogleLogin is no longer needed here
     logout,
     setCurrentUser,
     contacts,

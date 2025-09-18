@@ -2,7 +2,9 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import { getFirebaseAuth } from '@/ai/genkit';
+import { getFirebaseAuth } from '@/lib/firebase-admin';
+import type { FirebaseUserInput } from '@/lib/types';
+import { getOrCreateUserFlow } from '@/ai/flows/auth-flow';
 
 /**
  * Securely signs in a user as a guest by generating a custom token on the server.
@@ -49,4 +51,8 @@ export async function clearSessionCookie() {
         console.error("Error clearing session cookie", error);
         return { success: false, error: 'Could not clear session cookie.' };
     }
+}
+
+export async function getOrCreateUser(firebaseUser: FirebaseUserInput) {
+    return await getOrCreateUserFlow(firebaseUser);
 }
