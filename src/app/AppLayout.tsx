@@ -17,45 +17,34 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const isSetupPage = pathname === '/initial-setup';
 
   useEffect(() => {
-    if (isLoadingAuth) {
-      return; 
-    }
-
-    if (currentUser) {
+    // This effect now ONLY handles redirection for LOGGED-IN users.
+    // The decision to show Login vs App is handled by HomePage.
+    if (!isLoadingAuth && currentUser) {
       if (!currentUser.isInitialSetupComplete && !isSetupPage) {
         router.push('/initial-setup');
-      } else if (currentUser.isInitialSetupComplete && isAuthPage) {
-        // This case is tricky. If they are on '/' and logged in, children will handle it.
-        // This can be removed if the root page handles the redirect itself.
-      }
-    } else {
-      // If not logged in, they should be on the root/login page.
-      if (!isAuthPage) {
-        router.push('/');
       }
     }
-  }, [isLoadingAuth, currentUser, pathname, router, isAuthPage, isSetupPage]);
+  }, [isLoadingAuth, currentUser, pathname, router, isSetupPage]);
 
-  // Global loader
+
+  // While authentication is resolving, don't render header/footer.
+  // HomePage will show its own loader.
   if (isLoadingAuth) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
+    return <>{children}</>;
   }
-  
-  // If not logged in, only render children if on the designated auth page ('/')
+
+  // If there's no user, it means we are on the LoginPage.
+  // The children (LoginPage) will be rendered without Header/Footer.
   if (!currentUser) {
-    return isAuthPage ? <>{children}</> : null;
+    return <>{children}</>;
   }
-  
-  // If logged in but setup is not complete
+
+  // If the user exists but hasn't completed setup, show only the setup page.
   if (!currentUser.isInitialSetupComplete) {
     return isSetupPage ? <>{children}</> : null;
   }
-
-  // If fully logged in and setup is complete
+  
+  // If fully logged in and setup is complete, render the full layout.
   const hideHeaderForPaths = [
     '/initial-setup',
     '/cashier-login',

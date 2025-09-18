@@ -17,11 +17,11 @@ export default function HomePage() {
     );
   }
 
-  if (!currentUser || !currentUser.isInitialSetupComplete) {
-    // The AppLayout should redirect to /initial-setup if needed,
-    // but we show the LoginPage as a fallback if no user is present.
+  if (!currentUser) {
     return <LoginPage />;
   }
-  
-  // If the user is fully authenticated and setup is complete, show the feed.
+
+  // The AppLayout will handle redirection to /initial-setup if needed.
+  // We can safely render the feed here if a user object exists.
   return <FeedClientComponent />;
+}
