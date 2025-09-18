@@ -13,33 +13,30 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { currentUser, isLoadingAuth } = useAuth();
   
-  const isAuthPage = pathname === '/login' || pathname === '/initial-setup';
+  const isAuthPage = pathname === '/';
+  const isSetupPage = pathname === '/initial-setup';
 
-  // This useEffect handles all redirection logic based on authentication and profile completion state.
   useEffect(() => {
-    // Don't run redirection logic until auth and user profiles are fully resolved
     if (isLoadingAuth) {
       return; 
     }
 
     if (currentUser) {
-      if (!currentUser.isInitialSetupComplete && pathname !== '/initial-setup') {
-        // If setup is not complete, they MUST be on the setup page
+      if (!currentUser.isInitialSetupComplete && !isSetupPage) {
         router.push('/initial-setup');
       } else if (currentUser.isInitialSetupComplete && isAuthPage) {
-        // If setup is complete, they should NOT be on login or setup pages
-        router.push('/');
+        // This case is tricky. If they are on '/' and logged in, children will handle it.
+        // This can be removed if the root page handles the redirect itself.
       }
     } else {
-      // No user is authenticated
+      // If not logged in, they should be on the root/login page.
       if (!isAuthPage) {
-        router.push('/login');
+        router.push('/');
       }
     }
-  }, [isLoadingAuth, currentUser, pathname, router, isAuthPage]);
+  }, [isLoadingAuth, currentUser, pathname, router, isAuthPage, isSetupPage]);
 
-
-  // Show a global loader while authentication or the initial user profile is being fetched.
+  // Global loader
   if (isLoadingAuth) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
@@ -48,60 +45,44 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
   
-  // If no user is authenticated and we are on an auth page, allow rendering login/setup
-  if (!currentUser && isAuthPage) {
-    return <>{children}</>;
+  // If not logged in, only render children if on the designated auth page ('/')
+  if (!currentUser) {
+    return isAuthPage ? <>{children}</> : null;
   }
   
-  // If no user is authenticated and we are NOT on an auth page, render nothing until redirect happens.
-  if (!currentUser && !isAuthPage) {
-      return null;
+  // If logged in but setup is not complete
+  if (!currentUser.isInitialSetupComplete) {
+    return isSetupPage ? <>{children}</> : null;
   }
+
+  // If fully logged in and setup is complete
+  const hideHeaderForPaths = [
+    '/initial-setup',
+    '/cashier-login',
+    '/scan-qr',
+    '/show-qr',
+    '/videos',
+    '/profile',
+  ];
+
+  const hideFooterForPaths = [
+    '/messages', 
+    '/scan-qr', 
+    '/show-qr',
+    '/admin',
+    '/videos',
+    '/initial-setup',
+    '/cashier-login',
+  ];
+
+  const shouldHideHeader = hideHeaderForPaths.some(path => (pathname || '').startsWith(path));
+  const shouldHideFooter = hideFooterForPaths.some(path => (pathname || '').startsWith(path));
   
-  // If user is authenticated but their profile is not complete, and they are on the setup page, show the page.
-  if (currentUser && !currentUser.isInitialSetupComplete && pathname === '/initial-setup') {
-      return <>{children}</>;
-  }
-
-  // If user is authenticated and their profile IS complete, render the full app layout.
-  if (currentUser && currentUser.isInitialSetupComplete) {
-      const hideHeaderForPaths = [
-        '/login',
-        '/initial-setup',
-        '/cashier-login',
-        '/scan-qr',
-        '/show-qr',
-        '/videos',
-        '/profile',
-      ];
-
-      const hideFooterForPaths = [
-        '/messages', 
-        '/scan-qr', 
-        '/show-qr',
-        '/admin',
-        '/videos',
-        '/login',
-        '/initial-setup',
-        '/cashier-login',
-      ];
-
-      const shouldHideHeader = hideHeaderForPaths.some(path => (pathname || '').startsWith(path));
-      const shouldHideFooter = hideFooterForPaths.some(path => (pathname || '').startsWith(path));
-      
-      return (
-        <div className="flex flex-col min-h-screen">
-          {!shouldHideHeader && <Header />}
-          <div className="flex-1">{children}</div>
-          {!shouldHideFooter && <Footer />}
-        </div>
-      );
-  }
-
-  // Fallback case, typically shows loader or null until redirection logic completes
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background">
-      <Loader2 className="h-12 w-12 animate-spin text-primary" />
+    <div className="flex flex-col min-h-screen">
+      {!shouldHideHeader && <Header />}
+      <div className="flex-1">{children}</div>
+      {!shouldHideFooter && <Footer />}
     </div>
   );
 }
