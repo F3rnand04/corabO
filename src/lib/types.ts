@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 export type FirebaseUserInput = { uid: string; email?: string | null; displayName?: string | null; photoURL?: string | null; phoneNumber?: string | null; emailVerified: boolean; };
@@ -9,30 +10,36 @@ export type Affiliation = {
   status: 'pending' | 'approved' | 'rejected' | 'revoked';
   requestedAt: string;
   updatedAt: string;
+  handledBy?: string; // Admin who handled the request
 };
 
 
 export type QrSession = {
   id: string;
   providerId: string;
-  clientId: string;
-  cashierBoxId?: string; 
+  clientId?: string;
+  cashierId?: string; 
   cashierName?: string; // NEW: To store the name of the cashier
-  status: 'pendingAmount' | 'pendingClientApproval' | 'awaitingPayment' | 'pendingVoucherUpload' | 'completed' | 'cancelled';
+  status: 'pendingAmount' | 'pendingClientApproval' | 'awaitingPayment' | 'pendingVoucherUpload' | 'completed' | 'cancelled' | 'awaiting_scan' | 'closed';
   amount?: number;
   initialPayment?: number;
   financedAmount?: number;
   installments?: number;
   voucherUrl?: string;
   createdAt: string;
-  updatedAt: string;
-  participantIds: string[];
+  updatedAt?: string;
+  closedAt?: string;
+  participantIds?: string[];
+  transactionId?: string;
+  cashierBoxId?: string; // To link the session to a specific box
 };
+
+export type NotificationType = 'new_campaign' | 'payment_reminder' | 'admin_alert' | 'welcome' | 'affiliation_request' | 'payment_warning' | 'payment_due' | 'new_publication' | 'cashier_request' | 'new_quote_request' | 'tutorial_request' | 'tutorial_payment_request' | 'live_access_request' | 'monthly_invoice';
 
 export type Notification = {
   id: string;
   userId: string;
-  type: 'new_campaign' | 'payment_reminder' | 'admin_alert' | 'welcome' | 'affiliation_request' | 'payment_warning' | 'payment_due' | 'new_publication' | 'cashier_request';
+  type: NotificationType;
   title: string;
   message: string;
   link?: string;
@@ -40,6 +47,16 @@ export type Notification = {
   timestamp: string;
   metadata?: { 
     requestId?: string;
+    handled?: boolean;
+    publicationId?: string;
+    requesterId?: string;
+    requesterName?: string;
+    liveStreamId?: string; // For live stream notifications
+    invoiceDetails?: {
+        subtotal: number;
+        iva: number;
+        total: number;
+    }
   }
 }
 
@@ -51,7 +68,7 @@ export type Campaign = {
   durationDays: number;
   startDate: string;
   endDate: string;
-  status: 'pending_payment' | 'active' | 'completed' | 'cancelled' | 'verified';
+  status: 'pending_payment' | 'active' | 'completed' | 'cancelled';
   stats: {
     impressions: number; // Veces que se mostró
     reach: number;       // Usuarios únicos alcanzados
@@ -69,6 +86,7 @@ export type Campaign = {
 };
 
 export type GalleryImageComment = {
+  authorId: string; // New field to identify the author for deletion
   author: string;
   text: string;
   likes?: number;
@@ -85,9 +103,11 @@ export type PublicationOwner = {
   reputation?: number;
   profileSetupData?: {
     specialty?: string;
-    providerType?: 'professional' | 'company';
+    providerType?: 'professional' | 'company' | 'tourism' | 'lodging';
     username?: string;
     primaryCategory?: string;
+    location?: string;
+    showExactLocation?: boolean;
   }
   activeAffiliation?: {
     companyId: string;
@@ -103,7 +123,6 @@ export type ProductDetails = {
     category: string;
 };
 
-export const GalleryImageSchema = z.custom<GalleryImage>();
 export type GalleryImage = {
   id: string;
   providerId: string;
@@ -117,12 +136,15 @@ export type GalleryImage = {
   promotion?: {
     text: string;
     expires: string;
+    publicationId: string;
   };
   campaignId?: string;
-  aspectRatio?: 'square' | 'horizontal' | 'vertical';
   likes?: number;
   owner?: PublicationOwner; 
   productDetails?: ProductDetails;
+  isTutorial?: boolean;
+  tutorialPrice?: number;
+  searchKeywords?: string[];
 };
 
 export type CredicoraLevel = {
@@ -249,7 +271,8 @@ export type SpecializedData = {
     serviceOptions?: {
         local?: boolean;
         pickup?: boolean;
-        delivery?: boolean;
+        own_delivery?: boolean;
+        corabo_delivery?: boolean;
         catering?: boolean;
     };
     menuUrl?: string;
@@ -273,6 +296,13 @@ export type SpecializedData = {
     keySkills?: string[];
     toolsAndBrands?: string;
     yearsOfExperience?: number;
+    
+    // Turismo y Estadías
+    lodgingType?: 'hotel' | 'apartamento' | 'casa' | 'cabaña' | 'habitación';
+    amenities?: string[];
+    tourType?: 'aventura' | 'cultural' | 'gastronómico' | 'playa';
+    duration?: string;
+    includedServices?: string[];
 };
 
 // NEW: Type for a single cashier box
@@ -285,6 +315,13 @@ export type CashierBox = {
     isActive?: boolean;
 };
 
+export type LegalRepresentative = {
+  name: string;
+  position?: string;
+  idNumber: string;
+  phone?: string;
+};
+
 export type ProfileSetupData = {
   username?: string;
   useUsername?: boolean;
@@ -292,7 +329,7 @@ export type ProfileSetupData = {
   primaryCategory?: string | null;
   specialty?: string;
   country?: string;
-  providerType?: 'professional' | 'company';
+  providerType?: 'professional' | 'company' | 'delivery' | 'tourism' | 'lodging';
   offerType?: 'product' | 'service' | 'both';
   hasPhysicalLocation?: boolean;
   location?: string;
@@ -321,13 +358,10 @@ export type ProfileSetupData = {
     }
   };
   specializedData?: SpecializedData;
-  legalRepresentative?: {
-    name: string;
-    idNumber: string;
-    phone: string;
-  };
+  legalRepresentative?: LegalRepresentative;
   // NEW: Cashier boxes for company accounts
   cashierBoxes?: CashierBox[];
+  adminPassword?: string;
 };
 
 
@@ -358,18 +392,23 @@ export type User = {
   promotion?: {
     text: string;
     expires: string;
+    publicationId: string;
   };
   profileSetupData?: ProfileSetupData;
   isPaused?: boolean;
   pauseReason?: string;
+  pausedBy?: string; // Admin who paused the account
+  suspensionLiftDate?: string; // Timestamp for when suspension is lifted
   activeCampaignIds?: string[];
-  role?: 'admin';
-  idDocumentUrl?: string;
+  role?: 'admin' | 'manager'; // NEW: Add manager role
+  managementRole?: 'payment_verifier' | 'document_verifier' | 'dispute_manager' | 'affiliation_manager' | 'quality_auditor' | 'customer_support' | 'accountant';
+  idDocumentUrl?: string | null;
   idVerificationStatus?: 'pending' | 'verified' | 'rejected';
+  idVerificationDate?: string; // Timestamp of verification
+  idVerifiedBy?: string; // Admin who verified
   phoneVerificationCode?: string | null;
   phoneVerificationCodeExpires?: string | null;
   credicoraDetails?: CredicoraLevel;
-  deliveryAddress?: string;
   activeAffiliation?: {
     companyId: string;
     companyName: string;
@@ -377,6 +416,32 @@ export type User = {
     companySpecialty: string;
   } | null;
   lastActivityAt?: string; // New field to track last activity
+  contacts?: string[]; // Array of user IDs
+  lastFreeQuoteAt?: string; // Tracks the last free quote for non-subscribed users
+  giftCredits?: number; // New field for gift credits balance
+  activeLiveStreamId?: string; // ID of the current live stream
+  fcmToken?: string | null; // FCM token for push notifications
+  thirdPartyPaymentOffenses?: number; // Tracks violations for payments from non-holder accounts
+  cart?: CartItem[]; // Shopping cart data is now part of the user document
+};
+
+// NEW: Data model for live streams
+export type LiveStream = {
+    id: string;
+    creatorId: string;
+    status: 'upcoming' | 'live' | 'ended';
+    visibility: 'public' | 'private';
+    title: string;
+    description?: string;
+    accessCostCredits?: number;
+    startedAt?: string;
+    endedAt?: string;
+    // Arrays of user IDs
+    pendingRequests?: string[];
+    approvedViewers?: string[];
+    // Placeholder for actual stream URLs
+    streamUrl?: string; 
+    playbackUrl?: string;
 };
 
 export type Product = {
@@ -384,15 +449,6 @@ export type Product = {
   name: string;
   description: string;
   price: number;
-  category: string;
-  providerId: string;
-  imageUrl: string;
-};
-
-export type Service = {
-  id: string;
-  name: string;
-  description: string;
   category: string;
   providerId: string;
   imageUrl: string;
@@ -420,7 +476,9 @@ export type TransactionStatus =
   | 'Pago Enviado - Esperando Confirmación'
   | 'Buscando Repartidor'
   | 'En Reparto'
-  | 'Error de Delivery - Acción Requerida';
+  | 'Error de Delivery - Acción Requerida'
+  | 'Listo para Retirar en Tienda'
+  | 'En Cobranza';
 
 export type AgreementProposal = {
     title: string;
@@ -428,6 +486,10 @@ export type AgreementProposal = {
     amount: number;
     deliveryDate: string;
     acceptsCredicora: boolean;
+    // NEW FIELDS
+    pricingModel?: 'fixed' | 'hourly';
+    hourlyRate?: number;
+    estimatedHours?: number;
 };
 
 export type Message = {
@@ -436,22 +498,28 @@ export type Message = {
     text?: string;
     timestamp: string;
     isRead: boolean;
-    type?: 'text' | 'proposal' | 'location';
+    type?: 'text' | 'proposal' | 'location' | 'image' | 'document';
     proposal?: AgreementProposal;
-    location?: { lat: number, lon: number };
+    location?: { lat: number; lon: number };
+    media?: {
+        url: string;
+        fileName?: string;
+        fileType?: string;
+    };
     isProposalAccepted?: boolean;
 };
 
 export type Conversation = {
     id: string;
     participantIds: string[];
+    participants: { [key: string]: { name: string, profileImage: string } };
     messages: Message[];
     lastUpdated: string;
 };
 
 export type Transaction = {
   id: string;
-  type: 'Compra' | 'Servicio' | 'Sistema' | 'Compra Directa';
+  type: 'Compra' | 'Servicio' | 'Sistema' | 'Compra Directa' | 'Cotización' | 'Tutorial';
   status: TransactionStatus;
   date: string; // ISO 8601 string
   amount: number; // Monto en moneda local
@@ -481,10 +549,11 @@ export type Transaction = {
     deliveryProviderId?: string;
 
     // For payments
-    paymentMethod?: 'Efectivo' | 'Transferencia' | 'Pago Móvil' | 'Binance' | 'credicora' | 'direct';
+    paymentMethod?: 'Efectivo' | 'Transferencia' | 'Pago Móvil' | 'Binance' | 'credicora' | 'direct' | 'creditos_regalo';
     initialPayment?: number;
     financedAmount?: number;
     paymentConfirmationDate?: string;
+    paymentVerifiedBy?: string; // Admin who verified the payment
     paymentVoucherUrl?: string;
     paymentReference?: string;
     paymentFromThirdParty?: boolean;
@@ -495,7 +564,10 @@ export type Transaction = {
     system?: string;
     isSubscription?: boolean;
     isRenewable?: boolean;
-
+    // For gifts
+    giftName?: string;
+    creditValue?: number;
+    
     // For feedback
     clientRating?: number;
     clientComment?: string;
@@ -504,94 +576,96 @@ export type Transaction = {
 
     // For commission and taxes
     amountUSD?: number; // Monto original en USD
-    baseAmount?: number; // Base amount in local currency
+    baseAmount?: number; // Base amount in local currency for invoices
     commissionRate?: number;
     commission?: number; // Commission amount in local currency
     taxRate?: number;
-    tax?: number; // Tax amount in local currency
+    tax?: number; // Tax amount in local currency for invoices
     total?: number; // Final total in local currency
     exchangeRate?: number; // Tasa de cambio al momento de la creación
+    invoiceId?: string; // ID of the master monthly invoice
+    commissionedTransactionIds?: string[];
     
     // For cashier payments
     cashierBoxId?: string;
     cashierName?: string;
+    qrSessionId?: string;
+
+    // For tutorials
+    tutorialId?: string;
+    tutorialName?: string;
   };
+  lastUpdated?: string;
 };
 
-export type AppointmentRequest = {
-    clientId: string;
-    providerId: string;
-    date: string;
-    details: string;
-    amount: number;
-};
-export type VerificationOutput = {
-    extractedName: string;
-    extractedId: string;
-    nameMatch: boolean;
-    idMatch: boolean;
-};
-
-// Schemas from feed-flow
-const PublicationSchema = z.any();
-
-export const GetFeedInputSchema = z.object({
-    limitNum: z.number().optional().default(10),
-    startAfterDocId: z.string().optional(),
+// New: Schema for creating a quote request from the new /quotes page
+export const QuoteRequestInputSchema = z.object({
+  clientId: z.string(),
+  title: z.string().min(5, "El título es muy corto."),
+  description: z.string().min(20, "La descripción debe ser más detallada."),
+  category: z.string({ required_error: "Debes seleccionar una categoría." }),
+  isPaid: z.boolean().optional(), // To indicate if a payment flow is triggered
 });
-
-export const GetFeedOutputSchema = z.object({
-    publications: z.array(PublicationSchema),
-    lastVisibleDocId: z.string().optional(),
-});
-
-// Schemas from profile-flow
-const GalleryImageRequestSchema = z.any();
-const ProductSchema = z.any();
-
-export const GetProfileGalleryInputSchema = z.object({
-    userId: z.string(),
-    limitNum: z.number().optional(),
-    startAfterDocId: z.string().optional(),
-});
-
-export const GetProfileGalleryOutputSchema = z.object({
-    gallery: z.array(GalleryImageRequestSchema),
-    lastVisibleDocId: z.string().optional(),
-});
-
-export const GetProfileProductsInputSchema = z.object({
-    userId: z.string(),
-    limitNum: z.number().optional(),
-    startAfterDocId: z.string().optional(),
-});
-
-export const GetProfileProductsOutputSchema = z.object({
-    products: z.array(ProductSchema),
-    lastVisibleDocId: z.string().optional(),
-});
-
-
-export const CreatePublicationInputSchema = z.object({
-  userId: z.string(),
-  description: z.string(),
-  imageDataUri: z.string(),
-  aspectRatio: z.enum(['square', 'horizontal', 'vertical']),
-  type: z.enum(['image', 'video']),
-});
-export type CreatePublicationInput = z.infer<typeof CreatePublicationInputSchema>;
-
-export const CreateProductInputSchema = z.object({
-  userId: z.string(),
-  name: z.string(),
-  description: z.string(),
-  price: z.number(),
-  imageDataUri: z.string(),
-});
-export type CreateProductInput = z.infer<typeof CreateProductInputSchema>;
+export type QuoteRequestInput = z.infer<typeof QuoteRequestInputSchema>;
 
 
 export type TempRecipientInfo = {
     name: string;
     phone: string;
 }
+
+export type Gift = {
+  id: string;
+  name: string;
+  price: number;
+  credits: number;
+  icon: string; // URL to an icon/image for the gift
+};
+
+export const GetFeedInputSchema = z.object({
+  limitNum: z.number().optional(),
+  startAfterDocId: z.string().optional(),
+  searchQuery: z.string().optional(),
+  categoryFilter: z.string().optional(),
+});
+
+export const GetFeedOutputSchema = z.object({
+  publications: z.array(z.any()),
+  lastVisibleDocId: z.string().optional(),
+});
+
+// NEW: Data model for dispute cases
+export type DisputeCase = {
+  id: string; // Corresponds to the transaction ID
+  status: 'open' | 'investigating' | 'resolved';
+  clientId: string;
+  providerId: string;
+  managerId?: string; // Admin handling the case
+  createdAt: string;
+  lastUpdated: string;
+  resolutionNotes?: string;
+  finalResolution?: 'refund_client' | 'pay_provider' | 'partial_refund' | 'no_action';
+};
+
+export type SanctionReason = 
+    | "Contenido Engañoso o Spam"
+    | "Suplantación de Identidad"
+    | "Incitación al Odio o Acoso"
+    | "Promoción de Actividades Ilegales"
+    | "Contenido Explícito o Inapropiado";
+
+// NEW: Data model for content reports
+export type ContentReport = {
+  id: string;
+  reporterId: string;
+  reportedContentId: string; // Can be a publication ID or a user ID
+  reportedUserId: string; // The user who owns the content
+  contentType: 'publication' | 'profile';
+  reason: SanctionReason;
+  description?: string;
+  status: 'pending' | 'reviewed';
+  createdAt: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  sanctionReason?: SanctionReason; // Reason selected by admin
+};

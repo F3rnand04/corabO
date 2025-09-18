@@ -19,6 +19,7 @@ const categoryComponentMap: { [key: string]: React.ElementType } = {
     'Alimentos y Restaurantes': SpecializedFieldsMap.FoodAndRestaurantFields,
     'Belleza': SpecializedFieldsMap.BeautyFields,
     'Automotriz y Repuestos': SpecializedFieldsMap.AutomotiveFields,
+    'Turismo y Estadías': SpecializedFieldsMap.TourismAndLodgingFields,
     'Tecnología y Soporte': SpecializedFieldsMap.GeneralProviderFields,
     'Educación': SpecializedFieldsMap.GeneralProviderFields,
     'Eventos': SpecializedFieldsMap.GeneralProviderFields,

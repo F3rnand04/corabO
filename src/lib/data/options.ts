@@ -29,6 +29,7 @@ export const allCategories = [
   { id: 'Alimentos y Restaurantes', name: 'Alimentos y Restaurantes', description: 'Restaurantes, catering, mercados...' },
   { id: 'Transporte y Asistencia', name: 'Transporte y Asistencia', description: 'Grúas, ambulancias, fletes, mudanzas...' },
   { id: 'Salud y Bienestar', name: 'Salud y Bienestar', description: 'Fisioterapia, nutrición, entrenadores...' },
+  { id: 'Turismo y Estadías', name: 'Turismo y Estadías', description: 'Hoteles, posadas, tours, paquetes...' },
   { id: 'Educación', name: 'Educación', description: 'Tutorías, clases, cursos...' },
   { id: 'Eventos', name: 'Eventos', description: 'Fotografía, catering, música...' },
   { id: 'Belleza', name: 'Belleza', description: 'Peluquería, maquillaje, spa...' },

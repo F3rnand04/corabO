@@ -2,7 +2,7 @@
 'use client';
 
 import { Card } from "@/components/ui/card";
-import { Truck, Wrench } from "lucide-react";
+import { Truck, Wrench, BedDouble, Earth } from "lucide-react";
 import type { ProfileSetupData } from '@/lib/types';
 import { useAuth } from "@/hooks/use-auth";
 
@@ -24,8 +24,14 @@ const StepCard = ({ icon: Icon, title, description, onClick }: { icon: React.Ele
 export default function Step1ProfileType({ onUpdateAndNext }: Step1ProfileTypeProps) {
     const { setCurrentUser } = useAuth();
 
-    const handleSelect = (type: 'professional' | 'delivery') => {
-        const data = { providerType: type };
+    const handleSelect = (type: 'professional' | 'delivery' | 'lodging' | 'tourism') => {
+        let primaryCategory = '';
+        if(type === 'lodging' || type === 'tourism') {
+            primaryCategory = 'Turismo y Estadías';
+        }
+
+        const data = { providerType: type, primaryCategory };
+        
         setCurrentUser(prev => prev ? { ...prev, profileSetupData: { ...prev.profileSetupData, ...data } } : null);
         onUpdateAndNext(data);
     };
@@ -40,8 +46,20 @@ export default function Step1ProfileType({ onUpdateAndNext }: Step1ProfileTypePr
                 <StepCard
                     icon={Wrench}
                     title="Proveedor de Servicios"
-                    description="Ofrece tus habilidades y talentos profesionales o vende tus productos."
+                    description="Ofrece tus habilidades y talentos profesionales o vende tus productos en otras categorías."
                     onClick={() => handleSelect('professional')}
+                />
+                 <StepCard
+                    icon={BedDouble}
+                    title="Proveedor de Hospedaje"
+                    description="Ofrece alojamientos como hoteles, apartamentos, casas o habitaciones."
+                    onClick={() => handleSelect('lodging')}
+                />
+                 <StepCard
+                    icon={Earth}
+                    title="Proveedor de Turismo"
+                    description="Ofrece paquetes turísticos, tours y experiencias guiadas."
+                    onClick={() => handleSelect('tourism')}
                 />
                 <StepCard
                     icon={Truck}
