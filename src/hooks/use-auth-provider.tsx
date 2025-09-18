@@ -26,7 +26,6 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
   const { toast } = useToast();
   const router = useRouter();
   const pathname = usePathname();
-  const initialAuthChecked = useRef(false);
 
   // Data states
   const [users, setUsers] = useState<User[]>([]);
@@ -47,7 +46,6 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
   
   useEffect(() => {
     const unsubscribe = onIdTokenChanged(auth, async (user) => {
-      const wasUser = !!firebaseUser;
       setFirebaseUser(user);
 
       if (user) {
@@ -59,23 +57,14 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
         await clearSessionCookie();
         setCurrentUser(null);
       }
-
-      // Only trigger a reload if the auth state *changes* (login/logout), not on initial load.
-      if (initialAuthChecked.current && wasUser !== !!user) {
-        window.location.reload();
-      }
-      
-      // Mark initial check as complete and stop the main loader
-      initialAuthChecked.current = true;
       setIsLoadingAuth(false);
     });
 
     return () => unsubscribe();
-  }, [firebaseUser]);
+  }, []);
 
   useEffect(() => {
     if (!currentUser?.id || !db) {
-        // If there's no user, we can confidently say auth loading is done.
         if(!currentUser) setIsLoadingAuth(false);
         return;
     };
