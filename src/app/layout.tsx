@@ -6,7 +6,8 @@ import '@/app/globals.css';
 import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { Toaster } from '@/components/ui/toaster';
-import { AuthProvider } from '@/hooks/use-auth-provider'; // CAMBIO IMPORTANTE
+import { AuthProvider } from '@/hooks/use-auth-provider';
+import { AppLayout } from './AppLayout';
 
 // export const metadata: Metadata = {
 //   title: 'corabO.app',
@@ -29,7 +30,9 @@ export default function RootLayout({
       <body className={`${inter.variable} antialiased bg-background`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <AuthProvider>
-                {children}
+                <AppLayout>
+                  {children}
+                </AppLayout>
                 <Toaster />
             </AuthProvider>
         </ThemeProvider>
