@@ -7,18 +7,17 @@ import { Header } from '@/components/Header';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useEffect } from 'react';
+import LoginPage from './login/page';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { currentUser, isLoadingAuth } = useAuth();
   
-  const isAuthPage = pathname === '/';
   const isSetupPage = pathname === '/initial-setup';
 
   useEffect(() => {
     // This effect now ONLY handles redirection for LOGGED-IN users.
-    // The decision to show Login vs App is handled by HomePage.
     if (!isLoadingAuth && currentUser) {
       if (!currentUser.isInitialSetupComplete && !isSetupPage) {
         router.push('/initial-setup');
@@ -27,20 +26,23 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   }, [isLoadingAuth, currentUser, pathname, router, isSetupPage]);
 
 
-  // While authentication is resolving, don't render header/footer.
-  // HomePage will show its own loader.
   if (isLoadingAuth) {
-    return <>{children}</>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
   }
 
-  // If there's no user, it means we are on the LoginPage.
-  // The children (LoginPage) will be rendered without Header/Footer.
+  // If there's no user, it means we must show the LoginPage.
   if (!currentUser) {
-    return <>{children}</>;
+    return <LoginPage />;
   }
 
   // If the user exists but hasn't completed setup, show only the setup page.
   if (!currentUser.isInitialSetupComplete) {
+    // Only render the children if we are on the correct setup page.
+    // Otherwise, render nothing while the useEffect redirects.
     return isSetupPage ? <>{children}</> : null;
   }
   
