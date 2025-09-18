@@ -366,40 +366,4 @@ export function UserProfilePage({ userId }: { userId: string}) {
             
             {provider.activeAffiliation && (
                 <Link href={`/companies/${provider.activeAffiliation.companyId}`} className="group block mt-4">
-                    <div className="p-3 bg-muted/50 rounded-lg flex items-center gap-3 border hover:border-primary/50 transition-colors"><Avatar className="w-10 h-10 shrink-0"><AvatarImage src={provider.activeAffiliation.companyProfileImage} /><AvatarFallback>{provider.activeAffiliation.companyName.charAt(0)}</AvatarFallback></Avatar><div><p className="text-xs text-muted-foreground">Verificado por:</p><p className="font-semibold text-foreground group-hover:underline">{provider.activeAffiliation.companyName}</p></div></div>
-                </Link>
-            )}
-
-            <div className="flex justify-around font-semibold text-center border-b mt-4">
-                {(offerType === 'service' || offerType === 'both' || !offerType) && <Button variant="ghost" className="flex-1 p-3 rounded-none text-muted-foreground data-[active=true]:text-primary data-[active=true]:border-b-2 data-[active=true]:border-primary" data-active={activeTab === 'publications'} onClick={() => setActiveTab('publications')}>Publicaciones</Button>}
-                {(offerType === 'product' || offerType === 'both') && <Button variant="ghost" className="flex-1 p-3 rounded-none text-muted-foreground data-[active=true]:text-primary data-[active=true]:border-b-2 data-[active=true]:border-primary" data-active={activeTab === 'catalog'} onClick={() => setActiveTab('catalog')}>Catálogo</Button>}
-            </div>
-        </div>
-
-        <main className="flex-grow py-4 px-2">
-            {activeTab === 'publications' && <ProfileGalleryView gallery={providerGallery} owner={provider} isLoading={isLoading} />}
-            {activeTab === 'catalog' && (
-                <div className="space-y-4">
-                   <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" /><Input placeholder="Buscar en este catálogo..." className="pl-10" value={catalogSearchQuery} onChange={(e) => setCatalogSearchQuery(e.target.value)} /></div>
-                    {filteredProducts.length > 0 ? (
-                        <div className='p-2 grid grid-cols-2 gap-2'>
-                          {filteredProducts.map(product => ( <ProductGridCard key={product.id} product={product} onDoubleClick={() => { setSelectedProduct(product); setIsProductDetailsDialogOpen(true); }} /> ))}
-                        </div>
-                    ) : ( <p className='text-center text-muted-foreground py-8'>No se encontraron productos.</p> )}
-                </div>
-            )}
-        </main>
-      </div>
-
-       {/* Dialogs */}
-      <AlertDialog open={isAppointmentDialogOpen} onOpenChange={setIsAppointmentDialogOpen}>
-        <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Solicitar Cita</AlertDialogTitle><AlertDialogDescription>Estás solicitando una cita con <strong>{displayName}</strong> para el día <strong>{appointmentDate && format(appointmentDate, "dd 'de' MMMM", { locale: es })}</strong>.</AlertDialogDescription></AlertDialogHeader><div className="py-4 space-y-4"><div className="space-y-2"><Label htmlFor="appointment-details">Motivo o resumen (opcional)</Label><Textarea id="appointment-details" placeholder={appointmentPlaceholder} value={appointmentDetails} onChange={(e) => setAppointmentDetails(e.target.value)} /></div>{provider.profileSetupData?.appointmentCost && provider.profileSetupData.appointmentCost > 0 ? (<div className="p-3 bg-muted rounded-md text-sm">El costo de esta consulta es de <span className="font-bold">${provider.profileSetupData.appointmentCost.toFixed(2)}</span>. Se creará un compromiso de pago al ser aceptada.</div>) : (<div className="p-3 bg-muted rounded-md text-sm">Esta consulta no tiene un costo fijo inicial. El proveedor te enviará una cotización si es necesario.</div>)}</div><AlertDialogFooter><AlertDialogCancel onClick={() => setAppointmentDetails('')}>Cancelar</AlertDialogCancel><AlertDialogAction onClick={handleConfirmAppointment}>Enviar Solicitud</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
-      </AlertDialog>
-      
-      {selectedProduct && <ProductDetailsDialog isOpen={isProductDetailsDialogOpen} onOpenChange={setIsProductDetailsDialogOpen} product={selectedProduct} />}
-      {isSelfProfile && <CampaignDialog isOpen={isCampaignDialogOpen} onOpenChange={setIsCampaignDialogOpen} />}
-      {isSelfProfile && <SubscriptionDialog isOpen={isSubscriptionDialogOpen} onOpenChange={setIsSubscriptionDialogOpen} />}
-      <TransactionDetailsDialog isOpen={!!selectedTransaction} onOpenChange={() => setSelectedTransaction(null)} transaction={selectedTransaction} />
-    </div>
-  );
-}
+                    <div className="p-3 bg-muted/50 rounded-lg flex items-center gap-3 border hover:border-primary/50 transition-colors"><Avatar className="w-10 h-10 shrink-0"><AvatarImage src={provider.activeAffiliation.companyProfileImage} /><AvatarFallback>{provider.activeAffiliation.companyName.charAt(0)}</AvatarFallback></Avatar><div><p className="text-xs text-muted-foreground">Verificado por:</p><p className="font-semibold text-foreground group-hover:underline">{provider.activeAffiliation.comp
