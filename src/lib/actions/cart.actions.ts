@@ -1,6 +1,5 @@
 'use server';
 
-import '@/ai/genkit';
 import { revalidatePath } from 'next/cache';
 import { updateCartFlow } from '@/ai/flows/cart-flow';
 

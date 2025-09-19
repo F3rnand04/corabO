@@ -1,6 +1,5 @@
 'use server';
 
-import '@/ai/genkit';
 import type { CreatePublicationInput, CreateProductInput, User } from '@/lib/types';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
@@ -62,14 +61,26 @@ export async function addCommentToImage(input: {ownerId: string, imageId: string
     revalidatePath(`/companies/${input.ownerId}`);
 }
 
-export async function removeCommentFromImage(input: {ownerId: string, imageId: string, commentIndex: number}) {
-    await removeCommentFromImageFlow({imageId: input.imageId, commentIndex: input.commentIndex});
-    revalidatePath(`/companies/${input.ownerId}`);
+export async function removeCommentFromImage(imageId: string, commentIndex: number) {
+    const db = getFirestore();
+    const imageRef = db.collection('publications').doc(imageId);
+    const imageSnap = await imageRef.get();
+
+    if (!imageSnap.exists) throw new Error("Image not found.");
+    
+    const publication = imageSnap.data() as any;
+    
+    // Firestore does not support removing an element by index directly in a secure way.
+    // The safest way is to read the array, modify it, and write it back.
+    const updatedComments = publication.comments?.filter((_: any, index: number) => index !== commentIndex);
+
+    await imageRef.update({ comments: updatedComments });
+    revalidatePath(`/publications/${imageId}`);
 }
 
-export async function updateGalleryImage(input: {ownerId: string, imageId: string, updates: { description?: string, imageDataUri?: string }}) {
-    await updateGalleryImageFlow({imageId: input.imageId, updates: input.updates});
-    revalidatePath(`/companies/${input.ownerId}`);
+export async function updateGalleryImage(imageId: string, updates: { description?: string, imageDataUri?: string }) {
+    await updateGalleryImageFlow({imageId: imageId, updates: updates});
+    revalidatePath(`/publications/${imageId}`);
 }
 
 export async function removeGalleryImage(ownerId: string, imageId: string) {

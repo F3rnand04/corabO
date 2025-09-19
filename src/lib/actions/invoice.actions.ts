@@ -1,6 +1,5 @@
 'use server';
 
-import '@/ai/genkit';
 import { getFirebaseFirestore } from '@/lib/firebase-admin';
 import type { Transaction, User } from '@/lib/types';
 import { z } from 'zod';

@@ -1,8 +1,8 @@
 'use server';
 
-import '@/ai/genkit';
 import { revalidatePath } from 'next/cache';
-import type { AppointmentRequest, Transaction, User } from '@/lib/types';
+import { createQuoteRequestFlow, createTransactionFlow } from '@/ai/flows/transaction-flow';
+import type { AppointmentRequest, QuoteRequestInput, Transaction, User } from '@/lib/types';
 import { 
     createAppointmentRequestFlow, 
     acceptAppointmentFlow, 
@@ -93,4 +93,10 @@ export async function processDirectPayment(sessionId: string) {
     const result = await processDirectPaymentFlow({ sessionId });
     revalidatePath('/transactions');
     return result;
+}
+
+export async function createQuoteRequest(input: QuoteRequestInput): Promise<{ requiresPayment: boolean; newTransaction: Transaction | null }> {
+    const { newTransaction, requiresPayment } = await createQuoteRequestFlow(input);
+    revalidatePath('/transactions');
+    return { newTransaction, requiresPayment };
 }

@@ -1,7 +1,6 @@
 
 'use server';
 
-import '@/ai/genkit';
 import { revalidatePath } from 'next/cache';
 import type { FirebaseUserInput, ProfileSetupData, User } from '@/lib/types';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
@@ -154,3 +153,13 @@ export async function addContactToUser(userId: string, contactId: string) {
     revalidatePath(`/companies/${contactId}`);
     revalidatePath('/contacts');
 }
+export async function becomeProvider(userId: string, profileData: ProfileSetupData) {
+    const db = getFirestore();
+    await db.collection('users').doc(userId).update({
+        type: profileData.providerType === 'delivery' ? 'repartidor' : 'provider',
+        profileSetupData: profileData,
+        isTransactionsActive: true
+    });
+    revalidatePath('/profile');
+}
+

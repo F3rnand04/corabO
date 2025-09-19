@@ -1,6 +1,5 @@
 'use server';
 
-import '@/ai/genkit';
 import { getFirebaseFirestore } from '../firebase-admin';
 import { sendNewQuoteRequestNotificationsFlow, sendNotification, getNotificationsFlow } from '@/ai/flows/notification-flow';
 import type { NotificationType } from '../types';

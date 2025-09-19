@@ -1,6 +1,5 @@
 'use server';
 
-import '@/ai/genkit';
 import { revalidatePath } from 'next/cache';
 import { findDeliveryProviderFlow, resolveDeliveryAsPickupFlow } from '@/ai/flows/delivery-flow';
 import { getFirestore } from 'firebase-admin/firestore';

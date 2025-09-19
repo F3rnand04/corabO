@@ -1,6 +1,5 @@
 'use server';
 
-import '@/ai/genkit';
 import { revalidatePath } from 'next/cache';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import type { Conversation, Message, Transaction } from '@/lib/types';

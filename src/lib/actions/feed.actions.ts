@@ -1,7 +1,6 @@
 
 'use server';
 
-import '@/ai/genkit';
 import { getFeedFlow } from '@/ai/flows/feed-flow';
 import { getProfileGalleryFlow, getProfileProductsFlow, getPublicProfileFlow } from '@/ai/flows/profile-flow';
 import { GetFeedInputSchema } from '@/lib/types';

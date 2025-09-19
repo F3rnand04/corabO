@@ -1,6 +1,5 @@
 'use server';
 
-import '@/ai/genkit';
 import { initiateDisputeResolutionFlow } from '@/ai/flows/dispute-flow';
 import { revalidatePath } from 'next/cache';
 

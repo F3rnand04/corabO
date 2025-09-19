@@ -1,8 +1,7 @@
 'use server';
 
-import '@/ai/genkit';
-import { getExchangeRate, setExchangeRateFlow } from '@/ai/flows/exchange-rate-flow';
 import { revalidatePath } from 'next/cache';
+import { setExchangeRateFlow } from '@/ai/flows/exchange-rate-flow';
 
 /**
  * Server Action to securely set the exchange rate for a country.

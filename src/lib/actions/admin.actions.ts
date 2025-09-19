@@ -1,11 +1,11 @@
 'use server';
 
-import '@/ai/genkit';
 import { getFirestore } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
 import type { User } from '@/lib/types';
 import { autoVerifyIdWithAIFlow } from '@/ai/flows/verification-flow';
 import { sendNewCampaignNotificationsFlow } from '@/ai/flows/notification-flow';
+import { createManagementUserFlow } from '@/ai/flows/admin-flow';
 
 /**
  * Approves a user's identity verification.
@@ -79,4 +79,8 @@ export async function toggleUserPause(userId: string, shouldUnpause: boolean) {
 export async function registerSystemPayment(userId: string, concept: string, amount: number, isSubscription: boolean) {
     console.log(`System payment registration for ${userId} is disabled.`);
     revalidatePath('/transactions');
+}
+
+export async function createManagementUser(input: any) {
+    return await createManagementUserFlow(input);
 }

@@ -1,6 +1,5 @@
 'use server';
 
-import '@/ai/genkit';
 import { revalidatePath } from 'next/cache';
 import { getFirebaseFirestore } from '@/lib/firebase-admin';
 import type { LiveStream, User, Gift } from '@/lib/types';

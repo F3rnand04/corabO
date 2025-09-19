@@ -6,8 +6,8 @@
  */
 import { z } from 'zod';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import type { Transaction, User, QrSession } from '@/lib/types';
-import { addDays, endOfMonth } from 'date-fns';
+import type { Transaction, User, QrSession, QuoteRequestInput } from '@/lib/types';
+import { addDays, endOfMonth, isAfter, startOfWeek } from 'date-fns';
 import { getExchangeRate } from './exchange-rate-flow';
 import { findDeliveryProviderFlow, calculateDeliveryCostFlow } from './delivery-flow';
 import { haversineDistance } from '@/lib/utils';
@@ -503,5 +503,50 @@ export async function checkoutFlow(input: CheckoutInput) {
     if (input.deliveryMethod !== 'pickup') {
         // Run delivery search in the background
         findDeliveryProviderFlow({ transactionId: cartTx.id });
+    }
+}
+
+
+export async function createQuoteRequestFlow(input: QuoteRequestInput): Promise<{ requiresPayment: boolean; newTransaction: Transaction | null }> {
+    const db = getFirestore();
+    const batch = db.batch();
+    
+    const clientRef = db.collection('users').doc(input.clientId);
+    const clientSnap = await clientRef.get();
+    if (!clientSnap.exists) throw new Error("Client not found.");
+    const client = clientSnap.data() as User;
+    
+    // Check for free quote eligibility
+    const startOfThisWeek = startOfWeek(new Date(), { weekStartsOn: 1 });
+    const hasUsedFreeQuote = client.lastFreeQuoteAt && isAfter(new Date(client.lastFreeQuoteAt), startOfThisWeek);
+    
+    if (client.isSubscribed || !hasUsedFreeQuote) {
+        // Free Quote or Subscribed User
+        const txId = `txn-quote-${Date.now()}`;
+        const newTransaction: Transaction = {
+            id: txId,
+            type: 'Cotización',
+            status: 'Solicitud Pendiente',
+            date: new Date().toISOString(),
+            amount: 0,
+            clientId: input.clientId,
+            providerId: 'corabo-system',
+            participantIds: [input.clientId, 'corabo-system'],
+            details: {
+                serviceName: input.title,
+                quote: { breakdown: input.description, total: 0 },
+            },
+        };
+        batch.set(db.collection('transactions').doc(txId), newTransaction);
+        
+        if (!client.isSubscribed) {
+            batch.update(clientRef, { lastFreeQuoteAt: new Date().toISOString() });
+        }
+        
+        await batch.commit();
+        return { requiresPayment: false, newTransaction };
+    } else {
+        // User needs to pay
+        return { requiresPayment: true, newTransaction: null };
     }
 }

@@ -1,6 +1,5 @@
 'use server';
 
-import '@/ai/genkit';
 import { sendSmsVerificationCodeFlow, verifySmsCodeFlow } from '@/ai/flows/sms-flow';
 import { revalidatePath } from 'next/cache';
 
