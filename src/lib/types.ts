@@ -106,7 +106,7 @@ export type PublicationOwner = {
     specialty?: string;
     providerType?: 'professional' | 'company' | 'delivery' | 'tourism' | 'lodging';
     username?: string;
-    primaryCategory?: string;
+    primaryCategory?: string | null;
     location?: string;
     showExactLocation?: boolean;
   }
