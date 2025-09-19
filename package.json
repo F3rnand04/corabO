@@ -33,6 +33,7 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
+    "embla-carousel-react": "^8.0.0",
     "firebase": "^10.12.4",
     "firebase-admin": "^12.2.0",
     "genkit": "^1.0.0",
