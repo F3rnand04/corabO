@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -19,9 +18,10 @@ export default function LoginPage() {
     try {
         const response = await signInAsGuest();
         if (response.customToken) {
-            // This will trigger the onIdTokenChanged listener in AuthProvider
+            // signInWithCustomToken will trigger onIdTokenChanged in AuthProvider
             await signInWithCustomToken(auth, response.customToken);
-            // The AuthProvider will handle cookie setting and redirection via window.location.reload()
+            // After token is set, reload the page to let the server-side session take over
+            window.location.reload();
         } else {
             throw new Error(response.error || "No se pudo obtener el token de invitado.");
         }

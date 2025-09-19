@@ -25,7 +25,6 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const { toast } = useToast();
   const router = useRouter();
-  const pathname = usePathname();
 
   // Data states
   const [users, setUsers] = useState<User[]>([]);
@@ -45,29 +44,14 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   
   useEffect(() => {
-    const unsubscribe = onIdTokenChanged(auth, async (user) => {
-      setFirebaseUser(user);
-
-      if (user) {
-        const idToken = await user.getIdToken();
-        await createSessionCookie(idToken);
-        const userProfile = await getOrCreateUser(user);
-        setCurrentUser(userProfile);
-      } else {
-        await clearSessionCookie();
-        setCurrentUser(null);
-      }
-      setIsLoadingAuth(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
+    if (initialUser) {
+        setCurrentUser(initialUser);
+    }
+    setIsLoadingAuth(false);
+  }, [initialUser]);
 
   useEffect(() => {
-    if (!currentUser?.id || !db) {
-        if(!currentUser) setIsLoadingAuth(false);
-        return;
-    };
+    if (!currentUser?.id || !db) return;
 
     const unsubUser = onSnapshot(doc(db, "users", currentUser.id), (doc) => {
       if (doc.exists()) {
@@ -128,11 +112,12 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
   
   const logout = useCallback(async () => {
     try {
-        await signOut(auth); // This will trigger onIdTokenChanged
+        await signOut(auth); // Sign out from client
+        router.push('/api/auth/logout'); // Hit API route to clear server cookie
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cerrar la sesión.' });
     }
-  }, [toast]);
+  }, [toast, router]);
   
   const getCurrentLocation = useCallback(() => {
     if (typeof window !== 'undefined' && navigator.geolocation) {
