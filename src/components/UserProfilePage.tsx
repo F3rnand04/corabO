@@ -424,5 +424,3 @@ export function UserProfilePage({ userId }: { userId: string}) {
     </div>
   );
 }
-
-    
