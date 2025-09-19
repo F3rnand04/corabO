@@ -26,6 +26,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const { toast } = useToast();
   const router = useRouter();
+  const pathname = usePathname();
 
   // Data states
   const [users, setUsers] = useState<User[]>([]);
@@ -44,28 +45,27 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   
+  // This effect runs once on mount, listening for auth state changes.
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+    const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
       setFirebaseUser(fbUser);
-      // The server-side page component now handles the initial user fetch.
-      // The client-side AuthProvider will listen for real-time updates.
-      if (!fbUser) {
-        setCurrentUser(null);
-      }
+      // The initial check is done, now other effects will handle data fetching and redirection.
       setIsLoadingAuth(false);
     });
     return () => unsubscribe();
   }, []);
-
+  
+  // This effect handles data fetching for the logged-in user.
   useEffect(() => {
     if (!firebaseUser?.uid || !db) {
+      setCurrentUser(null);
       setUsers([]); setTransactions([]); setAllPublications([]); setCart([]); setContacts([]);
       setNotifications([]); setConversations([]); setQrSession(null);
       return;
     }
 
     const unsubUser = onSnapshot(doc(db, "users", firebaseUser.uid), (doc) => {
-      if (doc.exists) {
+      if (doc.exists()) {
         const updatedUser = doc.data() as User;
         setCurrentUser(updatedUser);
         setCart(updatedUser.cart || []);
@@ -78,9 +78,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         } else {
             setContacts([]);
         }
+      } else {
+        // This case might happen if the user is authenticated but their Firestore doc is deleted.
+        // Treat them as logged out.
+        setCurrentUser(null);
       }
     });
     
+    // Global listeners
     const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => setUsers(snapshot.docs.map(doc => doc.data() as User)));
     const unsubTransactions = onSnapshot(query(collection(db, "transactions"), where('participantIds', 'array-contains', firebaseUser.uid)), (snapshot) => setTransactions(snapshot.docs.map(doc => doc.data() as Transaction).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())));
     const unsubPublications = onSnapshot(collection(db, "publications"), (snapshot) => setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage)));
@@ -93,13 +98,34 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       unsubNotifications(); unsubConversations(); unsubQrSession();
     };
   }, [firebaseUser?.uid]);
+
+  // This is the key effect for client-side routing.
+  useEffect(() => {
+    // Don't do anything until Firebase has confirmed the auth state.
+    if (isLoadingAuth) {
+      return;
+    }
+
+    const isAuthPage = pathname === '/login';
+    const isSetupPage = pathname === '/initial-setup';
+
+    if (!firebaseUser && !isAuthPage) {
+      router.push('/login');
+    } else if (firebaseUser && currentUser && !currentUser.isInitialSetupComplete && !isSetupPage) {
+      router.push('/initial-setup');
+    } else if (firebaseUser && currentUser && currentUser.isInitialSetupComplete && (isAuthPage || isSetupPage)) {
+      router.push('/');
+    }
+  }, [firebaseUser, currentUser, isLoadingAuth, pathname, router]);
+
   
   const logout = useCallback(async () => {
     try {
       await signOut(auth);
       await clearSessionCookie();
-      // Let the server handle the redirect on next page load
-      window.location.href = '/login';
+      setCurrentUser(null);
+      setFirebaseUser(null);
+      // Let the routing effect handle the redirect to /login
     } catch (error: any) {
       console.error("Error during logout:", error);
       toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cerrar la sesión.' });
@@ -200,14 +226,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const value: AuthContextValue = {
     currentUser, firebaseUser, isLoadingAuth, logout, setCurrentUser, contacts, addContact, removeContact, isContact, users, transactions, setTransactions, allPublications, setAllPublications, cart, activeCartForCheckout, setActiveCartForCheckout, updateCartItem, removeCart, tempRecipientInfo, setTempRecipientInfo, deliveryAddress, setDeliveryAddress, setDeliveryAddressToCurrent, currentUserLocation, getCurrentLocation, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, searchHistory, clearSearchHistory, notifications, conversations, qrSession, getUserMetrics, getAgendaEvents
   };
-  
-  if (isLoadingAuth) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-background">
-        <Loader2 className="w-12 h-12 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   return (
     <AuthContext.Provider value={value}>

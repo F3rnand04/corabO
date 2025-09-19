@@ -4,20 +4,21 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import type { User, FirebaseUserInput } from '@/lib/types';
 import { checkIdUniqueness, completeInitialSetup } from '@/lib/actions/user.actions';
 import { useAuth } from '@/hooks/use-auth';
 import InitialSetupForm from '@/components/profile-setup/InitialSetupForm';
 import { Loader2 } from 'lucide-react';
 
 export default function InitialSetupPage() {
-  const { firebaseUser } = useAuth(); 
+  const { firebaseUser, isLoadingAuth } = useAuth(); 
   const { toast } = useToast();
   const router = useRouter();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (!firebaseUser) {
+  // If auth is loading, or we don't have a firebaseUser yet, show a loader.
+  // The AuthProvider will handle redirecting away if the user is not authenticated.
+  if (isLoadingAuth || !firebaseUser) {
       return (
           <div className="flex items-center justify-center min-h-screen">
               <Loader2 className="w-8 h-8 animate-spin" />

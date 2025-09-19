@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -8,9 +9,11 @@ import { useToast } from '@/hooks/use-toast';
 import { signInWithCustomToken } from 'firebase/auth';
 import { auth } from '@/lib/firebase-client';
 import { signInAsGuest, createSessionCookie } from '@/lib/actions/auth.actions';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function LoginPage() {
   const { toast } = useToast();
+  const { isLoadingAuth } = useAuth(); // Use the central loading state
   const [isProcessingLogin, setIsProcessingLogin] = useState(false);
 
   const handleGuestLogin = async () => {
@@ -21,7 +24,9 @@ export default function LoginPage() {
             const userCredential = await signInWithCustomToken(auth, response.customToken);
             const idToken = await userCredential.user.getIdToken();
             await createSessionCookie(idToken);
-            window.location.reload();
+            // The AuthProvider will detect the user and handle the redirect,
+            // but a reload can ensure everything is synchronized.
+            window.location.reload(); 
         } else {
             throw new Error(response.error || "No se pudo obtener el token de invitado.");
         }
@@ -35,8 +40,9 @@ export default function LoginPage() {
         setIsProcessingLogin(false);
     }
   };
-
-  if (isProcessingLogin) {
+  
+  // Show a loader if either the main auth provider is loading or a specific login action is processing.
+  if (isLoadingAuth || isProcessingLogin) {
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -80,8 +86,8 @@ export default function LoginPage() {
                 Ingresa para descubrir oportunidades.
             </p>
             <div className="space-y-4 mt-8">
-                <Button size="lg" variant="secondary" className="w-full" onClick={handleGuestLogin} disabled={isProcessingLogin}>
-                    {isProcessingLogin ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Ingresar como Invitado'}
+                <Button size="lg" variant="secondary" className="w-full" onClick={handleGuestLogin}>
+                    Ingresar como Invitado
                 </Button>
             </div>
              <p className="px-8 text-center text-xs text-muted-foreground mt-10">
