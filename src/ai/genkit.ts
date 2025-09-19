@@ -35,11 +35,7 @@ export function getFirebaseAuth(): Auth {
 // Configure and export the Genkit AI instance.
 export const ai = genkit({
   plugins: [
-    googleAI({
-      // IMPORTANT: This line is crucial to prevent authentication conflicts
-      // between the Firebase Admin SDK and the Genkit Google AI plugin.
-      firebaseAuth: 'DISABLED',
-    }),
+    googleAI(),
   ],
   enableTracingAndMetrics: false,
 });
