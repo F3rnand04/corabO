@@ -12,7 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from '@/components/ui/badge';
 import { Zap, Clock, ChevronLeft, Upload, Check, Loader2, Handshake } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useCorabo } from '@/contexts/CoraboContext';
+import { useCorabo } from '@/hooks/use-corabo';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -100,7 +100,6 @@ export default function EmprendePage() {
     setIsSubmitting(true);
     
     try {
-        const newPublicationId = `temp-pub-${Date.now()}`;
         await createPublication({
           userId: currentUser.id,
           description: tempDescription,
@@ -109,7 +108,7 @@ export default function EmprendePage() {
           type: 'image',
         });
 
-        await activatePromotion(currentUser.id, { imageId: newPublicationId, promotionText, cost: promotionCost });
+        await activatePromotion(currentUser.id, { imageId: `temp-pub-${Date.now()}`, promotionText, cost: promotionCost });
 
         toast({ title: "¡Promoción Activada!", description: "Tu oferta destacará por 24 horas." });
         router.push('/profile');
