@@ -14,7 +14,7 @@ const SendNotificationInputSchema = z.object({
   title: z.string(),
   message: z.string(),
   link: z.string().optional(),
-  type: z.enum(['new_campaign', 'payment_reminder', 'admin_alert', 'welcome', 'affiliation_request', 'payment_warning', 'payment_due', 'new_publication', 'cashier_request']),
+  type: z.enum(['new_campaign', 'payment_reminder', 'admin_alert', 'welcome', 'affiliation_request', 'payment_warning', 'payment_due', 'new_publication', 'cashier_request', 'new_quote_request', 'monthly_invoice', 'tutorial_request', 'tutorial_payment_request', 'live_access_request']),
   metadata: z.any().optional(),
 });
 
@@ -124,12 +124,12 @@ export async function sendNewCampaignNotificationsFlow({ campaignId }: { campaig
     const db = getFirestore();
     const campaignRef = db.collection('campaigns').doc(campaignId);
     const campaignSnap = await campaignRef.get();
-    if (!campaignSnap.exists()) return;
+    if (!campaignSnap.exists) return;
     const campaign = campaignSnap.data() as Campaign;
 
     const providerRef = db.collection('users').doc(campaign.providerId);
     const providerSnap = await providerRef.get();
-    if (!providerSnap.exists()) return;
+    if (!providerSnap.exists) return;
     const provider = providerSnap.data() as User;
     
     const targetInterests = campaign.segmentation.interests?.length 
@@ -212,4 +212,70 @@ export async function sendWelcomeToProviderNotificationFlow({ userId }: { userId
         message: 'Para empezar con el pie de derecho, suscríbete y obtén la insignia de verificado.',
         link: '/contacts', // Links to the subscription page
     });
+}
+
+
+/**
+ * Fetches notifications for a given user with pagination support.
+ */
+export async function getNotificationsFlow({ userId, limitNum = 20, startAfterDocId }: { userId: string, limitNum?: number, startAfterDocId?: string }) {
+    const db = getFirestore();
+    let q = db.collection('notifications')
+        .where('userId', '==', userId)
+        .orderBy('timestamp', 'desc')
+        .limit(limitNum);
+
+    if (startAfterDocId) {
+        const startAfterDoc = await db.collection('notifications').doc(startAfterDocId).get();
+        if (startAfterDoc.exists) {
+            q = q.startAfter(startAfterDoc);
+        }
+    }
+
+    const snapshot = await q.get();
+    const notifications = snapshot.docs.map(doc => doc.data() as Notification);
+    const lastVisible = snapshot.docs[snapshot.docs.length - 1];
+
+    return {
+        notifications,
+        lastVisibleDocId: snapshot.docs.length === limitNum ? lastVisible?.id : undefined
+    };
+}
+export async function sendNewQuoteRequestNotificationsFlow(input: {
+    category: string;
+    title: string;
+    transactionId: string;
+    limitedReach?: boolean;
+}) {
+    const db = getFirestore();
+    const providersQuery = db.collection('users')
+        .where('type', '==', 'provider')
+        .where('profileSetupData.primaryCategory', '==', input.category)
+        .where('isTransactionsActive', '==', true); // Only notify active providers
+    
+    const snapshot = await providersQuery.get();
+    if (snapshot.empty) {
+        console.log(`No active providers found for category: ${input.category}`);
+        return;
+    }
+
+    const batch = db.batch();
+    snapshot.forEach(doc => {
+        const provider = doc.data() as User;
+        const notificationId = `notif-${provider.id}-quote-${input.transactionId}`;
+        const notificationRef = db.collection('notifications').doc(notificationId);
+        const newNotification: Notification = {
+            id: notificationId,
+            userId: provider.id,
+            type: 'new_quote_request',
+            title: '📣 Nueva Oportunidad de Negocio',
+            message: `Un cliente necesita un servicio de "${input.title}" en tu categoría.`,
+            link: `/transactions?tx=${input.transactionId}`,
+            isRead: false,
+            timestamp: new Date().toISOString(),
+        };
+        batch.set(notificationRef, newNotification);
+    });
+
+    await batch.commit();
 }

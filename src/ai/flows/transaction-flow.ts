@@ -6,7 +6,7 @@
  */
 import { z } from 'zod';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import type { Transaction, User, AppointmentRequest, QrSession } from '@/lib/types';
+import type { Transaction, User, QrSession } from '@/lib/types';
 import { addDays, endOfMonth } from 'date-fns';
 import { getExchangeRate } from './exchange-rate-flow';
 import { findDeliveryProviderFlow, calculateDeliveryCostFlow } from './delivery-flow';
@@ -87,7 +87,7 @@ export async function processDirectPaymentFlow(input: ProcessDirectPaymentInput)
     const sessionRef = db.collection('qr_sessions').doc(input.sessionId);
     const sessionSnap = await sessionRef.get();
 
-    if (!sessionSnap.exists()) {
+    if (!sessionSnap.exists) {
         throw new Error("QR Session not found");
     }
     const session = sessionSnap.data() as QrSession;
@@ -96,14 +96,18 @@ export async function processDirectPaymentFlow(input: ProcessDirectPaymentInput)
         throw new Error("Invalid session data: amount is missing.");
     }
     
+    if (!session.clientId) {
+      throw new Error("Invalid session data: client ID is missing.");
+    }
+    
     const clientRef = db.collection('users').doc(session.clientId);
     const clientSnap = await clientRef.get();
-    if (!clientSnap.exists()) throw new Error("Client not found for commission calculation");
+    if (!clientSnap.exists) throw new Error("Client not found for commission calculation");
     const client = clientSnap.data() as User;
 
     const providerRef = db.collection('users').doc(session.providerId);
     const providerSnap = await providerRef.get();
-    if (!providerSnap.exists()) throw new Error("Provider not found");
+    if (!providerSnap.exists) throw new Error("Provider not found");
     const provider = providerSnap.data() as User;
     
     const { rate: exchangeRate } = await getExchangeRate();
@@ -209,7 +213,7 @@ export async function completeWorkFlow(input: BasicTransactionInput) {
     const db = getFirestore();
     const txRef = db.collection('transactions').doc(input.transactionId);
     const txSnap = await txRef.get();
-    if (!txSnap.exists()) throw new Error("Transaction not found.");
+    if (!txSnap.exists) throw new Error("Transaction not found.");
     
     const transaction = txSnap.data() as Transaction;
     if (transaction.providerId !== input.userId) {
@@ -226,7 +230,7 @@ export async function confirmWorkReceivedFlow(input: ConfirmWorkReceivedInput) {
     const db = getFirestore();
     const txRef = db.collection('transactions').doc(input.transactionId);
     const txSnap = await txRef.get();
-    if (!txSnap.exists()) throw new Error("Transaction not found.");
+    if (!txSnap.exists) throw new Error("Transaction not found.");
 
     const transaction = txSnap.data() as Transaction;
     if (transaction.clientId !== input.userId) {
@@ -253,7 +257,7 @@ export async function payCommitmentFlow(input: PayCommitmentInput) {
     const db = getFirestore();
     const txRef = db.collection('transactions').doc(input.transactionId);
     const txSnap = await txRef.get();
-    if (!txSnap.exists()) throw new Error("Transaction not found.");
+    if (!txSnap.exists) throw new Error("Transaction not found.");
 
     const transaction = txSnap.data() as Transaction;
     if (transaction.clientId !== input.userId) {
@@ -276,7 +280,7 @@ export async function confirmPaymentReceivedFlow(input: ConfirmPaymentReceivedIn
     
     const txRef = db.collection('transactions').doc(input.transactionId);
     const txSnap = await txRef.get();
-    if (!txSnap.exists()) throw new Error("Transaction not found.");
+    if (!txSnap.exists) throw new Error("Transaction not found.");
     
     const transaction = txSnap.data() as Transaction;
     if (transaction.providerId !== input.userId) {
@@ -302,7 +306,7 @@ export async function sendQuoteFlow(input: SendQuoteInput) {
     const db = getFirestore();
     const txRef = db.collection('transactions').doc(input.transactionId);
     const txSnap = await txRef.get();
-    if (!txSnap.exists()) throw new Error("Transaction not found.");
+    if (!txSnap.exists) throw new Error("Transaction not found.");
     
     const transaction = txSnap.data() as Transaction;
     if (transaction.providerId !== input.userId) {
@@ -323,7 +327,7 @@ export async function acceptQuoteFlow(input: BasicTransactionInput) {
     const db = getFirestore();
     const txRef = db.collection('transactions').doc(input.transactionId);
     const txSnap = await txRef.get();
-    if (!txSnap.exists()) throw new Error("Transaction not found.");
+    if (!txSnap.exists) throw new Error("Transaction not found.");
     
     const transaction = txSnap.data() as Transaction;
     if (transaction.clientId !== input.userId) {
@@ -375,7 +379,7 @@ export async function acceptAppointmentFlow(input: BasicTransactionInput) {
     const db = getFirestore();
     const txRef = db.collection('transactions').doc(input.transactionId);
     const txSnap = await txRef.get();
-    if (!txSnap.exists()) throw new Error("Transaction not found.");
+    if (!txSnap.exists) throw new Error("Transaction not found.");
 
     const transaction = txSnap.data() as Transaction;
     if (transaction.providerId !== input.userId) {
@@ -477,7 +481,7 @@ export async function checkoutFlow(input: CheckoutInput) {
     };
 
     let deliveryCost = 0;
-    if (input.deliveryMethod !== 'pickup' && provider.profileSetupData?.location && client.profileSetupData?.location) {
+    if (input.deliveryMethod !== 'pickup' && provider?.profileSetupData?.location && client.profileSetupData?.location) {
         const [provLat, provLon] = provider.profileSetupData.location.split(',').map(Number);
         const [clientLat, clientLon] = client.profileSetupData.location.split(',').map(Number);
         const distance = haversineDistance(provLat, provLon, clientLat, clientLon);

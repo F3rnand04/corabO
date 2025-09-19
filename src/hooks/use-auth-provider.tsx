@@ -7,15 +7,13 @@ import type { User, Transaction, GalleryImage, CartItem, Product, TempRecipientI
 import type { User as FirebaseUser } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase-client';
-import { clearSessionCookie, getOrCreateUser } from '@/lib/actions/auth.actions';
+import { clearSessionCookie } from '@/lib/actions/auth.actions';
 import { collection, doc, onSnapshot, query, where, updateDoc, FieldValue } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import { differenceInMilliseconds } from 'date-fns';
 import { usePathname, useRouter } from 'next/navigation';
 import { AuthContext, type AuthContextValue } from './use-auth';
 import { Loader2 } from 'lucide-react';
-import LoginPage from '@/app/login/page';
-import InitialSetupPage from '@/app/initial-setup/page';
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -28,7 +26,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const { toast } = useToast();
   const router = useRouter();
-  const pathname = usePathname();
 
   // Data states
   const [users, setUsers] = useState<User[]>([]);
@@ -50,10 +47,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       setFirebaseUser(fbUser);
-      if (fbUser) {
-        const user = await getOrCreateUser(fbUser);
-        setCurrentUser(user);
-      } else {
+      // The server-side page component now handles the initial user fetch.
+      // The client-side AuthProvider will listen for real-time updates.
+      if (!fbUser) {
         setCurrentUser(null);
       }
       setIsLoadingAuth(false);
@@ -61,35 +57,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return () => unsubscribe();
   }, []);
 
-  // Client-side routing logic
   useEffect(() => {
-    if (isLoadingAuth) return;
-
-    const isAuthPage = pathname === '/login';
-    const isSetupPage = pathname === '/initial-setup';
-
-    if (!currentUser && !isAuthPage) {
-      router.push('/login');
-    } else if (currentUser && !currentUser.isInitialSetupComplete && !isSetupPage) {
-      router.push('/initial-setup');
-    } else if (currentUser && currentUser.isInitialSetupComplete && (isAuthPage || isSetupPage)) {
-      router.push('/');
-    }
-  }, [currentUser, isLoadingAuth, pathname, router]);
-
-
-  useEffect(() => {
-    if (!currentUser?.id || !db) {
-      // Clear data states if there's no user
+    if (!firebaseUser?.uid || !db) {
       setUsers([]); setTransactions([]); setAllPublications([]); setCart([]); setContacts([]);
       setNotifications([]); setConversations([]); setQrSession(null);
       return;
     }
 
-    const unsubUser = onSnapshot(doc(db, "users", currentUser.id), (doc) => {
-      if (doc.exists()) {
+    const unsubUser = onSnapshot(doc(db, "users", firebaseUser.uid), (doc) => {
+      if (doc.exists) {
         const updatedUser = doc.data() as User;
-        setCurrentUser(prev => prev ? ({...prev, ...updatedUser}) : updatedUser);
+        setCurrentUser(updatedUser);
         setCart(updatedUser.cart || []);
         
         if (updatedUser.contacts && updatedUser.contacts.length > 0) {
@@ -104,28 +82,29 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     });
     
     const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => setUsers(snapshot.docs.map(doc => doc.data() as User)));
-    const unsubTransactions = onSnapshot(query(collection(db, "transactions"), where('participantIds', 'array-contains', currentUser.id)), (snapshot) => setTransactions(snapshot.docs.map(doc => doc.data() as Transaction).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())));
+    const unsubTransactions = onSnapshot(query(collection(db, "transactions"), where('participantIds', 'array-contains', firebaseUser.uid)), (snapshot) => setTransactions(snapshot.docs.map(doc => doc.data() as Transaction).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())));
     const unsubPublications = onSnapshot(collection(db, "publications"), (snapshot) => setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage)));
-    const unsubNotifications = onSnapshot(query(collection(db, "notifications"), where('userId', '==', currentUser.id)), (snapshot) => setNotifications(snapshot.docs.map(doc => doc.data() as Notification)));
-    const unsubConversations = onSnapshot(query(collection(db, "conversations"), where('participantIds', 'array-contains', currentUser.id)), (snapshot) => setConversations(snapshot.docs.map(doc => doc.data() as Conversation)));
-    const unsubQrSession = onSnapshot(query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', currentUser.id), where('status', '!=', 'closed')), (snapshot) => setQrSession(snapshot.empty ? null : snapshot.docs[0].data() as QrSession));
+    const unsubNotifications = onSnapshot(query(collection(db, "notifications"), where('userId', '==', firebaseUser.uid)), (snapshot) => setNotifications(snapshot.docs.map(doc => doc.data() as Notification)));
+    const unsubConversations = onSnapshot(query(collection(db, "conversations"), where('participantIds', 'array-contains', firebaseUser.uid)), (snapshot) => setConversations(snapshot.docs.map(doc => doc.data() as Conversation)));
+    const unsubQrSession = onSnapshot(query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', firebaseUser.uid), where('status', '!=', 'closed')), (snapshot) => setQrSession(snapshot.empty ? null : snapshot.docs[0].data() as QrSession));
 
     return () => {
       unsubUser(); unsubUsers(); unsubTransactions(); unsubPublications();
       unsubNotifications(); unsubConversations(); unsubQrSession();
     };
-  }, [currentUser?.id]);
+  }, [firebaseUser?.uid]);
   
   const logout = useCallback(async () => {
     try {
       await signOut(auth);
       await clearSessionCookie();
-      router.push('/login');
+      // Let the server handle the redirect on next page load
+      window.location.href = '/login';
     } catch (error: any) {
       console.error("Error during logout:", error);
       toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cerrar la sesión.' });
     }
-  }, [router, toast]);
+  }, [toast]);
   
   const getCurrentLocation = useCallback(() => {
     if (typeof window !== 'undefined' && navigator.geolocation) {
@@ -229,19 +208,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       </div>
     );
   }
-
-  // This logic now correctly shows/hides content based on auth state, preventing premature rendering
-  const isAuthPage = pathname === '/login';
-  const isSetupPage = pathname === '/initial-setup';
-
-  if (!currentUser && !isAuthPage) {
-    return <LoginPage />;
-  }
-
-  if (currentUser && !currentUser.isInitialSetupComplete && !isSetupPage) {
-    return <InitialSetupPage />;
-  }
-
 
   return (
     <AuthContext.Provider value={value}>

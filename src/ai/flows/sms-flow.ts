@@ -50,7 +50,7 @@ export async function verifySmsCodeFlow(input: VerifySmsCodeInput): Promise<{ su
     const userRef = db.collection('users').doc(input.userId);
     const userSnap = await userRef.get();
 
-    if (!userSnap.exists()) {
+    if (!userSnap.exists) {
         return { success: false, message: "Usuario no encontrado." };
     }
 

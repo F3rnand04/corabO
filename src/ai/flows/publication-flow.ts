@@ -3,7 +3,6 @@
  */
 import { z } from 'zod';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import { CreatePublicationInputSchema, CreateProductInputSchema, GalleryImageSchema } from '@/lib/types';
 import type { GalleryImage, User, GalleryImageComment, CreatePublicationInput, CreateProductInput } from '@/lib/types';
 
 
@@ -22,6 +21,7 @@ type AddCommentInput = z.infer<typeof AddCommentInputSchema>;
 const RemoveCommentInputSchema = z.object({
   imageId: z.string(),
   commentIndex: z.number(),
+  authorId: z.string(),
 });
 type RemoveCommentInput = z.infer<typeof RemoveCommentInputSchema>;
 
@@ -46,7 +46,7 @@ export async function createPublicationFlow(input: CreatePublicationInput): Prom
     
     const userRef = db.collection('users').doc(input.userId);
     const userSnap = await userRef.get();
-    if (!userSnap.exists()) {
+    if (!userSnap.exists) {
       throw new Error('User not found.');
     }
     
@@ -77,7 +77,7 @@ export async function createProductFlow(input: CreateProductInput): Promise<Gall
     const db = getFirestore();
     const userRef = db.collection('users').doc(input.userId);
     const userSnap = await userRef.get();
-    if (!userSnap.exists()) {
+    if (!userSnap.exists) {
         throw new Error('User not found.');
     }
     
@@ -112,6 +112,7 @@ export async function addCommentToImageFlow(input: AddCommentInput) {
     const imageRef = db.collection('publications').doc(input.imageId);
     
     const newComment: GalleryImageComment = {
+        authorId: input.author.id,
         author: input.author.name,
         text: input.commentText,
         profileImage: input.author.profileImage,
@@ -130,9 +131,21 @@ export async function removeCommentFromImageFlow(input: RemoveCommentInput) {
     const imageRef = db.collection('publications').doc(input.imageId);
     const imageSnap = await imageRef.get();
 
-    if (!imageSnap.exists()) throw new Error("Image not found.");
+    if (!imageSnap.exists) throw new Error("Image not found.");
     
     const publication = imageSnap.data() as GalleryImage;
+    const commentToRemove = publication.comments?.[input.commentIndex];
+
+    if (!commentToRemove) throw new Error("Comment not found at the specified index.");
+    
+    // Authorization: Ensure the user is either the author of the comment or the owner of the publication
+    const publicationOwnerId = publication.providerId;
+    if (input.authorId !== commentToRemove.authorId && input.authorId !== publicationOwnerId) {
+        throw new Error("You are not authorized to delete this comment.");
+    }
+    
+    // Firestore does not support removing an element by index directly in a secure way.
+    // The safest way is to read the array, modify it, and write it back.
     const updatedComments = publication.comments?.filter((_, index) => index !== input.commentIndex);
 
     await imageRef.update({ comments: updatedComments });

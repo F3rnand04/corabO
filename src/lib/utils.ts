@@ -1,10 +1,10 @@
-
-import { clsx, type ClassValue } from "clsx"
+import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
+
 
 /**
  * Calculates the distance between two points on Earth using the Haversine formula.
@@ -24,4 +24,29 @@ export function haversineDistance(lat1: number, lon1: number, lat2: number, lon2
     Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
+}
+
+/**
+ * Generates an array of keywords from a given text string for search purposes.
+ * This creates substrings to allow for "starts-with" type queries in Firestore.
+ * @param text The input string to generate keywords from.
+ * @returns An array of unique, lowercase keywords.
+ */
+export function generateKeywords(text: string): string[] {
+    if (!text) return [];
+    
+    const cleanedText = text.toLowerCase().replace(/[.,!?;:"'()]/g, '');
+    const words = cleanedText.split(/\s+/).filter(Boolean);
+    
+    const keywords = new Set<string>();
+    
+    words.forEach(word => {
+        if (word.length > 2) {
+            for (let i = 3; i <= word.length; i++) {
+                keywords.add(word.substring(0, i));
+            }
+        }
+    });
+
+    return Array.from(keywords);
 }
