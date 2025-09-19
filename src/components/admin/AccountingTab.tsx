@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import type { Transaction } from '@/lib/types';
 import { downloadTransactionsPDF } from '@/lib/actions/transaction.actions';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-provider';
 
 // Constants
 const IVA_RATE = 0.16;

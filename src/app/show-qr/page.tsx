@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, Info, Copy, Loader2, QrCode, UploadCloud, CheckCircle, Smartphone, Banknote, Hourglass, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useCorabo } from '@/hooks/use-corabo';
+import { useAuth } from '@/hooks/use-auth-provider';
 import { QRCodeSVG } from 'qrcode.react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
@@ -22,7 +22,7 @@ import { credicoraLevels } from '@/lib/types';
 export default function ShowQrPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { currentUser } = useCorabo();
+  const { currentUser } = useAuth();
 
   const [qrSession, setQrSession] = useState<QrSession | null>(null);
   const [amount, setAmount] = useState('');

@@ -4,7 +4,7 @@
 import { useRouter } from 'next/navigation';
 import type { ProfileSetupData } from '@/lib/types';
 import Step1_CompanyInfo from '@/components/profile-setup/company/Step1_CompanyInfo';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-provider';
 
 export default function CompanySetupPage() {
   const { currentUser, setCurrentUser } = useAuth();

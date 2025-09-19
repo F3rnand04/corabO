@@ -4,7 +4,7 @@
 import { useRouter } from 'next/navigation';
 import type { ProfileSetupData } from '@/lib/types';
 import Step2_Logistics from '@/components/profile-setup/company/Step2_Logistics';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-provider';
 
 export default function LogisticsPage() {
   const { currentUser, setCurrentUser } = useAuth();

@@ -4,7 +4,7 @@
 import { useRouter } from 'next/navigation';
 import type { ProfileSetupData } from '@/lib/types';
 import Step3_LegalInfo from '@/components/profile-setup/company/Step3_LegalInfo';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-provider';
 
 export default function LegalInfoPage() {
   const { currentUser, setCurrentUser } = useAuth();

@@ -1,9 +1,10 @@
+
 'use client';
 
 import { Separator } from './ui/separator';
 import { Star, TrendingUp, Clock, Gem } from 'lucide-react';
 import type { User } from '@/lib/types';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-provider';
 
 function formatPaymentTime(ms: number): string {
     if (ms <= 0) return '0ms';

@@ -4,7 +4,7 @@
 import Step1ProfileType from '@/components/profile-setup/personal/Step1_ProfileType';
 import type { ProfileSetupData } from '@/lib/types';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-provider';
 
 export default function PersonalProviderSetupPage() {
   const { setCurrentUser } = useAuth();

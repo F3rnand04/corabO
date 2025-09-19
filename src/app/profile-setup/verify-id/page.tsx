@@ -4,7 +4,7 @@
 import { useState, useRef, ChangeEvent, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { useCorabo } from '@/contexts/CoraboContext';
+import { useAuth } from '@/hooks/use-auth-provider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -25,7 +25,7 @@ const countriesInfo = [
 ];
 
 export default function VerifyIdPage() {
-  const { currentUser } = useCorabo();
+  const { currentUser } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
 

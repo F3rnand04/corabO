@@ -19,7 +19,7 @@ import { Textarea } from './ui/textarea';
 import { Switch } from './ui/switch';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { AlertTriangle, Loader2 } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-provider';
 import { useToast } from '@/hooks/use-toast';
 import { startLiveStream } from '@/lib/actions/livestream.actions';
 

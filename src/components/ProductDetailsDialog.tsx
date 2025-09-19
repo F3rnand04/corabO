@@ -15,7 +15,7 @@ import { Input } from './ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Separator } from './ui/separator';
 import type { Product, GalleryImageComment, User } from '@/lib/types';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-provider';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -80,6 +80,7 @@ export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductD
   const handlePostComment = () => {
     if (newComment.trim()) {
       const commentToAdd: GalleryImageComment = {
+        authorId: currentUser.id,
         author: currentUser.name,
         text: newComment,
         profileImage: currentUser.profileImage,

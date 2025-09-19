@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, Zap, CameraOff, Loader2, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useCorabo } from '@/hooks/use-corabo';
+import { useAuth } from '@/hooks/use-auth-provider';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { startQrSession } from '@/lib/actions/cashier.actions';
@@ -44,7 +44,7 @@ const QrScannerPlaceholder = ({ onScan, onScanError }: { onScan: (data: string) 
 function ScanQrContent() {
   const router = useRouter();
   const { toast } = useToast();
-  const { currentUser, users } = useCorabo();
+  const { currentUser, users } = useAuth();
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [manualCode, setManualCode] = useState('');
