@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -10,6 +9,7 @@ import { signInWithCustomToken } from 'firebase/auth';
 import { auth } from '@/lib/firebase-client';
 import { signInAsGuest, createSessionCookie } from '@/lib/actions/auth.actions';
 import { useAuth } from '@/hooks/use-auth-provider';
+import GoogleIcon from '@/components/GoogleIcon';
 
 export default function LoginPage() {
   const { toast } = useToast();
@@ -39,6 +39,11 @@ export default function LoginPage() {
         });
         setIsProcessingLogin(false);
     }
+  };
+  
+  const handleGoogleLogin = () => {
+    // Simply redirect to our server-side API route to handle the OAuth flow
+    window.location.href = '/api/auth/google';
   };
   
   // Show a loader if either the main auth provider is loading or a specific login action is processing.
@@ -82,6 +87,10 @@ export default function LoginPage() {
             La plataforma donde profesionales y clientes se encuentran para realizar proyectos de forma segura y eficiente.
         </p>
         <div className="space-y-4 mt-8">
+            <Button size="lg" className="w-full bg-white text-gray-800 hover:bg-gray-200" onClick={handleGoogleLogin}>
+               <GoogleIcon className="w-6 h-6 mr-2" />
+               Ingresar con Google
+            </Button>
             <Button size="lg" className="w-full" onClick={handleGuestLogin}>
                 Ingresar como Invitado
             </Button>
