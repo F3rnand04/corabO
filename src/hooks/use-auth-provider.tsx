@@ -2,13 +2,14 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { signOut, onIdTokenChanged, type User as FirebaseUser } from 'firebase/auth';
+import { signOut, onIdTokenChanged } from 'firebase/auth';
+import type { User as FirebaseUser } from 'firebase/auth';
 import type { User, Transaction, GalleryImage, CartItem, Product, TempRecipientInfo, QrSession, Notification, Conversation } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase-client';
-import { addContactToUser, removeContactFromUser, updateCartInFirestore } from '@/lib/actions/user.actions';
-import { clearSessionCookie } from '@/lib/actions/auth.actions';
-import { collection, doc, onSnapshot, query, where } from 'firebase/firestore';
+import { addContactToUser, removeContactFromUser } from '@/lib/actions/user.actions';
+import { createSessionCookie, clearSessionCookie } from '@/lib/actions/auth.actions';
+import { collection, doc, onSnapshot, query, where, updateDoc } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import { differenceInMilliseconds } from 'date-fns';
 import { usePathname, useRouter } from 'next/navigation';
@@ -44,9 +45,23 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   
   useEffect(() => {
-    if (initialUser) {
-        setCurrentUser(initialUser);
-    }
+    const unsubscribe = onIdTokenChanged(auth, async (user) => {
+      setFirebaseUser(user);
+      if (user) {
+        const idToken = await user.getIdToken();
+        await createSessionCookie(idToken);
+      } else {
+        await clearSessionCookie();
+        setCurrentUser(null);
+      }
+      setIsLoadingAuth(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+  
+  useEffect(() => {
+    setCurrentUser(initialUser);
     setIsLoadingAuth(false);
   }, [initialUser]);
 
@@ -56,7 +71,7 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
     const unsubUser = onSnapshot(doc(db, "users", currentUser.id), (doc) => {
       if (doc.exists()) {
         const updatedUser = doc.data() as User;
-        setCurrentUser(prev => ({...prev, ...updatedUser}));
+        setCurrentUser(prev => prev ? ({...prev, ...updatedUser}) : updatedUser);
         setCart(updatedUser.cart || []);
         
         if (updatedUser.contacts && updatedUser.contacts.length > 0) {
@@ -112,11 +127,14 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
   
   const logout = useCallback(async () => {
     try {
-        await signOut(auth);
-        await clearSessionCookie();
-        router.refresh();
+      await signOut(auth); // Sign out from client SDK
+      await fetch('/api/auth/logout'); // Hit API route to clear server cookie
+      setCurrentUser(null);
+      router.push('/');
+      router.refresh();
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cerrar la sesión.' });
+      console.error("Error during logout:", error);
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cerrar la sesión.' });
     }
   }, [toast, router]);
   
@@ -124,13 +142,15 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
     if (typeof window !== 'undefined' && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setCurrentUserLocation({
+          const location = {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
-          });
+          };
+          setCurrentUserLocation(location);
           if (currentUser?.id) {
-            import('@/lib/actions/user.actions').then(actions => {
-              actions.toggleGps(currentUser.id);
+            const userRef = doc(db, 'users', currentUser.id);
+            updateDoc(userRef, {
+                'profileSetupData.location': `${location.latitude},${location.longitude}`
             });
           }
         },
@@ -178,31 +198,32 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
   }, [currentUser?.contacts]);
   
   const updateCartItem = useCallback(async (product: Product, quantity: number) => {
-      if (!currentUser) return;
+      if (!currentUser || !db) return;
+      
       const newCart = [...cart];
       const itemIndex = newCart.findIndex(item => item.product.id === product.id);
       
       if (itemIndex > -1) {
-          if (quantity > 0) {
-              newCart[itemIndex].quantity = quantity;
-          } else {
-              newCart.splice(itemIndex, 1);
-          }
+          if (quantity > 0) newCart[itemIndex].quantity = quantity;
+          else newCart.splice(itemIndex, 1);
       } else if (quantity > 0) {
           newCart.push({ product, quantity });
       }
-      setCart(newCart);
-      await updateCartInFirestore(currentUser.id, newCart);
 
-  }, [cart, currentUser]);
+      setCart(newCart);
+      const userRef = doc(db, 'users', currentUser.id);
+      await updateDoc(userRef, { cart: newCart });
+
+  }, [cart, currentUser, db]);
 
   const removeCart = useCallback(async (itemsToRemove: CartItem[]) => {
-      if (!currentUser) return;
+      if (!currentUser || !db) return;
       const idsToRemove = itemsToRemove.map(item => item.product.id);
       const newCart = cart.filter(item => !idsToRemove.includes(item.product.id));
       setCart(newCart);
-      await updateCartInFirestore(currentUser.id, newCart);
-  }, [cart, currentUser]);
+      const userRef = doc(db, 'users', currentUser.id);
+      await updateDoc(userRef, { cart: newCart });
+  }, [cart, currentUser, db]);
 
   const setDeliveryAddressToCurrent = useCallback(() => {
     getCurrentLocation();

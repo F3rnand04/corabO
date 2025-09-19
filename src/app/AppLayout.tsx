@@ -43,7 +43,11 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   if (!currentUser.isInitialSetupComplete) {
     // Only render the children if we are on the correct setup page.
     // Otherwise, render nothing while the useEffect redirects.
-    return isSetupPage ? <>{children}</> : null;
+    return isSetupPage ? <>{children}</> : (
+        <div className="flex items-center justify-center min-h-screen">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+    );
   }
   
   // If fully logged in and setup is complete, render the full layout.
