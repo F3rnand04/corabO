@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-provider';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, MessageCircle, CheckCircle, Flag, Package, Hand, MoreHorizontal, Wallet, Megaphone, Zap, Timer, TrendingUp, UserRoundCog, BrainCircuit, Wrench, Car, Scissors, Home as HomeIcon, Utensils, Briefcase, Building, Users, Search, Loader2, Handshake, Settings } from 'lucide-react';
@@ -425,3 +424,5 @@ export function UserProfilePage({ userId }: { userId: string}) {
     </div>
   );
 }
+
+    

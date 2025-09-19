@@ -8,7 +8,7 @@ import { Heart, Send, ChevronLeft, ChevronRight, MessageCircle, Flag, ImageIcon 
 import { cn } from '@/lib/utils';
 import { ImageDetailsDialog } from '@/components/ImageDetailsDialog';
 import { useToast } from '@/hooks/use-toast';
-import { useCorabo } from '@/contexts/CoraboContext';
+import { useAuth } from '@/hooks/use-auth-provider';
 import type { GalleryImage, User } from '@/lib/types';
 import { ReportDialog } from '@/components/ReportDialog';
 import { Skeleton } from './ui/skeleton';
@@ -136,3 +136,5 @@ export function ProfileGalleryView({ gallery, owner, isLoading }: ProfileGallery
     </>
   );
 }
+
+    
