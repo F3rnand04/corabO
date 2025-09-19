@@ -1,8 +1,7 @@
 
-
 "use client";
 
-import { useCorabo } from "@/contexts/CoraboContext";
+import { useCorabo } from "@/hooks/use-corabo";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 import { MultiProviderCart } from "./MultiProviderCart";

@@ -3,7 +3,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useCorabo } from "@/contexts/CoraboContext";
+import { useCorabo } from "@/hooks/use-corabo";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 import { Card, CardContent } from "./ui/card";

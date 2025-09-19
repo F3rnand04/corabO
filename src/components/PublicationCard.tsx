@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import type { GalleryImage, User } from "@/lib/types";
 import { Star, Bookmark, Send, MessageCircle, Flag, CheckCircle, MapPin, Plus, Heart } from "lucide-react";
 import Link from "next/link";
-import { useCorabo } from "@/contexts/CoraboContext";
+import { useCorabo } from "@/hooks/use-corabo";
 import { useState, useEffect, useMemo } from "react";
 import { ReportDialog } from "./ReportDialog";
 import { cn } from "@/lib/utils";

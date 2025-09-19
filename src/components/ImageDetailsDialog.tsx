@@ -98,11 +98,12 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex =
   }
   
   const handleDeleteComment = (commentIndex: number) => {
-    if (currentImage && owner) {
+    if (currentImage && owner && currentUser) {
         removeCommentFromImage({
             ownerId: owner.id,
             imageId: currentImage.id,
-            commentIndex
+            commentIndex,
+            authorId: currentUser.id,
         });
     }
   }
@@ -127,13 +128,9 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex =
   const handleSaveChanges = () => {
     if (!currentImage || !owner) return;
     
-    updateGalleryImage({
-        ownerId: owner.id,
-        imageId: currentImage.id,
-        updates: {
-            description: editedDescription,
-            imageDataUri: newImagePreview || undefined, // Send undefined if not changed
-        }
+    updateGalleryImage(currentImage.id, {
+        description: editedDescription,
+        imageDataUri: newImagePreview || undefined, // Send undefined if not changed
     });
     setIsEditing(false);
   };
@@ -248,7 +245,7 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex =
                                       <span className="text-xs">{0}</span>
                                    </div>
                                </div>
-                                {comment.author === currentUser.name && (
+                                {(comment.authorId === currentUser.id || isOwnerView) && (
                                    <Button variant="ghost" size="icon" className="w-7 h-7 shrink-0 opacity-0 group-hover:opacity-100" onClick={() => handleDeleteComment(index)}>
                                         <Trash2 className="w-4 h-4 text-destructive" />
                                    </Button>
