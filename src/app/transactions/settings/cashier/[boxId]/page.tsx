@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useCorabo } from '@/hooks/use-corabo';
+import { useAuth } from '@/hooks/use-auth-provider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChevronLeft, DollarSign, List, BarChart } from 'lucide-react';
@@ -42,7 +41,7 @@ const StatCard = ({ title, value, icon: Icon }: { title: string, value: string, 
 
 export default function CashierDetailsPage() {
     const params = useParams();
-    const { currentUser, transactions, users } = useCorabo();
+    const { currentUser, transactions, users } = useAuth();
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
 
     const boxId = params.boxId as string;

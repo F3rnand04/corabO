@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useCorabo } from '@/hooks/use-corabo';
+import { useAuth } from '@/hooks/use-auth-provider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Bookmark, Send, Star, MessageCircle } from 'lucide-react';
@@ -14,7 +13,7 @@ import { cn } from '@/lib/utils';
 
 // Component for a single video reel item
 function ReelItem({ video, owner }: { video: GalleryImage, owner: User }) {
-    const { addContact, isContact } = useCorabo();
+    const { addContact, isContact } = useAuth();
     const { toast } = useToast();
     
     // State for interaction within this specific reel
@@ -136,7 +135,7 @@ function ReelItem({ video, owner }: { video: GalleryImage, owner: User }) {
 
 
 export default function VideosPage() {
-  const { users, allPublications } = useCorabo();
+  const { users, allPublications } = useAuth();
 
   // Create a dynamic feed by finding all videos from all users' galleries
   const videoFeed = allPublications

@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
-import { useCorabo } from '@/hooks/use-corabo';
+import { useAuth } from '@/hooks/use-auth-provider';
 import {
   Dialog,
   DialogContent,
@@ -36,7 +35,7 @@ const budgetLevelsData = {
 };
 
 export function CampaignDialog({ isOpen, onOpenChange }: CampaignDialogProps) {
-    const { currentUser, allPublications } = useCorabo();
+    const { currentUser, allPublications } = useAuth();
     const [step, setStep] = useState(1);
     const [selectedPublicationId, setSelectedPublicationId] = useState<string | null>(null);
     

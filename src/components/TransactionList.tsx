@@ -1,9 +1,8 @@
-
 'use client';
 
 import type { Transaction, User } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { useCorabo } from "@/hooks/use-corabo";
+import { useAuth } from "@/hooks/use-auth-provider";
 import { TransactionItem } from "./TransactionItem";
 
 
@@ -15,7 +14,7 @@ interface TransactionListProps {
 
 
 export function TransactionList({ title, transactions, onTransactionClick }: TransactionListProps) {
-  const { currentUser, users } = useCorabo();
+  const { currentUser, users } = useAuth();
 
   return (
     <Card>

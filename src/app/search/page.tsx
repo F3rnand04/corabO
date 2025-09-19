@@ -2,13 +2,13 @@
 
 import { CategoryHub } from '@/components/CategoryHub';
 import { Button } from '@/components/ui/button';
-import { useCorabo } from '@/contexts/CoraboContext';
+import { useAuth } from '@/hooks/use-auth-provider';
 import { ChevronLeft, List } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function SearchPage() {
     const router = useRouter();
-    const { setSearchQuery, setCategoryFilter } = useCorabo();
+    const { setSearchQuery, setCategoryFilter } = useAuth();
 
     const handleCategorySelect = (categoryName: string) => {
         // Neutralized: This no longer updates the feed.
