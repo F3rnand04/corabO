@@ -15,7 +15,6 @@ import Image from "next/image";
 
 export function FeedClientComponent() {
   const { currentUser, isLoadingAuth, searchQuery, categoryFilter } = useAuth();
-  const router = useRouter();
   
   const [publications, setPublications] = useState<GalleryImage[]>([]);
   const [isLoadingFeed, setIsLoadingFeed] = useState(true);
@@ -129,7 +128,7 @@ export function FeedClientComponent() {
     );
   };
 
-  if (isLoadingAuth || (isLoadingFeed && publications.length === 0)) {
+  if (isLoadingAuth || isLoadingFeed) {
     return (
       <main className="space-y-4 container py-4 mx-auto max-w-2xl">
         {Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-[500px] w-full" />)}
@@ -137,46 +136,12 @@ export function FeedClientComponent() {
     );
   }
 
-  if (!currentUser) {
-     return (
-        <div className="relative h-screen flex flex-col items-center justify-center text-center p-4 bg-black text-white overflow-hidden">
-            <Image
-                src="https://i.postimg.cc/C1sxJnNT/bv.png"
-                alt="Fondo de bienvenida"
-                fill
-                priority
-                className="object-cover opacity-50"
-                data-ai-hint="background office"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent" />
-            <div className="relative z-10 flex flex-col items-center">
-                 <div className="relative w-48 h-24 mx-auto mb-6">
-                    <Image
-                        src="https://i.postimg.cc/Wz1MTvWK/lg.png"
-                        alt="Corabo logo"
-                        fill
-                        priority
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                        className="object-contain"
-                    />
-                </div>
-                <h1 className="text-4xl font-bold tracking-tight drop-shadow-lg">Conecta. Colabora. Crece.</h1>
-                <p className="mt-4 max-w-xl text-lg text-white/80 drop-shadow-md">
-                    Tu nueva plataforma de confianza para encontrar profesionales talentosos y clientes que valoran tu trabajo. Únete a la comunidad y lleva tus proyectos al siguiente nivel.
-                </p>
-                <Button className="mt-8" size="lg" onClick={() => router.push('/login')}>
-                    <LogIn className="mr-2 h-5 w-5" />
-                    Iniciar Sesión o Registrarse
-                </Button>
-            </div>
-        </div>
-    );
-  }
-
+  // AppLayout now handles the unauthenticated state.
+  // This component will only render if there is a currentUser.
   return (
     <>
       <div className="container py-4 mx-auto max-w-2xl">
-        {!currentUser.isTransactionsActive && (
+        {currentUser && !currentUser.isTransactionsActive && (
           <ActivationWarning userType={currentUser.type} />
         )}
       </div>
