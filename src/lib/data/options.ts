@@ -40,3 +40,11 @@ export const automotiveServicesOptions = ["Mecánica General", "Latonería y Pin
 export const beautyTradesOptions = ["Manicure", "Pedicure", "Estilismo", "Maquillaje", "Depilación", "Masajes"];
 
 export const homeRepairTradesOptions = ["Plomería", "Electricidad", "Albañilería", "Carpintería", "Jardinería", "Pintura"];
+
+export const countries = [
+  { code: 'VE', name: 'Venezuela', idLabel: 'Cédula de Identidad', companyIdLabel: 'RIF', ivaRate: 0.16 },
+  { code: 'CO', name: 'Colombia', idLabel: 'Cédula de Ciudadanía', companyIdLabel: 'NIT', ivaRate: 0.19 },
+  { code: 'CL', name: 'Chile', idLabel: 'RUT / DNI', companyIdLabel: 'RUT', ivaRate: 0.19 },
+  { code: 'ES', name: 'España', idLabel: 'DNI / NIE', companyIdLabel: 'NIF', ivaRate: 0.21 },
+  { code: 'MX', name: 'México', idLabel: 'CURP', companyIdLabel: 'RFC', ivaRate: 0.16 },
+];

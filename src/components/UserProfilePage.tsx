@@ -26,7 +26,7 @@ import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { getFirestoreInstance } from '@/lib/firebase-client';
+import { db } from '@/lib/firebase-client';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { getPublicProfile, getProfileGallery, getProfileProducts } from '@/lib/actions/feed.actions';
 import { createAppointmentRequest } from '@/lib/actions/transaction.actions';
@@ -192,7 +192,6 @@ export function UserProfilePage({ userId }: { userId: string}) {
 
   useEffect(() => {
     if (provider?.profileSetupData?.providerType === 'company') {
-      const db = getFirestoreInstance();
       const q = query(collection(db, 'affiliations'), where('companyId', '==', provider.id), where('status', '==', 'approved'));
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const professionalIds = snapshot.docs.map(doc => (doc.data() as Affiliation).providerId);
