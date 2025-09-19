@@ -8,12 +8,12 @@ import { useAuth } from '@/hooks/use-auth';
 
 // This component now ONLY wraps the authenticated parts of the app.
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { currentUser } = useAuth();
   const pathname = usePathname();
-  
-  // This layout assumes a user is present, as decided by the page component.
+  const { currentUser } = useAuth(); // It's safe to assume currentUser exists here
+
   if (!currentUser) {
-    // This should ideally not happen if routing is correct, but acts as a safeguard.
+    // This should ideally not be reached if AppLayout is used correctly,
+    // but it's a safe fallback.
     return null;
   }
   

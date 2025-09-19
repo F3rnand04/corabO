@@ -1,18 +1,22 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { signOut } from 'firebase/auth';
+import React, { useState, useEffect, useCallback, createContext } from 'react';
+import { signOut, onAuthStateChanged } from 'firebase/auth';
 import type { User, Transaction, GalleryImage, CartItem, Product, TempRecipientInfo, QrSession, Notification, Conversation } from '@/lib/types';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase-client';
-import { clearSessionCookie } from '@/lib/actions/auth.actions';
+import { clearSessionCookie, getOrCreateUser } from '@/lib/actions/auth.actions';
 import { collection, doc, onSnapshot, query, where, updateDoc } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import { differenceInMilliseconds } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { AuthContext, type AuthContextValue } from './use-auth';
+import { AppLayout } from '@/app/AppLayout';
+import { Loader2 } from 'lucide-react';
+import LoginPage from '@/app/login/page';
+import InitialSetupPage from '@/app/initial-setup/page';
 
 interface AuthProviderProps {
   initialUser: User | null;
@@ -22,11 +26,7 @@ interface AuthProviderProps {
 export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
   const [currentUser, setCurrentUser] = useState<User | null>(initialUser);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(auth.currentUser);
-
-  // isLoadingAuth is now simply about whether the component has mounted on the client.
-  const [isClient, setIsClient] = useState(false);
-  useEffect(() => setIsClient(true), []);
-  const isLoadingAuth = !isClient;
+  const [isLoading, setIsLoading] = useState(true);
 
   const { toast } = useToast();
   const router = useRouter();
@@ -49,16 +49,24 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   
   useEffect(() => {
-    // If there is no current user, don't attempt to fetch data.
+    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      setFirebaseUser(fbUser);
+      if (fbUser) {
+        const user = await getOrCreateUser(fbUser);
+        setCurrentUser(user);
+      } else {
+        setCurrentUser(null);
+      }
+      setIsLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
     if (!currentUser?.id || !db) {
-      setUsers([]);
-      setTransactions([]);
-      setAllPublications([]);
-      setCart([]);
-      setContacts([]);
-      setNotifications([]);
-      setConversations([]);
-      setQrSession(null);
+      // Clear data states if there's no user
+      setUsers([]); setTransactions([]); setAllPublications([]); setCart([]); setContacts([]);
+      setNotifications([]); setConversations([]); setQrSession(null);
       return;
     }
 
@@ -70,52 +78,25 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
         
         if (updatedUser.contacts && updatedUser.contacts.length > 0) {
             const contactsQuery = query(collection(db, "users"), where('id', 'in', updatedUser.contacts));
-            const unsubContacts = onSnapshot(contactsQuery, (snapshot) => {
+            onSnapshot(contactsQuery, (snapshot) => {
                 setContacts(snapshot.docs.map(d => d.data() as User));
             });
-            return () => unsubContacts();
         } else {
             setContacts([]);
         }
       }
     });
     
-    const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => {
-        setUsers(snapshot.docs.map(doc => doc.data() as User));
-    });
-
-    const unsubTransactions = onSnapshot(query(collection(db, "transactions"), where('participantIds', 'array-contains', currentUser.id)), (snapshot) => {
-        setTransactions(snapshot.docs.map(doc => doc.data() as Transaction).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-    });
-    
-    const unsubPublications = onSnapshot(collection(db, "publications"), (snapshot) => {
-      setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage));
-    });
-
-    const unsubNotifications = onSnapshot(query(collection(db, "notifications"), where('userId', '==', currentUser.id)), (snapshot) => {
-        setNotifications(snapshot.docs.map(doc => doc.data() as Notification));
-    });
-
-     const unsubConversations = onSnapshot(query(collection(db, "conversations"), where('participantIds', 'array-contains', currentUser.id)), (snapshot) => {
-        setConversations(snapshot.docs.map(doc => doc.data() as Conversation));
-    });
-
-    const unsubQrSession = onSnapshot(query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', currentUser.id), where('status', '!=', 'closed')), (snapshot) => {
-       if (!snapshot.empty) {
-           setQrSession(snapshot.docs[0].data() as QrSession);
-       } else {
-           setQrSession(null);
-       }
-    });
+    const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => setUsers(snapshot.docs.map(doc => doc.data() as User)));
+    const unsubTransactions = onSnapshot(query(collection(db, "transactions"), where('participantIds', 'array-contains', currentUser.id)), (snapshot) => setTransactions(snapshot.docs.map(doc => doc.data() as Transaction).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())));
+    const unsubPublications = onSnapshot(collection(db, "publications"), (snapshot) => setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage)));
+    const unsubNotifications = onSnapshot(query(collection(db, "notifications"), where('userId', '==', currentUser.id)), (snapshot) => setNotifications(snapshot.docs.map(doc => doc.data() as Notification)));
+    const unsubConversations = onSnapshot(query(collection(db, "conversations"), where('participantIds', 'array-contains', currentUser.id)), (snapshot) => setConversations(snapshot.docs.map(doc => doc.data() as Conversation)));
+    const unsubQrSession = onSnapshot(query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', currentUser.id), where('status', '!=', 'closed')), (snapshot) => setQrSession(snapshot.empty ? null : snapshot.docs[0].data() as QrSession));
 
     return () => {
-      unsubUser();
-      unsubUsers();
-      unsubTransactions();
-      unsubPublications();
-      unsubNotifications();
-      unsubConversations();
-      unsubQrSession();
+      unsubUser(); unsubUsers(); unsubTransactions(); unsubPublications();
+      unsubNotifications(); unsubConversations(); unsubQrSession();
     };
   }, [currentUser?.id]);
   
@@ -124,7 +105,7 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
       await signOut(auth);
       await clearSessionCookie();
       setCurrentUser(null);
-      // No need to force reload, Next.js Router will handle the state change
+      setFirebaseUser(null);
       router.push('/login'); 
     } catch (error: any) {
       console.error("Error during logout:", error);
@@ -136,26 +117,14 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
     if (typeof window !== 'undefined' && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const location = {
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          };
+          const location = { latitude: position.coords.latitude, longitude: position.coords.longitude };
           setCurrentUserLocation(location);
-          if (currentUser?.id) {
+          if (currentUser?.id && db) {
             const userRef = doc(db, 'users', currentUser.id);
-            updateDoc(userRef, {
-                'profileSetupData.location': `${'${location.latitude}'},${'${location.longitude}'}`
-            });
+            updateDoc(userRef, { 'profileSetupData.location': `${'${location.latitude}'},${'${location.longitude}'}` });
           }
         },
-        (error) => {
-          console.error("Geolocation error:", error.message);
-          toast({
-            variant: "destructive",
-            title: "Error de Ubicación",
-            description: "No se pudo obtener tu ubicación. Revisa los permisos del navegador."
-          });
-        },
+        () => toast({ variant: "destructive", title: "Error de Ubicación", description: "No se pudo obtener tu ubicación. Revisa los permisos." }),
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 600000 }
       );
     }
@@ -163,9 +132,7 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
   
   useEffect(() => {
     const storedHistory = localStorage.getItem('coraboSearchHistory');
-    if (storedHistory) {
-        setSearchHistory(JSON.parse(storedHistory));
-    }
+    if (storedHistory) setSearchHistory(JSON.parse(storedHistory));
   }, []);
 
   useEffect(() => {
@@ -178,42 +145,35 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
   
   const addContact = useCallback(async (user: User) => {
     if (!currentUser) return;
-    // This function will be defined in user.actions.ts
-    // await addContactToUser(currentUser.id, user.id);
+    const userRef = doc(db, 'users', currentUser.id);
+    await updateDoc(userRef, { contacts: FieldValue.arrayUnion(user.id) });
   }, [currentUser]);
 
   const removeContact = useCallback(async (userId: string) => {
     if (!currentUser) return;
-    // This function will be defined in user.actions.ts
-    // await removeContactFromUser(currentUser.id, userId);
+    const userRef = doc(db, 'users', currentUser.id);
+    await updateDoc(userRef, { contacts: FieldValue.arrayRemove(userId) });
   }, [currentUser]);
 
-  const isContact = useCallback((userId: string) => {
-    if (!currentUser?.contacts) return false;
-    return currentUser.contacts.includes(userId);
-  }, [currentUser?.contacts]);
+  const isContact = useCallback((userId: string) => currentUser?.contacts?.includes(userId) ?? false, [currentUser?.contacts]);
   
   const updateCartItem = useCallback(async (product: Product, quantity: number) => {
-      if (!currentUser) return;
-      
+      if (!currentUser || !db) return;
       const newCart = [...cart];
       const itemIndex = newCart.findIndex(item => item.product.id === product.id);
-      
       if (itemIndex > -1) {
           if (quantity > 0) newCart[itemIndex].quantity = quantity;
           else newCart.splice(itemIndex, 1);
       } else if (quantity > 0) {
           newCart.push({ product, quantity });
       }
-
       setCart(newCart);
       const userRef = doc(db, 'users', currentUser.id);
       await updateDoc(userRef, { cart: newCart });
-
   }, [cart, currentUser]);
 
   const removeCart = useCallback(async (itemsToRemove: CartItem[]) => {
-      if (!currentUser) return;
+      if (!currentUser || !db) return;
       const idsToRemove = itemsToRemove.map(item => item.product.id);
       const newCart = cart.filter(item => !idsToRemove.includes(item.product.id));
       setCart(newCart);
@@ -223,15 +183,8 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
 
   const setDeliveryAddressToCurrent = useCallback(() => {
     getCurrentLocation();
-    if (currentUserLocation) {
-        setDeliveryAddress(`${'${currentUserLocation.latitude}'},${'${currentUserLocation.longitude}'}`);
-    } else {
-        toast({
-            variant: "destructive",
-            title: "Ubicación no disponible",
-            description: "No hemos podido obtener tu ubicación GPS. Activa los permisos y vuelve a intentarlo.",
-        });
-    }
+    if (currentUserLocation) setDeliveryAddress(`${'${currentUserLocation.latitude}'},${'${currentUserLocation.longitude}'}`);
+    else toast({ variant: "destructive", title: "Ubicación no disponible", description: "No hemos podido obtener tu ubicación GPS." });
   }, [currentUserLocation, toast, getCurrentLocation]);
   
   const clearSearchHistory = () => {
@@ -240,81 +193,35 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
   };
   
   const getUserMetrics = useCallback((userId: string, userType: User['type'], allTransactions: Transaction[]) => {
-    const relevantTransactions = allTransactions.filter(tx => 
-        (tx.clientId === userId || tx.providerId === userId) && ['Pagado', 'Resuelto'].includes(tx.status)
-    );
-
-    const reputation = relevantTransactions.reduce((acc, tx) => {
-        const rating = userType === 'provider' ? tx.details.clientRating : tx.details.providerRating;
-        return rating ? acc + rating : acc;
-    }, 0) / (relevantTransactions.filter(tx => (userType === 'provider' ? tx.details.clientRating : tx.details.providerRating)).length || 1);
-
+    const relevantTransactions = allTransactions.filter(tx => (tx.clientId === userId || tx.providerId === userId) && ['Pagado', 'Resuelto'].includes(tx.status));
+    const reputation = relevantTransactions.reduce((acc, tx) => (userType === 'provider' ? tx.details.clientRating : tx.details.providerRating) ? acc + (userType === 'provider' ? tx.details.clientRating! : tx.details.providerRating!) : acc, 0) / (relevantTransactions.filter(tx => userType === 'provider' ? tx.details.clientRating : tx.details.providerRating).length || 1);
     const totalDeals = allTransactions.filter(tx => tx.clientId === userId || tx.providerId === userId).length;
     const effectiveness = (relevantTransactions.length / (totalDeals || 1)) * 100;
-    
-    const paymentConfirmations = allTransactions
-        .filter(tx => tx.providerId === userId && tx.details.paymentSentAt && tx.details.paymentConfirmationDate)
-        .map(tx => differenceInMilliseconds(new Date(tx.details.paymentConfirmationDate!), new Date(tx.details.paymentSentAt!)));
-    
-    const averagePaymentTimeMs = paymentConfirmations.length > 0
-        ? paymentConfirmations.reduce((a, b) => a + b, 0) / paymentConfirmations.length
-        : 0;
-        
+    const paymentConfirmations = allTransactions.filter(tx => tx.providerId === userId && tx.details.paymentSentAt && tx.details.paymentConfirmationDate).map(tx => differenceInMilliseconds(new Date(tx.details.paymentConfirmationDate!), new Date(tx.details.paymentSentAt!)));
+    const averagePaymentTimeMs = paymentConfirmations.length > 0 ? paymentConfirmations.reduce((a, b) => a + b, 0) / paymentConfirmations.length : 0;
     return { reputation: isNaN(reputation) ? 5 : reputation, effectiveness: isNaN(effectiveness) ? 100 : effectiveness, averagePaymentTimeMs };
   }, []);
   
-  const getAgendaEvents = useCallback((transactions: Transaction[]) => {
-      return transactions.filter(tx => ['Finalizado - Pendiente de Pago', 'Cita Solicitada'].includes(tx.status)).map(tx => ({
-          date: new Date(tx.date),
-          type: tx.status === 'Finalizado - Pendiente de Pago' ? 'payment' : 'appointment',
-          title: tx.details.serviceName || tx.details.system || 'Evento',
-          transactionId: tx.id,
-      }));
-  }, []);
+  const getAgendaEvents = useCallback((transactions: Transaction[]) => transactions.filter(tx => ['Finalizado - Pendiente de Pago', 'Cita Solicitada'].includes(tx.status)).map(tx => ({ date: new Date(tx.date), type: tx.status === 'Finalizado - Pendiente de Pago' ? 'payment' : 'appointment', title: tx.details.serviceName || tx.details.system || 'Evento', transactionId: tx.id })), []);
 
   const value: AuthContextValue = {
-    currentUser,
-    firebaseUser,
-    isLoadingAuth,
-    logout,
-    setCurrentUser,
-    contacts,
-    addContact,
-    removeContact,
-    isContact,
-    users,
-    transactions,
-    setTransactions,
-    allPublications,
-    setAllPublications,
-    cart,
-    activeCartForCheckout,
-    setActiveCartForCheckout,
-    updateCartItem,
-    removeCart,
-    tempRecipientInfo,
-    setTempRecipientInfo,
-    deliveryAddress,
-    setDeliveryAddress,
-    setDeliveryAddressToCurrent,
-    currentUserLocation,
-    getCurrentLocation,
-    searchQuery,
-    setSearchQuery,
-    categoryFilter,
-    setCategoryFilter,
-    searchHistory,
-    clearSearchHistory,
-    notifications,
-    conversations,
-    qrSession,
-    getUserMetrics,
-    getAgendaEvents,
+    currentUser, firebaseUser, isLoadingAuth: isLoading, logout, setCurrentUser, contacts, addContact, removeContact, isContact, users, transactions, setTransactions, allPublications, setAllPublications, cart, activeCartForCheckout, setActiveCartForCheckout, updateCartItem, removeCart, tempRecipientInfo, setTempRecipientInfo, deliveryAddress, setDeliveryAddress, setDeliveryAddressToCurrent, currentUserLocation, getCurrentLocation, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, searchHistory, clearSearchHistory, notifications, conversations, qrSession, getUserMetrics, getAgendaEvents
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Once loading is false, we can make a decision based on currentUser
+  const isFullyAuthenticated = currentUser && currentUser.isInitialSetupComplete;
 
   return (
     <AuthContext.Provider value={value}>
-        {children}
+      {isFullyAuthenticated ? <AppLayout>{children}</AppLayout> : children}
     </AuthContext.Provider>
   );
 };

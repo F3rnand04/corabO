@@ -28,7 +28,15 @@ export default async function RootLayout({
       const auth = getFirebaseAuth();
       const decodedToken = await auth.verifySessionCookie(sessionCookie, true);
       const firebaseUser = await auth.getUser(decodedToken.uid);
-      initialUser = await getOrCreateUser(firebaseUser);
+      // We pass the full Firebase user object to getOrCreateUser
+      initialUser = await getOrCreateUser({
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+        displayName: firebaseUser.displayName,
+        photoURL: firebaseUser.photoURL,
+        phoneNumber: firebaseUser.phoneNumber,
+        emailVerified: firebaseUser.emailVerified
+      });
     } catch (error) {
       // Session cookie is invalid. No need to log, user is just not logged in.
       initialUser = null;
