@@ -1,5 +1,7 @@
+
 'use client';
 
+import Image from 'next/image';
 import { Button } from './ui/button';
 import { Forward } from 'lucide-react';
 
@@ -12,9 +14,11 @@ export function LocationBubble({ lat, lon, onForward }: { lat: number, lon: numb
     <div className="flex flex-col items-center w-full my-2">
       <a href={mapUrl} target="_blank" rel="noopener noreferrer" className="block w-full max-w-sm rounded-lg border bg-background shadow-md p-0.5 space-y-1 overflow-hidden group">
         <div className="relative aspect-video w-full">
-           <img
+           <Image
               src={staticMapImageUrl}
               alt="Mapa de ubicación"
+              width={400}
+              height={200}
               className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
               data-ai-hint="map location"
             />

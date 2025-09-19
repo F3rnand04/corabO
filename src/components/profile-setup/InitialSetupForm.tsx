@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect, memo } from 'react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -116,7 +117,7 @@ export default function InitialSetupForm({ user, onSubmit, isSubmitting }: Initi
   return (
     <Card className="w-full max-w-md shadow-lg border-none bg-background">
       <CardHeader className="text-center items-center">
-        <img src="https://i.postimg.cc/YSNBv5DT/logo-light-png.png" alt="Corabo Logo" className="h-24 mb-4" />
+        <Image src="https://i.postimg.cc/YSNBv5DT/logo-light-png.png" alt="Corabo Logo" width={192} height={96} className="h-24 w-auto mb-4" />
         <CardTitle className="text-2xl">¡Bienvenido a Corabo!</CardTitle>
         <CardDescription>
           Completa tus datos para activar todas las funciones de la plataforma.

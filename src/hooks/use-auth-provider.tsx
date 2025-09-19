@@ -192,7 +192,7 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
   }, [currentUser?.contacts]);
   
   const updateCartItem = useCallback(async (product: Product, quantity: number) => {
-      if (!currentUser || !db) return;
+      if (!currentUser) return;
       
       const newCart = [...cart];
       const itemIndex = newCart.findIndex(item => item.product.id === product.id);
@@ -208,16 +208,16 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
       const userRef = doc(db, 'users', currentUser.id);
       await updateDoc(userRef, { cart: newCart });
 
-  }, [cart, currentUser, db]);
+  }, [cart, currentUser]);
 
   const removeCart = useCallback(async (itemsToRemove: CartItem[]) => {
-      if (!currentUser || !db) return;
+      if (!currentUser) return;
       const idsToRemove = itemsToRemove.map(item => item.product.id);
       const newCart = cart.filter(item => !idsToRemove.includes(item.product.id));
       setCart(newCart);
       const userRef = doc(db, 'users', currentUser.id);
       await updateDoc(userRef, { cart: newCart });
-  }, [cart, currentUser, db]);
+  }, [cart, currentUser]);
 
   const setDeliveryAddressToCurrent = useCallback(() => {
     getCurrentLocation();

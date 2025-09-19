@@ -23,14 +23,14 @@ export function PublicationComments({ publicationId, ownerId }: PublicationComme
     const [newComment, setNewComment] = useState("");
 
     useEffect(() => {
-        if (!publicationId || !db) return;
+        if (!publicationId) return;
         
         const unsub = onSnapshot(doc(db, "publications", publicationId), (doc) => {
             setPublication(doc.data() as GalleryImage);
         });
 
         return () => unsub();
-    }, [publicationId, db]);
+    }, [publicationId]);
 
     const handlePostComment = () => {
         if (newComment.trim() && publication && currentUser) {

@@ -17,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { updateGalleryImage, removeGalleryImage } from '@/lib/actions/publication.actions';
 import { useToast } from '@/hooks/use-toast';
-import { db } from '@/lib/firebase';
+import { db } from '@/lib/firebase-client';
 
 
 function EditPublicationDialog({ publication, onOpenChange }: { publication: GalleryImage, onOpenChange: (open: boolean) => void }) {
@@ -97,7 +97,7 @@ export default function PublicationPage() {
 
         return () => unsub();
 
-    }, [publicationId, db]);
+    }, [publicationId]);
 
     const handleDelete = async () => {
         if (!publication || !currentUser) return;

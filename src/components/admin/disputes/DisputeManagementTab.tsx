@@ -97,7 +97,7 @@ export function DisputeManagementTab({ selectedCountry }: DisputeManagementTabPr
       setContentReports(snapshot.docs.map(doc => doc.data() as ContentReport));
     });
     return () => unsubscribe();
-  }, [db]);
+  }, []);
 
 
   const disputeCases = useMemo(() => {
@@ -215,7 +215,7 @@ export function DisputeManagementTab({ selectedCountry }: DisputeManagementTabPr
             <CardHeader>
                 <CardTitle>Gestión de Disputas y Reclamos</CardTitle>
                 <CardDescription>
-                Media en las transacciones marcadas como "En Disputa" para llegar a una resolución.
+                Media en las transacciones marcadas como &quot;En Disputa&quot; para llegar a una resolución.
                 </CardDescription>
             </CardHeader>
             <CardContent>

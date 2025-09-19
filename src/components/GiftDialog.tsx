@@ -3,6 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import {
   Dialog,
   DialogContent,
@@ -66,7 +67,7 @@ export function GiftDialog({ isOpen, onOpenChange }: GiftDialogProps) {
                             onClick={() => setSelectedGift(gift)}
                         >
                             <div className="relative w-16 h-16 mx-auto mb-2">
-                                <img src={gift.icon} alt={gift.name} className="object-contain w-full h-full" />
+                                <Image src={gift.icon} alt={gift.name} width={64} height={64} className="object-contain" />
                             </div>
                             <p className="font-bold">{gift.name}</p>
                             <p className="text-sm font-semibold text-primary">${gift.price.toFixed(2)}</p>

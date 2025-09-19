@@ -1,6 +1,8 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import type { Message } from '@/lib/types';
@@ -36,7 +38,7 @@ export function MessageBubble({ msg, isCurrentUser, onAccept, canAcceptProposal,
         return (
             <div className={cn("flex flex-col items-end gap-2 max-w-[85%] w-fit", isCurrentUser ? "ml-auto" : "mr-auto")}>
                  <a href={msg.media.url} target="_blank" rel="noopener noreferrer" className="block relative w-64 aspect-square rounded-lg overflow-hidden border bg-background shadow-md group">
-                    <img src={msg.media.url} alt="Imagen adjunta" className="object-cover w-full h-full" />
+                    <Image src={msg.media.url} alt="Imagen adjunta" width={256} height={256} className="object-cover w-full h-full" />
                  </a>
                  <div className={cn("text-xs", isCurrentUser ? "text-primary-foreground/70" : "text-muted-foreground/70")}>{formattedTime || '...'}</div>
             </div>
