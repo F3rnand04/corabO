@@ -31,7 +31,6 @@ export async function createCashierBoxFlow(input: CreateCashierBoxInput): Promis
         const qrDataURL = await QRCode.toDataURL(qrValue, {
             errorCorrectionLevel: 'H',
             type: 'image/png',
-            quality: 0.92,
             margin: 1,
         });
 
@@ -62,7 +61,6 @@ export async function regenerateCashierQrFlow(input: RegenerateQrInput): Promise
         const newQrDataURL = await QRCode.toDataURL(newQrValue, {
             errorCorrectionLevel: 'H',
             type: 'image/png',
-            quality: 0.92,
             margin: 1,
         });
 
