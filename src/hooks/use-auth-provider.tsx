@@ -7,7 +7,7 @@ import type { User, Transaction, GalleryImage, CartItem, Product, TempRecipientI
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase-client';
 import { addContactToUser, removeContactFromUser, updateCartInFirestore } from '@/lib/actions/user.actions';
-import { createSessionCookie, clearSessionCookie, getOrCreateUser } from '@/lib/actions/auth.actions';
+import { clearSessionCookie } from '@/lib/actions/auth.actions';
 import { collection, doc, onSnapshot, query, where } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import { differenceInMilliseconds } from 'date-fns';
@@ -112,8 +112,9 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
   
   const logout = useCallback(async () => {
     try {
-        await signOut(auth); // Sign out from client
-        router.push('/api/auth/logout'); // Hit API route to clear server cookie
+        await signOut(auth);
+        await clearSessionCookie();
+        router.refresh();
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cerrar la sesión.' });
     }

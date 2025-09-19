@@ -7,7 +7,7 @@ import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { signInWithCustomToken } from 'firebase/auth';
 import { auth } from '@/lib/firebase-client';
-import { signInAsGuest } from '@/lib/actions/auth.actions';
+import { signInAsGuest, createSessionCookie } from '@/lib/actions/auth.actions';
 
 export default function LoginPage() {
   const { toast } = useToast();
@@ -18,9 +18,9 @@ export default function LoginPage() {
     try {
         const response = await signInAsGuest();
         if (response.customToken) {
-            // signInWithCustomToken will trigger onIdTokenChanged in AuthProvider
-            await signInWithCustomToken(auth, response.customToken);
-            // After token is set, reload the page to let the server-side session take over
+            const userCredential = await signInWithCustomToken(auth, response.customToken);
+            const idToken = await userCredential.user.getIdToken();
+            await createSessionCookie(idToken);
             window.location.reload();
         } else {
             throw new Error(response.error || "No se pudo obtener el token de invitado.");
