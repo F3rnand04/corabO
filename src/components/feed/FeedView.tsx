@@ -3,7 +3,7 @@
 
 import { useMemo, useEffect, useState, useCallback, useRef } from 'react';
 import type { GalleryImage } from '@/lib/types';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-provider';
 import { ActivationWarning } from '@/components/ActivationWarning';
 import { PublicationCard } from '@/components/PublicationCard';
 import { Skeleton } from '@/components/ui/skeleton';

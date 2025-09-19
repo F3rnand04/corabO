@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import type { GalleryImage, User } from "@/lib/types";
 import { Star, Bookmark, Send, MessageCircle, Flag, CheckCircle, MapPin, Plus, Heart } from "lucide-react";
 import Link from "next/link";
-import { useCorabo } from "@/hooks/use-corabo";
+import { useAuth } from "@/hooks/use-auth-provider";
 import { useState, useEffect, useMemo } from "react";
 import { ReportDialog } from "./ReportDialog";
 import { cn } from "@/lib/utils";
@@ -26,7 +26,7 @@ interface PublicationCardProps {
 }
 
 export function PublicationCard({ publication, className }: PublicationCardProps) {
-    const { isContact, currentUser, addContact, transactions } = useCorabo();
+    const { isContact, currentUser, addContact, transactions } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
     

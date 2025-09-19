@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useCorabo } from "@/hooks/use-corabo";
+import { useAuth } from "@/hooks/use-auth-provider";
 import { useToast } from '@/hooks/use-toast';
 import { UploadCloud, X, Image as ImageIcon, Video, PackagePlus, Loader2, Crop, RotateCw, Check } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
@@ -113,7 +113,7 @@ interface UploadDialogProps {
 }
 
 export function UploadDialog({ isOpen, onOpenChange }: UploadDialogProps) {
-  const { currentUser } = useCorabo();
+  const { currentUser } = useAuth();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
