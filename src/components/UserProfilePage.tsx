@@ -2,10 +2,10 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCorabo } from '@/contexts/CoraboContext';
+import { useAuth } from '@/hooks/use-auth';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, MessageCircle, CheckCircle, Flag, Package, Hand, MoreHorizontal, Wallet, Megaphone, Zap, Timer, TrendingUp, UserRoundCog, BrainCircuit, Wrench, Car, Scissors, Home as HomeIcon, Utensils, Briefcase, Building, Users, Search, Loader2, Handshake } from 'lucide-react';
+import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, MessageCircle, CheckCircle, Flag, Package, Hand, MoreHorizontal, Wallet, Megaphone, Zap, Timer, TrendingUp, UserRoundCog, BrainCircuit, Wrench, Car, Scissors, Home as HomeIcon, Utensils, Briefcase, Building, Users, Search, Loader2, Handshake, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
@@ -27,12 +27,12 @@ import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { getFirestoreDb } from '@/lib/firebase';
+import { getFirestoreInstance } from '@/lib/firebase-client';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { getPublicProfile, getProfileGallery, getProfileProducts } from '@/lib/actions/feed.actions';
 import { createAppointmentRequest } from '@/lib/actions/transaction.actions';
 import { sendMessage } from '@/lib/actions/messaging.actions';
-import { toggleGps } from '@/lib/actions/user.actions';
+import { toggleGps, addContactToUser } from '@/lib/actions/user.actions';
 import { ProfileGalleryView } from './ProfileGalleryView';
 import { CampaignDialog } from './CampaignDialog';
 import { SubscriptionDialog } from './SubscriptionDialog';
@@ -125,7 +125,7 @@ function ProfileStats({ metrics, isNew }: { metrics: any, isNew: boolean }) {
 
 
 export function UserProfilePage({ userId }: { userId: string}) {
-  const { currentUser, users, transactions, isContact, addContact, currentUserLocation } = useCorabo();
+  const { currentUser, users, transactions, isContact, addContact, currentUserLocation } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -193,7 +193,7 @@ export function UserProfilePage({ userId }: { userId: string}) {
 
   useEffect(() => {
     if (provider?.profileSetupData?.providerType === 'company') {
-      const db = getFirestoreDb();
+      const db = getFirestoreInstance();
       const q = query(collection(db, 'affiliations'), where('companyId', '==', provider.id), where('status', '==', 'approved'));
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const professionalIds = snapshot.docs.map(doc => (doc.data() as Affiliation).providerId);
@@ -333,15 +333,14 @@ export function UserProfilePage({ userId }: { userId: string}) {
                 <ProfileStats metrics={{ reputation, effectiveness, responseTime }} isNew={isNewProvider} />
               </div>
               <div className="flex flex-col items-end gap-2 shrink-0">
-                 {!isSelfProfile && <Button variant="link" size="sm" className="p-0 h-auto text-primary hover:text-primary/80 font-semibold text-xs" onClick={() => {}}>Contactar</Button>}
+                 {!isSelfProfile && <Button variant="link" size="sm" className="p-0 h-auto text-primary hover:text-primary/80 font-semibold text-xs" onClick={() => sendMessage({recipientId: provider.id, text: `¡Hola! Me interesa tu perfil.`, conversationId: [currentUser!.id, provider.id].sort().join('-'), senderId: currentUser!.id}).then(id => router.push(`/messages/${id}`))}>Contactar</Button>}
                  <div className="flex items-center gap-2">
                     <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground" onClick={() => isSelfProfile && toggleGps(provider.id)}><MapPin className={cn("h-5 w-5", provider.isGpsActive ? "text-green-500" : "text-muted-foreground")} /></Button>
                     <Popover>
                         <PopoverTrigger asChild><Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground"><Calendar className="w-5 h-5"/></Button></PopoverTrigger>
                         <PopoverContent className="w-auto p-0"><CalendarComponent mode="multiple" selected={eventDates} onDayClick={handleDateSelect} disabled={[{ dayOfWeek: disabledDays }, { before: new Date() }]} /></PopoverContent>
                     </Popover>
-                    {isSelfProfile ? <Button asChild variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground"><Link href="/transactions"><Wallet className="w-5 h-5"/></Link></Button> : <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground" onClick={() => sendMessage({recipientId: provider.id, text: `¡Hola! Me interesa tu perfil.`, conversationId: [currentUser!.id, provider.id].sort().join('-'), senderId: currentUser!.id}).then(id => router.push(`/messages/${id}`))}><Send className="w-5 h-5"/></Button>}
-                    {isSelfProfile && <Button asChild variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground"><Link href="/profile-setup/details"><UserRoundCog className="w-5 h-5"/></Link></Button>}
+                    {isSelfProfile && <Button asChild variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground"><Link href="/transactions"><Wallet className="w-5 h-5"/></Link></Button>}
                  </div>
               </div>
             </div>
@@ -360,10 +359,69 @@ export function UserProfilePage({ userId }: { userId: string}) {
               <div className="flex items-center gap-2 mt-4">
                   {isProvider && !isCompany && <Button asChild variant="outline" className="flex-1"><Link href="/emprende"><Zap className="w-4 h-4 mr-2"/>Emprende por Hoy</Link></Button>}
                   {isCompany && <Button variant="outline" className="flex-1" onClick={() => setIsCampaignDialogOpen(true)}><Megaphone className="w-4 h-4 mr-2"/>Campañas</Button>}
-                  {isCompany && <Button asChild variant="outline" className="flex-1"><Link href="/admin"><Handshake className="w-4 h-4 mr-2"/>Talento</Link></Button>}
+                  {isCompany && <Button asChild variant="outline" className="flex-1"><Link href="/admin?tab=affiliations"><Handshake className="w-4 h-4 mr-2"/>Talento</Link></Button>}
               </div>
             )}
             
             {provider.activeAffiliation && (
                 <Link href={`/companies/${provider.activeAffiliation.companyId}`} className="group block mt-4">
-                    <div className="p-3 bg-muted/50 rounded-lg flex items-center gap-3 border hover:border-primary/50 transition-colors"><Avatar className="w-10 h-10 shrink-0"><AvatarImage src={provider.activeAffiliation.companyProfileImage} /><AvatarFallback>{provider.activeAffiliation.companyName.charAt(0)}</AvatarFallback></Avatar><div><p className="text-xs text-muted-foreground">Verificado por:</p><p className="font-semibold text-foreground group-hover:underline">{provider.activeAffiliation.comp
+                    <div className="p-3 bg-muted/50 rounded-lg flex items-center gap-3 border hover:border-primary/50 transition-colors"><Avatar className="w-10 h-10 shrink-0"><AvatarImage src={provider.activeAffiliation.companyProfileImage} /><AvatarFallback>{provider.activeAffiliation.companyName.charAt(0)}</AvatarFallback></Avatar><div><p className="text-xs text-muted-foreground">Verificado por:</p><p className="font-semibold text-foreground group-hover:underline">{provider.activeAffiliation.companyName}</p><p className="text-xs text-muted-foreground">{provider.activeAffiliation.companySpecialty}</p></div></div>
+                </Link>
+            )}
+
+            {!isSelfProfile && (
+              <div className="grid grid-cols-2 gap-2 mt-4">
+                <Button variant="outline" onClick={() => addContact(provider)}><Bookmark className="w-4 h-4 mr-2"/>Guardar</Button>
+                <Button onClick={() => sendMessage({recipientId: provider.id, text: `¡Hola! Me interesa tu perfil.`, conversationId: [currentUser!.id, provider.id].sort().join('-'), senderId: currentUser!.id}).then(id => router.push(`/messages/${id}`))}><MessageCircle className="w-4 h-4 mr-2"/>Mensaje</Button>
+              </div>
+            )}
+        </div>
+        
+        {/* Tabs for content */}
+        <div className="border-b mt-4 sticky top-[152px] z-20 bg-background/95 backdrop-blur-sm">
+            <div className="container flex justify-around">
+                {(offerType === 'service' || offerType === 'both' || !offerType) && <Button variant="ghost" className={cn("flex-1 rounded-none", activeTab === 'publications' && 'border-b-2 border-primary text-primary')} onClick={() => setActiveTab('publications')}>Publicaciones</Button>}
+                {(offerType === 'product' || offerType === 'both') && <Button variant="ghost" className={cn("flex-1 rounded-none", activeTab === 'catalog' && 'border-b-2 border-primary text-primary')} onClick={() => setActiveTab('catalog')}>Catálogo</Button>}
+                {isCompany && <Button variant="ghost" className={cn("flex-1 rounded-none", activeTab === 'team' && 'border-b-2 border-primary text-primary')} onClick={() => setActiveTab('team')}>Talento Asociado</Button>}
+            </div>
+        </div>
+
+        <div className="mt-4">
+             {activeTab === 'publications' && <ProfileGalleryView gallery={providerGallery} owner={provider} isLoading={isLoading} />}
+             
+             {activeTab === 'catalog' && (
+                <div className="space-y-4">
+                     <div className="px-4">
+                        <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" /><Input placeholder="Buscar en el catálogo..." className="pl-9" value={catalogSearchQuery} onChange={(e) => setCatalogSearchQuery(e.target.value)}/></div>
+                    </div>
+                    {isLoading ? <div className="text-center"><Loader2 className="w-6 h-6 animate-spin"/></div> : (
+                        filteredProducts.length > 0 ? <div className="grid grid-cols-2 gap-2 px-2">{filteredProducts.map(p => <ProductGridCard key={p.id} product={p} onDoubleClick={() => {setSelectedProduct(p); setIsProductDetailsDialogOpen(true);}} />)}</div> : <div className="text-center py-10 text-muted-foreground"><p>No se encontraron productos.</p></div>
+                    )}
+                </div>
+             )}
+
+             {activeTab === 'team' && isCompany && (
+                 <div className="px-4 space-y-3">
+                    {affiliatedProfessionals.length > 0 ? affiliatedProfessionals.map(prof => (
+                        <Link key={prof.id} href={`/companies/${prof.id}`}>
+                          <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted"><Avatar><AvatarImage src={prof.profileImage}/><AvatarFallback>{prof.name.charAt(0)}</AvatarFallback></Avatar><div><p className="font-semibold">{prof.name}</p><p className="text-sm text-muted-foreground">{prof.profileSetupData?.specialty}</p></div></div>
+                        </Link>
+                    )) : <div className="text-center py-10 text-muted-foreground"><p>Aún no tienes talento asociado.</p></div>}
+                 </div>
+             )}
+        </div>
+      </div>
+      <ProductDetailsDialog isOpen={isProductDetailsDialogOpen} onOpenChange={setIsProductDetailsDialogOpen} product={selectedProduct} />
+      <CampaignDialog isOpen={isCampaignDialogOpen} onOpenChange={setIsCampaignDialogOpen} />
+      <SubscriptionDialog isOpen={isSubscriptionDialogOpen} onOpenChange={setIsSubscriptionDialogOpen} />
+      <TransactionDetailsDialog isOpen={!!selectedTransaction} onOpenChange={() => setSelectedTransaction(null)} transaction={selectedTransaction} />
+       <AlertDialog open={isAppointmentDialogOpen} onOpenChange={setIsAppointmentDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader><AlertDialogTitle>Confirmar Solicitud de Cita</AlertDialogTitle><AlertDialogDescription>Estás a punto de solicitar una cita con {displayName} para el {appointmentDate ? format(appointmentDate, "PPP", { locale: es }) : ''}.</AlertDialogDescription></AlertDialogHeader>
+          <div className="py-4 space-y-2"><Label htmlFor="appt-details">Añade detalles sobre lo que necesitas (opcional)</Label><Textarea id="appt-details" value={appointmentDetails} onChange={(e) => setAppointmentDetails(e.target.value)} placeholder={appointmentPlaceholder} /></div>
+          <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={handleConfirmAppointment}>Confirmar Solicitud</AlertDialogAction></AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}

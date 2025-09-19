@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Home, PlaySquare, Search, MessageSquare, Upload, Settings, QrCode, ScanLine } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useCorabo } from '@/contexts/CoraboContext';
+import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { useState } from 'react';
 import { UploadDialog } from './UploadDialog';
@@ -14,7 +14,7 @@ import { UploadDialog } from './UploadDialog';
 export function Footer() {
   const pathname = usePathname();
   const router = useRouter();
-  const { currentUser } = useCorabo();
+  const { currentUser } = useAuth();
   const [isUploadOpen, setIsUploadOpen] = useState(false);
 
   if (!currentUser) {
@@ -22,12 +22,13 @@ export function Footer() {
   }
 
   const isProvider = currentUser.type === 'provider';
-  const isProfilePage = pathname.startsWith('/profile');
+  // Check if the current path is the user's own profile page
+  const isSelfProfilePage = pathname === `/profile` || pathname === `/companies/${currentUser.id}`;
 
-  const CentralButtonIcon = isProvider && isProfilePage ? Upload : ScanLine;
+  const CentralButtonIcon = isProvider && isSelfProfilePage ? Upload : ScanLine;
 
   const handleCentralButtonClick = () => {
-    if (isProvider && isProfilePage) {
+    if (isProvider && isSelfProfilePage) {
       setIsUploadOpen(true);
     } else {
       router.push(isProvider ? '/show-qr' : '/scan-qr');
@@ -35,23 +36,28 @@ export function Footer() {
   };
   
   const renderRightmostButton = () => {
-    let href = '/profile/publications';
-    let Icon = (
-        <Avatar className={cn("w-7 h-7", pathname.startsWith('/profile') && "border-2 border-primary")}>
-            <AvatarImage src={currentUser.profileImage} alt={currentUser.name} />
-            <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
-        </Avatar>
-    );
-
-    if (isProfilePage) {
-        Icon = <Settings className="w-6 h-6" />;
-        href = '/profile-setup/details'; 
+    // If it's the user's own profile page, show the settings gear
+    if (isSelfProfilePage) {
+        const setupPath = currentUser.profileSetupData?.providerType === 'company' 
+            ? '/profile-setup/company' 
+            : '/profile-setup/personal';
+      return (
+        <Link href={setupPath} passHref>
+          <Button variant="ghost" className="flex-col h-auto p-1 text-primary">
+            <Settings className="w-6 h-6" />
+          </Button>
+        </Link>
+      );
     }
     
+    // Otherwise, show the avatar linking to their profile
     return (
-      <Link href={href} passHref>
-        <Button variant="ghost" className={cn("flex-col h-auto p-1 text-muted-foreground hover:text-primary", pathname.startsWith('/profile') && "text-primary")}>
-          {Icon}
+      <Link href="/profile" passHref>
+        <Button variant="ghost" className={cn("flex-col h-auto p-1 text-muted-foreground hover:text-primary")}>
+          <Avatar className={cn("w-7 h-7")}>
+            <AvatarImage src={currentUser.profileImage} alt={currentUser.name} />
+            <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+          </Avatar>
         </Button>
       </Link>
     );
