@@ -1,12 +1,13 @@
 
+
 "use client";
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MapPin, FileText, Menu, Search, LogOut, User, Wallet, History as HistoryIcon, Shield, HelpCircle, Contact, ShoppingCart, ChevronDown, KeyRound, LogInIcon } from "lucide-react";
-import { useCorabo } from "@/contexts/CoraboContext";
-import { useAuth } from "@/components/auth/AuthProvider";
+import { useCorabo } from "@/hooks/use-corabo";
+import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {

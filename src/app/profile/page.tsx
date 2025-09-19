@@ -1,7 +1,8 @@
 
+
 'use client';
 
-import { useCorabo } from '@/contexts/CoraboContext';
+import { useCorabo } from '@/hooks/use-corabo';
 import { Loader2 } from 'lucide-react';
 import { UserProfilePage } from '@/components/UserProfilePage';
 

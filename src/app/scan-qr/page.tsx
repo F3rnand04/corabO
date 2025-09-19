@@ -1,5 +1,6 @@
 
 
+
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -7,7 +8,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, Zap, CameraOff, Loader2, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useCorabo } from '@/contexts/CoraboContext';
+import { useCorabo } from '@/hooks/use-corabo';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { startQrSession } from '@/lib/actions/cashier.actions';

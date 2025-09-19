@@ -1,9 +1,10 @@
 
+
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCorabo } from '@/contexts/CoraboContext';
+import { useCorabo } from '@/hooks/use-corabo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, CheckCircle, Handshake, AlertTriangle, Smartphone, Copy, Banknote, Star } from 'lucide-react';

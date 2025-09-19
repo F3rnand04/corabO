@@ -1,10 +1,11 @@
 
+
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, History, Search, Trash2 } from 'lucide-react';
-import { useCorabo } from '@/contexts/CoraboContext';
+import { useCorabo } from '@/hooks/use-corabo';
 import { Card, CardContent } from '@/components/ui/card';
 
 function SearchHistoryHeader() {
