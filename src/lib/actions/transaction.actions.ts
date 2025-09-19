@@ -17,10 +17,10 @@ import {
     processDirectPaymentFlow, 
     sendQuoteFlow, 
     startDisputeFlow, 
-    cancelSystemTransactionFlow,
-    acceptProposalFlow
+    cancelSystemTransactionFlow
 } from '@/ai/flows/transaction-flow';
 import { findDeliveryProviderFlow, resolveDeliveryAsPickupFlow } from '@/ai/flows/delivery-flow';
+import { acceptProposalFlow } from '@/ai/flows/message-flow';
 
 
 export async function createAppointmentRequest(request: AppointmentRequest) {
@@ -105,6 +105,6 @@ export async function createQuoteRequest(input: QuoteRequestInput): Promise<{ re
 
 export async function acceptProposal(conversationId: string, messageId: string, acceptorId: string) {
     await acceptProposalFlow({ conversationId, messageId, acceptorId });
-    revalidatePath(`/messages/${conversationId}`);
+    revalidatePath(`/messages/${'${conversationId}'}`);
     revalidatePath('/transactions');
 }

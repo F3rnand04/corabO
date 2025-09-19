@@ -12,7 +12,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, UploadCloud, X, CheckCircle, AlertTriangle, Sparkles, FileText } from 'lucide-react';
 import type { VerificationOutput, User } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { updateUser, autoVerifyIdWithAI } from '@/lib/actions/user.actions';
+import { updateUser } from '@/lib/actions/user.actions';
+import { autoVerifyIdWithAI } from '@/lib/actions/admin.actions';
 import { deleteField } from 'firebase/firestore';
 
 
@@ -177,10 +178,10 @@ export default function VerifyIdPage() {
                         ) : (
                             <>
                                <p className={verificationResult.idMatch ? 'text-green-600' : 'text-destructive'}>
-                                  <strong>Coincidencia de ID:</strong> {verificationResult.idMatch ? 'Exitosa' : `Fallida (Detectado: ${verificationResult.extractedId})`}
+                                  <strong>Coincidencia de ID:</strong> {verificationResult.idMatch ? 'Exitosa' : `Fallida (Detectado: ${'${verificationResult.extractedId}'})`}
                                </p>
                                <p className={verificationResult.nameMatch ? 'text-green-600' : 'text-destructive'}>
-                                  <strong>Coincidencia de Nombre:</strong> {verificationResult.nameMatch ? 'Exitosa' : `Fallida (Detectado: ${verificationResult.extractedName})`}
+                                  <strong>Coincidencia de Nombre:</strong> {verificationResult.nameMatch ? 'Exitosa' : `Fallida (Detectado: ${'${verificationResult.extractedName}'})`}
                                </p>
                             </>
                         )}
