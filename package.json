@@ -4,7 +4,7 @@
   "type": "module",
   "description": "Plataforma de conexión entre profesionales y clientes.",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next build && next start",
     "build": "next build",
     "start": "next start"
   },
