@@ -3,7 +3,7 @@
 
 import { useRef, ChangeEvent } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { useCorabo } from '@/contexts/CoraboContext';
+import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';

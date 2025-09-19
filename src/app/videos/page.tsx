@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useCorabo } from '@/contexts/CoraboContext';
+import { useCorabo } from '@/hooks/use-corabo';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Bookmark, Send, Star, MessageCircle } from 'lucide-react';

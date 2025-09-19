@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useCorabo } from '@/contexts/CoraboContext';
+import { useAuth } from '@/hooks/use-auth';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,7 @@ import { sendMessage } from '@/lib/actions/messaging.actions';
 import { approveAffiliation, rejectAffiliation, revokeAffiliation } from '@/lib/actions/affiliation.actions';
 
 export function AffiliationManagementTab() {
-  const { currentUser, users } = useCorabo();
+  const { currentUser, users } = useAuth();
   const [affiliations, setAffiliations] = useState<Affiliation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();

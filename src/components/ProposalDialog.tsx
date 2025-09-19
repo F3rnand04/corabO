@@ -23,7 +23,7 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { cn } from '@/lib/utils';
 import { Switch } from './ui/switch';
-import { useCorabo } from '@/contexts/CoraboContext';
+import { useAuth } from '@/hooks/use-auth';
 import { sendMessage } from '@/lib/actions/messaging.actions';
 
 
@@ -67,7 +67,7 @@ const placeholderMap: Record<string, { title: string; description: string }> = {
 };
 
 export function ProposalDialog({ isOpen, onOpenChange, conversationId }: ProposalDialogProps) {
-    const { currentUser } = useCorabo();
+    const { currentUser } = useAuth();
 
     const form = useForm<ProposalFormValues>({
         resolver: zodResolver(proposalSchema),

@@ -1,8 +1,7 @@
 
-
 'use client';
 
-import { useCorabo } from '@/contexts/CoraboContext';
+import { useAuth } from '@/hooks/use-auth';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { verifyCampaignPayment, sendNewCampaignNotifications } from '@/lib/actions/admin.actions';
 
 export function PaymentVerificationTab() {
-  const { transactions, users } = useCorabo();
+  const { transactions, users } = useAuth();
   const { toast } = useToast();
 
   const pendingPayments = transactions.filter(

@@ -5,7 +5,7 @@
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { useCorabo } from "@/contexts/CoraboContext";
+import { useAuth } from "@/hooks/use-auth";
 import type { Conversation, User } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from 'date-fns';
@@ -20,7 +20,7 @@ interface ConversationCardProps {
 }
 
 export function ConversationCard({ conversation, otherParticipant }: ConversationCardProps) {
-    const { currentUser } = useCorabo();
+    const { currentUser } = useAuth();
     const router = useRouter();
 
     if (!currentUser) return null;

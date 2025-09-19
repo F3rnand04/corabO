@@ -1,6 +1,7 @@
 
 'use server';
 
+import '@/ai/genkit';
 import { cookies } from 'next/headers';
 import { getFirebaseAuth } from '@/lib/firebase-admin';
 import type { FirebaseUserInput } from '@/lib/types';

@@ -1,8 +1,9 @@
+
 'use client';
 
 import type { Transaction, User } from "@/lib/types";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
-import { useCorabo } from "@/contexts/CoraboContext";
+import { useCorabo } from "@/hooks/use-corabo";
 import { TransactionItem } from "./TransactionItem";
 
 

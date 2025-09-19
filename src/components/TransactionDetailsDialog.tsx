@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, ReactNode } from 'react';
@@ -14,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "./ui/badge";
 import type { Transaction, User } from "@/lib/types";
-import { useCorabo } from "@/contexts/CoraboContext";
+import { useCorabo } from "@/hooks/use-corabo";
 import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert, Truck, Banknote, ClipboardCheck, CalendarCheck, Star, XCircle, FileText, Repeat } from "lucide-react";
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';

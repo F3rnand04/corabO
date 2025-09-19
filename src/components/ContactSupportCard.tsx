@@ -8,13 +8,13 @@ import { Mail, Phone, Instagram } from "lucide-react";
 import Link from 'next/link';
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { useCorabo } from "../contexts/CoraboContext";
+import { useAuth } from "../hooks/use-auth";
 import { sendMessage } from "@/lib/actions/messaging.actions";
 
 export function ContactSupportCard() {
     const { toast } = useToast();
     const router = useRouter();
-    const { currentUser } = useCorabo();
+    const { currentUser } = useAuth();
     
     const contactEmail = "corabo.app@gmail.com";
     const contactPhone = "+584128978405";

@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useCorabo } from '@/contexts/CoraboContext';
+import { useAuth } from '@/hooks/use-auth';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -15,7 +15,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { deleteUser, toggleUserPause } from '@/lib/actions/admin.actions';
 
 export function UserManagementTab() {
-  const { users } = useCorabo();
+  const { users } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredUsers = users.filter(u => 

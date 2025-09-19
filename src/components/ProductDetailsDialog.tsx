@@ -15,7 +15,7 @@ import { Input } from './ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Separator } from './ui/separator';
 import type { Product, GalleryImageComment, User } from '@/lib/types';
-import { useCorabo } from '@/contexts/CoraboContext';
+import { useAuth } from '@/hooks/use-auth';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -31,7 +31,7 @@ interface ProductDetailsDialogProps {
 }
 
 export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductDetailsDialogProps) {
-  const { currentUser, cart } = useCorabo();
+  const { currentUser, cart } = useAuth();
   const { toast } = useToast();
   const [newComment, setNewComment] = useState("");
   // Comments are now managed locally for this dialog

@@ -6,7 +6,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MapPin, FileText, Menu, Search, LogOut, User, Wallet, History as HistoryIcon, Shield, HelpCircle, Contact, ShoppingCart, ChevronDown, KeyRound, LogInIcon } from "lucide-react";
-import { useCorabo } from "@/hooks/use-corabo";
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -46,7 +45,7 @@ const serviceGroups = [
 
 
 export function Header() {
-  const { cart, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, currentUser } = useCorabo();
+  const { cart, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, currentUser } = useAuth();
   const { logout } = useAuth();
   const router = useRouter();
 

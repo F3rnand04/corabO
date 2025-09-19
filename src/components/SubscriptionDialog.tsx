@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -12,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Check, CheckCircle, Star, Info } from 'lucide-react';
-import { useCorabo } from "@/contexts/CoraboContext";
+import { useAuth } from '@/hooks/use-auth';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { cn } from '@/lib/utils';
@@ -70,7 +71,7 @@ const plans = {
 
 
 export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogProps) {
-  const { currentUser } = useCorabo();
+  const { currentUser } = useAuth();
   const [paymentCycle, setPaymentCycle] = useState<'monthly' | 'annually'>('monthly');
 
   if (!currentUser) {

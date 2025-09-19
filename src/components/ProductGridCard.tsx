@@ -5,7 +5,7 @@
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Plus, Heart, MessageCircle, Minus } from "lucide-react";
-import { useCorabo } from "@/contexts/CoraboContext";
+import { useAuth } from "@/hooks/use-auth";
 import type { Product } from "@/lib/types";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -18,7 +18,7 @@ interface ProductGridCardProps {
 }
 
 export function ProductGridCard({ product, onDoubleClick }: ProductGridCardProps) {
-    const { currentUser, cart } = useCorabo();
+    const { currentUser, cart } = useAuth();
     const { toast } = useToast();
     const [likeCount, setLikeCount] = useState(0);
     const [isLiked, setIsLiked] = useState(false);
