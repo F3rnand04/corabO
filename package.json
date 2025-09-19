@@ -4,9 +4,10 @@
   "type": "module",
   "description": "Plataforma de conexión entre profesionales y clientes.",
   "scripts": {
-    "dev": "next build && next start",
+    "dev": "npm run clean && next build && next start",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "clean": "rm -rf .next"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.1.0",
