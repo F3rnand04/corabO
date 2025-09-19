@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { signInWithCustomToken } from 'firebase/auth';
-import { auth } from '@/lib/firebase-client';
-import { signInAsGuest, createSessionCookie } from '@/lib/actions/auth.actions';
+import { signInWithCustomToken, signInWithRedirect } from 'firebase/auth';
+import { auth, googleProvider } from '@/lib/firebase-client';
+import { signInAsGuest, createSessionCookie, getOrCreateUser } from '@/lib/actions/auth.actions';
 import { useAuth } from '@/hooks/use-auth-provider';
 import GoogleIcon from '@/components/GoogleIcon';
 
@@ -22,11 +22,20 @@ export default function LoginPage() {
         const response = await signInAsGuest();
         if (response.customToken) {
             const userCredential = await signInWithCustomToken(auth, response.customToken);
-            const idToken = await userCredential.user.getIdToken();
+            // After signing in with custom token, get the user and create the session cookie.
+            const firebaseUser = userCredential.user;
+            await getOrCreateUser({
+                uid: firebaseUser.uid,
+                email: firebaseUser.email,
+                displayName: firebaseUser.displayName,
+                photoURL: firebaseUser.photoURL,
+                emailVerified: firebaseUser.emailVerified,
+            });
+            const idToken = await firebaseUser.getIdToken();
             await createSessionCookie(idToken);
             // The AuthProvider will detect the user and handle the redirect,
             // but a reload can ensure everything is synchronized.
-            window.location.reload(); 
+            window.location.href = '/'; 
         } else {
             throw new Error(response.error || "No se pudo obtener el token de invitado.");
         }
@@ -41,9 +50,22 @@ export default function LoginPage() {
     }
   };
   
-  const handleGoogleLogin = () => {
-    // Simply redirect to our server-side API route to handle the OAuth flow
-    window.location.href = '/api/auth/google';
+  const handleGoogleLogin = async () => {
+    setIsProcessingLogin(true);
+    try {
+        // This initiates the REAL Google Sign-In popup/redirect flow.
+        await signInWithRedirect(auth, googleProvider);
+        // The rest of the logic is handled by the onAuthStateChanged listener
+        // in AuthProvider after the user is redirected back.
+    } catch (error: any) {
+        console.error("Google Sign-In Error:", error);
+        toast({
+          variant: "destructive",
+          title: "Error de Google",
+          description: error.message || "No se pudo iniciar sesión con Google.",
+        });
+        setIsProcessingLogin(false);
+    }
   };
   
   // Show a loader if either the main auth provider is loading or a specific login action is processing.

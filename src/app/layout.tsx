@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/hooks/use-auth-provider';
+import ClientLayout from './ClientLayout'; // Import ClientLayout
 
 const inter = Inter({
   subsets: ['latin'],
@@ -19,7 +20,9 @@ export default function RootLayout({
       <body className={`${inter.variable} antialiased bg-background`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <AuthProvider>
-                {children}
+                <ClientLayout>
+                  {children}
+                </ClientLayout>
                 <Toaster />
             </AuthProvider>
         </ThemeProvider>

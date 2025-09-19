@@ -6,6 +6,7 @@ import { cookies } from 'next/headers';
 import { getFirebaseAuth } from '@/lib/firebase-admin';
 import type { FirebaseUserInput } from '@/lib/types';
 import { getOrCreateUserFlow } from '@/ai/flows/auth-flow';
+import { revalidatePath } from 'next/cache';
 
 /**
  * Securely signs in a user as a guest by generating a custom token on the server.
@@ -55,5 +56,7 @@ export async function clearSessionCookie() {
 }
 
 export async function getOrCreateUser(firebaseUser: FirebaseUserInput) {
-    return await getOrCreateUserFlow(firebaseUser);
+    const user = await getOrCreateUserFlow(firebaseUser);
+    revalidatePath('/'); // Revalidate the path to reflect changes
+    return user;
 }

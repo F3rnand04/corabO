@@ -1,20 +1,11 @@
-
 'use client';
 
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator, GoogleAuthProvider } from 'firebase/auth';
-import { getFirestore, connectFirestoreEmulator, getFirestore as getFirestoreInstance } from 'firebase/firestore';
+import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
+import { firebaseConfig } from './firebase-config';
 
-const firebaseConfig = {
-  "projectId": "corabo-demo",
-  "appId": "1:220291714642:web:3aca123e39a92f16c0998b",
-  "storageBucket": "corabo-demo.appspot.com",
-  "apiKey": "AIzaSyAOZ9eRQz1Sry6pdLNwCVZ3QNsr1pZgHnQ",
-  "authDomain": "corabo-demo.firebaseapp.com",
-  "measurementId": "G-CYN8E0S2VZ",
-  "messagingSenderId": "220291714642"
-};
 
 // --- Firebase App Initialization (Singleton) ---
 function initializeFirebaseApp() {
@@ -24,10 +15,11 @@ function initializeFirebaseApp() {
     return initializeApp(firebaseConfig);
 }
 
-const app = initializeFirebaseApp();
-const auth = getAuth(app);
-const db = getFirestore(app);
+const app: FirebaseApp = initializeFirebaseApp();
+const auth: Auth = getAuth(app);
+const db: Firestore = getFirestore(app);
 const storage = getStorage(app);
+const googleProvider = new GoogleAuthProvider();
 
 
 // --- Emulator Connection for Local Development ---
@@ -51,5 +43,4 @@ if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
 }
 
 
-export { app, auth, db, storage, getFirestoreInstance };
-
+export { app, auth, db, storage, googleProvider };
