@@ -37,5 +37,4 @@ export const ai = genkit({
   plugins: [
     googleAI(),
   ],
-  enableTracingAndMetrics: false,
 });
