@@ -5,7 +5,7 @@ import '@/ai/genkit';
 import { revalidatePath } from 'next/cache';
 import type { FirebaseUserInput, ProfileSetupData, User } from '@/lib/types';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import { getOrCreateUserFlow, completeInitialSetupFlow } from '@/ai/flows/auth-flow';
+import { completeInitialSetupFlow } from '@/ai/flows/auth-flow';
 import { checkIdUniquenessFlow, deleteUserFlow, toggleGpsFlow, updateUserFlow } from '@/ai/flows/profile-flow';
 import { sendWelcomeToProviderNotificationFlow } from '@/ai/flows/notification-flow';
 import { autoVerifyIdWithAIFlow } from '@/ai/flows/verification-flow';

@@ -4,8 +4,11 @@
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function NotFound() {
+  const router = useRouter();
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background text-center px-4">
       <div className="relative w-48 h-24 mx-auto mb-6">
@@ -25,11 +28,9 @@ export default function NotFound() {
       <p className="mt-2 text-sm text-muted-foreground">
         Es posible que el enlace esté roto o que la página haya sido eliminada.
       </p>
-      <Link href="/">
-        <Button className="mt-8">
-          Volver a la Página Principal
-        </Button>
-      </Link>
+      <Button className="mt-8" onClick={() => router.push('/')}>
+        Volver a la Página Principal
+      </Button>
     </div>
   )
 }

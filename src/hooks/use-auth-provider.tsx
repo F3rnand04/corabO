@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { signOut } from 'firebase/auth';
 import type { User, Transaction, GalleryImage, CartItem, Product, TempRecipientInfo, QrSession, Notification, Conversation } from '@/lib/types';
 import type { User as FirebaseUser } from 'firebase/auth';
@@ -13,7 +13,6 @@ import { haversineDistance } from '@/lib/utils';
 import { differenceInMilliseconds } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { AuthContext, type AuthContextValue } from './use-auth';
-import { AppLayout } from '@/app/AppLayout';
 
 interface AuthProviderProps {
   initialUser: User | null;
@@ -24,8 +23,10 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
   const [currentUser, setCurrentUser] = useState<User | null>(initialUser);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(auth.currentUser);
 
-  // isLoadingAuth is now simply about whether the client has hydrated, which it has by the time this runs.
-  const isLoadingAuth = false;
+  // isLoadingAuth is now simply about whether the component has mounted on the client.
+  const [isClient, setIsClient] = useState(false);
+  useEffect(() => setIsClient(true), []);
+  const isLoadingAuth = !isClient;
 
   const { toast } = useToast();
   const router = useRouter();
@@ -123,12 +124,13 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
       await signOut(auth);
       await clearSessionCookie();
       setCurrentUser(null);
-      window.location.href = '/'; 
+      // No need to force reload, Next.js Router will handle the state change
+      router.push('/login'); 
     } catch (error: any) {
       console.error("Error during logout:", error);
       toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cerrar la sesión.' });
     }
-  }, [toast]);
+  }, [toast, router]);
   
   const getCurrentLocation = useCallback(() => {
     if (typeof window !== 'undefined' && navigator.geolocation) {
@@ -312,9 +314,7 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
 
   return (
     <AuthContext.Provider value={value}>
-        <AppLayout>
-            {children}
-        </AppLayout>
+        {children}
     </AuthContext.Provider>
   );
 };

@@ -5,18 +5,16 @@ import { usePathname } from 'next/navigation';
 import { Footer } from '@/components/Footer';
 import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/use-auth';
-import LoginPage from './login/page';
-import { Loader2 } from 'lucide-react';
 
 // This component now ONLY wraps the authenticated parts of the app.
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { currentUser } = useAuth();
   const pathname = usePathname();
   
-  // If there's no user, we don't render the main layout.
-  // The root page component will handle showing the LoginPage.
+  // This layout assumes a user is present, as decided by the page component.
   if (!currentUser) {
-    return <>{children}</>;
+    // This should ideally not happen if routing is correct, but acts as a safeguard.
+    return null;
   }
   
   const hideHeaderForPaths = [

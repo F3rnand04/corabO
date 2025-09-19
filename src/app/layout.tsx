@@ -4,7 +4,6 @@ import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/hooks/use-auth-provider';
-import { AppLayout } from './AppLayout';
 import { cookies } from 'next/headers';
 import { getFirebaseAuth } from '@/lib/firebase-admin';
 import type { User } from '@/lib/types';
@@ -31,7 +30,7 @@ export default async function RootLayout({
       const firebaseUser = await auth.getUser(decodedToken.uid);
       initialUser = await getOrCreateUser(firebaseUser);
     } catch (error) {
-      console.log('Session cookie verification failed:', error);
+      // Session cookie is invalid. No need to log, user is just not logged in.
       initialUser = null;
     }
   }

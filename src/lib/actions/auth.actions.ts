@@ -1,3 +1,4 @@
+
 'use server';
 
 import { cookies } from 'next/headers';
@@ -12,7 +13,7 @@ export async function signInAsGuest(): Promise<{ customToken?: string; error?: s
     try {
         const auth = getFirebaseAuth();
         // Use a consistent but unique UID for the guest session to avoid creating new users on every click
-        const uid = `guest_user_session`; 
+        const uid = `guest_${Date.now()}`;
         const customToken = await auth.createCustomToken(uid);
         return { customToken };
     } catch (error: any) {

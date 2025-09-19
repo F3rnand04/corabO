@@ -8,6 +8,7 @@ import InitialSetupPage from './initial-setup/page';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { AppLayout } from './AppLayout';
 
 // This component is now the main gatekeeper.
 export default function HomePage() {
@@ -43,6 +44,10 @@ export default function HomePage() {
     );
   }
 
-  // If fully authenticated and setup is complete, show the main feed.
-  return <FeedClientComponent />;
+  // If fully authenticated and setup is complete, show the main feed within the AppLayout
+  return (
+    <AppLayout>
+      <FeedClientComponent />
+    </AppLayout>
+  );
 }
