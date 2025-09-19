@@ -1,13 +1,12 @@
-
-import { FeedClientComponent } from '@/components/FeedClientComponent';
 import { AppLayout } from './AppLayout';
+import FeedPage from './feed/page';
 
-// This component is now simplified. It no longer handles auth logic.
-// The AuthProvider will handle redirects on the client-side.
+// This component is the main entry point of the app.
+// It renders the AppLayout which contains the main content.
 export default function HomePage() {
   return (
     <AppLayout>
-      <FeedClientComponent />
+      <FeedPage />
     </AppLayout>
   );
 }
