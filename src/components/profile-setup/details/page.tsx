@@ -3,7 +3,7 @@
 
 import { useState, useCallback, useEffect, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { useCorabo } from '@/hooks/use-corabo';
+import { useAuth } from '@/hooks/use-auth-provider';
 import { Loader2, Settings, ChevronLeft, Save, Wrench, Clock, DollarSign, AlertCircle, Home, Briefcase, Car, Scissors, Stethoscope, Utensils } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -59,7 +59,7 @@ const categoryComponentMap: { [key: string]: React.ElementType } = {
 const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
 export default function DetailsPage() {
-  const { currentUser } = useCorabo();
+  const { currentUser } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
 

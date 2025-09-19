@@ -3,7 +3,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useCorabo } from "@/hooks/use-corabo";
+import { useAuth } from "@/hooks/use-auth-provider";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 import { Card, CardContent } from "./ui/card";
@@ -17,7 +17,7 @@ interface MultiProviderCartProps {
 }
 
 export function MultiProviderCart({ onCheckoutClick }: MultiProviderCartProps) {
-    const { cart, users, setActiveCartForCheckout, currentUser } = useCorabo();
+    const { cart, users, setActiveCartForCheckout, currentUser } = useAuth();
 
     const groupedCart = useMemo(() => {
         return cart.reduce((acc, item) => {
@@ -44,11 +44,12 @@ export function MultiProviderCart({ onCheckoutClick }: MultiProviderCartProps) {
         onCheckoutClick();
     };
 
-    const handleRemoveProviderFromCart = (items: any[]) => {
-        if (!currentUser?.id) return;
-        items.forEach(item => {
+    const handleRemoveProviderFromCart = () => {
+        if (!currentUser?.id || !activeCartForCheckout) return;
+        activeCartForCheckout.forEach(item => {
             updateCart(currentUser.id, item.product.id, 0);
         });
+        setActiveCartForCheckout(null);
     };
 
 

@@ -3,7 +3,7 @@
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { useCorabo } from "@/hooks/use-corabo";
+import { useAuth } from "@/hooks/use-auth-provider";
 import { AlertCircle, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -13,7 +13,7 @@ interface ActivationWarningProps {
 }
 
 export function ActivationWarning({ userType }: ActivationWarningProps) {
-  const { currentUser } = useCorabo();
+  const { currentUser } = useAuth();
   const router = useRouter();
 
   if (!currentUser) return null;

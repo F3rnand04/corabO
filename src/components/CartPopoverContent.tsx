@@ -1,13 +1,13 @@
 
 "use client";
 
-import { useCorabo } from "@/hooks/use-corabo";
+import { useAuth } from "@/hooks/use-auth-provider";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
 import { MultiProviderCart } from "./MultiProviderCart";
 
 export function CartPopoverContent({ onCheckoutClick }: { onCheckoutClick: () => void }) {
-    const { cart } = useCorabo();
+    const { cart } = useAuth();
 
     return (
         <div className="grid gap-4">
@@ -25,3 +25,4 @@ export function CartPopoverContent({ onCheckoutClick }: { onCheckoutClick: () =>
         </div>
     );
 }
+

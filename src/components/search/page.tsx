@@ -3,7 +3,7 @@
 
 import { CategoryHub } from '@/components/CategoryHub';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-provider';
 import { ChevronLeft, List } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 

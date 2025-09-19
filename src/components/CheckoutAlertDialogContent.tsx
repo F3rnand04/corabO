@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useCorabo } from "@/hooks/use-corabo";
+import { useAuth } from "@/hooks/use-auth-provider";
 import { AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "./ui/alert-dialog";
 import { Button } from "./ui/button";
 import { Separator } from "./ui/separator";
@@ -21,7 +21,7 @@ import { checkout } from '@/lib/actions/transaction.actions';
 import { updateCart } from '@/lib/actions/cart.actions';
 
 export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (open: boolean) => void }) {
-    const { currentUser, users, deliveryAddress, setDeliveryAddressToCurrent, tempRecipientInfo, setTempRecipientInfo, activeCartForCheckout, setActiveCartForCheckout } = useCorabo();
+    const { currentUser, users, deliveryAddress, setDeliveryAddressToCurrent, tempRecipientInfo, setTempRecipientInfo, activeCartForCheckout, setActiveCartForCheckout } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
     

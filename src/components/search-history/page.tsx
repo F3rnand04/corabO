@@ -1,11 +1,10 @@
 
-
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, History, Search, Trash2 } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-provider';
 import { Card, CardContent } from '@/components/ui/card';
 
 function SearchHistoryHeader() {
