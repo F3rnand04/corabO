@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getFirebaseAuth } from '@/lib/firebase-admin';
 import { getOrCreateUser } from '@/lib/actions/auth.actions';
-import { Auth, GoogleAuthProvider } from 'firebase-admin/auth';
+import { Auth } from 'firebase-admin/auth';
 import { cookies } from 'next/headers';
 
 // This function simulates the frontend part of the OAuth flow on the server.
