@@ -53,7 +53,7 @@ export default function LoginPage() {
     <div className="relative w-full h-screen grid grid-cols-1 md:grid-cols-2">
       <div className="relative hidden md:block">
          <Image
-            src="https://i.postimg.cc/C1sxJnNT/bv.png"
+            src="https://i.postimg.cc/sXwFcprc/welcome-bg-png.png"
             alt="Fondo de bienvenida"
             fill
             sizes="50vw"
@@ -72,7 +72,7 @@ export default function LoginPage() {
         <div className="w-full max-w-sm text-center">
             <div className="relative w-48 h-24 mx-auto mb-8">
                 <Image
-                    src="https://i.postimg.cc/Wz1MTvWK/lg.png"
+                    src="https://i.postimg.cc/YSNBv5DT/logo-light-png.png"
                     alt="Corabo logo"
                     fill
                     priority
@@ -80,9 +80,9 @@ export default function LoginPage() {
                     className="object-contain"
                 />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight">Bienvenido a corabO.app</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Bienvenido</h1>
             <p className="text-muted-foreground mt-2">
-                Ingresa para descubrir oportunidades.
+                Ingresa para descubrir un mundo de oportunidades y llevar tus proyectos al siguiente nivel.
             </p>
             <div className="space-y-4 mt-8">
                 <Button size="lg" variant="secondary" className="w-full" onClick={handleGuestLogin}>
