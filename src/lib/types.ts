@@ -146,6 +146,7 @@ export type GalleryImage = {
   isTutorial?: boolean;
   tutorialPrice?: number;
   searchKeywords?: string[];
+  aspectRatio?: 'square' | 'horizontal' | 'vertical';
 };
 
 export type CredicoraLevel = {
@@ -272,8 +273,7 @@ export type SpecializedData = {
     serviceOptions?: {
         local?: boolean;
         pickup?: boolean;
-        own_delivery?: boolean;
-        corabo_delivery?: boolean;
+        delivery?: boolean;
         catering?: boolean;
     };
     menuUrl?: string;
@@ -301,7 +301,7 @@ export type SpecializedData = {
     // Turismo y Estadías
     lodgingType?: 'hotel' | 'apartamento' | 'casa' | 'cabaña' | 'habitación';
     amenities?: string[];
-    tourType?: 'aventura' | 'cultural' | 'gastronómico' | 'playa';
+    tourType?: 'aventura' | 'cultural' | 'gastronómico' | 'playa' | 'montaña';
     duration?: string;
     includedServices?: string[];
 };
@@ -671,3 +671,58 @@ export type ContentReport = {
   sanctionReason?: SanctionReason; // Reason selected by admin
 };
 
+
+export const CreatePublicationInputSchema = z.object({
+    userId: z.string(),
+    description: z.string().min(1, "La descripción no puede estar vacía."),
+    imageDataUri: z.string().url("Debes proporcionar una imagen válida."),
+    aspectRatio: z.enum(['square', 'horizontal', 'vertical']),
+    type: z.enum(['image', 'video']),
+});
+
+export type CreatePublicationInput = z.infer<typeof CreatePublicationInputSchema>;
+
+export const CreateProductInputSchema = z.object({
+    userId: z.string(),
+    name: z.string().min(3, "El nombre del producto es muy corto."),
+    description: z.string().min(10, "La descripción es muy corta."),
+    price: z.number().min(0.01, "El precio debe ser positivo."),
+    imageDataUri: z.string().url("Debes proporcionar una imagen."),
+});
+
+export type CreateProductInput = z.infer<typeof CreateProductInputSchema>;
+export type AppointmentRequest = {
+    providerId: string;
+    clientId: string;
+    date: string;
+    details: string;
+    amount: number;
+};
+export const GalleryImageSchema = z.object({
+    id: z.string(),
+    providerId: z.string(),
+    type: z.enum(['image', 'video', 'product']),
+    src: z.string(),
+    alt: z.string(),
+    description: z.string(),
+    createdAt: z.string(),
+    comments: z.array(z.any()).optional(), // Replace with more specific comment schema
+    isTemporary: z.boolean().optional(),
+    promotion: z.object({
+        text: z.string(),
+        expires: z.string(),
+        publicationId: z.string(),
+    }).optional(),
+    campaignId: z.string().optional(),
+    likes: z.number().optional(),
+    owner: z.any().optional(), // Replace with more specific owner schema
+    productDetails: z.object({
+        name: z.string(),
+        price: z.number(),
+        category: z.string(),
+    }).optional(),
+    isTutorial: z.boolean().optional(),
+    tutorialPrice: z.number().optional(),
+    searchKeywords: z.array(z.string()).optional(),
+    aspectRatio: z.enum(['square', 'horizontal', 'vertical']).optional(),
+});
