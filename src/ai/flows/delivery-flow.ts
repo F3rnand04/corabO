@@ -37,12 +37,12 @@ export async function findDeliveryProviderFlow({ transactionId }: { transactionI
     const txRef = db.collection('transactions').doc(transactionId);
     const txSnap = await txRef.get();
 
-    if (!txSnap.exists()) throw new Error('Transaction not found');
+    if (!txSnap.exists) throw new Error('Transaction not found');
     const transaction = txSnap.data() as Transaction;
     
     const providerRef = db.collection('users').doc(transaction.providerId);
     const providerSnap = await providerRef.get();
-    if (!providerSnap.exists() || !providerSnap.data()?.profileSetupData?.location) {
+    if (!providerSnap.exists || !providerSnap.data()?.profileSetupData?.location) {
         throw new Error('Provider location not found');
     }
     const [providerLat, providerLon] = (providerSnap.data() as User).profileSetupData!.location!.split(',').map(Number);
@@ -113,7 +113,7 @@ export async function resolveDeliveryAsPickupFlow({ transactionId }: { transacti
     const txRef = db.collection('transactions').doc(transactionId);
     const txSnap = await txRef.get();
 
-    if (!txSnap.exists()) throw new Error('Transaction not found');
+    if (!txSnap.exists) throw new Error('Transaction not found');
     const transaction = txSnap.data() as Transaction;
     
     batch.update(txRef, {
