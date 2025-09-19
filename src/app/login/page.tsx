@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -50,57 +51,52 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative w-full h-screen grid grid-cols-1 md:grid-cols-2">
-      <div className="relative flex items-center justify-center bg-background p-8">
-        <div className="w-full max-w-sm text-center">
-            <div className="relative w-48 h-24 mx-auto mb-8">
-                <Image
-                    src="https://i.postimg.cc/YSNBv5DT/logo-light-png.png"
-                    alt="Corabo logo"
-                    fill
-                    priority
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    className="object-contain"
-                />
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight">Bienvenido a Corabo</h1>
-            <p className="text-muted-foreground mt-2">
-                Ingresa para descubrir un mundo de oportunidades y llevar tus proyectos al siguiente nivel.
-            </p>
-            <div className="space-y-4 mt-8">
-                <Button size="lg" variant="secondary" className="w-full" onClick={handleGuestLogin}>
-                    Ingresar como Invitado
-                </Button>
-            </div>
-             <p className="px-8 text-center text-xs text-muted-foreground mt-10">
-                Al continuar, aceptas nuestros{' '}
-                <a href="/terms" className="underline underline-offset-4 hover:text-primary">
-                   Términos de Servicio
-                </a>{' '}
-                y{' '}
-                <a href="/privacy" className="underline underline-offset-4 hover:text-primary">
-                    Política de Privacidad
-                </a>
-                .
-            </p>
+    <div className="relative w-full h-screen flex items-center justify-center p-4">
+      {/* Background Image */}
+      <Image
+        src="https://i.postimg.cc/sXwFcprc/welcome-bg-png.png"
+        alt="Fondo de bienvenida"
+        fill
+        quality={90}
+        priority
+        className="object-cover -z-20"
+        data-ai-hint="background office"
+      />
+      {/* Dark Overlay */}
+      <div className="absolute inset-0 bg-black/60 -z-10" />
+
+      {/* Centered Login Card */}
+      <div className="w-full max-w-sm text-center bg-background/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-white/10">
+        <div className="relative w-48 h-24 mx-auto mb-6">
+            <Image
+                src="https://i.postimg.cc/YSNBv5DT/logo-light-png.png"
+                alt="Corabo logo"
+                fill
+                priority
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                className="object-contain"
+            />
         </div>
-      </div>
-      <div className="relative hidden md:block">
-         <Image
-            src="https://i.postimg.cc/sXwFcprc/welcome-bg-png.png"
-            alt="Fondo de bienvenida"
-            fill
-            sizes="50vw"
-            quality={90}
-            priority
-            className="object-cover"
-            data-ai-hint="background office"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-          <div className="absolute bottom-10 left-10 text-white p-4 rounded-lg bg-black/30 backdrop-blur-sm">
-            <h2 className="text-3xl font-bold">Conecta. Colabora. Crece.</h2>
-            <p className="mt-2 max-w-md">La plataforma donde profesionales y clientes se encuentran para realizar proyectos de forma segura y eficiente.</p>
-          </div>
+        <h1 className="text-2xl font-bold tracking-tight">Conecta. Colabora. Crece.</h1>
+        <p className="text-muted-foreground mt-2">
+            La plataforma donde profesionales y clientes se encuentran para realizar proyectos de forma segura y eficiente.
+        </p>
+        <div className="space-y-4 mt-8">
+            <Button size="lg" className="w-full" onClick={handleGuestLogin}>
+                Ingresar como Invitado
+            </Button>
+        </div>
+        <p className="px-8 text-center text-xs text-muted-foreground mt-10">
+            Al continuar, aceptas nuestros{' '}
+            <a href="/terms" className="underline underline-offset-4 hover:text-primary">
+               Términos de Servicio
+            </a>{' '}
+            y{' '}
+            <a href="/privacy" className="underline underline-offset-4 hover:text-primary">
+                Política de Privacidad
+            </a>
+            .
+        </p>
       </div>
     </div>
   );
