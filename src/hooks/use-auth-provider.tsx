@@ -220,6 +220,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     currentUser, firebaseUser, isLoadingAuth, logout, setCurrentUser, contacts, addContact, removeContact, isContact, users, transactions, setTransactions, allPublications, setAllPublications, cart, activeCartForCheckout, setActiveCartForCheckout, updateCartItem, removeCart, tempRecipientInfo, setTempRecipientInfo, deliveryAddress, setDeliveryAddress, setDeliveryAddressToCurrent, currentUserLocation, getCurrentLocation, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, searchHistory, clearSearchHistory, notifications, conversations, qrSession, getUserMetrics, getAgendaEvents
   };
   
+  const showLogin = !isLoadingAuth && !currentUser;
+  const showSetup = !isLoadingAuth && currentUser && !currentUser.isInitialSetupComplete;
+  
   if (isLoadingAuth) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
