@@ -7,7 +7,6 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getOrCreateUserFlow, completeInitialSetupFlow } from '@/ai/flows/auth-flow';
 import { checkIdUniquenessFlow, deleteUserFlow, toggleGpsFlow, updateUserFlow } from '@/ai/flows/profile-flow';
 import { sendWelcomeToProviderNotificationFlow } from '@/ai/flows/notification-flow';
-import { autoVerifyIdWithAIFlow } from '@/ai/flows/verification-flow';
 
 
 // --- Exported Actions ---
@@ -75,14 +74,6 @@ export async function completeInitialSetup(userId: string, data: { name: string;
     const updatedUser = await completeInitialSetupFlow(userId, data);
     revalidatePath('/'); // Revalidate the home page to reflect login status
     return updatedUser;
-}
-
-export async function autoVerifyIdWithAI(user: User): Promise<any> {
-    // Ensure the flow is only called if the document URL exists
-    if (!user.idDocumentUrl) {
-        throw new Error("El documento de identidad no ha sido cargado.");
-    }
-    return await autoVerifyIdWithAIFlow(user);
 }
 
 export async function subscribeUser(userId: string, planName: string, amount: number) {
@@ -162,4 +153,3 @@ export async function becomeProvider(userId: string, profileData: ProfileSetupDa
     });
     revalidatePath('/profile');
 }
-

@@ -1,3 +1,4 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -16,7 +17,8 @@ import {
     processDirectPaymentFlow, 
     sendQuoteFlow, 
     startDisputeFlow, 
-    cancelSystemTransactionFlow 
+    cancelSystemTransactionFlow,
+    acceptProposalFlow
 } from '@/ai/flows/transaction-flow';
 import { findDeliveryProviderFlow, resolveDeliveryAsPickupFlow } from '@/ai/flows/delivery-flow';
 
@@ -99,4 +101,10 @@ export async function createQuoteRequest(input: QuoteRequestInput): Promise<{ re
     const { newTransaction, requiresPayment } = await createQuoteRequestFlow(input);
     revalidatePath('/transactions');
     return { newTransaction, requiresPayment };
+}
+
+export async function acceptProposal(conversationId: string, messageId: string, acceptorId: string) {
+    await acceptProposalFlow({ conversationId, messageId, acceptorId });
+    revalidatePath(`/messages/${conversationId}`);
+    revalidatePath('/transactions');
 }

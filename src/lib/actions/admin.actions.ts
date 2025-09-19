@@ -1,3 +1,4 @@
+
 'use server';
 
 import { getFirestore } from 'firebase-admin/firestore';
@@ -30,6 +31,10 @@ export async function rejectUserId(userId: string) {
 
 
 export async function autoVerifyIdWithAI(user: User) {
+    // Ensure the flow is only called if the document URL exists
+    if (!user.idDocumentUrl) {
+        throw new Error("El documento de identidad no ha sido cargado.");
+    }
     return await autoVerifyIdWithAIFlow(user);
 }
 
