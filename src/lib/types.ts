@@ -1,4 +1,5 @@
 
+
 import { z } from 'zod';
 
 export type FirebaseUserInput = { uid: string; email?: string | null; displayName?: string | null; photoURL?: string | null; phoneNumber?: string | null; emailVerified: boolean; };
@@ -103,7 +104,7 @@ export type PublicationOwner = {
   reputation?: number;
   profileSetupData?: {
     specialty?: string;
-    providerType?: 'professional' | 'company' | 'tourism' | 'lodging';
+    providerType?: 'professional' | 'company' | 'delivery' | 'tourism' | 'lodging';
     username?: string;
     primaryCategory?: string;
     location?: string;
@@ -669,3 +670,4 @@ export type ContentReport = {
   reviewedAt?: string;
   sanctionReason?: SanctionReason; // Reason selected by admin
 };
+
