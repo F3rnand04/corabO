@@ -120,7 +120,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           setCurrentUserLocation(location);
           if (currentUser?.id && db) {
             const userRef = doc(db, 'users', currentUser.id);
-            updateDoc(userRef, { 'profileSetupData.location': `${'${location.latitude}'},${'${location.longitude}'}` });
+            updateDoc(userRef, { 'profileSetupData.location': `${location.latitude},${location.longitude}` });
           }
         },
         () => toast({ variant: "destructive", title: "Error de Ubicación", description: "No se pudo obtener tu ubicación. Revisa los permisos." }),
@@ -182,7 +182,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const setDeliveryAddressToCurrent = useCallback(() => {
     getCurrentLocation();
-    if (currentUserLocation) setDeliveryAddress(`${'${currentUserLocation.latitude}'},${'${currentUserLocation.longitude}'}`);
+    if (currentUserLocation) setDeliveryAddress(`${currentUserLocation.latitude},${currentUserLocation.longitude}`);
     else toast({ variant: "destructive", title: "Ubicación no disponible", description: "No hemos podido obtener tu ubicación GPS." });
   }, [currentUserLocation, toast, getCurrentLocation]);
   
