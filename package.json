@@ -4,13 +4,12 @@
   "type": "module",
   "description": "Plataforma de conexión entre profesionales y clientes.",
   "scripts": {
-    "dev": "npm run clean && next start",
+    "dev": "npm run clean && next dev",
     "build": "next build",
     "start": "next start",
     "clean": "rm -rf .next"
   },
   "dependencies": {
-    "@genkit-ai/googleai": "^1.1.0",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-accordion": "^1.2.3",
     "@radix-ui/react-alert-dialog": "^1.1.6",
@@ -37,7 +36,6 @@
     "embla-carousel-react": "^8.0.0",
     "firebase": "^10.12.4",
     "firebase-admin": "^12.2.0",
-    "genkit": "^1.0.0",
     "html2canvas": "^1.4.1",
     "js-cookie": "^3.0.5",
     "lucide-react": "^0.417.0",
