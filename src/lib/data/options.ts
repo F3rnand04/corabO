@@ -48,3 +48,9 @@ export const countries = [
   { code: 'ES', name: 'España', idLabel: 'DNI / NIE', companyIdLabel: 'NIF', ivaRate: 0.21 },
   { code: 'MX', name: 'México', idLabel: 'CURP', companyIdLabel: 'RFC', ivaRate: 0.16 },
 ];
+
+export const gifts = [
+  { id: 'rose', name: 'Rosa', price: 1, credits: 100, icon: 'https://i.postimg.cc/SNqD5pqW/avatar-placeholder.png' },
+  { id: 'diamond', name: 'Diamante', price: 5, credits: 500, icon: 'https://i.postimg.cc/SNqD5pqW/avatar-placeholder.png' },
+  { id: 'crown', name: 'Corona', price: 10, credits: 1000, icon: 'https://i.postimg.cc/SNqD5pqW/avatar-placeholder.png' },
+];

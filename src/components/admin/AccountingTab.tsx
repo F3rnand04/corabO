@@ -11,6 +11,7 @@ import type { Transaction } from '@/lib/types';
 import { downloadTransactionsPDF } from '@/lib/actions/transaction.actions';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth-provider';
+import { countries } from '@/lib/data/options';
 
 // Constants
 const IVA_RATE = 0.16;
@@ -35,7 +36,9 @@ export function AccountingTab({ selectedCountry }: AccountingTabProps) {
       })
       .map(tx => {
         const user = users.find(u => u.id === tx.clientId);
-        const subtotal = tx.amount / (1 + IVA_RATE);
+        const countryInfo = countries.find(c => c.code === user?.country);
+        const effectiveIvaRate = countryInfo?.ivaRate || IVA_RATE;
+        const subtotal = tx.amount / (1 + effectiveIvaRate);
         const iva = tx.amount - subtotal;
         
         return {
@@ -43,6 +46,7 @@ export function AccountingTab({ selectedCountry }: AccountingTabProps) {
           userName: user?.name || tx.clientId,
           subtotal,
           iva,
+          ivaRate: effectiveIvaRate,
         };
       })
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -95,7 +99,7 @@ export function AccountingTab({ selectedCountry }: AccountingTabProps) {
                 <TableHead>Usuario</TableHead>
                 <TableHead>Concepto</TableHead>
                 <TableHead className="text-right">Subtotal</TableHead>
-                <TableHead className="text-right">IVA (16%)</TableHead>
+                <TableHead className="text-right">IVA</TableHead>
                 <TableHead className="text-right font-bold">Total Pagado</TableHead>
               </TableRow>
             </TableHeader>
@@ -111,7 +115,7 @@ export function AccountingTab({ selectedCountry }: AccountingTabProps) {
                         </Badge>
                     </TableCell>
                     <TableCell className="text-right font-mono">${tx.subtotal.toFixed(2)}</TableCell>
-                    <TableCell className="text-right font-mono">${tx.iva.toFixed(2)}</TableCell>
+                    <TableCell className="text-right font-mono">${tx.iva.toFixed(2)} ({tx.ivaRate * 100}%)</TableCell>
                     <TableCell className="text-right font-mono font-bold">${tx.amount.toFixed(2)}</TableCell>
                   </TableRow>
                 ))
