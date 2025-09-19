@@ -63,28 +63,3 @@ export async function searchPublicationsFlow(input: z.infer<typeof GetFeedInputS
         lastVisibleDocId: nextCursor
     };
 }
-
-
-/**
- * Generates an array of keywords from a given text string.
- * This is a simple implementation and can be improved with more sophisticated logic.
- * @param text The input string to generate keywords from.
- * @returns An array of unique, lowercase keywords.
- */
-function generateKeywords(text: string): string[] {
-    if (!text) return [];
-    
-    const words = text.toLowerCase().split(/\s+/);
-    
-    const keywords = new Set<string>();
-    
-    words.forEach(word => {
-        if (word.length > 2) {
-            for (let i = 3; i <= word.length; i++) {
-                keywords.add(word.substring(0, i));
-            }
-        }
-    });
-
-    return Array.from(keywords);
-}
