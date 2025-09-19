@@ -2,13 +2,13 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, createContext } from 'react';
-import { signOut, onAuthStateChanged } from 'firebase/auth';
+import { signOut, onAuthStateChanged, getIdToken } from 'firebase/auth';
 import type { User, Transaction, GalleryImage, CartItem, Product, TempRecipientInfo, QrSession, Notification, Conversation } from '@/lib/types';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase-client';
-import { clearSessionCookie, getOrCreateUser } from '@/lib/actions/auth.actions';
-import { collection, doc, onSnapshot, query, where, updateDoc } from 'firebase/firestore';
+import { clearSessionCookie, getOrCreateUser, createSessionCookie } from '@/lib/actions/auth.actions';
+import { collection, doc, onSnapshot, query, where, updateDoc, FieldValue } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import { differenceInMilliseconds } from 'date-fns';
 import { useRouter } from 'next/navigation';
@@ -19,13 +19,12 @@ import LoginPage from '@/app/login/page';
 import InitialSetupPage from '@/app/initial-setup/page';
 
 interface AuthProviderProps {
-  initialUser: User | null;
   children: React.ReactNode;
 }
 
-export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(initialUser);
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(auth.currentUser);
+export const AuthProvider = ({ children }: AuthProviderProps) => {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const { toast } = useToast();
@@ -52,9 +51,14 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       setFirebaseUser(fbUser);
       if (fbUser) {
+        // When auth state changes, create a new session cookie
+        const idToken = await getIdToken(fbUser);
+        await createSessionCookie(idToken);
         const user = await getOrCreateUser(fbUser);
         setCurrentUser(user);
       } else {
+        // If user logs out on client, clear the cookie
+        await clearSessionCookie();
         setCurrentUser(null);
       }
       setIsLoading(false);
@@ -106,7 +110,7 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
       await clearSessionCookie();
       setCurrentUser(null);
       setFirebaseUser(null);
-      router.push('/login'); 
+      // No need to push, the MainPage component will react to the change
     } catch (error: any) {
       console.error("Error during logout:", error);
       toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cerrar la sesión.' });
@@ -208,20 +212,9 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
     currentUser, firebaseUser, isLoadingAuth: isLoading, logout, setCurrentUser, contacts, addContact, removeContact, isContact, users, transactions, setTransactions, allPublications, setAllPublications, cart, activeCartForCheckout, setActiveCartForCheckout, updateCartItem, removeCart, tempRecipientInfo, setTempRecipientInfo, deliveryAddress, setDeliveryAddress, setDeliveryAddressToCurrent, currentUserLocation, getCurrentLocation, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, searchHistory, clearSearchHistory, notifications, conversations, qrSession, getUserMetrics, getAgendaEvents
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  // Once loading is false, we can make a decision based on currentUser
-  const isFullyAuthenticated = currentUser && currentUser.isInitialSetupComplete;
-
   return (
     <AuthContext.Provider value={value}>
-      {isFullyAuthenticated ? <AppLayout>{children}</AppLayout> : children}
+      {children}
     </AuthContext.Provider>
   );
 };
