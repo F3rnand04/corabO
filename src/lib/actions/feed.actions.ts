@@ -1,3 +1,4 @@
+
 'use server';
 
 import '@/ai/genkit';
@@ -6,9 +7,6 @@ import { getProfileGalleryFlow, getProfileProductsFlow, getPublicProfileFlow } f
 import { GetFeedInputSchema } from '@/lib/types';
 import { z } from 'zod';
 
-export async function getFeed(input: z.infer<typeof GetFeedInputSchema>) {
-    return await getFeedFlow(input);
-}
 
 export async function getPublicProfile(userId: string) {
     return await getPublicProfileFlow({ userId });
