@@ -2,17 +2,18 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, createContext } from 'react';
-import { signOut, onAuthStateChanged, getIdToken } from 'firebase/auth';
+import { signOut, onAuthStateChanged } from 'firebase/auth';
 import type { User, Transaction, GalleryImage, CartItem, Product, TempRecipientInfo, QrSession, Notification, Conversation } from '@/lib/types';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase-client';
-import { clearSessionCookie, getOrCreateUser, createSessionCookie } from '@/lib/actions/auth.actions';
+import { clearSessionCookie, getOrCreateUser } from '@/lib/actions/auth.actions';
 import { collection, doc, onSnapshot, query, where, updateDoc, FieldValue } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import { differenceInMilliseconds } from 'date-fns';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { AuthContext, type AuthContextValue } from './use-auth';
+import { Loader2 } from 'lucide-react';
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -21,10 +22,11 @@ interface AuthProviderProps {
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
 
   const { toast } = useToast();
   const router = useRouter();
+  const pathname = usePathname();
 
   // Data states
   const [users, setUsers] = useState<User[]>([]);
@@ -47,20 +49,32 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       setFirebaseUser(fbUser);
       if (fbUser) {
-        // When auth state changes, create a new session cookie
-        const idToken = await getIdToken(fbUser);
-        await createSessionCookie(idToken);
         const user = await getOrCreateUser(fbUser);
         setCurrentUser(user);
       } else {
-        // If user logs out on client, clear the cookie
-        await clearSessionCookie();
         setCurrentUser(null);
       }
-      setIsLoading(false);
+      setIsLoadingAuth(false);
     });
     return () => unsubscribe();
   }, []);
+
+  // Client-side routing logic
+  useEffect(() => {
+    if (isLoadingAuth) return;
+
+    const isAuthPage = pathname === '/login';
+    const isSetupPage = pathname === '/initial-setup';
+
+    if (!currentUser && !isAuthPage) {
+      router.push('/login');
+    } else if (currentUser && !currentUser.isInitialSetupComplete && !isSetupPage) {
+      router.push('/initial-setup');
+    } else if (currentUser && currentUser.isInitialSetupComplete && (isAuthPage || isSetupPage)) {
+      router.push('/');
+    }
+  }, [currentUser, isLoadingAuth, pathname, router]);
+
 
   useEffect(() => {
     if (!currentUser?.id || !db) {
@@ -103,14 +117,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const logout = useCallback(async () => {
     try {
       await signOut(auth);
-      // clearSessionCookie is now called inside onAuthStateChanged
-      // No need to push, onAuthStateChanged will trigger re-render
-      window.location.href = '/'; // Force a full page reload to ensure server state is cleared
+      await clearSessionCookie();
+      router.push('/login');
     } catch (error: any) {
       console.error("Error during logout:", error);
       toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cerrar la sesión.' });
     }
-  }, [toast]);
+  }, [router, toast]);
   
   const getCurrentLocation = useCallback(() => {
     if (typeof window !== 'undefined' && navigator.geolocation) {
@@ -204,8 +217,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const getAgendaEvents = useCallback((transactions: Transaction[]) => transactions.filter(tx => ['Finalizado - Pendiente de Pago', 'Cita Solicitada'].includes(tx.status)).map(tx => ({ date: new Date(tx.date), type: tx.status === 'Finalizado - Pendiente de Pago' ? 'payment' : 'appointment', title: tx.details.serviceName || tx.details.system || 'Evento', transactionId: tx.id })), []);
 
   const value: AuthContextValue = {
-    currentUser, firebaseUser, isLoadingAuth: isLoading, logout, setCurrentUser, contacts, addContact, removeContact, isContact, users, transactions, setTransactions, allPublications, setAllPublications, cart, activeCartForCheckout, setActiveCartForCheckout, updateCartItem, removeCart, tempRecipientInfo, setTempRecipientInfo, deliveryAddress, setDeliveryAddress, setDeliveryAddressToCurrent, currentUserLocation, getCurrentLocation, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, searchHistory, clearSearchHistory, notifications, conversations, qrSession, getUserMetrics, getAgendaEvents
+    currentUser, firebaseUser, isLoadingAuth, logout, setCurrentUser, contacts, addContact, removeContact, isContact, users, transactions, setTransactions, allPublications, setAllPublications, cart, activeCartForCheckout, setActiveCartForCheckout, updateCartItem, removeCart, tempRecipientInfo, setTempRecipientInfo, deliveryAddress, setDeliveryAddress, setDeliveryAddressToCurrent, currentUserLocation, getCurrentLocation, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, searchHistory, clearSearchHistory, notifications, conversations, qrSession, getUserMetrics, getAgendaEvents
   };
+  
+  if (isLoadingAuth) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-background">
+        <Loader2 className="w-12 h-12 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <AuthContext.Provider value={value}>
