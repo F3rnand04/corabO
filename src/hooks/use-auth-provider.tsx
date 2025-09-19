@@ -1,12 +1,12 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { signOut, onIdTokenChanged, type User as FirebaseUser } from 'firebase/auth';
+import { signOut } from 'firebase/auth';
 import type { User, Transaction, GalleryImage, CartItem, Product, TempRecipientInfo, QrSession, Notification, Conversation } from '@/lib/types';
+import type { User as FirebaseUser } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase-client';
-import { createSessionCookie, clearSessionCookie } from '@/lib/actions/auth.actions';
+import { clearSessionCookie } from '@/lib/actions/auth.actions';
 import { collection, doc, onSnapshot, query, where, updateDoc } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import { differenceInMilliseconds } from 'date-fns';
@@ -20,8 +20,12 @@ interface AuthProviderProps {
 
 export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
   const [currentUser, setCurrentUser] = useState<User | null>(initialUser);
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  // isLoadingAuth is now derived from whether initialUser has been processed.
+  // Since this provider only renders after the server has resolved the user,
+  // we can consider the initial auth loading to be false.
+  const [isLoadingAuth, setIsLoadingAuth] = useState(false);
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(auth.currentUser);
+
   const { toast } = useToast();
   const router = useRouter();
 
@@ -42,29 +46,6 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   
-  useEffect(() => {
-    // Set the initial user from server props and stop loading
-    setCurrentUser(initialUser);
-    setIsLoadingAuth(false);
-
-    // This listener will handle any subsequent auth state changes on the client
-    const unsubscribe = onIdTokenChanged(auth, async (user) => {
-      setFirebaseUser(user);
-      if (user) {
-        const idToken = await user.getIdToken();
-        await createSessionCookie(idToken);
-      } else {
-        // Only clear cookies if the user explicitly signs out,
-        // otherwise, we trust the server's initial state.
-        if (auth.currentUser === null) {
-           await clearSessionCookie();
-        }
-      }
-    });
-
-    return () => unsubscribe();
-  }, [initialUser]);
-
   useEffect(() => {
     // If there is no current user, don't attempt to fetch data.
     if (!currentUser?.id || !db) {
@@ -141,9 +122,8 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
   const logout = useCallback(async () => {
     try {
       await signOut(auth);
-      await fetch('/api/auth/logout');
+      await clearSessionCookie();
       setCurrentUser(null);
-      // Let the AppLayout handle the redirection by re-rendering
       window.location.href = '/'; 
     } catch (error: any) {
       console.error("Error during logout:", error);
