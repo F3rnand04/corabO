@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo } from 'react';
@@ -9,7 +8,7 @@ import { MessageSquare, Handshake, Phone, Mail, XCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
 import { sendMessage } from '@/lib/actions/messaging.actions';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-provider';
 
 interface CollectionsManagementTabProps {
   selectedCountry: string | null;

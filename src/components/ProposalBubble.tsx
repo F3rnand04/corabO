@@ -6,7 +6,7 @@ import { Button } from './ui/button';
 import { Separator } from './ui/separator';
 import { Handshake, Star, Clock } from 'lucide-react';
 import type { Message } from '@/lib/types';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-provider';
 
 export function ProposalBubble({ msg, onAccept, canAccept }: { msg: Message, onAccept: (messageId: string) => void, canAccept: boolean }) {
     const { currentUser } = useAuth();

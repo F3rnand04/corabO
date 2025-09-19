@@ -1,11 +1,9 @@
-
-
-"use client";
+'use client';
 
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth-provider";
 import type { Conversation, User } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from 'date-fns';

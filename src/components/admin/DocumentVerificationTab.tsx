@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useCorabo } from '@/contexts/CoraboContext';
+import { useAuth } from '@/hooks/use-auth-provider';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import type { User, VerificationOutput } from '@/lib/types';
 import { autoVerifyIdWithAI, rejectUserId, verifyUserId } from '@/lib/actions/admin.actions';
 
 export function DocumentVerificationTab() {
-  const { users } = useCorabo();
+  const { users } = useAuth();
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [verificationResult, setVerificationResult] = useState<VerificationOutput | { error: string } | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);

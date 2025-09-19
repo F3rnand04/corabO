@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
@@ -19,7 +17,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { approveContentReport, rejectContentReport } from '@/lib/actions/report.actions';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-provider';
 
 const sanctionReasons: SanctionReason[] = [
     "Contenido Engañoso o Spam",

@@ -1,4 +1,5 @@
 import { AppLayout } from './AppLayout';
+import ClientLayout from './ClientLayout';
 import FeedPage from './feed/page';
 
 // This component is the main entry point of the app.
@@ -6,7 +7,9 @@ import FeedPage from './feed/page';
 export default function HomePage() {
   return (
     <AppLayout>
-      <FeedPage />
+      <ClientLayout>
+        <FeedPage />
+      </ClientLayout>
     </AppLayout>
   );
 }

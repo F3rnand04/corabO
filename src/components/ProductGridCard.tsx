@@ -1,11 +1,9 @@
-
-
-"use client";
+'use client';
 
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Plus, Heart, MessageCircle, Minus } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth-provider";
 import type { Product } from "@/lib/types";
 import { useState } from "react";
 import { cn } from "@/lib/utils";

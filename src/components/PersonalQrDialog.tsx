@@ -5,7 +5,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Button } from "./ui/button";
 import { Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth-provider";
 import CoraboLogo from "./CoraboLogo";
 
 interface PersonalQrDialogProps {

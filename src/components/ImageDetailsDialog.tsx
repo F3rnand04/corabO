@@ -1,5 +1,4 @@
-
-"use client";
+'use client';
 
 import Image from 'next/image';
 import {
@@ -15,7 +14,7 @@ import { Input } from './ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Separator } from './ui/separator';
 import type { GalleryImage, GalleryImageComment, User } from '@/lib/types';
-import { useCorabo } from '@/hooks/use-corabo';
+import { useAuth } from '@/hooks/use-auth-provider';
 import { useState, useEffect, useRef, ChangeEvent } from 'react';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 import { cn } from '@/lib/utils';
@@ -32,7 +31,7 @@ interface ImageDetailsDialogProps {
 }
 
 export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex = 0, owner }: ImageDetailsDialogProps) {
-  const { currentUser } = useCorabo();
+  const { currentUser } = useAuth();
   const [api, setApi] = useState<CarouselApi>();
   const [currentImageIndex, setCurrentImageIndex] = useState(startIndex);
   const [newComment, setNewComment] = useState("");

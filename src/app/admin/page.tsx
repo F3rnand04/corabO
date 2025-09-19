@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-provider';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { Shield, Home, Users, Banknote, ShieldAlert, BadgeInfo, Handshake } from 'lucide-react';

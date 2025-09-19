@@ -4,7 +4,7 @@ import { sendMessage } from "@/lib/actions/messaging.actions";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "./ui/button";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth-provider";
 
 interface ContactSupportButtonProps {
     children: React.ReactNode;

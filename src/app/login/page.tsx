@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -9,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { signInWithCustomToken } from 'firebase/auth';
 import { auth } from '@/lib/firebase-client';
 import { signInAsGuest, createSessionCookie } from '@/lib/actions/auth.actions';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-provider';
 
 export default function LoginPage() {
   const { toast } = useToast();

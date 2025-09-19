@@ -1,6 +1,4 @@
-
-
-"use client";
+'use client';
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +6,7 @@ import { Mail, Phone, Instagram } from "lucide-react";
 import Link from 'next/link';
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { useAuth } from "../hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth-provider";
 import { sendMessage } from "@/lib/actions/messaging.actions";
 
 export function ContactSupportCard() {

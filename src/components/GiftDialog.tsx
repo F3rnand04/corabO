@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -18,7 +17,7 @@ import { cn } from '@/lib/utils';
 import { purchaseGift } from '@/lib/actions/transaction.actions';
 import { useToast } from '@/hooks/use-toast';
 import { Sparkles } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-provider';
 
 interface GiftDialogProps {
   isOpen: boolean;
