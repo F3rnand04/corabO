@@ -20,7 +20,7 @@ if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
       // Connect to Firestore Emulator
       connectFirestoreEmulator(db, 'localhost', 8083);
       // Connect to Auth Emulator
-      connectAuthEmulator(auth, 'http://localhost:9101', { disableWarnings: true });
+      connectAuthEmulator(auth, 'http://localhost:9100', { disableWarnings: true });
   } catch (error) {
       console.error("Error connecting to Firebase Emulators on localhost:", error);
   }
