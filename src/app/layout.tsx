@@ -10,7 +10,7 @@ const inter = Inter({
   variable: '--font-inter',
 });
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;

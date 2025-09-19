@@ -1,9 +1,11 @@
-
 import { cookies } from 'next/headers';
 import { getFirebaseAuth } from '@/lib/firebase-admin';
 import { getOrCreateUser } from '@/lib/actions/user.actions';
 import type { User } from '@/lib/types';
-import { MainPage } from '@/app/MainPage';
+import LoginPage from './login/page';
+import InitialSetupPage from './initial-setup/page';
+import { FeedClientComponent } from '@/components/FeedClientComponent';
+import { AppLayout } from './AppLayout';
 
 // This component is now the main gatekeeper, running on the server.
 export default async function HomePage() {
@@ -25,10 +27,23 @@ export default async function HomePage() {
         emailVerified: firebaseUser.emailVerified,
       });
     } catch (error) {
+      // Failed to verify cookie, treat as logged out
       serverUser = null;
     }
   }
 
-  // We pass the server-fetched user to the client-side decision maker.
-  return <MainPage serverUser={serverUser} />;
+  if (!serverUser) {
+    return <LoginPage />;
+  }
+
+  if (!serverUser.isInitialSetupComplete) {
+    return <InitialSetupPage />;
+  }
+  
+  // If user is authenticated and setup is complete, render the main app.
+  return (
+    <AppLayout>
+      <FeedClientComponent />
+    </AppLayout>
+  );
 }

@@ -13,10 +13,6 @@ import { haversineDistance } from '@/lib/utils';
 import { differenceInMilliseconds } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { AuthContext, type AuthContextValue } from './use-auth';
-import { AppLayout } from '@/app/AppLayout';
-import { Loader2 } from 'lucide-react';
-import LoginPage from '@/app/login/page';
-import InitialSetupPage from '@/app/initial-setup/page';
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -107,15 +103,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const logout = useCallback(async () => {
     try {
       await signOut(auth);
-      await clearSessionCookie();
-      setCurrentUser(null);
-      setFirebaseUser(null);
-      // No need to push, the MainPage component will react to the change
+      // clearSessionCookie is now called inside onAuthStateChanged
+      // No need to push, onAuthStateChanged will trigger re-render
+      window.location.href = '/'; // Force a full page reload to ensure server state is cleared
     } catch (error: any) {
       console.error("Error during logout:", error);
       toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cerrar la sesión.' });
     }
-  }, [toast, router]);
+  }, [toast]);
   
   const getCurrentLocation = useCallback(() => {
     if (typeof window !== 'undefined' && navigator.geolocation) {

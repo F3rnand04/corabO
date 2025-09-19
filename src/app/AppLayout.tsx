@@ -4,18 +4,10 @@
 import { usePathname } from 'next/navigation';
 import { Footer } from '@/components/Footer';
 import { Header } from '@/components/Header';
-import { useAuth } from '@/hooks/use-auth';
 
 // This component now ONLY wraps the authenticated parts of the app.
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { currentUser } = useAuth(); // It's safe to assume currentUser exists here
-
-  if (!currentUser) {
-    // This should ideally not be reached if AppLayout is used correctly,
-    // but it's a safe fallback.
-    return null;
-  }
   
   const hideHeaderForPaths = [
     '/initial-setup',
