@@ -56,7 +56,7 @@ export async function sendMessageFlow(input: SendMessageInput) {
       newMessage.type = 'text';
     }
 
-    if (convoSnap.exists()) {
+    if (convoSnap.exists) {
       const conversation = convoSnap.data() as Conversation;
 
       if (!conversation.participantIds?.includes(input.senderId)) {
@@ -83,7 +83,7 @@ export async function acceptProposalFlow(input: AcceptProposalInput) {
     const convoRef = db.collection('conversations').doc(input.conversationId);
 
     const convoSnap = await convoRef.get();
-    if (!convoSnap.exists()) throw new Error('Conversation not found');
+    if (!convoSnap.exists) throw new Error('Conversation not found');
 
     const conversation = convoSnap.data() as Conversation;
 
@@ -104,7 +104,7 @@ export async function acceptProposalFlow(input: AcceptProposalInput) {
 
     const clientRef = db.collection('users').doc(input.acceptorId);
     const clientSnap = await clientRef.get();
-    if (!clientSnap.exists()) throw new Error('Client user data not found.');
+    if (!clientSnap.exists) throw new Error('Client user data not found.');
     const clientData = clientSnap.data() as User;
 
     const isClientSubscribed = clientData.isSubscribed === true;

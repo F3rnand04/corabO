@@ -14,6 +14,8 @@ import { differenceInMilliseconds } from 'date-fns';
 import { usePathname, useRouter } from 'next/navigation';
 import { AuthContext, type AuthContextValue } from './use-auth';
 import { Loader2 } from 'lucide-react';
+import LoginPage from '@/app/login/page';
+import InitialSetupPage from '@/app/initial-setup/page';
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -220,9 +222,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     currentUser, firebaseUser, isLoadingAuth, logout, setCurrentUser, contacts, addContact, removeContact, isContact, users, transactions, setTransactions, allPublications, setAllPublications, cart, activeCartForCheckout, setActiveCartForCheckout, updateCartItem, removeCart, tempRecipientInfo, setTempRecipientInfo, deliveryAddress, setDeliveryAddress, setDeliveryAddressToCurrent, currentUserLocation, getCurrentLocation, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, searchHistory, clearSearchHistory, notifications, conversations, qrSession, getUserMetrics, getAgendaEvents
   };
   
-  const showLogin = !isLoadingAuth && !currentUser;
-  const showSetup = !isLoadingAuth && currentUser && !currentUser.isInitialSetupComplete;
-  
   if (isLoadingAuth) {
     return (
       <div className="flex items-center justify-center h-screen bg-background">
@@ -230,6 +229,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       </div>
     );
   }
+
+  // This logic now correctly shows/hides content based on auth state, preventing premature rendering
+  const isAuthPage = pathname === '/login';
+  const isSetupPage = pathname === '/initial-setup';
+
+  if (!currentUser && !isAuthPage) {
+    return <LoginPage />;
+  }
+
+  if (currentUser && !currentUser.isInitialSetupComplete && !isSetupPage) {
+    return <InitialSetupPage />;
+  }
+
 
   return (
     <AuthContext.Provider value={value}>
