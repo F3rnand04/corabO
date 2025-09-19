@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ import { SpecializedFields } from "../SpecializedFields";
 import { useRouter } from "next/navigation";
 import { SubscriptionDialog } from "@/components/SubscriptionDialog";
 import { useState } from "react";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth-provider";
 
 interface Step2_LogisticsProps {
   formData: Partial<ProfileSetupData>;

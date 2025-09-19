@@ -12,7 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from '@/components/ui/badge';
 import { Zap, Clock, ChevronLeft, Upload, Check, Loader2, Handshake } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useCorabo } from '@/hooks/use-corabo';
+import { useAuth } from '@/hooks/use-auth-provider';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,7 +22,7 @@ import { createPublication } from '@/lib/actions/publication.actions';
 const promotionSuggestions = ["10% OFF", "2x1 Hoy", "Envío Gratis", "Oferta Especial", "Nuevo"];
 
 export default function EmprendePage() {
-  const { currentUser } = useCorabo();
+  const { currentUser } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
 

@@ -15,7 +15,7 @@ import type { Transaction, User } from '@/lib/types';
 import { haversineDistance } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-provider';
 
 function DeliveryDashboardHeader() {
     const { currentUser, logout } = useAuth();

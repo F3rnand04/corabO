@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronLeft, Banknote, ShieldCheck, FileText, AlertTriangle, KeyRound, Link as LinkIcon, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCorabo } from "@/hooks/use-corabo";
+import { useAuth } from "@/hooks/use-auth-provider";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import Link from 'next/link';
 import { deactivateTransactions } from '@/lib/actions/user.actions';
@@ -57,7 +57,7 @@ function SettingsLinkCard({
 }
 
 export default function TransactionsSettingsPage() {
-    const { currentUser } = useCorabo();
+    const { currentUser } = useAuth();
     const router = useRouter();
 
     if (!currentUser) {

@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { checkIdUniqueness, completeInitialSetup } from '@/lib/actions/user.actions';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-provider';
 import InitialSetupForm from '@/components/profile-setup/InitialSetupForm';
 import { Loader2 } from 'lucide-react';
 

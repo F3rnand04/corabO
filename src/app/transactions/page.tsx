@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth-provider";
 import { Home, Settings, Wallet, ListChecks, History, CalendarClock, ChevronLeft, Loader2, Star, TrendingUp, Calendar as CalendarIcon, ShoppingCart } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { TransactionDetailsDialog } from "@/components/TransactionDetailsDialog";
@@ -34,7 +34,7 @@ function TransactionsHeader({ onBackToSummary, currentView }: { onBackToSummary:
                         {currentView !== 'summary' ? <ChevronLeft className="h-6 w-6" /> : <Home className="h-6 w-6" />}
                     </Button>
                     <div className="flex items-center gap-2">
-                        <Wallet className="h-6 w-6 text-muted-foreground" />
+                        <Wallet className="h-6 h-6 text-muted-foreground" />
                         <h1 className="text-lg font-semibold">Registro de Transacciones</h1>
                     </div>
                     <Button variant="ghost" size="icon" onClick={() => router.push('/transactions/settings')}>

@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-provider';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { Button } from "@/components/ui/button";
 import { Input } from './ui/input';

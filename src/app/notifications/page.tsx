@@ -4,7 +4,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-provider';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, Bell, FileText, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';

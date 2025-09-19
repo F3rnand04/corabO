@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { allCategories } from "@/lib/data/options";
 import type { ProfileSetupData } from '@/lib/types';
 import { Checkbox } from "@/components/ui/checkbox";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth-provider";
 
 interface Step3CategoryProps {
   formData: Partial<ProfileSetupData>;

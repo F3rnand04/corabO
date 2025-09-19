@@ -6,12 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Edit, User, ShieldCheck } from "lucide-react";
 import type { ProfileSetupData } from '@/lib/types';
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth-provider";
 import { useMemo } from "react";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ValidationItem } from "@/components/ValidationItem";
 
 interface Step5_ReviewProps {
   formData: Partial<ProfileSetupData>;
@@ -77,9 +76,6 @@ export default function Step5_Review({ formData, onUpdate, onSubmit, isSubmittin
       });
   };
 
-  if(!currentUser) return null;
-  const initialPhoneValue = currentUser.phone || currentUser.profileSetupData?.paymentDetails?.mobile?.mobilePaymentPhone || '';
-
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -130,12 +126,10 @@ export default function Step5_Review({ formData, onUpdate, onSubmit, isSubmittin
                     <p className="text-muted-foreground">ID:</p>
                     <p className="font-semibold">{currentUser?.idNumber || 'No especificado'}</p>
                 </div>
-                <ValidationItem
-                    label="Teléfono:"
-                    value={initialPhoneValue}
-                    initialStatus={currentUser.phoneValidated ? 'validated' : 'idle'}
-                    type="phone"
-                />
+                <div className="text-sm">
+                    <p className="text-muted-foreground">Teléfono:</p>
+                    <p className="font-semibold">{currentUser?.phone || 'No especificado'}</p>
+                </div>
             </CardContent>
         </Card>
 

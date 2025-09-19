@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2, Edit, User, ShieldCheck } from "lucide-react";
 import type { ProfileSetupData } from '@/lib/types';
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth-provider";
 import { useMemo } from "react";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";

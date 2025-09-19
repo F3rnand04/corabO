@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronLeft, Banknote, Smartphone, AlertCircle, Home, CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCorabo } from "@/hooks/use-corabo";
+import { useAuth } from "@/hooks/use-auth-provider";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -41,7 +41,7 @@ function PaymentMethodsHeader() {
 }
 
 export default function PaymentMethodsPage() {
-    const { currentUser } = useCorabo();
+    const { currentUser } = useAuth();
     const { toast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
     

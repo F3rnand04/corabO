@@ -5,12 +5,12 @@
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, History, Search, Trash2 } from 'lucide-react';
-import { useCorabo } from '@/hooks/use-corabo';
+import { useAuth } from '@/hooks/use-auth-provider';
 import { Card, CardContent } from '@/components/ui/card';
 
 function SearchHistoryHeader() {
   const router = useRouter();
-  const { clearSearchHistory } = useCorabo();
+  const { clearSearchHistory } = useAuth();
 
   return (
     <header className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b">
@@ -30,7 +30,7 @@ function SearchHistoryHeader() {
 }
 
 export default function SearchHistoryPage() {
-    const { searchHistory, setSearchQuery } = useCorabo();
+    const { searchHistory, setSearchQuery } = useAuth();
     const router = useRouter();
 
     const handleSearch = (query: string) => {

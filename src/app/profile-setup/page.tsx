@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useCorabo } from '@/contexts/CoraboContext';
+import { useAuth } from '@/hooks/use-auth-provider';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, Loader2 } from 'lucide-react';
 import type { ProfileSetupData } from '@/lib/types';
@@ -18,7 +18,7 @@ import Step4_LegalInfo from '@/components/profile-setup/Step4_LegalInfo';
 import Step5_Review from '@/components/profile-setup/Step5_Review';
 
 export default function ProfileSetupPage() {
-  const { currentUser, setDeliveryAddress } = useCorabo();
+  const { currentUser, setDeliveryAddress } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   

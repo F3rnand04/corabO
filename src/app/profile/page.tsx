@@ -2,12 +2,12 @@
 
 'use client';
 
-import { useCorabo } from '@/hooks/use-corabo';
+import { useAuth } from '@/hooks/use-auth-provider';
 import { Loader2 } from 'lucide-react';
 import { UserProfilePage } from '@/components/UserProfilePage';
 
 export default function ProfilePage() {
-    const { currentUser } = useCorabo();
+    const { currentUser } = useAuth();
 
     if (!currentUser) {
         return (

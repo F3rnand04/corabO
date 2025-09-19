@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChevronLeft, KeyRound, QrCode, Trash2, Eye, EyeOff, RefreshCw, FileText, Home } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCorabo } from "@/hooks/use-corabo";
+import { useAuth } from "@/hooks/use-auth-provider";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Input } from '@/components/ui/input';
 import { PrintableQrDisplay } from '@/components/PrintableQrDisplay';
@@ -38,7 +38,7 @@ function CashierSettingsHeader() {
 }
 
 function CashierManagementCard() {
-    const { currentUser, qrSession } = useCorabo();
+    const { currentUser, qrSession } = useAuth();
     const [newBoxName, setNewBoxName] = useState('');
     const [newBoxPassword, setNewBoxPassword] = useState('');
     const [selectedBox, setSelectedBox] = useState<{id: string, name: string, businessId: string, qrValue: string} | null>(null);

@@ -4,7 +4,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCorabo } from '@/hooks/use-corabo';
+import { useAuth } from '@/hooks/use-auth-provider';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { ChevronLeft, Banknote, Upload, Smartphone, Loader2 } from 'lucide-react';
 import type { Transaction } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { db } from '@/lib/firebase';
+import { db } from '@/lib/firebase-client';
 import { setDoc, doc } from 'firebase/firestore';
 import { registerSystemPayment } from '@/lib/actions/admin.actions';
 import { payCommitment } from '@/lib/actions/transaction.actions';
@@ -40,7 +40,7 @@ function PaymentPageContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { toast } = useToast();
-    const { currentUser, transactions } = useCorabo();
+    const { currentUser, transactions } = useAuth();
 
     const [commitment, setCommitment] = useState<Transaction | null>(null);
     const [isLoading, setIsLoading] = useState(true);

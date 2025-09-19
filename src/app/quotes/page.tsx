@@ -19,7 +19,7 @@ import { createQuoteRequest } from '@/lib/actions/transaction.actions';
 import { sendNewQuoteRequestNotifications } from '@/lib/actions/notification.actions';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { SubscriptionDialog } from '@/components/SubscriptionDialog';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-provider';
 
 
 const getQuoteCost = (user: User | null): number => {
@@ -52,6 +52,10 @@ export default function QuotesPage() {
         setIsSubmitting(true);
         try {
             const newTransaction = await createQuoteRequest({ ...values, clientId: currentUser.id, isPaid: true });
+            
+            if (!newTransaction) {
+              throw new Error("No se pudo crear la transacción de cotización.")
+            }
             
             await sendNewQuoteRequestNotifications({
                 category: values.category,

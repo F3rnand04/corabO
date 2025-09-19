@@ -4,7 +4,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useCorabo } from '@/hooks/use-corabo';
+import { useAuth } from '@/hooks/use-auth-provider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, CheckCircle, Handshake, AlertTriangle, Smartphone, Copy, Banknote, Star } from 'lucide-react';
@@ -12,7 +12,7 @@ import { User, credicoraLevels, QrSession } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
-import { db } from '@/lib/firebase';
+import { db } from '@/lib/firebase-client';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { handleClientCopyAndPay, cancelQrSession } from '@/lib/actions/cashier.actions';
 
@@ -20,12 +20,15 @@ import { handleClientCopyAndPay, cancelQrSession } from '@/lib/actions/cashier.a
 function ApprovalContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { exchangeRate, users } = useCorabo();
+  const { users } = useAuth();
   const { toast } = useToast();
   
   const [provider, setProvider] = useState<User | null>(null);
   const [qrSession, setQrSession] = useState<QrSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // This needs to be replaced with a proper exchange rate mechanism
+  const exchangeRate = 36.5; 
 
   const sessionId = searchParams?.get('sessionId');
 

@@ -18,7 +18,7 @@ function SearchHistoryHeader() {
           <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <ChevronLeft className="h-6 w-6" />
           </Button>
-          <h1 className="text-xl font-bold flex items-center gap-2"><History className="h-5 w-5"/> Historial</h1>
+          <h1 className="text-xl font-bold flex items-center gap-2"><History className="h-5 h-5"/> Historial</h1>
           <Button variant="ghost" size="icon" onClick={clearSearchHistory}>
             <Trash2 className="h-5 w-5 text-muted-foreground" />
           </Button>

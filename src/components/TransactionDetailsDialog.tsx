@@ -15,7 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "./ui/badge";
 import type { Transaction, User } from "@/lib/types";
-import { useCorabo } from "@/hooks/use-corabo";
+import { useAuth } from "@/hooks/use-auth-provider";
 import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert, Truck, Banknote, ClipboardCheck, CalendarCheck, Star, XCircle, FileText, Repeat } from "lucide-react";
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
@@ -28,7 +28,7 @@ import { retryFindDelivery, assignOwnDelivery, resolveDeliveryAsPickup } from '@
 // --- Sub-components for Actions ---
 
 function ProviderActions({ tx, onAction }: { tx: Transaction; onAction: () => void }) {
-  const { currentUser } = useCorabo();
+  const { currentUser } = useAuth();
   
   const [quoteBreakdown, setQuoteBreakdown] = useState('');
   const [quoteTotal, setQuoteTotal] = useState(0);
@@ -96,7 +96,7 @@ function ProviderActions({ tx, onAction }: { tx: Transaction; onAction: () => vo
 }
 
 function ClientActions({ tx, onAction }: { tx: Transaction; onAction: () => void }) {
-  const { currentUser } = useCorabo();
+  const { currentUser } = useAuth();
   
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -188,7 +188,7 @@ interface TransactionDetailsDialogProps {
 
 
 export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: TransactionDetailsDialogProps) {
-  const { currentUser, users } = useCorabo();
+  const { currentUser, users } = useAuth();
 
   const [otherParty, setOtherParty] = useState<User | null>(null);
   const [isDeliveryFailedDialogOpen, setIsDeliveryFailedDialogOpen] = useState(false);
