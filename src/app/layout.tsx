@@ -15,7 +15,6 @@ const inter = Inter({
   variable: '--font-inter',
 });
 
-// This is now a Server Component that fetches the initial user state.
 export default async function RootLayout({
   children,
 }: Readonly<{
@@ -30,10 +29,8 @@ export default async function RootLayout({
       const auth = getFirebaseAuth();
       const decodedToken = await auth.verifySessionCookie(sessionCookie, true);
       const firebaseUser = await auth.getUser(decodedToken.uid);
-      // Now that we have the Firebase user, get/create our custom user profile
       initialUser = await getOrCreateUser(firebaseUser);
     } catch (error) {
-      // Cookie is invalid, expired, etc. Treat as logged out.
       console.log('Session cookie verification failed:', error);
       initialUser = null;
     }
@@ -44,9 +41,7 @@ export default async function RootLayout({
       <body className={`${'${inter.variable}'} antialiased bg-background`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <AuthProvider initialUser={initialUser}>
-                <AppLayout>
-                  {children}
-                </AppLayout>
+                {children}
                 <Toaster />
             </AuthProvider>
         </ThemeProvider>

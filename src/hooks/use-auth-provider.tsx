@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
@@ -12,6 +13,7 @@ import { haversineDistance } from '@/lib/utils';
 import { differenceInMilliseconds } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { AuthContext, type AuthContextValue } from './use-auth';
+import { AppLayout } from '@/app/AppLayout';
 
 interface AuthProviderProps {
   initialUser: User | null;
@@ -20,11 +22,10 @@ interface AuthProviderProps {
 
 export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
   const [currentUser, setCurrentUser] = useState<User | null>(initialUser);
-  // isLoadingAuth is now derived from whether initialUser has been processed.
-  // Since this provider only renders after the server has resolved the user,
-  // we can consider the initial auth loading to be false.
-  const [isLoadingAuth, setIsLoadingAuth] = useState(false);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(auth.currentUser);
+
+  // isLoadingAuth is now simply about whether the client has hydrated, which it has by the time this runs.
+  const isLoadingAuth = false;
 
   const { toast } = useToast();
   const router = useRouter();
@@ -49,7 +50,6 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
   useEffect(() => {
     // If there is no current user, don't attempt to fetch data.
     if (!currentUser?.id || !db) {
-      // Clear data states if user logs out
       setUsers([]);
       setTransactions([]);
       setAllPublications([]);
@@ -61,7 +61,6 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
       return;
     }
 
-    // All listeners are now conditional on currentUser.id existing.
     const unsubUser = onSnapshot(doc(db, "users", currentUser.id), (doc) => {
       if (doc.exists()) {
         const updatedUser = doc.data() as User;
@@ -143,7 +142,7 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
           if (currentUser?.id) {
             const userRef = doc(db, 'users', currentUser.id);
             updateDoc(userRef, {
-                'profileSetupData.location': `${location.latitude},${location.longitude}`
+                'profileSetupData.location': `${'${location.latitude}'},${'${location.longitude}'}`
             });
           }
         },
@@ -223,7 +222,7 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
   const setDeliveryAddressToCurrent = useCallback(() => {
     getCurrentLocation();
     if (currentUserLocation) {
-        setDeliveryAddress(`${currentUserLocation.latitude},${currentUserLocation.longitude}`);
+        setDeliveryAddress(`${'${currentUserLocation.latitude}'},${'${currentUserLocation.longitude}'}`);
     } else {
         toast({
             variant: "destructive",
@@ -311,5 +310,11 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
     getAgendaEvents,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+        <AppLayout>
+            {children}
+        </AppLayout>
+    </AuthContext.Provider>
+  );
 };
