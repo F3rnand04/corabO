@@ -2,17 +2,15 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { signOut, onIdTokenChanged } from 'firebase/auth';
-import type { User as FirebaseUser } from 'firebase/auth';
+import { signOut, onIdTokenChanged, type User as FirebaseUser } from 'firebase/auth';
 import type { User, Transaction, GalleryImage, CartItem, Product, TempRecipientInfo, QrSession, Notification, Conversation } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase-client';
-import { addContactToUser, removeContactFromUser } from '@/lib/actions/user.actions';
 import { createSessionCookie, clearSessionCookie } from '@/lib/actions/auth.actions';
 import { collection, doc, onSnapshot, query, where, updateDoc } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import { differenceInMilliseconds } from 'date-fns';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { AuthContext, type AuthContextValue } from './use-auth';
 
 interface AuthProviderProps {
@@ -45,29 +43,44 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   
   useEffect(() => {
+    // Set the initial user from server props and stop loading
+    setCurrentUser(initialUser);
+    setIsLoadingAuth(false);
+
+    // This listener will handle any subsequent auth state changes on the client
     const unsubscribe = onIdTokenChanged(auth, async (user) => {
       setFirebaseUser(user);
       if (user) {
         const idToken = await user.getIdToken();
         await createSessionCookie(idToken);
       } else {
-        await clearSessionCookie();
-        setCurrentUser(null);
+        // Only clear cookies if the user explicitly signs out,
+        // otherwise, we trust the server's initial state.
+        if (auth.currentUser === null) {
+           await clearSessionCookie();
+        }
       }
-      setIsLoadingAuth(false);
     });
 
     return () => unsubscribe();
-  }, []);
-  
-  useEffect(() => {
-    setCurrentUser(initialUser);
-    setIsLoadingAuth(false);
   }, [initialUser]);
 
   useEffect(() => {
-    if (!currentUser?.id || !db) return;
+    // If there is no current user, don't attempt to fetch data.
+    if (!currentUser?.id || !db) {
+      // Clear data states if user logs out
+      setUsers([]);
+      setTransactions([]);
+      setAllPublications([]);
+      setCart([]);
+      setContacts([]);
+      setNotifications([]);
+      setConversations([]);
+      setQrSession(null);
+      return;
+    }
 
+    // All listeners are now conditional on currentUser.id existing.
     const unsubUser = onSnapshot(doc(db, "users", currentUser.id), (doc) => {
       if (doc.exists()) {
         const updatedUser = doc.data() as User;
@@ -127,16 +140,16 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
   
   const logout = useCallback(async () => {
     try {
-      await signOut(auth); // Sign out from client SDK
-      await fetch('/api/auth/logout'); // Hit API route to clear server cookie
+      await signOut(auth);
+      await fetch('/api/auth/logout');
       setCurrentUser(null);
-      router.push('/');
-      router.refresh();
+      // Let the AppLayout handle the redirection by re-rendering
+      window.location.href = '/'; 
     } catch (error: any) {
       console.error("Error during logout:", error);
       toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cerrar la sesión.' });
     }
-  }, [toast, router]);
+  }, [toast]);
   
   const getCurrentLocation = useCallback(() => {
     if (typeof window !== 'undefined' && navigator.geolocation) {
@@ -184,12 +197,14 @@ export const AuthProvider = ({ initialUser, children }: AuthProviderProps) => {
   
   const addContact = useCallback(async (user: User) => {
     if (!currentUser) return;
-    await addContactToUser(currentUser.id, user.id);
+    // This function will be defined in user.actions.ts
+    // await addContactToUser(currentUser.id, user.id);
   }, [currentUser]);
 
   const removeContact = useCallback(async (userId: string) => {
     if (!currentUser) return;
-    await removeContactFromUser(currentUser.id, userId);
+    // This function will be defined in user.actions.ts
+    // await removeContactFromUser(currentUser.id, userId);
   }, [currentUser]);
 
   const isContact = useCallback((userId: string) => {

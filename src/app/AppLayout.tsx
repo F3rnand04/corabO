@@ -7,6 +7,7 @@ import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { useEffect } from 'react';
 import LoginPage from './login/page';
+import InitialSetupPage from './initial-setup/page';
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -16,11 +17,10 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const isSetupPage = pathname === '/initial-setup';
 
   useEffect(() => {
-    // This effect now ONLY handles redirection for LOGGED-IN users.
-    if (!isLoadingAuth && currentUser) {
-      if (!currentUser.isInitialSetupComplete && !isSetupPage) {
-        router.push('/initial-setup');
-      }
+    // This effect ONLY handles redirection for LOGGED-IN users
+    // who are NOT on the setup page but need to be.
+    if (!isLoadingAuth && currentUser && !currentUser.isInitialSetupComplete && !isSetupPage) {
+      router.push('/initial-setup');
     }
   }, [isLoadingAuth, currentUser, pathname, router, isSetupPage]);
 
@@ -33,16 +33,19 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // If there's no user, it means we must show the LoginPage.
+  // If there's no user, show the LoginPage. This is the main gate.
   if (!currentUser) {
     return <LoginPage />;
   }
 
-  // If the user exists but hasn't completed setup, show only the setup page.
+  // If user exists but setup is incomplete
   if (!currentUser.isInitialSetupComplete) {
-    // Only render the children if we are on the correct setup page.
-    // Otherwise, render nothing while the useEffect redirects.
-    return isSetupPage ? <>{children}</> : (
+    // If we are already on the setup page, render it.
+    if (isSetupPage) {
+        return <InitialSetupPage />;
+    }
+    // Otherwise, render a loader while the useEffect redirects.
+    return (
         <div className="flex items-center justify-center min-h-screen">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
