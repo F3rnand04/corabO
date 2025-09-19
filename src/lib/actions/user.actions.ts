@@ -5,7 +5,7 @@ import '@/ai/genkit';
 import { revalidatePath } from 'next/cache';
 import type { FirebaseUserInput, ProfileSetupData, User } from '@/lib/types';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import { completeInitialSetupFlow } from '@/ai/flows/auth-flow';
+import { getOrCreateUserFlow, completeInitialSetupFlow } from '@/ai/flows/auth-flow';
 import { checkIdUniquenessFlow, deleteUserFlow, toggleGpsFlow, updateUserFlow } from '@/ai/flows/profile-flow';
 import { sendWelcomeToProviderNotificationFlow } from '@/ai/flows/notification-flow';
 import { autoVerifyIdWithAIFlow } from '@/ai/flows/verification-flow';
@@ -14,38 +14,10 @@ import { autoVerifyIdWithAIFlow } from '@/ai/flows/verification-flow';
 // --- Exported Actions ---
 
 export async function getOrCreateUser(firebaseUser: FirebaseUserInput): Promise<User> {
-    const db = getFirestore();
-    const userRef = db.collection('users').doc(firebaseUser.uid);
-    const userSnap = await userRef.get();
-
-    if (userSnap.exists()) {
-      revalidatePath('/');
-      return userSnap.data() as User;
-    }
-
-    const coraboId = `corabo${Math.floor(Math.random() * 9000) + 1000}`;
-    
-    const newUser: User = {
-      id: firebaseUser.uid,
-      coraboId: coraboId,
-      name: firebaseUser.displayName || 'Invitado',
-      lastName: '',
-      email: firebaseUser.email || `${coraboId}@corabo.app`,
-      profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
-      phone: firebaseUser.phoneNumber || '',
-      type: 'client',
-      reputation: 5,
-      effectiveness: 100,
-      isGpsActive: true,
-      emailValidated: firebaseUser.emailVerified || false,
-      phoneValidated: false,
-      isInitialSetupComplete: false,
-      createdAt: new Date().toISOString(),
-    };
-
-    await userRef.set(newUser);
-    revalidatePath('/'); 
-    return newUser;
+    const user = await getOrCreateUserFlow(firebaseUser);
+    // This revalidatePath was causing a server error because this action is called during client-side rendering.
+    // Data updates are handled reactively by the AuthProvider listeners.
+    return user;
 }
 
 export async function updateUser(userId: string, updates: Partial<User> | { [key: string]: any }) {
@@ -172,4 +144,13 @@ export async function activatePromotion(userId: string, promotion: { imageId: st
 
     revalidatePath('/profile');
     revalidatePath(`/companies/${userId}`);
+}
+
+export async function addContactToUser(userId: string, contactId: string) {
+    const db = getFirestore();
+    await db.collection('users').doc(userId).update({
+        contacts: FieldValue.arrayUnion(contactId)
+    });
+    revalidatePath(`/companies/${contactId}`);
+    revalidatePath('/contacts');
 }

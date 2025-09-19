@@ -9,7 +9,7 @@ import { CheckCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { sendSmsVerificationCode, verifySmsCode } from '@/lib/actions/sms.actions'; 
-import { auth } from '@/lib/firebase';
+import { useAuth } from '@/hooks/use-auth';
 
 type ValidationStatus = 'idle' | 'pending' | 'validated';
 
@@ -20,6 +20,7 @@ interface ValidationItemProps {
     onValidate?: (valueToValidate: string) => Promise<boolean>;
     onValueChange?: (value: string) => void;
     type?: 'email' | 'phone';
+    userId?: string;
 }
 
 export function ValidationItem({ 
@@ -29,8 +30,10 @@ export function ValidationItem({
     onValidate,
     onValueChange,
     type,
+    userId
 }: ValidationItemProps) {
-    const firebaseUser = auth.currentUser; // Get current user directly
+    const { currentUser } = useAuth();
+    const firebaseUser = currentUser; 
 
     const [status, setStatus] = useState<ValidationStatus>(initialStatus);
     const [isLoading, setIsLoading] = useState(false);
@@ -48,7 +51,7 @@ export function ValidationItem({
         setIsLoading(true);
         try {
             if (type === 'phone') {
-                await sendSmsVerificationCode(firebaseUser.uid, currentValue);
+                await sendSmsVerificationCode(firebaseUser.id, currentValue);
                 setStatus('pending');
                 toast({ title: 'Código Enviado', description: 'Revisa tu teléfono para obtener el código de 6 dígitos.'});
             } else if (onValidate) {
@@ -69,7 +72,7 @@ export function ValidationItem({
         setIsLoading(true);
         try {
             if (type === 'phone') {
-                const result = await verifySmsCode(firebaseUser.uid, inputCode);
+                const result = await verifySmsCode(firebaseUser.id, inputCode);
                 if(result.success) {
                     setStatus('validated');
                 } else {
