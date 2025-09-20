@@ -19,3 +19,8 @@ export async function getProfileGallery(input: { userId: string, limitNum?: numb
 export async function getProfileProducts(input: { userId: string, limitNum?: number, startAfterDocId?: string }) {
     return await getProfileProductsFlow(input);
 }
+
+// NEW: Server action to securely fetch and enrich the main feed
+export async function getFeed(input: z.infer<typeof GetFeedInputSchema>) {
+    return await getFeedFlow(input);
+}

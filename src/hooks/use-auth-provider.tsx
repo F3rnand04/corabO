@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
@@ -6,7 +7,7 @@ import type { User, Transaction, GalleryImage, CartItem, Product, TempRecipientI
 import type { User as FirebaseUser } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase-client';
-import { clearSessionCookie, getOrCreateUser } from '@/lib/actions/auth.actions';
+import { getOrCreateUser } from '@/lib/actions/auth.actions';
 import { collection, doc, onSnapshot, query, where, updateDoc, FieldValue } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import { differenceInMilliseconds } from 'date-fns';
@@ -31,8 +32,6 @@ export interface AuthContextValue {
   users: User[];
   transactions: Transaction[];
   setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
-  allPublications: GalleryImage[];
-  setAllPublications: React.Dispatch<React.SetStateAction<GalleryImage[]>>;
   
   cart: CartItem[];
   activeCartForCheckout: CartItem[] | null;
@@ -92,7 +91,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // Data states
   const [users, setUsers] = useState<User[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [allPublications, setAllPublications] = useState<GalleryImage[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [contacts, setContacts] = useState<User[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -137,7 +135,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     if (!firebaseUser?.uid || !db) {
       // Clear all data when user logs out
-      setUsers([]); setTransactions([]); setAllPublications([]); setCart([]); setContacts([]);
+      setUsers([]); setTransactions([]); setCart([]); setContacts([]);
       setNotifications([]); setConversations([]); setQrSession(null);
       return;
     }
@@ -162,13 +160,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Global listeners
     const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => setUsers(snapshot.docs.map(doc => doc.data() as User)));
     const unsubTransactions = onSnapshot(query(collection(db, "transactions"), where('participantIds', 'array-contains', firebaseUser.uid)), (snapshot) => setTransactions(snapshot.docs.map(doc => doc.data() as Transaction).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())));
-    const unsubPublications = onSnapshot(collection(db, "publications"), (snapshot) => setAllPublications(snapshot.docs.map(doc => doc.data() as GalleryImage)));
     const unsubNotifications = onSnapshot(query(collection(db, "notifications"), where('userId', '==', firebaseUser.uid)), (snapshot) => setNotifications(snapshot.docs.map(doc => doc.data() as Notification)));
     const unsubConversations = onSnapshot(query(collection(db, "conversations"), where('participantIds', 'array-contains', firebaseUser.uid)), (snapshot) => setConversations(snapshot.docs.map(doc => doc.data() as Conversation)));
     const unsubQrSession = onSnapshot(query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', firebaseUser.uid), where('status', '!=', 'closed')), (snapshot) => setQrSession(snapshot.empty ? null : snapshot.docs[0].data() as QrSession));
 
     return () => {
-      unsubUser(); unsubUsers(); unsubTransactions(); unsubPublications();
+      unsubUser(); unsubUsers(); unsubTransactions();
       unsubNotifications(); unsubConversations(); unsubQrSession();
     };
   }, [firebaseUser?.uid]);
@@ -213,7 +210,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           setCurrentUserLocation(location);
           if (currentUser?.id && db) {
             const userRef = doc(db, 'users', currentUser.id);
-            updateDoc(userRef, { 'profileSetupData.location': `${location.latitude},${location.longitude}` });
+            updateDoc(userRef, { 'profileSetupData.location': `${'${location.latitude}'},${'${location.longitude}'}` });
           }
         },
         () => toast({ variant: "destructive", title: "Error de Ubicación", description: "No se pudo obtener tu ubicación. Revisa los permisos." }),
@@ -275,7 +272,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const setDeliveryAddressToCurrent = useCallback(() => {
     getCurrentLocation();
-    if (currentUserLocation) setDeliveryAddress(`${currentUserLocation.latitude},${currentUserLocation.longitude}`);
+    if (currentUserLocation) setDeliveryAddress(`${'${currentUserLocation.latitude}'},${'${currentUserLocation.longitude}'}`);
     else toast({ variant: "destructive", title: "Ubicación no disponible", description: "No hemos podido obtener tu ubicación GPS." });
   }, [currentUserLocation, toast, getCurrentLocation]);
   
@@ -297,7 +294,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const getAgendaEvents = useCallback((transactions: Transaction[]) => transactions.filter(tx => ['Finalizado - Pendiente de Pago', 'Cita Solicitada'].includes(tx.status)).map(tx => ({ date: new Date(tx.date), type: tx.status === 'Finalizado - Pendiente de Pago' ? 'payment' : 'appointment', title: tx.details.serviceName || tx.details.system || 'Evento', transactionId: tx.id })), []);
 
   const value: AuthContextValue = {
-    currentUser, firebaseUser, isLoadingAuth, logout, setCurrentUser, contacts, addContact, removeContact, isContact, users, transactions, setTransactions, allPublications, setAllPublications, cart, activeCartForCheckout, setActiveCartForCheckout, updateCartItem, removeCart, tempRecipientInfo, setTempRecipientInfo, deliveryAddress, setDeliveryAddress, setDeliveryAddressToCurrent, currentUserLocation, getCurrentLocation, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, searchHistory, clearSearchHistory, notifications, conversations, qrSession, getUserMetrics, getAgendaEvents
+    currentUser, firebaseUser, isLoadingAuth, logout, setCurrentUser, contacts, addContact, removeContact, isContact, users, transactions, setTransactions, cart, activeCartForCheckout, setActiveCartForCheckout, updateCartItem, removeCart, tempRecipientInfo, setTempRecipientInfo, deliveryAddress, setDeliveryAddress, setDeliveryAddressToCurrent, currentUserLocation, getCurrentLocation, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, searchHistory, clearSearchHistory, notifications, conversations, qrSession, getUserMetrics, getAgendaEvents
   };
 
   return (

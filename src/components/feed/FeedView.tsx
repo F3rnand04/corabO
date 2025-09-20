@@ -10,60 +10,127 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '../ui/button';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import { getFeed } from '@/lib/actions/feed.actions';
 
 export function FeedView() {
-  const { currentUser, allPublications, searchQuery, categoryFilter, isLoadingAuth } = useAuth();
+  const { currentUser, searchQuery, categoryFilter, isLoadingAuth } = useAuth();
   
-  const filteredPublications = useMemo(() => {
-    let results = allPublications;
+  // Local state for feed data, now managed by this component
+  const [publications, setPublications] = useState<GalleryImage[]>([]);
+  const [isLoadingFeed, setIsLoadingFeed] = useState(true);
+  const [lastVisibleDocId, setLastVisibleDocId] = useState<string | undefined>(undefined);
+  const [hasMore, setHasMore] = useState(true);
 
-    if (categoryFilter) {
-      results = results.filter(p => {
-        const pCategory =
-          p.productDetails?.category || p.owner?.profileSetupData?.primaryCategory;
-        return pCategory === categoryFilter;
+  const observer = useRef<IntersectionObserver>();
+
+  const loadMorePublications = useCallback(async () => {
+    if (!hasMore || isLoadingFeed) return;
+    setIsLoadingFeed(true);
+    try {
+      const result = await getFeed({ 
+        limitNum: 5, 
+        startAfterDocId: lastVisibleDocId,
+        searchQuery: searchQuery || undefined,
+        categoryFilter: categoryFilter || undefined,
       });
+      setPublications(prev => [...prev, ...result.publications]);
+      setLastVisibleDocId(result.lastVisibleDocId);
+      setHasMore(!!result.lastVisibleDocId);
+    } catch (error) {
+      console.error("Failed to fetch feed:", error);
+    } finally {
+      setIsLoadingFeed(false);
     }
+  }, [hasMore, isLoadingFeed, lastVisibleDocId, searchQuery, categoryFilter]);
 
-    if (searchQuery) {
-      const lowerCaseQuery = searchQuery.toLowerCase();
-      results = results.filter(
-        p =>
-          p.description?.toLowerCase().includes(lowerCaseQuery) ||
-          p.alt?.toLowerCase().includes(lowerCaseQuery) ||
-          p.owner?.name.toLowerCase().includes(lowerCaseQuery) ||
-          (p.type === 'product' &&
-            p.productDetails?.name.toLowerCase().includes(lowerCaseQuery))
-      );
+
+  useEffect(() => {
+    // Reset and fetch new data when filters change
+    setPublications([]);
+    setLastVisibleDocId(undefined);
+    setHasMore(true);
+    // The `loadMorePublications` will be triggered by the observer setup below
+    // if `hasMore` is true. We can kick off the initial load here.
+    const initialLoad = async () => {
+      setIsLoadingFeed(true);
+       try {
+        const result = await getFeed({ 
+          limitNum: 5,
+          searchQuery: searchQuery || undefined,
+          categoryFilter: categoryFilter || undefined,
+        });
+        setPublications(result.publications);
+        setLastVisibleDocId(result.lastVisibleDocId);
+        setHasMore(!!result.lastVisibleDocId);
+      } catch (error) {
+        console.error("Failed to fetch initial feed:", error);
+      } finally {
+        setIsLoadingFeed(false);
+      }
     }
-    return results;
-  }, [allPublications, searchQuery, categoryFilter]);
+    initialLoad();
+  }, [searchQuery, categoryFilter]);
+
+
+  const lastElementRef = useCallback((node: HTMLDivElement) => {
+    if (isLoadingFeed) return;
+    if (observer.current) observer.current.disconnect();
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        loadMorePublications();
+      }
+    });
+    if (node) observer.current.observe(node);
+  }, [isLoadingFeed, hasMore, loadMorePublications]);
+
 
   const renderFeedContent = () => {
-    if (filteredPublications.length > 0) {
+    // Initial loading state
+    if (isLoadingFeed && publications.length === 0) {
       return (
         <div className="space-y-4 container mx-auto max-w-2xl">
-          {filteredPublications.map((item, index) => {
-            return <PublicationCard key={item.id || index} publication={item} />;
-          })}
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-[500px] w-full" />
+          ))}
+        </div>
+      );
+    }
+    
+    // No results found
+    if (publications.length === 0) {
+      return (
+        <div className="text-center text-muted-foreground pt-16">
+          <p>No se encontraron publicaciones.</p>
+          <p className="text-xs">Intenta cambiar tus filtros de búsqueda.</p>
         </div>
       );
     }
 
+    // Display publications
     return (
-      <div className="text-center text-muted-foreground pt-16">
-        <p>No hay publicaciones para mostrar.</p>
-        <p className="text-xs">Intenta cambiar tus filtros de búsqueda.</p>
+      <div className="space-y-4 container mx-auto max-w-2xl">
+        {publications.map((item, index) => {
+          const isLastElement = index === publications.length - 1;
+          return (
+             <div ref={isLastElement ? lastElementRef : null} key={item.id || index}>
+                 <PublicationCard publication={item} />
+             </div>
+          );
+        })}
+         {isLoadingFeed && (
+            <div className="flex justify-center py-4">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+         )}
       </div>
     );
   };
-
+  
+  // This loader is for the initial page authentication
   if (isLoadingAuth) {
     return (
-      <main className="space-y-4 container py-4 mx-auto max-w-2xl">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="h-[500px] w-full" />
-        ))}
+      <main className="flex items-center justify-center min-h-screen">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </main>
     );
   }
