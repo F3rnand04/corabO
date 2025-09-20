@@ -133,5 +133,3 @@ export async function removeGalleryImageFlow(input: RemoveGalleryImageInput) {
     const db = getFirestore();
     await db.collection('publications').doc(input.imageId).delete();
 }
-
-    
