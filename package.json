@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "npm run clean && next build && next start",
     "build": "next build",
-    "start": "next start",
     "clean": "rm -rf .next",
     "rebuild": "rm -rf node_modules .next package-lock.json && npm install"
   },
