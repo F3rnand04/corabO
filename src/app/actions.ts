@@ -1,25 +1,22 @@
 
 'use server';
 
-import '@/ai/genkit';
 import { getFirestore } from 'firebase-admin/firestore';
 import type { FirebaseUserInput, User } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
-// import { getOrCreateUserFlow } from '@/ai/flows/auth-flow';
 
 /**
  * Gets a user document from Firestore, or creates it if it doesn't exist.
- * This server action now correctly wraps the centralized Genkit flow.
+ * This server action previously wrapped a Genkit flow, but has been temporarily
+ * modified to use direct Firestore access to allow the app to build without Genkit dependencies.
  */
 export async function getOrCreateUser(firebaseUser: FirebaseUserInput): Promise<User> {
-    // const user = await getOrCreateUserFlow(firebaseUser);
-    
-    // START TEMPORARY MOCK
     const db = getFirestore();
     const userRef = db.collection('users').doc(firebaseUser.uid);
     const userSnap = await userRef.get();
 
     if (userSnap.exists) {
+      revalidatePath('/'); // Ensure any updates are reflected
       return userSnap.data() as User;
     }
 
@@ -44,9 +41,6 @@ export async function getOrCreateUser(firebaseUser: FirebaseUserInput): Promise<
     };
 
     await userRef.set(newUser);
-    const user = newUser;
-    // END TEMPORARY MOCK
-
-    revalidatePath('/'); // Revalidate the path to reflect changes
-    return user;
+    revalidatePath('/'); // Revalidate the path to reflect the new user
+    return newUser;
 }
