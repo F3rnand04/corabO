@@ -4,10 +4,11 @@
   "type": "module",
   "description": "Plataforma de conexión entre profesionales y clientes.",
   "scripts": {
-    "dev": "npm run clean && next dev",
+    "dev": "npm run rebuild && next dev",
     "build": "next build",
     "start": "next start",
-    "clean": "rm -rf .next"
+    "clean": "rm -rf .next",
+    "rebuild": "rm -rf node_modules .next package-lock.json"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
