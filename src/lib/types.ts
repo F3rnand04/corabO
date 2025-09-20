@@ -677,34 +677,59 @@ export type AppointmentRequest = {
     details: string;
     amount: number;
 };
-export const GalleryImageSchema = z.object({
-    id: z.string(),
-    providerId: z.string(),
-    type: z.enum(['image', 'video', 'product']),
-    src: z.string(),
-    alt: z.string(),
-    description: z.string(),
-    createdAt: z.string(),
-    comments: z.array(z.any()).optional(), // Replace with more specific comment schema
-    isTemporary: z.boolean().optional(),
-    promotion: z.object({
-        text: z.string(),
-        expires: z.string(),
-        publicationId: z.string(),
-    }).optional(),
-    campaignId: z.string().optional(),
-    likes: z.number().optional(),
-    owner: z.any().optional(), // Replace with more specific owner schema
-    productDetails: z.object({
-        name: z.string(),
-        price: z.number(),
-        category: z.string(),
-    }).optional(),
-    isTutorial: z.boolean().optional(),
-    tutorialPrice: z.number().optional(),
-    searchKeywords: z.array(z.string()).optional(),
-    aspectRatio: z.enum(['square', 'horizontal', 'vertical']).optional(),
-});
 
-export type CreatePublicationInput = z.infer<typeof GalleryImageSchema>;
-export type CreateProductInput = z.infer<typeof GalleryImageSchema>;
+// Schemas for Publication Flow
+export const CreatePublicationInputSchema = z.object({
+  userId: z.string(),
+  description: z.string(),
+  imageDataUri: z.string(),
+  aspectRatio: z.enum(['square', 'horizontal', 'vertical']),
+  type: z.enum(['image', 'video']),
+});
+export type CreatePublicationInput = z.infer<typeof CreatePublicationInputSchema>;
+
+export const CreateProductInputSchema = z.object({
+    userId: z.string(),
+    name: z.string(),
+    description: z.string(),
+    price: z.number(),
+    imageDataUri: z.string(),
+});
+export type CreateProductInput = z.infer<typeof CreateProductInputSchema>;
+
+
+export const AddCommentInputSchema = z.object({
+  imageId: z.string(),
+  commentText: z.string(),
+  author: z.object({
+    id: z.string(),
+    name: z.string(),
+    profileImage: z.string(),
+  })
+});
+export type AddCommentInput = z.infer<typeof AddCommentInputSchema>;
+
+
+export const RemoveCommentInputSchema = z.object({
+  imageId: z.string(),
+  commentIndex: z.number(),
+  authorId: z.string(),
+});
+export type RemoveCommentInput = z.infer<typeof RemoveCommentInputSchema>;
+
+export const UpdateGalleryImageInputSchema = z.object({
+  imageId: z.string(),
+  updates: z.object({
+    description: z.string().optional(),
+    imageDataUri: z.string().optional(),
+  })
+});
+export type UpdateGalleryImageInput = z.infer<typeof UpdateGalleryImageInputSchema>;
+
+
+export const RemoveGalleryImageInputSchema = z.object({
+  imageId: z.string()
+});
+export type RemoveGalleryImageInput = z.infer<typeof RemoveGalleryImageInputSchema>;
+
+    

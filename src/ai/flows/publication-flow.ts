@@ -3,14 +3,13 @@
  * @fileOverview Flows for creating and managing publications and products securely on the backend.
  */
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import { z } from 'zod';
 import type { GalleryImage, User, GalleryImageComment, CreatePublicationInput, CreateProductInput, AddCommentInput, RemoveCommentInput, UpdateGalleryImageInput, RemoveGalleryImageInput } from '@/lib/types';
 
 
 export async function createPublicationFlow(input: CreatePublicationInput): Promise<GalleryImage> {
     const db = getFirestore();
     
-    const userRef = db.collection('users').doc(input.providerId);
+    const userRef = db.collection('users').doc(input.userId);
     const userSnap = await userRef.get();
     if (!userSnap.exists) {
       throw new Error('User not found.');
@@ -20,9 +19,9 @@ export async function createPublicationFlow(input: CreatePublicationInput): Prom
 
     const newPublication: GalleryImage = {
       id: publicationId,
-      providerId: input.providerId,
+      providerId: input.userId,
       type: input.type,
-      src: input.src,
+      src: input.imageDataUri,
       alt: input.description.slice(0, 50),
       description: input.description,
       createdAt: new Date().toISOString(),
@@ -41,7 +40,7 @@ export async function createPublicationFlow(input: CreatePublicationInput): Prom
 
 export async function createProductFlow(input: CreateProductInput): Promise<GalleryImage> {
     const db = getFirestore();
-    const userRef = db.collection('users').doc(input.providerId);
+    const userRef = db.collection('users').doc(input.userId);
     const userSnap = await userRef.get();
     if (!userSnap.exists) {
         throw new Error('User not found.');
@@ -51,17 +50,17 @@ export async function createProductFlow(input: CreateProductInput): Promise<Gall
     
     const newProductPublication: GalleryImage = {
         id: productId,
-        providerId: input.providerId,
+        providerId: input.userId,
         type: 'product',
-        src: input.src,
-        alt: input.alt,
+        src: input.imageDataUri,
+        alt: input.name,
         description: input.description,
         createdAt: new Date().toISOString(),
         likes: 0,
         comments: [],
         productDetails: {
-          name: input.alt,
-          price: input.productDetails?.price || 0,
+          name: input.name,
+          price: input.price || 0,
           category: (userSnap.data() as User).profileSetupData?.primaryCategory || 'General',
         },
     };
@@ -134,3 +133,5 @@ export async function removeGalleryImageFlow(input: RemoveGalleryImageInput) {
     const db = getFirestore();
     await db.collection('publications').doc(input.imageId).delete();
 }
+
+    
