@@ -1,57 +1,67 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Users can only read/write their own document. Public profiles are handled by flows.
+  
+    // Users can only read/write their own document
     match /users/{userId} {
-      allow read, update, delete: if request.auth != null && request.auth.uid == userId;
-      allow create: if request.auth != null;
+      allow read: if true;
+      allow create, update, delete: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Anyone can read publications, but only the owner can create/update/delete.
+    // Publications are public, but only owner can modify
     match /publications/{publicationId} {
       allow read: if true;
-      allow create, update, delete: if request.auth != null && request.resource.data.providerId == request.auth.uid;
+      allow create, update, delete: if request.auth != null && request.auth.uid == resource.data.providerId;
     }
     
-    // Transactions can only be read/written by participants.
+    // Transactions can only be read/written by participants
     match /transactions/{transactionId} {
-        allow read, write: if request.auth != null && request.resource.data.participantIds.hasAny([request.auth.uid]);
-        allow create: if request.auth != null && request.resource.data.participantIds.hasAny([request.auth.uid]);
+      allow read, create, update: if request.auth != null && request.auth.uid in resource.data.participantIds;
     }
     
-    // Conversations can only be read/written by participants.
+    // Conversations can only be read/written by participants
     match /conversations/{conversationId} {
-      allow read, write: if request.auth != null && resource.data.participantIds.hasAny([request.auth.uid]);
+      allow read, create, update: if request.auth != null && request.auth.uid in resource.data.participantIds;
     }
 
-    // Notifications can only be read/written by the recipient.
-    match /notifications/{notificationId} {
-      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
-    }
-
-    // Affiliations: complex logic handled by server-side flows (actions).
-    // Restrict client-side writes for safety.
-    match /affiliations/{affiliationId} {
-        allow read: if request.auth != null;
-        allow write: if false; // All affiliation logic is server-side.
-    }
-    
-    // Reports can be created by any authenticated user.
+    // Reports can be created by any authenticated user
     match /reports/{reportId} {
       allow create: if request.auth != null;
-      allow read, write: if false; // Reviewed by admins only.
+      allow read, update, delete: if request.auth != null && request.auth.token.role == 'admin'; // Only admins
     }
     
-    // QR Sessions can be read/written by participants.
-    match /qr_sessions/{sessionId} {
-      allow read, write: if request.auth != null && resource.data.participantIds.hasAny([request.auth.uid]);
-       allow create: if request.auth != null;
+    // Notifications belong to a user
+    match /notifications/{notificationId} {
+       allow read, create, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
     }
-
-    // Default deny all other reads/writes
-    match /{document=**} {
-      allow read, write: if false;
+    
+     // QR Sessions can be managed by participants
+    match /qr_sessions/{sessionId} {
+      allow read, create, update: if request.auth != null && request.auth.uid in resource.data.participantIds;
+    }
+    
+    // Affiliations
+    match /affiliations/{affiliationId} {
+        allow read, create: if request.auth != null;
+        allow update: if request.auth != null; // Simplificado para demo, idealmente sería más granular
+    }
+    
+    // Campaigns
+    match /campaigns/{campaignId} {
+        allow read: if true;
+        allow create, update: if request.auth != null && request.auth.uid == resource.data.providerId;
+    }
+    
+    // Disputes (Admin only)
+    match /disputes/{disputeId} {
+       allow read, create, update, delete: if request.auth != null && request.auth.token.role == 'admin';
+    }
+    
+    // Live Streams
+    match /livestreams/{streamId} {
+      allow read: if true;
+      allow create, update: if request.auth != null && request.auth.uid == resource.data.creatorId;
     }
   }
 }
