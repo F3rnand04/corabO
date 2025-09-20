@@ -1,7 +1,9 @@
+
 /**
  * @fileOverview Flows for creating and managing publications and products securely on the backend.
  */
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { z } from 'zod';
 import type { GalleryImage, User, GalleryImageComment, CreatePublicationInput, CreateProductInput, AddCommentInput, RemoveCommentInput, UpdateGalleryImageInput, RemoveGalleryImageInput } from '@/lib/types';
 
 
@@ -20,7 +22,7 @@ export async function createPublicationFlow(input: CreatePublicationInput): Prom
       id: publicationId,
       providerId: input.providerId,
       type: input.type,
-      src: input.imageDataUri,
+      src: input.src,
       alt: input.description.slice(0, 50),
       description: input.description,
       createdAt: new Date().toISOString(),
@@ -51,15 +53,15 @@ export async function createProductFlow(input: CreateProductInput): Promise<Gall
         id: productId,
         providerId: input.providerId,
         type: 'product',
-        src: input.imageDataUri,
-        alt: input.name,
+        src: input.src,
+        alt: input.alt,
         description: input.description,
         createdAt: new Date().toISOString(),
         likes: 0,
         comments: [],
         productDetails: {
-          name: input.name,
-          price: input.price,
+          name: input.alt,
+          price: input.productDetails?.price || 0,
           category: (userSnap.data() as User).profileSetupData?.primaryCategory || 'General',
         },
     };
