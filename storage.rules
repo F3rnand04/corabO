@@ -1,8 +1,18 @@
+
 rules_version = '2';
+
 service firebase.storage {
   match /b/{bucket}/o {
+    // Allow public read for all files. 
+    // This is simple for an MVP, can be restricted later (e.g., only for images in /publications).
     match /{allPaths=**} {
-      allow read, write: if request.auth != null;
+      allow read;
+    }
+
+    // Users can only write to their own folder within 'user_uploads'
+    // Example path: /user_uploads/USER_ID/profile_pic.jpg
+    match /user_uploads/{userId}/{allPaths=**} {
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }

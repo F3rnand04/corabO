@@ -1,58 +1,51 @@
 
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if the user is authenticated
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    // Helper function to check if the user is the owner of the document
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    // --- Users Collection ---
-    // Users can read any public profile, but can only write to their own document.
+    // Users can only read/write their own document
     match /users/{userId} {
-      allow read: if true;
-      allow write: if isOwner(userId);
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // --- Global Publications (Feed) ---
-    // Anyone can read publications. Only the owner can create/update/delete.
+    // Allow public read for publications, but only the owner can create/update/delete
     match /publications/{publicationId} {
-      allow read: if true;
-      allow create, update, delete: if isSignedIn() && isOwner(request.resource.data.providerId);
+      allow read;
+      allow create, update, delete: if request.auth != null && request.resource.data.providerId == request.auth.uid;
+    }
+    
+    // Conversations are private between participants
+    match /conversations/{conversationId} {
+      allow read, write: if request.auth != null && request.auth.uid in resource.data.participantIds;
+    }
+    
+    // Transactions are private between participants
+    match /transactions/{transactionId} {
+        allow read, write: if request.auth != null && request.auth.uid in resource.data.participantIds;
     }
 
-    // --- Transactions & Conversations ---
-    // Participants can read/write their own transactions and conversations.
-    match /{collection}/{docId} {
-      allow read, write: if isSignedIn() && request.auth.uid in resource.data.participantIds;
-    }
-
-    // --- Notifications ---
-    // Only the designated user can access their notifications.
+    // Notifications are private to the user
     match /notifications/{notificationId} {
-        allow read, write: if isSignedIn() && isOwner(resource.data.userId);
+      allow read, write: if request.auth != null && request.resource.data.userId == request.auth.uid;
     }
-
-    // --- Affiliations ---
-    // The company or the provider can read it.
-    // The provider can create it (request).
-    // The company can update it (approve/reject/revoke).
-    match /affiliations/{affiliationId} {
-        allow read: if isSignedIn() && (request.auth.uid == resource.data.providerId || request.auth.uid == resource.data.companyId);
-        allow create: if isSignedIn() && isOwner(request.resource.data.providerId);
-        allow update, delete: if isSignedIn() && isOwner(request.resource.data.companyId);
+    
+    // Reports can only be created by authenticated users
+    match /reports/{reportId} {
+        allow create: if request.auth != null;
+        // Reading/deleting reports should be an admin-only task, handled by server-side logic
+        allow read, update, delete: if false;
     }
-
-    // --- QR Sessions ---
-    // The participants (client and provider) can access the session document.
+    
+     // QR sessions are private between participants
     match /qr_sessions/{sessionId} {
-      allow read, write: if isSignedIn() && request.auth.uid in resource.data.participantIds;
+      allow read, write: if request.auth != null && request.auth.uid in resource.data.participantIds;
+    }
+    
+    // Affiliations can be read by involved parties, but writes are handled server-side
+    match /affiliations/{affiliationId} {
+        allow read: if request.auth != null && (request.auth.uid == resource.data.providerId || request.auth.uid == resource.data.companyId);
+        allow create, update, delete: if false; // Must be done via server actions
     }
   }
 }
