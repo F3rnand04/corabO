@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth-provider';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, MessageCircle, CheckCircle, Flag, Package, Hand, MoreHorizontal, Wallet, Megaphone, Zap, Timer, TrendingUp, UserRoundCog, BrainCircuit, Wrench, Car, Scissors, Home as HomeIcon, Utensils, Briefcase, Building, Users, Search, Loader2, Handshake, Settings } from 'lucide-react';
+import { Star, Calendar, MapPin, Bookmark, Send, ChevronLeft, MessageCircle, CheckCircle, Flag, Package, Hand, MoreHorizontal, Wallet, Megaphone, Zap, Timer, TrendingUp, UserRoundCog, BrainCircuit, Wrench, Car, Scissors, Home as HomeIcon, Utensils, Briefcase, Building, Users, Search, Loader2, Handshake, Settings, Edit } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
@@ -38,6 +39,7 @@ import { SubscriptionDialog } from './SubscriptionDialog';
 import { EditableAvatar } from './EditableAvatar';
 import { TransactionDetailsDialog } from './TransactionDetailsDialog';
 import { haversineDistance } from '@/lib/utils';
+import { useCorabo } from '@/hooks/use-corabo';
 
 
 const categoryIcons: { [key: string]: React.ElementType } = {
@@ -124,7 +126,8 @@ function ProfileStats({ metrics, isNew }: { metrics: any, isNew: boolean }) {
 
 
 export function UserProfilePage({ userId }: { userId: string}) {
-  const { currentUser, users, transactions, isContact, addContact, currentUserLocation } = useAuth();
+  const { currentUser, addContact } = useAuth();
+  const { users, transactions, isContact, currentUserLocation } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -353,9 +356,9 @@ export function UserProfilePage({ userId }: { userId: string}) {
               )}
             </div>
 
-            {isSelfProfile && (
+            {isSelfProfile && isProvider && (
               <div className="flex items-center gap-2 mt-4">
-                  {isProvider && !isCompany && <Button asChild variant="outline" className="flex-1"><Link href="/emprende"><Zap className="w-4 h-4 mr-2"/>Emprende por Hoy</Link></Button>}
+                  <Button asChild variant="outline" className="flex-1"><Link href="/profile-setup/details"><Edit className="w-4 h-4 mr-2"/>Editar Perfil</Link></Button>
                   {isCompany && <Button variant="outline" className="flex-1" onClick={() => setIsCampaignDialogOpen(true)}><Megaphone className="w-4 h-4 mr-2"/>Campañas</Button>}
                   {isCompany && <Button asChild variant="outline" className="flex-1"><Link href="/admin?tab=affiliations"><Handshake className="w-4 h-4 mr-2"/>Talento</Link></Button>}
               </div>
@@ -369,7 +372,7 @@ export function UserProfilePage({ userId }: { userId: string}) {
 
             {!isSelfProfile && (
               <div className="grid grid-cols-2 gap-2 mt-4">
-                <Button variant="outline" onClick={() => addContact(provider)}><Bookmark className="w-4 h-4 mr-2"/>Guardar</Button>
+                <Button variant="outline" onClick={() => addContactToUser(currentUser!.id, provider.id)}><Bookmark className="w-4 h-4 mr-2"/>Guardar</Button>
                 <Button onClick={() => sendMessage({recipientId: provider.id, text: `¡Hola! Me interesa tu perfil.`, conversationId: [currentUser!.id, provider.id].sort().join('-'), senderId: currentUser!.id}).then(id => router.push(`/messages/${id}`))}><MessageCircle className="w-4 h-4 mr-2"/>Mensaje</Button>
               </div>
             )}
