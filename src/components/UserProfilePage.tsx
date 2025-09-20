@@ -284,10 +284,10 @@ export function UserProfilePage({ userId }: { userId: string}) {
 
   const handleDateSelect = (date: Date | undefined) => {
     if (!currentUser?.isTransactionsActive) {
-         toast({ variant: 'destructive', title: "Acción Requerida", description: "Por favor, activa tu registro de transacciones para poder agendar citas." }); return;
+         toast({ variant: "destructive", title: "Acción Requerida", description: "Por favor, activa tu registro de transacciones para poder agendar citas." }); return;
     }
     if (!provider.isTransactionsActive) {
-         toast({ variant: 'destructive', title: "Proveedor no disponible", description: "Este proveedor no tiene las transacciones activas en este momento." }); return;
+         toast({ variant: "destructive", title: "Proveedor no disponible", description: "Este proveedor no tiene las transacciones activas en este momento." }); return;
     }
     if (date && provider) {
         setAppointmentDate(date);

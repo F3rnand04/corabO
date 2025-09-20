@@ -11,35 +11,8 @@ import { useAuth } from '@/hooks/use-auth-provider';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { startQrSession } from '@/lib/actions/cashier.actions';
+import QrScanner from 'react-qr-scanner';
 
-
-// --- Placeholder for QR Scanner Library ---
-const QrScannerPlaceholder = ({ onScan, onScanError }: { onScan: (data: string) => void, onScanError: (error: Error) => void }) => {
-  // In a real app, this would use a library like 'react-qr-scanner'
-  // For this prototype, we'll simulate a scan.
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      // Simulate scanning a provider's QR for a specific box
-      onScan('{"providerId":"user_provider_1", "cashierBoxId": "caja-1"}');
-    }, 2000);
-    return () => clearTimeout(timer);
-  }, [onScan]);
-
-  return (
-    <div className="w-full aspect-square bg-black rounded-lg flex flex-col items-center justify-center text-white relative overflow-hidden">
-      <div className="w-64 h-64 border-4 border-dashed border-green-500 rounded-lg" />
-      <div className="absolute top-0 left-0 w-full h-1 bg-green-500 animate-[scan_2s_ease-in-out_infinite]" />
-      <p className="mt-4 text-sm text-center">Simulando escaneo...</p>
-      <style jsx>{`
-        @keyframes scan {
-          0% { top: 0; }
-          100% { top: 100%; }
-        }
-      `}</style>
-    </div>
-  );
-};
-// --- End Placeholder ---
 
 function ScanQrContent() {
   const router = useRouter();
@@ -110,7 +83,7 @@ function ScanQrContent() {
     toast({
       variant: 'destructive',
       title: 'Error de Escaneo',
-      description: 'No se pudo leer el código QR.',
+      description: 'No se pudo leer el código QR. Revisa los permisos de la cámara.',
     });
   };
 
@@ -127,7 +100,15 @@ function ScanQrContent() {
     if (isMobileDevice()) {
         return (
              <div className="w-full max-w-sm">
-                <QrScannerPlaceholder onScan={handleScan} onScanError={handleError} />
+                <QrScanner 
+                  delay={300}
+                  onError={handleError}
+                  onScan={(result) => handleScan(result ? result.text : null)}
+                  style={{ width: '100%' }}
+                  constraints={{
+                      video: { facingMode: "environment" }
+                  }}
+                />
              </div>
         )
     }
