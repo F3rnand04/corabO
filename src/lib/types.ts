@@ -680,7 +680,7 @@ export type AppointmentRequest = {
 
 // Schemas for Publication Flow
 export const CreatePublicationInputSchema = z.object({
-  userId: z.string(),
+  providerId: z.string(),
   description: z.string(),
   imageDataUri: z.string(),
   aspectRatio: z.enum(['square', 'horizontal', 'vertical']),
@@ -689,7 +689,7 @@ export const CreatePublicationInputSchema = z.object({
 export type CreatePublicationInput = z.infer<typeof CreatePublicationInputSchema>;
 
 export const CreateProductInputSchema = z.object({
-    userId: z.string(),
+    providerId: z.string(),
     name: z.string(),
     description: z.string(),
     price: z.number(),
@@ -731,5 +731,3 @@ export const RemoveGalleryImageInputSchema = z.object({
   imageId: z.string()
 });
 export type RemoveGalleryImageInput = z.infer<typeof RemoveGalleryImageInputSchema>;
-
-    
