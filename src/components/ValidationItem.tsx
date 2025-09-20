@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -8,7 +9,7 @@ import { CheckCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { sendSmsVerificationCode, verifySmsCode } from '@/lib/actions/sms.actions'; 
-import { useAuth } from '@/hooks/use-auth-provider';
+import { useAuth } from '@/hooks/use-auth';
 
 type ValidationStatus = 'idle' | 'pending' | 'validated';
 
@@ -31,8 +32,7 @@ export function ValidationItem({
     type,
     userId
 }: ValidationItemProps) {
-    const { currentUser } = useAuth();
-    const firebaseUser = currentUser; 
+    const { firebaseUser } = useAuth(); 
 
     const [status, setStatus] = useState<ValidationStatus>(initialStatus);
     const [isLoading, setIsLoading] = useState(false);

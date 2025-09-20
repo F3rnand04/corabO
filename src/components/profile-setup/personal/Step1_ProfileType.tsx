@@ -4,7 +4,7 @@
 import { Card } from "@/components/ui/card";
 import { Truck, Wrench, BedDouble, Earth } from "lucide-react";
 import type { ProfileSetupData } from '@/lib/types';
-import { useAuth } from "@/hooks/use-auth-provider";
+import { useAuth } from "@/hooks/use-auth";
 
 interface Step1ProfileTypeProps {
   onUpdateAndNext: (data: Partial<ProfileSetupData>) => void;

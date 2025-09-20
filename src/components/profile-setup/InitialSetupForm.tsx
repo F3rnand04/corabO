@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, memo } from 'react';
@@ -20,7 +21,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Separator } from '@/components/ui/separator';
 import { countries } from '@/lib/data/options';
-import { useAuth } from '@/hooks/use-auth-provider';
+import { useAuth } from '@/hooks/use-auth';
 
 const CountrySelector = memo(function CountrySelector({ value, onValueChange }: { value: string, onValueChange: (value: string) => void }) {
     return (

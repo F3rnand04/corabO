@@ -3,87 +3,28 @@
 
 import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
-import type { User, Transaction, GalleryImage, CartItem, Product, TempRecipientInfo, QrSession, Notification, Conversation, FirebaseUserInput } from '@/lib/types';
 import type { User as FirebaseUser } from 'firebase/auth';
-import { useToast } from '@/hooks/use-toast';
-import { auth, db } from '@/lib/firebase-client';
+import { auth } from '@/lib/firebase-client';
 import { getOrCreateUser } from '@/lib/actions/auth.actions';
-import { addContactToUser, updateUser } from '@/lib/actions/user.actions';
-import { updateCart } from '@/lib/actions/cart.actions';
-import { collection, doc, onSnapshot, query, where, updateDoc, FieldValue } from 'firebase/firestore';
-import { haversineDistance } from '@/lib/utils';
-import { differenceInMilliseconds } from 'date-fns';
-import { usePathname, useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { useRouter, usePathname } from 'next/navigation';
+import { CoraboProvider } from '@/contexts/CoraboContext';
+import type { FirebaseUserInput, User } from '@/lib/types';
 
-// --- Centralized Type Definition and Context Creation ---
-
+// Interface for the Authentication Context
 export interface AuthContextValue {
   firebaseUser: FirebaseUser | null;
   currentUser: User | null;
   isLoadingAuth: boolean;
   logout: () => Promise<void>;
   setCurrentUser: React.Dispatch<React.SetStateAction<User | null>>;
-  
-  // Data states
-  contacts: User[];
-  addContact: (user: User) => void;
-  removeContact: (userId: string) => void;
-  isContact: (userId: string) => boolean;
-  
-  users: User[];
-  transactions: Transaction[];
-  setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
-  allPublications: GalleryImage[];
-  setAllPublications: React.Dispatch<React.SetStateAction<GalleryImage[]>>;
-  
-  cart: CartItem[];
-  activeCartForCheckout: CartItem[] | null;
-  setActiveCartForCheckout: React.Dispatch<React.SetStateAction<CartItem[] | null>>;
-  updateCartItem: (product: Product, quantity: number) => void;
-  removeCart: (itemsToRemove: CartItem[]) => void;
-  
-  tempRecipientInfo: TempRecipientInfo | null;
-  setTempRecipientInfo: React.Dispatch<React.SetStateAction<TempRecipientInfo | null>>;
-  deliveryAddress: string;
-  setDeliveryAddress: React.Dispatch<React.SetStateAction<string>>;
-  setDeliveryAddressToCurrent: () => void;
-  
-  currentUserLocation: { latitude: number; longitude: number } | null;
-  getCurrentLocation: () => void;
-  
-  searchQuery: string;
-  setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
-  categoryFilter: string | null;
-  setCategoryFilter: React.Dispatch<React.SetStateAction<string | null>>;
-  searchHistory: string[];
-  clearSearchHistory: () => void;
-  
-  notifications: Notification[];
-  conversations: Conversation[];
-  qrSession: QrSession | null;
-  
-  getUserMetrics: (userId: string, userType: User['type'], allTransactions: Transaction[]) => { reputation: number, effectiveness: number, averagePaymentTimeMs: number };
-  getAgendaEvents: (transactions: Transaction[]) => any[];
 }
 
+// Create the Authentication Context
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
-// --- AuthProvider Component ---
-
-interface AuthProviderProps {
-  children: React.ReactNode;
-}
-
-export const AuthProvider = ({ children }: AuthProviderProps) => {
+// AuthProvider Component: Handles auth state and orchestrates data providers
+export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
@@ -92,40 +33,22 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Data states
-  const [users, setUsers] = useState<User[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [allPublications, setAllPublications] = useState<GalleryImage[]>([]);
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [contacts, setContacts] = useState<User[]>([]);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [qrSession, setQrSession] = useState<QrSession | null>(null);
-  const [activeCartForCheckout, setActiveCartForCheckout] = useState<CartItem[] | null>(null);
-  const [tempRecipientInfo, setTempRecipientInfo] = useState<TempRecipientInfo | null>(null);
-  const [deliveryAddress, setDeliveryAddress] = useState('');
-  const [currentUserLocation, setCurrentUserLocation] = useState<{ latitude: number, longitude: number } | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
-  const [searchHistory, setSearchHistory] = useState<string[]>([]);
-  
-  // This effect handles the initial authentication check and user profile fetching.
+  // Effect for Firebase authentication state listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       if (fbUser) {
         setFirebaseUser(fbUser);
-        
         const userPayload: FirebaseUserInput = {
-          uid: fbUser.uid,
-          email: fbUser.email,
-          displayName: fbUser.displayName,
-          photoURL: fbUser.photoURL,
-          phoneNumber: fbUser.phoneNumber,
-          emailVerified: fbUser.emailVerified
+            uid: fbUser.uid,
+            email: fbUser.email,
+            displayName: fbUser.displayName,
+            photoURL: fbUser.photoURL,
+            phoneNumber: fbUser.phoneNumber,
+            emailVerified: fbUser.emailVerified
         };
+        // Get or create the user profile from Firestore
         const userProfile = await getOrCreateUser(userPayload);
         setCurrentUser(userProfile);
-
       } else {
         setFirebaseUser(null);
         setCurrentUser(null);
@@ -134,52 +57,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     });
     return () => unsubscribe();
   }, []);
-  
-  // This effect handles all real-time data listeners once the user is authenticated.
+
+  // Effect for handling client-side routing based on auth state
   useEffect(() => {
-    if (!firebaseUser?.uid || !db) {
-      setUsers([]); setTransactions([]); setCart([]); setContacts([]);
-      setNotifications([]); setConversations([]); setQrSession(null);
-      setAllPublications([]);
-      return;
-    }
-
-    const unsubUser = onSnapshot(doc(db, "users", firebaseUser.uid), (doc) => {
-      if (doc.exists()) {
-        const updatedUser = doc.data() as User;
-        setCurrentUser(updatedUser);
-        setCart(updatedUser.cart || []);
-        
-        if (updatedUser.contacts && updatedUser.contacts.length > 0) {
-            const contactsQuery = query(collection(db, "users"), where('id', 'in', updatedUser.contacts));
-            onSnapshot(contactsQuery, (snapshot) => {
-                setContacts(snapshot.docs.map(d => d.data() as User));
-            });
-        } else {
-            setContacts([]);
-        }
-      }
-    });
-    
-    const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => setUsers(snapshot.docs.map(doc => doc.data() as User)));
-    const unsubTransactions = onSnapshot(query(collection(db, "transactions"), where('participantIds', 'array-contains', firebaseUser.uid)), (snapshot) => setTransactions(snapshot.docs.map(doc => doc.data() as Transaction).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())));
-    const unsubNotifications = onSnapshot(query(collection(db, "notifications"), where('userId', '==', firebaseUser.uid), orderBy('timestamp', 'desc')), (snapshot) => setNotifications(snapshot.docs.map(doc => doc.data() as Notification)));
-    const unsubConversations = onSnapshot(query(collection(db, "conversations"), where('participantIds', 'array-contains', firebaseUser.uid)), (snapshot) => setConversations(snapshot.docs.map(doc => doc.data() as Conversation)));
-    const unsubQrSession = onSnapshot(query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', firebaseUser.uid), where('status', '!=', 'closed')), (snapshot) => setQrSession(snapshot.empty ? null : snapshot.docs[0].data() as QrSession));
-    const unsubPublications = onSnapshot(collection(db, "publications"), (snapshot) => setAllPublications(snapshot.docs.map(d => d.data() as GalleryImage)));
-
-    return () => {
-      unsubUser(); unsubUsers(); unsubTransactions();
-      unsubNotifications(); unsubConversations(); unsubQrSession();
-      unsubPublications();
-    };
-  }, [firebaseUser?.uid]);
-
-  // This is the key effect for client-side routing logic.
-  useEffect(() => {
-    if (isLoadingAuth) {
-      return;
-    }
+    if (isLoadingAuth) return;
 
     const isAuthPage = pathname === '/login';
     const isSetupPage = pathname === '/initial-setup';
@@ -193,10 +74,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   }, [currentUser, isLoadingAuth, pathname, router]);
 
-  
+  // Logout function
   const logout = useCallback(async () => {
     try {
       await signOut(auth);
+      // Clear all local state on logout
       setCurrentUser(null);
       setFirebaseUser(null);
       router.push('/login');
@@ -205,100 +87,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cerrar la sesión.' });
     }
   }, [toast, router]);
-  
-  const getCurrentLocation = useCallback(() => {
-    if (typeof window !== 'undefined' && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const location = { latitude: position.coords.latitude, longitude: position.coords.longitude };
-          setCurrentUserLocation(location);
-          if (currentUser?.id) {
-            updateUser(currentUser.id, { 'profileSetupData.location': `${'${location.latitude}'},${'${location.longitude}'}` });
-          }
-        },
-        () => toast({ variant: "destructive", title: "Error de Ubicación", description: "No se pudo obtener tu ubicación. Revisa los permisos." }),
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 600000 }
-      );
-    }
-  }, [toast, currentUser?.id]);
-  
-  useEffect(() => {
-    const storedHistory = localStorage.getItem('coraboSearchHistory');
-    if (storedHistory) setSearchHistory(JSON.parse(storedHistory));
-  }, []);
 
-  useEffect(() => {
-      if (searchQuery.trim() && !searchHistory.includes(searchQuery.trim())) {
-          const newHistory = [searchQuery.trim(), ...searchHistory].slice(0, 10);
-          setSearchHistory(newHistory);
-          localStorage.setItem('coraboSearchHistory', JSON.stringify(newHistory));
-      }
-  }, [searchQuery, searchHistory]);
-  
-  const addContact = useCallback(async (user: User) => {
-    if (!currentUser) return;
-    addContactToUser(currentUser.id, user.id);
-  }, [currentUser]);
-
-  const removeContact = useCallback(async (userId: string) => {
-    if (!currentUser) return;
-    const userRef = doc(db, 'users', currentUser.id);
-    await updateDoc(userRef, { contacts: FieldValue.arrayRemove(userId) });
-  }, [currentUser]);
-
-  const isContact = useCallback((userId: string) => currentUser?.contacts?.includes(userId) ?? false, [currentUser?.contacts]);
-  
-  const updateCartItem = useCallback(async (product: Product, quantity: number) => {
-      if (!currentUser) return;
-      updateCart(currentUser.id, product.id, quantity);
-  }, [currentUser]);
-
-  const removeCart = useCallback(async (itemsToRemove: CartItem[]) => {
-      if (!currentUser) return;
-      itemsToRemove.forEach(item => {
-        updateCart(currentUser.id, item.product.id, 0);
-      });
-  }, [currentUser]);
-
-  const setDeliveryAddressToCurrent = useCallback(() => {
-    getCurrentLocation();
-    if (currentUserLocation) setDeliveryAddress(`${'${currentUserLocation.latitude}'},${'${currentUserLocation.longitude}'}`);
-    else toast({ variant: "destructive", title: "Ubicación no disponible", description: "No hemos podido obtener tu ubicación GPS." });
-  }, [currentUserLocation, toast, getCurrentLocation]);
-  
-  const clearSearchHistory = () => {
-      setSearchHistory([]);
-      localStorage.removeItem('coraboSearchHistory');
-  };
-  
-  const getUserMetrics = useCallback((userId: string, userType: User['type'], allTransactions: Transaction[]) => {
-    const relevantTransactions = allTransactions.filter(tx => (tx.clientId === userId || tx.providerId === userId) && ['Pagado', 'Resuelto'].includes(tx.status));
-    const ratedTransactions = relevantTransactions.filter(tx => userType === 'provider' ? tx.details.clientRating : tx.details.providerRating);
-    const totalRating = ratedTransactions.reduce((acc, tx) => acc + (userType === 'provider' ? tx.details.clientRating! : tx.details.providerRating!), 0);
-    const reputation = ratedTransactions.length > 0 ? totalRating / ratedTransactions.length : 5.0;
-
-    const totalDeals = allTransactions.filter(tx => (tx.clientId === userId || tx.providerId === userId) && tx.type !== 'Sistema').length;
-    const effectiveness = totalDeals > 0 ? (relevantTransactions.length / totalDeals) * 100 : 100;
-    
-    const paymentConfirmations = allTransactions.filter(tx => tx.providerId === userId && tx.details.paymentSentAt && tx.details.paymentConfirmationDate).map(tx => differenceInMilliseconds(new Date(tx.details.paymentConfirmationDate!), new Date(tx.details.paymentSentAt!)));
-    const averagePaymentTimeMs = paymentConfirmations.length > 0 ? paymentConfirmations.reduce((a, b) => a + b, 0) / paymentConfirmations.length : 0;
-    
-    return { 
-      reputation: isNaN(reputation) ? 5 : reputation, 
-      effectiveness: isNaN(effectiveness) ? 100 : Math.min(effectiveness, 100), 
-      averagePaymentTimeMs 
-    };
-  }, []);
-  
-  const getAgendaEvents = useCallback((transactions: Transaction[]) => transactions.filter(tx => ['Finalizado - Pendiente de Pago', 'Cita Solicitada'].includes(tx.status)).map(tx => ({ date: new Date(tx.date), type: tx.status === 'Finalizado - Pendiente de Pago' ? 'payment' : 'appointment', title: tx.details.serviceName || tx.details.system || 'Evento', transactionId: tx.id })), []);
-
-  const value: AuthContextValue = {
-    currentUser, firebaseUser, isLoadingAuth, logout, setCurrentUser, contacts, addContact, removeContact, isContact, users, transactions, setTransactions, allPublications, setAllPublications, cart, activeCartForCheckout, setActiveCartForCheckout, updateCartItem, removeCart, tempRecipientInfo, setTempRecipientInfo, deliveryAddress, setDeliveryAddress, setDeliveryAddressToCurrent, currentUserLocation, getCurrentLocation, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, searchHistory, clearSearchHistory, notifications, conversations, qrSession, getUserMetrics, getAgendaEvents
+  const authContextValue: AuthContextValue = {
+    currentUser,
+    firebaseUser,
+    isLoadingAuth,
+    logout,
+    setCurrentUser,
   };
 
   return (
-    <AuthContext.Provider value={value}>
-      {children}
+    <AuthContext.Provider value={authContextValue}>
+        {/* The CoraboProvider is nested inside, so it only runs when a user is authenticated */}
+        <CoraboProvider>
+            {children}
+        </CoraboProvider>
     </AuthContext.Provider>
   );
 };
