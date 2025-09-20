@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -16,7 +15,7 @@ import Step2_CompanyInfo from '@/components/profile-setup/Step2_CompanyInfo';
 import Step3_Logistics from '@/components/profile-setup/Step3_Logistics';
 import Step4_LegalInfo from '@/components/profile-setup/Step4_LegalInfo';
 import Step5_Review from '@/components/profile-setup/Step5_Review';
-import { useCorabo } from '@/contexts/CoraboContext';
+import { useCorabo } from '@/hooks/use-corabo';
 
 export default function ProfileSetupPage() {
   const { currentUser } = useAuth();

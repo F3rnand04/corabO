@@ -1,4 +1,3 @@
-
 'use client';
 
 import Step1ProfileType from '@/components/profile-setup/personal/Step1_ProfileType';

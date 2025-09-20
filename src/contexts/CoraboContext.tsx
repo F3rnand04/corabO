@@ -1,8 +1,7 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, createContext } from 'react';
-import { collection, doc, onSnapshot, query, where, orderBy, updateDoc, FieldValue } from 'firebase/firestore';
+import { collection, doc, onSnapshot, query, where, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
@@ -11,6 +10,7 @@ import { updateCart } from '@/lib/actions/cart.actions';
 import { haversineDistance } from '@/lib/utils';
 import { differenceInMilliseconds } from 'date-fns';
 import type { User, Transaction, GalleryImage, CartItem, Product, TempRecipientInfo, QrSession, Notification, Conversation } from '@/lib/types';
+import { FieldValue } from 'firebase/firestore';
 
 // --- Centralized Type Definition and Context Creation ---
 
