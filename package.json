@@ -4,7 +4,7 @@
   "type": "module",
   "description": "Plataforma de conexión entre profesionales y clientes.",
   "scripts": {
-    "dev": "npm run rebuild && next dev",
+    "dev": "npm run clean && next build && next start",
     "build": "next build",
     "start": "next start",
     "clean": "rm -rf .next",
