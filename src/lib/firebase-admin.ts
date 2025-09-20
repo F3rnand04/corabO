@@ -1,4 +1,3 @@
-
 /**
  * @fileOverview Centralized Firebase Admin SDK initialization.
  * This file is the single source of truth for the Firebase Admin App instance,
@@ -9,13 +8,14 @@ import { getAuth, type Auth } from 'firebase-admin/auth';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { getStorage, type Storage } from 'firebase-admin/storage';
 import { getMessaging, type Messaging } from 'firebase-admin/messaging';
+import { firebaseConfig } from './firebase-config';
 
 
 // --- Singleton Pattern for Admin SDK ---
 // This prevents multiple initializations in serverless environments.
 
 function initializeAdminApp(): admin.app.App {
-    if (admin.apps.length) {
+    if (admin.apps.length > 0) {
         return admin.app();
     }
     
@@ -25,35 +25,40 @@ function initializeAdminApp(): admin.app.App {
     if (process.env.NEXT_RUNTIME !== 'nodejs') {
         throw new Error("CRITICAL: El SDK de Firebase Admin no puede ser importado en el cliente.");
     }
+    
+    const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_KEY
+      ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY)
+      : undefined;
 
-    if (!process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+    // In a local emulator environment, service account might not be needed
+    if (!serviceAccount && !process.env.FIRESTORE_EMULATOR_HOST) {
         throw new Error("CRITICAL: La variable de entorno FIREBASE_SERVICE_ACCOUNT_KEY no está definida. El backend no puede conectar con Firebase.");
     }
-    
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
 
     const app = admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-        storageBucket: "corabo-demo.appspot.com"
+        credential: serviceAccount ? admin.credential.cert(serviceAccount) : undefined,
+        projectId: firebaseConfig.projectId,
+        storageBucket: firebaseConfig.storageBucket,
     });
 
     return app;
 }
 
+const adminApp = initializeAdminApp();
 
 // Export getter functions for each service
 export function getFirebaseAuth(): Auth {
-    return getAuth(initializeAdminApp());
+    return getAuth(adminApp);
 }
 
 export function getFirebaseFirestore(): Firestore {
-    return getFirestore(initializeAdminApp());
+    return getFirestore(adminApp);
 }
 
 export function getFirebaseStorage(): Storage {
-    return getStorage(initializeAdminApp());
+    return getStorage(adminApp);
 }
 
 export function getFirebaseMessaging(): Messaging {
-    return getMessaging(initializeAdminApp());
+    return getMessaging(adminApp);
 }

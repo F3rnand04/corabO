@@ -1,14 +1,13 @@
-
 'use server';
 
 import { getFirestore } from 'firebase-admin/firestore';
 import type { FirebaseUserInput, User } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
+import { getFirebaseAuth } from '@/lib/firebase-admin';
 
 /**
  * Gets a user document from Firestore, or creates it if it doesn't exist.
- * This server action previously wrapped a Genkit flow, but has been temporarily
- * modified to use direct Firestore access to allow the app to build without Genkit dependencies.
+ * This is a Server Action and executes only on the server.
  */
 export async function getOrCreateUser(firebaseUser: FirebaseUserInput): Promise<User> {
     const db = getFirestore();
@@ -20,6 +19,7 @@ export async function getOrCreateUser(firebaseUser: FirebaseUserInput): Promise<
       return userSnap.data() as User;
     }
 
+    // If user does not exist, create a new document.
     const coraboId = `corabo${Math.floor(Math.random() * 9000) + 1000}`;
     
     const newUser: User = {
@@ -38,9 +38,16 @@ export async function getOrCreateUser(firebaseUser: FirebaseUserInput): Promise<
       phoneValidated: false,
       isInitialSetupComplete: false,
       createdAt: new Date().toISOString(),
+      // Ensure required fields that might be null on firebaseUser are handled
+      emailValidated: firebaseUser.emailVerified ?? false,
     };
 
     await userRef.set(newUser);
+    
+    // Set custom claims for security rules if needed (e.g., initial role)
+    const auth = getFirebaseAuth();
+    await auth.setCustomUserClaims(firebaseUser.uid, { role: 'client' });
+
     revalidatePath('/'); // Revalidate the path to reflect the new user
     return newUser;
 }

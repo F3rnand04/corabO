@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
-import type { User, Transaction, GalleryImage, CartItem, Product, TempRecipientInfo, QrSession, Notification, Conversation } from '@/lib/types';
+import type { User, Transaction, GalleryImage, CartItem, Product, TempRecipientInfo, QrSession, Notification, Conversation, FirebaseUserInput } from '@/lib/types';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase-client';
-import { clearSessionCookie } from '@/lib/actions/auth.actions';
+import { clearSessionCookie, getOrCreateUser } from '@/lib/actions/auth.actions';
 import { collection, doc, onSnapshot, query, where, updateDoc, FieldValue } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import { differenceInMilliseconds } from 'date-fns';
@@ -106,20 +106,37 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   
-  // This effect runs once on mount, listening for auth state changes.
+  // This effect handles the initial authentication check and user profile fetching.
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
-      setFirebaseUser(fbUser);
-      // The initial check is done, now other effects will handle data fetching and redirection.
+    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      if (fbUser) {
+        setFirebaseUser(fbUser);
+        
+        // This is the key change: call the Server Action to get/create the user profile.
+        const userPayload: FirebaseUserInput = {
+          uid: fbUser.uid,
+          email: fbUser.email,
+          displayName: fbUser.displayName,
+          photoURL: fbUser.photoURL,
+          phoneNumber: fbUser.phoneNumber,
+          emailVerified: fbUser.emailVerified
+        };
+        const userProfile = await getOrCreateUser(userPayload);
+        setCurrentUser(userProfile);
+
+      } else {
+        setFirebaseUser(null);
+        setCurrentUser(null);
+      }
       setIsLoadingAuth(false);
     });
     return () => unsubscribe();
   }, []);
   
-  // This effect handles data fetching for the logged-in user.
+  // This effect handles all real-time data listeners once the user is authenticated.
   useEffect(() => {
     if (!firebaseUser?.uid || !db) {
-      setCurrentUser(null);
+      // Clear all data when user logs out
       setUsers([]); setTransactions([]); setAllPublications([]); setCart([]); setContacts([]);
       setNotifications([]); setConversations([]); setQrSession(null);
       return;
@@ -128,7 +145,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const unsubUser = onSnapshot(doc(db, "users", firebaseUser.uid), (doc) => {
       if (doc.exists()) {
         const updatedUser = doc.data() as User;
-        setCurrentUser(updatedUser);
+        setCurrentUser(updatedUser); // Keep local state in sync
         setCart(updatedUser.cart || []);
         
         if (updatedUser.contacts && updatedUser.contacts.length > 0) {
@@ -139,10 +156,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         } else {
             setContacts([]);
         }
-      } else {
-        // This case might happen if the user is authenticated but their Firestore doc is deleted.
-        // Treat them as logged out.
-        setCurrentUser(null);
       }
     });
     
@@ -160,9 +173,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     };
   }, [firebaseUser?.uid]);
 
-  // This is the key effect for client-side routing.
+  // This is the key effect for client-side routing logic.
   useEffect(() => {
-    // Don't do anything until Firebase has confirmed the auth state.
     if (isLoadingAuth) {
       return;
     }
@@ -170,28 +182,28 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const isAuthPage = pathname === '/login';
     const isSetupPage = pathname === '/initial-setup';
 
-    if (!firebaseUser && !isAuthPage) {
+    if (!currentUser && !isAuthPage) {
       router.push('/login');
-    } else if (firebaseUser && currentUser && !currentUser.isInitialSetupComplete && !isSetupPage) {
+    } else if (currentUser && !currentUser.isInitialSetupComplete && !isSetupPage) {
       router.push('/initial-setup');
-    } else if (firebaseUser && currentUser && currentUser.isInitialSetupComplete && (isAuthPage || isSetupPage)) {
+    } else if (currentUser && currentUser.isInitialSetupComplete && (isAuthPage || isSetupPage)) {
       router.push('/');
     }
-  }, [firebaseUser, currentUser, isLoadingAuth, pathname, router]);
+  }, [currentUser, isLoadingAuth, pathname, router]);
 
   
   const logout = useCallback(async () => {
     try {
       await signOut(auth);
-      await clearSessionCookie();
+      // No need to call clearSessionCookie here, as we are managing auth state client-side
       setCurrentUser(null);
       setFirebaseUser(null);
-      // Let the routing effect handle the redirect to /login
+      router.push('/login'); // Force redirect
     } catch (error: any) {
       console.error("Error during logout:", error);
       toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cerrar la sesión.' });
     }
-  }, [toast]);
+  }, [toast, router]);
   
   const getCurrentLocation = useCallback(() => {
     if (typeof window !== 'undefined' && navigator.geolocation) {
