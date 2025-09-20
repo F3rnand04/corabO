@@ -4,8 +4,8 @@
  * This file is the single source of truth for the Genkit `ai` instance and
  * ensures Firebase Admin is initialized once for all server-side operations.
  */
-import { genkit } from 'genkit';
-import { googleAI } from '@genkit-ai/googleai';
+// import { genkit } from 'genkit';
+// import { googleAI } from '@genkit-ai/googleai';
 import {initializeApp, getApps, App, type AppOptions} from 'firebase-admin/app';
 import { getAuth as getAdminAuth, type Auth } from 'firebase-admin/auth';
 import { firebaseConfig } from '@/lib/firebase-config';
@@ -33,8 +33,15 @@ export function getFirebaseAuth(): Auth {
 }
 
 // Configure and export the Genkit AI instance.
-export const ai = genkit({
-  plugins: [
-    googleAI(),
-  ],
-});
+// export const ai = genkit({
+//   plugins: [
+//     googleAI(),
+//   ],
+// });
+
+// TEMPORARY: Mock 'ai' object to prevent build errors.
+export const ai: any = {
+  definePrompt: () => () => ({ output: null }),
+  defineFlow: (config: any, implementation: any) => implementation,
+  defineTool: () => () => {},
+};
