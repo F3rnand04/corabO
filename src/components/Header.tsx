@@ -13,9 +13,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuLabel
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -28,20 +25,6 @@ import { CheckoutAlertDialogContent } from "./CheckoutAlertDialogContent";
 import { toggleGps } from "@/lib/actions/user.actions";
 
 
-const serviceGroups = [
-    { name: 'Todos los Grupos', id: 'all' },
-    { name: 'Hogar y Reparaciones', id: 'Hogar y Reparaciones' },
-    { name: 'Tecnología y Soporte', id: 'Tecnología y Soporte' },
-    { name: 'Automotriz y Repuestos', id: 'Automotriz y Repuestos' },
-    { name: 'Alimentos y Restaurantes', id: 'Alimentos y Restaurantes' },
-    { name: 'Salud y Bienestar', id: 'Salud y Bienestar' },
-    { name: 'Educación', id: 'Educación' },
-    { name: 'Eventos', id: 'Eventos' },
-    { name: 'Belleza', id: 'Belleza' },
-    { name: 'Fletes y Delivery', id: 'Fletes y Delivery' },
-];
-
-
 export function Header() {
   const { cart, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, currentUser } = useAuth();
   const { logout } = useAuth();
@@ -50,7 +33,6 @@ export function Header() {
   const [isCheckoutAlertOpen, setIsCheckoutAlertOpen] = useState(false);
   
   if (!currentUser) {
-    // The header for unauthenticated users is removed to create a cleaner landing page experience.
     return null;
   }
   
@@ -58,12 +40,12 @@ export function Header() {
   const isTransactionsActive = currentUser.isTransactionsActive === true;
   
   const totalCartItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-
-  const selectedCategoryName = serviceGroups.find(g => g.id === categoryFilter)?.name || "Todos";
-
-  const cashierBoxes = currentUser.profileSetupData?.cashierBoxes || [];
-  const activeCashierBoxes = cashierBoxes.filter(box => box.isActive).length;
-  const totalCashierBoxes = cashierBoxes.length;
+  
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // The search query is already updated on change, so we can just push to the home/feed page
+    router.push('/');
+  }
 
   return (
     <header className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b">
@@ -91,11 +73,6 @@ export function Header() {
               <Button asChild variant="ghost" size="icon" className="relative">
                 <Link href="/transactions/settings/cashier">
                     <KeyRound className="h-5 w-5 text-muted-foreground" />
-                    {totalCashierBoxes > 0 && (
-                        <Badge variant="secondary" className="absolute -bottom-1 -right-1 text-xs px-1 h-4 scale-75">
-                            {activeCashierBoxes}/{totalCashierBoxes}
-                        </Badge>
-                    )}
                 </Link>
               </Button>
             )}
@@ -157,32 +134,19 @@ export function Header() {
         </div>
         
         {/* Bottom Row: Search Bar */}
-        <div className="flex items-center gap-2 pb-3">
+        <form onSubmit={handleSearchSubmit} className="flex items-center gap-2 pb-3">
              <div className="relative flex-grow">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input 
                     placeholder="Buscar por servicio, producto..." 
-                    className="pl-10 pr-28 rounded-full bg-muted border-none focus-visible:ring-primary/50"
+                    className="pl-10 pr-4 rounded-full bg-muted border-none focus-visible:ring-primary/50"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 rounded-full text-xs px-2">
-                          {selectedCategoryName.split(' ')[0]}
-                          <ChevronDown className="h-4 w-4 ml-1"/>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Filtrar por Grupo</DropdownMenuLabel>
-                      <DropdownMenuRadioGroup value={categoryFilter || 'all'} onValueChange={(value) => setCategoryFilter(value === 'all' ? null : value)}>
-                          {serviceGroups.map(group => (
-                               <DropdownMenuRadioItem key={group.id} value={group.id}>{group.name}</DropdownMenuRadioItem>
-                          ))}
-                      </DropdownMenuRadioGroup>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
             </div>
+             <Button type="button" variant="outline" size="sm" className="rounded-full" onClick={() => router.push('/search')}>
+                Explorar
+            </Button>
             {/* Cart Popover */}
             <AlertDialog open={isCheckoutAlertOpen} onOpenChange={setIsCheckoutAlertOpen}>
                 <Popover>
@@ -200,7 +164,7 @@ export function Header() {
                 </Popover>
                 <CheckoutAlertDialogContent onOpenChange={setIsCheckoutAlertOpen} />
             </AlertDialog>
-        </div>
+        </form>
       </div>
     </header>
   );

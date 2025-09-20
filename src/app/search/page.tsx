@@ -11,10 +11,9 @@ export default function SearchPage() {
     const { setSearchQuery, setCategoryFilter } = useAuth();
 
     const handleCategorySelect = (categoryName: string) => {
-        // Neutralized: This no longer updates the feed.
-        // In the future, this could navigate to a dedicated category page.
-        // For now, it does nothing.
-        console.log(`Category selected (neutralized): ${categoryName}`);
+        setCategoryFilter(categoryName);
+        setSearchQuery(''); // Clear any text search when a category is selected
+        router.push('/');
     }
 
     const handleShowAll = () => {
