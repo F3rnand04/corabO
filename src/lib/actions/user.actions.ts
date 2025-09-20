@@ -4,8 +4,7 @@
 import { revalidatePath } from 'next/cache';
 import type { FirebaseUserInput, ProfileSetupData, User } from '@/lib/types';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import { getOrCreateUserFlow, completeInitialSetupFlow } from '@/ai/flows/auth-flow';
-import { checkIdUniquenessFlow, deleteUserFlow, toggleGpsFlow, updateUserFlow } from '@/ai/flows/profile-flow';
+import { getOrCreateUserFlow, completeInitialSetupFlow, checkIdUniquenessFlow, deleteUserFlow, toggleGpsFlow, updateUserFlow } from '@/ai/flows/profile-flow';
 import { sendWelcomeToProviderNotificationFlow } from '@/ai/flows/notification-flow';
 
 
@@ -13,8 +12,6 @@ import { sendWelcomeToProviderNotificationFlow } from '@/ai/flows/notification-f
 
 export async function getOrCreateUser(firebaseUser: FirebaseUserInput): Promise<User> {
     const user = await getOrCreateUserFlow(firebaseUser);
-    // This revalidatePath was causing a server error because this action is called during client-side rendering.
-    // Data updates are handled reactively by the AuthProvider listeners.
     return user;
 }
 

@@ -671,26 +671,6 @@ export type ContentReport = {
   sanctionReason?: SanctionReason; // Reason selected by admin
 };
 
-
-export const CreatePublicationInputSchema = z.object({
-    userId: z.string(),
-    description: z.string().min(1, "La descripción no puede estar vacía."),
-    imageDataUri: z.string().url("Debes proporcionar una imagen válida."),
-    aspectRatio: z.enum(['square', 'horizontal', 'vertical']),
-    type: z.enum(['image', 'video']),
-});
-
-export type CreatePublicationInput = z.infer<typeof CreatePublicationInputSchema>;
-
-export const CreateProductInputSchema = z.object({
-    userId: z.string(),
-    name: z.string().min(3, "El nombre del producto es muy corto."),
-    description: z.string().min(10, "La descripción es muy corta."),
-    price: z.number().min(0.01, "El precio debe ser positivo."),
-    imageDataUri: z.string().url("Debes proporcionar una imagen."),
-});
-
-export type CreateProductInput = z.infer<typeof CreateProductInputSchema>;
 export type AppointmentRequest = {
     providerId: string;
     clientId: string;

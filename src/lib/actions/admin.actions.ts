@@ -1,9 +1,9 @@
 
 'use server';
 
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
-import type { User } from '@/lib/types';
+import type { User, Transaction } from '@/lib/types';
 import { autoVerifyIdWithAIFlow } from '@/ai/flows/verification-flow';
 import { sendNewCampaignNotificationsFlow } from '@/ai/flows/notification-flow';
 import { createManagementUserFlow } from '@/ai/flows/admin-flow';
@@ -35,7 +35,8 @@ export async function autoVerifyIdWithAI(user: User) {
     if (!user.idDocumentUrl) {
         throw new Error("El documento de identidad no ha sido cargado.");
     }
-    return await autoVerifyIdWithAIFlow(user);
+    const result = await autoVerifyIdWithAIFlow(user);
+    return result;
 }
 
 /**
@@ -82,7 +83,29 @@ export async function toggleUserPause(userId: string, shouldUnpause: boolean) {
 }
 
 export async function registerSystemPayment(userId: string, concept: string, amount: number, isSubscription: boolean) {
-    console.log(`System payment registration for ${userId} is disabled.`);
+    const db = getFirestore();
+    const txId = `txn-sys-${userId.slice(0,5)}-${Date.now()}`;
+    const newTransaction: Omit<Transaction, 'id'> = {
+        type: 'Sistema',
+        status: 'Pagado',
+        date: new Date().toISOString(),
+        amount: amount,
+        clientId: userId,
+        providerId: 'corabo-admin',
+        participantIds: [userId, 'corabo-admin'],
+        details: {
+            system: concept,
+            isSubscription: isSubscription,
+            paymentMethod: 'direct' // Or determine from source
+        }
+    };
+
+    await db.collection('transactions').doc(txId).set({ id: txId, ...newTransaction });
+
+    if (isSubscription) {
+        await db.collection('users').doc(userId).update({ isSubscribed: true });
+    }
+    
     revalidatePath('/transactions');
 }
 

@@ -1,9 +1,10 @@
+
 'use server';
 
 import { cookies } from 'next/headers';
 import { getFirebaseAuth } from '@/lib/firebase-admin';
 import type { FirebaseUserInput } from '@/lib/types';
-import { getOrCreateUser as getOrCreateUserAction } from '@/app/actions';
+import { getOrCreateUserFlow } from '@/ai/flows/profile-flow';
 import { revalidatePath } from 'next/cache';
 
 /**
@@ -53,10 +54,8 @@ export async function clearSessionCookie() {
     }
 }
 
-// Re-exporting the getOrCreateUser function from its new location
-// to maintain a consistent API for the rest of the application.
 export async function getOrCreateUser(firebaseUser: FirebaseUserInput) {
-    const user = await getOrCreateUserAction(firebaseUser);
+    const user = await getOrCreateUserFlow(firebaseUser);
     revalidatePath('/'); // Revalidate the path to reflect changes
     return user;
 }

@@ -1,9 +1,11 @@
-
 /**
  * @fileOverview Central Genkit initialization and Firebase Admin SDK setup.
  * This file is the single source of truth for the Genkit `ai` instance and
  * ensures Firebase Admin is initialized once for all server-side operations.
  */
+import { genkit } from 'genkit';
+import { firebase } from 'genkit/plugins/firebase';
+import { googleAI } from '@genkit-ai/googleai';
 import {initializeApp, getApps, App, type AppOptions} from 'firebase-admin/app';
 import { getAuth as getAdminAuth, type Auth } from 'firebase-admin/auth';
 import { firebaseConfig } from '@/lib/firebase-config';
@@ -30,10 +32,14 @@ export function getFirebaseAuth(): Auth {
     return adminAuth;
 }
 
-// TEMPORARY: Mock 'ai' object to prevent build errors.
-// In a real implementation, this would be properly configured with Genkit.
-export const ai: any = {
-  definePrompt: () => () => ({ output: null }),
-  defineFlow: (config: any, implementation: any) => implementation,
-  defineTool: () => () => {},
-};
+// Initialize Genkit with necessary plugins
+export const ai = genkit({
+  plugins: [
+    firebase(),
+    googleAI({
+      apiVersion: 'v1beta',
+    }),
+  ],
+  logLevel: 'debug',
+  enableTracingAndMetrics: true,
+});
