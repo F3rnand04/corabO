@@ -8,6 +8,8 @@ import type { User as FirebaseUser } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase-client';
 import { getOrCreateUser } from '@/lib/actions/auth.actions';
+import { addContactToUser, updateUser } from '@/lib/actions/user.actions';
+import { updateCart } from '@/lib/actions/cart.actions';
 import { collection, doc, onSnapshot, query, where, updateDoc, FieldValue } from 'firebase/firestore';
 import { haversineDistance } from '@/lib/utils';
 import { differenceInMilliseconds } from 'date-fns';
@@ -32,6 +34,8 @@ export interface AuthContextValue {
   users: User[];
   transactions: Transaction[];
   setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
+  allPublications: GalleryImage[];
+  setAllPublications: React.Dispatch<React.SetStateAction<GalleryImage[]>>;
   
   cart: CartItem[];
   activeCartForCheckout: CartItem[] | null;
@@ -91,6 +95,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // Data states
   const [users, setUsers] = useState<User[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [allPublications, setAllPublications] = useState<GalleryImage[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [contacts, setContacts] = useState<User[]>([]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -110,7 +115,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (fbUser) {
         setFirebaseUser(fbUser);
         
-        // This is the key change: call the Server Action to get/create the user profile.
         const userPayload: FirebaseUserInput = {
           uid: fbUser.uid,
           email: fbUser.email,
@@ -134,16 +138,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // This effect handles all real-time data listeners once the user is authenticated.
   useEffect(() => {
     if (!firebaseUser?.uid || !db) {
-      // Clear all data when user logs out
       setUsers([]); setTransactions([]); setCart([]); setContacts([]);
       setNotifications([]); setConversations([]); setQrSession(null);
+      setAllPublications([]);
       return;
     }
 
     const unsubUser = onSnapshot(doc(db, "users", firebaseUser.uid), (doc) => {
       if (doc.exists()) {
         const updatedUser = doc.data() as User;
-        setCurrentUser(updatedUser); // Keep local state in sync
+        setCurrentUser(updatedUser);
         setCart(updatedUser.cart || []);
         
         if (updatedUser.contacts && updatedUser.contacts.length > 0) {
@@ -157,16 +161,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     });
     
-    // Global listeners
     const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => setUsers(snapshot.docs.map(doc => doc.data() as User)));
     const unsubTransactions = onSnapshot(query(collection(db, "transactions"), where('participantIds', 'array-contains', firebaseUser.uid)), (snapshot) => setTransactions(snapshot.docs.map(doc => doc.data() as Transaction).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())));
-    const unsubNotifications = onSnapshot(query(collection(db, "notifications"), where('userId', '==', firebaseUser.uid)), (snapshot) => setNotifications(snapshot.docs.map(doc => doc.data() as Notification)));
+    const unsubNotifications = onSnapshot(query(collection(db, "notifications"), where('userId', '==', firebaseUser.uid), orderBy('timestamp', 'desc')), (snapshot) => setNotifications(snapshot.docs.map(doc => doc.data() as Notification)));
     const unsubConversations = onSnapshot(query(collection(db, "conversations"), where('participantIds', 'array-contains', firebaseUser.uid)), (snapshot) => setConversations(snapshot.docs.map(doc => doc.data() as Conversation)));
     const unsubQrSession = onSnapshot(query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', firebaseUser.uid), where('status', '!=', 'closed')), (snapshot) => setQrSession(snapshot.empty ? null : snapshot.docs[0].data() as QrSession));
+    const unsubPublications = onSnapshot(collection(db, "publications"), (snapshot) => setAllPublications(snapshot.docs.map(d => d.data() as GalleryImage)));
 
     return () => {
       unsubUser(); unsubUsers(); unsubTransactions();
       unsubNotifications(); unsubConversations(); unsubQrSession();
+      unsubPublications();
     };
   }, [firebaseUser?.uid]);
 
@@ -192,10 +197,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const logout = useCallback(async () => {
     try {
       await signOut(auth);
-      // No need to call clearSessionCookie here, as we are managing auth state client-side
       setCurrentUser(null);
       setFirebaseUser(null);
-      router.push('/login'); // Force redirect
+      router.push('/login');
     } catch (error: any) {
       console.error("Error during logout:", error);
       toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cerrar la sesión.' });
@@ -208,9 +212,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         (position) => {
           const location = { latitude: position.coords.latitude, longitude: position.coords.longitude };
           setCurrentUserLocation(location);
-          if (currentUser?.id && db) {
-            const userRef = doc(db, 'users', currentUser.id);
-            updateDoc(userRef, { 'profileSetupData.location': `${'${location.latitude}'},${'${location.longitude}'}` });
+          if (currentUser?.id) {
+            updateUser(currentUser.id, { 'profileSetupData.location': `${'${location.latitude}'},${'${location.longitude}'}` });
           }
         },
         () => toast({ variant: "destructive", title: "Error de Ubicación", description: "No se pudo obtener tu ubicación. Revisa los permisos." }),
@@ -234,8 +237,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   
   const addContact = useCallback(async (user: User) => {
     if (!currentUser) return;
-    const userRef = doc(db, 'users', currentUser.id);
-    await updateDoc(userRef, { contacts: FieldValue.arrayUnion(user.id) });
+    addContactToUser(currentUser.id, user.id);
   }, [currentUser]);
 
   const removeContact = useCallback(async (userId: string) => {
@@ -247,28 +249,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const isContact = useCallback((userId: string) => currentUser?.contacts?.includes(userId) ?? false, [currentUser?.contacts]);
   
   const updateCartItem = useCallback(async (product: Product, quantity: number) => {
-      if (!currentUser || !db) return;
-      const newCart = [...cart];
-      const itemIndex = newCart.findIndex(item => item.product.id === product.id);
-      if (itemIndex > -1) {
-          if (quantity > 0) newCart[itemIndex].quantity = quantity;
-          else newCart.splice(itemIndex, 1);
-      } else if (quantity > 0) {
-          newCart.push({ product, quantity });
-      }
-      setCart(newCart);
-      const userRef = doc(db, 'users', currentUser.id);
-      await updateDoc(userRef, { cart: newCart });
-  }, [cart, currentUser]);
+      if (!currentUser) return;
+      updateCart(currentUser.id, product.id, quantity);
+  }, [currentUser]);
 
   const removeCart = useCallback(async (itemsToRemove: CartItem[]) => {
-      if (!currentUser || !db) return;
-      const idsToRemove = itemsToRemove.map(item => item.product.id);
-      const newCart = cart.filter(item => !idsToRemove.includes(item.product.id));
-      setCart(newCart);
-      const userRef = doc(db, 'users', currentUser.id);
-      await updateDoc(userRef, { cart: newCart });
-  }, [cart, currentUser]);
+      if (!currentUser) return;
+      itemsToRemove.forEach(item => {
+        updateCart(currentUser.id, item.product.id, 0);
+      });
+  }, [currentUser]);
 
   const setDeliveryAddressToCurrent = useCallback(() => {
     getCurrentLocation();
@@ -283,18 +273,27 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   
   const getUserMetrics = useCallback((userId: string, userType: User['type'], allTransactions: Transaction[]) => {
     const relevantTransactions = allTransactions.filter(tx => (tx.clientId === userId || tx.providerId === userId) && ['Pagado', 'Resuelto'].includes(tx.status));
-    const reputation = relevantTransactions.reduce((acc, tx) => (userType === 'provider' ? tx.details.clientRating : tx.details.providerRating) ? acc + (userType === 'provider' ? tx.details.clientRating! : tx.details.providerRating!) : acc, 0) / (relevantTransactions.filter(tx => userType === 'provider' ? tx.details.clientRating : tx.details.providerRating).length || 1);
-    const totalDeals = allTransactions.filter(tx => tx.clientId === userId || tx.providerId === userId).length;
-    const effectiveness = (relevantTransactions.length / (totalDeals || 1)) * 100;
+    const ratedTransactions = relevantTransactions.filter(tx => userType === 'provider' ? tx.details.clientRating : tx.details.providerRating);
+    const totalRating = ratedTransactions.reduce((acc, tx) => acc + (userType === 'provider' ? tx.details.clientRating! : tx.details.providerRating!), 0);
+    const reputation = ratedTransactions.length > 0 ? totalRating / ratedTransactions.length : 5.0;
+
+    const totalDeals = allTransactions.filter(tx => (tx.clientId === userId || tx.providerId === userId) && tx.type !== 'Sistema').length;
+    const effectiveness = totalDeals > 0 ? (relevantTransactions.length / totalDeals) * 100 : 100;
+    
     const paymentConfirmations = allTransactions.filter(tx => tx.providerId === userId && tx.details.paymentSentAt && tx.details.paymentConfirmationDate).map(tx => differenceInMilliseconds(new Date(tx.details.paymentConfirmationDate!), new Date(tx.details.paymentSentAt!)));
     const averagePaymentTimeMs = paymentConfirmations.length > 0 ? paymentConfirmations.reduce((a, b) => a + b, 0) / paymentConfirmations.length : 0;
-    return { reputation: isNaN(reputation) ? 5 : reputation, effectiveness: isNaN(effectiveness) ? 100 : effectiveness, averagePaymentTimeMs };
+    
+    return { 
+      reputation: isNaN(reputation) ? 5 : reputation, 
+      effectiveness: isNaN(effectiveness) ? 100 : Math.min(effectiveness, 100), 
+      averagePaymentTimeMs 
+    };
   }, []);
   
   const getAgendaEvents = useCallback((transactions: Transaction[]) => transactions.filter(tx => ['Finalizado - Pendiente de Pago', 'Cita Solicitada'].includes(tx.status)).map(tx => ({ date: new Date(tx.date), type: tx.status === 'Finalizado - Pendiente de Pago' ? 'payment' : 'appointment', title: tx.details.serviceName || tx.details.system || 'Evento', transactionId: tx.id })), []);
 
   const value: AuthContextValue = {
-    currentUser, firebaseUser, isLoadingAuth, logout, setCurrentUser, contacts, addContact, removeContact, isContact, users, transactions, setTransactions, cart, activeCartForCheckout, setActiveCartForCheckout, updateCartItem, removeCart, tempRecipientInfo, setTempRecipientInfo, deliveryAddress, setDeliveryAddress, setDeliveryAddressToCurrent, currentUserLocation, getCurrentLocation, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, searchHistory, clearSearchHistory, notifications, conversations, qrSession, getUserMetrics, getAgendaEvents
+    currentUser, firebaseUser, isLoadingAuth, logout, setCurrentUser, contacts, addContact, removeContact, isContact, users, transactions, setTransactions, allPublications, setAllPublications, cart, activeCartForCheckout, setActiveCartForCheckout, updateCartItem, removeCart, tempRecipientInfo, setTempRecipientInfo, deliveryAddress, setDeliveryAddress, setDeliveryAddressToCurrent, currentUserLocation, getCurrentLocation, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, searchHistory, clearSearchHistory, notifications, conversations, qrSession, getUserMetrics, getAgendaEvents
   };
 
   return (

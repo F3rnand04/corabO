@@ -15,7 +15,9 @@ export async function getOrCreateUser(firebaseUser: FirebaseUserInput): Promise<
     const userSnap = await userRef.get();
 
     if (userSnap.exists) {
-      revalidatePath('/'); // Ensure any updates are reflected
+      // Revalidating is less critical now that we have realtime listeners,
+      // but can be useful for instant updates on other parts of the app.
+      revalidatePath('/');
       return userSnap.data() as User;
     }
 
@@ -38,8 +40,6 @@ export async function getOrCreateUser(firebaseUser: FirebaseUserInput): Promise<
       phoneValidated: false,
       isInitialSetupComplete: false,
       createdAt: new Date().toISOString(),
-      // Ensure required fields that might be null on firebaseUser are handled
-      emailValidated: firebaseUser.emailVerified ?? false,
     };
 
     await userRef.set(newUser);
