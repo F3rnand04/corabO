@@ -706,3 +706,23 @@ export const GalleryImageSchema = z.object({
     searchKeywords: z.array(z.string()).optional(),
     aspectRatio: z.enum(['square', 'horizontal', 'vertical']).optional(),
 });
+
+export type CreatePublicationInput = z.infer<typeof CreatePublicationInputSchema>;
+export type CreateProductInput = z.infer<typeof CreateProductInputSchema>;
+
+// Input schemas for creating publications, moved here from types.ts
+const CreatePublicationInputSchema = z.object({
+    userId: z.string(),
+    description: z.string().min(1, "La descripción no puede estar vacía."),
+    imageDataUri: z.string().url("Debes proporcionar una imagen válida."),
+    aspectRatio: z.enum(['square', 'horizontal', 'vertical']),
+    type: z.enum(['image', 'video']),
+});
+
+const CreateProductInputSchema = z.object({
+    userId: z.string(),
+    name: z.string().min(3, "El nombre del producto es muy corto."),
+    description: z.string().min(10, "La descripción es muy corta."),
+    price: z.number().min(0.01, "El precio debe ser positivo."),
+    imageDataUri: z.string().url("Debes proporcionar una imagen."),
+});

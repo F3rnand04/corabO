@@ -48,8 +48,8 @@ export default function InitialSetupPage() {
         
         toast({ title: "Perfil Guardado", description: "Tus datos han sido guardados. Serás redirigido."});
         // The AuthProvider will detect the state change and the main page component will handle the redirect.
-        // We can force a reload to ensure all states are fresh.
-        window.location.href = '/';
+        // No need to force a reload anymore.
+        // window.location.href = '/';
 
     } catch (error: any) {
         console.error("Failed to complete setup:", error);
