@@ -2,36 +2,22 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
+  
     // Allow public read access to all files. 
-    // This is necessary for others to see profile pictures and publication images.
+    // This is necessary for profile pictures, publication images, etc. to be displayed in the app.
     match /{allPaths=**} {
-      allow read: if true;
+      allow read;
     }
 
-    // --- User Profile Images ---
-    // A user can only write (upload, update, delete) to their own profile image path.
-    // The path is structured as 'users/{userId}/profile/{fileName}'.
-    match /users/{userId}/profile/{fileName} {
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // --- Publication Media ---
-    // A user can only write to their own publication media path.
-    // Path: 'publications/{userId}/{publicationId}/{fileName}'
-     match /publications/{userId}/{publicationId}/{fileName} {
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // --- Payment Vouchers ---
-    // A user can only write to their own voucher path for a specific transaction.
-    // Path: 'vouchers/{userId}/{transactionId}/{fileName}'
-    match /vouchers/{userId}/{transactionId}/{fileName} {
-       allow write: if request.auth != null && request.auth.uid == userId;
+    // Allow authenticated users to write to their own designated folder.
+    // Example path: /users/USER_ID/profile_picture.jpg
+    match /users/{userId}/{allPaths=**} {
+        allow write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // --- ID Documents ---
-    // A user can only write to their own ID document path.
-    match /id-documents/{userId}/{fileName} {
+    // Allow authenticated users to write publication images to their folder.
+    // Example path: /publications/USER_ID/image.jpg
+    match /publications/{userId}/{allPaths=**} {
         allow write: if request.auth != null && request.auth.uid == userId;
     }
   }
