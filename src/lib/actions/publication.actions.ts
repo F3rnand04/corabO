@@ -1,9 +1,10 @@
+
 'use server';
 
-import type { CreatePublicationInput, CreateProductInput, User } from '@/lib/types';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import type { User } from '@/lib/types';
+import { getFirestore } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
-import { createProductFlow, createPublicationFlow, addCommentToImageFlow, removeCommentFromImageFlow, updateGalleryImageFlow, removeGalleryImageFlow } from '@/ai/flows/publication-flow';
+import { createProductFlow, createPublicationFlow, addCommentToImageFlow, removeCommentFromImageFlow, updateGalleryImageFlow, removeGalleryImageFlow, type CreatePublicationInput, type CreateProductInput } from '@/ai/flows/publication-flow';
 import { sendNewContentNotificationFlow } from '@/ai/flows/notification-flow';
 
 
