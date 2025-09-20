@@ -1,8 +1,7 @@
 
 'use server';
 
-import { getFeedFlow } from '@/ai/flows/feed-flow';
-import { getProfileGalleryFlow, getProfileProductsFlow, getPublicProfileFlow } from '@/ai/flows/profile-flow';
+import { getFeedFlow, getProfileGalleryFlow, getProfileProductsFlow, getPublicProfileFlow } from '@/ai/flows/feed-flow';
 import { GetFeedInputSchema } from '@/lib/types';
 import { z } from 'zod';
 

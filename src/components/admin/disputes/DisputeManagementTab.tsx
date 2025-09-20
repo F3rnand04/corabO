@@ -91,7 +91,6 @@ export function DisputeManagementTab({ selectedCountry }: DisputeManagementTabPr
 
   // Listener for content reports
   useEffect(() => {
-    if (!db) return;
     const q = query(collection(db, 'reports'), where('status', '==', 'pending'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setContentReports(snapshot.docs.map(doc => doc.data() as ContentReport));
@@ -197,7 +196,7 @@ export function DisputeManagementTab({ selectedCountry }: DisputeManagementTabPr
                               </div>
                             </div>
                             <div className="flex flex-col sm:flex-row gap-2 self-start sm:self-center pt-2 sm:pt-0 border-t sm:border-none w-full sm:w-auto">
-                              <Button asChild variant="secondary" size="sm"><a href={`/publications/${report.reportedContentId}`} target="_blank"><Eye className="mr-2 h-4 w-4"/>Ver Contenido</a></Button>
+                              <Button asChild variant="secondary" size="sm"><a href={'/publications/${report.reportedContentId}'} target="_blank"><Eye className="mr-2 h-4 w-4"/>Ver Contenido</a></Button>
                                <Button variant="destructive" size="sm" onClick={() => setSanctionDialogReport(report)}><Trash2 className="mr-2 h-4 w-4"/>Aprobar Denuncia</Button>
                                <Button variant="outline" size="sm" onClick={() => handleRejectReport(report.id)}>Descartar</Button>
                             </div>

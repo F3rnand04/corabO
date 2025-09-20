@@ -133,7 +133,7 @@ function ClientActions({ tx, onAction }: { tx: Transaction; onAction: () => void
       <div className="py-6 space-y-6">
         <div className="flex justify-center gap-2">
             {[1, 2, 3, 4, 5].map((star) => (
-                <Star key={star} className={`w-8 h-8 cursor-pointer ${rating >= star ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} onClick={() => setRating(star)} />
+                <Star key={star} className={'w-8 h-8 cursor-pointer ${rating >= star ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}'} onClick={() => setRating(star)} />
             ))}
         </div>
         <Textarea placeholder="Añade un comentario opcional..." value={comment} onChange={(e) => setComment(e.target.value)} rows={4} />
@@ -267,7 +267,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${iconColor}`}><CurrentIcon className="w-5 h-5 text-white" /></div>
+              <div className={'w-8 h-8 rounded-full flex items-center justify-center ${iconColor}'}><CurrentIcon className="w-5 h-5 text-white" /></div>
               Detalles de la Transacción
             </DialogTitle>
             <DialogDescription>ID: {transaction.id}</DialogDescription>
