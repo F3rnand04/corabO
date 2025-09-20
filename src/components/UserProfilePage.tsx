@@ -126,7 +126,7 @@ function ProfileStats({ metrics, isNew }: { metrics: any, isNew: boolean }) {
 
 
 export function UserProfilePage({ userId }: { userId: string}) {
-  const { currentUser, addContact } = useAuth();
+  const { currentUser } = useAuth();
   const { users, transactions, isContact, currentUserLocation } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
@@ -246,6 +246,13 @@ export function UserProfilePage({ userId }: { userId: string}) {
     return null;
   }, [currentUserLocation, provider?.profileSetupData?.location]);
 
+    const handleEditProfile = () => {
+        if (!provider) return;
+        const setupPath = provider.profileSetupData?.providerType === 'company'
+            ? '/profile-setup/company'
+            : '/profile-setup/personal';
+        router.push(setupPath);
+    };
 
   if (isLoading) {
     return (
@@ -341,7 +348,13 @@ export function UserProfilePage({ userId }: { userId: string}) {
                         <PopoverTrigger asChild><Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground"><Calendar className="w-5 h-5"/></Button></PopoverTrigger>
                         <PopoverContent className="w-auto p-0"><CalendarComponent mode="multiple" selected={eventDates} onDayClick={handleDateSelect} disabled={[{ dayOfWeek: disabledDays }, { before: new Date() }]} /></PopoverContent>
                     </Popover>
-                    {isSelfProfile && <Button asChild variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground"><Link href="/transactions"><Wallet className="w-5 h-5"/></Link></Button>}
+                    {isSelfProfile ? (
+                        <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground" onClick={handleEditProfile}>
+                            <Settings className="w-5 h-5"/>
+                        </Button>
+                    ) : (
+                       <Button asChild variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground"><Link href="/transactions"><Wallet className="w-5 h-5"/></Link></Button>
+                    )}
                  </div>
               </div>
             </div>
@@ -356,11 +369,9 @@ export function UserProfilePage({ userId }: { userId: string}) {
               )}
             </div>
 
-            {isSelfProfile && isProvider && (
+            {isSelfProfile && isProvider && !isCompany && (
               <div className="flex items-center gap-2 mt-4">
-                  <Button asChild variant="outline" className="flex-1"><Link href="/profile-setup/details"><Edit className="w-4 h-4 mr-2"/>Editar Perfil</Link></Button>
-                  {isCompany && <Button variant="outline" className="flex-1" onClick={() => setIsCampaignDialogOpen(true)}><Megaphone className="w-4 h-4 mr-2"/>Campañas</Button>}
-                  {isCompany && <Button asChild variant="outline" className="flex-1"><Link href="/admin?tab=affiliations"><Handshake className="w-4 h-4 mr-2"/>Talento</Link></Button>}
+                  <Button variant="outline" className="flex-1" onClick={() => setIsCampaignDialogOpen(true)}><Megaphone className="w-4 h-4 mr-2"/>Campañas</Button>
               </div>
             )}
             
@@ -426,3 +437,5 @@ export function UserProfilePage({ userId }: { userId: string}) {
     </div>
   );
 }
+
+    
