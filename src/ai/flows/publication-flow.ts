@@ -1,70 +1,14 @@
 /**
  * @fileOverview Flows for creating and managing publications and products securely on the backend.
  */
-import { z } from 'zod';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import type { GalleryImage, User, GalleryImageComment } from '@/lib/types';
-
-
-// Schemas moved from types.ts for better co-location
-export const CreatePublicationInputSchema = z.object({
-    userId: z.string(),
-    description: z.string().min(1, "La descripción no puede estar vacía."),
-    imageDataUri: z.string().url("Debes proporcionar una imagen válida."),
-    aspectRatio: z.enum(['square', 'horizontal', 'vertical']),
-    type: z.enum(['image', 'video']),
-});
-export type CreatePublicationInput = z.infer<typeof CreatePublicationInputSchema>;
-
-export const CreateProductInputSchema = z.object({
-    userId: z.string(),
-    name: z.string().min(3, "El nombre del producto es muy corto."),
-    description: z.string().min(10, "La descripción es muy corta."),
-    price: z.number().min(0.01, "El precio debe ser positivo."),
-    imageDataUri: z.string().url("Debes proporcionar una imagen."),
-});
-export type CreateProductInput = z.infer<typeof CreateProductInputSchema>;
-
-
-const AddCommentInputSchema = z.object({
-  imageId: z.string(),
-  commentText: z.string(),
-  author: z.object({
-    id: z.string(),
-    name: z.string(),
-    profileImage: z.string(),
-  })
-});
-type AddCommentInput = z.infer<typeof AddCommentInputSchema>;
-
-
-const RemoveCommentInputSchema = z.object({
-  imageId: z.string(),
-  commentIndex: z.number(),
-  authorId: z.string(),
-});
-type RemoveCommentInput = z.infer<typeof RemoveCommentInputSchema>;
-
-const UpdateGalleryImageInputSchema = z.object({
-  imageId: z.string(),
-  updates: z.object({
-    description: z.string().optional(),
-    imageDataUri: z.string().optional(),
-  })
-});
-type UpdateGalleryImageInput = z.infer<typeof UpdateGalleryImageInputSchema>;
-
-
-const RemoveGalleryImageInputSchema = z.object({
-  imageId: z.string()
-});
-type RemoveGalleryImageInput = z.infer<typeof RemoveGalleryImageInputSchema>;
+import type { GalleryImage, User, GalleryImageComment, CreatePublicationInput, CreateProductInput, AddCommentInput, RemoveCommentInput, UpdateGalleryImageInput, RemoveGalleryImageInput } from '@/lib/types';
 
 
 export async function createPublicationFlow(input: CreatePublicationInput): Promise<GalleryImage> {
     const db = getFirestore();
     
-    const userRef = db.collection('users').doc(input.userId);
+    const userRef = db.collection('users').doc(input.providerId);
     const userSnap = await userRef.get();
     if (!userSnap.exists) {
       throw new Error('User not found.');
@@ -74,7 +18,7 @@ export async function createPublicationFlow(input: CreatePublicationInput): Prom
 
     const newPublication: GalleryImage = {
       id: publicationId,
-      providerId: input.userId,
+      providerId: input.providerId,
       type: input.type,
       src: input.imageDataUri,
       alt: input.description.slice(0, 50),
@@ -95,7 +39,7 @@ export async function createPublicationFlow(input: CreatePublicationInput): Prom
 
 export async function createProductFlow(input: CreateProductInput): Promise<GalleryImage> {
     const db = getFirestore();
-    const userRef = db.collection('users').doc(input.userId);
+    const userRef = db.collection('users').doc(input.providerId);
     const userSnap = await userRef.get();
     if (!userSnap.exists) {
         throw new Error('User not found.');
@@ -105,7 +49,7 @@ export async function createProductFlow(input: CreateProductInput): Promise<Gall
     
     const newProductPublication: GalleryImage = {
         id: productId,
-        providerId: input.userId,
+        providerId: input.providerId,
         type: 'product',
         src: input.imageDataUri,
         alt: input.name,
