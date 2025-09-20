@@ -91,43 +91,46 @@ const renderSpecializedBadges = (specializedData?: SpecializedData) => {
 };
 
 
-function ProfileStats({ metrics, isNew }: { metrics: any, isNew: boolean }) {
-  const { reputation, effectiveness, responseTime } = metrics;
+function ProfileStats({ user, isSelf }: { user: User, isSelf: boolean }) {
+    const { getUserMetrics, transactions } = useCorabo();
+    const metrics = getUserMetrics(user.id, user.type, transactions);
+    
+    const effectivenessLabel = user.type === 'provider' ? 'Efectividad' : 'Cumplimiento';
   
-  return (
-    <div className="flex items-center flex-wrap gap-x-2 gap-y-1 text-xs mt-1 text-muted-foreground">
-      <div className="flex items-center gap-1">
-        <Star className="w-4 h-4 text-yellow-400 fill-yellow-400"/>
-        <span className="font-semibold text-foreground">{reputation.toFixed(1)}</span>
-      </div>
-       <Separator orientation="vertical" className="h-3" />
-        <div className="flex items-center gap-1">
-          <TrendingUp className="w-4 h-4 text-green-500"/>
-          <span className="font-semibold text-foreground">{effectiveness.toFixed(0)}%</span>
-      </div>
-      
-      {isNew ? (
-        <>
-            <Separator orientation="vertical" className="h-3" />
-            <Badge variant="secondary" className="px-1.5 py-0">Nuevo</Badge>
-        </>
-      ) : (
-        <>
-            <Separator orientation="vertical" className="h-3" />
-             <div className="flex items-center gap-1 font-semibold text-green-600">
-                <Timer className="w-4 h-4"/>
-                <span>{responseTime}</span>
+    return (
+        <div className="flex items-center justify-between w-full text-xs mt-1">
+            <div className="flex items-center flex-wrap gap-x-2 gap-y-1 text-muted-foreground">
+                <div className="flex items-center gap-1">
+                    <Star className="w-4 h-4 text-yellow-400 fill-yellow-400"/>
+                    <span className="font-semibold text-foreground">{metrics.reputation.toFixed(1)}</span>
+                </div>
+                <Separator orientation="vertical" className="h-3" />
+                <div className="flex items-center gap-1">
+                    <TrendingUp className="w-4 h-4 text-green-500"/>
+                    <span className="font-semibold text-foreground">{metrics.effectiveness.toFixed(0)}%</span>
+                    <span className="hidden sm:inline-block">{effectivenessLabel}</span>
+                </div>
+                 <Separator orientation="vertical" className="h-3" />
+                <div className="flex items-center gap-1">
+                    <Timer className="w-4 h-4 text-blue-500"/>
+                    <span className="font-semibold text-foreground">{metrics.averagePaymentTimeMs > 0 ? `${(metrics.averagePaymentTimeMs / 1000 / 60).toFixed(0)}m` : 'N/A'}</span>
+                    <span className="hidden sm:inline-block">T. Pago</span>
+                </div>
             </div>
-        </>
-      )}
-    </div>
-  );
+            {isSelf && (
+                <div className="flex items-center gap-1 text-muted-foreground">
+                    <Zap className="w-4 h-4 text-pink-500"/>
+                    <span className="font-semibold text-foreground">{user.giftCredits || 0}</span>
+                </div>
+            )}
+        </div>
+    );
 }
 
 
 export function UserProfilePage({ userId }: { userId: string}) {
   const { currentUser } = useAuth();
-  const { users, transactions, isContact, currentUserLocation } = useCorabo();
+  const { users, transactions, isContact, addContact, currentUserLocation } = useCorabo();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -210,23 +213,11 @@ export function UserProfilePage({ userId }: { userId: string}) {
     return providerProducts.filter(p => p.name.toLowerCase().includes(catalogSearchQuery.toLowerCase()));
   }, [providerProducts, catalogSearchQuery]);
 
-  const { reputation, effectiveness, responseTime, agendaEvents, eventDates } = useMemo(() => {
-    if (!provider) return { reputation: 0, effectiveness: 0, responseTime: 'N/A', agendaEvents: [], eventDates: [] };
-
-    const userTransactions = transactions.filter(tx => tx.providerId === provider.id || tx.clientId === provider.id);
-    const ratedTransactions = userTransactions.filter(tx => tx.providerId === provider.id && tx.details.clientRating);
-    const totalRating = ratedTransactions.reduce((acc, tx) => acc + (tx.details.clientRating || 0), 0);
-    const rep = ratedTransactions.length > 0 ? totalRating / ratedTransactions.length : 5.0;
-
-    const relevantTransactions = userTransactions.filter(tx => tx.type !== 'Sistema' && tx.status !== 'Carrito Activo');
-    const successfulTransactions = relevantTransactions.filter(tx => tx.status === 'Pagado' || tx.status === 'Resuelto');
-    const eff = relevantTransactions.length > 0 ? (successfulTransactions.length / relevantTransactions.length) * 100 : 100;
+  const { agendaEvents, eventDates } = useMemo(() => {
+    if (!provider) return { agendaEvents: [], eventDates: [] };
     
-    const quoteRequests = userTransactions.filter(tx => tx.providerId === provider.id && tx.status === 'Cotización Recibida');
-    const respTime = quoteRequests.length > 5 ? 'Rápido' : (userTransactions.length > 0 ? 'Normal' : 'Nuevo');
-    
-    const events = userTransactions
-        .filter(tx => ['Finalizado - Pendiente de Pago', 'Cita Solicitada'].includes(tx.status))
+    const events = transactions
+        .filter(tx => tx.providerId === provider.id && ['Finalizado - Pendiente de Pago', 'Cita Solicitada'].includes(tx.status))
         .map(tx => ({
             date: new Date(tx.date),
             type: tx.status === 'Finalizado - Pendiente de Pago' ? 'payment' : 'appointment',
@@ -234,8 +225,8 @@ export function UserProfilePage({ userId }: { userId: string}) {
         }));
     const dates = events.map(e => e.date);
 
-    return { reputation: rep, effectiveness: eff, responseTime: respTime, agendaEvents: events, eventDates: dates };
-}, [provider, transactions]);
+    return { agendaEvents: events, eventDates: dates };
+  }, [provider, transactions]);
   
   const distance = useMemo(() => {
     if (currentUserLocation && provider?.profileSetupData?.location) {
@@ -310,7 +301,6 @@ export function UserProfilePage({ userId }: { userId: string}) {
     }
   };
   
-  const isNewProvider = responseTime === 'Nuevo';
   const disabledDays = Object.entries(provider.profileSetupData?.schedule || {}).filter(([, dayDetails]) => !(dayDetails as any).active).map(([dayName]) => ({ 'Domingo': 0, 'Lunes': 1, 'Martes': 2, 'Miércoles': 3, 'Jueves': 4, 'Viernes': 5, 'Sábado': 6 }[dayName] as number));
   const displayName = provider.profileSetupData?.useUsername && provider.profileSetupData.username ? provider.profileSetupData.username : provider.name;
   const specialty = provider.profileSetupData?.specialty || "Sin especialidad definida";
@@ -338,7 +328,7 @@ export function UserProfilePage({ userId }: { userId: string}) {
                   {isCompany && <Building className="w-4 h-4 text-muted-foreground" />}
                 </div>
                 <p className="text-sm text-muted-foreground">{specialty}</p>
-                <ProfileStats metrics={{ reputation, effectiveness, responseTime }} isNew={isNewProvider} />
+                <ProfileStats user={provider} isSelf={isSelfProfile} />
               </div>
               <div className="flex flex-col items-end gap-2 shrink-0">
                  {!isSelfProfile && <Button variant="link" size="sm" className="p-0 h-auto text-primary hover:text-primary/80 font-semibold text-xs" onClick={() => sendMessage({recipientId: provider.id, text: `¡Hola! Me interesa tu perfil.`, conversationId: [currentUser!.id, provider.id].sort().join('-'), senderId: currentUser!.id}).then(id => router.push(`/messages/${id}`))}>Contactar</Button>}
@@ -383,7 +373,7 @@ export function UserProfilePage({ userId }: { userId: string}) {
 
             {!isSelfProfile && (
               <div className="grid grid-cols-2 gap-2 mt-4">
-                <Button variant="outline" onClick={() => addContactToUser(currentUser!.id, provider.id)}><Bookmark className="w-4 h-4 mr-2"/>Guardar</Button>
+                <Button variant="outline" onClick={() => { addContact(provider); toast({ title: "¡Contacto Guardado!", description: `Has añadido a ${provider.name} a tus contactos.` }); }}><Bookmark className="w-4 h-4 mr-2"/>Guardar</Button>
                 <Button onClick={() => sendMessage({recipientId: provider.id, text: `¡Hola! Me interesa tu perfil.`, conversationId: [currentUser!.id, provider.id].sort().join('-'), senderId: currentUser!.id}).then(id => router.push(`/messages/${id}`))}><MessageCircle className="w-4 h-4 mr-2"/>Mensaje</Button>
               </div>
             )}
@@ -437,5 +427,3 @@ export function UserProfilePage({ userId }: { userId: string}) {
     </div>
   );
 }
-
-    

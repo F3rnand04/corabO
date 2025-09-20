@@ -1,10 +1,10 @@
 
 'use server';
 
-import type { User } from '@/lib/types';
+import type { User, CreatePublicationInput, CreateProductInput } from '@/lib/types';
 import { getFirestore } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
-import { createProductFlow, createPublicationFlow, addCommentToImageFlow, removeCommentFromImageFlow, updateGalleryImageFlow, removeGalleryImageFlow, type CreatePublicationInput, type CreateProductInput } from '@/ai/flows/publication-flow';
+import { createProductFlow, createPublicationFlow, addCommentToImageFlow, removeCommentFromImageFlow, updateGalleryImageFlow, removeGalleryImageFlow } from '@/ai/flows/publication-flow';
 import { sendNewContentNotificationFlow } from '@/ai/flows/notification-flow';
 
 
@@ -14,12 +14,12 @@ export async function createPublication(input: CreatePublicationInput) {
     // Asynchronously send notification without blocking the response
     if (newPublication) {
         const db = getFirestore();
-        const userSnap = await db.collection('users').doc(input.userId).get();
+        const userSnap = await db.collection('users').doc(input.providerId).get();
         if (userSnap.exists()) {
             const user = userSnap.data() as User;
             if (user.verified || (user.reputation || 0) > 4.0) {
                  sendNewContentNotificationFlow({
-                    providerId: input.userId,
+                    providerId: input.providerId,
                     publicationId: newPublication.id,
                     publicationDescription: newPublication.description,
                     providerName: user.name,
@@ -29,7 +29,7 @@ export async function createPublication(input: CreatePublicationInput) {
     }
 
     revalidatePath('/profile');
-    revalidatePath(`/companies/${input.userId}`);
+    revalidatePath(`/companies/${input.providerId}`);
     return newPublication;
 }
 
@@ -38,12 +38,12 @@ export async function createProduct(input: CreateProductInput) {
 
     if (newProduct) {
         const db = getFirestore();
-        const userSnap = await db.collection('users').doc(input.userId).get();
+        const userSnap = await db.collection('users').doc(input.providerId).get();
         if (userSnap.exists()) {
             const user = userSnap.data() as User;
             if (user.verified || (user.reputation || 0) > 4.0) {
                  sendNewContentNotificationFlow({
-                    providerId: input.userId,
+                    providerId: input.providerId,
                     publicationId: newProduct.id,
                     publicationDescription: `¡Nuevo producto disponible! ${newProduct.alt}`,
                     providerName: user.name,
@@ -53,7 +53,7 @@ export async function createProduct(input: CreateProductInput) {
     }
 
     revalidatePath('/profile');
-    revalidatePath(`/companies/${input.userId}`);
+    revalidatePath(`/companies/${input.providerId}`);
     return newProduct;
 }
 

@@ -1,5 +1,4 @@
 
-
 import { z } from 'zod';
 
 export type FirebaseUserInput = { uid: string; email?: string | null; displayName?: string | null; photoURL?: string | null; phoneNumber?: string | null; emailVerified: boolean; };
@@ -706,3 +705,6 @@ export const GalleryImageSchema = z.object({
     searchKeywords: z.array(z.string()).optional(),
     aspectRatio: z.enum(['square', 'horizontal', 'vertical']).optional(),
 });
+
+export type CreatePublicationInput = z.infer<typeof GalleryImageSchema>;
+export type CreateProductInput = z.infer<typeof GalleryImageSchema>;

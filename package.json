@@ -1,3 +1,4 @@
+
 {
   "name": "corabo-app",
   "private": true,
@@ -8,7 +9,7 @@
     "build": "next build",
     "start": "next start",
     "clean": "rm -rf .next",
-    "rebuild": "rm -rf node_modules .next package-lock.json && npm install"
+    "rebuild": "npm run clean && npm install"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
