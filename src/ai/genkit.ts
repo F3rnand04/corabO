@@ -5,7 +5,7 @@
  */
 import { genkit } from 'genkit';
 import { firebase } from 'genkit/plugins/firebase';
-import { googleAI } from '@genkit-ai/googleai';
+// import { googleAI } from '@genkit-ai/googleai';
 import {initializeApp, getApps, App, type AppOptions} from 'firebase-admin/app';
 import { getAuth as getAdminAuth, type Auth } from 'firebase-admin/auth';
 import { firebaseConfig } from '@/lib/firebase-config';
@@ -36,9 +36,9 @@ export function getFirebaseAuth(): Auth {
 export const ai = genkit({
   plugins: [
     firebase(),
-    googleAI({
-      apiVersion: 'v1beta',
-    }),
+    // googleAI({
+    //   apiVersion: 'v1beta',
+    // }),
   ],
   logLevel: 'debug',
   enableTracingAndMetrics: true,

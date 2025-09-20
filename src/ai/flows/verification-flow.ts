@@ -108,26 +108,37 @@ export const autoVerifyIdWithAIFlow = ai.defineFlow(
         outputSchema: VerificationOutputSchema,
     },
     async (input) => {
-        const llmResponse = await verificationPrompt.generate({
-            input: input,
-            model: 'googleai/gemini-1.5-flash',
-            output: { schema: VerificationOutputSchema },
-            config: { temperature: 0.1 },
-        });
-        
-        const output = llmResponse.output()!;
+        try {
+            const llmResponse = await verificationPrompt.generate({
+                input: input,
+                model: 'googleai/gemini-1.5-flash',
+                output: { schema: VerificationOutputSchema },
+                config: { temperature: 0.1 },
+            });
+            
+            const output = llmResponse.output()!;
 
-        // Post-processing and fuzzy matching logic
-        const extractedIdNormalized = normalizeId(output.extractedId);
-        const recordIdNormalized = normalizeId(input.idInRecord);
+            // Post-processing and fuzzy matching logic
+            const extractedIdNormalized = normalizeId(output.extractedId);
+            const recordIdNormalized = normalizeId(input.idInRecord);
 
-        const idMatches = extractedIdNormalized === recordIdNormalized;
-        const nameMatches = compareNamesFlexibly(output.extractedName, input.nameInRecord);
+            const idMatches = extractedIdNormalized === recordIdNormalized;
+            const nameMatches = compareNamesFlexibly(output.extractedName, input.nameInRecord);
 
-        return {
-            ...output,
-            idMatch: idMatches,
-            nameMatch: nameMatches,
-        };
+            return {
+                ...output,
+                idMatch: idMatches,
+                nameMatch: nameMatches,
+            };
+        } catch (error) {
+            console.error("AI Verification Flow Error: googleAI plugin likely not configured.", error);
+            // Return a safe, non-matching response if the AI call fails.
+            return {
+                extractedName: "Error de IA",
+                extractedId: "Error de IA",
+                nameMatch: false,
+                idMatch: false,
+            };
+        }
     }
 );

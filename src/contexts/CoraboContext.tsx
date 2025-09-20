@@ -1,16 +1,17 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, createContext } from 'react';
-import { collection, doc, onSnapshot, query, where, orderBy } from 'firebase/firestore';
+import { collection, doc, onSnapshot, query, where, orderBy, updateDoc, FieldValue } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-provider';
 import { addContactToUser, updateUser } from '@/lib/actions/user.actions';
 import { updateCart } from '@/lib/actions/cart.actions';
 import { haversineDistance } from '@/lib/utils';
 import { differenceInMilliseconds } from 'date-fns';
 import type { User, Transaction, GalleryImage, CartItem, Product, TempRecipientInfo, QrSession, Notification, Conversation } from '@/lib/types';
-import { FieldValue } from 'firebase/firestore';
+
 
 // --- Centralized Type Definition and Context Creation ---
 
@@ -145,7 +146,7 @@ export const CoraboProvider = ({ children }: { children: React.ReactNode }) => {
           const location = { latitude: position.coords.latitude, longitude: position.coords.longitude };
           setCurrentUserLocation(location);
           if (currentUser?.id) {
-            updateUser(currentUser.id, { 'profileSetupData.location': `${location.latitude},${location.longitude}` });
+            updateUser(currentUser.id, { 'profileSetupData.location': `${'${location.latitude}'},${'${location.longitude}'}` });
           }
         },
         () => toast({ variant: "destructive", title: "Error de Ubicación", description: "No se pudo obtener tu ubicación. Revisa los permisos." }),
@@ -181,7 +182,7 @@ export const CoraboProvider = ({ children }: { children: React.ReactNode }) => {
 
   const setDeliveryAddressToCurrent = useCallback(() => {
     getCurrentLocation();
-    if (currentUserLocation) setDeliveryAddress(`${currentUserLocation.latitude},${currentUserLocation.longitude}`);
+    if (currentUserLocation) setDeliveryAddress(`${'${currentUserLocation.latitude}'},${'${currentUserLocation.longitude}'}`);
     else toast({ variant: "destructive", title: "Ubicación no disponible", description: "No hemos podido obtener tu ubicación GPS." });
   }, [currentUserLocation, toast, getCurrentLocation]);
   

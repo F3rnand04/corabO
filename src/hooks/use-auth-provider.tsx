@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
@@ -21,6 +22,15 @@ export interface AuthContextValue {
 
 // Create the Authentication Context
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+
+// Custom hook to use the Auth Context
+export const useAuth = (): AuthContextValue => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
 
 // AuthProvider Component: Handles auth state and orchestrates data providers
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
