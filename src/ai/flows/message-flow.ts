@@ -1,3 +1,4 @@
+'use server';
 /**
  * @fileOverview Message and proposal management flows.
  *
@@ -38,7 +39,7 @@ export async function sendMessageFlow(input: SendMessageInput) {
     const convoSnap = await convoRef.get();
 
     const newMessage: Message = {
-      id: `msg-${Date.now()}`,
+      id: `msg-${'${Date.now()}'}`,
       senderId: input.senderId,
       timestamp: new Date().toISOString(),
       text: input.text || '',
@@ -125,7 +126,7 @@ export async function acceptProposalFlow(input: AcceptProposalInput) {
     const clientId = input.acceptorId;
 
     const newTransaction: Transaction = {
-      id: `txn-prop-${Date.now()}`,
+      id: `txn-prop-${'${Date.now()}'}`,
       type: 'Servicio',
       status: initialStatus,
       date: new Date().toISOString(),

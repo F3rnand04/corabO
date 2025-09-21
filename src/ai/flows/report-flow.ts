@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -15,7 +14,7 @@ import { sendNotification } from './notification-flow';
  */
 export async function createContentReportFlow(input: Omit<ContentReport, 'id' | 'status' | 'createdAt'>): Promise<ContentReport> {
     const db = getFirebaseFirestore();
-    const reportId = `report-${Date.now()}`;
+    const reportId = `report-${'${Date.now()}'}`;
     const reportRef = db.collection('reports').doc(reportId);
 
     const newReport: ContentReport = {
@@ -50,7 +49,7 @@ export async function approveContentReportFlow({ reportId, contentId, reportedUs
                 const fileRef = storage.bucket().file(filePath);
                 await fileRef.delete();
             } catch (storageError) {
-                console.error(`Error deleting file from Storage for pub ${contentId}, but proceeding:`, storageError);
+                console.error(`Error deleting file from Storage for pub ${'${contentId}'}, but proceeding:`, storageError);
             }
         }
         batch.delete(publicationRef);
@@ -75,7 +74,7 @@ export async function approveContentReportFlow({ reportId, contentId, reportedUs
         userId: reportedUserId,
         type: 'payment_warning', // Reusing a strong notification type
         title: 'Advertencia: Contenido Eliminado',
-        message: `Tu publicación fue eliminada por infringir nuestras normas. Motivo: ${sanctionReason}. Infracciones repetidas pueden resultar en la suspensión de tu cuenta.`,
+        message: `Tu publicación fue eliminada por infringir nuestras normas. Motivo: ${'${sanctionReason}'}. Infracciones repetidas pueden resultar en la suspensión de tu cuenta.`,
         link: '/community-guidelines',
     });
     

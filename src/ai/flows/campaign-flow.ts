@@ -25,7 +25,7 @@ export type CreateCampaignInput = z.infer<typeof CreateCampaignInputSchema>;
 
 export async function createCampaignFlow(input: CreateCampaignInput): Promise<Campaign> {
   const db = getFirestore();
-  const campaignId = `camp-${input.userId}-${Date.now()}`;
+  const campaignId = `camp-${'${input.userId}'}-${'${Date.now()}'}`;
   
   const startDate = new Date();
   const endDate = addDays(startDate, input.durationDays);
@@ -62,7 +62,7 @@ export async function createCampaignFlow(input: CreateCampaignInput): Promise<Ca
     providerId: 'corabo-admin', // Payment is to the system
     participantIds: [input.userId, 'corabo-admin'],
     details: {
-        system: `Pago de campaña publicitaria: ${campaignId}`,
+        system: `Pago de campaña publicitaria: ${'${campaignId}'}`,
     }
   });
 

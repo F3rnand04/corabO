@@ -1,3 +1,4 @@
+'use server';
 /**
  * @fileOverview Flows for managing professional affiliations with companies.
  */
@@ -42,7 +43,7 @@ export async function requestAffiliationFlow (input: RequestAffiliationInput) {
         throw new Error("An affiliation request for this company already exists or has been approved.");
     }
     
-    const affiliationId = `affil-${input.providerId}-${input.companyId}`;
+    const affiliationId = `affil-${'${input.providerId}'}-${'${input.companyId}'}`;
     const now = new Date().toISOString();
     const newAffiliation: Affiliation = {
       id: affiliationId,

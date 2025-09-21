@@ -1,3 +1,4 @@
+'use server';
 /**
  * @fileOverview A feed generation flow for fetching publications and profile data.
  *
@@ -23,7 +24,7 @@ export async function getFeedFlow(input: z.infer<typeof GetFeedInputSchema>): Pr
             if(startAfterDoc.exists) {
                 q = q.startAfter(startAfterDoc);
             } else {
-                console.warn(`Cursor document with ID ${input.startAfterDocId} not found. Fetching from the beginning.`);
+                console.warn(`Cursor document with ID ${'${input.startAfterDocId}'} not found. Fetching from the beginning.`);
             }
         }
         

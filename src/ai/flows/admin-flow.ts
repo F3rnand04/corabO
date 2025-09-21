@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Flows for administrator-specific actions.
@@ -25,7 +24,7 @@ export async function createManagementUserFlow(input: CreateManagementUserInput)
     const userRecord = await auth.createUser({
         email: input.email,
         password: input.password,
-        displayName: `${input.name} ${input.lastName}`,
+        displayName: `${'${input.name}'} ${'${input.lastName}'}`,
         disabled: false
     });
     

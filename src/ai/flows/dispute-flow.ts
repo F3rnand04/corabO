@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -67,7 +66,7 @@ export async function initiateDisputeResolutionFlow(input: InitiateDisputeInput)
         type: 'admin_alert',
         title: 'Tu disputa está siendo revisada',
         message: notificationMessage,
-        link: `/transactions?tx=${transaction.id}`
+        link: `/transactions?tx=${'${transaction.id}'}`
     });
     
     await sendNotification({
@@ -75,7 +74,7 @@ export async function initiateDisputeResolutionFlow(input: InitiateDisputeInput)
         type: 'admin_alert',
         title: 'Una disputa está siendo revisada',
         message: notificationMessage,
-        link: `/transactions?tx=${transaction.id}`
+        link: `/transactions?tx=${'${transaction.id}'}`
     });
 
     return newDisputeCase;
