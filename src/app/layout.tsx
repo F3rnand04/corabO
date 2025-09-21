@@ -18,7 +18,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={`${inter.variable} antialiased bg-background`}>
+      <body className={`${'${inter.variable}'} antialiased bg-background`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <AuthProvider>
                 {/* ClientLayout now lives inside AuthProvider to access auth state */}
