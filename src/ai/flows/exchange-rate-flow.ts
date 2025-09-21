@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Exchange rate management flow.
@@ -21,7 +22,10 @@ export async function getExchangeRate(): Promise<ExchangeRateOutput> {
   return unstable_cache(
     async () => {
       console.log('Fetching fresh exchange rate...');
-      return getExchangeRateFlow();
+      // In a real-world scenario, this flow would contain logic to scrape
+      // a financial data API or read from a secure database.
+      // For this prototype, we return a fixed, realistic value.
+      return { rate: 36.54 };
     },
     ['exchange-rate-cache'],
     {
@@ -30,10 +34,3 @@ export async function getExchangeRate(): Promise<ExchangeRateOutput> {
     }
   )();
 }
-
-async function getExchangeRateFlow(): Promise<ExchangeRateOutput> {
-    // In a real-world scenario, this flow would contain logic to scrape
-    // a financial data API. For this prototype, we return a fixed, realistic value.
-    // The caching mechanism is the important part here.
-    return { rate: 36.54 };
-  }
