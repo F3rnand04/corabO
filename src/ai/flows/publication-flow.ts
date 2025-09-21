@@ -1,11 +1,11 @@
+
 'use server';
 
 /**
  * @fileOverview Flows for creating and managing publications and products securely on the backend.
  */
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import type { GalleryImage, User, GalleryImageComment } from '@/lib/types';
-import { CreatePublicationInput, CreateProductInput, AddCommentInput, RemoveCommentInput, UpdateGalleryImageInput, RemoveGalleryImageInput } from '@/lib/types';
+import type { GalleryImage, User, GalleryImageComment, CreatePublicationInput, CreateProductInput, AddCommentInput, RemoveCommentInput, UpdateGalleryImageInput, RemoveGalleryImageInput } from '@/lib/types';
 
 
 export async function createPublicationFlow(input: CreatePublicationInput): Promise<GalleryImage> {
@@ -17,7 +17,7 @@ export async function createPublicationFlow(input: CreatePublicationInput): Prom
       throw new Error('User not found.');
     }
     
-    const publicationId = `pub-${'${Date.now()}'}`;
+    const publicationId = `pub-${Date.now()}`;
 
     const newPublication: GalleryImage = {
       id: publicationId,
@@ -48,7 +48,7 @@ export async function createProductFlow(input: CreateProductInput): Promise<Gall
         throw new Error('User not found.');
     }
     
-    const productId = `prod-${'${Date.now()}'}`;
+    const productId = `prod-${Date.now()}`;
     
     const newProductPublication: GalleryImage = {
         id: productId,

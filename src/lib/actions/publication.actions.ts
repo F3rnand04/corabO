@@ -1,8 +1,7 @@
 
-
 'use server';
 
-import type { User, CreatePublicationInput, CreateProductInput } from '@/lib/types';
+import type { User, CreatePublicationInput, CreateProductInput, AddCommentInput, RemoveCommentInput, UpdateGalleryImageInput, RemoveGalleryImageInput } from '@/lib/types';
 import { getFirestore } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
 import { createProductFlow, createPublicationFlow, addCommentToImageFlow, removeCommentFromImageFlow, updateGalleryImageFlow, removeGalleryImageFlow } from '@/ai/flows/publication-flow';
@@ -58,26 +57,14 @@ export async function createProduct(input: CreateProductInput) {
     return newProduct;
 }
 
-export async function addCommentToImage(input: {ownerId: string, imageId: string, commentText: string, author: {id: string, name: string, profileImage: string}}) {
-    await addCommentToImageFlow({imageId: input.imageId, commentText: input.commentText, author: input.author});
-    revalidatePath(`/companies/${input.ownerId}`);
+export async function addCommentToImage(input: AddCommentInput) {
+    await addCommentToImageFlow(input);
+    revalidatePath(`/publications/${input.imageId}`);
 }
 
-export async function removeCommentFromImage(imageId: string, commentIndex: number) {
-    const db = getFirestore();
-    const imageRef = db.collection('publications').doc(imageId);
-    const imageSnap = await imageRef.get();
-
-    if (!imageSnap.exists) throw new Error("Image not found.");
-    
-    const publication = imageSnap.data() as any;
-    
-    // Firestore does not support removing an element by index directly in a secure way.
-    // The safest way is to read the array, modify it, and write it back.
-    const updatedComments = publication.comments?.filter((_: any, index: number) => index !== commentIndex);
-
-    await imageRef.update({ comments: updatedComments });
-    revalidatePath(`/publications/${imageId}`);
+export async function removeCommentFromImage(input: RemoveCommentInput) {
+    await removeCommentFromImageFlow(input);
+    revalidatePath(`/publications/${input.imageId}`);
 }
 
 export async function updateGalleryImage(imageId: string, updates: { description?: string, imageDataUri?: string }) {
