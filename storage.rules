@@ -1,23 +1,31 @@
+
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Allow public read access to all files.
-    // This is necessary for profile pictures, publication images, etc.
+    // Helper function to check if the user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // All files are publicly readable
     match /{allPaths=**} {
       allow read;
     }
 
-    // Allow authenticated users to write to their own folder.
-    // e.g., users/{userId}/profile.jpg
-    match /users/{userId}/{allPaths=**} {
-      allow write: if request.auth != null && request.auth.uid == userId;
+    // User can only write to their own folder within 'user_uploads'
+    match /user_uploads/{userId}/{fileName} {
+      allow write: if isAuthenticated() && request.auth.uid == userId;
     }
 
-    // Allow authenticated users to write to publications folder.
-    // We check the user's ID against the path segment.
-    match /publications/{userId}/{allPaths=**} {
-       allow write: if request.auth != null && request.auth.uid == userId;
+    // Allow writes to a 'vouchers' folder for authenticated users
+    match /vouchers/{userId}/{fileName} {
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Allow writes to an 'id_documents' folder only for the specific user
+    match /id_documents/{userId}/{fileName} {
+      allow write: if isAuthenticated() && request.auth.uid == userId;
     }
   }
 }

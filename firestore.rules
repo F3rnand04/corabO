@@ -1,5 +1,5 @@
-rules_version = '2';
 
+rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -11,59 +11,68 @@ service cloud.firestore {
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
+    
+    function isParticipant(resource) {
+        return request.auth.uid in resource.data.participantIds;
+    }
 
-    // Users can read/write their own data. Public profiles are readable by anyone.
+    // Users: Can only read/write their own data. All can create their own doc.
     match /users/{userId} {
-      allow read: if true;
-      allow write: if isOwner(userId);
+      allow read; // Allow reading public profiles
+      allow create: if isAuthenticated() && isOwner(userId);
+      allow update, delete: if isAuthenticated() && isOwner(userId);
+    }
+    
+    // Publications: Publicly readable, only owner can write/delete.
+    match /publications/{pubId} {
+      allow read;
+      allow create, update, delete: if isAuthenticated() && isOwner(resource.data.providerId);
     }
 
-    // Publications are public to read, but only owner can write/delete.
-    match /publications/{publicationId} {
-      allow read: if true;
-      allow create: if isAuthenticated() && request.resource.data.providerId == request.auth.uid;
-      allow update, delete: if isAuthenticated() && resource.data.providerId == request.auth.uid;
+    // Transactions: Only participants can read/write.
+    match /transactions/{txId} {
+      allow read, write: if isAuthenticated() && isParticipant(resource);
+    }
+    
+    // Conversations: Only participants can read/write.
+    match /conversations/{convoId} {
+        allow read, write: if isAuthenticated() && isParticipant(resource);
     }
 
-    // Transactions can only be read/written by participants.
-    match /transactions/{transactionId} {
-      allow read, write: if isAuthenticated() && request.auth.uid in resource.data.participantIds;
+    // Affiliations: Only authenticated users can create, participants can read.
+    match /affiliations/{affilId} {
+        allow read: if isAuthenticated() && isParticipant(resource);
+        allow create: if isAuthenticated();
+        allow update, delete: if isAuthenticated() && request.auth.uid == resource.data.companyId;
     }
 
-    // Conversations can only be read/written by participants.
-    match /conversations/{conversationId} {
-      allow read, write: if isAuthenticated() && request.auth.uid in resource.data.participantIds;
-    }
-
-    // Notifications can only be accessed by the owner.
-    match /notifications/{notificationId} {
-      allow read, write: if isAuthenticated() && resource.data.userId == request.auth.uid;
-    }
-
-    // Affiliations can be read by participants, created by provider, and written by company.
-    match /affiliations/{affiliationId} {
-      allow read: if isAuthenticated() && (request.auth.uid == resource.data.providerId || request.auth.uid == resource.data.companyId);
-      allow create: if isAuthenticated() && request.resource.data.providerId == request.auth.uid;
-      allow update: if isAuthenticated() && request.auth.uid == resource.data.companyId;
-    }
-
-    // Reports can be created by any authenticated user.
+    // Reports: Only authenticated users can create. Admins (server-side) will manage them.
     match /reports/{reportId} {
         allow create: if isAuthenticated();
-        // Read/write access should be limited to admins, which requires custom claims.
-        // For MVP, we restrict further access until admin logic is fully implemented.
-        allow read, update, delete: if false;
+        allow read, write, delete: if false; // Managed by server-side admin logic
     }
-
-    // QR sessions can be read/written by participants.
-    match /qr_sessions/{sessionId} {
-      allow read, write: if isAuthenticated() && request.auth.uid in resource.data.participantIds;
+    
+    // Notifications: Only owner can read/write.
+     match /notifications/{notifId} {
+      allow read, write, delete: if isAuthenticated() && isOwner(resource.data.userId);
     }
-
-     // Campaigns can be read by anyone, but only owner can write.
+    
+    // Campaigns: Owner can create, only readable by owner.
     match /campaigns/{campaignId} {
-      allow read: if true;
-      allow write: if isAuthenticated() && resource.data.providerId == request.auth.uid;
+        allow read, update: if isAuthenticated() && isOwner(resource.data.providerId);
+        allow create: if isAuthenticated();
+        allow delete: if false; // Campaigns should be cancelled, not deleted
+    }
+
+    // QR Sessions: Only participants can read/write.
+    match /qr_sessions/{sessionId} {
+      allow read, write: if isAuthenticated() && isParticipant(resource);
+    }
+
+    // Live Streams: Publicly readable, only creator can manage.
+    match /livestreams/{streamId} {
+        allow read;
+        allow create, update, delete: if isAuthenticated() && isOwner(resource.data.creatorId);
     }
   }
 }
