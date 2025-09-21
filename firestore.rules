@@ -2,66 +2,69 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Users can only read/write their own document
+
+    // Users: Can only read/write their own data. Public profiles are handled by server-side flows.
     match /users/{userId} {
-      allow read: if true;
-      allow create, update, delete: if request.auth != null && request.auth.uid == userId;
-    }
-    
-    // Publications are public, but only owner can modify
-    match /publications/{publicationId} {
-      allow read: if true;
-      allow create, update, delete: if request.auth != null && request.auth.uid == resource.data.providerId;
-    }
-    
-    // Transactions can only be read/written by participants
-    match /transactions/{transactionId} {
-      allow read, create, update: if request.auth != null && request.auth.uid in resource.data.participantIds;
-    }
-    
-    // Conversations can only be read/written by participants
-    match /conversations/{conversationId} {
-      allow read, create, update: if request.auth != null && request.auth.uid in resource.data.participantIds;
+      allow read: if request.auth != null;
+      allow write: if request.auth.uid == userId;
     }
 
-    // Reports can be created by any authenticated user
+    // Publications: Publicly readable, only owner can write/delete.
+    match /publications/{publicationId} {
+      allow read: if request.auth != null;
+      allow create, update, delete: if request.auth.uid == request.resource.data.providerId;
+    }
+
+    // Conversations: Only participants can read/write.
+    match /conversations/{conversationId} {
+      allow read, write: if request.auth.uid in resource.data.participantIds;
+    }
+    
+    // Transactions: Only participants can read/write.
+    match /transactions/{transactionId} {
+      allow read, write: if request.auth.uid in resource.data.participantIds;
+    }
+
+    // Reports: Only authenticated users can create reports.
     match /reports/{reportId} {
-      allow create: if request.auth != null;
-      allow read, update, delete: if request.auth != null && request.auth.token.role == 'admin'; // Only admins
+        allow read: if request.auth.token.role == 'admin'; // Only admins can read reports
+        allow create: if request.auth != null;
+        allow update, delete: if request.auth.token.role == 'admin';
     }
     
-    // Notifications belong to a user
-    match /notifications/{notificationId} {
-       allow read, create, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
-    }
-    
-     // QR Sessions can be managed by participants
-    match /qr_sessions/{sessionId} {
-      allow read, create, update: if request.auth != null && request.auth.uid in resource.data.participantIds;
-    }
-    
-    // Affiliations
+    // Affiliations: Readable by participants, writable by company.
     match /affiliations/{affiliationId} {
-        allow read, create: if request.auth != null;
-        allow update: if request.auth != null; // Simplificado para demo, idealmente sería más granular
+       allow read: if request.auth.uid == resource.data.providerId || request.auth.uid == resource.data.companyId;
+       allow create: if request.auth.uid == request.resource.data.providerId;
+       allow update: if request.auth.uid == resource.data.companyId; // Company can approve/reject/revoke
+    }
+
+    // Notifications: Only the recipient can read/write their own notifications.
+    match /notifications/{notificationId} {
+      allow read, write: if request.auth.uid == resource.data.userId;
     }
     
-    // Campaigns
-    match /campaigns/{campaignId} {
-        allow read: if true;
-        allow create, update: if request.auth != null && request.auth.uid == resource.data.providerId;
+    // QR Sessions: Only participants can interact with them.
+    match /qr_sessions/{sessionId} {
+      allow read, write: if request.auth.uid in resource.data.participantIds;
     }
     
-    // Disputes (Admin only)
+    // Disputes: Only participants and admins can interact.
     match /disputes/{disputeId} {
-       allow read, create, update, delete: if request.auth != null && request.auth.token.role == 'admin';
+      allow read, write: if request.auth.uid in resource.data.participantIds || request.auth.token.role == 'admin';
     }
     
-    // Live Streams
+    // Campaigns: Only owner can create/read.
+    match /campaigns/{campaignId} {
+      allow read, create: if request.auth.uid == resource.data.providerId;
+      // Updates might be handled by admin or system
+      allow update: if request.auth.token.role == 'admin';
+    }
+    
+    // Live Streams: Publicly readable, creator manages.
     match /livestreams/{streamId} {
       allow read: if true;
-      allow create, update: if request.auth != null && request.auth.uid == resource.data.creatorId;
+      allow create, update: if request.auth.uid == request.resource.data.creatorId;
     }
   }
 }
