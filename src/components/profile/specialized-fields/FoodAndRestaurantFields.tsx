@@ -18,7 +18,7 @@ interface SpecializedFieldProps {
 export const FoodAndRestaurantFields = ({ formData, onSpecializedChange }: SpecializedFieldProps) => {
     const [currentCuisine, setCurrentCuisine] = useState('');
 
-    const handleServiceOptionChange = (option: 'local' | 'pickup' | 'delivery' | 'catering', checked: boolean) => {
+    const handleServiceOptionChange = (option: 'local' | 'pickup' | 'own_delivery' | 'corabo_delivery' | 'catering', checked: boolean) => {
         onSpecializedChange('serviceOptions', {
             ...formData.specializedData?.serviceOptions,
             [option]: checked
@@ -63,7 +63,8 @@ export const FoodAndRestaurantFields = ({ formData, onSpecializedChange }: Speci
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                     <div className="flex items-center space-x-2"><Checkbox id="local" checked={formData.specializedData?.serviceOptions?.local} onCheckedChange={(c) => handleServiceOptionChange('local', !!c)} /><Label htmlFor="local">Consumo en Local</Label></div>
                     <div className="flex items-center space-x-2"><Checkbox id="pickup" checked={formData.specializedData?.serviceOptions?.pickup} onCheckedChange={(c) => handleServiceOptionChange('pickup', !!c)} /><Label htmlFor="pickup">Para Recoger (Pick-up)</Label></div>
-                    <div className="flex items-center space-x-2"><Checkbox id="delivery" checked={formData.specializedData?.serviceOptions?.delivery} onCheckedChange={(c) => handleServiceOptionChange('delivery', !!c)} /><Label htmlFor="delivery">Delivery Propio</Label></div>
+                    <div className="flex items-center space-x-2"><Checkbox id="own_delivery" checked={formData.specializedData?.serviceOptions?.own_delivery} onCheckedChange={(c) => handleServiceOptionChange('own_delivery', !!c)} /><Label htmlFor="own_delivery">Delivery Propio</Label></div>
+                    <div className="flex items-center space-x-2"><Checkbox id="corabo_delivery" checked={formData.specializedData?.serviceOptions?.corabo_delivery} onCheckedChange={(c) => handleServiceOptionChange('corabo_delivery', !!c)} /><Label htmlFor="corabo_delivery">Delivery con CorabO</Label></div>
                     <div className="flex items-center space-x-2"><Checkbox id="catering" checked={formData.specializedData?.serviceOptions?.catering} onCheckedChange={(c) => handleServiceOptionChange('catering', !!c)} /><Label htmlFor="catering">Servicio de Catering</Label></div>
                 </div>
             </div>

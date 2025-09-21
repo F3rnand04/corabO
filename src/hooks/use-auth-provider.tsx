@@ -2,22 +2,67 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
-import { signOut, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
+import { signOut, onAuthStateChanged } from 'firebase/auth';
 import type { User as FirebaseUser } from 'firebase/auth';
-import { auth } from '@/lib/firebase-client';
+import { auth, db } from '@/lib/firebase-client';
 import { createSessionCookie, clearSessionCookie } from '@/lib/actions/auth.actions';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, usePathname } from 'next/navigation';
-import type { FirebaseUserInput, User } from '@/lib/types';
-import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, where, orderBy, updateDoc, arrayRemove } from 'firebase/firestore';
+import type { User, Transaction, GalleryImage, CartItem, Product, TempRecipientInfo, QrSession, Notification, Conversation } from '@/lib/types';
+import { haversineDistance } from '@/lib/utils';
+import { differenceInMilliseconds } from 'date-fns';
+import { addContactToUser, updateUser } from '@/lib/actions/user.actions';
+import { updateCart } from '@/lib/actions/cart.actions';
 
-// Interface for the Authentication Context
+// --- Centralized Type Definition and Context Creation ---
 export interface AuthContextValue {
   firebaseUser: FirebaseUser | null;
   currentUser: User | null;
   isLoadingAuth: boolean;
   logout: () => Promise<void>;
   setCurrentUser: React.Dispatch<React.SetStateAction<User | null>>;
+
+  // Data states from former CoraboContext
+  contacts: User[];
+  addContact: (user: User) => void;
+  removeContact: (userId: string) => void;
+  isContact: (userId: string) => boolean;
+  
+  users: User[];
+  transactions: Transaction[];
+  setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
+  allPublications: GalleryImage[];
+  setAllPublications: React.Dispatch<React.SetStateAction<GalleryImage[]>>;
+  
+  cart: CartItem[];
+  activeCartForCheckout: CartItem[] | null;
+  setActiveCartForCheckout: React.Dispatch<React.SetStateAction<CartItem[] | null>>;
+  updateCartItem: (product: Product, quantity: number) => void;
+  removeCart: (itemsToRemove: CartItem[]) => void;
+  
+  tempRecipientInfo: TempRecipientInfo | null;
+  setTempRecipientInfo: React.Dispatch<React.SetStateAction<TempRecipientInfo | null>>;
+  deliveryAddress: string;
+  setDeliveryAddress: React.Dispatch<React.SetStateAction<string>>;
+  setDeliveryAddressToCurrent: () => void;
+  
+  currentUserLocation: { latitude: number; longitude: number } | null;
+  getCurrentLocation: () => void;
+  
+  searchQuery: string;
+  setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
+  categoryFilter: string | null;
+  setCategoryFilter: React.Dispatch<React.SetStateAction<string | null>>;
+  searchHistory: string[];
+  clearSearchHistory: () => void;
+  
+  notifications: Notification[];
+  conversations: Conversation[];
+  qrSession: QrSession | null;
+  
+  getUserMetrics: (userId: string, userType: User['type'], allTransactions: Transaction[]) => { reputation: number, effectiveness: number, averagePaymentTimeMs: number };
+  getAgendaEvents: (transactions: Transaction[]) => any[];
 }
 
 // Create the Authentication Context
@@ -32,8 +77,9 @@ export const useAuth = (): AuthContextValue => {
   return context;
 };
 
-// AuthProvider Component: Handles auth state and orchestrates data providers
+// AuthProvider Component: Handles auth state and ALL application data
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  // Auth State
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
@@ -41,59 +87,76 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const { toast } = useToast();
   const router = useRouter();
   const pathname = usePathname();
+  
+  // Application Data States (formerly in CoraboProvider)
+  const [users, setUsers] = useState<User[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [allPublications, setAllPublications] = useState<GalleryImage[]>([]);
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [contacts, setContacts] = useState<User[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [qrSession, setQrSession] = useState<QrSession | null>(null);
+  const [activeCartForCheckout, setActiveCartForCheckout] = useState<CartItem[] | null>(null);
+  const [tempRecipientInfo, setTempRecipientInfo] = useState<TempRecipientInfo | null>(null);
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [currentUserLocation, setCurrentUserLocation] = useState<{ latitude: number, longitude: number } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
+  const [searchHistory, setSearchHistory] = useState<string[]>([]);
+  
 
-  // Effect for Firebase authentication state listener
+  // Combined listener for auth and data
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (fbUser) => {
+      setFirebaseUser(fbUser);
+
       if (fbUser) {
-        setFirebaseUser(fbUser);
-        const db = getFirestore(auth.app);
+        // --- DATA LISTENERS ---
         const userDocRef = doc(db, 'users', fbUser.uid);
-        
-        // This onSnapshot listener will get the user profile and keep it updated in real-time.
-        // The user document is created on the server-side via getOrCreateUser in login actions.
-        const unsubUserDoc = onSnapshot(userDocRef, (doc) => {
+        const unsubUser = onSnapshot(userDocRef, (doc) => {
             if (doc.exists()) {
-                setCurrentUser(doc.data() as User);
+                const updatedUser = doc.data() as User;
+                setCurrentUser(updatedUser);
+                setCart(updatedUser.cart || []);
+                // Fetch contacts if they exist
+                if (updatedUser.contacts && updatedUser.contacts.length > 0) {
+                    const contactsQuery = query(collection(db, "users"), where('id', 'in', updatedUser.contacts));
+                    onSnapshot(contactsQuery, (snapshot) => {
+                        setContacts(snapshot.docs.map(d => d.data() as User));
+                    });
+                } else {
+                    setContacts([]);
+                }
             }
-            // If the doc doesn't exist, it means server-side creation is pending.
-            // We just wait, and the listener will fire when it's created.
             setIsLoadingAuth(false);
         });
-        
-        return () => unsubUserDoc();
-        
+
+        const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => setUsers(snapshot.docs.map(doc => doc.data() as User)));
+        const unsubTransactions = onSnapshot(query(collection(db, "transactions"), where('participantIds', 'array-contains', fbUser.uid)), (snapshot) => setTransactions(snapshot.docs.map(doc => doc.data() as Transaction).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())));
+        const unsubNotifications = onSnapshot(query(collection(db, "notifications"), where('userId', '==', fbUser.uid), orderBy('timestamp', 'desc')), (snapshot) => setNotifications(snapshot.docs.map(doc => doc.data() as Notification)));
+        const unsubConversations = onSnapshot(query(collection(db, "conversations"), where('participantIds', 'array-contains', fbUser.uid)), (snapshot) => setConversations(snapshot.docs.map(doc => doc.data() as Conversation)));
+        const unsubQrSession = onSnapshot(query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', fbUser.uid), where('status', '!=', 'closed')), (snapshot) => setQrSession(snapshot.empty ? null : snapshot.docs[0].data() as QrSession));
+        const unsubPublications = onSnapshot(collection(db, "publications"), (snapshot) => setAllPublications(snapshot.docs.map(d => d.data() as GalleryImage)));
+
+        return () => {
+          unsubUser(); unsubUsers(); unsubTransactions();
+          unsubNotifications(); unsubConversations(); unsubQrSession();
+          unsubPublications();
+        };
+
       } else {
-        setFirebaseUser(null);
+        // --- CLEAR ALL STATE ON LOGOUT ---
         setCurrentUser(null);
         setIsLoadingAuth(false);
+        setUsers([]); setTransactions([]); setCart([]); setContacts([]);
+        setNotifications([]); setConversations([]); setQrSession(null);
+        setAllPublications([]);
       }
     });
-    return () => unsubscribe();
+
+    return () => unsubscribeAuth();
   }, []);
-
-  // Effect for handling the redirect result from Google Sign-In
-  useEffect(() => {
-    const processRedirect = async () => {
-        try {
-            const result = await getRedirectResult(auth);
-            if (result) {
-                // This will trigger the onAuthStateChanged listener above,
-                // which will handle user creation and session setup.
-                const idToken = await result.user.getIdToken();
-                await createSessionCookie(idToken);
-                window.location.href = '/'; // Force a full reload to ensure server session is read
-            }
-        } catch (error: any) {
-             console.error("Error processing redirect result:", error);
-             toast({ variant: "destructive", title: "Error de Autenticación", description: error.message });
-             router.push('/login');
-        }
-    };
-    // Only run this on the client after the initial mount
-    processRedirect();
-  }, [router, toast]);
-
 
   // Effect for handling client-side routing based on auth state
   useEffect(() => {
@@ -116,9 +179,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       await signOut(auth);
       await clearSessionCookie();
-      // Clear all local state on logout
-      setCurrentUser(null);
-      setFirebaseUser(null);
+      // State clearing is now handled by the onAuthStateChanged listener
       router.push('/login');
     } catch (error: any) {
       console.error("Error during logout:", error);
@@ -126,16 +187,91 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [toast, router]);
 
-  const authContextValue: AuthContextValue = {
-    currentUser,
-    firebaseUser,
-    isLoadingAuth,
-    logout,
-    setCurrentUser,
+  // --- Data Management Functions (formerly in CoraboProvider) ---
+  const getCurrentLocation = useCallback(() => {
+    if (typeof window !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const location = { latitude: position.coords.latitude, longitude: position.coords.longitude };
+          setCurrentUserLocation(location);
+          if (currentUser?.id) {
+            updateUser(currentUser.id, { 'profileSetupData.location': `${'${location.latitude}'},${'${location.longitude}'}` });
+          }
+        },
+        () => toast({ variant: "destructive", title: "Error de Ubicación", description: "No se pudo obtener tu ubicación. Revisa los permisos." }),
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 600000 }
+      );
+    }
+  }, [toast, currentUser?.id]);
+
+  const addContact = useCallback(async (user: User) => {
+    if (!currentUser) return;
+    addContactToUser(currentUser.id, user.id);
+  }, [currentUser]);
+
+  const removeContact = useCallback(async (userId: string) => {
+    if (!currentUser) return;
+    const userRef = doc(db, 'users', currentUser.id);
+    await updateDoc(userRef, {
+        contacts: arrayRemove(userId)
+    });
+  }, [currentUser]);
+
+  const isContact = useCallback((userId: string) => currentUser?.contacts?.includes(userId) ?? false, [currentUser?.contacts]);
+  
+  const updateCartItem = useCallback(async (product: Product, quantity: number) => {
+      if (!currentUser) return;
+      updateCart(currentUser.id, product.id, quantity);
+  }, [currentUser]);
+
+  const removeCart = useCallback(async (itemsToRemove: CartItem[]) => {
+      if (!currentUser) return;
+      itemsToRemove.forEach(item => {
+        updateCart(currentUser.id, item.product.id, 0);
+      });
+  }, [currentUser]);
+
+  const setDeliveryAddressToCurrent = useCallback(() => {
+    getCurrentLocation();
+    if (currentUserLocation) setDeliveryAddress(`${'${currentUserLocation.latitude}'},${'${currentUserLocation.longitude}'}`);
+    else toast({ variant: "destructive", title: "Ubicación no disponible", description: "No hemos podido obtener tu ubicación GPS." });
+  }, [currentUserLocation, toast, getCurrentLocation]);
+  
+  const clearSearchHistory = () => {
+      setSearchHistory([]);
+      localStorage.removeItem('coraboSearchHistory');
+  };
+  
+  const getUserMetrics = useCallback((userId: string, userType: User['type'], allTransactions: Transaction[]) => {
+    const relevantTransactions = allTransactions.filter(tx => (tx.clientId === userId || tx.providerId === userId) && ['Pagado', 'Resuelto'].includes(tx.status));
+    const ratedTransactions = relevantTransactions.filter(tx => userType === 'provider' ? tx.details.clientRating : tx.details.providerRating);
+    const totalRating = ratedTransactions.reduce((acc, tx) => acc + (userType === 'provider' ? tx.details.clientRating! : tx.details.providerRating!), 0);
+    const reputation = ratedTransactions.length > 0 ? totalRating / ratedTransactions.length : 5.0;
+
+    const totalDeals = allTransactions.filter(tx => (tx.clientId === userId || tx.providerId === userId) && tx.type !== 'Sistema').length;
+    const effectiveness = totalDeals > 0 ? (relevantTransactions.length / totalDeals) * 100 : 100;
+    
+    const paymentConfirmations = allTransactions.filter(tx => tx.providerId === userId && tx.details.paymentSentAt && tx.details.paymentConfirmationDate).map(tx => differenceInMilliseconds(new Date(tx.details.paymentConfirmationDate!), new Date(tx.details.paymentSentAt!)));
+    const averagePaymentTimeMs = paymentConfirmations.length > 0 ? paymentConfirmations.reduce((a, b) => a + b, 0) / paymentConfirmations.length : 0;
+    
+    return { 
+      reputation: isNaN(reputation) ? 5 : reputation, 
+      effectiveness: isNaN(effectiveness) ? 100 : Math.min(effectiveness, 100), 
+      averagePaymentTimeMs 
+    };
+  }, []);
+  
+  const getAgendaEvents = useCallback((transactions: Transaction[]) => transactions.filter(tx => ['Finalizado - Pendiente de Pago', 'Cita Solicitada'].includes(tx.status)).map(tx => ({ date: new Date(tx.date), type: tx.status === 'Finalizado - Pendiente de Pago' ? 'payment' : 'appointment', title: tx.details.serviceName || tx.details.system || 'Evento', transactionId: tx.id })), []);
+
+  const value: AuthContextValue = {
+    // Auth
+    currentUser, firebaseUser, isLoadingAuth, logout, setCurrentUser,
+    // Data
+    contacts, addContact, removeContact, isContact, users, transactions, setTransactions, allTransactions, setAllPublications, cart, activeCartForCheckout, setActiveCartForCheckout, updateCartItem, removeCart, tempRecipientInfo, setTempRecipientInfo, deliveryAddress, setDeliveryAddress, setDeliveryAddressToCurrent, currentUserLocation, getCurrentLocation, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, searchHistory, clearSearchHistory, notifications, conversations, qrSession, getUserMetrics, getAgendaEvents
   };
 
   return (
-    <AuthContext.Provider value={authContextValue}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

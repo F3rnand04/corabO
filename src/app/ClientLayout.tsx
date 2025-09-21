@@ -6,7 +6,6 @@ import { Footer } from '@/components/Footer';
 import { Header } from '@/components/Header';
 import { useAuth } from '@/hooks/use-auth-provider';
 import { Loader2 } from 'lucide-react';
-import { CoraboProvider } from '@/contexts/CoraboContext';
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -24,12 +23,12 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   
   // The logic in AuthProvider handles redirection. If we are here and there's no
   // user, it's either an auth page or a temporary state before redirect.
-  // We should not wrap these pages with CoraboProvider or the main layout.
+  // We should not render the main layout for these pages.
   if (!currentUser) {
       return <>{children}</>;
   }
 
-  // Once we have a user, wrap the main app content with CoraboProvider and the layout.
+  // Once we have a user, render the main app layout.
   const hideHeaderForPaths = [
     '/initial-setup',
     '/cashier-login',
@@ -53,10 +52,10 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   const shouldHideFooter = hideFooterForPaths.some(path => (pathname || '').startsWith(path));
   
   return (
-    <CoraboProvider>
+    <>
       {!shouldHideHeader && <Header />}
       <div className="flex-1">{children}</div>
       {!shouldHideFooter && <Footer />}
-    </CoraboProvider>
+    </>
   );
 }

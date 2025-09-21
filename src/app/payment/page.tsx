@@ -150,7 +150,7 @@ function PaymentPageContent() {
                         </div>
                         <div className="flex justify-between items-center text-2xl font-bold">
                             <span className="text-muted-foreground">Monto a Pagar:</span>
-                            <span>${displayAmount?.toFixed(2)}</span>
+                            <span>${'${displayAmount?.toFixed(2)}'}</span>
                         </div>
                     </CardContent>
                 </Card>

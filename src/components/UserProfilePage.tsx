@@ -39,7 +39,6 @@ import { EditableAvatar } from './EditableAvatar';
 import { TransactionDetailsDialog } from './TransactionDetailsDialog';
 import { haversineDistance } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth-provider';
-import { useCorabo } from '@/hooks/use-corabo';
 
 
 const categoryIcons: { [key: string]: React.ElementType } = {
@@ -92,7 +91,7 @@ const renderSpecializedBadges = (specializedData?: SpecializedData) => {
 
 
 function ProfileStats({ user, isSelf }: { user: User, isSelf: boolean }) {
-    const { getUserMetrics, transactions } = useCorabo();
+    const { getUserMetrics, transactions } = useAuth();
     const metrics = getUserMetrics(user.id, user.type, transactions);
     
     const effectivenessLabel = user.type === 'provider' ? 'Efectividad' : 'Cumplimiento';
@@ -129,8 +128,7 @@ function ProfileStats({ user, isSelf }: { user: User, isSelf: boolean }) {
 
 
 export function UserProfilePage({ userId }: { userId: string}) {
-  const { currentUser } = useAuth();
-  const { users, transactions, isContact, addContact, currentUserLocation } = useCorabo();
+  const { currentUser, users, transactions, isContact, addContact, currentUserLocation } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -427,5 +425,3 @@ export function UserProfilePage({ userId }: { userId: string}) {
     </div>
   );
 }
-
-    

@@ -141,8 +141,6 @@ function LocationBubble({ lat, lon, onForward }: { lat: number, lon: number, onF
 
 function ProposalBubble({ msg, onAccept, canAccept }: { msg: Message, onAccept: (messageId: string) => void, canAccept: boolean }) {
     const { currentUser } = useAuth();
-    const isClient = currentUser?.type === 'client';
-    const isAccepted = msg.isProposalAccepted;
     const [formattedDate, setFormattedDate] = useState<string | null>(null);
 
     useEffect(() => {
@@ -152,25 +150,46 @@ function ProposalBubble({ msg, onAccept, canAccept }: { msg: Message, onAccept: 
     }, [msg.proposal?.deliveryDate]);
 
     if (!currentUser) return null;
+    
+    const isClient = currentUser?.type === 'client';
+    const isAccepted = msg.isProposalAccepted;
+    const proposal = msg.proposal;
+
+    if (!proposal) return null;
+
+    const isHourly = proposal.pricingModel === 'hourly';
+    const totalAmount = isHourly ? (proposal.hourlyRate || 0) * (proposal.estimatedHours || 0) : proposal.amount;
 
     return (
         <div className="flex justify-center w-full my-2">
             <div className="w-full max-w-sm rounded-lg border bg-background shadow-lg p-4 space-y-3">
                 <div className="flex items-center gap-2">
                     <Handshake className="w-6 h-6 text-primary" />
-                    <h3 className="font-bold text-lg">{msg.proposal?.title}</h3>
+                    <h3 className="font-bold text-lg">{proposal.title}</h3>
                 </div>
-                <p className="text-sm text-muted-foreground line-clamp-3">{msg.proposal?.description}</p>
+                <p className="text-sm text-muted-foreground line-clamp-3">{proposal.description}</p>
                 <Separator />
+                 {isHourly ? (
+                    <>
+                        <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Tarifa:</span>
+                            <span className="font-semibold">${proposal.hourlyRate?.toFixed(2)} / hora</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Horas Estimadas:</span>
+                            <span className="font-semibold">{proposal.estimatedHours}h</span>
+                        </div>
+                    </>
+                ) : null}
                 <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Fecha:</span>
+                    <span className="text-muted-foreground">Fecha Entrega:</span>
                     <span className="font-semibold">{formattedDate || '...'}</span>
                 </div>
-                 <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Costo:</span>
-                    <span className="font-bold text-lg">${msg.proposal?.amount.toFixed(2)}</span>
+                 <div className="flex justify-between items-baseline text-sm">
+                    <span className="text-muted-foreground">Total Estimado:</span>
+                    <span className="font-bold text-xl">${totalAmount.toFixed(2)}</span>
                 </div>
-                 {msg.proposal?.acceptsCredicora && (
+                 {proposal.acceptsCredicora && (
                      <div className="flex items-center gap-2 text-blue-600">
                         <Star className="w-4 h-4 fill-current"/>
                         <span className="text-sm font-semibold">Acepta Credicora</span>

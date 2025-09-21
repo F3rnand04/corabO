@@ -1,3 +1,4 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -17,13 +18,13 @@ export async function getOrCreateUser(firebaseUser: FirebaseUserInput): Promise<
 export async function updateUser(userId: string, updates: Partial<User> | { [key: string]: any }) {
     await updateUserFlow({ userId, updates });
     revalidatePath('/profile');
-    revalidatePath(`/companies/${userId}`);
+    revalidatePath(`/companies/${'${userId}'}`);
 }
 
 export async function updateUserProfileImage(userId: string, dataUrl: string) {
     await updateUserFlow({ userId, updates: { profileImage: dataUrl } });
     revalidatePath('/profile');
-    revalidatePath(`/companies/${userId}`);
+    revalidatePath(`/companies/${'${userId}'}`);
 }
 
 export async function updateFullProfile(userId: string, formData: ProfileSetupData, userType: User['type']) {
@@ -46,7 +47,7 @@ export async function updateFullProfile(userId: string, formData: ProfileSetupDa
     }
 
     revalidatePath('/profile');
-    revalidatePath(`/companies/${userId}`);
+    revalidatePath(`/companies/${'${userId}'}`);
 }
 
 
@@ -54,7 +55,7 @@ export async function toggleGps(userId: string) {
     await toggleGpsFlow({ userId });
     revalidatePath('/');
     revalidatePath('/profile');
-    revalidatePath(`/companies/${userId}`);
+    revalidatePath(`/companies/${'${userId}'}`);
 }
 
 export async function deleteUserAction(userId: string) {
@@ -74,7 +75,7 @@ export async function completeInitialSetup(userId: string, data: { name: string;
 
 export async function subscribeUser(userId: string, planName: string, amount: number) {
     const db = getFirestore();
-    const txId = `txn-sub-${Date.now()}`;
+    const txId = `txn-sub-${'${Date.now()}'}`;
     const newTransaction = {
         id: txId,
         type: 'Sistema',
@@ -85,7 +86,7 @@ export async function subscribeUser(userId: string, planName: string, amount: nu
         providerId: 'corabo-admin',
         participantIds: [userId, 'corabo-admin'],
         details: {
-            system: `Suscripción a ${planName}`,
+            system: `Suscripción a ${'${planName}'}`,
             isSubscription: true
         },
     };
@@ -112,7 +113,7 @@ export async function activatePromotion(userId: string, promotion: { imageId: st
         }
     });
 
-    const txId = `txn-promo-${Date.now()}`;
+    const txId = `txn-promo-${'${Date.now()}'}`;
     const newTransaction = {
         id: txId,
         type: 'Sistema',
@@ -129,7 +130,7 @@ export async function activatePromotion(userId: string, promotion: { imageId: st
     await db.collection('transactions').doc(txId).set(newTransaction);
 
     revalidatePath('/profile');
-    revalidatePath(`/companies/${userId}`);
+    revalidatePath(`/companies/${'${userId}'}`);
 }
 
 export async function addContactToUser(userId: string, contactId: string) {
@@ -137,7 +138,7 @@ export async function addContactToUser(userId: string, contactId: string) {
     await db.collection('users').doc(userId).update({
         contacts: FieldValue.arrayUnion(contactId)
     });
-    revalidatePath(`/companies/${contactId}`);
+    revalidatePath(`/companies/${'${contactId}'}`);
     revalidatePath('/contacts');
 }
 export async function becomeProvider(userId: string, profileData: ProfileSetupData) {

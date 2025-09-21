@@ -100,7 +100,7 @@ export async function payCommitment(transactionId: string, userId: string, payme
 
     // If a new voucher data URL is provided, upload it to storage
     if (paymentDetails.paymentVoucherUrl && paymentDetails.paymentVoucherUrl.startsWith('data:')) {
-        const filePath = `vouchers/${userId}/${transactionId}-${Date.now()}`;
+        const filePath = `vouchers/${'${userId}'}/${'${transactionId}'}-${'${Date.now()}'}`;
         uploadedVoucherUrl = await uploadToStorage(filePath, paymentDetails.paymentVoucherUrl);
     }
     
@@ -138,22 +138,8 @@ export async function processDirectPayment(sessionId: string) {
     const sessionRef = db.collection('qr_sessions').doc(sessionId);
     const sessionSnap = await sessionRef.get();
     if (!sessionSnap.exists) throw new Error("Session not found for payment processing");
-    const session = sessionSnap.data() as any;
-
-    const providerRef = db.collection('users').doc(session.providerId);
-    const providerSnap = await providerRef.get();
-    if (!providerSnap.exists) throw new Error("Provider not found");
-    const provider = providerSnap.data() as User;
     
-    const result = await processDirectPaymentFlow({ 
-        sessionId: sessionId,
-        // Pass real provider payment data to the flow
-        providerPaymentDetails: {
-            mobilePaymentPhone: provider.profileSetupData?.paymentDetails?.mobile?.mobilePaymentPhone,
-            idNumber: provider.idNumber,
-            bankName: provider.profileSetupData?.paymentDetails?.mobile?.bankName
-        }
-    });
+    const result = await processDirectPaymentFlow({ sessionId });
 
     revalidatePath('/transactions');
     return result;
@@ -167,7 +153,7 @@ export async function createQuoteRequest(input: QuoteRequestInput): Promise<{ re
 
 export async function acceptProposal(conversationId: string, messageId: string, acceptorId: string) {
     await acceptProposalFlow({ conversationId, messageId, acceptorId });
-    revalidatePath(`/messages/${conversationId}`);
+    revalidatePath(`/messages/${'${conversationId}'}`);
     revalidatePath('/transactions');
 }
 
@@ -181,11 +167,11 @@ export async function purchaseGift(userId: string, gift: { id: string, name: str
         providerId: 'corabo-admin',
         participantIds: [userId, 'corabo-admin'],
         details: {
-            system: `Compra de regalo: ${gift.name}`,
+            system: `Compra de regalo: ${'${gift.name}'}`,
         },
     });
     
-    const paymentUrl = `/payment?commitmentId=${newTransaction.id}`;
+    const paymentUrl = `/payment?commitmentId=${'${newTransaction.id}'}`;
 
     return { paymentUrl };
 }

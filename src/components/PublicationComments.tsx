@@ -50,7 +50,11 @@ export function PublicationComments({ publicationId, ownerId }: PublicationComme
   
     const handleDeleteComment = (commentIndex: number) => {
         if (publication && currentUser) {
-            removeCommentFromImage(publication.id, commentIndex);
+            removeCommentFromImage({
+                imageId: publication.id,
+                commentIndex,
+                authorId: currentUser.id,
+            });
         }
     }
     

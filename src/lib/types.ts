@@ -680,55 +680,47 @@ export type AppointmentRequest = {
 };
 
 // Schemas for Publication Flow
-export const CreatePublicationInputSchema = z.object({
-  providerId: z.string(),
-  description: z.string(),
-  imageDataUri: z.string(),
-  aspectRatio: z.enum(['square', 'horizontal', 'vertical']),
-  type: z.enum(['image', 'video']),
-});
-export type CreatePublicationInput = z.infer<typeof CreatePublicationInputSchema>;
+export interface CreatePublicationInput {
+  providerId: string;
+  description: string;
+  imageDataUri: string;
+  aspectRatio: 'square' | 'horizontal' | 'vertical';
+  type: 'image' | 'video';
+}
 
-export const CreateProductInputSchema = z.object({
-    providerId: z.string(),
-    name: z.string(),
-    description: z.string(),
-    price: z.number(),
-    imageDataUri: z.string(),
-});
-export type CreateProductInput = z.infer<typeof CreateProductInputSchema>;
+export interface CreateProductInput {
+    providerId: string;
+    name: string;
+    description: string;
+    price: number;
+    imageDataUri: string;
+}
 
+export interface AddCommentInput {
+  imageId: string;
+  commentText: string;
+  author: {
+    id: string;
+    name: string;
+    profileImage: string;
+  };
+  ownerId: string;
+}
 
-export const AddCommentInputSchema = z.object({
-  imageId: z.string(),
-  commentText: z.string(),
-  author: z.object({
-    id: z.string(),
-    name: z.string(),
-    profileImage: z.string(),
-  })
-});
-export type AddCommentInput = z.infer<typeof AddCommentInputSchema>;
+export interface RemoveCommentInput {
+  imageId: string;
+  commentIndex: number;
+  authorId: string;
+}
 
+export interface UpdateGalleryImageInput {
+  imageId: string;
+  updates: {
+    description?: string;
+    imageDataUri?: string;
+  }
+}
 
-export const RemoveCommentInputSchema = z.object({
-  imageId: z.string(),
-  commentIndex: z.number(),
-  authorId: z.string(),
-});
-export type RemoveCommentInput = z.infer<typeof RemoveCommentInputSchema>;
-
-export const UpdateGalleryImageInputSchema = z.object({
-  imageId: z.string(),
-  updates: z.object({
-    description: z.string().optional(),
-    imageDataUri: z.string().optional(),
-  })
-});
-export type UpdateGalleryImageInput = z.infer<typeof UpdateGalleryImageInputSchema>;
-
-
-export const RemoveGalleryImageInputSchema = z.object({
-  imageId: z.string()
-});
-export type RemoveGalleryImageInput = z.infer<typeof RemoveGalleryImageInputSchema>;
+export interface RemoveGalleryImageInput {
+  imageId: string;
+}
