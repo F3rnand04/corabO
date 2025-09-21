@@ -116,7 +116,7 @@ export async function joinPrivateLiveWithGift(liveStreamId: string, viewerId: st
     }
 
     if (gift.credits < (liveStream.accessCostCredits || 0)) {
-        return { success: false, message: `Este regalo no cubre el costo de entrada de ${liveStream.accessCostCredits} créditos.` };
+        return { success: false, message: `Este regalo no cubre el costo de entrada de ${'${liveStream.accessCostCredits}'} créditos.` };
     }
     
     // In a real app, you would verify the user has the gift/credits to spend.
