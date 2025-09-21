@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback, createContext } from 'react';
+import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase-client';
@@ -14,9 +14,73 @@ import { haversineDistance } from '@/lib/utils';
 import { differenceInMilliseconds } from 'date-fns';
 import { updateUser } from '@/lib/actions/user.actions';
 import { updateCart } from '@/lib/actions/cart.actions';
-import { AuthContext, AuthContextValue } from './use-auth';
 
-// AuthProvider Component: Handles auth state and ALL application data
+// --- Centralized Context Definition ---
+
+export interface AuthContextValue {
+  firebaseUser: FirebaseUser | null;
+  currentUser: User | null;
+  isLoadingAuth: boolean;
+  logout: () => Promise<void>;
+  setCurrentUser: React.Dispatch<React.SetStateAction<User | null>>;
+  
+  // Data states
+  contacts: User[];
+  addContact: (user: User) => void;
+  removeContact: (userId: string) => void;
+  isContact: (userId: string) => boolean;
+  
+  users: User[];
+  transactions: Transaction[];
+  setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
+  allPublications: GalleryImage[];
+  setAllPublications: React.Dispatch<React.SetStateAction<GalleryImage[]>>;
+  
+  cart: CartItem[];
+  activeCartForCheckout: CartItem[] | null;
+  setActiveCartForCheckout: React.Dispatch<React.SetStateAction<CartItem[] | null>>;
+  updateCartItem: (product: Product, quantity: number) => void;
+  removeCart: (itemsToRemove: CartItem[]) => void;
+  
+  tempRecipientInfo: TempRecipientInfo | null;
+  setTempRecipientInfo: React.Dispatch<React.SetStateAction<TempRecipientInfo | null>>;
+  deliveryAddress: string;
+  setDeliveryAddress: React.Dispatch<React.SetStateAction<string>>;
+  setDeliveryAddressToCurrent: () => void;
+  
+  currentUserLocation: { latitude: number; longitude: number } | null;
+  getCurrentLocation: () => void;
+  
+  searchQuery: string;
+  setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
+  categoryFilter: string | null;
+  setCategoryFilter: React.Dispatch<React.SetStateAction<string | null>>;
+  searchHistory: string[];
+  clearSearchHistory: () => void;
+  
+  notifications: Notification[];
+  conversations: Conversation[];
+  qrSession: QrSession | null;
+  
+  getUserMetrics: (userId: string, userType: User['type'], allTransactions: Transaction[]) => { reputation: number, effectiveness: number, averagePaymentTimeMs: number };
+  getAgendaEvents: (transactions: Transaction[]) => any[];
+}
+
+export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+
+// --- Centralized Hook ---
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+
+// --- AuthProvider Component ---
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Auth State
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -151,6 +215,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       updateCart(currentUser.id, product.id, quantity);
   }, [currentUser]);
   
+  const removeCart = useCallback(async (itemsToRemove: CartItem[]) => {
+      if (!currentUser) return;
+      for (const item of itemsToRemove) {
+          updateCart(currentUser.id, item.product.id, 0);
+      }
+  }, [currentUser]);
+  
   const getCurrentLocation = useCallback(() => {
     if (typeof window !== 'undefined' && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -215,7 +286,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Auth
     currentUser, firebaseUser, isLoadingAuth, logout, setCurrentUser,
     // Data
-    contacts, addContact, removeContact, isContact, users, transactions, setTransactions, allTransactions, setAllPublications, cart, activeCartForCheckout, setActiveCartForCheckout, updateCartItem, tempRecipientInfo, setTempRecipientInfo, deliveryAddress, setDeliveryAddress, setDeliveryAddressToCurrent, currentUserLocation, getCurrentLocation, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, searchHistory, clearSearchHistory, notifications, conversations, qrSession,
+    contacts, addContact, removeContact, isContact, users, transactions, setTransactions, allPublications, setAllPublications, cart, activeCartForCheckout, setActiveCartForCheckout, updateCartItem, removeCart, tempRecipientInfo, setTempRecipientInfo, deliveryAddress, setDeliveryAddress, setDeliveryAddressToCurrent, currentUserLocation, getCurrentLocation, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, searchHistory, clearSearchHistory, notifications, conversations, qrSession,
     // Metric getters
     getUserMetrics, getAgendaEvents
   };
