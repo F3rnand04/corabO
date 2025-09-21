@@ -2,15 +2,21 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Allow public read access to all files.
+    // Permite la lectura pública de todos los archivos. Necesario para que cualquiera vea imágenes de perfil, publicaciones, etc.
     match /{allPaths=**} {
-      allow read: if true;
+      allow read;
     }
 
-    // User can only write to their own folder.
-    // Example path: /users/USER_ID/profile.jpg
+    // Permite la escritura (subida, actualización, eliminación) de archivos solo si el usuario está autenticado
+    // y el path del archivo coincide con su ID de usuario.
+    // Ej: /users/USER_ID/profile.jpg
     match /users/{userId}/{allPaths=**} {
       allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+     // Permite la escritura de comprobantes en un path temporal seguro, si el usuario está autenticado.
+    match /vouchers/{userId}/{allPaths=**} {
+        allow write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
