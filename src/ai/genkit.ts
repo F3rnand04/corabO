@@ -6,7 +6,7 @@
  */
 import { genkit } from 'genkit';
 import { firebase } from 'genkit/plugins/firebase';
-// import { googleAI } from '@genkit-ai/googleai';
+import { googleAI } from '@genkit-ai/googleai';
 
 // Firebase Admin is initialized in `src/lib/firebase-admin.ts`, which is imported
 // by the server actions and flows. We don't need to initialize it again here.
@@ -15,9 +15,9 @@ import { firebase } from 'genkit/plugins/firebase';
 export const ai = genkit({
   plugins: [
     firebase(),
-    // googleAI({
-    //   apiVersion: 'v1beta',
-    // }),
+    googleAI({
+      apiVersion: 'v1beta',
+    }),
   ],
   logLevel: 'debug',
   enableTracingAndMetrics: true,

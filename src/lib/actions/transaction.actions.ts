@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { createQuoteRequestFlow, createTransactionFlow } from '@/ai/flows/transaction-flow';
 import type { AppointmentRequest, QuoteRequestInput, Transaction, User } from '@/lib/types';
+import { getFirebaseStorage } from '@/lib/firebase-admin';
 import { 
     createAppointmentRequestFlow, 
     acceptAppointmentFlow, 
@@ -18,8 +19,42 @@ import {
     startDisputeFlow, 
     cancelSystemTransactionFlow
 } from '@/ai/flows/transaction-flow';
-import { findDeliveryProviderFlow, resolveDeliveryAsPickupFlow } from '@/ai/flows/delivery-flow';
-import { acceptProposalFlow } from '@/ai/flows/message-flow';
+
+/**
+ * Uploads a file (as a data URL) to a specified path in Firebase Storage.
+ * @param filePath The desired path in the storage bucket.
+ * @param dataUrl The base64 encoded data URL of the file.
+ * @returns The public URL of the uploaded file.
+ */
+async function uploadToStorage(filePath: string, dataUrl: string): Promise<string> {
+    const storage = getFirebaseStorage();
+    const bucket = storage.bucket();
+
+    // Extract content type and base64 data from data URL
+    const match = dataUrl.match(/^data:(.+);base64,(.+)$/);
+    if (!match) {
+        throw new Error('Invalid data URL format.');
+    }
+    const contentType = match[1];
+    const base64Data = match[2];
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    const file = bucket.file(filePath);
+
+    // Upload the file
+    await file.save(buffer, {
+        metadata: {
+            contentType: contentType,
+        },
+    });
+
+    // Make the file public and return its URL
+    // This is a simplified approach for a prototype. In a real-world scenario,
+    // you would use signed URLs for private access control.
+    await file.makePublic();
+    
+    return file.publicUrl();
+}
 
 
 export async function createAppointmentRequest(request: AppointmentRequest) {
@@ -61,7 +96,16 @@ export async function confirmWorkReceived(input: { transactionId: string, userId
 }
 
 export async function payCommitment(transactionId: string, userId: string, paymentDetails: { paymentMethod: string, paymentReference?: string, paymentVoucherUrl?: string }) {
-    await payCommitmentFlow({ transactionId, userId, paymentDetails });
+    
+    let uploadedVoucherUrl = paymentDetails.paymentVoucherUrl;
+
+    // If a new voucher data URL is provided, upload it to storage
+    if (paymentDetails.paymentVoucherUrl && paymentDetails.paymentVoucherUrl.startsWith('data:')) {
+        const filePath = `vouchers/${userId}/${transactionId}-${Date.now()}`;
+        uploadedVoucherUrl = await uploadToStorage(filePath, paymentDetails.paymentVoucherUrl);
+    }
+    
+    await payCommitmentFlow({ transactionId, userId, paymentDetails: {...paymentDetails, paymentVoucherUrl: uploadedVoucherUrl} });
     revalidatePath('/transactions');
 }
 

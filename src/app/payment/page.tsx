@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, ChangeEvent } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth-provider';
 import { useToast } from '@/hooks/use-toast';
@@ -13,8 +13,6 @@ import { Label } from '@/components/ui/label';
 import { ChevronLeft, Banknote, Upload, Smartphone, Loader2 } from 'lucide-react';
 import type { Transaction } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { db } from '@/lib/firebase-client';
-import { setDoc, doc } from 'firebase/firestore';
 import { registerSystemPayment } from '@/lib/actions/admin.actions';
 import { payCommitment } from '@/lib/actions/transaction.actions';
 
@@ -53,7 +51,9 @@ function PaymentPageContent() {
     // Form state
     const [paymentReference, setPaymentReference] = useState('');
     const [paymentVoucher, setPaymentVoucher] = useState<File | null>(null);
+    const [voucherDataUrl, setVoucherDataUrl] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    
 
     useEffect(() => {
         const commitmentId = searchParams?.get('commitmentId');
@@ -71,9 +71,21 @@ function PaymentPageContent() {
         }
         setIsLoading(false);
     }, [searchParams, transactions, currentUser]);
+    
+    const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if(file) {
+            setPaymentVoucher(file);
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                setVoucherDataUrl(event.target?.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    }
 
     const handleConfirmPayment = async () => {
-        if (!paymentReference || !paymentVoucher || !currentUser) {
+        if (!paymentReference || !voucherDataUrl || !currentUser) {
             toast({ variant: 'destructive', title: 'Faltan datos', description: 'Por favor, sube el comprobante y añade la referencia.' });
             return;
         }
@@ -82,13 +94,13 @@ function PaymentPageContent() {
         try {
              // For direct payments (subscriptions, campaigns), we create a system transaction
             if (directPaymentAmount && paymentConcept) {
-                 await registerSystemPayment(currentUser.id, paymentConcept, directPaymentAmount, isSubscription);
+                 await registerSystemPayment(currentUser.id, paymentConcept, directPaymentAmount, isSubscription, voucherDataUrl, paymentReference);
             } else if (commitment) {
                 // Regular commitment payment, handled by payCommitment which will update the status
                  await payCommitment(commitment.id, currentUser.id, {
                      paymentMethod: 'Transferencia', // Defaulting for now
                      paymentReference,
-                     paymentVoucherUrl: 'https://i.postimg.cc/L8y2zWc2/vzla-id.png' // Placeholder
+                     paymentVoucherUrl: voucherDataUrl
                  });
             }
             
@@ -186,7 +198,7 @@ function PaymentPageContent() {
                                      type="file" 
                                      className="hidden" 
                                      accept="image/*"
-                                     onChange={(e) => setPaymentVoucher(e.target.files ? e.target.files[0] : null)}
+                                     onChange={handleFileChange}
                                      />
                                  <span className={cn("text-sm text-muted-foreground truncate", paymentVoucher && "text-foreground font-medium")}>
                                      {paymentVoucher ? paymentVoucher.name : 'Ningún archivo seleccionado...'}

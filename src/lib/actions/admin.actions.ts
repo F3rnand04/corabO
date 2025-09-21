@@ -87,12 +87,12 @@ export async function toggleUserPause(userId: string, shouldUnpause: boolean) {
     revalidatePath('/admin');
 }
 
-export async function registerSystemPayment(userId: string, concept: string, amount: number, isSubscription: boolean) {
+export async function registerSystemPayment(userId: string, concept: string, amount: number, isSubscription: boolean, voucherUrl: string, reference: string) {
     const db = getFirestore();
     const txId = `txn-sys-${'${userId.slice(0,5)}'}-${'${Date.now()}'}`;
     const newTransaction: Omit<Transaction, 'id'> = {
         type: 'Sistema',
-        status: 'Pagado',
+        status: 'Pago Enviado - Esperando Confirmación', // Changed from 'Pagado'
         date: new Date().toISOString(),
         amount: amount,
         clientId: userId,
@@ -101,17 +101,22 @@ export async function registerSystemPayment(userId: string, concept: string, amo
         details: {
             system: concept,
             isSubscription: isSubscription,
-            paymentMethod: 'direct' // Or determine from source
+            paymentMethod: 'direct',
+            paymentVoucherUrl: voucherUrl,
+            paymentReference: reference,
+            paymentSentAt: new Date().toISOString(),
         }
     };
 
     await db.collection('transactions').doc(txId).set({ id: txId, ...newTransaction });
 
     if (isSubscription) {
-        await db.collection('users').doc(userId).update({ isSubscribed: true });
+        // We do not mark as subscribed until payment is verified by an admin
+        // await db.collection('users').doc(userId).update({ isSubscribed: true });
     }
     
     revalidatePath('/transactions');
+    revalidatePath('/admin');
 }
 
 export async function createManagementUser(input: any) {
