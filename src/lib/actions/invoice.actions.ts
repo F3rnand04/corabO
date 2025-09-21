@@ -32,9 +32,9 @@ export async function generateMonthlyInvoices(month: number, year: number) {
                 success = true; // Mark as success to exit the while loop
             } catch (error: any) {
                 retries++;
-                console.error(`Attempt ${'${retries}'} failed for provider ${'${doc.id}'}:`, error.message);
+                console.error(`Attempt ${retries} failed for provider ${doc.id}:`, error.message);
                 if (retries >= MAX_RETRIES) {
-                    console.error(`All retries failed for provider ${'${doc.id}'}. Final error:`, error);
+                    console.error(`All retries failed for provider ${doc.id}. Final error:`, error);
                     errors.push({ providerId: doc.id, error: error.message });
                 } else {
                     const delay = Math.pow(2, retries - 1) * 1000;
@@ -46,9 +46,9 @@ export async function generateMonthlyInvoices(month: number, year: number) {
 
     if (errors.length > 0) {
         console.error("Invoice generation completed with errors.", { errors });
-        return { success: false, message: `Invoice generation completed with ${'${errors.length}'} errors.` };
+        return { success: false, message: `Invoice generation completed with ${errors.length} errors.` };
     }
     
     revalidatePath('/admin');
-    return { success: true, message: `Successfully processed invoices for ${'${processedCount}'} providers.` };
+    return { success: true, message: `Successfully processed invoices for ${processedCount} providers.` };
 }
