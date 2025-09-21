@@ -2,44 +2,8 @@
 /**
  * @fileOverview Flows for creating and managing publications and products securely on the backend.
  */
-import { z } from 'zod';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import type { GalleryImage, User, GalleryImageComment, CreatePublicationInput, CreateProductInput } from '@/lib/types';
-
-
-const AddCommentInputSchema = z.object({
-  imageId: z.string(),
-  commentText: z.string(),
-  author: z.object({
-    id: z.string(),
-    name: z.string(),
-    profileImage: z.string(),
-  })
-});
-type AddCommentInput = z.infer<typeof AddCommentInputSchema>;
-
-
-const RemoveCommentInputSchema = z.object({
-  imageId: z.string(),
-  commentIndex: z.number(),
-  authorId: z.string(),
-});
-type RemoveCommentInput = z.infer<typeof RemoveCommentInputSchema>;
-
-const UpdateGalleryImageInputSchema = z.object({
-  imageId: z.string(),
-  updates: z.object({
-    description: z.string().optional(),
-    imageDataUri: z.string().optional(),
-  })
-});
-type UpdateGalleryImageInput = z.infer<typeof UpdateGalleryImageInputSchema>;
-
-
-const RemoveGalleryImageInputSchema = z.object({
-  imageId: z.string()
-});
-type RemoveGalleryImageInput = z.infer<typeof RemoveGalleryImageInputSchema>;
+import type { GalleryImage, User, GalleryImageComment, CreatePublicationInput, CreateProductInput, AddCommentInput, RemoveCommentInput, UpdateGalleryImageInput, RemoveGalleryImageInput } from '@/lib/types';
 
 
 export async function createPublicationFlow(input: CreatePublicationInput): Promise<GalleryImage> {
@@ -57,7 +21,7 @@ export async function createPublicationFlow(input: CreatePublicationInput): Prom
       id: publicationId,
       providerId: input.providerId,
       type: input.type,
-      src: input.src,
+      src: input.imageDataUri,
       alt: input.description.slice(0, 50),
       description: input.description,
       createdAt: new Date().toISOString(),
@@ -88,15 +52,15 @@ export async function createProductFlow(input: CreateProductInput): Promise<Gall
         id: productId,
         providerId: input.providerId,
         type: 'product',
-        src: input.src,
-        alt: input.alt,
+        src: input.imageDataUri,
+        alt: input.name,
         description: input.description,
         createdAt: new Date().toISOString(),
         likes: 0,
         comments: [],
         productDetails: {
-          name: input.alt,
-          price: input.productDetails?.price || 0,
+          name: input.name,
+          price: input.price || 0,
           category: (userSnap.data() as User).profileSetupData?.primaryCategory || 'General',
         },
     };
