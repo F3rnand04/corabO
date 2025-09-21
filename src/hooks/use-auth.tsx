@@ -2,7 +2,7 @@
 'use client';
 
 import { createContext, useContext } from 'react';
-import type { User, Transaction, GalleryImage, CartItem, Product, TempRecipientInfo, QrSession, Notification, Conversation } from '@/lib/types';
+import type { User } from '@/lib/types';
 import type { User as FirebaseUser } from 'firebase/auth';
 
 export interface AuthContextValue {
@@ -22,3 +22,5 @@ export const useAuth = () => {
   }
   return context;
 };
+
+    
