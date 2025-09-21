@@ -1,8 +1,7 @@
 
 'use server';
 
-import { revalidatePath } from 'next/cache';
-import { getExchangeRate } from '@/ai/flows/exchange-rate-flow';
+import { revalidateTag } from 'next/cache';
 
 /**
  * Server Action to securely set the exchange rate for a country.
@@ -14,7 +13,7 @@ export async function setExchangeRate(countryCode: string, rate: number) {
     console.log(`Setting exchange rate for ${countryCode} to ${rate}`);
     
     // This revalidates the cache for the getExchangeRate flow.
-    revalidatePath('/admin', 'page');
+    revalidateTag('exchange-rate');
     
     return { success: true };
 }
