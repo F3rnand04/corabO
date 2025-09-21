@@ -105,6 +105,6 @@ export async function createQuoteRequest(input: QuoteRequestInput): Promise<{ re
 
 export async function acceptProposal(conversationId: string, messageId: string, acceptorId: string) {
     await acceptProposalFlow({ conversationId, messageId, acceptorId });
-    revalidatePath(`/messages/${'${conversationId}'}`);
+    revalidatePath(`/messages/${conversationId}`);
     revalidatePath('/transactions');
 }
