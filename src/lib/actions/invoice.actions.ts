@@ -1,8 +1,8 @@
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
 import { generateProviderInvoiceFlow } from '@/ai/flows/invoice-flow';
+import { getFirebaseFirestore } from '../firebase-admin';
 
 /**
  * Triggers the monthly invoice generation process for all providers.
