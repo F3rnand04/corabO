@@ -1,81 +1,20 @@
 
 'use client';
 
-import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
+import React, { useState, useEffect, useCallback, createContext } from 'react';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase-client';
 import { createSessionCookie, clearSessionCookie } from '@/lib/actions/auth.actions';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, usePathname } from 'next/navigation';
-import { doc, onSnapshot, collection, query, where, orderBy, updateDoc, arrayRemove } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, where, orderBy, updateDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
 import type { User, Transaction, GalleryImage, CartItem, Product, TempRecipientInfo, QrSession, Notification, Conversation } from '@/lib/types';
 import { haversineDistance } from '@/lib/utils';
 import { differenceInMilliseconds } from 'date-fns';
-import { addContactToUser, updateUser } from '@/lib/actions/user.actions';
+import { updateUser } from '@/lib/actions/user.actions';
 import { updateCart } from '@/lib/actions/cart.actions';
-
-// --- Centralized Type Definition and Context Creation ---
-export interface AuthContextValue {
-  firebaseUser: FirebaseUser | null;
-  currentUser: User | null;
-  isLoadingAuth: boolean;
-  logout: () => Promise<void>;
-  setCurrentUser: React.Dispatch<React.SetStateAction<User | null>>;
-
-  // Data states from former CoraboContext
-  contacts: User[];
-  addContact: (user: User) => void;
-  removeContact: (userId: string) => void;
-  isContact: (userId: string) => boolean;
-  
-  users: User[];
-  transactions: Transaction[];
-  setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>;
-  allPublications: GalleryImage[];
-  setAllPublications: React.Dispatch<React.SetStateAction<GalleryImage[]>>;
-  
-  cart: CartItem[];
-  activeCartForCheckout: CartItem[] | null;
-  setActiveCartForCheckout: React.Dispatch<React.SetStateAction<CartItem[] | null>>;
-  updateCartItem: (product: Product, quantity: number) => void;
-  removeCart: (itemsToRemove: CartItem[]) => void;
-  
-  tempRecipientInfo: TempRecipientInfo | null;
-  setTempRecipientInfo: React.Dispatch<React.SetStateAction<TempRecipientInfo | null>>;
-  deliveryAddress: string;
-  setDeliveryAddress: React.Dispatch<React.SetStateAction<string>>;
-  setDeliveryAddressToCurrent: () => void;
-  
-  currentUserLocation: { latitude: number; longitude: number } | null;
-  getCurrentLocation: () => void;
-  
-  searchQuery: string;
-  setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
-  categoryFilter: string | null;
-  setCategoryFilter: React.Dispatch<React.SetStateAction<string | null>>;
-  searchHistory: string[];
-  clearSearchHistory: () => void;
-  
-  notifications: Notification[];
-  conversations: Conversation[];
-  qrSession: QrSession | null;
-  
-  getUserMetrics: (userId: string, userType: User['type'], allTransactions: Transaction[]) => { reputation: number, effectiveness: number, averagePaymentTimeMs: number };
-  getAgendaEvents: (transactions: Transaction[]) => any[];
-}
-
-// Create the Authentication Context
-export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
-
-// Custom hook to use the Auth Context
-export const useAuth = (): AuthContextValue => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+import { AuthContext, AuthContextValue } from './use-auth';
 
 // AuthProvider Component: Handles auth state and ALL application data
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -88,7 +27,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter();
   const pathname = usePathname();
   
-  // Application Data States (formerly in CoraboProvider)
+  // Application Data States
   const [users, setUsers] = useState<User[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [allPublications, setAllPublications] = useState<GalleryImage[]>([]);
@@ -105,7 +44,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
   
-
   // Combined listener for auth and data
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (fbUser) => {
@@ -128,6 +66,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 } else {
                     setContacts([]);
                 }
+            } else {
+              // This can happen briefly during user creation
+              setCurrentUser(null);
             }
             setIsLoadingAuth(false);
         });
@@ -187,26 +128,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [toast, router]);
 
-  // --- Data Management Functions (formerly in CoraboProvider) ---
-  const getCurrentLocation = useCallback(() => {
-    if (typeof window !== 'undefined' && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const location = { latitude: position.coords.latitude, longitude: position.coords.longitude };
-          setCurrentUserLocation(location);
-          if (currentUser?.id) {
-            updateUser(currentUser.id, { 'profileSetupData.location': `${'${location.latitude}'},${'${location.longitude}'}` });
-          }
-        },
-        () => toast({ variant: "destructive", title: "Error de Ubicación", description: "No se pudo obtener tu ubicación. Revisa los permisos." }),
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 600000 }
-      );
-    }
-  }, [toast, currentUser?.id]);
-
   const addContact = useCallback(async (user: User) => {
     if (!currentUser) return;
-    addContactToUser(currentUser.id, user.id);
+    const userRef = doc(db, 'users', currentUser.id);
+    await updateDoc(userRef, {
+        contacts: arrayUnion(user.id)
+    });
   }, [currentUser]);
 
   const removeContact = useCallback(async (userId: string) => {
@@ -223,18 +150,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (!currentUser) return;
       updateCart(currentUser.id, product.id, quantity);
   }, [currentUser]);
-
-  const removeCart = useCallback(async (itemsToRemove: CartItem[]) => {
-      if (!currentUser) return;
-      itemsToRemove.forEach(item => {
-        updateCart(currentUser.id, item.product.id, 0);
-      });
-  }, [currentUser]);
-
+  
+  const getCurrentLocation = useCallback(() => {
+    if (typeof window !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const location = { latitude: position.coords.latitude, longitude: position.coords.longitude };
+          setCurrentUserLocation(location);
+          if (currentUser?.id) {
+            updateUser(currentUser.id, { 'profileSetupData.location': `${location.latitude},${location.longitude}` });
+          }
+        },
+        () => toast({ variant: "destructive", title: "Error de Ubicación", description: "No se pudo obtener tu ubicación. Revisa los permisos." }),
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 600000 }
+      );
+    }
+  }, [toast, currentUser?.id]);
+  
   const setDeliveryAddressToCurrent = useCallback(() => {
-    getCurrentLocation();
-    if (currentUserLocation) setDeliveryAddress(`${'${currentUserLocation.latitude}'},${'${currentUserLocation.longitude}'}`);
-    else toast({ variant: "destructive", title: "Ubicación no disponible", description: "No hemos podido obtener tu ubicación GPS." });
+    if (currentUserLocation) {
+        setDeliveryAddress(`${currentUserLocation.latitude},${currentUserLocation.longitude}`);
+    } else {
+        getCurrentLocation();
+        if(currentUserLocation) setDeliveryAddress(`${currentUserLocation.latitude},${currentUserLocation.longitude}`);
+        else toast({ variant: "destructive", title: "Ubicación no disponible", description: "Activa el GPS o intenta de nuevo." });
+    }
   }, [currentUserLocation, toast, getCurrentLocation]);
   
   const clearSearchHistory = () => {
@@ -242,32 +182,42 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       localStorage.removeItem('coraboSearchHistory');
   };
   
-  const getUserMetrics = useCallback((userId: string, userType: User['type'], allTransactions: Transaction[]) => {
-    const relevantTransactions = allTransactions.filter(tx => (tx.clientId === userId || tx.providerId === userId) && ['Pagado', 'Resuelto'].includes(tx.status));
-    const ratedTransactions = relevantTransactions.filter(tx => userType === 'provider' ? tx.details.clientRating : tx.details.providerRating);
-    const totalRating = ratedTransactions.reduce((acc, tx) => acc + (userType === 'provider' ? tx.details.clientRating! : tx.details.providerRating!), 0);
-    const reputation = ratedTransactions.length > 0 ? totalRating / ratedTransactions.length : 5.0;
+    const getUserMetrics = useCallback((userId: string, userType: User['type'], allTransactions: Transaction[]) => {
+        const relevantTransactions = allTransactions.filter(tx => (tx.clientId === userId || tx.providerId === userId) && ['Pagado', 'Resuelto'].includes(tx.status));
+        const ratedTransactions = relevantTransactions.filter(tx => userType === 'provider' ? tx.details.clientRating : tx.details.providerRating);
+        const totalRating = ratedTransactions.reduce((acc, tx) => acc + (userType === 'provider' ? tx.details.clientRating! : tx.details.providerRating!), 0);
+        const reputation = ratedTransactions.length > 0 ? totalRating / ratedTransactions.length : 5.0;
 
-    const totalDeals = allTransactions.filter(tx => (tx.clientId === userId || tx.providerId === userId) && tx.type !== 'Sistema').length;
-    const effectiveness = totalDeals > 0 ? (relevantTransactions.length / totalDeals) * 100 : 100;
+        const totalDeals = allTransactions.filter(tx => (tx.clientId === userId || tx.providerId === userId) && tx.type !== 'Sistema').length;
+        const effectiveness = totalDeals > 0 ? (relevantTransactions.length / totalDeals) * 100 : 100;
+        
+        const paymentConfirmations = allTransactions.filter(tx => tx.providerId === userId && tx.details.paymentSentAt && tx.details.paymentConfirmationDate).map(tx => differenceInMilliseconds(new Date(tx.details.paymentConfirmationDate!), new Date(tx.details.paymentSentAt!)));
+        const averagePaymentTimeMs = paymentConfirmations.length > 0 ? paymentConfirmations.reduce((a, b) => a + b, 0) / paymentConfirmations.length : 0;
+        
+        return { 
+          reputation: isNaN(reputation) ? 5 : reputation, 
+          effectiveness: isNaN(effectiveness) ? 100 : Math.min(effectiveness, 100), 
+          averagePaymentTimeMs 
+        };
+    }, []);
     
-    const paymentConfirmations = allTransactions.filter(tx => tx.providerId === userId && tx.details.paymentSentAt && tx.details.paymentConfirmationDate).map(tx => differenceInMilliseconds(new Date(tx.details.paymentConfirmationDate!), new Date(tx.details.paymentSentAt!)));
-    const averagePaymentTimeMs = paymentConfirmations.length > 0 ? paymentConfirmations.reduce((a, b) => a + b, 0) / paymentConfirmations.length : 0;
-    
-    return { 
-      reputation: isNaN(reputation) ? 5 : reputation, 
-      effectiveness: isNaN(effectiveness) ? 100 : Math.min(effectiveness, 100), 
-      averagePaymentTimeMs 
-    };
-  }, []);
+    const getAgendaEvents = useCallback((transactions: Transaction[]) => {
+       return transactions
+        .filter(tx => ['Finalizado - Pendiente de Pago', 'Cita Solicitada'].includes(tx.status))
+        .map(tx => ({
+            date: new Date(tx.date),
+            type: tx.status === 'Finalizado - Pendiente de Pago' ? 'payment' : 'appointment',
+            transactionId: tx.id,
+        }));
+    }, []);
   
-  const getAgendaEvents = useCallback((transactions: Transaction[]) => transactions.filter(tx => ['Finalizado - Pendiente de Pago', 'Cita Solicitada'].includes(tx.status)).map(tx => ({ date: new Date(tx.date), type: tx.status === 'Finalizado - Pendiente de Pago' ? 'payment' : 'appointment', title: tx.details.serviceName || tx.details.system || 'Evento', transactionId: tx.id })), []);
-
   const value: AuthContextValue = {
     // Auth
     currentUser, firebaseUser, isLoadingAuth, logout, setCurrentUser,
     // Data
-    contacts, addContact, removeContact, isContact, users, transactions, setTransactions, allTransactions, setAllPublications, cart, activeCartForCheckout, setActiveCartForCheckout, updateCartItem, removeCart, tempRecipientInfo, setTempRecipientInfo, deliveryAddress, setDeliveryAddress, setDeliveryAddressToCurrent, currentUserLocation, getCurrentLocation, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, searchHistory, clearSearchHistory, notifications, conversations, qrSession, getUserMetrics, getAgendaEvents
+    contacts, addContact, removeContact, isContact, users, transactions, setTransactions, allTransactions, setAllPublications, cart, activeCartForCheckout, setActiveCartForCheckout, updateCartItem, tempRecipientInfo, setTempRecipientInfo, deliveryAddress, setDeliveryAddress, setDeliveryAddressToCurrent, currentUserLocation, getCurrentLocation, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, searchHistory, clearSearchHistory, notifications, conversations, qrSession,
+    // Metric getters
+    getUserMetrics, getAgendaEvents
   };
 
   return (

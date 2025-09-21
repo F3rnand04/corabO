@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -8,8 +7,8 @@ import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { signInWithPopup, signInWithCustomToken } from 'firebase/auth';
 import { auth, googleProvider } from '@/lib/firebase-client';
-import { signInAsGuest, createSessionCookie, getOrCreateUser } from '@/lib/actions/auth.actions';
-import { useAuth } from '@/hooks/use-auth-provider';
+import { signInAsGuest, createSessionCookie } from '@/lib/actions/auth.actions';
+import { useAuth } from '@/hooks/use-auth';
 import GoogleIcon from '@/components/GoogleIcon';
 import { useRouter } from 'next/navigation';
 
@@ -26,13 +25,6 @@ export default function LoginPage() {
         if (response.customToken) {
             const userCredential = await signInWithCustomToken(auth, response.customToken);
             const firebaseUser = userCredential.user;
-            await getOrCreateUser({
-                uid: firebaseUser.uid,
-                email: firebaseUser.email,
-                displayName: firebaseUser.displayName,
-                photoURL: firebaseUser.photoURL,
-                emailVerified: firebaseUser.emailVerified,
-            });
             const idToken = await firebaseUser.getIdToken();
             await createSessionCookie(idToken);
             window.location.href = '/'; 

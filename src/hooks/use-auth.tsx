@@ -28,7 +28,6 @@ export interface AuthContextValue {
   activeCartForCheckout: CartItem[] | null;
   setActiveCartForCheckout: React.Dispatch<React.SetStateAction<CartItem[] | null>>;
   updateCartItem: (product: Product, quantity: number) => void;
-  removeCart: (itemsToRemove: CartItem[]) => void;
   
   tempRecipientInfo: TempRecipientInfo | null;
   setTempRecipientInfo: React.Dispatch<React.SetStateAction<TempRecipientInfo | null>>;

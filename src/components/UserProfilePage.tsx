@@ -39,6 +39,7 @@ import { EditableAvatar } from './EditableAvatar';
 import { TransactionDetailsDialog } from './TransactionDetailsDialog';
 import { haversineDistance } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth-provider';
+import { ProfileStats } from './ProfileStats';
 
 
 const categoryIcons: { [key: string]: React.ElementType } = {
@@ -89,46 +90,8 @@ const renderSpecializedBadges = (specializedData?: SpecializedData) => {
     );
 };
 
-
-function ProfileStats({ user, isSelf }: { user: User, isSelf: boolean }) {
-    const { getUserMetrics, transactions } = useAuth();
-    const metrics = getUserMetrics(user.id, user.type, transactions);
-    
-    const effectivenessLabel = user.type === 'provider' ? 'Efectividad' : 'Cumplimiento';
-  
-    return (
-        <div className="flex items-center justify-between w-full text-xs mt-1">
-            <div className="flex items-center flex-wrap gap-x-2 gap-y-1 text-muted-foreground">
-                <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 text-yellow-400 fill-yellow-400"/>
-                    <span className="font-semibold text-foreground">{metrics.reputation.toFixed(1)}</span>
-                </div>
-                <Separator orientation="vertical" className="h-3" />
-                <div className="flex items-center gap-1">
-                    <TrendingUp className="w-4 h-4 text-green-500"/>
-                    <span className="font-semibold text-foreground">{metrics.effectiveness.toFixed(0)}%</span>
-                    <span className="hidden sm:inline-block">{effectivenessLabel}</span>
-                </div>
-                 <Separator orientation="vertical" className="h-3" />
-                <div className="flex items-center gap-1">
-                    <Timer className="w-4 h-4 text-blue-500"/>
-                    <span className="font-semibold text-foreground">{metrics.averagePaymentTimeMs > 0 ? `${(metrics.averagePaymentTimeMs / 1000 / 60).toFixed(0)}m` : 'N/A'}</span>
-                    <span className="hidden sm:inline-block">T. Pago</span>
-                </div>
-            </div>
-            {isSelf && (
-                <div className="flex items-center gap-1 text-muted-foreground">
-                    <Zap className="w-4 h-4 text-pink-500"/>
-                    <span className="font-semibold text-foreground">{user.giftCredits || 0}</span>
-                </div>
-            )}
-        </div>
-    );
-}
-
-
 export function UserProfilePage({ userId }: { userId: string}) {
-  const { currentUser, users, transactions, isContact, addContact, currentUserLocation } = useAuth();
+  const { currentUser, users, transactions, addContact, currentUserLocation } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -211,16 +174,20 @@ export function UserProfilePage({ userId }: { userId: string}) {
     return providerProducts.filter(p => p.name.toLowerCase().includes(catalogSearchQuery.toLowerCase()));
   }, [providerProducts, catalogSearchQuery]);
 
-  const { agendaEvents, eventDates } = useMemo(() => {
-    if (!provider) return { agendaEvents: [], eventDates: [] };
-    
-    const events = transactions
-        .filter(tx => tx.providerId === provider.id && ['Finalizado - Pendiente de Pago', 'Cita Solicitada'].includes(tx.status))
+  const getAgendaEvents = (transactions: Transaction[], providerId: string) => {
+    return transactions
+        .filter(tx => tx.providerId === providerId && ['Finalizado - Pendiente de Pago', 'Cita Solicitada'].includes(tx.status))
         .map(tx => ({
             date: new Date(tx.date),
             type: tx.status === 'Finalizado - Pendiente de Pago' ? 'payment' : 'appointment',
             transactionId: tx.id,
         }));
+  }
+
+  const { agendaEvents, eventDates } = useMemo(() => {
+    if (!provider) return { agendaEvents: [], eventDates: [] };
+    
+    const events = getAgendaEvents(transactions, provider.id);
     const dates = events.map(e => e.date);
 
     return { agendaEvents: events, eventDates: dates };
@@ -334,7 +301,7 @@ export function UserProfilePage({ userId }: { userId: string}) {
                     <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground" onClick={() => isSelfProfile && toggleGps(provider.id)}><MapPin className={cn("h-5 w-5", provider.isGpsActive ? "text-green-500" : "text-muted-foreground")} /></Button>
                     <Popover>
                         <PopoverTrigger asChild><Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground"><Calendar className="w-5 h-5"/></Button></PopoverTrigger>
-                        <PopoverContent className="w-auto p-0"><CalendarComponent mode="multiple" selected={eventDates} onDayClick={handleDateSelect} disabled={[{ dayOfWeek: disabledDays }, { before: new Date() }]} /></PopoverContent>
+                        <PopoverContent className="w-auto p-0"><CalendarComponent mode="multiple" selected={eventDates} onDayClick={(day) => handleDateSelect(day)} disabled={[{ dayOfWeek: disabledDays }, { before: new Date() }]} /></PopoverContent>
                     </Popover>
                     {isSelfProfile ? (
                         <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground" onClick={handleEditProfile}>

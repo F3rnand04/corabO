@@ -1,9 +1,8 @@
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
 import { createQuoteRequestFlow, createTransactionFlow } from '@/ai/flows/transaction-flow';
-import type { AppointmentRequest, QuoteRequestInput, Transaction, User } from '@/lib/types';
+import type { Transaction, User, QuoteRequestInput, AppointmentRequest } from '@/lib/types';
 import { getFirebaseStorage, getFirebaseFirestore } from '@/lib/firebase-admin';
 import { 
     createAppointmentRequestFlow, 
@@ -20,6 +19,7 @@ import {
     startDisputeFlow, 
     cancelSystemTransactionFlow
 } from '@/ai/flows/transaction-flow';
+import { acceptProposalFlow } from '@/ai/flows/message-flow';
 
 /**
  * Uploads a file (as a data URL) to a specified path in Firebase Storage.

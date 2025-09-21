@@ -671,17 +671,9 @@ export type ContentReport = {
   sanctionReason?: SanctionReason; // Reason selected by admin
 };
 
-export type AppointmentRequest = {
-    providerId: string;
-    clientId: string;
-    date: string;
-    details: string;
-    amount: number;
-};
-
 // Schemas for Publication Flow
 export interface CreatePublicationInput {
-  providerId: string;
+  userId: string;
   description: string;
   imageDataUri: string;
   aspectRatio: 'square' | 'horizontal' | 'vertical';
@@ -689,7 +681,7 @@ export interface CreatePublicationInput {
 }
 
 export interface CreateProductInput {
-    providerId: string;
+    userId: string;
     name: string;
     description: string;
     price: number;
