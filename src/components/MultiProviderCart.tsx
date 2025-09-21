@@ -44,21 +44,12 @@ export function MultiProviderCart({ onCheckoutClick }: MultiProviderCartProps) {
         onCheckoutClick();
     };
 
-    const handleRemoveProviderFromCart = () => {
-        if (!currentUser?.id || !activeCartForCheckout) return;
-        activeCartForCheckout.forEach(item => {
-            updateCart(currentUser.id, item.product.id, 0);
-        });
-        setActiveCartForCheckout(null);
-    };
-
-
     return (
         <div className="space-y-4">
             <div className="max-h-60 overflow-y-auto space-y-3 pr-2">
                 {Object.values(groupedCart).map(({ provider, items, subtotal, itemCount }) => (
                     <Card key={provider?.id} className="p-3 relative group/provider-cart">
-                        <div className="flex items-center justify-between pr-8">
+                        <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2 overflow-hidden">
                                 <Avatar className="h-8 w-8">
                                     <AvatarImage src={provider?.profileImage} />
@@ -80,14 +71,6 @@ export function MultiProviderCart({ onCheckoutClick }: MultiProviderCartProps) {
                                 </Button>
                             </div>
                         </div>
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="absolute top-1/2 -translate-y-1/2 right-1 h-7 w-7 text-muted-foreground hover:text-destructive opacity-0 group-hover/provider-cart:opacity-100"
-                            onClick={() => handleRemoveProviderFromCart(items)}
-                        >
-                            <X className="h-4 w-4" />
-                        </Button>
                     </Card>
                 ))}
             </div>

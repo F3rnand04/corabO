@@ -642,6 +642,7 @@ export type DisputeCase = {
   finalResolution?: 'refund_client' | 'pay_provider' | 'partial_refund' | 'no_action';
 };
 
+// Types moved from report-flow
 export type SanctionReason = 
     | "Contenido Engañoso o Spam"
     | "Suplantación de Identidad"
@@ -649,7 +650,6 @@ export type SanctionReason =
     | "Promoción de Actividades Ilegales"
     | "Contenido Explícito o Inapropiado";
 
-// NEW: Data model for content reports
 export type ContentReport = {
   id: string;
   reporterId: string;
@@ -710,5 +710,3 @@ export interface UpdateGalleryImageInput {
 export interface RemoveGalleryImageInput {
   imageId: string;
 }
-
-    
