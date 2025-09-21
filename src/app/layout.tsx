@@ -22,6 +22,7 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <AuthProvider>
                 {/* ClientLayout now lives inside AuthProvider to access auth state */}
+                {/* CoraboProvider is now INSIDE ClientLayout, conditionally rendered */}
                 <ClientLayout>
                   {children}
                 </ClientLayout>

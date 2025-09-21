@@ -8,7 +8,6 @@ import { auth } from '@/lib/firebase-client';
 import { getOrCreateUser } from '@/lib/actions/auth.actions';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, usePathname } from 'next/navigation';
-import { CoraboProvider } from '@/contexts/CoraboContext';
 import type { FirebaseUserInput, User } from '@/lib/types';
 
 // Interface for the Authentication Context
@@ -107,10 +106,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <AuthContext.Provider value={authContextValue}>
-        {/* The CoraboProvider is nested inside, so it only runs when a user is authenticated */}
-        <CoraboProvider>
-            {children}
-        </CoraboProvider>
+      {children}
     </AuthContext.Provider>
   );
 };
