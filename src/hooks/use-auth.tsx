@@ -1,10 +1,9 @@
 'use client';
 
 import { createContext, useContext } from 'react';
-import type { User } from '@/lib/types';
+import type { User, Transaction, GalleryImage, CartItem, Product, TempRecipientInfo, QrSession, Notification, Conversation } from '@/lib/types';
 import type { User as FirebaseUser } from 'firebase/auth';
 
-// This context is now SOLELY for authentication state.
 export interface AuthContextValue {
   firebaseUser: FirebaseUser | null;
   currentUser: User | null;
