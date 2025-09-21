@@ -5,10 +5,11 @@ import React, { useState, useEffect, useCallback, createContext, useContext } fr
 import { signOut, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase-client';
-import { getOrCreateUser, createSessionCookie, clearSessionCookie } from '@/lib/actions/auth.actions';
+import { createSessionCookie, clearSessionCookie } from '@/lib/actions/auth.actions';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, usePathname } from 'next/navigation';
 import type { FirebaseUserInput, User } from '@/lib/types';
+import { getFirestore, doc, onSnapshot } from 'firebase/firestore';
 
 // Interface for the Authentication Context
 export interface AuthContextValue {
@@ -46,22 +47,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       if (fbUser) {
         setFirebaseUser(fbUser);
-        const userPayload: FirebaseUserInput = {
-            uid: fbUser.uid,
-            email: fbUser.email,
-            displayName: fbUser.displayName,
-            photoURL: fbUser.photoURL,
-            phoneNumber: fbUser.phoneNumber,
-            emailVerified: fbUser.emailVerified
-        };
-        // Get or create the user profile from Firestore
-        const userProfile = await getOrCreateUser(userPayload);
-        setCurrentUser(userProfile);
+        const db = getFirestore(auth.app);
+        const userDocRef = doc(db, 'users', fbUser.uid);
+        
+        // This onSnapshot listener will get the user profile and keep it updated in real-time.
+        // The user document is created on the server-side via getOrCreateUser in login actions.
+        const unsubUserDoc = onSnapshot(userDocRef, (doc) => {
+            if (doc.exists()) {
+                setCurrentUser(doc.data() as User);
+            }
+            // If the doc doesn't exist, it means server-side creation is pending.
+            // We just wait, and the listener will fire when it's created.
+            setIsLoadingAuth(false);
+        });
+        
+        return () => unsubUserDoc();
+        
       } else {
         setFirebaseUser(null);
         setCurrentUser(null);
+        setIsLoadingAuth(false);
       }
-      setIsLoadingAuth(false);
     });
     return () => unsubscribe();
   }, []);

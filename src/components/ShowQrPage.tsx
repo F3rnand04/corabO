@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useState, useRef, ChangeEvent, useEffect, useMemo } from 'react';
 import Image from 'next/image';
-import { db } from '@/lib/firebase';
+import { db } from '@/lib/firebase-client';
 import { collection, query, where, onSnapshot, Unsubscribe, doc } from 'firebase/firestore';
 import type { QrSession, User, Transaction } from '@/lib/types';
 import { setQrSessionAmount, cancelQrSession, confirmMobilePayment, finalizeQrSession } from '@/lib/actions/cashier.actions';

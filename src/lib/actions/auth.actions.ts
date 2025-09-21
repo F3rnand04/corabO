@@ -14,8 +14,12 @@ export async function signInAsGuest(): Promise<{ customToken?: string; error?: s
     try {
         const auth = getFirebaseAuth();
         // Use a consistent but unique UID for the guest session to avoid creating new users on every click
-        const uid = `guest_${'${Date.now()}'}`;
+        const uid = `guest_${Date.now()}`;
         const customToken = await auth.createCustomToken(uid);
+        
+        // Also ensure the user document is created server-side immediately
+        await getOrCreateUserFlow({ uid: uid, displayName: "Invitado", email: null, photoURL: null, emailVerified: false });
+        
         return { customToken };
     } catch (error: any) {
         console.error('[ACTION_ERROR] signInAsGuest:', error.message);
@@ -34,6 +38,17 @@ export async function createSessionCookie(idToken: string) {
         const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
         const sessionCookie = await auth.createSessionCookie(idToken, { expiresIn });
         cookies().set('session', sessionCookie, { maxAge: expiresIn, httpOnly: true, secure: process.env.NODE_ENV === 'production', path: '/', sameSite: 'lax' });
+        
+        // After setting the cookie, ensure the user exists in Firestore
+        const decodedToken = await auth.verifyIdToken(idToken);
+        await getOrCreateUserFlow({
+             uid: decodedToken.uid,
+             email: decodedToken.email,
+             displayName: decodedToken.name,
+             photoURL: decodedToken.picture,
+             emailVerified: decodedToken.email_verified || false,
+        });
+
         return { success: true };
     } catch (error) {
         console.error("Error creating session cookie", error);
