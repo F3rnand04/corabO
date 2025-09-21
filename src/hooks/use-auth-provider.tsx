@@ -2,10 +2,10 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
-import { signOut, onAuthStateChanged } from 'firebase/auth';
+import { signOut, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase-client';
-import { getOrCreateUser } from '@/lib/actions/auth.actions';
+import { getOrCreateUser, createSessionCookie, clearSessionCookie } from '@/lib/actions/auth.actions';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, usePathname } from 'next/navigation';
 import type { FirebaseUserInput, User } from '@/lib/types';
@@ -66,6 +66,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => unsubscribe();
   }, []);
 
+  // Effect for handling the redirect result from Google Sign-In
+  useEffect(() => {
+    const processRedirect = async () => {
+        try {
+            const result = await getRedirectResult(auth);
+            if (result) {
+                // This will trigger the onAuthStateChanged listener above,
+                // which will handle user creation and session setup.
+                const idToken = await result.user.getIdToken();
+                await createSessionCookie(idToken);
+                window.location.href = '/'; // Force a full reload to ensure server session is read
+            }
+        } catch (error: any) {
+             console.error("Error processing redirect result:", error);
+             toast({ variant: "destructive", title: "Error de Autenticación", description: error.message });
+             router.push('/login');
+        }
+    };
+    // Only run this on the client after the initial mount
+    processRedirect();
+  }, [router, toast]);
+
+
   // Effect for handling client-side routing based on auth state
   useEffect(() => {
     if (isLoadingAuth) return;
@@ -86,6 +109,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = useCallback(async () => {
     try {
       await signOut(auth);
+      await clearSessionCookie();
       // Clear all local state on logout
       setCurrentUser(null);
       setFirebaseUser(null);

@@ -56,6 +56,7 @@ export async function clearSessionCookie() {
 
 export async function getOrCreateUser(firebaseUser: FirebaseUserInput) {
     const user = await getOrCreateUserFlow(firebaseUser);
-    revalidatePath('/'); // Revalidate the path to reflect changes
+    // Do not revalidate here, as it can cause race conditions during login.
+    // The client-side redirect will handle the UI update.
     return user;
 }

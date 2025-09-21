@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { signInWithCustomToken, signInWithRedirect } from 'firebase/auth';
-import { auth, googleProvider } from '@/lib/firebase-client';
+import { signInWithCustomToken } from 'firebase/auth';
+import { auth } from '@/lib/firebase-client';
 import { signInAsGuest, createSessionCookie, getOrCreateUser } from '@/lib/actions/auth.actions';
 import { useAuth } from '@/hooks/use-auth-provider';
 import GoogleIcon from '@/components/GoogleIcon';
@@ -50,22 +50,10 @@ export default function LoginPage() {
     }
   };
   
-  const handleGoogleLogin = async () => {
+  const handleGoogleLogin = () => {
+    // Redirect to our own server-side API route to handle the OAuth flow
     setIsProcessingLogin(true);
-    try {
-        // This initiates the REAL Google Sign-In popup/redirect flow.
-        await signInWithRedirect(auth, googleProvider);
-        // The rest of the logic is handled by the onAuthStateChanged listener
-        // in AuthProvider after the user is redirected back.
-    } catch (error: any) {
-        console.error("Google Sign-In Error:", error);
-        toast({
-          variant: "destructive",
-          title: "Error de Google",
-          description: error.message || "No se pudo iniciar sesión con Google.",
-        });
-        setIsProcessingLogin(false);
-    }
+    router.push('/api/auth/google');
   };
   
   // Show a loader if either the main auth provider is loading or a specific login action is processing.
