@@ -1,5 +1,7 @@
 'use server';
-
+/**
+ * @fileOverview Flow for managing the user's shopping cart.
+ */
 import { revalidatePath } from 'next/cache';
 import { updateCartFlow } from '@/ai/flows/cart-flow';
 
