@@ -2,6 +2,10 @@
 
 This directory houses all of the application's reusable React components, organized by functionality to maintain a clean and scalable project.
 
+## Directiva Operativa Central
+
+**IMPORTANTE:** Queda terminantemente prohibido alterar, eliminar o modificar la funcionalidad existente de los componentes, los flujos de la aplicación o el diseño de la interfaz de usuario. Cualquier optimización o cambio debe realizarse garantizando que **TODOS** los componentes y funcionalidades permanezcan 100% operativos y sin cambios en su comportamiento de cara al usuario. El objetivo es mejorar el rendimiento y la mantenibilidad del código subyacente sin afectar la lógica de negocio ya establecida.
+
 ## Structure
 
 -   **`/` (Root):** Contains high-level or very generic components used across multiple parts of the application.

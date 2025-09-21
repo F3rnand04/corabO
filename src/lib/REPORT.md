@@ -1,8 +1,14 @@
-# Functional Status Report of the Corabo Application
+# Informe de Estado Funcional de la Aplicación Corabo
 
 **Date:** July 23, 2025
 **Version:** 1.0.0 (Stable and Operational)
 **Objective:** To document the components and workflows that have been implemented, validated, and are functioning correctly after the transition from a simulated state to a real, working implementation.
+
+---
+
+## Directiva Operativa Central
+
+**IMPORTANTE:** Queda terminantemente prohibido alterar, eliminar o modificar la funcionalidad existente de los componentes, los flujos de la aplicación o el diseño de la interfaz de usuario. Cualquier optimización o cambio debe realizarse garantizando que **TODOS** los componentes y funcionalidades permanezcan 100% operativos y sin cambios en su comportamiento de cara al usuario. El objetivo es mejorar el rendimiento y la mantenibilidad del código subyacente sin afectar la lógica de negocio ya establecida.
 
 ---
 

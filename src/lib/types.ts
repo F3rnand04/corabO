@@ -1,6 +1,5 @@
 
 
-
 import { z } from 'zod';
 
 export type FirebaseUserInput = { uid: string; email?: string | null; displayName?: string | null; photoURL?: string | null; phoneNumber?: string | null; emailVerified: boolean; };
@@ -105,9 +104,9 @@ export type PublicationOwner = {
   reputation?: number;
   profileSetupData?: {
     specialty?: string;
-    providerType?: 'professional' | 'company' | 'delivery' | 'tourism' | 'lodging';
+    providerType?: 'professional' | 'company' | 'delivery';
     username?: string;
-    primaryCategory?: string | null;
+    primaryCategory?: string;
     location?: string;
     showExactLocation?: boolean;
   }
@@ -274,7 +273,8 @@ export type SpecializedData = {
     serviceOptions?: {
         local?: boolean;
         pickup?: boolean;
-        delivery?: boolean;
+        own_delivery?: boolean;
+        corabo_delivery?: boolean;
         catering?: boolean;
     };
     menuUrl?: string;
@@ -298,13 +298,6 @@ export type SpecializedData = {
     keySkills?: string[];
     toolsAndBrands?: string;
     yearsOfExperience?: number;
-    
-    // Turismo y Estadías
-    lodgingType?: 'hotel' | 'apartamento' | 'casa' | 'cabaña' | 'habitación';
-    amenities?: string[];
-    tourType?: 'aventura' | 'cultural' | 'gastronómico' | 'playa' | 'montaña';
-    duration?: string;
-    includedServices?: string[];
 };
 
 // NEW: Type for a single cashier box
@@ -331,7 +324,7 @@ export type ProfileSetupData = {
   primaryCategory?: string | null;
   specialty?: string;
   country?: string;
-  providerType?: 'professional' | 'company' | 'delivery' | 'tourism' | 'lodging';
+  providerType?: 'professional' | 'company' | 'delivery';
   offerType?: 'product' | 'service' | 'both';
   hasPhysicalLocation?: boolean;
   location?: string;
@@ -717,3 +710,5 @@ export interface UpdateGalleryImageInput {
 export interface RemoveGalleryImageInput {
   imageId: string;
 }
+
+    

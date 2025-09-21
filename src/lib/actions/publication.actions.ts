@@ -94,3 +94,5 @@ export async function removeGalleryImage(ownerId: string, imageId: string) {
     await removeGalleryImageFlow({imageId: imageId});
     revalidatePath(`/companies/${ownerId}`);
 }
+
+    
