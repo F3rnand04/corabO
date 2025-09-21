@@ -36,7 +36,7 @@ export async function autoVerifyIdWithAI(user: User) {
     }
     const result = await autoVerifyIdWithAIFlow({
       userId: user.id,
-      nameInRecord: `${user.name} ${user.lastName}`,
+      nameInRecord: `${'${user.name}'} ${'${user.lastName}'}`,
       idInRecord: user.idNumber || '',
       documentImageUrl: user.idDocumentUrl,
       isCompany: user.profileSetupData?.providerType === 'company',
@@ -89,7 +89,7 @@ export async function toggleUserPause(userId: string, shouldUnpause: boolean) {
 
 export async function registerSystemPayment(userId: string, concept: string, amount: number, isSubscription: boolean) {
     const db = getFirestore();
-    const txId = `txn-sys-${userId.slice(0,5)}-${Date.now()}`;
+    const txId = `txn-sys-${'${userId.slice(0,5)}'}-${'${Date.now()}'}`;
     const newTransaction: Omit<Transaction, 'id'> = {
         type: 'Sistema',
         status: 'Pagado',
