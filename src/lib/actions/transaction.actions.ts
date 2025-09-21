@@ -1,4 +1,3 @@
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -107,4 +106,25 @@ export async function acceptProposal(conversationId: string, messageId: string, 
     await acceptProposalFlow({ conversationId, messageId, acceptorId });
     revalidatePath(`/messages/${conversationId}`);
     revalidatePath('/transactions');
+}
+
+export async function purchaseGift(userId: string, gift: { id: string, name: string, price: number }) {
+    const newTransaction = await createTransactionFlow({
+        type: 'Sistema',
+        status: 'Finalizado - Pendiente de Pago',
+        date: new Date().toISOString(),
+        amount: gift.price,
+        clientId: userId,
+        providerId: 'corabo-admin',
+        participantIds: [userId, 'corabo-admin'],
+        details: {
+            system: `Compra de regalo: ${gift.name}`,
+        },
+    });
+    
+    // In a real app, this would redirect to a proper payment gateway URL.
+    // For this prototype, we'll redirect to the generic payment page for system transactions.
+    const paymentUrl = `/payment?commitmentId=${newTransaction.id}`;
+
+    return { paymentUrl };
 }
