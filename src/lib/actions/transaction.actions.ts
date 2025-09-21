@@ -1,9 +1,10 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
 import { createQuoteRequestFlow, createTransactionFlow } from '@/ai/flows/transaction-flow';
 import type { AppointmentRequest, QuoteRequestInput, Transaction, User } from '@/lib/types';
-import { getFirebaseStorage } from '@/lib/firebase-admin';
+import { getFirebaseStorage, getFirebaseFirestore } from '@/lib/firebase-admin';
 import { 
     createAppointmentRequestFlow, 
     acceptAppointmentFlow, 
@@ -49,8 +50,6 @@ async function uploadToStorage(filePath: string, dataUrl: string): Promise<strin
     });
 
     // Make the file public and return its URL
-    // This is a simplified approach for a prototype. In a real-world scenario,
-    // you would use signed URLs for private access control.
     await file.makePublic();
     
     return file.publicUrl();
@@ -135,7 +134,27 @@ export async function downloadTransactionsPDF(transactions: Transaction[]) {
 
 
 export async function processDirectPayment(sessionId: string) {
-    const result = await processDirectPaymentFlow({ sessionId });
+    const db = getFirebaseFirestore();
+    const sessionRef = db.collection('qr_sessions').doc(sessionId);
+    const sessionSnap = await sessionRef.get();
+    if (!sessionSnap.exists) throw new Error("Session not found for payment processing");
+    const session = sessionSnap.data() as any;
+
+    const providerRef = db.collection('users').doc(session.providerId);
+    const providerSnap = await providerRef.get();
+    if (!providerSnap.exists) throw new Error("Provider not found");
+    const provider = providerSnap.data() as User;
+    
+    const result = await processDirectPaymentFlow({ 
+        sessionId: sessionId,
+        // Pass real provider payment data to the flow
+        providerPaymentDetails: {
+            mobilePaymentPhone: provider.profileSetupData?.paymentDetails?.mobile?.mobilePaymentPhone,
+            idNumber: provider.idNumber,
+            bankName: provider.profileSetupData?.paymentDetails?.mobile?.bankName
+        }
+    });
+
     revalidatePath('/transactions');
     return result;
 }
@@ -166,8 +185,6 @@ export async function purchaseGift(userId: string, gift: { id: string, name: str
         },
     });
     
-    // In a real app, this would redirect to a proper payment gateway URL.
-    // For this prototype, we'll redirect to the generic payment page for system transactions.
     const paymentUrl = `/payment?commitmentId=${newTransaction.id}`;
 
     return { paymentUrl };

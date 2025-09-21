@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -58,7 +59,6 @@ export default function LoginPage() {
         
         await createSessionCookie(idToken);
         
-        // This will reload the page, and the AuthProvider will handle the redirect.
         window.location.href = '/';
 
     } catch (error: any) {
@@ -100,7 +100,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm text-center bg-background/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-white/10">
         <div className="relative w-48 h-24 mx-auto mb-6">
             <Image
-                src="https://i.postimg.cc/YSNBv5DT/logo-light-png.png"
+                src="https://i.postimg.cc/Wz1MTvWK/lg.png"
                 alt="Corabo logo"
                 fill
                 priority
