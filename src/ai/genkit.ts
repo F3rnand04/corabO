@@ -7,11 +7,9 @@
 import { genkit } from 'genkit';
 import { firebase } from 'genkit/plugins/firebase';
 // import { googleAI } from '@genkit-ai/googleai';
-import { getFirebaseAuth } from '@/lib/firebase-admin';
 
-// Initialize Firebase Admin SDK. This must be done once per server instance.
-// The getFirebaseAuth function handles the singleton pattern.
-getFirebaseAuth();
+// Firebase Admin is initialized in `src/lib/firebase-admin.ts`, which is imported
+// by the server actions and flows. We don't need to initialize it again here.
 
 // Initialize Genkit with necessary plugins
 export const ai = genkit({
