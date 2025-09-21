@@ -46,7 +46,7 @@ export async function approveAffiliation(affiliationId: string, actorId: string)
         });
 
         revalidatePath('/admin');
-        revalidatePath(`/companies/${providerId}`);
+        revalidatePath(`/companies/${'${providerId}'}`);
     } catch (error) {
         console.error(`[ACTION_ERROR] approveAffiliation:`, error);
         throw new Error("Failed to approve affiliation.");
@@ -89,7 +89,7 @@ export async function revokeAffiliation(affiliationId: string, actorId: string) 
             link: '/profile/publications',
         });
         revalidatePath('/admin');
-        revalidatePath(`/companies/${providerId}`);
+        revalidatePath(`/companies/${'${providerId}'}`);
     } catch (error) {
         console.error(`[ACTION_ERROR] revokeAffiliation:`, error);
         throw new Error("Failed to revoke affiliation.");
