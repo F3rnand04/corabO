@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createQuoteRequestFlow, createTransactionFlow } from '@/ai/flows/transaction-flow';
-import type { Transaction, User, QuoteRequestInput, AppointmentRequest } from '@/lib/types';
+import type { Transaction, User, QuoteRequestInput, AgreementProposal } from '@/lib/types';
 import { getFirebaseStorage, getFirebaseFirestore } from '@/lib/firebase-admin';
 import { 
     createAppointmentRequestFlow, 
@@ -56,7 +56,7 @@ async function uploadToStorage(filePath: string, dataUrl: string): Promise<strin
 }
 
 
-export async function createAppointmentRequest(request: AppointmentRequest) {
+export async function createAppointmentRequest(request: { providerId: string; clientId: string; date: string; details: string; amount: number; }) {
     await createAppointmentRequestFlow(request);
     revalidatePath('/transactions');
 }
@@ -100,12 +100,13 @@ export async function payCommitment(transactionId: string, userId: string, payme
 
     // If a new voucher data URL is provided, upload it to storage
     if (paymentDetails.paymentVoucherUrl && paymentDetails.paymentVoucherUrl.startsWith('data:')) {
-        const filePath = `vouchers/${'${userId}'}/${'${transactionId}'}-${'${Date.now()}'}`;
+        const filePath = `vouchers/${userId}/${transactionId}-${Date.now()}`;
         uploadedVoucherUrl = await uploadToStorage(filePath, paymentDetails.paymentVoucherUrl);
     }
     
     await payCommitmentFlow({ transactionId, userId, paymentDetails: {...paymentDetails, paymentVoucherUrl: uploadedVoucherUrl} });
     revalidatePath('/transactions');
+    revalidatePath('/payment');
 }
 
 export async function confirmPaymentReceived(input: { transactionId: string, userId: string, fromThirdParty: boolean }) {
@@ -152,8 +153,45 @@ export async function createQuoteRequest(input: QuoteRequestInput): Promise<{ re
 }
 
 export async function acceptProposal(conversationId: string, messageId: string, acceptorId: string) {
-    await acceptProposalFlow({ conversationId, messageId, acceptorId });
-    revalidatePath(`/messages/${'${conversationId}'}`);
+    const { message } = await acceptProposalFlow({ conversationId, messageId, acceptorId });
+
+    if (!message.proposal) throw new Error("Accepted message is not a valid proposal.");
+
+    const db = getFirebaseFirestore();
+    const clientRef = db.collection('users').doc(acceptorId);
+    const clientSnap = await clientRef.get();
+    if (!clientSnap.exists) throw new Error('Client user data not found.');
+    const clientData = clientSnap.data() as User;
+    
+    const isClientSubscribed = clientData.isSubscribed === true;
+    const initialStatus = isClientSubscribed
+      ? 'Acuerdo Aceptado - Pendiente de Ejecución'
+      : 'Finalizado - Pendiente de Pago';
+
+    const providerId = message.senderId;
+    const clientId = acceptorId;
+
+    const newTransaction: Omit<Transaction, 'id'> = {
+      type: 'Servicio',
+      status: initialStatus,
+      date: new Date().toISOString(),
+      amount: message.proposal.amount,
+      clientId: clientId,
+      providerId: providerId,
+      participantIds: [clientId, providerId].sort(),
+      details: {
+        serviceName: message.proposal.title,
+        proposal: message.proposal,
+        paymentMethod:
+          message.proposal.acceptsCredicora && message.proposal.amount >= 20
+            ? 'credicora'
+            : 'direct',
+      },
+    };
+    
+    await createTransactionFlow(newTransaction);
+    
+    revalidatePath(`/messages/${conversationId}`);
     revalidatePath('/transactions');
 }
 
@@ -167,11 +205,11 @@ export async function purchaseGift(userId: string, gift: { id: string, name: str
         providerId: 'corabo-admin',
         participantIds: [userId, 'corabo-admin'],
         details: {
-            system: `Compra de regalo: ${'${gift.name}'}`,
+            system: `Compra de regalo: ${gift.name}`,
         },
     });
     
-    const paymentUrl = `/payment?commitmentId=${'${newTransaction.id}'}`;
+    const paymentUrl = `/payment?commitmentId=${newTransaction.id}`;
 
     return { paymentUrl };
 }

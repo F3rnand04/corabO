@@ -39,7 +39,7 @@ export async function sendMessageFlow(input: SendMessageInput) {
     const convoSnap = await convoRef.get();
 
     const newMessage: Message = {
-      id: `msg-${'${Date.now()}'}`,
+      id: `msg-${Date.now()}`,
       senderId: input.senderId,
       timestamp: new Date().toISOString(),
       text: input.text || '',
@@ -68,9 +68,30 @@ export async function sendMessageFlow(input: SendMessageInput) {
         lastUpdated: new Date().toISOString(),
       });
     } else {
+      // First, get the participant details to store them denormalized
+      const senderSnap = await db.collection('users').doc(input.senderId).get();
+      const recipientSnap = await db.collection('users').doc(input.recipientId).get();
+      
+      if(!senderSnap.exists || !recipientSnap.exists) {
+          throw new Error('Sender or Recipient not found for new conversation.');
+      }
+      
+      const senderData = senderSnap.data() as User;
+      const recipientData = recipientSnap.data() as User;
+
       await convoRef.set({
         id: input.conversationId,
         participantIds: [input.senderId, input.recipientId].sort(),
+        participants: {
+          [senderData.id]: {
+            name: senderData.name,
+            profileImage: senderData.profileImage,
+          },
+          [recipientData.id]: {
+            name: recipientData.name,
+            profileImage: recipientData.profileImage,
+          },
+        },
         messages: [newMessage],
         lastUpdated: new Date().toISOString(),
       });
@@ -78,9 +99,8 @@ export async function sendMessageFlow(input: SendMessageInput) {
   }
 
 
-export async function acceptProposalFlow(input: AcceptProposalInput) {
+export async function acceptProposalFlow(input: AcceptProposalInput): Promise<{ message: Message, conversation: Conversation }> {
     const db = getFirestore();
-    const batch = db.batch();
     const convoRef = db.collection('conversations').doc(input.conversationId);
 
     const convoSnap = await convoRef.get();
@@ -103,49 +123,24 @@ export async function acceptProposalFlow(input: AcceptProposalInput) {
       throw new Error('Message is not a proposal');
     }
 
-    const clientRef = db.collection('users').doc(input.acceptorId);
-    const clientSnap = await clientRef.get();
-    if (!clientSnap.exists) throw new Error('Client user data not found.');
-    const clientData = clientSnap.data() as User;
-
-    const isClientSubscribed = clientData.isSubscribed === true;
-    const initialStatus = isClientSubscribed
-      ? 'Acuerdo Aceptado - Pendiente de Ejecución'
-      : 'Finalizado - Pendiente de Pago';
-
     const messageIndex = conversation.messages.findIndex(
       (m) => m.id === input.messageId
     );
-    const updatedMessages = [...conversation.messages];
-    if(messageIndex > -1) {
+
+    if (messageIndex > -1) {
+      const updatedMessages = [...conversation.messages];
       updatedMessages[messageIndex] = { ...message, isProposalAccepted: true };
-      batch.update(convoRef, { messages: updatedMessages });
+      
+      // Update the conversation in Firestore
+      await convoRef.update({ messages: updatedMessages });
+
+      // Return the updated message and conversation for the action layer
+      return { 
+        message: updatedMessages[messageIndex], 
+        conversation: { ...conversation, messages: updatedMessages }
+      };
     }
 
-    const providerId = message.senderId;
-    const clientId = input.acceptorId;
-
-    const newTransaction: Transaction = {
-      id: `txn-prop-${'${Date.now()}'}`,
-      type: 'Servicio',
-      status: initialStatus,
-      date: new Date().toISOString(),
-      amount: message.proposal.amount,
-      clientId: clientId,
-      providerId: providerId,
-      participantIds: [clientId, providerId].sort(),
-      details: {
-        serviceName: message.proposal.title,
-        proposal: message.proposal,
-        paymentMethod:
-          message.proposal.acceptsCredicora && message.proposal.amount >= 20
-            ? 'credicora'
-            : 'direct',
-      },
-    };
-
-    const txRef = db.collection('transactions').doc(newTransaction.id);
-    batch.set(txRef, newTransaction);
-
-    await batch.commit();
-  }
+    // If message wasn't found in array, which is unlikely if it passed previous checks
+    throw new Error('Could not find message in conversation array to update.');
+}
