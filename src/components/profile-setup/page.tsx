@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-provider';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, Loader2 } from 'lucide-react';
 import type { ProfileSetupData } from '@/lib/types';
@@ -97,5 +97,7 @@ export default function ProfileSetupPage() {
     </div>
   );
 }
+
+    
 
     
