@@ -1,8 +1,7 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, createContext } from 'react';
-import { collection, doc, onSnapshot, query, where, orderBy, updateDoc, FieldValue } from 'firebase/firestore';
+import { collection, doc, onSnapshot, query, where, orderBy, updateDoc, arrayRemove } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth-provider';
@@ -163,7 +162,9 @@ export const CoraboProvider = ({ children }: { children: React.ReactNode }) => {
   const removeContact = useCallback(async (userId: string) => {
     if (!currentUser) return;
     const userRef = doc(db, 'users', currentUser.id);
-    await updateDoc(userRef, { contacts: FieldValue.arrayRemove(userId) });
+    await updateDoc(userRef, {
+        contacts: arrayRemove(userId)
+    });
   }, [currentUser]);
 
   const isContact = useCallback((userId: string) => currentUser?.contacts?.includes(userId) ?? false, [currentUser?.contacts]);

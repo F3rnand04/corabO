@@ -20,6 +20,7 @@ export default function RootLayout({
       <body className={`${inter.variable} antialiased bg-background`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <AuthProvider>
+                {/* ClientLayout now lives inside AuthProvider to access auth state */}
                 <ClientLayout>
                   {children}
                 </ClientLayout>

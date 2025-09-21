@@ -8,7 +8,7 @@ import { CheckCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { sendSmsVerificationCode, verifySmsCode } from '@/lib/actions/sms.actions'; 
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-provider';
 
 type ValidationStatus = 'idle' | 'pending' | 'validated';
 

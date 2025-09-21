@@ -13,7 +13,7 @@ import { Slider } from "@/components/ui/slider";
 import { SubscriptionDialog } from "@/components/SubscriptionDialog";
 import type { ProfileSetupData } from '@/lib/types';
 import { SpecializedFields } from '@/components/profile-setup/SpecializedFields';
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/use-auth-provider";
 import { useCorabo } from '@/hooks/use-corabo';
 
 const daysOfWeek = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];

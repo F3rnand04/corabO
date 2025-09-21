@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { signInWithCustomToken, signInWithRedirect } from 'firebase/auth';
 import { auth, googleProvider } from '@/lib/firebase-client';
 import { signInAsGuest, createSessionCookie, getOrCreateUser } from '@/lib/actions/auth.actions';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/use-auth-provider';
 import GoogleIcon from '@/components/GoogleIcon';
 
 export default function LoginPage() {
