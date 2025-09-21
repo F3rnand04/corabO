@@ -12,7 +12,7 @@ import type { GalleryImage, User, GalleryImageComment, CreatePublicationInput, C
 export async function createPublicationFlow(input: CreatePublicationInput): Promise<GalleryImage> {
     const db = getFirestore();
     
-    const userRef = db.collection('users').doc(input.providerId);
+    const userRef = db.collection('users').doc(input.userId);
     const userSnap = await userRef.get();
     if (!userSnap.exists) {
       throw new Error('User not found.');
@@ -22,7 +22,7 @@ export async function createPublicationFlow(input: CreatePublicationInput): Prom
 
     const newPublication: GalleryImage = {
       id: publicationId,
-      providerId: input.providerId,
+      providerId: input.userId,
       type: input.type,
       src: input.imageDataUri,
       alt: input.description.slice(0, 50),
@@ -43,7 +43,7 @@ export async function createPublicationFlow(input: CreatePublicationInput): Prom
 
 export async function createProductFlow(input: CreateProductInput): Promise<GalleryImage> {
     const db = getFirestore();
-    const userRef = db.collection('users').doc(input.providerId);
+    const userRef = db.collection('users').doc(input.userId);
     const userSnap = await userRef.get();
     if (!userSnap.exists) {
         throw new Error('User not found.');
@@ -53,7 +53,7 @@ export async function createProductFlow(input: CreateProductInput): Promise<Gall
     
     const newProductPublication: GalleryImage = {
         id: productId,
-        providerId: input.providerId,
+        providerId: input.userId,
         type: 'product',
         src: input.imageDataUri,
         alt: input.name,

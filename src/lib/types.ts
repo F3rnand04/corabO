@@ -1,6 +1,5 @@
 
 
-
 import { z } from 'zod';
 
 export type FirebaseUserInput = { uid: string; email?: string | null; displayName?: string | null; photoURL?: string | null; phoneNumber?: string | null; emailVerified: boolean; };
@@ -682,7 +681,7 @@ export type AppointmentRequest = {
 
 // Schemas for Publication Flow
 export const CreatePublicationInputSchema = z.object({
-  providerId: z.string(),
+  userId: z.string(),
   description: z.string(),
   imageDataUri: z.string(),
   aspectRatio: z.enum(['square', 'horizontal', 'vertical']),
@@ -691,7 +690,7 @@ export const CreatePublicationInputSchema = z.object({
 export type CreatePublicationInput = z.infer<typeof CreatePublicationInputSchema>;
 
 export const CreateProductInputSchema = z.object({
-    providerId: z.string(),
+    userId: z.string(),
     name: z.string(),
     description: z.string(),
     price: z.number(),
@@ -702,6 +701,7 @@ export type CreateProductInput = z.infer<typeof CreateProductInputSchema>;
 
 export const AddCommentInputSchema = z.object({
   imageId: z.string(),
+  ownerId: z.string(),
   commentText: z.string(),
   author: z.object({
     id: z.string(),
