@@ -146,7 +146,7 @@ export const CoraboProvider = ({ children }: { children: React.ReactNode }) => {
           const location = { latitude: position.coords.latitude, longitude: position.coords.longitude };
           setCurrentUserLocation(location);
           if (currentUser?.id) {
-            updateUser(currentUser.id, { 'profileSetupData.location': `${'${location.latitude}'},${'${location.longitude}'}` });
+            updateUser(currentUser.id, { 'profileSetupData.location': `''${location.latitude}'',''${location.longitude}''` });
           }
         },
         () => toast({ variant: "destructive", title: "Error de Ubicación", description: "No se pudo obtener tu ubicación. Revisa los permisos." }),
@@ -184,7 +184,7 @@ export const CoraboProvider = ({ children }: { children: React.ReactNode }) => {
 
   const setDeliveryAddressToCurrent = useCallback(() => {
     getCurrentLocation();
-    if (currentUserLocation) setDeliveryAddress(`${'${currentUserLocation.latitude}'},${'${currentUserLocation.longitude}'}`);
+    if (currentUserLocation) setDeliveryAddress(`''${currentUserLocation.latitude}'',''${currentUserLocation.longitude}''`);
     else toast({ variant: "destructive", title: "Ubicación no disponible", description: "No hemos podido obtener tu ubicación GPS." });
   }, [currentUserLocation, toast, getCurrentLocation]);
   
