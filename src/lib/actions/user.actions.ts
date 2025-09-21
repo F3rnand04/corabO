@@ -141,6 +141,15 @@ export async function addContactToUser(userId: string, contactId: string) {
     revalidatePath(`/companies/${'${contactId}'}`);
     revalidatePath('/contacts');
 }
+
+export async function removeContactFromUser(userId: string, contactId: string) {
+    const db = getFirestore();
+    await db.collection('users').doc(userId).update({
+        contacts: FieldValue.arrayRemove(contactId)
+    });
+    revalidatePath('/contacts');
+}
+
 export async function becomeProvider(userId: string, profileData: ProfileSetupData) {
     const db = getFirestore();
     await db.collection('users').doc(userId).update({

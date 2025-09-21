@@ -13,7 +13,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { ContactSupportCard } from '@/components/ContactSupportCard';
-import { updateUser } from '@/lib/actions/user.actions';
+import { updateUser, removeContactFromUser } from '@/lib/actions/user.actions';
 import { sendMessage } from '@/lib/actions/messaging.actions';
 
 
@@ -47,7 +47,7 @@ function ContactsHeader({ onSubscribeClick }: { onSubscribeClick: () => void }) 
 
 
 export default function ContactsPage() {
-  const { currentUser, contacts, removeContact } = useAuth();
+  const { currentUser, contacts } = useAuth();
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
@@ -62,6 +62,11 @@ export default function ContactsPage() {
     sendMessage({ recipientId: contactId, text: "", conversationId, senderId: currentUser.id });
     router.push(`/messages/${conversationId}`);
   };
+  
+  const handleRemoveContact = (contactId: string) => {
+    if (!currentUser) return;
+    removeContactFromUser(currentUser.id, contactId);
+  }
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -147,7 +152,7 @@ export default function ContactsPage() {
                         <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full" onClick={() => handleDirectMessage(contact.id)}>
                             <MessageSquare className="w-5 h-5" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full" onClick={() => removeContact(contact.id)}>
+                        <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full" onClick={() => handleRemoveContact(contact.id)}>
                             <X className="w-5 h-5" />
                         </Button>
                     </div>

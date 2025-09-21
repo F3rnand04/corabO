@@ -26,8 +26,6 @@ export interface AuthContextValue {
   
   // Data states
   contacts: User[];
-  addContact: (user: User) => void;
-  removeContact: (userId: string) => void;
   isContact: (userId: string) => boolean;
   
   users: User[];
@@ -39,8 +37,6 @@ export interface AuthContextValue {
   cart: CartItem[];
   activeCartForCheckout: CartItem[] | null;
   setActiveCartForCheckout: React.Dispatch<React.SetStateAction<CartItem[] | null>>;
-  updateCartItem: (product: Product, quantity: number) => void;
-  removeCart: (itemsToRemove: CartItem[]) => void;
   
   tempRecipientInfo: TempRecipientInfo | null;
   setTempRecipientInfo: React.Dispatch<React.SetStateAction<TempRecipientInfo | null>>;
@@ -192,35 +188,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   }, [toast, router]);
 
-  const addContact = useCallback(async (user: User) => {
-    if (!currentUser) return;
-    const userRef = doc(db, 'users', currentUser.id);
-    await updateDoc(userRef, {
-        contacts: arrayUnion(user.id)
-    });
-  }, [currentUser]);
-
-  const removeContact = useCallback(async (userId: string) => {
-    if (!currentUser) return;
-    const userRef = doc(db, 'users', currentUser.id);
-    await updateDoc(userRef, {
-        contacts: arrayRemove(userId)
-    });
-  }, [currentUser]);
-
   const isContact = useCallback((userId: string) => currentUser?.contacts?.includes(userId) ?? false, [currentUser?.contacts]);
-  
-  const updateCartItem = useCallback(async (product: Product, quantity: number) => {
-      if (!currentUser) return;
-      updateCart(currentUser.id, product.id, quantity);
-  }, [currentUser]);
-  
-  const removeCart = useCallback(async (itemsToRemove: CartItem[]) => {
-      if (!currentUser) return;
-      for (const item of itemsToRemove) {
-          updateCart(currentUser.id, item.product.id, 0);
-      }
-  }, [currentUser]);
   
   const getCurrentLocation = useCallback(() => {
     if (typeof window !== 'undefined' && navigator.geolocation) {
@@ -286,7 +254,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Auth
     currentUser, firebaseUser, isLoadingAuth, logout, setCurrentUser,
     // Data
-    contacts, addContact, removeContact, isContact, users, transactions, setTransactions, allPublications, setAllPublications, cart, activeCartForCheckout, setActiveCartForCheckout, updateCartItem, removeCart, tempRecipientInfo, setTempRecipientInfo, deliveryAddress, setDeliveryAddress, setDeliveryAddressToCurrent, currentUserLocation, getCurrentLocation, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, searchHistory, clearSearchHistory, notifications, conversations, qrSession,
+    contacts, isContact, users, transactions, setTransactions, allPublications, setAllPublications, cart, activeCartForCheckout, setActiveCartForCheckout, tempRecipientInfo, setTempRecipientInfo, deliveryAddress, setDeliveryAddress, setDeliveryAddressToCurrent, currentUserLocation, getCurrentLocation, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, searchHistory, clearSearchHistory, notifications, conversations, qrSession,
     // Metric getters
     getUserMetrics, getAgendaEvents
   };

@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from "next/image";
@@ -18,6 +17,7 @@ import { Badge } from "./ui/badge";
 import { Separator } from "./ui/separator";
 import { updateCart } from '@/lib/actions/cart.actions';
 import { sendMessage } from '@/lib/actions/messaging.actions';
+import { addContactToUser } from "@/lib/actions/user.actions";
 
 
 interface PublicationCardProps {
@@ -86,7 +86,8 @@ export function PublicationCard({ publication, className }: PublicationCardProps
     const affiliation = owner.activeAffiliation;
 
     const handleSaveContact = () => {
-        addContact(owner as User);
+        if (!currentUser) return;
+        addContactToUser(currentUser.id, owner.id);
         setIsSaved(true);
         toast({
             title: "¡Contacto Guardado!",
