@@ -1,4 +1,3 @@
-
 'use server';
 
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
@@ -35,7 +34,13 @@ export async function autoVerifyIdWithAI(user: User) {
     if (!user.idDocumentUrl) {
         throw new Error("El documento de identidad no ha sido cargado.");
     }
-    const result = await autoVerifyIdWithAIFlow(user);
+    const result = await autoVerifyIdWithAIFlow({
+      userId: user.id,
+      nameInRecord: `${user.name} ${user.lastName}`,
+      idInRecord: user.idNumber || '',
+      documentImageUrl: user.idDocumentUrl,
+      isCompany: user.profileSetupData?.providerType === 'company',
+    });
     return result;
 }
 
