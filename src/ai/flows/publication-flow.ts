@@ -1,15 +1,23 @@
 
+'use server';
+
 /**
  * @fileOverview Flows for creating and managing publications and products securely on the backend.
+ * This file handles the direct interaction with the Firestore database for all publication-related write operations.
  */
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import type { GalleryImage, User, GalleryImageComment, CreatePublicationInput, CreateProductInput, AddCommentInput, RemoveCommentInput, UpdateGalleryImageInput, RemoveGalleryImageInput } from '@/lib/types';
+import type { User, GalleryImage, GalleryImageComment, CreatePublicationInput, CreateProductInput, AddCommentInput, RemoveCommentInput, UpdateGalleryImageInput, RemoveGalleryImageInput } from '@/lib/types';
 
-
+/**
+ * Creates a new publication (image or video) in the 'publications' collection.
+ * @param input - The data for the new publication.
+ * @returns The newly created GalleryImage object.
+ * @throws Will throw an error if the user is not found.
+ */
 export async function createPublicationFlow(input: CreatePublicationInput): Promise<GalleryImage> {
     const db = getFirestore();
     
-    const userRef = db.collection('users').doc(input.providerId);
+    const userRef = db.collection('users').doc(input.userId);
     const userSnap = await userRef.get();
     if (!userSnap.exists) {
       throw new Error('User not found.');
@@ -19,7 +27,7 @@ export async function createPublicationFlow(input: CreatePublicationInput): Prom
 
     const newPublication: GalleryImage = {
       id: publicationId,
-      providerId: input.providerId,
+      providerId: input.userId,
       type: input.type,
       src: input.imageDataUri,
       alt: input.description.slice(0, 50),
@@ -33,14 +41,18 @@ export async function createPublicationFlow(input: CreatePublicationInput): Prom
     const publicationRef = db.collection('publications').doc(publicationId);
     await publicationRef.set(newPublication);
     
-    // Return the full publication object so the action layer can decide what to do next (e.g., notify).
     return newPublication;
-  }
+}
 
-
+/**
+ * Creates a new product, which is a special type of publication.
+ * @param input - The data for the new product.
+ * @returns The newly created product as a GalleryImage object.
+ * @throws Will throw an error if the user is not found.
+ */
 export async function createProductFlow(input: CreateProductInput): Promise<GalleryImage> {
     const db = getFirestore();
-    const userRef = db.collection('users').doc(input.providerId);
+    const userRef = db.collection('users').doc(input.userId);
     const userSnap = await userRef.get();
     if (!userSnap.exists) {
         throw new Error('User not found.');
@@ -50,7 +62,7 @@ export async function createProductFlow(input: CreateProductInput): Promise<Gall
     
     const newProductPublication: GalleryImage = {
         id: productId,
-        providerId: input.providerId,
+        providerId: input.userId,
         type: 'product',
         src: input.imageDataUri,
         alt: input.name,
@@ -71,7 +83,10 @@ export async function createProductFlow(input: CreateProductInput): Promise<Gall
     return newProductPublication;
 }
 
-
+/**
+ * Adds a comment to a specific publication.
+ * @param input - The comment data and publication ID.
+ */
 export async function addCommentToImageFlow(input: AddCommentInput) {
     const db = getFirestore();
     const imageRef = db.collection('publications').doc(input.imageId);
@@ -90,7 +105,11 @@ export async function addCommentToImageFlow(input: AddCommentInput) {
     });
 }
 
-
+/**
+ * Removes a comment from a publication, with authorization checks.
+ * @param input - The data required to identify and authorize the comment removal.
+ * @throws Will throw an error if the image is not found, comment is not found, or user is not authorized.
+ */
 export async function removeCommentFromImageFlow(input: RemoveCommentInput) {
     const db = getFirestore();
     const imageRef = db.collection('publications').doc(input.imageId);
@@ -103,20 +122,20 @@ export async function removeCommentFromImageFlow(input: RemoveCommentInput) {
 
     if (!commentToRemove) throw new Error("Comment not found at the specified index.");
     
-    // Authorization: Ensure the user is either the author of the comment or the owner of the publication
     const publicationOwnerId = publication.providerId;
     if (input.authorId !== commentToRemove.authorId && input.authorId !== publicationOwnerId) {
         throw new Error("You are not authorized to delete this comment.");
     }
     
-    // Firestore does not support removing an element by index directly in a secure way.
-    // The safest way is to read the array, modify it, and write it back.
     const updatedComments = publication.comments?.filter((_, index) => index !== input.commentIndex);
 
     await imageRef.update({ comments: updatedComments });
 }
 
-
+/**
+ * Updates the description or image source of a gallery image.
+ * @param input - The ID of the image and the updates to apply.
+ */
 export async function updateGalleryImageFlow(input: UpdateGalleryImageInput) {
     const db = getFirestore();
     const imageRef = db.collection('publications').doc(input.imageId);
@@ -128,7 +147,10 @@ export async function updateGalleryImageFlow(input: UpdateGalleryImageInput) {
     await imageRef.update(dataToUpdate);
 }
 
-
+/**
+ * Deletes a publication from the 'publications' collection.
+ * @param input - The ID of the image to remove.
+ */
 export async function removeGalleryImageFlow(input: RemoveGalleryImageInput) {
     const db = getFirestore();
     await db.collection('publications').doc(input.imageId).delete();

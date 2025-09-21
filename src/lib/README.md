@@ -1,19 +1,21 @@
 # /src/lib
 
-Este directorio contiene la lógica de negocio principal y las definiciones de tipos para la aplicación. Es el núcleo de la funcionalidad del lado del servidor y del cliente.
+This directory contains the core business logic and type definitions for the application. It is the heart of both server-side and client-side functionality.
 
-## Subdirectorios
+## Subdirectories
 
--   **`/actions`**: Contiene todas las Server Actions de Next.js. Estas son las únicas funciones que los componentes de cliente deben importar para interactuar con el backend. Actúan como una capa de seguridad y orquestación, llamando a los flujos (`/flows`) para ejecutar la lógica de negocio.
+-   **/actions**: Contains all Next.js Server Actions. These are the **only** functions that client components should import to interact with the backend. They act as a security and orchestration layer, calling flows (`/ai/flows`) to execute business logic.
 
--   **`/data`**: Almacena opciones y datos estáticos utilizados en toda la aplicación, como listas de categorías, bancos, o configuraciones que no cambian frecuentemente.
+-   **/data**: Stores static options and data used throughout the application, such as lists of categories, banks, or configurations that do not change frequently.
 
--   **`types.ts`**: El archivo más crítico. Define todas las interfaces y tipos de TypeScript (como `User`, `Transaction`, `Product`, etc.) que se usan en la aplicación. Sirve como la única fuente de verdad para la estructura de datos.
+-   **`types.ts`**: The most critical file. It defines all TypeScript interfaces and types (like `User`, `Transaction`, `Product`, etc.) used across the application. It serves as the single source of truth for the data structure.
 
--   **`utils.ts`**: Proporciona funciones de utilidad reutilizables y puras, como formateo de fechas, cálculos matemáticos, etc.
+-   **`utils.ts`**: Provides reusable, pure utility functions like date formatting, mathematical calculations, etc.
 
--   **`firebase-admin.ts`**: Se encarga de la inicialización del SDK de Firebase Admin para operaciones de backend (usado exclusivamente por las Server Actions).
+-   **`firebase-admin.ts`**: Handles the initialization of the Firebase Admin SDK for backend operations (used exclusively by Server Actions and flows).
 
--   **`firebase-client.ts`**: Maneja la inicialización del SDK de Firebase para el lado del cliente (usado en componentes de React).
+-   **`firebase-client.ts`**: Manages the initialization of the Firebase client-side SDK (used in React components and hooks).
 
--   **`firebase-config.ts`**: Contiene el objeto de configuración de Firebase para el cliente. Es seguro exponerlo.
+-   **`firebase-config.ts`**: Contains the Firebase configuration object for the client. It is safe to expose this.
+
+-   **`REPORT.md`**: A comprehensive report detailing the final, functional state of the application's architecture and modules after moving from simulation to a real, working implementation.

@@ -509,7 +509,6 @@ export async function checkoutFlow(input: CheckoutInput) {
 
 export async function createQuoteRequestFlow(input: QuoteRequestInput): Promise<{ requiresPayment: boolean; newTransaction: Transaction | null }> {
     const db = getFirestore();
-    const batch = db.batch();
     
     const clientRef = db.collection('users').doc(input.clientId);
     const clientSnap = await clientRef.get();
@@ -521,7 +520,6 @@ export async function createQuoteRequestFlow(input: QuoteRequestInput): Promise<
     const hasUsedFreeQuote = client.lastFreeQuoteAt && isAfter(new Date(client.lastFreeQuoteAt), startOfThisWeek);
     
     if (client.isSubscribed || !hasUsedFreeQuote) {
-        // Free Quote or Subscribed User
         const txId = `txn-quote-${Date.now()}`;
         const newTransaction: Transaction = {
             id: txId,
@@ -537,6 +535,8 @@ export async function createQuoteRequestFlow(input: QuoteRequestInput): Promise<
                 quote: { breakdown: input.description, total: 0 },
             },
         };
+        
+        const batch = db.batch();
         batch.set(db.collection('transactions').doc(txId), newTransaction);
         
         if (!client.isSubscribed) {

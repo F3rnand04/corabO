@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import {
   Dialog,
   DialogContent,
@@ -17,7 +18,7 @@ import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { countries } from '@/lib/data/options';
 import { createManagementUser } from '@/lib/actions/admin.actions';
-import CoraboLogo from '../CoraboLogo';
+
 
 interface TeamManagementDialogProps {
   isOpen: boolean;
@@ -89,7 +90,7 @@ export function TeamManagementDialog({ isOpen, onOpenChange }: TeamManagementDia
         }}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader className="items-center text-center">
-                    <CoraboLogo className="h-10 text-foreground" />
+                    <Image src="https://i.postimg.cc/Wz1MTvWK/lg.png" alt="Corabo Logo" width={120} height={40} className="h-10 w-auto" />
                     <DialogTitle>Panel del CEO</DialogTitle>
                     <DialogDescription>
                         Crea nuevos usuarios con roles específicos para gestionar la plataforma.

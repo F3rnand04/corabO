@@ -1,21 +1,20 @@
 # /src/hooks
 
-Este directorio contiene los custom hooks de React que encapsulan lógica reutilizable y manejo de estado complejo, manteniendo los componentes limpios y enfocados en la UI.
+This directory contains React custom hooks that encapsulate reusable logic and complex state management, keeping components clean and focused on the UI.
 
-## Hooks Principales
+## Main Hooks
 
--   **`useAuth.ts`**:
-    -   **Propósito:** Proporciona acceso al estado de autenticación de Firebase y a los datos del usuario logueado (`currentUser`).
-    -   **Funcionalidad Clave:** Expone `firebaseUser`, `currentUser`, `isLoadingAuth` y la función `logout`. Es el único punto de contacto para saber quién es el usuario actual.
-    -   **Uso:** Debe ser utilizado dentro de un `AuthProvider`.
-
--   **`useCorabo.ts`**:
-    -   **Propósito:** Gestiona y provee todo el estado global de la aplicación que **no** es de autenticación.
-    -   **Funcionalidad Clave:** Expone listas en tiempo real de `users`, `transactions`, `publications`, el estado del `cart`, `searchQuery`, etc. Separa la lógica de negocio del estado de autenticación.
-    -   **Uso:** Debe ser utilizado dentro de un `CoraboProvider`.
+-   **`use-auth-provider.tsx`**:
+    -   **Purpose:** This is the **single source of truth** for all global application state, including authentication and real-time data. It centralizes state management to ensure consistency and performance.
+    -   **Key Functionality:**
+        -   Manages the authentication state (`currentUser`, `firebaseUser`, `isLoadingAuth`).
+        -   Establishes real-time listeners for all necessary Firestore collections (`users`, `transactions`, `publications`, `conversations`, etc.) **only after** a user is successfully authenticated.
+        -   Provides the data from these listeners to the entire application via the `useAuth` hook.
+        -   Handles client-side routing logic based on the user's authentication and profile completion status.
+    -   **Usage:** It provides the `AuthProvider` that wraps the entire application in `layout.tsx`. Any component within this provider can use the `useAuth()` hook to access both user data and global application data.
 
 -   **`useToast.ts`**:
-    -   **Propósito:** Proporciona una forma estandarizada y sencilla de mostrar notificaciones "toast" (mensajes emergentes) en toda la aplicación.
+    -   **Purpose:** Provides a standardized and simple way to display "toast" notifications (pop-up messages) throughout the application.
 
 -   **`use-mobile.ts`**:
-    -   **Propósito:** Un hook simple para detectar si el usuario está en un dispositivo móvil, permitiendo renderizar componentes de forma condicional.
+    -   **Purpose:** A simple hook to detect if the user is on a mobile device, allowing for conditional rendering of components.

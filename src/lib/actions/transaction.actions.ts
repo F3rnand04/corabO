@@ -147,9 +147,7 @@ export async function processDirectPayment(sessionId: string) {
 }
 
 export async function createQuoteRequest(input: QuoteRequestInput): Promise<{ requiresPayment: boolean; newTransaction: Transaction | null }> {
-    const { newTransaction, requiresPayment } = await createQuoteRequestFlow(input);
-    revalidatePath('/transactions');
-    return { newTransaction, requiresPayment };
+    return await createQuoteRequestFlow(input);
 }
 
 export async function acceptProposal(conversationId: string, messageId: string, acceptorId: string) {

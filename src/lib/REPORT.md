@@ -1,104 +1,103 @@
+# Functional Status Report of the Corabo Application
 
-# Informe de Estado Funcional de la Aplicación Corabo
-
-**Fecha:** 23 de Julio de 2025
-**Versión:** 1.0.0 (Estable y Operativa)
-**Objetivo:** Documentar los componentes y flujos de trabajo que han sido implementados, validados y que se encuentran funcionando correctamente tras la transición del estado de simulación a un estado de funcionamiento real.
-
----
-
-## 1. Arquitectura Central y Flujo de Datos
-
-El núcleo de la aplicación ahora opera sobre una arquitectura robusta y desacoplada, garantizando seguridad y rendimiento.
-
--   **Flujo Unidireccional:** La comunicación sigue un patrón estricto: `Componente de UI (Cliente)` -> `Server Action` -> `Flujo de Genkit (Servidor)` -> `Base de Datos (Firestore)`.
--   **Separación Cliente/Servidor:** Se ha erradicado por completo el error `UnhandledSchemeError`. Todos los módulos que utilizan lógica de backend (como `firebase-admin` o `genkit`) están correctamente aislados en el servidor mediante la directiva `'use server';`.
--   **Gestión de Estado Reactivo:** `CoraboContext` y `AuthProvider` gestionan eficientemente el estado del cliente, suscribiéndose a los datos de Firestore en tiempo real una vez que el usuario está autenticado.
-
-**Estado:** <span style="color:green;">**OPERATIVO Y ESTABLE**</span>
+**Date:** July 23, 2025
+**Version:** 1.0.0 (Stable and Operational)
+**Objective:** To document the components and workflows that have been implemented, validated, and are functioning correctly after the transition from a simulated state to a real, working implementation.
 
 ---
 
-## 2. Módulo de Autenticación y Usuarios
+## 1. Core Architecture and Data Flow
 
-El ciclo de vida completo del usuario es funcional y seguro.
+The application's core now operates on a robust and decoupled architecture, ensuring security and performance.
 
--   **Inicio de Sesión Real:**
-    -   **Google:** La autenticación con Google está completamente implementada a través de Firebase Authentication.
-    -   **Invitado:** El inicio de sesión como invitado genera un usuario temporal válido, permitiendo la exploración de la plataforma.
--   **Gestión de Sesión:** Las sesiones de usuario son persistentes y seguras, gestionadas a través de cookies de sesión del lado del servidor.
--   **Registro y Configuración Inicial:** El flujo que guía a un nuevo usuario para completar sus datos básicos (`/initial-setup`) es completamente funcional y guarda la información en Firestore.
--   **Creación de Perfil de Proveedor:** Los flujos para que un usuario se convierta en "Proveedor" (tanto personal como empresa) están implementados y funcionan correctamente, actualizando el tipo de usuario y habilitando funciones avanzadas.
+-   **Unidirectional Flow:** Communication follows a strict pattern: `UI Component (Client)` -> `Server Action` -> `Genkit Flow (Server)` -> `Database (Firestore)`.
+-   **Client/Server Separation:** The `UnhandledSchemeError` has been completely eradicated. All modules using backend logic (like `firebase-admin` or `genkit`) are correctly isolated on the server using the `'use server';` directive.
+-   **Reactive State Management:** `AuthProvider` efficiently manages the client's state, subscribing to real-time data from Firestore once the user is authenticated.
 
-**Estado:** <span style="color:green;">**OPERATIVO**</span>
+**Status:** <span style="color:green;">**OPERATIONAL AND STABLE**</span>
 
 ---
 
-## 3. Módulo de Perfiles y Galería
+## 2. Authentication and User Module
 
-La visualización y gestión de la identidad pública de los usuarios está completa.
+The complete user lifecycle is functional and secure.
 
--   **Vista de Perfil Público:** Cualquier usuario puede ver el perfil de otro, mostrando su información pública, reputación, estadísticas y contenido.
--   **Galería de Publicaciones:** Los proveedores pueden crear, editar y eliminar publicaciones (imágenes y videos) en su galería. La subida de archivos a Firebase Storage es funcional.
--   **Catálogo de Productos:** Los proveedores pueden crear y mostrar productos en una pestaña dedicada de su perfil, incluyendo nombre, descripción, precio e imagen.
+-   **Real Login:**
+    -   **Google:** Authentication with Google is fully implemented via Firebase Authentication.
+    -   **Guest:** Guest login generates a valid temporary user, allowing exploration of the platform.
+-   **Session Management:** User sessions are persistent and secure, managed through server-side session cookies.
+-   **Registration and Initial Setup:** The flow guiding a new user to complete their basic data (`/initial-setup`) is fully functional and saves the information to Firestore.
+-   **Provider Profile Creation:** The flows for a user to become a "Provider" (both personal and company) are implemented and work correctly, updating the user type and enabling advanced features.
 
-**Estado:** <span style="color:green;">**OPERATIVO**</span>
-
----
-
-## 4. Módulo de Transacciones y Pagos
-
-El corazón financiero de Corabo está funcionando.
-
--   **Registro de Transacciones:** El sistema crea y actualiza transacciones para una variedad de flujos:
-    -   Creación de cotizaciones.
-    -   Aceptación de propuestas de acuerdo.
-    -   Compras desde el catálogo.
-    -   Pagos de campañas y suscripciones.
--   **Flujo de Pago con Comprobante:** El proceso donde un usuario realiza un pago y sube un comprobante (`/payment`) es completamente funcional. La imagen se convierte a `dataUrl` y se prepara para ser almacenada.
--   **Pago con Código QR:**
-    -   **Proveedor:** Puede mostrar un QR único de su perfil o de una "caja" específica.
-    -   **Cliente:** Puede escanear el QR para iniciar un pago directo, introduciendo el monto que el proveedor solicita en tiempo real.
--   **Credicora:** El sistema de niveles de crédito está definido y se asigna a los usuarios, aunque los flujos de financiamiento específicos están en una etapa inicial.
-
-**Estado:** <span style="color:green;">**OPERATIVO**</span>
+**Status:** <span style="color:green;">**OPERATIONAL**</span>
 
 ---
 
-## 5. Módulo de Mensajería y Propuestas
+## 3. Profiles and Gallery Module
 
-La comunicación directa entre usuarios es funcional y en tiempo real.
+The display and management of users' public identity are complete.
 
--   **Chat en Tiempo Real:** Los usuarios pueden iniciar conversaciones y enviar mensajes de texto. La interfaz de chat se actualiza instantáneamente con nuevos mensajes.
--   **Sistema de Propuestas:** Los proveedores pueden enviar "Propuestas de Acuerdo" formales a través del chat, especificando detalles y montos. Los clientes pueden aceptar estas propuestas, lo que automáticamente genera una transacción formal en el sistema.
+-   **Public Profile View:** Any user can view another's profile, displaying their public information, reputation, statistics, and content.
+-   **Publications Gallery:** Providers can create, edit, and delete publications (images and videos) in their gallery. File uploads to Firebase Storage are functional.
+-   **Product Catalog:** Providers can create and display products in a dedicated tab on their profile, including name, description, price, and image.
 
-**Estado:** <span style="color:green;">**OPERATIVO**</span>
-
----
-
-## 6. Módulo de Administración
-
-Las herramientas para la gestión de la plataforma están implementadas.
-
--   **Gestión de Usuarios:** Los administradores pueden ver, pausar, reactivar y eliminar usuarios.
--   **Verificación de Pagos:** Los pagos de suscripciones y campañas aparecen en el panel para que un administrador los verifique y active los servicios correspondientes.
--   **Verificación de Documentos:** La interfaz para revisar documentos de identidad está lista, permitiendo a un administrador aprobar o rechazar la verificación de un usuario.
-
-**Estado:** <span style="color:green;">**OPERATIVO**</span>
+**Status:** <span style="color:green;">**OPERATIONAL**</span>
 
 ---
 
-## 7. Módulo de Inteligencia Artificial (Genkit)
+## 4. Transactions and Payments Module
 
-La base para las funcionalidades de IA está activa y lista para ser utilizada.
+The financial heart of Corabo is working.
 
--   **Plugin de Google AI:** El plugin está correctamente configurado y habilitado.
--   **Flujo de Verificación de Documentos:** El flujo `autoVerifyIdWithAIFlow` está implementado. Es capaz de recibir la imagen de un documento y, utilizando un modelo multimodal, intentar extraer y comparar los datos con el registro del usuario.
+-   **Transaction Log:** The system creates and updates transactions for a variety of flows:
+    -   Quote creation.
+    -   Acceptance of agreement proposals.
+    -   Purchases from the catalog.
+    -   Payments for campaigns and subscriptions.
+-   **Payment with Voucher Flow:** The process where a user makes a payment and uploads a voucher (`/payment`) is fully functional. The image is converted to a `dataUrl` and prepared for storage.
+-   **QR Code Payment:**
+    -   **Provider:** Can display a unique QR code for their profile or a specific "cashier box."
+    -   **Client:** Can scan the QR to initiate a direct payment, entering the amount requested by the provider in real-time.
+-   **Credicora:** The credit level system is defined and assigned to users, though the specific financing flows are in an initial stage.
 
-**Estado:** <span style="color:green;">**OPERATIVO Y LISTO PARA USAR**</span>
+**Status:** <span style="color:green;">**OPERATIONAL**</span>
 
 ---
 
-## Conclusión General
+## 5. Messaging and Proposals Module
 
-La aplicación Corabo ha superado con éxito la fase de simulación. La arquitectura es estable, los flujos de datos son seguros y las funcionalidades principales están implementadas y operativas. El proyecto está listo para la siguiente fase de desarrollo, que podría incluir la expansión de funcionalidades, pruebas de usuario a gran escala y optimizaciones de rendimiento.
+Direct communication between users is functional and in real-time.
+
+-   **Real-Time Chat:** Users can start conversations and send text messages. The chat interface updates instantly with new messages.
+-   **Proposal System:** Providers can send formal "Agreement Proposals" via chat, specifying details and amounts. Clients can accept these proposals, which automatically generates a formal transaction in the system.
+
+**Status:** <span style="color:green;">**OPERATIONAL**</span>
+
+---
+
+## 6. Administration Module
+
+Tools for platform management are implemented.
+
+-   **User Management:** Administrators can view, pause, reactivate, and delete users.
+-   **Payment Verification:** Payments for subscriptions and campaigns appear on the panel for an administrator to verify and activate the corresponding services.
+-   **Document Verification:** The interface for reviewing identity documents is ready, allowing an administrator to approve or reject a user's verification.
+
+**Status:** <span style="color:green;">**OPERATIONAL**</span>
+
+---
+
+## 7. Artificial Intelligence Module (Genkit)
+
+The foundation for AI functionalities is active and ready for use.
+
+-   **Google AI Plugin:** The plugin is correctly configured and enabled.
+-   **Document Verification Flow:** The `autoVerifyIdWithAIFlow` is implemented. It can receive a document image and, using a multimodal model, attempt to extract and compare the data with the user's record.
+
+**Status:** <span style="color:green;">**OPERATIONAL AND READY TO USE**</span>
+
+---
+
+## General Conclusion
+
+The Corabo application has successfully moved past the simulation phase. The architecture is stable, data flows are secure, and the main functionalities are implemented and operational. The project is ready for the next phase of development, which could include feature expansion, large-scale user testing, and performance optimizations.

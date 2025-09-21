@@ -1,27 +1,23 @@
 # /src/components
 
-Este directorio alberga todos los componentes de React reutilizables de la aplicación, organizados por funcionalidad para mantener un proyecto limpio y escalable.
+This directory houses all of the application's reusable React components, organized by functionality to maintain a clean and scalable project.
 
-## Estructura
+## Structure
 
--   **`/` (Raíz):** Contiene componentes de alto nivel o muy genéricos que se utilizan en múltiples partes de la aplicación.
-    -   `Footer.tsx`: El pie de página de navegación principal.
-    -   `Header.tsx`: La cabecera principal de la aplicación.
-    -   `UserProfilePage.tsx`: El componente principal que renderiza el perfil de un usuario, reutilizado para el perfil propio y para ver perfiles de otros.
-    -   ... y otros componentes globales.
+-   **`/` (Root):** Contains high-level or very generic components used across multiple parts of the application.
+    -   `Footer.tsx`: The main navigation footer.
+    -   `Header.tsx`: The main application header.
+    -   `UserProfilePage.tsx`: The primary component that renders a user's profile, reused for one's own profile and for viewing others' profiles.
+    -   ... and other global components.
 
--   **`/admin`**: Componentes específicos para el Panel de Administración.
-    -   `UserManagementTab.tsx`: Tabla y lógica para gestionar usuarios.
-    -   `PaymentVerificationTab.tsx`: Interfaz para verificar pagos.
-    -   ... y otras pestañas y diálogos del panel.
+-   **`/admin`**: Components specific to the Administration Panel.
+    -   `UserManagementTab.tsx`: Table and logic for managing users.
+    -   `PaymentVerificationTab.tsx`: Interface for verifying payments.
+    -   ... and other tabs and dialogs for the panel.
 
--   **`/auth`**: Componentes relacionados con la autenticación.
-    -   `AuthProvider.tsx`: El proveedor de contexto principal que gestiona el estado del usuario autenticado.
+-   **`/profile-setup`**: Components for the multi-step profile setup flows (both for personal and company providers).
 
--   **`/charts`**: Componentes de gráficos (ej. `TransactionsLineChart.tsx`).
+-   **`/ui`**: Contains the UI library components (from shadcn/ui). These are "primitive" and styled components (Button, Card, Input, etc.) used to build more complex components. **They must not contain business logic.**
 
--   **`/profile`**: Componentes específicos para las distintas secciones del perfil de usuario.
-
--   **`/profile-setup`**: Componentes para el flujo de configuración inicial del perfil.
-
--   **`/ui`**: Contiene los componentes de la biblioteca de UI (shadcn/ui). Estos son componentes "primitivos" y estilizados (Button, Card, Input, etc.) que se utilizan para construir componentes más complejos. **No deben contener lógica de negocio**.
+-   **`/feed`**: Components related to the main content feed.
+    - `FeedView.tsx`: The main component that fetches and displays the paginated list of publications.

@@ -6,7 +6,7 @@ import { Button } from "./ui/button";
 import { Copy } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth-provider";
-import CoraboLogo from "./CoraboLogo";
+import Image from 'next/image';
 
 interface PersonalQrDialogProps {
     isOpen: boolean;
@@ -33,7 +33,7 @@ export function PersonalQrDialog({ isOpen, onOpenChange }: PersonalQrDialogProps
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-sm">
                 <div className="flex flex-col items-center justify-center p-6 bg-background rounded-lg text-center space-y-4">
-                     <CoraboLogo className="h-10 text-foreground mb-2" />
+                     <Image src="https://i.postimg.cc/Wz1MTvWK/lg.png" alt="Corabo Logo" width={120} height={40} className="h-10 w-auto cursor-pointer" />
                     <h2 className="text-xl font-semibold">Muestra este código para recibir pagos</h2>
                     <div className="bg-white p-4 rounded-lg shadow-inner inline-block">
                         <QRCodeSVG 

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -46,37 +45,6 @@ export default function QuotesPage() {
             category: '',
         }
     });
-    
-    async function processQuoteCreation(values: QuoteRequestInput) {
-        if (!currentUser) return;
-        setIsSubmitting(true);
-        try {
-            const newTransaction = await createQuoteRequest({ ...values, clientId: currentUser.id, isPaid: true });
-            
-            if (!newTransaction) {
-              throw new Error("No se pudo crear la transacción de cotización.")
-            }
-            
-            await sendNewQuoteRequestNotifications({
-                category: values.category,
-                title: values.title,
-                transactionId: newTransaction.id,
-            });
-
-            toast({
-                title: '¡Solicitud Enviada!',
-                description: 'Los proveedores de la categoría seleccionada serán notificados.',
-            });
-            router.push('/transactions');
-        } catch (error) {
-            console.error("Failed to create quote request:", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo enviar la solicitud.' });
-        } finally {
-            setIsSubmitting(false);
-            setFormValues(null);
-            setIsPaymentDialog(false);
-        }
-    }
 
     async function onSubmit(values: QuoteRequestInput) {
         if (!currentUser) {
@@ -84,27 +52,33 @@ export default function QuotesPage() {
             return;
         }
 
-        if (currentUser.isSubscribed) {
-            await processQuoteCreation(values);
-            return;
-        }
-        
-        // Logic for non-subscribed users
+        setIsSubmitting(true);
         try {
-            const result = await createQuoteRequest({ ...values, clientId: currentUser.id, isPaid: false });
+            const result = await createQuoteRequest({ ...values, clientId: currentUser.id });
+            
             if (result.requiresPayment) {
                  setFormValues(values);
                  setIsPaymentDialog(true);
-            } else {
-                 toast({
-                    title: '¡Solicitud Gratuita Enviada!',
-                    description: 'Has usado tu cotización gratuita de la semana. Los proveedores serán notificados.',
+            } else if (result.newTransaction) {
+                 await sendNewQuoteRequestNotifications({
+                    category: values.category,
+                    title: values.title,
+                    transactionId: result.newTransaction.id,
+                });
+
+                toast({
+                    title: currentUser.isSubscribed ? '¡Solicitud Enviada!' : '¡Solicitud Gratuita Enviada!',
+                    description: 'Los proveedores de la categoría seleccionada serán notificados.',
                 });
                 router.push('/transactions');
+            } else {
+                throw new Error("Respuesta inesperada del servidor.");
             }
         } catch (error) {
-            console.error(error);
-            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo procesar la solicitud.' });
+            console.error("Failed to create quote request:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo enviar la solicitud.' });
+        } finally {
+            setIsSubmitting(false);
         }
     }
     
