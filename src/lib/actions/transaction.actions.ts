@@ -104,7 +104,7 @@ export async function createQuoteRequest(input: QuoteRequestInput): Promise<{ re
 
 export async function acceptProposal(conversationId: string, messageId: string, acceptorId: string) {
     await acceptProposalFlow({ conversationId, messageId, acceptorId });
-    revalidatePath(`/messages/${conversationId}`);
+    revalidatePath(`/messages/${'${conversationId}'}`);
     revalidatePath('/transactions');
 }
 
@@ -118,13 +118,13 @@ export async function purchaseGift(userId: string, gift: { id: string, name: str
         providerId: 'corabo-admin',
         participantIds: [userId, 'corabo-admin'],
         details: {
-            system: `Compra de regalo: ${gift.name}`,
+            system: `Compra de regalo: ${'${gift.name}'}`,
         },
     });
     
     // In a real app, this would redirect to a proper payment gateway URL.
     // For this prototype, we'll redirect to the generic payment page for system transactions.
-    const paymentUrl = `/payment?commitmentId=${newTransaction.id}`;
+    const paymentUrl = `/payment?commitmentId=${'${newTransaction.id}'}`;
 
     return { paymentUrl };
 }
