@@ -13,7 +13,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { ContactSupportCard } from '@/components/ContactSupportCard';
-import { removeContactFromUser, sendMessage } from '@/lib/actions';
+import { removeContactFromUser } from '@/lib/actions/user.actions';
+import { sendMessage } from '@/lib/actions/messaging.actions';
 
 
 function ContactsHeader({ onSubscribeClick }: { onSubscribeClick: () => void }) {
@@ -46,7 +47,7 @@ function ContactsHeader({ onSubscribeClick }: { onSubscribeClick: () => void }) 
 
 
 export default function ContactsPage() {
-  const { currentUser, contacts } = useAuth();
+  const { currentUser, contacts, removeContact } = useAuth();
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
@@ -64,7 +65,7 @@ export default function ContactsPage() {
   
   const handleRemoveContact = (contactId: string) => {
     if (!currentUser) return;
-    removeContactFromUser(currentUser.id, contactId);
+    removeContact(contactId);
   }
 
   const copyToClipboard = (text: string) => {
