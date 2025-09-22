@@ -1,27 +1,11 @@
-
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-  
-    // Denegar todo por defecto
+    // Permite la lectura pública de cualquier archivo.
     match /{allPaths=**} {
-      allow read, write: if false;
-    }
-
-    // Permitir lectura pública de todos los archivos
-    allow read: if true;
-
-    // Permitir escritura solo a usuarios autenticados en su propia carpeta
-    // Ej: /users/USER_ID/profile.jpg
-    match /users/{userId}/{allPaths=**} {
-      allow write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Permitir escritura en 'publications' a cualquier usuario autenticado
-    // Se podría refinar más para que solo el providerId pueda escribir aquí.
-    match /publications/{fileName} {
-        allow write: if request.auth != null;
+      allow read: if true;
+      allow write: if request.auth != null;
     }
   }
 }
