@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter, usePathname } from 'next/navigation';
 import { doc, onSnapshot, collection, query, where, orderBy } from 'firebase/firestore';
 import type { User, Transaction, GalleryImage, CartItem, TempRecipientInfo, QrSession, Notification, Conversation } from '@/lib/types';
-import { updateUser } from '@/lib/actions/user.actions';
+import { updateUser as updateUserAction, deleteUser as deleteUserAction, toggleUserPause as toggleUserPauseAction, updateUserProfileImage as updateUserProfileImageAction } from '@/lib/actions/user.actions';
 import { differenceInMilliseconds } from 'date-fns';
 
 // --- Centralized Context Definition ---
@@ -59,6 +59,12 @@ export interface AuthContextValue {
   
   getUserMetrics: (userId: string, userType: User['type'], allTransactions: Transaction[]) => { reputation: number, effectiveness: number, averagePaymentTimeMs: number };
   getAgendaEvents: (transactions: Transaction[]) => any[];
+
+  // Server Action Wrappers
+  updateUser: (userId: string, updates: Partial<User> | { [key: string]: any }) => Promise<void>;
+  updateUserProfileImage: (userId: string, dataUrl: string) => Promise<void>;
+  deleteUser: (userId: string) => Promise<void>;
+  toggleUserPause: (userId: string, shouldUnpause: boolean) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -208,7 +214,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           const location = { latitude: position.coords.latitude, longitude: position.coords.longitude };
           setCurrentUserLocation(location);
           if (currentUser?.id) {
-            updateUser(currentUser.id, { 'profileSetupData.location': `${'${location.latitude}'},${'${location.longitude}'}` });
+            updateUserAction(currentUser.id, { 'profileSetupData.location': `${'${location.latitude}'},${'${location.longitude}'}` });
           }
         },
         () => toast({ variant: "destructive", title: "Error de Ubicación", description: "No se pudo obtener tu ubicación. Revisa los permisos." }),
@@ -284,7 +290,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Data
     contacts, isContact, users, transactions, setTransactions, allPublications, setAllPublications, cart, activeCartForCheckout, setActiveCartForCheckout, tempRecipientInfo, setTempRecipientInfo, deliveryAddress, setDeliveryAddress, setDeliveryAddressToCurrent, currentUserLocation, getCurrentLocation, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, searchHistory, clearSearchHistory, addSearchToHistory, notifications, conversations, qrSession,
     // Metric getters
-    getUserMetrics, getAgendaEvents
+    getUserMetrics, getAgendaEvents,
+    // Server Action Wrappers
+    updateUser: updateUserAction,
+    updateUserProfileImage: updateUserProfileImageAction,
+    deleteUser: deleteUserAction,
+    toggleUserPause: toggleUserPauseAction,
   };
 
   return (

@@ -6,7 +6,6 @@ import { useAuth } from '@/hooks/use-auth-provider';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { updateUserProfileImage } from '@/lib/actions/user.actions';
 
 interface EditableAvatarProps {
   user: {
@@ -19,6 +18,7 @@ interface EditableAvatarProps {
 export function EditableAvatar({ user }: EditableAvatarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { updateUserProfileImage } = useAuth(); // Use the hook to get the action function
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

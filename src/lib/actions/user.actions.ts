@@ -64,6 +64,14 @@ export async function deleteUser(userId: string) {
     revalidatePath('/admin');
 }
 
+export async function toggleUserPause(userId: string, shouldUnpause: boolean) {
+    const updates = shouldUnpause 
+        ? { isPaused: false } 
+        : { isPaused: true, pauseReason: 'Paused by admin' };
+    await updateUserFlow({ userId, updates });
+    revalidatePath('/admin');
+}
+
 export async function checkIdUniqueness(input: { idNumber: string; country: string; currentUserId: string; }): Promise<boolean> {
     return await checkIdUniquenessFlow(input);
 }
@@ -151,5 +159,3 @@ export async function becomeProvider(userId: string, profileData: ProfileSetupDa
     });
     revalidatePath('/profile');
 }
-
-  
