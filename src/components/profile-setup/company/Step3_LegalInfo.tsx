@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -21,6 +20,7 @@ interface StepProps {
 export default function Step3_LegalInfo({ formData, onUpdate, onNext }: StepProps) {
     const [qrCodeDataUrl, setQrCodeDataUrl] = useState('');
     const [isLoadingQr, setIsLoadingQr] = useState(false);
+    const [idForQr, setIdForQr] = useState(formData.legalRepresentative?.idNumber || '');
 
     const handleFieldChange = (field: 'name' | 'position' | 'idNumber' | 'phone', value: string) => {
         onUpdate({
@@ -29,25 +29,30 @@ export default function Step3_LegalInfo({ formData, onUpdate, onNext }: StepProp
                 [field]: value,
             },
         });
+        if (field === 'idNumber') {
+            setIdForQr(value);
+        }
     };
     
     useEffect(() => {
         const generateQR = async () => {
-            if (formData.legalRepresentative?.idNumber) {
+            if (idForQr) {
                 setIsLoadingQr(true);
                 try {
                     // This now calls a server action
-                    const dataUrl = await generateQrCode(formData.legalRepresentative.idNumber);
+                    const dataUrl = await generateQrCode(idForQr);
                     setQrCodeDataUrl(dataUrl);
                 } catch (error) {
                     console.error("Failed to generate QR Code", error);
                 } finally {
                     setIsLoadingQr(false);
                 }
+            } else {
+                setQrCodeDataUrl('');
             }
         };
         generateQR();
-    }, [formData.legalRepresentative?.idNumber]);
+    }, [idForQr]);
 
 
     return (
@@ -70,14 +75,14 @@ export default function Step3_LegalInfo({ formData, onUpdate, onNext }: StepProp
                     <Input id="rep-phone" placeholder="0412-1234567" value={formData.legalRepresentative?.phone || ''} onChange={(e) => handleFieldChange('phone', e.target.value)} />
                 </div>
                 
-                 {qrCodeDataUrl && (
+                 { (isLoadingQr || qrCodeDataUrl) && (
                     <div className="space-y-2 text-center">
                          <Label>Código QR Fiscal (RIF)</Label>
                         <div className="p-4 bg-muted rounded-md inline-block">
                              {isLoadingQr ? (
                                 <div className="w-32 h-32 flex items-center justify-center"><Loader2 className="animate-spin" /></div>
                             ) : (
-                                <Image src={qrCodeDataUrl} alt="QR Code" width={128} height={128} />
+                                qrCodeDataUrl && <Image src={qrCodeDataUrl} alt="QR Code" width={128} height={128} />
                             )}
                         </div>
                     </div>
