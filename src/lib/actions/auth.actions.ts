@@ -1,3 +1,4 @@
+
 'use server';
 
 import { cookies } from 'next/headers';
@@ -31,9 +32,10 @@ export async function signInAsGuest(): Promise<{ customToken?: string; error?: s
         await getOrCreateUserFlow(db, { uid: uid, displayName: "Invitado", email: null, photoURL: null, emailVerified: false });
         
         return { customToken };
-    } catch (error: any) {
-        console.error('[ACTION_ERROR] signInAsGuest:', error.message);
-        return { error: 'Failed to create guest token.' };
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to create guest token.';
+        console.error('[ACTION_ERROR] signInAsGuest:', errorMessage);
+        return { error: errorMessage };
     }
 }
 
@@ -62,8 +64,9 @@ export async function createSessionCookie(idToken: string) {
 
         return { success: true };
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Could not create session cookie.';
         console.error("Error creating session cookie", error);
-        return { success: false, error: 'Could not create session cookie.' };
+        return { success: false, error: errorMessage };
     }
 }
 
@@ -75,7 +78,8 @@ export async function clearSessionCookie() {
         cookies().delete('session');
         return { success: true };
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Could not clear session cookie.';
         console.error("Error clearing session cookie", error);
-        return { success: false, error: 'Could not clear session cookie.' };
+        return { success: false, error: errorMessage };
     }
 }

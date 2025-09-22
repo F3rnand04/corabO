@@ -1,3 +1,4 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -21,7 +22,8 @@ export async function createCampaign(userId: string, campaignData: Omit<CreateCa
 
         return newCampaign;
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Failed to create campaign.";
         console.error(`[ACTION_ERROR] createCampaign:`, error);
-        throw new Error("Failed to create campaign.");
+        throw new Error(errorMessage);
     }
 }

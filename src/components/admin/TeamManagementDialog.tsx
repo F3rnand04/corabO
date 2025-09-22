@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -77,8 +78,9 @@ export function TeamManagementDialog({ isOpen, onOpenChange }: TeamManagementDia
             toast({ title: 'Usuario Creado', description: `Se ha creado el usuario de gestión para ${name} ${lastName}.` });
             resetForm();
             onOpenChange(false);
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Error al crear usuario', description: error.message });
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "No se pudo crear el usuario.";
+            toast({ variant: 'destructive', title: 'Error al crear usuario', description: errorMessage });
         } finally {
             setIsLoading(false);
         }

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -54,8 +55,9 @@ export function ExchangeRateDialog({ isOpen, onOpenChange }: ExchangeRateDialogP
             toast({ title: 'Tasa Actualizada', description: `La tasa para ${countryCode} ha sido establecida a ${numericRate}.` });
             resetForm();
             onOpenChange(false);
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Error al Guardar', description: error.message });
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "No se pudo guardar la tasa.";
+            toast({ variant: 'destructive', title: 'Error al Guardar', description: errorMessage });
         } finally {
             setIsLoading(false);
         }

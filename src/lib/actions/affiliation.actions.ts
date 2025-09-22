@@ -1,3 +1,4 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -24,9 +25,10 @@ export async function requestAffiliation(providerId: string, companyId: string) 
         });
         
         revalidatePath('/admin');
-    } catch (error: any) {
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Failed to request affiliation.";
         console.error(`[ACTION_ERROR] requestAffiliation:`, error);
-        throw new Error(error.message || "Failed to request affiliation.");
+        throw new Error(errorMessage);
     }
 }
 
@@ -50,8 +52,9 @@ export async function approveAffiliation(affiliationId: string, actorId: string)
         revalidatePath('/admin');
         revalidatePath(`/companies/${providerId}`);
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Failed to approve affiliation.";
         console.error(`[ACTION_ERROR] approveAffiliation:`, error);
-        throw new Error("Failed to approve affiliation.");
+        throw new Error(errorMessage);
     }
 }
 
@@ -72,8 +75,9 @@ export async function rejectAffiliation(affiliationId: string, actorId: string) 
         });
         revalidatePath('/admin');
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Failed to reject affiliation.";
         console.error(`[ACTION_ERROR] rejectAffiliation:`, error);
-        throw new Error("Failed to reject affiliation.");
+        throw new Error(errorMessage);
     }
 }
 
@@ -95,7 +99,8 @@ export async function revokeAffiliation(affiliationId: string, actorId: string) 
         revalidatePath('/admin');
         revalidatePath(`/companies/${providerId}`);
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Failed to revoke affiliation.";
         console.error(`[ACTION_ERROR] revokeAffiliation:`, error);
-        throw new Error("Failed to revoke affiliation.");
+        throw new Error(errorMessage);
     }
 }

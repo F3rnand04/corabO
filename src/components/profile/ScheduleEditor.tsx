@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -7,7 +8,7 @@ import { BusinessHoursStatus } from '../BusinessHoursStatus';
 import type { User, ProfileSetupData } from '@/lib/types';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
 import { Button } from '../ui/button';
-import { ChevronDown, Clock } from 'lucide-react';
+import { ChevronDown, Clock, Loader2 } from 'lucide-react';
 import { Switch } from '../ui/switch';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -48,7 +49,8 @@ export function ScheduleEditor({ provider, isSelfProfile }: ScheduleEditorProps)
             await updateUser(provider.id, { 'profileSetupData.schedule': schedule });
             toast({ title: 'Horario actualizado', description: 'Tus nuevos horarios de atención están visibles.' });
         } catch (error) {
-            toast({ variant: 'destructive', title: 'Error', description: 'No se pudo guardar el horario.' });
+            const errorMessage = error instanceof Error ? error.message : 'No se pudo guardar el horario.';
+            toast({ variant: 'destructive', title: 'Error', description: errorMessage });
         } finally {
             setIsSaving(false);
         }
@@ -108,6 +110,7 @@ export function ScheduleEditor({ provider, isSelfProfile }: ScheduleEditorProps)
                             ))}
                         </div>
                         <Button className="w-full mt-4" onClick={handleSave} disabled={isSaving}>
+                            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
                             {isSaving ? 'Guardando...' : 'Guardar Cambios'}
                         </Button>
                     </CardContent>

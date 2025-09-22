@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState } from 'react';
@@ -14,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from '@/hooks/use-toast';
-import { Flag, EyeOff, UserX } from 'lucide-react';
+import { Flag, EyeOff, UserX, Loader2 } from 'lucide-react';
 import { Switch } from './ui/switch';
 
 
@@ -33,6 +34,7 @@ export function ReportDialog({ isOpen, onOpenChange, providerId, publicationId }
   const [description, setDescription] = useState("");
   const [hideContent, setHideContent] = useState(false);
   const [hideProvider, setHideProvider] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSendReport = () => {
     if (!reason && !description) {
@@ -44,27 +46,31 @@ export function ReportDialog({ isOpen, onOpenChange, providerId, publicationId }
         return;
     }
     
-    // Aquí iría la lógica para enviar la denuncia al backend
-    console.log({
-        providerId,
-        publicationId,
-        reason,
-        description,
-        hideContent,
-        hideProvider,
-    });
+    setIsSubmitting(true);
+    // Simulate API call
+    setTimeout(() => {
+        console.log({
+            providerId,
+            publicationId,
+            reason,
+            description,
+            hideContent,
+            hideProvider,
+        });
 
-    toast({
-        title: "Denuncia Enviada",
-        description: "Gracias por ayudarnos a mantener la comunidad segura. Revisaremos tu denuncia a la brevedad."
-    });
-    
-    // Resetear y cerrar
-    setReason("");
-    setDescription("");
-    setHideContent(false);
-    setHideProvider(false);
-    onOpenChange(false);
+        toast({
+            title: "Denuncia Enviada",
+            description: "Gracias por ayudarnos a mantener la comunidad segura. Revisaremos tu denuncia a la brevedad."
+        });
+        
+        // Reset and close
+        setReason("");
+        setDescription("");
+        setHideContent(false);
+        setHideProvider(false);
+        setIsSubmitting(false);
+        onOpenChange(false);
+    }, 1000);
   };
   
   return (
@@ -138,7 +144,8 @@ export function ReportDialog({ isOpen, onOpenChange, providerId, publicationId }
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button variant="destructive" onClick={handleSendReport}>
+          <Button variant="destructive" onClick={handleSendReport} disabled={isSubmitting || (!reason && !description)}>
+            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
             Enviar Denuncia
           </Button>
         </DialogFooter>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -32,12 +33,13 @@ export default function LoginPage() {
         } else {
             throw new Error(response.error || "No se pudo obtener el token de invitado.");
         }
-    } catch (error: any) {
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "No se pudo iniciar sesión como invitado.";
         console.error("Guest Sign-In Error:", error);
         toast({
           variant: "destructive",
           title: "Error de Invitado",
-          description: error.message || "No se pudo iniciar sesión como invitado.",
+          description: errorMessage,
         });
         setIsProcessingLogin(false);
     }
@@ -53,12 +55,13 @@ export default function LoginPage() {
         await createSessionCookie(idToken);
         
         // Let the AuthProvider handle the redirect
-    } catch (error: any) {
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "No se pudo iniciar sesión con Google.";
         console.error("Google Sign-In Error:", error);
         toast({
           variant: "destructive",
           title: "Error de Autenticación",
-          description: error.message || "No se pudo iniciar sesión con Google.",
+          description: errorMessage,
         });
         setIsProcessingLogin(false);
     }

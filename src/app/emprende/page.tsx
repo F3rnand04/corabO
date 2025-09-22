@@ -80,20 +80,14 @@ export default function EmprendePage() {
   };
 
   const goToNextStep = () => {
-    if (!tempImageFile || !tempDescription.trim()) {
-        toast({ variant: "destructive", title: "Falta información", description: "Por favor, sube una imagen y añade una descripción para tu oferta." });
-        return;
-    }
+    // La validación ahora se controla con el estado `disabled` del botón
     setStep(2);
   };
   
   const handleConfirmAndActivate = async () => {
-    if (!reference || !voucherFile) {
-        toast({ variant: "destructive", title: "Faltan datos de pago", description: "Sube el comprobante y añade la referencia." });
-        return;
-    }
-    if (!tempImageFile || !tempDescription.trim() || !currentUser) {
-        toast({ variant: "destructive", title: "Falta información de la oferta", description: "Hubo un error, por favor vuelve al paso anterior." });
+    // La validación se controla con el estado del botón, pero se mantiene como doble chequeo.
+    if (!reference || !voucherFile || !tempImageFile || !tempDescription.trim() || !currentUser) {
+        toast({ variant: "destructive", title: "Faltan datos", description: "Completa todos los campos para continuar." });
         return;
     }
 
@@ -114,8 +108,9 @@ export default function EmprendePage() {
         router.push('/profile');
 
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "No se pudo activar la promoción.";
         console.error("Error activating promotion:", error);
-        toast({ variant: "destructive", title: "Error al activar", description: "No se pudo activar la promoción." });
+        toast({ variant: "destructive", title: "Error al activar", description: errorMessage });
     } finally {
         setIsSubmitting(false);
     }

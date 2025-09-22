@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -54,6 +55,7 @@ export default function Step3_LegalInfo({ formData, onUpdate, onNext }: StepProp
         generateQR();
     }, [idForQr]);
 
+    const isFormValid = formData.legalRepresentative?.name && formData.legalRepresentative?.idNumber;
 
     return (
         <Card>
@@ -88,7 +90,7 @@ export default function Step3_LegalInfo({ formData, onUpdate, onNext }: StepProp
                     </div>
                 )}
                 
-                <Button onClick={onNext} className="w-full" disabled={!formData.legalRepresentative?.name || !formData.legalRepresentative?.idNumber}>
+                <Button onClick={onNext} className="w-full" disabled={!isFormValid}>
                     <Check className="mr-2 h-4 w-4"/>
                     Guardar y Continuar
                 </Button>

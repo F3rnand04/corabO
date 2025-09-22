@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -18,13 +19,14 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Handshake, Calendar as CalendarIcon, Star } from 'lucide-react';
+import { Handshake, Calendar as CalendarIcon, Star, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Calendar } from './ui/calendar';
 import { cn } from '@/lib/utils';
 import { Switch } from './ui/switch';
 import { useAuth } from '@/hooks/use-auth-provider';
 import { sendMessage } from '@/lib/actions/messaging.actions';
+import { useToast } from '@/hooks/use-toast';
 
 
 interface ProposalDialogProps {
@@ -68,6 +70,8 @@ const placeholderMap: Record<string, { title: string; description: string }> = {
 
 export function ProposalDialog({ isOpen, onOpenChange, conversationId }: ProposalDialogProps) {
     const { currentUser } = useAuth();
+    const { toast } = useToast();
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const form = useForm<ProposalFormValues>({
         resolver: zodResolver(proposalSchema),
@@ -79,20 +83,29 @@ export function ProposalDialog({ isOpen, onOpenChange, conversationId }: Proposa
         }
     });
 
-    const onSubmit = (data: ProposalFormValues) => {
+    const onSubmit = async (data: ProposalFormValues) => {
         if (!currentUser) return;
-        const otherParticipantId = conversationId.replace(currentUser.id, '').replace('-', '');
-        sendMessage({
-            senderId: currentUser.id,
-            recipientId: otherParticipantId,
-            conversationId,
-            proposal: {
-                ...data,
-                deliveryDate: data.deliveryDate.toISOString(),
-            },
-        });
-        form.reset();
-        onOpenChange(false);
+        setIsSubmitting(true);
+        try {
+            const otherParticipantId = conversationId.replace(currentUser.id, '').replace('-', '');
+            await sendMessage({
+                senderId: currentUser.id,
+                recipientId: otherParticipantId,
+                conversationId,
+                proposal: {
+                    ...data,
+                    deliveryDate: data.deliveryDate.toISOString(),
+                },
+            });
+            toast({ title: "Propuesta Enviada", description: "El cliente ha sido notificado." });
+            form.reset();
+            onOpenChange(false);
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "No se pudo enviar la propuesta.";
+            toast({ variant: "destructive", title: "Error", description: errorMessage });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
     
     const providerCategory = currentUser?.profileSetupData?.primaryCategory || 'default';
@@ -164,7 +177,10 @@ export function ProposalDialog({ isOpen, onOpenChange, conversationId }: Proposa
 
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
-                            <Button type="submit">Enviar Propuesta</Button>
+                            <Button type="submit" disabled={isSubmitting}>
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                                Enviar Propuesta
+                            </Button>
                         </DialogFooter>
                     </form>
                 </Form>

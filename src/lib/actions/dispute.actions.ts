@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { initiateDisputeResolutionFlow } from '@/ai/flows/dispute-flow';
@@ -18,7 +19,8 @@ export async function initiateDisputeResolution(transactionId: string, actorId: 
         
         return { success: true, disputeCase };
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to initiate dispute case.';
         console.error('[ACTION_ERROR] initiateDisputeResolution:', error);
-        throw new Error('Failed to initiate dispute case.');
+        throw new Error(errorMessage);
     }
 }
