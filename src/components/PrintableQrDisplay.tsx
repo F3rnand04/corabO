@@ -21,7 +21,7 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
     const [isDownloading, setIsDownloading] = useState(false);
     const printRef = useRef<HTMLDivElement>(null);
     
-    const logoUrl = "https://i.postimg.cc/8zWvkhxS/Sin-t-tulo-3.png";
+    const logoUrl = "https://i.postimg.cc/YSNBv5DT/logo-light-png.png";
 
     const downloadQR = useCallback(() => {
         if (!printRef.current) {
