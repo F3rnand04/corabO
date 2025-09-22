@@ -62,7 +62,7 @@ const verificationPrompt = ai.definePrompt({
     inputSchema: VerificationInputSchema,
     outputSchema: VerificationOutputSchema,
     prompt: `
-        You are an expert document verifier. Your task is to extract the full name and ID number from the provided image of a government-issued identification document.
+        You are an expert document verifier. Your task is to extract the full name and the main identification number from the provided image of a government-issued identification document.
         Then, you must compare the extracted data with the user's registration data.
 
         Document Image: {{media url=documentImageUrl}}
