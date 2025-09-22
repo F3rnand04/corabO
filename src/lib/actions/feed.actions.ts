@@ -1,9 +1,13 @@
 'use server';
 
 import { getFeedFlow, getProfileGalleryFlow, getProfileProductsFlow, getPublicProfileFlow } from '@/ai/flows/feed-flow';
-import { GetFeedInputSchema } from '@/lib/types';
-import { z } from 'zod';
 
+export interface GetFeedInput {
+  limitNum?: number;
+  startAfterDocId?: string;
+  searchQuery?: string;
+  categoryFilter?: string;
+}
 
 export async function getPublicProfile(userId: string) {
     return await getPublicProfileFlow({ userId });
@@ -19,6 +23,6 @@ export async function getProfileProducts(input: { userId: string, limitNum?: num
 }
 
 // NEW: Server action to securely fetch and enrich the main feed
-export async function getFeed(input: z.infer<typeof GetFeedInputSchema>) {
+export async function getFeed(input: GetFeedInput) {
     return await getFeedFlow(input);
 }

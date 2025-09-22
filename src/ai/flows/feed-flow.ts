@@ -10,7 +10,20 @@
 import { z } from 'zod';
 import { getFirestore, type DocumentSnapshot } from 'firebase-admin/firestore';
 import type { GalleryImage, User, PublicationOwner, Product } from '@/lib/types';
-import { GetFeedInputSchema, GetFeedOutputSchema } from '@/lib/types';
+
+
+// Define Schemas locally in the flow
+const GetFeedInputSchema = z.object({
+  limitNum: z.number().optional(),
+  startAfterDocId: z.string().optional(),
+  searchQuery: z.string().optional(),
+  categoryFilter: z.string().optional(),
+});
+
+const GetFeedOutputSchema = z.object({
+  publications: z.array(z.any()),
+  lastVisibleDocId: z.string().optional(),
+});
 
 
 export async function getFeedFlow(input: z.infer<typeof GetFeedInputSchema>): Promise<z.infer<typeof GetFeedOutputSchema>> {

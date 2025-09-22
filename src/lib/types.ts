@@ -495,15 +495,14 @@ export type Transaction = {
   lastUpdated?: string;
 };
 
-// New: Schema for creating a quote request from the new /quotes page
-export const QuoteRequestInputSchema = z.object({
-  clientId: z.string(),
-  title: z.string().min(5, "El título es muy corto."),
-  description: z.string().min(20, "La descripción debe ser más detallada."),
-  category: z.string({ required_error: "Debes seleccionar una categoría." }),
-  isPaid: z.boolean().optional(), // To indicate if a payment flow is triggered
-});
-export type QuoteRequestInput = z.infer<typeof QuoteRequestInputSchema>;
+// Interface matching the Zod schema for type safety on the client
+export interface QuoteRequestInput {
+  clientId: string;
+  title: string;
+  description: string;
+  category: string;
+  isPaid?: boolean;
+}
 
 
 export type TempRecipientInfo = {
@@ -517,31 +516,6 @@ export type Gift = {
   price: number;
   credits: number;
   icon: string; // URL to an icon/image for the gift
-};
-
-export const GetFeedInputSchema = z.object({
-  limitNum: z.number().optional(),
-  startAfterDocId: z.string().optional(),
-  searchQuery: z.string().optional(),
-  categoryFilter: z.string().optional(),
-});
-
-export const GetFeedOutputSchema = z.object({
-  publications: z.array(z.any()),
-  lastVisibleDocId: z.string().optional(),
-});
-
-// NEW: Data model for dispute cases
-export type DisputeCase = {
-  id: string; // Corresponds to the transaction ID
-  status: 'open' | 'investigating' | 'resolved';
-  clientId: string;
-  providerId: string;
-  managerId?: string; // Admin handling the case
-  createdAt: string;
-  lastUpdated: string;
-  resolutionNotes?: string;
-  finalResolution?: 'refund_client' | 'pay_provider' | 'partial_refund' | 'no_action';
 };
 
 // Types moved from report-flow
