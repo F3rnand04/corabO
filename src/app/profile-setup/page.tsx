@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -12,13 +11,14 @@ import { useRouter } from 'next/navigation';
 import { updateFullProfile } from '@/lib/actions/user.actions';
 
 // Import Step Components
-import Step2_CompanyInfo from '@/components/profile-setup/Step2_CompanyInfo';
-import Step3_Logistics from '@/components/profile-setup/Step3_Logistics';
-import Step4_LegalInfo from '@/components/profile-setup/Step4_LegalInfo';
-import Step5_Review from '@/components/profile-setup/Step5_Review';
+import Step1_CompanyInfo from '@/components/profile-setup/company/Step1_CompanyInfo';
+import Step2_Logistics from '@/components/profile-setup/company/Step2_Logistics';
+import Step3_LegalInfo from '@/components/profile-setup/company/Step3_LegalInfo';
+import Step4_Review from '@/components/profile-setup/company/Step4_Review';
+
 
 export default function ProfileSetupPage() {
-  const { currentUser, setDeliveryAddress } = useAuth();
+  const { currentUser } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   
@@ -27,8 +27,6 @@ export default function ProfileSetupPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    // This effect ONLY runs when the component mounts or the user changes.
-    // It prevents re-initializing the form data unnecessarily.
     if (currentUser?.profileSetupData) {
       setFormData(prev => ({ ...prev, ...currentUser.profileSetupData }));
     }
@@ -45,7 +43,13 @@ export default function ProfileSetupPage() {
   const totalSteps = 4; // Info, Logistics, Legal, Review
 
   const handleNext = () => setStep(prev => Math.min(prev + 1, totalSteps));
-  const handleBack = () => setStep(prev => Math.max(prev - 1, 1));
+  const handleBack = () => {
+    if (step === 1) {
+      router.push('/profile');
+    } else {
+      setStep(prev => Math.max(prev - 1, 1));
+    }
+  };
   
   const handleUpdateFormData = (data: Partial<ProfileSetupData>) => {
     setFormData(prev => ({ ...prev, ...data }));
@@ -68,13 +72,13 @@ export default function ProfileSetupPage() {
   const renderStep = () => {
     switch (step) {
       case 1:
-        return <Step2_CompanyInfo formData={formData} onUpdate={handleUpdateFormData} onNext={handleNext} />;
+        return <Step1_CompanyInfo formData={formData} onUpdate={handleUpdateFormData} onNext={handleNext} />;
       case 2:
-        return <Step3_Logistics formData={formData} onUpdate={handleUpdateFormData} onNext={handleNext} />;
+        return <Step2_Logistics formData={formData} onUpdate={handleUpdateFormData} onNext={handleNext} />;
       case 3:
-        return <Step4_LegalInfo formData={formData} onUpdate={handleUpdateFormData} onNext={handleNext} />;
+        return <Step3_LegalInfo formData={formData} onUpdate={handleUpdateFormData} onNext={handleNext} />;
       case 4:
-        return <Step5_Review formData={formData} onSubmit={handleFinalSubmit} isSubmitting={isSubmitting} />;
+        return <Step4_Review formData={formData} onSubmit={handleFinalSubmit} isSubmitting={isSubmitting} />;
       default:
         return <p>Paso desconocido.</p>;
     }
@@ -83,13 +87,14 @@ export default function ProfileSetupPage() {
   return (
     <div className="container max-w-2xl mx-auto py-8">
         <div className="mb-8">
-            {step > 1 && (
-                <Button variant="ghost" onClick={handleBack} className="mb-4">
-                    <ChevronLeft className="w-4 h-4 mr-2" />
-                    Atrás
-                </Button>
-            )}
-            <ProgressBar current={step} total={totalSteps} />
+            <Button variant="ghost" onClick={handleBack} className="mb-4">
+                <ChevronLeft className="w-4 h-4 mr-2" />
+                Atrás
+            </Button>
+             <div className="space-y-2">
+                <p className="text-sm font-medium text-muted-foreground">Paso {step} de {totalSteps}</p>
+                <ProgressBar current={step} total={totalSteps} />
+            </div>
         </div>
         {renderStep()}
     </div>

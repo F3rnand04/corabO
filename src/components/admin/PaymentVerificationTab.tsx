@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { verifyCampaignPayment, sendNewCampaignNotifications } from '@/lib/actions';
+import { verifyCampaignPayment, sendNewCampaignNotifications } from '@/lib/actions/admin.actions';
 
 export function PaymentVerificationTab() {
   const { transactions, users } = useAuth();

@@ -8,7 +8,7 @@ import type { Product } from "@/lib/types";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { updateCart } from '@/lib/actions';
+import { updateCart } from '@/lib/actions/cart.actions';
 
 interface ProductGridCardProps {
     product: Product;

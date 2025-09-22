@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import type { User, VerificationOutput } from '@/lib/types';
-import { autoVerifyIdWithAI, rejectUserId, verifyUserId } from '@/lib/actions';
+import { autoVerifyIdWithAI, rejectUserId, verifyUserId } from '@/lib/actions/admin.actions';
 
 export function DocumentVerificationTab() {
   const { users } = useAuth();

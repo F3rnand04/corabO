@@ -1,4 +1,3 @@
-
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
@@ -8,6 +7,7 @@ import { useMemo } from 'react';
 import { ProgressBar } from '@/components/ui/progress-bar';
 
 // Este layout proporciona una estructura consistente para el flujo de configuración de la empresa.
+// AHORA OBSOLETO Y SERÁ ELIMINADO. LA LÓGICA SE HA MOVIDO A page.tsx
 export default function CompanySetupLayout({
   children,
 }: {

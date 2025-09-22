@@ -19,7 +19,7 @@ import { useState, useEffect, useRef, ChangeEvent } from 'react';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 import { cn } from '@/lib/utils';
 import { Textarea } from './ui/textarea';
-import { addCommentToImage, removeCommentFromImage, removeGalleryImage, updateGalleryImage } from '@/lib/actions';
+import { addCommentToImage, removeCommentFromImage, removeGalleryImage, updateGalleryImage } from '@/lib/actions/publication.actions';
 
 
 interface ImageDetailsDialogProps {

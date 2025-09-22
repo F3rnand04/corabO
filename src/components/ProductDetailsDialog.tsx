@@ -19,7 +19,8 @@ import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
-import { updateCart, removeGalleryImage } from '@/lib/actions';
+import { updateCart } from '@/lib/actions/cart.actions';
+import { removeGalleryImage } from '@/lib/actions/publication.actions';
 
 
 interface ProductDetailsDialogProps {

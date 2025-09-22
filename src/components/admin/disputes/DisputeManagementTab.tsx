@@ -7,7 +7,9 @@ import { MessageSquare, Info, ShieldHalf, Loader2, FileWarning, User, Eye, Trash
 import { Badge } from '@/components/ui/badge';
 import type { Transaction, ContentReport, User as CoraboUser, SanctionReason } from '@/lib/types';
 import { useRouter } from 'next/navigation';
-import { sendMessage, initiateDisputeResolution, approveContentReport, rejectContentReport } from '@/lib/actions';
+import { sendMessage } from '@/lib/actions/messaging.actions';
+import { initiateDisputeResolution } from '@/lib/actions/dispute.actions';
+import { approveContentReport, rejectContentReport } from '@/lib/actions/report.actions';
 import { TransactionDetailsDialog } from '@/components/TransactionDetailsDialog';
 import { useToast } from '@/hooks/use-toast';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
