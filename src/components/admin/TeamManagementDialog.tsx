@@ -91,7 +91,7 @@ export function TeamManagementDialog({ isOpen, onOpenChange }: TeamManagementDia
         }}>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader className="items-center text-center">
-                    <Image src="/images/logo-light.png" alt="Corabo Logo" width={120} height={40} className="h-10 w-auto" />
+                    <Image src="https://i.postimg.cc/YSNBv5DT/logo-light-png.png" alt="Corabo Logo" width={120} height={40} className="h-10 w-auto" />
                     <DialogTitle>Panel del CEO</DialogTitle>
                     <DialogDescription>
                         Crea nuevos usuarios con roles específicos para gestionar la plataforma.

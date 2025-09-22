@@ -33,7 +33,7 @@ export function PersonalQrDialog({ isOpen, onOpenChange }: PersonalQrDialogProps
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-sm">
                 <div className="flex flex-col items-center justify-center p-6 bg-background rounded-lg text-center space-y-4">
-                     <Image src="/images/logo-light.png" alt="Corabo Logo" width={120} height={40} className="h-10 w-auto cursor-pointer" />
+                     <Image src="https://i.postimg.cc/YSNBv5DT/logo-light-png.png" alt="Corabo Logo" width={120} height={40} className="h-10 w-auto cursor-pointer" />
                     <h2 className="text-xl font-semibold">Muestra este código para recibir pagos</h2>
                     <div className="bg-white p-4 rounded-lg shadow-inner inline-block">
                         <QRCodeSVG 
