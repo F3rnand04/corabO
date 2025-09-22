@@ -5,15 +5,13 @@ import React, { useState, useEffect, useCallback, createContext, useContext } fr
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase-client';
-import { createSessionCookie, clearSessionCookie } from '@/lib/actions/auth.actions';
+import { clearSessionCookie } from '@/lib/actions/auth.actions';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, usePathname } from 'next/navigation';
-import { doc, onSnapshot, collection, query, where, orderBy, updateDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
-import type { User, Transaction, GalleryImage, CartItem, Product, TempRecipientInfo, QrSession, Notification, Conversation } from '@/lib/types';
-import { haversineDistance } from '@/lib/utils';
-import { differenceInMilliseconds } from 'date-fns';
+import { doc, onSnapshot, collection, query, where, orderBy } from 'firebase/firestore';
+import type { User, Transaction, GalleryImage, CartItem, TempRecipientInfo, QrSession, Notification, Conversation } from '@/lib/types';
 import { updateUser } from '@/lib/actions/user.actions';
-import { updateCart } from '@/lib/actions/cart.actions';
+import { differenceInMilliseconds } from 'date-fns';
 
 // --- Centralized Context Definition ---
 
@@ -197,7 +195,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           const location = { latitude: position.coords.latitude, longitude: position.coords.longitude };
           setCurrentUserLocation(location);
           if (currentUser?.id) {
-            updateUser(currentUser.id, { 'profileSetupData.location': `${location.latitude},${location.longitude}` });
+            updateUser(currentUser.id, { 'profileSetupData.location': `${'${location.latitude}'},${'${location.longitude}'}` });
           }
         },
         () => toast({ variant: "destructive", title: "Error de Ubicación", description: "No se pudo obtener tu ubicación. Revisa los permisos." }),
@@ -208,10 +206,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   
   const setDeliveryAddressToCurrent = useCallback(() => {
     if (currentUserLocation) {
-        setDeliveryAddress(`${currentUserLocation.latitude},${currentUserLocation.longitude}`);
+        setDeliveryAddress(`${'${currentUserLocation.latitude}'},${'${currentUserLocation.longitude}'}`);
     } else {
         getCurrentLocation();
-        if(currentUserLocation) setDeliveryAddress(`${currentUserLocation.latitude},${currentUserLocation.longitude}`);
+        if(currentUserLocation) setDeliveryAddress(`${'${currentUserLocation.latitude}'},${'${currentUserLocation.longitude}'}`);
         else toast({ variant: "destructive", title: "Ubicación no disponible", description: "Activa el GPS o intenta de nuevo." });
     }
   }, [currentUserLocation, toast, getCurrentLocation]);
@@ -265,3 +263,5 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     </AuthContext.Provider>
   );
 };
+
+  

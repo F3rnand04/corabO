@@ -97,16 +97,11 @@ function ProviderActions({ tx, onAction }: { tx: Transaction; onAction: () => vo
 
 function ClientActions({ tx, onAction }: { tx: Transaction; onAction: () => void }) {
   const { currentUser } = useAuth();
+  const router = useRouter();
   
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [showRatingScreen, setShowRatingScreen] = useState(false);
-  const [showPaymentScreen, setShowPaymentScreen] = useState(false);
-  
-  const [paymentMethod, setPaymentMethod] = useState<'Efectivo' | 'Transferencia' | 'Pago Móvil' | 'Binance'>('Transferencia');
-  const [paymentReference, setPaymentReference] = useState('');
-  const [paymentVoucher, setPaymentVoucher] = useState<File | null>(null);
-  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
 
   if (!currentUser) return null;
 
@@ -114,19 +109,10 @@ function ClientActions({ tx, onAction }: { tx: Transaction; onAction: () => void
     if (rating === 0) return;
     confirmWorkReceived({transactionId: tx.id, userId: currentUser.id, rating, comment});
     setShowRatingScreen(false);
-    setShowPaymentScreen(true);
     onAction();
+    // Redirect to payment page after rating
+    router.push(`/payment?commitmentId=${'${tx.id}'}`);
   }
-  
-  const handleProcessPayment = async () => {
-    if (paymentMethod !== 'Efectivo' && (!paymentReference || !paymentVoucher)) return;
-    setIsSubmittingPayment(true);
-    let voucherUrl = 'https://i.postimg.cc/L8y2zWc2/vzla-id.png'; // Placeholder
-    
-    await payCommitment(tx.id, currentUser.id, { paymentMethod, paymentReference, paymentVoucherUrl: voucherUrl });
-    setIsSubmittingPayment(false);
-    onAction();
-  };
 
   if (showRatingScreen) {
     return (
@@ -145,33 +131,16 @@ function ClientActions({ tx, onAction }: { tx: Transaction; onAction: () => void
     );
   }
 
-  if (showPaymentScreen) {
-    return (
-      <div className="py-4 space-y-4">
-        <p className="text-center text-lg font-bold">Total a Pagar: ${tx.amount.toFixed(2)}</p>
-        <Select onValueChange={(v) => setPaymentMethod(v as any)} defaultValue={paymentMethod}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent><SelectItem value="Transferencia">Transferencia</SelectItem><SelectItem value="Pago Móvil">Pago Móvil</SelectItem><SelectItem value="Binance">Binance</SelectItem><SelectItem value="Efectivo">Efectivo</SelectItem></SelectContent>
-        </Select>
-        {paymentMethod !== 'Efectivo' && <Input placeholder="Número de referencia" value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)}/>}
-        {paymentMethod !== 'Efectivo' && <Input type="file" onChange={(e) => setPaymentVoucher(e.target.files?.[0] || null)} />}
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setShowPaymentScreen(false)}>Atrás</Button>
-          <Button onClick={handleProcessPayment} disabled={isSubmittingPayment}>Confirmar y Enviar</Button>
-        </div>
-      </div>
-    );
-  }
 
   const actionMap: Record<string, ReactNode> = {
     'Pendiente de Confirmación del Cliente': (
       <Button onClick={() => setShowRatingScreen(true)} className="w-full">Confirmar Recepción y Calificar</Button>
     ),
     'Finalizado - Pendiente de Pago': (
-      <Button onClick={() => setShowPaymentScreen(true)} className="w-full"><Banknote className="mr-2 h-4 w-4" />Pagar Ahora</Button>
+      <Button onClick={() => router.push(`/payment?commitmentId=${'${tx.id}'}`)} className="w-full"><Banknote className="mr-2 h-4 w-4" />Pagar Ahora</Button>
     ),
     'Cotización Recibida': (
-      <Button onClick={() => setShowPaymentScreen(true)} className="w-full"><Banknote className="mr-2 h-4 w-4" />Pagar Ahora</Button>
+       <Button onClick={() => router.push(`/payment?commitmentId=${'${tx.id}'}`)} className="w-full"><Banknote className="mr-2 h-4 w-4" />Pagar Ahora</Button>
     ),
   };
 
@@ -308,3 +277,5 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
     </>
   );
 }
+
+  
