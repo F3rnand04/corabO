@@ -1,6 +1,6 @@
 'use server';
 
-import type { CreatePublicationInput, CreateProductInput, AddCommentInput, RemoveCommentInput, UpdateGalleryImageInput, RemoveGalleryImageInput } from '@/lib/types';
+import type { CreatePublicationInput, CreateProductInput, AddCommentInput, RemoveCommentInput, UpdateGalleryImageInput, RemoveGalleryImageInput, GalleryImage } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { createProductFlow, createPublicationFlow, addCommentToImageFlow, removeCommentFromImageFlow, updateGalleryImageFlow, removeGalleryImageFlow } from '@/ai/flows/publication-flow';
 import { sendNewContentNotificationFlow } from '@/ai/flows/notification-flow';
