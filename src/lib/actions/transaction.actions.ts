@@ -12,7 +12,6 @@ import {
     completeWorkFlow, 
     confirmPaymentReceivedFlow, 
     confirmWorkReceivedFlow, 
-    downloadTransactionsPDFFlow, 
     payCommitmentFlow, 
     processDirectPaymentFlow, 
     sendQuoteFlow, 
@@ -127,11 +126,6 @@ export async function cancelSystemTransaction(transactionId: string) {
     await cancelSystemTransactionFlow(transactionId);
     revalidatePath('/transactions');
 }
-
-export async function downloadTransactionsPDF(transactions: Transaction[]) {
-    return await downloadTransactionsPDFFlow(transactions);
-}
-
 
 export async function processDirectPayment(sessionId: string) {
     const db = getFirebaseFirestore();

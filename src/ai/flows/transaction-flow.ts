@@ -414,13 +414,6 @@ export async function cancelSystemTransactionFlow(transactionId: string) {
     await txRef.delete();
 }
 
-
-export async function downloadTransactionsPDFFlow(transactions: Transaction[]): Promise<string> {
-    console.log("Generating PDF for", transactions.length, "transactions.");
-    return "base64-encoded-pdf-string-placeholder";
-}
-
-
 export async function checkoutFlow(input: CheckoutInput) {
     const db = getFirestore();
     const batch = db.batch();

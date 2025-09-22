@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { FileDown, ImageDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { Transaction } from '@/lib/types';
-import { downloadTransactionsPDF } from '@/lib/actions/transaction.actions';
+import { downloadTransactionsPDF } from '@/lib/actions/pdf.actions';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth-provider';
 import { countries } from '@/lib/data/options';
