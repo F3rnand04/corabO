@@ -14,19 +14,19 @@ import type { User } from '@/lib/types';
 export async function createPublication(input: CreatePublicationInput): Promise<GalleryImage> {
     const newPublication = await createPublicationFlow(input);
     
-    if (newPublication) {
-        const db = getFirestore();
-        const userSnap = await db.collection('users').doc(input.userId).get();
-        if (userSnap.exists()) {
-            const user = userSnap.data() as User;
-            if (user.verified || (user.reputation || 0) > 4.0) {
-                 sendNewContentNotificationFlow({
-                    providerId: input.userId,
-                    publicationId: newPublication.id,
-                    publicationDescription: newPublication.description,
-                    providerName: user.name,
-                });
-            }
+    // After the publication is created, check if we should send notifications.
+    // This orchestration happens here, in the action layer, not in the flow.
+    const db = getFirestore();
+    const userSnap = await db.collection('users').doc(input.userId).get();
+    if (userSnap.exists()) {
+        const user = userSnap.data() as User;
+        if (user.verified || (user.reputation || 0) > 4.0) {
+             sendNewContentNotificationFlow({
+                providerId: input.userId,
+                publicationId: newPublication.id,
+                publicationDescription: newPublication.description,
+                providerName: user.name,
+            });
         }
     }
 
@@ -42,19 +42,18 @@ export async function createPublication(input: CreatePublicationInput): Promise<
 export async function createProduct(input: CreateProductInput) {
     const newProduct = await createProductFlow(input);
 
-    if (newProduct) {
-        const db = getFirestore();
-        const userSnap = await db.collection('users').doc(input.userId).get();
-        if (userSnap.exists()) {
-            const user = userSnap.data() as User;
-            if (user.verified || (user.reputation || 0) > 4.0) {
-                 sendNewContentNotificationFlow({
-                    providerId: input.userId,
-                    publicationId: newProduct.id,
-                    publicationDescription: `¡Nuevo producto disponible! ${newProduct.alt}`,
-                    providerName: user.name,
-                });
-            }
+    // Orchestration of notification sending is done here.
+    const db = getFirestore();
+    const userSnap = await db.collection('users').doc(input.userId).get();
+    if (userSnap.exists()) {
+        const user = userSnap.data() as User;
+        if (user.verified || (user.reputation || 0) > 4.0) {
+             sendNewContentNotificationFlow({
+                providerId: input.userId,
+                publicationId: newProduct.id,
+                publicationDescription: `¡Nuevo producto disponible! ${newProduct.alt}`,
+                providerName: user.name,
+            });
         }
     }
 

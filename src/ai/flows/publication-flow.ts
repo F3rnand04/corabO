@@ -6,11 +6,10 @@
  */
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import type { User, GalleryImage, GalleryImageComment, CreatePublicationInput, CreateProductInput, AddCommentInput, RemoveCommentInput, UpdateGalleryImageInput, RemoveGalleryImageInput } from '@/lib/types';
-import { sendNewContentNotificationFlow } from './notification-flow';
+// DO NOT import notification flows here to prevent circular dependencies. Orchestration happens in the action layer.
 
 /**
  * Creates a new publication (image or video) in the 'publications' collection.
- * It also triggers a notification if the provider is reputable.
  * @param input - The data for the new publication.
  * @returns The newly created GalleryImage object.
  * @throws Will throw an error if the user is not found.
@@ -57,23 +56,12 @@ export async function createPublicationFlow(input: CreatePublicationInput): Prom
     
     const publicationRef = db.collection('publications').doc(publicationId);
     await publicationRef.set(newPublication);
-
-    // Notify contacts if the provider is reputable
-    if (user.verified || (user.reputation || 0) > 4.0) {
-      sendNewContentNotificationFlow({
-        providerId: input.userId,
-        publicationId: newPublication.id,
-        publicationDescription: newPublication.description,
-        providerName: user.name,
-      });
-    }
     
     return newPublication;
 }
 
 /**
  * Creates a new product, which is a special type of publication.
- * It also triggers a notification if the provider is reputable.
  * @param input - The data for the new product.
  * @returns The newly created product as a GalleryImage object.
  * @throws Will throw an error if the user is not found.
@@ -124,16 +112,6 @@ export async function createProductFlow(input: CreateProductInput): Promise<Gall
     const productRef = db.collection('publications').doc(productId);
     await productRef.set(newProductPublication);
     
-     // Notify contacts if the provider is reputable
-    if (user.verified || (user.reputation || 0) > 4.0) {
-      sendNewContentNotificationFlow({
-        providerId: input.userId,
-        publicationId: newProductPublication.id,
-        publicationDescription: `¡Nuevo producto! ${newProductPublication.alt}`,
-        providerName: user.name,
-      });
-    }
-
     return newProductPublication;
 }
 
