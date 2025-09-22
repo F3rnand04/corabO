@@ -4,7 +4,6 @@
  */
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
 import type { User, ProfileSetupData, FirebaseUserInput } from '@/lib/types';
-import { credicoraLevels, credicoraCompanyLevels } from '@/lib/data/options';
 import { sendWelcomeToProviderNotificationFlow } from './notification-flow';
 import type { Auth } from 'firebase-admin/auth';
 
@@ -54,7 +53,7 @@ export async function completeInitialSetupFlow(db: Firestore, userId: string, da
     const existingData = userSnap.data() as User;
     
     const isCompany = data.providerType === 'company';
-    const activeCredicoraLevels = isCompany ? credicoraCompanyLevels : credicoraLevels;
+    const activeCredicoraLevels = isCompany ? (await import('@/lib/data/options')).credicoraCompanyLevels : (await import('@/lib/data/options')).credicoraLevels;
     const initialCredicoraLevel = activeCredicoraLevels['1'];
     
     const dataToUpdate: Partial<User> = {
