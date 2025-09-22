@@ -163,7 +163,29 @@ export async function purchaseGift(userId: string, gift: { id: string, name: str
         },
     });
     
-    const paymentUrl = `/payment?commitmentId=${newTransaction.id}`;
+    const paymentUrl = `/payment?commitmentId=${'${newTransaction.id}'}`;
 
     return { paymentUrl };
 }
+
+// --- New Actions for Collections Management ---
+
+/**
+ * Marks a collection case as resolved by an admin.
+ */
+export async function resolveCollectionCase(transactionId: string) {
+    const db = getFirebaseFirestore();
+    await db.collection('transactions').doc(transactionId).update({ status: 'Resuelto' });
+    revalidatePath('/admin');
+}
+
+/**
+ * Marks a debt as uncollectible by an admin.
+ */
+export async function writeOffDebt(transactionId: string) {
+    const db = getFirebaseFirestore();
+    await db.collection('transactions').doc(transactionId).update({ status: 'Incobrable' });
+    revalidatePath('/admin');
+}
+
+    

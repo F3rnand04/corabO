@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
 import { sendMessage } from '@/lib/actions/messaging.actions';
 import { useAuth } from '@/hooks/use-auth-provider';
+import { resolveCollectionCase, writeOffDebt } from '@/lib/actions/transaction.actions';
 
 interface CollectionsManagementTabProps {
   selectedCountry: string | null;
@@ -50,13 +51,11 @@ export function CollectionsManagementTab({ selectedCountry }: CollectionsManagem
   };
 
   const handleResolve = (txId: string) => {
-    // Logic to mark as resolved will be added here
-    console.log(`Resolving transaction ${txId}`);
+    resolveCollectionCase(txId);
   };
 
   const handleWriteOff = (txId: string) => {
-    // Logic to mark as uncollectible
-    console.log(`Writing off transaction ${txId}`);
+    writeOffDebt(txId);
   };
 
   return (
@@ -118,3 +117,5 @@ export function CollectionsManagementTab({ selectedCountry }: CollectionsManagem
     </Card>
   );
 }
+
+    

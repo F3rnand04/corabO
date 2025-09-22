@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 export type FirebaseUserInput = { uid: string; email?: string | null; displayName?: string | null; photoURL?: string | null; phoneNumber?: string | null; emailVerified: boolean; };
@@ -471,7 +472,8 @@ export type TransactionStatus =
   | 'En Reparto'
   | 'Error de Delivery - Acción Requerida'
   | 'Listo para Retirar en Tienda'
-  | 'En Cobranza';
+  | 'En Cobranza'
+  | 'Incobrable';
 
 export type AgreementProposal = {
     title: string;
@@ -726,3 +728,5 @@ export const VerificationOutputSchema = z.object({
   idMatch: z.boolean(),
 });
 export type VerificationOutput = z.infer<typeof VerificationOutputSchema>;
+
+    
