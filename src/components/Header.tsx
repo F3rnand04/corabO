@@ -55,7 +55,7 @@ export function Header() {
         {/* Top Row: Logo, Actions, Menu */}
         <div className="flex h-16 items-center justify-between gap-4">
           <Link href="/contacts" passHref>
-             <Image src="https://i.postimg.cc/YSNBv5DT/logo-light-png.png" alt="Corabo Logo" width={120} height={40} className="h-10 w-auto cursor-pointer" />
+             <Image src="/images/logo-light.png" alt="Corabo Logo" width={120} height={40} className="h-10 w-auto cursor-pointer" />
           </Link>
 
           <div className="flex items-center gap-1">

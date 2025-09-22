@@ -95,7 +95,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm text-center bg-background/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-white/10">
         <div className="relative w-48 h-24 mx-auto mb-6">
             <Image
-                src="https://i.postimg.cc/YSNBv5DT/logo-light-png.png"
+                src="/images/logo-light.png"
                 alt="Corabo logo"
                 fill
                 priority

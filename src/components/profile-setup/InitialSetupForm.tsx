@@ -116,7 +116,7 @@ export default function InitialSetupForm({ user, onSubmit, isSubmitting }: Initi
   return (
     <Card className="w-full max-w-md shadow-lg border-none bg-background">
       <CardHeader className="text-center items-center">
-        <Image src="https://i.postimg.cc/YSNBv5DT/logo-light-png.png" alt="Corabo Logo" width={192} height={96} className="h-24 w-auto mb-4" />
+        <Image src="/images/logo-light.png" alt="Corabo Logo" width={192} height={96} className="h-24 w-auto mb-4" />
         <CardTitle className="text-2xl">¡Bienvenido a Corabo!</CardTitle>
         <CardDescription>
           Completa tus datos para activar todas las funciones de la plataforma.
