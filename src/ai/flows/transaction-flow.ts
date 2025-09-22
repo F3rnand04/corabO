@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -5,7 +6,7 @@
  */
 import { z } from 'zod';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import type { Transaction, User, QrSession, QuoteRequestInput } from '@/lib/types';
+import type { Transaction, User, QrSession } from '@/lib/types';
 import { addDays, endOfMonth, isAfter, startOfWeek } from 'date-fns';
 import { getExchangeRate } from './exchange-rate-flow';
 import { findDeliveryProviderFlow, calculateDeliveryCostFlow } from './delivery-flow';
@@ -15,6 +16,14 @@ import { countries } from '@/lib/data/options';
 
 
 // --- Schemas ---
+const QuoteRequestInputSchema = z.object({
+  clientId: z.string(),
+  title: z.string().min(5, "El título es muy corto."),
+  description: z.string().min(20, "La descripción debe ser más detallada."),
+  category: z.string({ required_error: "Debes seleccionar una categoría." }),
+  isPaid: z.boolean().optional(), // To indicate if a payment flow is triggered
+});
+type QuoteRequestInput = z.infer<typeof QuoteRequestInputSchema>;
 
 const BasicTransactionSchema = z.object({
   transactionId: z.string(),
@@ -562,4 +571,6 @@ export async function createQuoteRequestFlow(input: QuoteRequestInput): Promise<
 }
 
     
+
+
 

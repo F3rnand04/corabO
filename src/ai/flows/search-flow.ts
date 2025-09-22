@@ -7,8 +7,15 @@
 import { z } from 'zod';
 import { getFirebaseFirestore } from '@/lib/firebase-admin';
 import type { Query } from 'firebase-admin/firestore';
-import { GetFeedInputSchema } from '@/lib/types';
 import { generateKeywords } from '@/lib/utils';
+
+
+const GetFeedInputSchema = z.object({
+  limitNum: z.number().optional(),
+  startAfterDocId: z.string().optional(),
+  searchQuery: z.string().optional(),
+  categoryFilter: z.string().optional(),
+});
 
 
 const SearchPublicationsOutputSchema = z.object({
@@ -62,3 +69,4 @@ export async function searchPublicationsFlow(input: z.infer<typeof GetFeedInputS
         lastVisibleDocId: nextCursor
     };
 }
+

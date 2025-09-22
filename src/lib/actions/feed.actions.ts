@@ -1,13 +1,16 @@
 'use server';
 
+import { z } from 'zod';
 import { getFeedFlow, getProfileGalleryFlow, getProfileProductsFlow, getPublicProfileFlow } from '@/ai/flows/feed-flow';
 
-export interface GetFeedInput {
-  limitNum?: number;
-  startAfterDocId?: string;
-  searchQuery?: string;
-  categoryFilter?: string;
-}
+const GetFeedInputSchema = z.object({
+  limitNum: z.number().optional(),
+  startAfterDocId: z.string().optional(),
+  searchQuery: z.string().optional(),
+  categoryFilter: z.string().optional(),
+});
+
+export type GetFeedInput = z.infer<typeof GetFeedInputSchema>;
 
 export async function getPublicProfile(userId: string) {
     return await getPublicProfileFlow({ userId });
@@ -26,3 +29,4 @@ export async function getProfileProducts(input: { userId: string, limitNum?: num
 export async function getFeed(input: GetFeedInput) {
     return await getFeedFlow(input);
 }
+

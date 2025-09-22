@@ -225,7 +225,7 @@ export type ProfileSetupData = {
   primaryCategory?: string | null;
   specialty?: string;
   country?: string;
-  providerType?: 'professional' | 'company' | 'delivery';
+  providerType?: 'professional' | 'company' | 'delivery' | 'lodging' | 'tourism';
   offerType?: 'product' | 'service' | 'both';
   hasPhysicalLocation?: boolean;
   location?: string;
@@ -608,3 +608,5 @@ export type VerificationOutput = z.infer<typeof VerificationOutputSchema>;
   
 
     
+
+

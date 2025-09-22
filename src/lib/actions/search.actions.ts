@@ -1,8 +1,14 @@
 'use server';
 
 import { searchPublicationsFlow } from '@/ai/flows/search-flow';
-import type { GetFeedInputSchema } from '@/lib/types';
 import type { z } from 'zod';
+
+const GetFeedInputSchema = z.object({
+  limitNum: z.number().optional(),
+  startAfterDocId: z.string().optional(),
+  searchQuery: z.string().optional(),
+  categoryFilter: z.string().optional(),
+});
 
 /**
  * Server Action to securely perform a search for publications.
@@ -11,3 +17,4 @@ import type { z } from 'zod';
 export async function searchPublications(input: z.infer<typeof GetFeedInputSchema>) {
     return await searchPublicationsFlow(input);
 }
+
