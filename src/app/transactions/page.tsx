@@ -56,7 +56,7 @@ const ActionButton = ({ icon: Icon, label, count, onClick }: { icon: React.Eleme
 
 
 export default function TransactionsPage() {
-    const { currentUser, transactions, cart, getUserMetrics, getAgendaEvents, isLoadingAuth } = useAuth();
+    const { currentUser, transactions, cart, getUserMetrics, isLoadingAuth } = useAuth();
     const router = useRouter();
     
     const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
@@ -98,7 +98,15 @@ export default function TransactionsPage() {
         const activeCredicoraLevels = isCompany ? credicoraCompanyLevels : credicoraLevels;
         
         const metrics = getUserMetrics(currentUser.id, currentUser.type, transactions);
-        const events = getAgendaEvents(transactions);
+        
+        const events = transactions
+            .filter(tx => ['Finalizado - Pendiente de Pago', 'Cita Solicitada'].includes(tx.status))
+            .map(tx => ({
+                date: new Date(tx.date),
+                type: tx.status === 'Finalizado - Pendiente de Pago' ? 'payment' : 'appointment',
+                transactionId: tx.id,
+            }));
+
         const dates = events.filter(e => e.type === 'payment').map(e => e.date);
         const cartTotal = cart.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -125,7 +133,7 @@ export default function TransactionsPage() {
             credicoraLevelDetails: credicoraLvl, nextCredicoraLevelDetails: nextCredicoraLvl,
             completedTransactionsCount: completedCount, transactionsNeeded: needed, progressToNextLevel: progress
         };
-    }, [currentUser, transactions, cart, getUserMetrics, getAgendaEvents]);
+    }, [currentUser, transactions, cart, getUserMetrics]);
 
 
     if (isLoadingAuth || !currentUser) {

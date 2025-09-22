@@ -13,8 +13,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { ContactSupportCard } from '@/components/ContactSupportCard';
-import { updateUser, removeContactFromUser } from '@/lib/actions/user.actions';
-import { sendMessage } from '@/lib/actions/messaging.actions';
+import { removeContactFromUser, sendMessage } from '@/lib/actions';
 
 
 function ContactsHeader({ onSubscribeClick }: { onSubscribeClick: () => void }) {
@@ -47,7 +46,7 @@ function ContactsHeader({ onSubscribeClick }: { onSubscribeClick: () => void }) 
 
 
 export default function ContactsPage() {
-  const { currentUser, contacts } = useAuth();
+  const { currentUser, contacts, removeContact } = useAuth();
   const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
@@ -56,16 +55,16 @@ export default function ContactsPage() {
     return null; 
   }
 
-  const handleDirectMessage = (contactId: string) => {
+  const handleDirectMessage = async (contactId: string) => {
     if (!currentUser) return;
     const conversationId = [currentUser.id, contactId].sort().join('-')
-    sendMessage({ recipientId: contactId, text: "", conversationId, senderId: currentUser.id });
+    await sendMessage({ recipientId: contactId, text: "", conversationId, senderId: currentUser.id });
     router.push(`/messages/${conversationId}`);
   };
   
   const handleRemoveContact = (contactId: string) => {
     if (!currentUser) return;
-    removeContactFromUser(currentUser.id, contactId);
+    removeContact(contactId);
   }
 
   const copyToClipboard = (text: string) => {
@@ -100,14 +99,12 @@ export default function ContactsPage() {
                     label="Correo:"
                     value={currentUser.email}
                     initialStatus={currentUser.emailValidated ? 'validated' : 'idle'}
-                    onValueChange={(value) => updateUser(currentUser.id, { email: value })}
                     type="email"
                 />
                 <ValidationItem
                     label="Teléfono:"
                     value={currentUser.phone}
                     initialStatus={currentUser.phoneValidated ? 'validated' : 'idle'}
-                    onValueChange={(value) => updateUser(currentUser.id, { phone: value })}
                     type="phone"
                 />
             </div>

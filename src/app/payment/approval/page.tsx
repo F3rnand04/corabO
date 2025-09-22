@@ -20,7 +20,7 @@ import { handleClientCopyAndPay, cancelQrSession } from '@/lib/actions/cashier.a
 function ApprovalContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { users } = useAuth();
+  const { currentUser, users } = useAuth();
   const { toast } = useToast();
   
   const [provider, setProvider] = useState<User | null>(null);

@@ -5,6 +5,7 @@ import { createCashierBoxFlow, regenerateCashierQrFlow } from '@/ai/flows/cashie
 import { sendNotification } from '@/ai/flows/notification-flow';
 import { processDirectPaymentFlow } from '@/ai/flows/transaction-flow';
 import { getFirestore } from '../firebase-admin';
+import type { User } from '@/lib/types';
 
 
 export async function addCashierBox(userId: string, name: string, password: string) {
@@ -16,7 +17,7 @@ export async function removeCashierBox(userId: string, boxId: string) {
   const db = getFirestore();
   const userRef = db.collection('users').doc(userId);
   const userSnap = await userRef.get();
-  const userData = userSnap.data();
+  const userData = userSnap.data() as User;
   const existingBoxes = userData?.profileSetupData?.cashierBoxes || [];
   const updatedBoxes = existingBoxes.filter((box: any) => box.id !== boxId);
   await userRef.update({ 'profileSetupData.cashierBoxes': updatedBoxes });
@@ -27,7 +28,7 @@ export async function updateCashierBox(userId: string, boxId: string, updates: {
   const db = getFirestore();
   const userRef = db.collection('users').doc(userId);
   const userSnap = await userRef.get();
-  const userData = userSnap.data();
+  const userData = userSnap.data() as User;
   const existingBoxes = userData?.profileSetupData?.cashierBoxes || [];
   const boxIndex = existingBoxes.findIndex((box: any) => box.id === boxId);
   if (boxIndex === -1) throw new Error('Cashier box not found');
