@@ -1,3 +1,4 @@
+
 'use server';
 
 import { getFirebaseFirestore } from '../firebase-admin';
@@ -57,6 +58,7 @@ export async function getNotifications(userId: string, limitNum: number, startAf
 }
 
 export async function sendNotification(input: { userId: string; title: string; message: string; link?: string; type: NotificationType; metadata?: any; }) {
-    await sendNotificationFlow(input);
+    const db = getFirebaseFirestore();
+    await sendNotificationFlow(db, input);
     revalidatePath(`/notifications`);
 }

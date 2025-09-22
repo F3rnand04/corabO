@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Message and proposal management flows.
@@ -6,7 +7,7 @@
  * - acceptProposalFlow - A function that handles accepting a proposal and creating a transaction.
  */
 import { z } from 'zod';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, type Firestore } from 'firebase-admin/firestore';
 import type { Conversation, Message, Transaction, User, AgreementProposal } from '@/lib/types';
 import { createTransactionFlow } from './transaction-flow';
 
@@ -34,8 +35,7 @@ const AcceptProposalInputSchema = z.object({
 });
 export type AcceptProposalInput = z.infer<typeof AcceptProposalInputSchema>;
 
-export async function sendMessageFlow(input: SendMessageInput) {
-    const db = getFirestore();
+export async function sendMessageFlow(db: Firestore, input: SendMessageInput) {
     const convoRef = db.collection('conversations').doc(input.conversationId);
     const convoSnap = await convoRef.get();
 
@@ -100,8 +100,7 @@ export async function sendMessageFlow(input: SendMessageInput) {
   }
 
 
-export async function acceptProposalFlow(input: AcceptProposalInput): Promise<{ message: Message, conversation: Conversation }> {
-    const db = getFirestore();
+export async function acceptProposalFlow(db: Firestore, input: AcceptProposalInput): Promise<{ message: Message, conversation: Conversation }> {
     const convoRef = db.collection('conversations').doc(input.conversationId);
 
     const convoSnap = await convoRef.get();
@@ -177,7 +176,7 @@ export async function acceptProposalFlow(input: AcceptProposalInput): Promise<{ 
       },
     };
     
-    await createTransactionFlow(newTransactionData);
+    await createTransactionFlow(db, newTransactionData);
 
     return { 
         message: updatedMessage, 

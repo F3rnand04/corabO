@@ -1,3 +1,4 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -51,7 +52,7 @@ export async function retryFindDelivery(input: { transactionId: string }) {
     const db = getFirebaseFirestore();
     // This action doesn't await the flow, allowing the UI to respond immediately.
     // The flow will run in the background.
-    findDeliveryProviderFlow({ transactionId: input.transactionId }, db);
+    findDeliveryProviderFlow(db, { transactionId: input.transactionId });
     revalidatePath('/transactions');
 }
 

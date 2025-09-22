@@ -1,15 +1,16 @@
+
 'use server';
 
 import { cookies } from 'next/headers';
 import { getFirebaseAuth, getFirebaseFirestore } from '@/lib/firebase-admin';
-import type { FirebaseUserInput } from '@/lib/types';
+import type { FirebaseUserInput, User } from '@/lib/types';
 import { getOrCreateUserFlow } from '@/ai/flows/profile-flow';
 
 /**
  * Server action to get or create a user in Firestore.
  * This is called by the client-side AuthProvider.
  */
-export async function getOrCreateUser(firebaseUser: FirebaseUserInput) {
+export async function getOrCreateUser(firebaseUser: FirebaseUserInput): Promise<User> {
     const db = getFirebaseFirestore();
     const user = await getOrCreateUserFlow(db, firebaseUser);
     return user;

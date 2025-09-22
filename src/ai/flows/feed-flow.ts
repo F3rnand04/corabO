@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A feed generation flow for fetching publications and profile data.
@@ -8,26 +9,11 @@
  * - getProfileProductsFlow - Fetches a user's products with pagination.
  */
 import { z } from 'zod';
-import { getFirestore, type DocumentSnapshot } from 'firebase-admin/firestore';
-import type { GalleryImage, User, PublicationOwner, Product } from '@/lib/types';
+import { getFirestore, type DocumentSnapshot, type Firestore } from 'firebase-admin/firestore';
+import type { GalleryImage, User, PublicationOwner, Product, GetFeedInput, GetFeedOutput } from '@/lib/types';
 
 
-// Define Schemas locally in the flow
-const GetFeedInputSchema = z.object({
-  limitNum: z.number().optional(),
-  startAfterDocId: z.string().optional(),
-  searchQuery: z.string().optional(),
-  categoryFilter: z.string().optional(),
-});
-
-const GetFeedOutputSchema = z.object({
-  publications: z.array(z.any()),
-  lastVisibleDocId: z.string().optional(),
-});
-
-
-export async function getFeedFlow(input: z.infer<typeof GetFeedInputSchema>): Promise<z.infer<typeof GetFeedOutputSchema>> {
-        const db = getFirestore();
+export async function getFeedFlow(db: Firestore, input: GetFeedInput): Promise<GetFeedOutput> {
         const publicationsCollection = db.collection('publications');
         
         let q = publicationsCollection.orderBy('createdAt', 'desc').limit(input.limitNum || 10);
@@ -95,8 +81,7 @@ export async function getFeedFlow(input: z.infer<typeof GetFeedInputSchema>): Pr
 }
 
 // --- Get Public Profile Flow ---
-export async function getPublicProfileFlow(input: { userId: string }): Promise<Partial<User> | null> {
-    const db = getFirestore();
+export async function getPublicProfileFlow(db: Firestore, input: { userId: string }): Promise<Partial<User> | null> {
     const userRef = db.collection('users').doc(input.userId);
     const userSnap = await userRef.get();
 
@@ -128,9 +113,8 @@ export async function getPublicProfileFlow(input: { userId: string }): Promise<P
 
 
 // --- Get Gallery with Pagination ---
-export async function getProfileGalleryFlow(input: { userId: string, limitNum?: number, startAfterDocId?: string }) {
+export async function getProfileGalleryFlow(db: Firestore, input: { userId: string, limitNum?: number, startAfterDocId?: string }) {
     const { userId, limitNum = 9, startAfterDocId } = input;
-    const db = getFirestore();
     const galleryCollection = db.collection('publications');
     
     let q = galleryCollection
@@ -160,9 +144,8 @@ export async function getProfileGalleryFlow(input: { userId: string, limitNum?: 
 
 
 // --- Get Products with Pagination ---
-export async function getProfileProductsFlow(input: { userId: string, limitNum?: number, startAfterDocId?: string }) {
+export async function getProfileProductsFlow(db: Firestore, input: { userId: string, limitNum?: number, startAfterDocId?: string }) {
     const { userId, limitNum = 10, startAfterDocId } = input;
-    const db = getFirestore();
     const publicationsCollection = db.collection('publications');
     
     let q = publicationsCollection
@@ -201,4 +184,3 @@ export async function getProfileProductsFlow(input: { userId: string, limitNum?:
         lastVisibleDocId: nextCursor
     };
 }
-

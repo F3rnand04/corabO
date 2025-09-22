@@ -1,3 +1,4 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -5,20 +6,15 @@ import type { User } from '@/lib/types';
 import { autoVerifyIdWithAIFlow } from '@/ai/flows/verification-flow';
 import { sendNewCampaignNotificationsFlow } from '@/ai/flows/notification-flow';
 import { createManagementUserFlow } from '@/ai/flows/admin-flow';
-import { createTransactionFlow } from '@/ai/flows/transaction-flow';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, getAuth } from 'firebase-admin/firestore';
 import { getFirebaseAuth, getFirebaseFirestore } from '../firebase-admin';
-
-async function _updateUser(userId: string, updates: any) {
-    const db = getFirestore();
-    await db.collection('users').doc(userId).update(updates);
-}
 
 /**
  * Approves a user's identity verification.
  */
 export async function verifyUserId(userId: string) {
-    await _updateUser(userId, { idVerificationStatus: 'verified', verified: true });
+    const db = getFirebaseFirestore();
+    await db.collection('users').doc(userId).update({ idVerificationStatus: 'verified', verified: true });
     revalidatePath('/admin');
 }
 
@@ -26,7 +22,8 @@ export async function verifyUserId(userId: string) {
  * Rejects a user's identity verification.
  */
 export async function rejectUserId(userId: string) {
-    await _updateUser(userId, { idVerificationStatus: 'rejected' });
+    const db = getFirebaseFirestore();
+    await db.collection('users').doc(userId).update({ idVerificationStatus: 'rejected' });
     revalidatePath('/admin');
 }
 
@@ -49,7 +46,7 @@ export async function autoVerifyIdWithAI(user: User) {
  * Verifies a campaign payment and activates the campaign.
  */
 export async function verifyCampaignPayment(transactionId: string, campaignId?: string) {
-    const db = getFirestore();
+    const db = getFirebaseFirestore();
     const batch = db.batch();
     
     const txRef = db.collection('transactions').doc(transactionId);
@@ -76,17 +73,18 @@ export async function sendNewCampaignNotifications(input: { campaignId: string }
 
 export async function deleteUser(userId: string) {
     const auth = getFirebaseAuth();
-    const db = getFirestore();
+    const db = getFirebaseFirestore();
     await auth.deleteUser(userId);
     await db.collection('users').doc(userId).delete();
     revalidatePath('/admin');
 }
 
 export async function toggleUserPause(userId: string, shouldUnpause: boolean) {
+    const db = getFirebaseFirestore();
     const updates = shouldUnpause 
         ? { isPaused: false } 
         : { isPaused: true, pauseReason: 'Paused by admin' };
-    await _updateUser(userId, updates);
+    await db.collection('users').doc(userId).update(updates);
     revalidatePath('/admin');
 }
 
@@ -116,6 +114,6 @@ export async function registerSystemPayment(userId: string, concept: string, amo
 
 export async function createManagementUser(input: any) {
     const auth = getFirebaseAuth();
-    const db = getFirestore();
+    const db = getFirebaseFirestore();
     return await createManagementUserFlow(auth, db, input);
 }

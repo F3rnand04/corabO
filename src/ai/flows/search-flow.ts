@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -5,17 +6,9 @@
  * This acts as a centralized "search service" for the application.
  */
 import { z } from 'zod';
-import { getFirebaseFirestore } from '@/lib/firebase-admin';
-import type { Query } from 'firebase-admin/firestore';
+import { type Query, type Firestore } from 'firebase-admin/firestore';
 import { generateKeywords } from '@/lib/utils';
-
-
-const GetFeedInputSchema = z.object({
-  limitNum: z.number().optional(),
-  startAfterDocId: z.string().optional(),
-  searchQuery: z.string().optional(),
-  categoryFilter: z.string().optional(),
-});
+import type { GetFeedInput } from '@/lib/types';
 
 
 const SearchPublicationsOutputSchema = z.object({
@@ -26,8 +19,7 @@ const SearchPublicationsOutputSchema = z.object({
 type SearchPublicationsOutput = z.infer<typeof SearchPublicationsOutputSchema>;
 
 
-export async function searchPublicationsFlow(input: z.infer<typeof GetFeedInputSchema>): Promise<SearchPublicationsOutput> {
-    const db = getFirebaseFirestore();
+export async function searchPublicationsFlow(db: Firestore, input: GetFeedInput): Promise<SearchPublicationsOutput> {
     const publicationsCollection = db.collection('publications');
     let q: Query = publicationsCollection;
     
@@ -69,4 +61,3 @@ export async function searchPublicationsFlow(input: z.infer<typeof GetFeedInputS
         lastVisibleDocId: nextCursor
     };
 }
-

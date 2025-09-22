@@ -1,7 +1,8 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { getFirebaseFirestore } from 'firebase-admin/firestore';
+import { getFirebaseFirestore } from '../firebase-admin';
 import type { Conversation } from '@/lib/types';
 import { sendMessageFlow, acceptProposalFlow } from '@/ai/flows/message-flow';
 

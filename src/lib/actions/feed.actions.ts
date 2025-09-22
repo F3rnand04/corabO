@@ -1,32 +1,29 @@
+
 'use server';
 
 import { z } from 'zod';
 import { getFeedFlow, getProfileGalleryFlow, getProfileProductsFlow, getPublicProfileFlow } from '@/ai/flows/feed-flow';
-
-const GetFeedInputSchema = z.object({
-  limitNum: z.number().optional(),
-  startAfterDocId: z.string().optional(),
-  searchQuery: z.string().optional(),
-  categoryFilter: z.string().optional(),
-});
-
-export type GetFeedInput = z.infer<typeof GetFeedInputSchema>;
+import { getFirebaseFirestore } from '../firebase-admin';
+import { GetFeedInput } from '../types';
 
 export async function getPublicProfile(userId: string) {
-    return await getPublicProfileFlow({ userId });
+    const db = getFirebaseFirestore();
+    return await getPublicProfileFlow(db, { userId });
 }
 
 export async function getProfileGallery(input: { userId: string, limitNum?: number, startAfterDocId?: string }) {
-   return await getProfileGalleryFlow(input);
+   const db = getFirebaseFirestore();
+   return await getProfileGalleryFlow(db, input);
 }
 
 
 export async function getProfileProducts(input: { userId: string, limitNum?: number, startAfterDocId?: string }) {
-    return await getProfileProductsFlow(input);
+    const db = getFirebaseFirestore();
+    return await getProfileProductsFlow(db, input);
 }
 
 // NEW: Server action to securely fetch and enrich the main feed
 export async function getFeed(input: GetFeedInput) {
-    return await getFeedFlow(input);
+    const db = getFirebaseFirestore();
+    return await getFeedFlow(db, input);
 }
-
