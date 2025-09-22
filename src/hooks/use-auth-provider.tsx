@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useCallback, createContext, useContext } from 'react';
@@ -10,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter, usePathname } from 'next/navigation';
 import { doc, onSnapshot, collection, query, where, orderBy } from 'firebase/firestore';
 import type { User, Transaction, GalleryImage, CartItem, TempRecipientInfo, QrSession, Notification, Conversation } from '@/lib/types';
-import { updateUser as updateUserAction } from '@/lib/actions/user.actions';
+import { updateUser } from '@/lib/actions/user.actions';
 import { differenceInMilliseconds } from 'date-fns';
 
 // --- Centralized Context Definition ---
@@ -209,7 +208,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           const location = { latitude: position.coords.latitude, longitude: position.coords.longitude };
           setCurrentUserLocation(location);
           if (currentUser?.id) {
-            updateUserAction(currentUser.id, { 'profileSetupData.location': `${location.latitude},${location.longitude}` });
+            updateUser(currentUser.id, { 'profileSetupData.location': `${location.latitude},${location.longitude}` });
           }
         },
         () => toast({ variant: "destructive", title: "Error de Ubicación", description: "No se pudo obtener tu ubicación. Revisa los permisos." }),

@@ -1,8 +1,8 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import { getFirebaseAuth } from '@/lib/firebase-admin';
-import type { FirebaseUserInput } from '@/lib/types';
+import { getFirebaseAuth, getFirebaseFirestore } from '@/lib/firebase-admin';
+import type { FirebaseUserInput, User } from '@/lib/types';
 import { getOrCreateUserFlow } from '@/ai/flows/profile-flow';
 
 /**
@@ -25,6 +25,7 @@ export async function signInAsGuest(): Promise<{ customToken?: string; error?: s
         const uid = `guest_${Date.now()}`;
         const customToken = await auth.createCustomToken(uid);
         
+        const db = getFirebaseFirestore();
         // Also ensure the user document is created server-side immediately
         await getOrCreateUserFlow({ uid: uid, displayName: "Invitado", email: null, photoURL: null, emailVerified: false });
         
@@ -49,6 +50,7 @@ export async function createSessionCookie(idToken: string) {
         
         // After setting the cookie, ensure the user exists in Firestore
         const decodedToken = await auth.verifyIdToken(idToken);
+        const db = getFirebaseFirestore();
         await getOrCreateUserFlow({
              uid: decodedToken.uid,
              email: decodedToken.email,

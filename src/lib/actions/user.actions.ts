@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import { getOrCreateUserFlow, completeInitialSetupFlow, checkIdUniquenessFlow, deleteUserFlow, toggleGpsFlow, updateUserFlow, addContactToUserFlow, removeContactFromUserFlow } from '@/ai/flows/profile-flow';
+import { getOrCreateUserFlow, completeInitialSetupFlow, checkIdUniquenessFlow, toggleGpsFlow, updateUserFlow, addContactToUserFlow, removeContactFromUserFlow } from '@/ai/flows/profile-flow';
 import { sendWelcomeToProviderNotificationFlow } from '@/ai/flows/notification-flow';
 import { createTransactionFlow } from '@/ai/flows/transaction-flow';
 import { credicoraCompanyLevels, credicoraLevels } from '../data/options';
@@ -52,19 +52,6 @@ export async function toggleGps(userId: string) {
     revalidatePath('/');
     revalidatePath('/profile');
     revalidatePath(`/companies/${userId}`);
-}
-
-export async function deleteUser(userId: string) {
-    await deleteUserFlow({ userId });
-    revalidatePath('/admin');
-}
-
-export async function toggleUserPause(userId: string, shouldUnpause: boolean) {
-    const updates = shouldUnpause 
-        ? { isPaused: false } 
-        : { isPaused: true, pauseReason: 'Paused by admin' };
-    await updateUserFlow({ userId, updates });
-    revalidatePath('/admin');
 }
 
 export async function checkIdUniqueness(input: { idNumber: string; country: string; currentUserId: string; }): Promise<boolean> {

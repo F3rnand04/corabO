@@ -1,7 +1,7 @@
 'use server';
 
 import { getFirebaseFirestore } from '../firebase-admin';
-import { sendNewQuoteRequestNotificationsFlow, sendNotification, getNotificationsFlow } from '@/ai/flows/notification-flow';
+import { sendNewQuoteRequestNotificationsFlow, sendNotification as sendNotificationFlow, getNotificationsFlow } from '@/ai/flows/notification-flow';
 import type { NotificationType } from '../types';
 import { revalidatePath } from 'next/cache';
 
@@ -52,4 +52,9 @@ export async function markNotificationsAsRead(userId: string) {
  */
 export async function getNotifications(userId: string, limitNum: number, startAfterDocId?: string) {
     return await getNotificationsFlow({ userId, limitNum, startAfterDocId });
+}
+
+export async function sendNotification(input: { userId: string; title: string; message: string; link?: string; type: NotificationType; metadata?: any; }) {
+    await sendNotificationFlow(input);
+    revalidatePath(`/notifications`);
 }

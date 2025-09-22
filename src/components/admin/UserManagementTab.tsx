@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -12,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '../ui/button';
 import { Trash2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
-import { deleteUser, toggleUserPause } from '@/lib/actions/user.actions'; // Import server actions directly
+import { deleteUser, toggleUserPause } from '@/lib/actions/admin.actions';
 
 export function UserManagementTab() {
   const { users } = useAuth();

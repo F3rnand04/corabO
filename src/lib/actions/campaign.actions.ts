@@ -17,6 +17,7 @@ export async function createCampaign(userId: string, campaignData: Omit<CreateCa
         revalidatePath('/transactions');
         revalidatePath('/payment');
 
+        return newCampaign;
     } catch (error) {
         console.error(`[ACTION_ERROR] createCampaign:`, error);
         throw new Error("Failed to create campaign.");
