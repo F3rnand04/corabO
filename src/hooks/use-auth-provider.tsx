@@ -51,6 +51,7 @@ export interface AuthContextValue {
   setCategoryFilter: React.Dispatch<React.SetStateAction<string | null>>;
   searchHistory: string[];
   clearSearchHistory: () => void;
+  addSearchToHistory: (query: string) => void;
   
   notifications: Notification[];
   conversations: Conversation[];
@@ -101,6 +102,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
+
+  // Load search history from local storage on initial mount
+  useEffect(() => {
+    try {
+      const storedHistory = localStorage.getItem('coraboSearchHistory');
+      if (storedHistory) {
+        setSearchHistory(JSON.parse(storedHistory));
+      }
+    } catch (error) {
+      console.error("Could not load search history from localStorage", error);
+    }
+  }, []);
   
   // Combined listener for auth and data
   useEffect(() => {
@@ -216,7 +229,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   
   const clearSearchHistory = () => {
       setSearchHistory([]);
-      localStorage.removeItem('coraboSearchHistory');
+      try {
+        localStorage.removeItem('coraboSearchHistory');
+      } catch (error) {
+        console.error("Could not clear search history from localStorage", error);
+      }
+  };
+
+  const addSearchToHistory = (query: string) => {
+    if (!query) return;
+    setSearchHistory(prev => {
+      const newHistory = [query, ...prev.filter(item => item !== query)].slice(0, 10);
+      try {
+        localStorage.setItem('coraboSearchHistory', JSON.stringify(newHistory));
+      } catch (error) {
+        console.error("Could not save search history to localStorage", error);
+      }
+      return newHistory;
+    });
   };
   
     const getUserMetrics = useCallback((userId: string, userType: User['type'], allTransactions: Transaction[]) => {
@@ -252,7 +282,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Auth
     currentUser, firebaseUser, isLoadingAuth, logout, setCurrentUser,
     // Data
-    contacts, isContact, users, transactions, setTransactions, allPublications, setAllPublications, cart, activeCartForCheckout, setActiveCartForCheckout, tempRecipientInfo, setTempRecipientInfo, deliveryAddress, setDeliveryAddress, setDeliveryAddressToCurrent, currentUserLocation, getCurrentLocation, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, searchHistory, clearSearchHistory, notifications, conversations, qrSession,
+    contacts, isContact, users, transactions, setTransactions, allPublications, setAllPublications, cart, activeCartForCheckout, setActiveCartForCheckout, tempRecipientInfo, setTempRecipientInfo, deliveryAddress, setDeliveryAddress, setDeliveryAddressToCurrent, currentUserLocation, getCurrentLocation, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, searchHistory, clearSearchHistory, addSearchToHistory, notifications, conversations, qrSession,
     // Metric getters
     getUserMetrics, getAgendaEvents
   };
@@ -263,5 +293,3 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     </AuthContext.Provider>
   );
 };
-
-  

@@ -1,18 +1,15 @@
 
-
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, Zap, CameraOff, Loader2, Edit } from 'lucide-react';
+import { ChevronLeft, Zap, CameraOff, Loader2, Edit, ScanLine } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth-provider';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { startQrSession } from '@/lib/actions/cashier.actions';
-import QrScanner from 'react-qr-scanner';
-
 
 function ScanQrContent() {
   const router = useRouter();
@@ -21,18 +18,76 @@ function ScanQrContent() {
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [manualCode, setManualCode] = useState('');
-  const [isClient, setIsClient] = useState(false);
+  const [hasCamera, setHasCamera] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    // Check if running on a client-side environment
-    setIsClient(true);
+    let stream: MediaStream;
+    let animationFrameId: number;
+
+    const setupCamera = async () => {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            setHasCamera(false);
+            return;
+        }
+
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { facingMode: 'environment' } 
+            });
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+            }
+        } catch (err) {
+            console.error("Error accessing camera:", err);
+            setHasCamera(false);
+            toast({
+                variant: 'destructive',
+                title: 'Error de Cámara',
+                description: 'No se pudo acceder a la cámara. Revisa los permisos.',
+            });
+        }
+    };
+    
+    const detectQrCode = async () => {
+        if (videoRef.current && canvasRef.current && 'BarcodeDetector' in window) {
+            const barcodeDetector = new (window as any).BarcodeDetector({ formats: ['qr_code'] });
+            try {
+                const barcodes = await barcodeDetector.detect(videoRef.current);
+                if (barcodes.length > 0 && !isProcessing) {
+                    handleScan(barcodes[0].rawValue);
+                }
+            } catch (e) {
+                console.error('Barcode detection failed:', e);
+            }
+        }
+        if (!isProcessing) {
+          animationFrameId = requestAnimationFrame(detectQrCode);
+        }
+    };
+
+    setupCamera().then(() => {
+       if ('BarcodeDetector' in window) {
+           animationFrameId = requestAnimationFrame(detect-qr-code);
+       } else {
+           console.warn("BarcodeDetector API not supported in this browser.");
+           // Consider a fallback to a library if needed, but for now we'll rely on manual input.
+           setHasCamera(false); 
+       }
+    });
+
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      if(animationFrameId){
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const isMobileDevice = () => {
-    if (!isClient) return false;
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  };
-  
   const handleScan = async (data: string | null) => {
     if (data && !isProcessing && currentUser) {
       setIsProcessing(true);
@@ -78,15 +133,6 @@ function ScanQrContent() {
     }
   }
 
-  const handleError = (err: any) => {
-    console.error(err);
-    toast({
-      variant: 'destructive',
-      title: 'Error de Escaneo',
-      description: 'No se pudo leer el código QR. Revisa los permisos de la cámara.',
-    });
-  };
-
   const renderContent = () => {
     if (isProcessing) {
         return (
@@ -97,23 +143,27 @@ function ScanQrContent() {
         );
     }
     
-    if (isMobileDevice()) {
+    if (hasCamera) {
         return (
-             <div className="w-full max-w-sm">
-                <QrScanner 
-                  delay={300}
-                  onError={handleError}
-                  onScan={(result) => handleScan(result ? result.text : null)}
-                  style={{ width: '100%' }}
-                  constraints={{
-                      video: { facingMode: "environment" }
-                  }}
+             <div className="w-full max-w-sm aspect-square relative rounded-2xl overflow-hidden shadow-2xl border-4 border-white/50">
+                <video
+                    ref={videoRef}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover"
                 />
+                 <div className="absolute inset-0 flex items-center justify-center">
+                    <ScanLine className="w-2/3 h-2/3 text-white/50 animate-pulse" />
+                </div>
+                 <p className="absolute bottom-4 left-4 right-4 text-white text-center font-bold text-sm bg-black/50 p-2 rounded-lg">
+                  Apunta la cámara al código QR
+                </p>
              </div>
         )
     }
 
-    // Fallback for Desktop
+    // Fallback for Desktop or devices without camera/permission
     return (
       <div className="w-full max-w-sm text-center">
         <Card className="text-foreground shadow-2xl border-border">
@@ -123,7 +173,7 @@ function ScanQrContent() {
              </div>
             <CardTitle>Entrada Manual</CardTitle>
             <CardDescription>
-              Parece que estás en una PC. Introduce el Corabo ID del proveedor para iniciar el pago.
+              La cámara no está disponible. Introduce el Corabo ID del proveedor para iniciar el pago.
             </CardDescription>
           </CardHeader>
           <CardContent>

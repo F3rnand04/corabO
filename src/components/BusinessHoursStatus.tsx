@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -42,17 +41,17 @@ export function BusinessHoursStatus({ schedule, onStatusChange }: BusinessHoursS
       const todaySchedule = schedule[currentDayName];
 
       if (todaySchedule && todaySchedule.active) {
-        const fromTime = parse(todaySchedule.from, 'HH:mm', new Date());
-        const toTime = parse(todaySchedule.to, 'HH:mm', new Date());
-
-        // **FIX**: Handle 24-hour case (00:00 to 24:00)
-        if (todaySchedule.from === '00:00' && todaySchedule.to === '24:00') {
+        // **FIX**: Handle 24-hour case (e.g., 00:00 to 23:59 or similar)
+        if (todaySchedule.from === '00:00' && (todaySchedule.to === '24:00' || todaySchedule.to === '23:59')) {
              setStatus('open');
              setMessage('Abierto 24 horas');
              onStatusChange?.('open');
              return;
         }
 
+        const fromTime = parse(todaySchedule.from, 'HH:mm', new Date());
+        const toTime = parse(todaySchedule.to, 'HH:mm', new Date());
+        
         if (isWithinInterval(now, { start: fromTime, end: toTime })) {
           setStatus('open');
           const timeToClose = formatTimeDifference(differenceInMilliseconds(toTime, now));

@@ -1,4 +1,3 @@
-
 'use server';
 
 import { generateQrCodeDataUrlFlow } from '@/ai/flows/qr-code-flow';

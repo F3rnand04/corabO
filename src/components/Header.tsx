@@ -26,7 +26,7 @@ import { toggleGps } from "@/lib/actions/user.actions";
 
 
 export function Header() {
-  const { cart, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, currentUser } = useAuth();
+  const { cart, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, currentUser, addSearchToHistory } = useAuth();
   const { logout } = useAuth();
   const router = useRouter();
 
@@ -43,7 +43,9 @@ export function Header() {
   
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // The search query is already updated on change, so we can just push to the home/feed page
+    if(searchQuery.trim()){
+      addSearchToHistory(searchQuery);
+    }
     router.push('/');
   }
 
