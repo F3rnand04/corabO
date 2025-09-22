@@ -25,7 +25,7 @@ export default function LogisticsPage() {
     };
 
     const handleNext = () => {
-        router.push('/profile-setup/personal/legal');
+        router.push('/profile-setup/personal/review');
     };
 
     return (

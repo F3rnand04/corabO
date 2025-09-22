@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { becomeProvider } from "@/lib/actions/user.actions";
-import Step6Review from "@/components/profile-setup/personal/Step6_Review";
+import Step5_Review from "@/components/profile-setup/personal/Step5_Review";
 import { useAuth } from "@/hooks/use-auth-provider";
 import { Loader2 } from "lucide-react";
 
@@ -49,7 +50,7 @@ export default function ReviewPage() {
   };
 
   return (
-    <Step6Review
+    <Step5_Review
       formData={currentUser.profileSetupData}
       onSubmit={handleFinalSubmit}
       isSubmitting={isSubmitting}

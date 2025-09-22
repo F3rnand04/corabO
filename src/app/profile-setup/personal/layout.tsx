@@ -22,10 +22,9 @@ export default function PersonalProviderSetupLayout({
         '/profile-setup/personal/details': 2,
         '/profile-setup/personal/category': 3,
         '/profile-setup/personal/logistics': 4,
-        '/profile-setup/personal/legal': 5,
-        '/profile-setup/personal/review': 6,
+        '/profile-setup/personal/review': 5,
     };
-    return { currentStep: pathMap[pathname] || 1, totalSteps: 6 };
+    return { currentStep: pathMap[pathname] || 1, totalSteps: 5 };
   }, [pathname]);
 
   const handleBack = () => {
