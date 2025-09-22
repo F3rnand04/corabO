@@ -7,7 +7,7 @@ import { sendNewCampaignNotificationsFlow } from '@/ai/flows/notification-flow';
 import { createManagementUserFlow } from '@/ai/flows/admin-flow';
 import { createTransactionFlow } from '@/ai/flows/transaction-flow';
 import { getFirestore } from 'firebase-admin/firestore';
-import { getFirebaseAuth } from '../firebase-admin';
+import { getFirebaseAuth, getFirebaseFirestore } from '../firebase-admin';
 
 async function _updateUser(userId: string, updates: any) {
     const db = getFirestore();
@@ -69,7 +69,8 @@ export async function verifyCampaignPayment(transactionId: string, campaignId?: 
  * Sends notifications for a newly activated campaign.
  */
 export async function sendNewCampaignNotifications(input: { campaignId: string }) {
-    await sendNewCampaignNotificationsFlow(input);
+    const db = getFirebaseFirestore();
+    await sendNewCampaignNotificationsFlow(db, input);
 }
 
 
@@ -90,7 +91,8 @@ export async function toggleUserPause(userId: string, shouldUnpause: boolean) {
 }
 
 export async function registerSystemPayment(userId: string, concept: string, amount: number, isSubscription: boolean, voucherUrl: string, reference: string) {
-    await createTransactionFlow({
+    const db = getFirebaseFirestore();
+    await createTransactionFlow(db, {
         type: 'Sistema',
         status: 'Pago Enviado - Esperando Confirmación',
         date: new Date().toISOString(),
@@ -113,5 +115,7 @@ export async function registerSystemPayment(userId: string, concept: string, amo
 }
 
 export async function createManagementUser(input: any) {
-    return await createManagementUserFlow(input);
+    const auth = getFirebaseAuth();
+    const db = getFirestore();
+    return await createManagementUserFlow(auth, db, input);
 }

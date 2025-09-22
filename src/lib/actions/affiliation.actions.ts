@@ -3,15 +3,16 @@
 import { revalidatePath } from 'next/cache';
 import { approveAffiliationFlow, rejectAffiliationFlow, revokeAffiliationFlow, requestAffiliationFlow } from '@/ai/flows/affiliation-flow';
 import { sendNotification } from '@/ai/flows/notification-flow';
-
+import { getFirebaseFirestore } from '../firebase-admin';
 
 /**
  * A professional requests to be affiliated with a company.
  * This action orchestrates the flow and sends a notification.
  */
 export async function requestAffiliation(providerId: string, companyId: string) {
+    const db = getFirebaseFirestore();
     try {
-        await requestAffiliationFlow({ providerId, companyId });
+        await requestAffiliationFlow(db, { providerId, companyId });
 
         // Notify the company admin
         await sendNotification({
@@ -33,8 +34,9 @@ export async function requestAffiliation(providerId: string, companyId: string) 
  * A company approves a professional's affiliation request.
  */
 export async function approveAffiliation(affiliationId: string, actorId: string) {
+    const db = getFirebaseFirestore();
     try {
-        await approveAffiliationFlow({ affiliationId, actorId });
+        await approveAffiliationFlow(db, { affiliationId, actorId });
 
         const providerId = affiliationId.split('-')[1];
         await sendNotification({
@@ -57,8 +59,9 @@ export async function approveAffiliation(affiliationId: string, actorId: string)
  * A company rejects a professional's affiliation request.
  */
 export async function rejectAffiliation(affiliationId: string, actorId: string) {
+    const db = getFirebaseFirestore();
     try {
-        await rejectAffiliationFlow({ affiliationId, actorId });
+        await rejectAffiliationFlow(db, { affiliationId, actorId });
         const providerId = affiliationId.split('-')[1];
          await sendNotification({
             userId: providerId,
@@ -78,8 +81,9 @@ export async function rejectAffiliation(affiliationId: string, actorId: string) 
  * A company revokes an existing affiliation.
  */
 export async function revokeAffiliation(affiliationId: string, actorId: string) {
+    const db = getFirebaseFirestore();
     try {
-        await revokeAffiliationFlow({ affiliationId, actorId });
+        await revokeAffiliationFlow(db, { affiliationId, actorId });
         const providerId = affiliationId.split('-')[1];
         await sendNotification({
             userId: providerId,

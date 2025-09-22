@@ -56,17 +56,20 @@ async function uploadToStorage(filePath: string, dataUrl: string): Promise<strin
 
 
 export async function createAppointmentRequest(request: { providerId: string; clientId: string; date: string; details: string; amount: number; }) {
-    await createAppointmentRequestFlow(request);
+    const db = getFirebaseFirestore();
+    await createAppointmentRequestFlow(db, request);
     revalidatePath('/transactions');
 }
 
 export async function acceptAppointment(input: { transactionId: string, userId: string }) {
-    await acceptAppointmentFlow(input);
+    const db = getFirebaseFirestore();
+    await acceptAppointmentFlow(db, input);
     revalidatePath('/transactions');
 }
 
 export async function acceptQuote(input: { transactionId: string, userId: string }) {
-    await acceptQuoteFlow(input);
+    const db = getFirebaseFirestore();
+    await acceptQuoteFlow(db, input);
     revalidatePath('/transactions');
 }
 
@@ -78,18 +81,21 @@ export async function checkout(
     recipientInfo: { name: string; phone: string } | undefined, 
     deliveryAddress: string
 ) {
-    await checkoutFlow({ userId, providerId, deliveryMethod, useCredicora, recipientInfo, deliveryAddress: deliveryAddress || undefined });
+    const db = getFirebaseFirestore();
+    await checkoutFlow(db, { userId, providerId, deliveryMethod, useCredicora, recipientInfo, deliveryAddress: deliveryAddress || undefined });
     revalidatePath('/transactions');
     revalidatePath('/cart'); // Assuming a cart page or component
 }
 
 export async function completeWork(input: { transactionId: string, userId: string }) {
-    await completeWorkFlow(input);
+    const db = getFirebaseFirestore();
+    await completeWorkFlow(db, input);
     revalidatePath('/transactions');
 }
 
 export async function confirmWorkReceived(input: { transactionId: string, userId: string, rating: number, comment?: string }) {
-    await confirmWorkReceivedFlow(input);
+    const db = getFirebaseFirestore();
+    await confirmWorkReceivedFlow(db, input);
     revalidatePath('/transactions');
 }
 
@@ -103,28 +109,33 @@ export async function payCommitment(transactionId: string, userId: string, payme
         uploadedVoucherUrl = await uploadToStorage(filePath, paymentDetails.paymentVoucherUrl);
     }
     
-    await payCommitmentFlow({ transactionId, userId, paymentDetails: {...paymentDetails, paymentVoucherUrl: uploadedVoucherUrl} });
+    const db = getFirebaseFirestore();
+    await payCommitmentFlow(db, { transactionId, userId, paymentDetails: {...paymentDetails, paymentVoucherUrl: uploadedVoucherUrl} });
     revalidatePath('/transactions');
     revalidatePath('/payment');
 }
 
 export async function confirmPaymentReceived(input: { transactionId: string, userId: string, fromThirdParty: boolean }) {
-    await confirmPaymentReceivedFlow(input);
+    const db = getFirebaseFirestore();
+    await confirmPaymentReceivedFlow(db, input);
     revalidatePath('/transactions');
 }
 
 export async function sendQuote(input: { transactionId: string, userId: string, breakdown: string, total: number }) {
-    await sendQuoteFlow(input);
+    const db = getFirebaseFirestore();
+    await sendQuoteFlow(db, input);
     revalidatePath('/transactions');
 }
 
 export async function startDispute(transactionId: string) {
-    await startDisputeFlow(transactionId);
+    const db = getFirebaseFirestore();
+    await startDisputeFlow(db, transactionId);
     revalidatePath('/transactions');
 }
 
 export async function cancelSystemTransaction(transactionId: string) {
-    await cancelSystemTransactionFlow(transactionId);
+    const db = getFirebaseFirestore();
+    await cancelSystemTransactionFlow(db, transactionId);
     revalidatePath('/transactions');
 }
 
@@ -137,11 +148,13 @@ export async function processDirectPayment(sessionId: string) {
 }
 
 export async function createQuoteRequest(input: QuoteRequestInput): Promise<{ requiresPayment: boolean; newTransaction: Transaction | null }> {
-    return await createQuoteRequestFlow(input);
+    const db = getFirebaseFirestore();
+    return await createQuoteRequestFlow(db, input);
 }
 
 export async function purchaseGift(userId: string, gift: { id: string, name: string, price: number }) {
-    const newTransaction = await createTransactionFlow({
+    const db = getFirebaseFirestore();
+    const newTransaction = await createTransactionFlow(db, {
         type: 'Sistema',
         status: 'Finalizado - Pendiente de Pago',
         date: new Date().toISOString(),
@@ -178,5 +191,3 @@ export async function writeOffDebt(transactionId: string) {
     await db.collection('transactions').doc(transactionId).update({ status: 'Incobrable' });
     revalidatePath('/admin');
 }
-
-  

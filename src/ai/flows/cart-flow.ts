@@ -3,7 +3,7 @@
  * @fileOverview Flow for managing the user's shopping cart.
  */
 import { z } from 'zod';
-import { getFirestore } from 'firebase-admin/firestore';
+import { type Firestore } from 'firebase-admin/firestore';
 import type { CartItem, Product, User } from '@/lib/types';
 
 const UpdateCartInputSchema = z.object({
@@ -14,8 +14,7 @@ const UpdateCartInputSchema = z.object({
 
 type UpdateCartInput = z.infer<typeof UpdateCartInputSchema>;
 
-export async function updateCartFlow(input: UpdateCartInput): Promise<void> {
-    const db = getFirestore();
+export async function updateCartFlow(db: Firestore, input: UpdateCartInput): Promise<void> {
     const userRef = db.collection('users').doc(input.userId);
     const userSnap = await userRef.get();
 

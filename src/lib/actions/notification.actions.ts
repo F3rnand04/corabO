@@ -15,9 +15,10 @@ export async function sendNewQuoteRequestNotifications(input: {
     transactionId: string;
     limitedReach?: boolean;
 }) {
+    const db = getFirebaseFirestore();
     // This action simply calls the underlying flow, ensuring that the
     // `firebase-admin` dependency is never exposed to the client.
-    await sendNewQuoteRequestNotificationsFlow(input);
+    await sendNewQuoteRequestNotificationsFlow(db, input);
 }
 
 
@@ -51,7 +52,8 @@ export async function markNotificationsAsRead(userId: string) {
  * Fetches notifications for a user with pagination.
  */
 export async function getNotifications(userId: string, limitNum: number, startAfterDocId?: string) {
-    return await getNotificationsFlow({ userId, limitNum, startAfterDocId });
+    const db = getFirebaseFirestore();
+    return await getNotificationsFlow(db, { userId, limitNum, startAfterDocId });
 }
 
 export async function sendNotification(input: { userId: string; title: string; message: string; link?: string; type: NotificationType; metadata?: any; }) {

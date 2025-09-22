@@ -4,17 +4,18 @@ import { revalidatePath } from 'next/cache';
 import { createCashierBoxFlow, regenerateCashierQrFlow } from '@/ai/flows/cashier-flow';
 import { sendNotification } from '@/ai/flows/notification-flow';
 import { processDirectPaymentFlow } from '@/ai/flows/transaction-flow';
-import { getFirestore } from '../firebase-admin';
+import { getFirebaseFirestore } from '../firebase-admin';
 import type { User } from '@/lib/types';
 
 
 export async function addCashierBox(userId: string, name: string, password: string) {
-  await createCashierBoxFlow({ userId, name, password });
+  const db = getFirebaseFirestore();
+  await createCashierBoxFlow(db, { userId, name, password });
   revalidatePath('/transactions/settings/cashier');
 }
 
 export async function removeCashierBox(userId: string, boxId: string) {
-  const db = getFirestore();
+  const db = getFirebaseFirestore();
   const userRef = db.collection('users').doc(userId);
   const userSnap = await userRef.get();
   const userData = userSnap.data() as User;
@@ -25,7 +26,7 @@ export async function removeCashierBox(userId: string, boxId: string) {
 }
 
 export async function updateCashierBox(userId: string, boxId: string, updates: { name?: string; passwordHash?: string }) {
-  const db = getFirestore();
+  const db = getFirebaseFirestore();
   const userRef = db.collection('users').doc(userId);
   const userSnap = await userRef.get();
   const userData = userSnap.data() as User;
@@ -42,13 +43,14 @@ export async function updateCashierBox(userId: string, boxId: string, updates: {
 
 
 export async function regenerateCashierBoxQr(userId: string, boxId: string) {
-    await regenerateCashierQrFlow({ userId, boxId });
+    const db = getFirebaseFirestore();
+    await regenerateCashierQrFlow(db, { userId, boxId });
     revalidatePath('/transactions/settings/cashier');
 }
 
 
 export async function startQrSession(clientId: string, providerId: string, cashierBoxId?: string, cashierName?: string) {
-    const db = getFirestore();
+    const db = getFirebaseFirestore();
     const sessionId = `qrsess-${Date.now()}`;
     const sessionRef = db.collection('qr_sessions').doc(sessionId);
 
@@ -68,7 +70,7 @@ export async function startQrSession(clientId: string, providerId: string, cashi
 }
 
 export async function setQrSessionAmount(sessionId: string, amount: number, initialPayment: number, financedAmount: number, installments: number) {
-    const db = getFirestore();
+    const db = getFirebaseFirestore();
     await db.collection('qr_sessions').doc(sessionId).update({
         amount,
         initialPayment,
@@ -80,7 +82,7 @@ export async function setQrSessionAmount(sessionId: string, amount: number, init
 }
 
 export async function cancelQrSession(sessionId: string) {
-    const db = getFirestore();
+    const db = getFirebaseFirestore();
     await db.collection('qr_sessions').doc(sessionId).update({
         status: 'cancelled',
         updatedAt: new Date().toISOString(),
@@ -88,7 +90,7 @@ export async function cancelQrSession(sessionId: string) {
 }
 
 export async function handleClientCopyAndPay(sessionId: string) {
-    const db = getFirestore();
+    const db = getFirebaseFirestore();
     await db.collection('qr_sessions').doc(sessionId).update({
         status: 'awaitingPayment',
         updatedAt: new Date().toISOString(),
@@ -96,7 +98,7 @@ export async function handleClientCopyAndPay(sessionId: string) {
 }
 
 export async function confirmMobilePayment(sessionId: string) {
-    const db = getFirestore();
+    const db = getFirebaseFirestore();
     await db.collection('qr_sessions').doc(sessionId).update({
         status: 'pendingVoucherUpload',
         updatedAt: new Date().toISOString(),
@@ -104,9 +106,9 @@ export async function confirmMobilePayment(sessionId: string) {
 }
 
 export async function finalizeQrSession(sessionId: string) {
-    const { transactionId } = await processDirectPaymentFlow({sessionId});
+    const db = getFirebaseFirestore();
+    const { transactionId } = await processDirectPaymentFlow(db, {sessionId});
     
-    const db = getFirestore();
     await db.collection('qr_sessions').doc(sessionId).update({
         status: 'completed',
         transactionId: transactionId,

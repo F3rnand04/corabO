@@ -4,6 +4,7 @@
  */
 import { revalidatePath } from 'next/cache';
 import { updateCartFlow } from '@/ai/flows/cart-flow';
+import { getFirebaseFirestore } from '../firebase-admin';
 
 /**
  * Updates the quantity of a product in the user's active cart.
@@ -11,8 +12,9 @@ import { updateCartFlow } from '@/ai/flows/cart-flow';
  * This action orchestrates the call to the underlying Genkit flow.
  */
 export async function updateCart(userId: string, productId: string, newQuantity: number) {
+    const db = getFirebaseFirestore();
     try {
-        await updateCartFlow({ userId, productId, newQuantity });
+        await updateCartFlow(db, { userId, productId, newQuantity });
         // Revalidate the transactions path because carts are displayed in a popover there
         revalidatePath('/transactions');
         revalidatePath('/profile'); // For product grid cards to update

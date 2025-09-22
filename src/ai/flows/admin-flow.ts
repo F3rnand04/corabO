@@ -2,7 +2,8 @@
 /**
  * @fileOverview Flows for administrator-specific actions.
  */
-import { getFirebaseAuth, getFirebaseFirestore } from '@/lib/firebase-admin';
+import type { Auth } from 'firebase-admin/auth';
+import type { Firestore } from 'firebase-admin/firestore';
 
 interface CreateManagementUserInput {
     name: string;
@@ -17,9 +18,7 @@ interface CreateManagementUserInput {
 /**
  * Creates a new user with a specific management role in Firebase Authentication and Firestore.
  */
-export async function createManagementUserFlow(input: CreateManagementUserInput): Promise<{ uid: string }> {
-    const auth = getFirebaseAuth();
-    
+export async function createManagementUserFlow(auth: Auth, db: Firestore, input: CreateManagementUserInput): Promise<{ uid: string }> {
     // Create the user in Firebase Authentication
     const userRecord = await auth.createUser({
         email: input.email,
@@ -28,7 +27,6 @@ export async function createManagementUserFlow(input: CreateManagementUserInput)
         disabled: false
     });
     
-    const db = getFirebaseFirestore();
     const userRef = db.collection('users').doc(userRecord.uid);
     
     // Create the user profile in Firestore

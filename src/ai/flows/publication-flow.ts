@@ -4,18 +4,18 @@
  * @fileOverview Flows for creating and managing publications and products securely on the backend.
  * This file handles the direct interaction with the Firestore database for all publication-related write operations.
  */
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue, type Firestore } from 'firebase-admin/firestore';
 import type { User, GalleryImage, GalleryImageComment, CreatePublicationInput, CreateProductInput, AddCommentInput, RemoveCommentInput, UpdateGalleryImageInput, RemoveGalleryImageInput } from '@/lib/types';
 // DO NOT import notification flows here to prevent circular dependencies. Orchestration happens in the action layer.
 
 /**
  * Creates a new publication (image or video) in the 'publications' collection.
+ * @param db - The Firestore database instance.
  * @param input - The data for the new publication.
  * @returns The newly created GalleryImage object.
  * @throws Will throw an error if the user is not found.
  */
-export async function createPublicationFlow(input: CreatePublicationInput): Promise<GalleryImage> {
-    const db = getFirestore();
+export async function createPublicationFlow(db: Firestore, input: CreatePublicationInput): Promise<GalleryImage> {
     
     const userRef = db.collection('users').doc(input.userId);
     const userSnap = await userRef.get();
@@ -62,12 +62,12 @@ export async function createPublicationFlow(input: CreatePublicationInput): Prom
 
 /**
  * Creates a new product, which is a special type of publication.
+ * @param db - The Firestore database instance.
  * @param input - The data for the new product.
  * @returns The newly created product as a GalleryImage object.
  * @throws Will throw an error if the user is not found.
  */
-export async function createProductFlow(input: CreateProductInput): Promise<GalleryImage> {
-    const db = getFirestore();
+export async function createProductFlow(db: Firestore, input: CreateProductInput): Promise<GalleryImage> {
     const userRef = db.collection('users').doc(input.userId);
     const userSnap = await userRef.get();
     if (!userSnap.exists) {
@@ -117,10 +117,10 @@ export async function createProductFlow(input: CreateProductInput): Promise<Gall
 
 /**
  * Adds a comment to a specific publication.
+ * @param db - The Firestore database instance.
  * @param input - The comment data and publication ID.
  */
-export async function addCommentToImageFlow(input: AddCommentInput) {
-    const db = getFirestore();
+export async function addCommentToImageFlow(db: Firestore, input: AddCommentInput) {
     const imageRef = db.collection('publications').doc(input.imageId);
     
     const newComment: GalleryImageComment = {
@@ -139,11 +139,11 @@ export async function addCommentToImageFlow(input: AddCommentInput) {
 
 /**
  * Removes a comment from a publication, with authorization checks.
+ * @param db - The Firestore database instance.
  * @param input - The data required to identify and authorize the comment removal.
  * @throws Will throw an error if the image is not found, comment is not found, or user is not authorized.
  */
-export async function removeCommentFromImageFlow(input: RemoveCommentInput) {
-    const db = getFirestore();
+export async function removeCommentFromImageFlow(db: Firestore, input: RemoveCommentInput) {
     const imageRef = db.collection('publications').doc(input.imageId);
     const imageSnap = await imageRef.get();
 
@@ -167,10 +167,10 @@ export async function removeCommentFromImageFlow(input: RemoveCommentInput) {
 
 /**
  * Updates the description or image source of a gallery image.
+ * @param db - The Firestore database instance.
  * @param input - The ID of the image and the updates to apply.
  */
-export async function updateGalleryImageFlow(input: UpdateGalleryImageInput) {
-    const db = getFirestore();
+export async function updateGalleryImageFlow(db: Firestore, input: UpdateGalleryImageInput) {
     const imageRef = db.collection('publications').doc(input.imageId);
     
     const dataToUpdate: Record<string, any> = {};
@@ -182,9 +182,9 @@ export async function updateGalleryImageFlow(input: UpdateGalleryImageInput) {
 
 /**
  * Deletes a publication from the 'publications' collection.
+ * @param db - The Firestore database instance.
  * @param input - The ID of the image to remove.
  */
-export async function removeGalleryImageFlow(input: RemoveGalleryImageInput) {
-    const db = getFirestore();
+export async function removeGalleryImageFlow(db: Firestore, input: RemoveGalleryImageInput) {
     await db.collection('publications').doc(input.imageId).delete();
 }

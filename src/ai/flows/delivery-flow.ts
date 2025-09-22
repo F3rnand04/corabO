@@ -3,7 +3,7 @@
  * @fileOverview Flows for managing delivery provider assignment.
  */
 import { z } from 'zod';
-import { getFirestore } from 'firebase-admin/firestore';
+import { type Firestore } from 'firebase-admin/firestore';
 import type { Transaction, User } from '@/lib/types';
 import { haversineDistance } from '@/lib/utils';
 import { sendMessageFlow } from './message-flow';
@@ -33,8 +33,7 @@ export async function calculateDeliveryCostFlow({ distanceInKm }: { distanceInKm
  * Finds an available delivery provider for a given transaction.
  * It searches in a 3km radius and retries up to 3 times.
  */
-export async function findDeliveryProviderFlow({ transactionId }: { transactionId: string }) {
-    const db = getFirestore();
+export async function findDeliveryProviderFlow({ transactionId }: { transactionId: string }, db: Firestore) {
     const txRef = db.collection('transactions').doc(transactionId);
     const txSnap = await txRef.get();
 
@@ -77,7 +76,7 @@ export async function findDeliveryProviderFlow({ transactionId }: { transactionI
               status: 'En Reparto',
             });
             
-            await sendMessageFlow({
+            await sendMessageFlow(db, {
                 conversationId: [transaction.providerId, assignedRepartidor.id].sort().join('-'),
                 senderId: transaction.providerId,
                 recipientId: assignedRepartidor.id,
@@ -108,8 +107,7 @@ export async function findDeliveryProviderFlow({ transactionId }: { transactionI
  * Resolves a failed delivery attempt by converting it to a pickup order.
  * Notifies the client and creates a refund transaction for the delivery fee if applicable.
  */
-export async function resolveDeliveryAsPickupFlow({ transactionId }: { transactionId: string }) {
-    const db = getFirestore();
+export async function resolveDeliveryAsPickupFlow(db: Firestore, { transactionId }: { transactionId: string }) {
     const batch = db.batch();
     const txRef = db.collection('transactions').doc(transactionId);
     const txSnap = await txRef.get();
@@ -140,7 +138,7 @@ export async function resolveDeliveryAsPickupFlow({ transactionId }: { transacti
         batch.set(db.collection('transactions').doc(refundTxId), refundTx);
     }
 
-    await sendMessageFlow({
+    await sendMessageFlow(db, {
         conversationId: [transaction.providerId, transaction.clientId].sort().join('-'),
         senderId: transaction.providerId,
         recipientId: transaction.clientId,
@@ -151,8 +149,7 @@ export async function resolveDeliveryAsPickupFlow({ transactionId }: { transacti
 }
 
 
-export async function acceptDeliveryJob(input: { transactionId: string, providerId: string }) {
-    const db = getFirestore();
+export async function acceptDeliveryJob(db: Firestore, input: { transactionId: string, providerId: string }) {
     const txRef = db.collection('transactions').doc(input.transactionId);
     await txRef.update({
         'details.deliveryProviderId': input.providerId,
@@ -171,8 +168,7 @@ export async function acceptDeliveryJob(input: { transactionId: string, provider
     });
 }
 
-export async function completeDelivery(input: { transactionId: string }) {
-    const db = getFirestore();
+export async function completeDelivery(db: Firestore, input: { transactionId: string }) {
     const txRef = db.collection('transactions').doc(input.transactionId);
     const transaction = (await txRef.get()).data() as Transaction;
 

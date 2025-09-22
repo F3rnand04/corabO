@@ -3,7 +3,7 @@
  * @fileOverview Flows for managing professional affiliations with companies.
  */
 import { z } from 'zod';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { type Firestore, FieldValue } from 'firebase-admin/firestore';
 import type { Affiliation, User } from '@/lib/types';
 // DO NOT import sendNotification from notification-flow here to avoid circular dependencies.
 // The notification logic will be orchestrated by the action layer.
@@ -28,8 +28,7 @@ export type RequestAffiliationInput = z.infer<typeof RequestAffiliationSchema>;
  * A professional requests to be affiliated with a company.
  * This flow is now only responsible for creating the affiliation document.
  */
-export async function requestAffiliationFlow (input: RequestAffiliationInput) {
-    const db = getFirestore();
+export async function requestAffiliationFlow (db: Firestore, input: RequestAffiliationInput) {
 
     // Check if a pending or approved affiliation already exists
     const q = db.collection('affiliations')
@@ -61,8 +60,7 @@ export async function requestAffiliationFlow (input: RequestAffiliationInput) {
 /**
  * A company approves a professional's affiliation request.
  */
-export async function approveAffiliationFlow(input: AffiliationActionInput) {
-    const db = getFirestore();
+export async function approveAffiliationFlow(db: Firestore, input: AffiliationActionInput) {
     const batch = db.batch();
     const affiliationRef = db.collection('affiliations').doc(input.affiliationId);
     
@@ -97,8 +95,7 @@ export async function approveAffiliationFlow(input: AffiliationActionInput) {
 /**
  * A company rejects a professional's affiliation request.
  */
-export async function rejectAffiliationFlow(input: AffiliationActionInput) {
-    const db = getFirestore();
+export async function rejectAffiliationFlow(db: Firestore, input: AffiliationActionInput) {
     await db.collection('affiliations').doc(input.affiliationId).update({
         status: 'rejected',
         updatedAt: FieldValue.serverTimestamp()
@@ -109,8 +106,7 @@ export async function rejectAffiliationFlow(input: AffiliationActionInput) {
 /**
  * A company revokes an existing affiliation.
  */
-export async function revokeAffiliationFlow(input: AffiliationActionInput) {
-     const db = getFirestore();
+export async function revokeAffiliationFlow(db: Firestore, input: AffiliationActionInput) {
      const batch = db.batch();
 
      const affiliationRef = db.collection('affiliations').doc(input.affiliationId);

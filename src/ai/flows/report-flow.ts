@@ -3,16 +3,15 @@
 /**
  * @fileOverview Flows for managing content reports.
  */
-import { getFirebaseFirestore } from '@/lib/firebase-admin';
 import { sendNotification } from './notification-flow';
 import type { ContentReport, SanctionReason } from '@/lib/types';
+import type { Firestore } from 'firebase-admin/firestore';
 
 
 /**
  * Creates a new content report in Firestore.
  */
-export async function createContentReportFlow(input: Omit<ContentReport, 'id' | 'status' | 'createdAt'>) {
-    const db = getFirebaseFirestore();
+export async function createContentReportFlow(db: Firestore, input: Omit<ContentReport, 'id' | 'status' | 'createdAt'>) {
     const reportId = `report-${input.reporterId}-${Date.now()}`;
     const newReport: ContentReport = {
         id: reportId,
@@ -36,8 +35,7 @@ export async function createContentReportFlow(input: Omit<ContentReport, 'id' | 
 /**
  * Approves a content report, deletes the content, and notifies the user.
  */
-export async function approveContentReportFlow(input: { reportId: string, contentId: string, reportedUserId: string, sanctionReason: SanctionReason }) {
-    const db = getFirebaseFirestore();
+export async function approveContentReportFlow(db: Firestore, input: { reportId: string, contentId: string, reportedUserId: string, sanctionReason: SanctionReason }) {
     const batch = db.batch();
 
     // Mark report as reviewed
@@ -67,8 +65,7 @@ export async function approveContentReportFlow(input: { reportId: string, conten
 /**
  * Rejects (dismisses) a content report.
  */
-export async function rejectContentReportFlow(input: { reportId: string }) {
-    const db = getFirebaseFirestore();
+export async function rejectContentReportFlow(db: Firestore, input: { reportId: string }) {
     await db.collection('reports').doc(input.reportId).update({
         status: 'reviewed',
         reviewedAt: new Date().toISOString()

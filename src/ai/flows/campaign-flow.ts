@@ -1,6 +1,6 @@
 'use server';
 import { z } from 'zod';
-import { getFirestore } from 'firebase-admin/firestore';
+import { type Firestore } from 'firebase-admin/firestore';
 import { addDays, formatISO } from 'date-fns';
 import type { Campaign } from '@/lib/types';
 import { createTransactionFlow } from './transaction-flow';
@@ -22,8 +22,7 @@ export const CreateCampaignInputSchema = z.object({
 
 export type CreateCampaignInput = z.infer<typeof CreateCampaignInputSchema>;
 
-export async function createCampaignFlow(input: CreateCampaignInput): Promise<Campaign> {
-  const db = getFirestore();
+export async function createCampaignFlow(db: Firestore, input: CreateCampaignInput): Promise<Campaign> {
   const campaignId = `camp-${input.userId}-${Date.now()}`;
   
   const startDate = new Date();
@@ -52,7 +51,7 @@ export async function createCampaignFlow(input: CreateCampaignInput): Promise<Ca
   };
   
   // Create a system transaction for the payment of this campaign
-  await createTransactionFlow({
+  await createTransactionFlow(db, {
     type: 'Sistema',
     status: 'Pago Enviado - Esperando Confirmación', // User pays immediately, admin must verify
     date: new Date().toISOString(),

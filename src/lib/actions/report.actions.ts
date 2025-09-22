@@ -3,13 +3,15 @@
 import { revalidatePath } from 'next/cache';
 import { createContentReportFlow, approveContentReportFlow, rejectContentReportFlow } from '@/ai/flows/report-flow';
 import type { ContentReport, SanctionReason } from '../types';
+import { getFirebaseFirestore } from '../firebase-admin';
 
 /**
  * Server Action to securely create a new content report.
  */
 export async function createContentReport(input: Omit<ContentReport, 'id' | 'status' | 'createdAt' | 'reason'> & { reason: SanctionReason }) {
     try {
-        await createContentReportFlow(input);
+        const db = getFirebaseFirestore();
+        await createContentReportFlow(db, input);
         // No revalidation needed on the client side for this action
     } catch (error) {
         console.error('[ACTION_ERROR] createContentReport:', error);
@@ -22,7 +24,8 @@ export async function createContentReport(input: Omit<ContentReport, 'id' | 'sta
  */
 export async function approveContentReport(reportId: string, contentId: string, reportedUserId: string, sanctionReason: SanctionReason) {
     try {
-        await approveContentReportFlow({ reportId, contentId, reportedUserId, sanctionReason });
+        const db = getFirebaseFirestore();
+        await approveContentReportFlow(db, { reportId, contentId, reportedUserId, sanctionReason });
         revalidatePath('/admin');
     } catch (error) {
         console.error('[ACTION_ERROR] approveContentReport:', error);
@@ -35,7 +38,8 @@ export async function approveContentReport(reportId: string, contentId: string, 
  */
 export async function rejectContentReport(reportId: string) {
     try {
-        await rejectContentReportFlow({ reportId });
+        const db = getFirebaseFirestore();
+        await rejectContentReportFlow(db, { reportId });
         revalidatePath('/admin');
     } catch (error) {
         console.error('[ACTION_ERROR] rejectContentReport:', error);

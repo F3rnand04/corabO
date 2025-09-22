@@ -10,7 +10,8 @@ import { getOrCreateUserFlow } from '@/ai/flows/profile-flow';
  * This is called by the client-side AuthProvider.
  */
 export async function getOrCreateUser(firebaseUser: FirebaseUserInput) {
-    const user = await getOrCreateUserFlow(firebaseUser);
+    const db = getFirebaseFirestore();
+    const user = await getOrCreateUserFlow(db, firebaseUser);
     return user;
 }
 
@@ -21,12 +22,13 @@ export async function getOrCreateUser(firebaseUser: FirebaseUserInput) {
 export async function signInAsGuest(): Promise<{ customToken?: string; error?: string }> {
     try {
         const auth = getFirebaseAuth();
+        const db = getFirebaseFirestore();
         // Use a consistent but unique UID for the guest session to avoid creating new users on every click
         const uid = `guest_${Date.now()}`;
         const customToken = await auth.createCustomToken(uid);
         
         // Also ensure the user document is created server-side immediately
-        await getOrCreateUserFlow({ uid: uid, displayName: "Invitado", email: null, photoURL: null, emailVerified: false });
+        await getOrCreateUserFlow(db, { uid: uid, displayName: "Invitado", email: null, photoURL: null, emailVerified: false });
         
         return { customToken };
     } catch (error: any) {
@@ -43,13 +45,14 @@ export async function signInAsGuest(): Promise<{ customToken?: string; error?: s
 export async function createSessionCookie(idToken: string) {
     try {
         const auth = getFirebaseAuth();
+        const db = getFirebaseFirestore();
         const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
         const sessionCookie = await auth.createSessionCookie(idToken, { expiresIn });
         cookies().set('session', sessionCookie, { maxAge: expiresIn, httpOnly: true, secure: process.env.NODE_ENV === 'production', path: '/', sameSite: 'lax' });
         
         // After setting the cookie, ensure the user exists in Firestore
         const decodedToken = await auth.verifyIdToken(idToken);
-        await getOrCreateUserFlow({
+        await getOrCreateUserFlow(db, {
              uid: decodedToken.uid,
              email: decodedToken.email,
              displayName: decodedToken.name,

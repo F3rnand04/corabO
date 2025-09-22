@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { findDeliveryProviderFlow, resolveDeliveryAsPickupFlow } from '@/ai/flows/delivery-flow';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirebaseFirestore } from '../firebase-admin';
 import type { Transaction } from '@/lib/types';
 import { acceptDeliveryJob as acceptDeliveryJobFlow, completeDelivery as completeDeliveryFlow } from '@/ai/flows/delivery-flow';
 
@@ -13,7 +13,7 @@ import { acceptDeliveryJob as acceptDeliveryJobFlow, completeDelivery as complet
  * A real implementation would include geographic filtering.
  */
 export async function getDeliveryJobs(providerId: string): Promise<Transaction[]> {
-    const db = getFirestore();
+    const db = getFirebaseFirestore();
     const q = db.collection('transactions').where('status', '==', 'Buscando Repartidor');
     const snapshot = await q.get();
     
@@ -29,7 +29,8 @@ export async function getDeliveryJobs(providerId: string): Promise<Transaction[]
  * Allows a delivery provider to accept a delivery job.
  */
 export async function acceptDeliveryJob(transactionId: string, providerId: string) {
-    await acceptDeliveryJobFlow({ transactionId, providerId });
+    const db = getFirebaseFirestore();
+    await acceptDeliveryJobFlow(db, { transactionId, providerId });
     revalidatePath('/delivery/dashboard');
 }
 
@@ -37,7 +38,8 @@ export async function acceptDeliveryJob(transactionId: string, providerId: strin
  * Marks a delivery job as completed by the provider.
  */
 export async function completeDelivery(transactionId: string) {
-    await completeDeliveryFlow({ transactionId });
+    const db = getFirebaseFirestore();
+    await completeDeliveryFlow(db, { transactionId });
     revalidatePath('/delivery/dashboard');
 }
 
@@ -46,9 +48,10 @@ export async function completeDelivery(transactionId: string) {
  * Initiates the search for an available delivery provider for a transaction.
  */
 export async function retryFindDelivery(input: { transactionId: string }) {
+    const db = getFirebaseFirestore();
     // This action doesn't await the flow, allowing the UI to respond immediately.
     // The flow will run in the background.
-    findDeliveryProviderFlow(input);
+    findDeliveryProviderFlow({ transactionId: input.transactionId }, db);
     revalidatePath('/transactions');
 }
 
@@ -56,7 +59,8 @@ export async function retryFindDelivery(input: { transactionId: string }) {
  * Resolves a failed delivery by converting the order to a pickup.
  */
 export async function resolveDeliveryAsPickup(input: { transactionId: string }) {
-    await resolveDeliveryAsPickupFlow(input);
+    const db = getFirebaseFirestore();
+    await resolveDeliveryAsPickupFlow(db, input);
     revalidatePath('/transactions');
 }
 
@@ -65,7 +69,7 @@ export async function resolveDeliveryAsPickup(input: { transactionId: string }) 
  * This is a simplified action that directly updates the transaction.
  */
 export async function assignOwnDelivery(transactionId: string, providerId: string) {
-    const db = getFirestore();
+    const db = getFirebaseFirestore();
     const txRef = db.collection('transactions').doc(transactionId);
     await txRef.update({
       'details.deliveryProviderId': providerId,

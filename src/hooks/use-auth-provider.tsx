@@ -116,10 +116,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   
   // Combined listener for auth and data
   useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (fbUser) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (fbUser) => {
       setFirebaseUser(fbUser);
 
       if (fbUser) {
+        // Now calling the server action
+        const userDoc = await getOrCreateUser(fbUser);
+        
         // --- DATA LISTENERS ---
         const userDocRef = doc(db, 'users', fbUser.uid);
         const unsubUser = onSnapshot(userDocRef, (doc) => {
@@ -136,10 +139,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 } else {
                     setContacts([]);
                 }
-            } else {
-              // This can happen briefly during user creation
-              // Let's ensure the user document exists by calling the server action
-              getOrCreateUser(fbUser);
             }
             setIsLoadingAuth(false);
         });

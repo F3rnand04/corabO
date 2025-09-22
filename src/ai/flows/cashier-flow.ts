@@ -5,7 +5,7 @@
 import { z } from 'zod';
 import QRCode from 'qrcode';
 import type { CashierBox } from '@/lib/types';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { type Firestore, FieldValue } from 'firebase-admin/firestore';
 
 const CreateCashierBoxInputSchema = z.object({
   userId: z.string(),
@@ -25,7 +25,7 @@ type RegenerateQrInput = z.infer<typeof RegenerateQrInputSchema>;
 /**
  * Creates a new cashier box, generates a QR code for it, and returns the box object.
  */
-export async function createCashierBoxFlow(input: CreateCashierBoxInput): Promise<CashierBox> {
+export async function createCashierBoxFlow(db: Firestore, input: CreateCashierBoxInput): Promise<CashierBox> {
     const boxId = `caja-${Date.now()}`;
     const qrValue = JSON.stringify({ providerId: input.userId, cashierBoxId: boxId });
 
@@ -44,7 +44,6 @@ export async function createCashierBoxFlow(input: CreateCashierBoxInput): Promis
             qrDataURL,
         };
 
-        const db = getFirestore();
         const userRef = db.collection('users').doc(input.userId);
         await userRef.update({
             'profileSetupData.cashierBoxes': FieldValue.arrayUnion(newBox),
@@ -62,7 +61,7 @@ export async function createCashierBoxFlow(input: CreateCashierBoxInput): Promis
 /**
  * Regenerates the QR code for an existing cashier box.
  */
-export async function regenerateCashierQrFlow(input: RegenerateQrInput): Promise<{ qrValue: string, qrDataURL: string }> {
+export async function regenerateCashierQrFlow(db: Firestore, input: RegenerateQrInput): Promise<{ qrValue: string, qrDataURL: string }> {
     const newQrValue = JSON.stringify({ providerId: input.userId, cashierBoxId: input.boxId, timestamp: Date.now() });
     
     try {
@@ -72,7 +71,6 @@ export async function regenerateCashierQrFlow(input: RegenerateQrInput): Promise
             margin: 1,
         });
         
-        const db = getFirestore();
         const userRef = db.collection('users').doc(input.userId);
         const userSnap = await userRef.get();
         const userData = userSnap.data();

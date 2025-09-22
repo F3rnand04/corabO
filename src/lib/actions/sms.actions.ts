@@ -5,10 +5,12 @@
  */
 import { sendSmsVerificationCodeFlow, verifySmsCodeFlow } from '@/ai/flows/sms-flow';
 import { revalidatePath } from 'next/cache';
+import { getFirebaseFirestore } from '../firebase-admin';
 
 export async function sendSmsVerificationCode(userId: string, phoneNumber: string) {
+    const db = getFirebaseFirestore();
     try {
-        await sendSmsVerificationCodeFlow({ userId, phoneNumber });
+        await sendSmsVerificationCodeFlow(db, { userId, phoneNumber });
         return { success: true };
     } catch (error) {
         console.error('Error sending SMS verification code:', error);
@@ -17,8 +19,9 @@ export async function sendSmsVerificationCode(userId: string, phoneNumber: strin
 }
 
 export async function verifySmsCode(userId: string, code: string) {
+    const db = getFirebaseFirestore();
     try {
-        const result = await verifySmsCodeFlow({ userId, code });
+        const result = await verifySmsCodeFlow(db, { userId, code });
         if (result.success) {
             revalidatePath('/contacts');
         }

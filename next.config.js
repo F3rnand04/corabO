@@ -33,11 +33,6 @@ const nextConfig = {
       ...config.experiments,
       asyncWebAssembly: true,
     };
-    // Excluye 'node-gyp-build' del bundle del cliente
-    config.externals = config.externals || [];
-    config.externals.push({
-      'node-gyp-build': 'commonjs node-gyp-build',
-    });
     return config;
   },
 };

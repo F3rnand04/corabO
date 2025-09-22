@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createCampaignFlow, type CreateCampaignInput } from '@/ai/flows/campaign-flow';
+import { getFirebaseFirestore } from '../firebase-admin';
 
 
 /**
@@ -9,9 +10,10 @@ import { createCampaignFlow, type CreateCampaignInput } from '@/ai/flows/campaig
  * This action orchestrates the call to the underlying Genkit flow.
  */
 export async function createCampaign(userId: string, campaignData: Omit<CreateCampaignInput, 'userId'>) {
+    const db = getFirebaseFirestore();
     try {
         const input = { ...campaignData, userId };
-        const newCampaign = await createCampaignFlow(input);
+        const newCampaign = await createCampaignFlow(db, input);
         
         revalidatePath('/profile'); 
         revalidatePath('/transactions');

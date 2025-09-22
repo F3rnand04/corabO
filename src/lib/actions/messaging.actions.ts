@@ -1,8 +1,8 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import type { Conversation, Message, Transaction } from '@/lib/types';
+import { getFirebaseFirestore } from 'firebase-admin/firestore';
+import type { Conversation } from '@/lib/types';
 import { sendMessageFlow, acceptProposalFlow } from '@/ai/flows/message-flow';
 
 
@@ -18,7 +18,8 @@ export async function sendMessage(input: {
   proposal?: any; // Consider creating a Zod schema for this
   location?: { lat: number; lon: number };
 }): Promise<string> {
-    await sendMessageFlow(input);
+    const db = getFirebaseFirestore();
+    await sendMessageFlow(db, input);
     revalidatePath(`/messages/${input.conversationId}`);
     return input.conversationId;
 }
@@ -27,7 +28,7 @@ export async function sendMessage(input: {
  * Marks all messages in a conversation as read for the current user.
  */
 export async function markConversationAsRead(conversationId: string) {
-    const db = getFirestore();
+    const db = getFirebaseFirestore();
     const convoRef = db.collection('conversations').doc(conversationId);
     const convoSnap = await convoRef.get();
 
@@ -44,7 +45,8 @@ export async function markConversationAsRead(conversationId: string) {
  * Accepts a proposal within a conversation, creating a transaction.
  */
 export async function acceptProposal(conversationId: string, messageId: string, acceptorId: string) {
-    await acceptProposalFlow({ conversationId, messageId, acceptorId });
+    const db = getFirebaseFirestore();
+    await acceptProposalFlow(db, { conversationId, messageId, acceptorId });
     revalidatePath(`/messages/${conversationId}`);
     revalidatePath('/transactions');
 }

@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { createProductFlow, createPublicationFlow, addCommentToImageFlow, removeCommentFromImageFlow, updateGalleryImageFlow, removeGalleryImageFlow } from '@/ai/flows/publication-flow';
 import { sendNewContentNotificationFlow } from '@/ai/flows/notification-flow';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirebaseFirestore } from '@/lib/firebase-admin';
 import type { User, CreatePublicationInput, CreateProductInput, AddCommentInput, RemoveCommentInput, UpdateGalleryImageInput, RemoveGalleryImageInput, GalleryImage } from '@/lib/types';
 
 
@@ -12,16 +12,16 @@ import type { User, CreatePublicationInput, CreateProductInput, AddCommentInput,
  * It orchestrates the creation flow and sends notifications for reputable providers.
  */
 export async function createPublication(input: CreatePublicationInput): Promise<GalleryImage> {
-    const newPublication = await createPublicationFlow(input);
+    const db = getFirebaseFirestore();
+    const newPublication = await createPublicationFlow(db, input);
     
     // After the publication is created, check if we should send notifications.
     // This orchestration happens here, in the action layer, not in the flow.
-    const db = getFirestore();
     const userSnap = await db.collection('users').doc(input.userId).get();
     if (userSnap.exists()) {
         const user = userSnap.data() as User;
         if (user.verified || (user.reputation || 0) > 4.0) {
-             sendNewContentNotificationFlow({
+             sendNewContentNotificationFlow(db, {
                 providerId: input.userId,
                 publicationId: newPublication.id,
                 publicationDescription: newPublication.description,
@@ -40,15 +40,15 @@ export async function createPublication(input: CreatePublicationInput): Promise<
  * It orchestrates the product creation flow and sends notifications.
  */
 export async function createProduct(input: CreateProductInput) {
-    const newProduct = await createProductFlow(input);
+    const db = getFirebaseFirestore();
+    const newProduct = await createProductFlow(db, input);
 
     // Orchestration of notification sending is done here.
-    const db = getFirestore();
     const userSnap = await db.collection('users').doc(input.userId).get();
     if (userSnap.exists()) {
         const user = userSnap.data() as User;
         if (user.verified || (user.reputation || 0) > 4.0) {
-             sendNewContentNotificationFlow({
+             sendNewContentNotificationFlow(db, {
                 providerId: input.userId,
                 publicationId: newProduct.id,
                 publicationDescription: `¡Nuevo producto disponible! ${newProduct.alt}`,
@@ -66,7 +66,8 @@ export async function createProduct(input: CreateProductInput) {
  * Server Action to add a comment to a publication.
  */
 export async function addCommentToImage(input: AddCommentInput) {
-    await addCommentToImageFlow(input);
+    const db = getFirebaseFirestore();
+    await addCommentToImageFlow(db, input);
     revalidatePath(`/publications/${input.imageId}`);
 }
 
@@ -74,7 +75,8 @@ export async function addCommentToImage(input: AddCommentInput) {
  * Server Action to remove a comment from a publication.
  */
 export async function removeCommentFromImage(input: RemoveCommentInput) {
-    await removeCommentFromImageFlow(input);
+    const db = getFirebaseFirestore();
+    await removeCommentFromImageFlow(db, input);
     revalidatePath(`/publications/${input.imageId}`);
 }
 
@@ -82,7 +84,8 @@ export async function removeCommentFromImage(input: RemoveCommentInput) {
  * Server Action to update a gallery image's details.
  */
 export async function updateGalleryImage(imageId: string, updates: { description?: string, imageDataUri?: string }) {
-    await updateGalleryImageFlow({imageId: imageId, updates: updates});
+    const db = getFirebaseFirestore();
+    await updateGalleryImageFlow(db, {imageId: imageId, updates: updates});
     revalidatePath(`/publications/${imageId}`);
     revalidatePath('/profile');
 }
@@ -91,7 +94,8 @@ export async function updateGalleryImage(imageId: string, updates: { description
  * Server Action to remove a gallery image.
  */
 export async function removeGalleryImage(ownerId: string, imageId: string) {
-    await removeGalleryImageFlow({imageId: imageId});
+    const db = getFirebaseFirestore();
+    await removeGalleryImageFlow(db, {imageId: imageId});
     revalidatePath(`/companies/${ownerId}`);
     revalidatePath('/profile');
 }

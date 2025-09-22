@@ -1,46 +1,41 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import { getOrCreateUserFlow, completeInitialSetupFlow, checkIdUniquenessFlow, toggleGpsFlow } from '@/ai/flows/profile-flow';
+import { getFirebaseFirestore } from '@/lib/firebase-admin';
+import { completeInitialSetupFlow, checkIdUniquenessFlow, toggleGpsFlow, addContactToUserFlow, removeContactFromUserFlow, updateUserFlow, becomeProviderFlow } from '@/ai/flows/profile-flow';
 import { sendWelcomeToProviderNotificationFlow } from '@/ai/flows/notification-flow';
 import { createTransactionFlow } from '@/ai/flows/transaction-flow';
-import { credicoraCompanyLevels, credicoraLevels } from '../data/options';
-import type { FirebaseUserInput, ProfileSetupData, User } from '@/lib/types';
-
-
-// --- Exported Actions ---
-
-async function _updateUser(userId: string, updates: any) {
-    const db = getFirestore();
-    await db.collection('users').doc(userId).update(updates);
-}
+import type { ProfileSetupData, User } from '@/lib/types';
 
 
 export async function updateUser(userId: string, updates: Partial<User> | { [key: string]: any }) {
-    await _updateUser(userId, updates);
+    const db = getFirebaseFirestore();
+    await updateUserFlow(db, { userId, updates });
     revalidatePath('/profile');
     revalidatePath(`/companies/${userId}`);
 }
 
 export async function updateUserProfileImage(userId: string, dataUrl: string) {
-    await _updateUser(userId, { profileImage: dataUrl });
+    const db = getFirebaseFirestore();
+    await updateUserFlow(db, { userId, updates: { profileImage: dataUrl }});
     revalidatePath('/profile');
     revalidatePath(`/companies/${userId}`);
 }
 
 export async function updateFullProfile(userId: string, formData: ProfileSetupData, userType: User['type']) {
-    const db = getFirestore();
+    const db = getFirebaseFirestore();
     const userRef = db.collection('users').doc(userId);
     const userSnap = await userRef.get();
     const becameProvider = userType === 'provider' && userSnap.exists() && userSnap.data()?.type === 'client';
 
-    await _updateUser(
-        userId,
+    await updateUserFlow(db,
         {
-            'profileSetupData': formData, 
-            'isTransactionsActive': true, 
-            'type': userType 
+            userId,
+            updates: {
+                'profileSetupData': formData, 
+                'isTransactionsActive': true, 
+                'type': userType 
+            }
         }
     );
 
@@ -54,24 +49,28 @@ export async function updateFullProfile(userId: string, formData: ProfileSetupDa
 
 
 export async function toggleGps(userId: string) {
-    await toggleGpsFlow({ userId });
+    const db = getFirebaseFirestore();
+    await toggleGpsFlow(db, { userId });
     revalidatePath('/');
     revalidatePath('/profile');
     revalidatePath(`/companies/${userId}`);
 }
 
 export async function checkIdUniqueness(input: { idNumber: string; country: string; currentUserId: string; }): Promise<boolean> {
-    return await checkIdUniquenessFlow(input);
+    const db = getFirebaseFirestore();
+    return await checkIdUniquenessFlow(db, input);
 }
 
 export async function completeInitialSetup(userId: string, data: { name: string; lastName: string; idNumber: string; birthDate: string; country: string; type: User['type'], providerType: ProfileSetupData['providerType'] }): Promise<User> {
-    const updatedUser = await completeInitialSetupFlow(userId, data);
+    const db = getFirebaseFirestore();
+    const updatedUser = await completeInitialSetupFlow(db, userId, data);
     revalidatePath('/'); // Revalidate the home page to reflect login status
     return updatedUser;
 }
 
 export async function subscribeUser(userId: string, planName: string, amount: number) {
-    await createTransactionFlow({
+    const db = getFirebaseFirestore();
+    await createTransactionFlow(db, {
         type: 'Sistema',
         status: 'Pago Enviado - Esperando Confirmación',
         date: new Date().toISOString(),
@@ -88,27 +87,31 @@ export async function subscribeUser(userId: string, planName: string, amount: nu
 }
 
 export async function deactivateTransactions(userId: string) {
-    await updateUser(userId, { isTransactionsActive: false });
+    const db = getFirebaseFirestore();
+    await updateUserFlow(db, { userId, updates: { isTransactionsActive: false }});
     revalidatePath('/transactions/settings');
     revalidatePath('/profile');
 }
 
 export async function activatePromotion(userId: string, promotion: { imageId: string; promotionText: string; cost: number }) {
+    const db = getFirebaseFirestore();
     const expirationDate = new Date();
     expirationDate.setHours(expirationDate.getHours() + 24);
 
-    await _updateUser(
-        userId,
+    await updateUserFlow(db,
         {
-            promotion: {
-                text: promotion.promotionText,
-                expires: expirationDate.toISOString(),
-                publicationId: promotion.imageId,
+            userId,
+            updates: {
+                promotion: {
+                    text: promotion.promotionText,
+                    expires: expirationDate.toISOString(),
+                    publicationId: promotion.imageId,
+                }
             }
         }
     );
 
-    await createTransactionFlow({
+    await createTransactionFlow(db, {
         type: 'Sistema',
         status: 'Pago Enviado - Esperando Confirmación',
         date: new Date().toISOString(),
@@ -126,24 +129,20 @@ export async function activatePromotion(userId: string, promotion: { imageId: st
 }
 
 export async function addContactToUser(userId: string, contactId: string) {
-    await addContactToUserFlow({ userId, contactId });
+    const db = getFirebaseFirestore();
+    await addContactToUserFlow(db, { userId, contactId });
     revalidatePath(`/companies/${contactId}`);
     revalidatePath('/contacts');
 }
 
 export async function removeContactFromUser(userId: string, contactId: string) {
-    await removeContactFromUserFlow({ userId, contactId });
+    const db = getFirebaseFirestore();
+    await removeContactFromUserFlow(db, { userId, contactId });
     revalidatePath('/contacts');
 }
 
 export async function becomeProvider(userId: string, profileData: ProfileSetupData) {
-    await _updateUser(
-        userId,
-        {
-            type: profileData.providerType === 'delivery' ? 'repartidor' : 'provider',
-            profileSetupData: profileData,
-            isTransactionsActive: true
-        }
-    );
+    const db = getFirebaseFirestore();
+    await becomeProviderFlow(db, { userId, profileData });
     revalidatePath('/profile');
 }
