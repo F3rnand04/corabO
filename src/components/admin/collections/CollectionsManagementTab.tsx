@@ -117,5 +117,3 @@ export function CollectionsManagementTab({ selectedCountry }: CollectionsManagem
     </Card>
   );
 }
-
-    

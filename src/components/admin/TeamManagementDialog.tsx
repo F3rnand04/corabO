@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -17,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { countries } from '@/lib/data/options';
-import { createManagementUser } from '@/lib/actions';
+import { createManagementUser } from '@/lib/actions/admin.actions';
 
 
 interface TeamManagementDialogProps {
