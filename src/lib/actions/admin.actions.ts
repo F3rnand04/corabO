@@ -6,14 +6,19 @@ import { autoVerifyIdWithAIFlow } from '@/ai/flows/verification-flow';
 import { sendNewCampaignNotificationsFlow } from '@/ai/flows/notification-flow';
 import { createManagementUserFlow } from '@/ai/flows/admin-flow';
 import { createTransactionFlow } from '@/ai/flows/transaction-flow';
-import { updateUserFlow, deleteUserFlow, toggleGpsFlow } from '@/ai/flows/profile-flow';
-import { getFirestore } from '../firebase-admin';
+import { getFirestore } from 'firebase-admin/firestore';
+import { getFirebaseAuth } from '../firebase-admin';
+
+async function _updateUser(userId: string, updates: any) {
+    const db = getFirestore();
+    await db.collection('users').doc(userId).update(updates);
+}
 
 /**
  * Approves a user's identity verification.
  */
 export async function verifyUserId(userId: string) {
-    await updateUserFlow({ userId, updates: { idVerificationStatus: 'verified', verified: true } });
+    await _updateUser(userId, { idVerificationStatus: 'verified', verified: true });
     revalidatePath('/admin');
 }
 
@@ -21,7 +26,7 @@ export async function verifyUserId(userId: string) {
  * Rejects a user's identity verification.
  */
 export async function rejectUserId(userId: string) {
-    await updateUserFlow({ userId, updates: { idVerificationStatus: 'rejected' } });
+    await _updateUser(userId, { idVerificationStatus: 'rejected' });
     revalidatePath('/admin');
 }
 
@@ -69,7 +74,10 @@ export async function sendNewCampaignNotifications(input: { campaignId: string }
 
 
 export async function deleteUser(userId: string) {
-    await deleteUserFlow({ userId });
+    const auth = getFirebaseAuth();
+    const db = getFirestore();
+    await auth.deleteUser(userId);
+    await db.collection('users').doc(userId).delete();
     revalidatePath('/admin');
 }
 
@@ -77,7 +85,7 @@ export async function toggleUserPause(userId: string, shouldUnpause: boolean) {
     const updates = shouldUnpause 
         ? { isPaused: false } 
         : { isPaused: true, pauseReason: 'Paused by admin' };
-    await updateUserFlow({ userId, updates });
+    await _updateUser(userId, updates);
     revalidatePath('/admin');
 }
 

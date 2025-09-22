@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import { getOrCreateUserFlow, completeInitialSetupFlow, checkIdUniquenessFlow, toggleGpsFlow, updateUserFlow, addContactToUserFlow, removeContactFromUserFlow } from '@/ai/flows/profile-flow';
+import { getOrCreateUserFlow, completeInitialSetupFlow, checkIdUniquenessFlow, toggleGpsFlow } from '@/ai/flows/profile-flow';
 import { sendWelcomeToProviderNotificationFlow } from '@/ai/flows/notification-flow';
 import { createTransactionFlow } from '@/ai/flows/transaction-flow';
 import { credicoraCompanyLevels, credicoraLevels } from '../data/options';
@@ -11,14 +11,20 @@ import type { FirebaseUserInput, ProfileSetupData, User } from '@/lib/types';
 
 // --- Exported Actions ---
 
+async function _updateUser(userId: string, updates: any) {
+    const db = getFirestore();
+    await db.collection('users').doc(userId).update(updates);
+}
+
+
 export async function updateUser(userId: string, updates: Partial<User> | { [key: string]: any }) {
-    await updateUserFlow({ userId, updates });
+    await _updateUser(userId, updates);
     revalidatePath('/profile');
     revalidatePath(`/companies/${userId}`);
 }
 
 export async function updateUserProfileImage(userId: string, dataUrl: string) {
-    await updateUserFlow({ userId, updates: { profileImage: dataUrl } });
+    await _updateUser(userId, { profileImage: dataUrl });
     revalidatePath('/profile');
     revalidatePath(`/companies/${userId}`);
 }
@@ -29,14 +35,14 @@ export async function updateFullProfile(userId: string, formData: ProfileSetupDa
     const userSnap = await userRef.get();
     const becameProvider = userType === 'provider' && userSnap.exists() && userSnap.data()?.type === 'client';
 
-    await updateUserFlow({
+    await _updateUser(
         userId,
-        updates: {
+        {
             'profileSetupData': formData, 
             'isTransactionsActive': true, 
             'type': userType 
         }
-    });
+    );
 
     if(becameProvider) {
         sendWelcomeToProviderNotificationFlow({ userId });
@@ -91,16 +97,16 @@ export async function activatePromotion(userId: string, promotion: { imageId: st
     const expirationDate = new Date();
     expirationDate.setHours(expirationDate.getHours() + 24);
 
-    await updateUserFlow({
+    await _updateUser(
         userId,
-        updates: {
+        {
             promotion: {
                 text: promotion.promotionText,
                 expires: expirationDate.toISOString(),
                 publicationId: promotion.imageId,
             }
         }
-    });
+    );
 
     await createTransactionFlow({
         type: 'Sistema',
@@ -131,13 +137,13 @@ export async function removeContactFromUser(userId: string, contactId: string) {
 }
 
 export async function becomeProvider(userId: string, profileData: ProfileSetupData) {
-    await updateUserFlow({
+    await _updateUser(
         userId,
-        updates: {
+        {
             type: profileData.providerType === 'delivery' ? 'repartidor' : 'provider',
             profileSetupData: profileData,
             isTransactionsActive: true
         }
-    });
+    );
     revalidatePath('/profile');
 }
