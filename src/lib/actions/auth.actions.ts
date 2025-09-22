@@ -4,7 +4,16 @@ import { cookies } from 'next/headers';
 import { getFirebaseAuth } from '@/lib/firebase-admin';
 import type { FirebaseUserInput } from '@/lib/types';
 import { getOrCreateUserFlow } from '@/ai/flows/profile-flow';
-import { revalidatePath } from 'next/cache';
+
+/**
+ * Server action to get or create a user in Firestore.
+ * This is called by the client-side AuthProvider.
+ */
+export async function getOrCreateUser(firebaseUser: FirebaseUserInput) {
+    const user = await getOrCreateUserFlow(firebaseUser);
+    return user;
+}
+
 
 /**
  * Securely signs in a user as a guest by generating a custom token on the server.
@@ -66,11 +75,4 @@ export async function clearSessionCookie() {
         console.error("Error clearing session cookie", error);
         return { success: false, error: 'Could not clear session cookie.' };
     }
-}
-
-export async function getOrCreateUser(firebaseUser: FirebaseUserInput) {
-    const user = await getOrCreateUserFlow(firebaseUser);
-    // Do not revalidate here, as it can cause race conditions during login.
-    // The client-side redirect will handle the UI update.
-    return user;
 }

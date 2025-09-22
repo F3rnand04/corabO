@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback, createContext, useContext } fr
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase-client';
-import { clearSessionCookie } from '@/lib/actions/auth.actions';
+import { clearSessionCookie, getOrCreateUser } from '@/lib/actions/auth.actions';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, usePathname } from 'next/navigation';
 import { doc, onSnapshot, collection, query, where, orderBy } from 'firebase/firestore';
@@ -139,7 +139,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 }
             } else {
               // This can happen briefly during user creation
-              setCurrentUser(null);
+              // Let's ensure the user document exists by calling the server action
+              getOrCreateUser(fbUser);
             }
             setIsLoadingAuth(false);
         });

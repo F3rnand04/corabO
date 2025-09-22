@@ -1,3 +1,4 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -153,7 +154,7 @@ export async function purchaseGift(userId: string, gift: { id: string, name: str
         },
     });
     
-    const paymentUrl = `/payment?commitmentId=${'${newTransaction.id}'}`;
+    const paymentUrl = `/payment?commitmentId=${newTransaction.id}`;
 
     return { paymentUrl };
 }

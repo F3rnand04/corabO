@@ -27,7 +27,7 @@ export async function generateMonthlyInvoices(month: number, year: number) {
         let success = false;
         while (retries < MAX_RETRIES && !success) {
             try {
-                await generateProviderInvoiceFlow({ providerId: doc.id, month, year });
+                await generateProviderInvoiceFlow(db, { providerId: doc.id, month, year });
                 processedCount++;
                 success = true; // Mark as success to exit the while loop
             } catch (error: any) {

@@ -1,31 +1,26 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import type { FirebaseUserInput, ProfileSetupData, User } from '@/lib/types';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getOrCreateUserFlow, completeInitialSetupFlow, checkIdUniquenessFlow, deleteUserFlow, toggleGpsFlow, updateUserFlow, addContactToUserFlow, removeContactFromUserFlow } from '@/ai/flows/profile-flow';
 import { sendWelcomeToProviderNotificationFlow } from '@/ai/flows/notification-flow';
 import { createTransactionFlow } from '@/ai/flows/transaction-flow';
 import { credicoraCompanyLevels, credicoraLevels } from '../data/options';
+import type { FirebaseUserInput, ProfileSetupData, User } from '@/lib/types';
 
 
 // --- Exported Actions ---
 
-export async function getOrCreateUser(firebaseUser: FirebaseUserInput): Promise<User> {
-    const user = await getOrCreateUserFlow(firebaseUser);
-    return user;
-}
-
 export async function updateUser(userId: string, updates: Partial<User> | { [key: string]: any }) {
     await updateUserFlow({ userId, updates });
     revalidatePath('/profile');
-    revalidatePath(`/companies/${'${userId}'}`);
+    revalidatePath(`/companies/${userId}`);
 }
 
 export async function updateUserProfileImage(userId: string, dataUrl: string) {
     await updateUserFlow({ userId, updates: { profileImage: dataUrl } });
     revalidatePath('/profile');
-    revalidatePath(`/companies/${'${userId}'}`);
+    revalidatePath(`/companies/${userId}`);
 }
 
 export async function updateFullProfile(userId: string, formData: ProfileSetupData, userType: User['type']) {
@@ -48,7 +43,7 @@ export async function updateFullProfile(userId: string, formData: ProfileSetupDa
     }
 
     revalidatePath('/profile');
-    revalidatePath(`/companies/${'${userId}'}`);
+    revalidatePath(`/companies/${userId}`);
 }
 
 
@@ -56,7 +51,7 @@ export async function toggleGps(userId: string) {
     await toggleGpsFlow({ userId });
     revalidatePath('/');
     revalidatePath('/profile');
-    revalidatePath(`/companies/${'${userId}'}`);
+    revalidatePath(`/companies/${userId}`);
 }
 
 export async function deleteUser(userId: string) {
@@ -92,7 +87,7 @@ export async function subscribeUser(userId: string, planName: string, amount: nu
         providerId: 'corabo-admin',
         participantIds: [userId, 'corabo-admin'],
         details: {
-            system: `Suscripción a ${'${planName}'}`,
+            system: `Suscripción a ${planName}`,
             isSubscription: true
         },
     });
@@ -134,12 +129,12 @@ export async function activatePromotion(userId: string, promotion: { imageId: st
     });
 
     revalidatePath('/profile');
-    revalidatePath(`/companies/${'${userId}'}`);
+    revalidatePath(`/companies/${userId}`);
 }
 
 export async function addContactToUser(userId: string, contactId: string) {
     await addContactToUserFlow({ userId, contactId });
-    revalidatePath(`/companies/${'${contactId}'}`);
+    revalidatePath(`/companies/${contactId}`);
     revalidatePath('/contacts');
 }
 

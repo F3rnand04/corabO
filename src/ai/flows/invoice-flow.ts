@@ -9,6 +9,7 @@ import { z } from 'zod';
 import { startOfMonth, endOfMonth } from 'date-fns';
 import { sendNotification } from '@/ai/flows/notification-flow';
 import { countries } from '@/lib/data/options';
+import { type Firestore } from 'firebase-admin/firestore';
 
 const GenerateInvoiceInputSchema = z.object({
   providerId: z.string(),
@@ -21,8 +22,7 @@ type GenerateInvoiceInput = z.infer<typeof GenerateInvoiceInputSchema>;
 /**
  * Generates a monthly commission invoice for a single provider.
  */
-export async function generateProviderInvoiceFlow(input: GenerateInvoiceInput) {
-    const db = getFirebaseFirestore();
+export async function generateProviderInvoiceFlow(db: Firestore, input: GenerateInvoiceInput) {
 
     const providerRef = db.collection('users').doc(input.providerId);
     const providerSnap = await providerRef.get();
