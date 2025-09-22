@@ -495,14 +495,17 @@ export type Transaction = {
   lastUpdated?: string;
 };
 
-// Interface matching the Zod schema for type safety on the client
-export interface QuoteRequestInput {
-  clientId: string;
-  title: string;
-  description: string;
-  category: string;
-  isPaid?: boolean;
-}
+// --- Schemas moved to types.ts to avoid circular dependencies ---
+
+// Schema for creating a quote request from the /quotes page
+export const QuoteRequestInputSchema = z.object({
+  clientId: z.string(),
+  title: z.string().min(5, "El título es muy corto."),
+  description: z.string().min(20, "La descripción debe ser más detallada."),
+  category: z.string({ required_error: "Debes seleccionar una categoría." }),
+  isPaid: z.boolean().optional(), // To indicate if a payment flow is triggered
+});
+export type QuoteRequestInput = z.infer<typeof QuoteRequestInputSchema>;
 
 
 export type TempRecipientInfo = {
@@ -518,28 +521,24 @@ export type Gift = {
   icon: string; // URL to an icon/image for the gift
 };
 
-// Types moved from report-flow
-export type SanctionReason = 
-    | "Contenido Engañoso o Spam"
-    | "Suplantación de Identidad"
-    | "Incitación al Odio o Acoso"
-    | "Promoción de Actividades Ilegales"
-    | "Contenido Explícito o Inapropiado";
+// Schemas for Verification Flow
+export const VerificationInputSchema = z.object({
+  userId: z.string(),
+  nameInRecord: z.string(),
+  idInRecord: z.string(),
+  documentImageUrl: z.string(),
+  isCompany: z.boolean().optional(),
+});
+export type VerificationInput = z.infer<typeof VerificationInputSchema>;
 
-export type ContentReport = {
-  id: string;
-  reporterId: string;
-  reportedContentId: string; // Can be a publication ID or a user ID
-  reportedUserId: string; // The user who owns the content
-  contentType: 'publication' | 'profile';
-  reason: SanctionReason;
-  description?: string;
-  status: 'pending' | 'reviewed';
-  createdAt: string;
-  reviewedBy?: string;
-  reviewedAt?: string;
-  sanctionReason?: SanctionReason; // Reason selected by admin
-};
+export const VerificationOutputSchema = z.object({
+  extractedName: z.string().describe("The full name of the person or company as it appears on the document."),
+  extractedId: z.string().describe("The ID number (cédula, RIF, NIT, etc.) as it appears on the document."),
+  nameMatch: z.boolean(),
+  idMatch: z.boolean(),
+});
+export type VerificationOutput = z.infer<typeof VerificationOutputSchema>;
+
 
 // Schemas for Publication Flow
 export interface CreatePublicationInput {
@@ -587,26 +586,54 @@ export interface RemoveGalleryImageInput {
   imageId: string;
 }
 
-// Schemas for Verification Flow
-export const VerificationInputSchema = z.object({
-  userId: z.string(),
-  nameInRecord: z.string(),
-  idInRecord: z.string(),
-  documentImageUrl: z.string(),
-  isCompany: z.boolean().optional(),
+// --- NEWLY MOVED SCHEMAS ---
+
+export const GetFeedInputSchema = z.object({
+  limitNum: z.number().optional(),
+  startAfterDocId: z.string().optional(),
+  searchQuery: z.string().optional(),
+  categoryFilter: z.string().optional(),
 });
-export type VerificationInput = z.infer<typeof VerificationInputSchema>;
+export type GetFeedInput = z.infer<typeof GetFeedInputSchema>;
 
-export const VerificationOutputSchema = z.object({
-  extractedName: z.string().describe("The full name of the person or company as it appears on the document."),
-  extractedId: z.string().describe("The ID number (cédula, RIF, NIT, etc.) as it appears on the document."),
-  nameMatch: z.boolean(),
-  idMatch: z.boolean(),
+export const GetFeedOutputSchema = z.object({
+  publications: z.array(z.any()),
+  lastVisibleDocId: z.string().optional(),
 });
-export type VerificationOutput = z.infer<typeof VerificationOutputSchema>;
+export type GetFeedOutput = z.infer<typeof GetFeedOutputSchema>;
 
-  
+// NEW: Data model for dispute cases
+export type DisputeCase = {
+  id: string; // Corresponds to the transaction ID
+  status: 'open' | 'investigating' | 'resolved';
+  clientId: string;
+  providerId: string;
+  managerId?: string; // Admin handling the case
+  createdAt: string;
+  lastUpdated: string;
+  resolutionNotes?: string;
+  finalResolution?: 'refund_client' | 'pay_provider' | 'partial_refund' | 'no_action';
+};
 
-    
+export type SanctionReason = 
+    | "Contenido Engañoso o Spam"
+    | "Suplantación de Identidad"
+    | "Incitación al Odio o Acoso"
+    | "Promoción de Actividades Ilegales"
+    | "Contenido Explícito o Inapropiado";
 
-
+// NEW: Data model for content reports
+export type ContentReport = {
+  id: string;
+  reporterId: string;
+  reportedContentId: string; // Can be a publication ID or a user ID
+  reportedUserId: string; // The user who owns the content
+  contentType: 'publication' | 'profile';
+  reason: SanctionReason;
+  description?: string;
+  status: 'pending' | 'reviewed';
+  createdAt: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  sanctionReason?: SanctionReason; // Reason selected by admin
+};

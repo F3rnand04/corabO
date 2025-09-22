@@ -4,7 +4,7 @@
  * @fileOverview Flows for managing transaction disputes.
  */
 import { z } from 'zod';
-import { getFirebaseFirestore } from '@/lib/firebase-admin';
+import type { Firestore } from 'firebase-admin/firestore';
 import type { DisputeCase, Transaction } from '@/lib/types';
 import { sendNotification } from './notification-flow';
 
@@ -18,8 +18,7 @@ type InitiateDisputeInput = z.infer<typeof InitiateDisputeSchema>;
  * Creates a formal dispute case based on a transaction.
  * This function is intended to be called by an admin from the management panel.
  */
-export async function initiateDisputeResolutionFlow(input: InitiateDisputeInput): Promise<DisputeCase> {
-    const db = getFirebaseFirestore();
+export async function initiateDisputeResolutionFlow(db: Firestore, input: InitiateDisputeInput): Promise<DisputeCase> {
     const batch = db.batch();
 
     const txRef = db.collection('transactions').doc(input.transactionId);

@@ -138,13 +138,13 @@ export async function activatePromotion(userId: string, promotion: { imageId: st
 }
 
 export async function addContactToUser(userId: string, contactId: string) {
-    await addContactToUserFlow(userId, contactId);
+    await addContactToUserFlow({ userId, contactId });
     revalidatePath(`/companies/${contactId}`);
     revalidatePath('/contacts');
 }
 
 export async function removeContactFromUser(userId: string, contactId: string) {
-    await removeContactFromUserFlow(userId, contactId);
+    await removeContactFromUserFlow({ userId, contactId });
     revalidatePath('/contacts');
 }
 

@@ -1,11 +1,11 @@
 'use server';
 
-import type { CreatePublicationInput, CreateProductInput, AddCommentInput, RemoveCommentInput, UpdateGalleryImageInput, RemoveGalleryImageInput, GalleryImage } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { createProductFlow, createPublicationFlow, addCommentToImageFlow, removeCommentFromImageFlow, updateGalleryImageFlow, removeGalleryImageFlow } from '@/ai/flows/publication-flow';
 import { sendNewContentNotificationFlow } from '@/ai/flows/notification-flow';
 import { getFirestore } from 'firebase-admin/firestore';
-import type { User } from '@/lib/types';
+import type { User, CreatePublicationInput, CreateProductInput, AddCommentInput, RemoveCommentInput, UpdateGalleryImageInput, RemoveGalleryImageInput, GalleryImage } from '@/lib/types';
+
 
 /**
  * Server Action to create a new publication.

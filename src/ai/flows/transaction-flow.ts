@@ -5,7 +5,7 @@
  * @fileOverview Transaction management flows.
  */
 import { z } from 'zod';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue, type Firestore } from 'firebase-admin/firestore';
 import type { Transaction, User, QrSession } from '@/lib/types';
 import { addDays, endOfMonth, isAfter, startOfWeek } from 'date-fns';
 import { getExchangeRate } from './exchange-rate-flow';
@@ -91,8 +91,7 @@ type CheckoutInput = z.infer<typeof CheckoutInputSchema>;
 
 // --- Flows ---
 
-export async function processDirectPaymentFlow(input: ProcessDirectPaymentInput): Promise<{ transactionId: string }> {
-    const db = getFirestore();
+export async function processDirectPaymentFlow(db: Firestore, input: ProcessDirectPaymentInput): Promise<{ transactionId: string }> {
     const batch = db.batch();
 
     const sessionRef = db.collection('qr_sessions').doc(input.sessionId);
@@ -571,6 +570,3 @@ export async function createQuoteRequestFlow(input: QuoteRequestInput): Promise<
 }
 
     
-
-
-

@@ -9,9 +9,8 @@ import { getFirebaseFirestore } from '../firebase-admin';
  */
 export async function initiateDisputeResolution(transactionId: string, actorId: string) {
     try {
-        // The action now gets the firestore instance and passes it to the flow.
-        // This avoids the flow having a direct import to firebase-admin setup.
-        const disputeCase = await initiateDisputeResolutionFlow({ transactionId, actorId });
+        const db = getFirebaseFirestore();
+        const disputeCase = await initiateDisputeResolutionFlow(db, { transactionId, actorId });
         
         // Revalidate the admin panel to reflect the new state
         revalidatePath('/admin');

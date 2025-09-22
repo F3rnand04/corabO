@@ -129,11 +129,7 @@ export async function cancelSystemTransaction(transactionId: string) {
 
 export async function processDirectPayment(sessionId: string) {
     const db = getFirebaseFirestore();
-    const sessionRef = db.collection('qr_sessions').doc(sessionId);
-    const sessionSnap = await sessionRef.get();
-    if (!sessionSnap.exists) throw new Error("Session not found for payment processing");
-    
-    const result = await processDirectPaymentFlow({ sessionId });
+    const result = await processDirectPaymentFlow(db, { sessionId });
 
     revalidatePath('/transactions');
     return result;
