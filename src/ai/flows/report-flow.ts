@@ -3,7 +3,7 @@
 /**
  * @fileOverview Flows for managing content reports.
  */
-import { getFirebaseFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getFirebaseFirestore } from '@/lib/firebase-admin';
 import { sendNotification } from './notification-flow';
 import type { ContentReport, SanctionReason } from '@/lib/types';
 

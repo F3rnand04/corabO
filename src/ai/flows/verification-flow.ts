@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview An AI-powered document verification flow.
@@ -7,27 +6,7 @@
  */
 import { z } from 'zod';
 import { ai } from '@/ai/genkit';
-
-
-const VerificationInputSchema = z.object({
-  userId: z.string(),
-  nameInRecord: z.string(),
-  idInRecord: z.string(),
-  documentImageUrl: z.string(),
-  isCompany: z.boolean().optional(),
-});
-
-export type VerificationInput = z.infer<typeof VerificationInputSchema>;
-
-
-const VerificationOutputSchema = z.object({
-  extractedName: z.string().describe("The full name of the person or company as it appears on the document."),
-  extractedId: z.string().describe("The ID number (cédula, RIF, NIT, etc.) as it appears on the document."),
-  nameMatch: z.boolean(),
-  idMatch: z.boolean(),
-});
-
-export type VerificationOutput = z.infer<typeof VerificationOutputSchema>;
+import { VerificationInputSchema, VerificationOutputSchema, type VerificationInput, type VerificationOutput } from '@/lib/types';
 
 
 const normalizeId = (id: string): string => {
@@ -107,7 +86,7 @@ export const autoVerifyIdWithAIFlow = ai.defineFlow(
         inputSchema: VerificationInputSchema,
         outputSchema: VerificationOutputSchema,
     },
-    async (input) => {
+    async (input: VerificationInput): Promise<VerificationOutput> => {
         try {
             const llmResponse = await verificationPrompt.generate({
                 input: input,

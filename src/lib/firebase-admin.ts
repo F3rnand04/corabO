@@ -7,7 +7,7 @@
 import admin from 'firebase-admin';
 import { getAuth, type Auth } from 'firebase-admin/auth';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
-import { getStorage, type Storage } from 'firebase-admin/storage';
+import { getStorage, type Storage } from 'firebase/storage';
 import { getMessaging, type Messaging } from 'firebase-admin/messaging';
 import { firebaseConfig } from './firebase-config';
 
@@ -18,13 +18,6 @@ import { firebaseConfig } from './firebase-config';
 function initializeAdminApp(): admin.app.App {
     if (admin.apps.length > 0) {
         return admin.app();
-    }
-    
-    // This check is crucial. If NEXT_RUNTIME is not 'nodejs', we are in a client-side
-    // environment or an environment that doesn't support the Admin SDK (like Edge Runtime).
-    // This entire file should only ever be imported in 'nodejs' (server) environments.
-    if (process.env.NEXT_RUNTIME !== 'nodejs') {
-        throw new Error("CRITICAL: El SDK de Firebase Admin no puede ser importado en el cliente.");
     }
     
     const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_KEY
@@ -56,8 +49,8 @@ export function getFirebaseFirestore(): Firestore {
     return getFirestore(adminApp);
 }
 
-export function getFirebaseStorage(): Storage {
-    return getStorage(adminApp);
+export function getFirebaseStorage(): admin.storage.Storage {
+    return admin.storage(adminApp);
 }
 
 export function getFirebaseMessaging(): Messaging {

@@ -1,5 +1,3 @@
-
-
 import { z } from 'zod';
 
 export type FirebaseUserInput = { uid: string; email?: string | null; displayName?: string | null; photoURL?: string | null; phoneNumber?: string | null; emailVerified: boolean; };
@@ -710,3 +708,21 @@ export interface UpdateGalleryImageInput {
 export interface RemoveGalleryImageInput {
   imageId: string;
 }
+
+// Schemas for Verification Flow
+export const VerificationInputSchema = z.object({
+  userId: z.string(),
+  nameInRecord: z.string(),
+  idInRecord: z.string(),
+  documentImageUrl: z.string(),
+  isCompany: z.boolean().optional(),
+});
+export type VerificationInput = z.infer<typeof VerificationInputSchema>;
+
+export const VerificationOutputSchema = z.object({
+  extractedName: z.string().describe("The full name of the person or company as it appears on the document."),
+  extractedId: z.string().describe("The ID number (cédula, RIF, NIT, etc.) as it appears on the document."),
+  nameMatch: z.boolean(),
+  idMatch: z.boolean(),
+});
+export type VerificationOutput = z.infer<typeof VerificationOutputSchema>;
