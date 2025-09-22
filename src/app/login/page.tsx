@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -7,7 +8,7 @@ import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { signInWithPopup, signInWithCustomToken } from 'firebase/auth';
 import { auth, googleProvider } from '@/lib/firebase-client';
-import { signInAsGuest, createSessionCookie } from '@/lib/actions/auth.actions';
+import { signInAsGuest, createSessionCookie } from '@/lib/actions';
 import { useAuth } from '@/hooks/use-auth-provider';
 import GoogleIcon from '@/components/GoogleIcon';
 import { useRouter } from 'next/navigation';
@@ -28,7 +29,8 @@ export default function LoginPage() {
             const firebaseUser = userCredential.user;
             const idToken = await firebaseUser.getIdToken();
             await createSessionCookie(idToken);
-            window.location.href = '/'; 
+            // Let the AuthProvider handle the redirect, don't force it here
+            // window.location.href = '/'; 
         } else {
             throw new Error(response.error || "No se pudo obtener el token de invitado.");
         }
@@ -52,7 +54,8 @@ export default function LoginPage() {
         
         await createSessionCookie(idToken);
         
-        window.location.href = '/';
+        // Let the AuthProvider handle the redirect
+        // window.location.href = '/';
 
     } catch (error: any) {
         console.error("Google Sign-In Error:", error);

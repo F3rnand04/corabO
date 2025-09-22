@@ -16,7 +16,8 @@ import { useAuth } from '@/hooks/use-auth-provider';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { activatePromotion, createPublication } from '@/lib/actions/user.actions';
+import { activatePromotion } from '@/lib/actions/user.actions';
+import { createPublication } from '@/lib/actions/publication.actions';
 
 const promotionSuggestions = ["10% OFF", "2x1 Hoy", "Envío Gratis", "Oferta Especial", "Nuevo"];
 

@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { checkIdUniqueness, completeInitialSetup } from '@/lib/actions/user.actions';
+import { checkIdUniqueness, completeInitialSetup } from '@/lib/actions';
 import { useAuth } from '@/hooks/use-auth-provider';
 import InitialSetupForm from '@/components/profile-setup/InitialSetupForm';
 import { Loader2 } from 'lucide-react';
@@ -49,7 +49,6 @@ export default function InitialSetupPage() {
         toast({ title: "Perfil Guardado", description: "Tus datos han sido guardados. Serás redirigido."});
         // The AuthProvider will detect the state change and the main page component will handle the redirect.
         // No need to force a reload anymore.
-        // window.location.href = '/';
 
     } catch (error: any) {
         console.error("Failed to complete setup:", error);
