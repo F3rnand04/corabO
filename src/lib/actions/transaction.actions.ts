@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { createTransactionFlow } from '@/ai/flows/transaction-flow';
 import type { Transaction, QuoteRequestInput, AgreementProposal } from '@/lib/types';
 import { getFirebaseStorage, getFirebaseFirestore } from '@/lib/firebase-admin';
+import type { Storage } from 'firebase-admin/storage';
 import { 
     createAppointmentRequestFlow, 
     acceptAppointmentFlow, 
@@ -24,12 +25,12 @@ import {
 
 /**
  * Uploads a file (as a data URL) to a specified path in Firebase Storage.
+ * @param storage - The Firebase Admin Storage instance.
  * @param filePath The desired path in the storage bucket.
  * @param dataUrl The base64 encoded data URL of the file.
  * @returns The public URL of the uploaded file.
  */
-async function uploadToStorage(filePath: string, dataUrl: string): Promise<string> {
-    const storage = getFirebaseStorage();
+async function uploadToStorage(storage: Storage, filePath: string, dataUrl: string): Promise<string> {
     const bucket = storage.bucket();
 
     // Extract content type and base64 data from data URL
@@ -107,8 +108,9 @@ export async function payCommitment(transactionId: string, userId: string, payme
 
     // If a new voucher data URL is provided, upload it to storage
     if (paymentDetails.paymentVoucherUrl && paymentDetails.paymentVoucherUrl.startsWith('data:')) {
+        const storage = getFirebaseStorage();
         const filePath = `vouchers/${userId}/${transactionId}-${Date.now()}`;
-        uploadedVoucherUrl = await uploadToStorage(filePath, paymentDetails.paymentVoucherUrl);
+        uploadedVoucherUrl = await uploadToStorage(storage, filePath, paymentDetails.paymentVoucherUrl);
     }
     
     const db = getFirebaseFirestore();
