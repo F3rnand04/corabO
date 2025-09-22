@@ -5,7 +5,7 @@ import type { User } from '@/lib/types';
 import { autoVerifyIdWithAIFlow } from '@/ai/flows/verification-flow';
 import { sendNewCampaignNotificationsFlow } from '@/ai/flows/notification-flow';
 import { createManagementUserFlow } from '@/ai/flows/admin-flow';
-import { createTransactionFlow } from '@/ai/flows/transaction-flow';
+import { createTransactionFlow } from '@/ai_flows/transaction-flow';
 import { updateUserFlow, deleteUserFlow, toggleGpsFlow } from '@/ai/flows/profile-flow';
 import { getFirestore } from '../firebase-admin';
 
@@ -82,8 +82,7 @@ export async function toggleUserPause(userId: string, shouldUnpause: boolean) {
 }
 
 export async function registerSystemPayment(userId: string, concept: string, amount: number, isSubscription: boolean, voucherUrl: string, reference: string) {
-    const txId = `txn-sys-${userId.slice(0,5)}-${Date.now()}`;
-    const newTransaction: Omit<Transaction, 'id'> = {
+    await createTransactionFlow({
         type: 'Sistema',
         status: 'Pago Enviado - Esperando Confirmación',
         date: new Date().toISOString(),
@@ -99,9 +98,7 @@ export async function registerSystemPayment(userId: string, concept: string, amo
             paymentReference: reference,
             paymentSentAt: new Date().toISOString(),
         }
-    };
-
-    await createTransactionFlow(newTransaction);
+    });
     
     revalidatePath('/transactions');
     revalidatePath('/admin');

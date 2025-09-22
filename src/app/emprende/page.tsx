@@ -16,8 +16,7 @@ import { useAuth } from '@/hooks/use-auth-provider';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { activatePromotion } from '@/lib/actions/user.actions';
-import { createPublication } from '@/lib/actions/publication.actions';
+import { activatePromotion, createPublication } from '@/lib/actions/user.actions';
 
 const promotionSuggestions = ["10% OFF", "2x1 Hoy", "Envío Gratis", "Oferta Especial", "Nuevo"];
 
@@ -100,7 +99,7 @@ export default function EmprendePage() {
     setIsSubmitting(true);
     
     try {
-        await createPublication({
+        const newPublication = await createPublication({
           userId: currentUser.id,
           description: tempDescription,
           imageDataUri: tempImagePreview!,
@@ -108,7 +107,7 @@ export default function EmprendePage() {
           type: 'image',
         });
 
-        await activatePromotion(currentUser.id, { imageId: `temp-pub-${Date.now()}`, promotionText, cost: promotionCost });
+        await activatePromotion(currentUser.id, { imageId: newPublication.id, promotionText, cost: promotionCost });
 
         toast({ title: "¡Promoción Activada!", description: "Tu oferta destacará por 24 horas." });
         router.push('/profile');

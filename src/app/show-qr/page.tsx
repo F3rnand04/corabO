@@ -12,35 +12,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useState, useRef, ChangeEvent, useEffect, useMemo } from 'react';
 import Image from 'next/image';
-import { db } from '@/lib/firebase-client';
-import { collection, query, where, onSnapshot, Unsubscribe, doc } from 'firebase/firestore';
-import type { QrSession, User, Transaction } from '@/lib/types';
-import { setQrSessionAmount, cancelQrSession, confirmMobilePayment, finalizeQrSession } from '@/lib/actions/cashier.actions';
+import { setQrSessionAmount, cancelQrSession, confirmMobilePayment, finalizeQrSession } from '@/lib/actions';
 import { credicoraLevels } from '@/lib/types';
 
 export default function ShowQrPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { currentUser } = useAuth();
+  const { currentUser, qrSession } = useAuth(); // Use qrSession from context
 
-  const [qrSession, setQrSession] = useState<QrSession | null>(null);
   const [amount, setAmount] = useState('');
   const [voucherFile, setVoucherFile] = useState<File | null>(null);
   const [voucherPreview, setVoucherPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (!currentUser) return;
-    const q = query(collection(db, 'qr_sessions'), where('providerId', '==', currentUser.id), where('status', '!=', 'completed'), where('status', '!=', 'cancelled'));
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-        const activeSession = snapshot.docs.length > 0 ? snapshot.docs[0].data() as QrSession : null;
-        setQrSession(activeSession);
-    });
-
-    return () => unsubscribe();
-  }, [currentUser]);
-
 
   if (!currentUser) {
     return (

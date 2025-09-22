@@ -11,7 +11,7 @@ import type { User } from '@/lib/types';
  * Server Action to create a new publication.
  * It orchestrates the creation flow and sends notifications for reputable providers.
  */
-export async function createPublication(input: CreatePublicationInput) {
+export async function createPublication(input: CreatePublicationInput): Promise<GalleryImage> {
     const newPublication = await createPublicationFlow(input);
     
     if (newPublication) {
