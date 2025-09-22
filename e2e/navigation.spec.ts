@@ -36,4 +36,22 @@ test.describe('Navegación y Búsqueda', () => {
     // Esto asume que al menos una publicación de prueba contiene "reparación" en su descripción.
     await expect(page.locator('text=/reparación/i').first()).toBeVisible({ timeout: 10000 });
   });
+
+  test('El usuario puede ver una publicación y dejar un comentario', async ({ page }) => {
+    // 1. Hacer clic en la primera publicación del feed
+    // Usamos un selector que apunte a la imagen dentro de la tarjeta de publicación.
+    await page.locator('.publication-card img').first().click();
+
+    // 2. Verificar que se navega a la página de detalles de la publicación
+    await expect(page).toHaveURL(/\/publications\/.+/);
+    await expect(page.getByRole('heading', { name: 'Comentarios' })).toBeVisible();
+
+    // 3. Escribir y enviar un comentario
+    const commentText = `¡Un comentario de prueba! ${Math.random()}`;
+    await page.getByPlaceholder('Añade un comentario...').fill(commentText);
+    await page.getByRole('button', { name: 'Comentar' }).click();
+
+    // 4. Verificar que el comentario aparece en la página
+    await expect(page.locator(`text=${commentText}`)).toBeVisible();
+  });
 });

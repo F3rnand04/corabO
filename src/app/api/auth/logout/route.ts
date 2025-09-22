@@ -1,8 +1,8 @@
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   // Redirect to the homepage
   const response = NextResponse.redirect(new URL('/', request.url));
   
