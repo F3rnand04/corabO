@@ -85,6 +85,7 @@ export async function removeCommentFromImage(input: RemoveCommentInput) {
 export async function updateGalleryImage(imageId: string, updates: { description?: string, imageDataUri?: string }) {
     await updateGalleryImageFlow({imageId: imageId, updates: updates});
     revalidatePath(`/publications/${imageId}`);
+    revalidatePath('/profile');
 }
 
 /**
@@ -93,4 +94,5 @@ export async function updateGalleryImage(imageId: string, updates: { description
 export async function removeGalleryImage(ownerId: string, imageId: string) {
     await removeGalleryImageFlow({imageId: imageId});
     revalidatePath(`/companies/${ownerId}`);
+    revalidatePath('/profile');
 }
