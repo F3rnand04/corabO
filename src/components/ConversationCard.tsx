@@ -30,7 +30,7 @@ export function ConversationCard({ conversation, otherParticipant }: Conversatio
     const timeAgo = lastMessage ? formatDistanceToNow(new Date(lastMessage.timestamp), { addSuffix: true, locale: es }) : '';
     
     const participantName = otherParticipant ? (otherParticipant.id === currentUser.id ? "Tú (Notas)" : otherParticipant.name) : 'Sistema';
-    const participantImage = otherParticipant ? otherParticipant.profileImage : "https://i.postimg.cc/Wz1MTvWK/lg.png";
+    const participantImage = otherParticipant ? otherParticipant.profileImage : "https://i.postimg.cc/SNqD5pqW/avatar-placeholder.png";
     const fallbackChar = participantName.charAt(0) || 'S';
 
     const cardStyles = otherParticipant && otherParticipant.id !== currentUser.id

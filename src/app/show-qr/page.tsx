@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -5,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, Info, Copy, Loader2, QrCode, UploadCloud, CheckCircle, Smartphone, Banknote, Hourglass, FileText, User, Clock, X, LogOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth-provider';
-import { QRCodeSVG } from 'qrcode.react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,16 +13,18 @@ import { useState, useRef, ChangeEvent, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { setQrSessionAmount, cancelQrSession, confirmMobilePayment, finalizeQrSession } from '@/lib/actions/cashier.actions';
 import { credicoraLevels } from '@/lib/types';
+import { PersonalQrDialog } from '@/components/PersonalQrDialog';
 
 export default function ShowQrPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { currentUser, qrSession } = useAuth(); // Use qrSession from context
+  const { currentUser, qrSession } = useAuth();
 
   const [amount, setAmount] = useState('');
   const [voucherFile, setVoucherFile] = useState<File | null>(null);
   const [voucherPreview, setVoucherPreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isPersonalQrOpen, setIsPersonalQrOpen] = useState(false);
 
   if (!currentUser) {
     return (
@@ -31,17 +33,7 @@ export default function ShowQrPage() {
         </div>
     );
   }
-
-  const qrValue = JSON.stringify({ providerId: currentUser.id });
-  const manualCode = currentUser.coraboId || 'N/A';
   
-  const handleCopyCode = () => {
-    if (manualCode !== 'N/A') {
-      navigator.clipboard.writeText(manualCode);
-      toast({ title: 'Copiado', description: 'Tu código manual ha sido copiado.' });
-    }
-  };
-
   const handleSetAmount = async () => {
     if (qrSession && amount && currentUser) {
       const parsedAmount = parseFloat(amount);
@@ -82,27 +74,11 @@ export default function ShowQrPage() {
     if (!qrSession) {
       return (
         <div className="text-center space-y-6">
-            <div>
-                <h2 className="text-xl font-semibold">Muestra este QR a tu cliente</h2>
-                <p className="text-muted-foreground mt-1 text-sm">El cliente deberá escanearlo desde su app de Corabo para iniciar el pago.</p>
-            </div>
-            <div className="bg-white p-6 rounded-2xl shadow-xl inline-block">
-                 <QRCodeSVG 
-                    value={qrValue} 
-                    size={256}
-                    bgColor={"#ffffff"}
-                    fgColor={"#000000"}
-                    level={"L"}
-                    includeMargin={false}
-                />
-            </div>
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground">Si el escaneo falla, el cliente puede usar tu:</p>
-              <div className="flex items-center justify-center gap-2 mt-2">
-                <p className="text-2xl font-bold font-mono tracking-widest">{manualCode}</p>
-                <Button variant="ghost" size="icon" onClick={handleCopyCode} disabled={manualCode === 'N/A'}><Copy className="w-5 h-5"/></Button>
-              </div>
-            </div>
+            <Button onClick={() => setIsPersonalQrOpen(true)} className="w-full max-w-sm">
+                <QrCode className="mr-2 h-5 w-5"/>
+                Mostrar mi QR Personal
+            </Button>
+            <p className="text-muted-foreground text-sm">O espera a que un cliente escanee tu QR...</p>
         </div>
       );
     }
@@ -193,8 +169,7 @@ export default function ShowQrPage() {
             Escanear Código para Pagar
           </Button>
       </footer>
+       <PersonalQrDialog isOpen={isPersonalQrOpen} onOpenChange={setIsPersonalQrOpen} />
     </div>
   );
 }
-
-    

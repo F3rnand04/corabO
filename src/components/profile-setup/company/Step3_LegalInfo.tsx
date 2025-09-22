@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -35,6 +36,7 @@ export default function Step3_LegalInfo({ formData, onUpdate, onNext }: StepProp
             if (formData.legalRepresentative?.idNumber) {
                 setIsLoadingQr(true);
                 try {
+                    // This now calls a server action
                     const dataUrl = await generateQrCode(formData.legalRepresentative.idNumber);
                     setQrCodeDataUrl(dataUrl);
                 } catch (error) {
