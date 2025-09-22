@@ -1,13 +1,12 @@
-
 'use client';
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { becomeProvider } from "@/lib/actions/user.actions";
-import type { ProfileSetupData } from "@/lib/types";
 import Step6Review from "@/components/profile-setup/personal/Step6_Review";
 import { useAuth } from "@/hooks/use-auth-provider";
+import { Loader2 } from "lucide-react";
 
 export default function ReviewPage() {
   const { currentUser, setCurrentUser } = useAuth();
@@ -15,34 +14,26 @@ export default function ReviewPage() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Local state for the editable fields on the review page
-  const [formData, setFormData] = useState<Partial<ProfileSetupData>>(currentUser?.profileSetupData || {});
-
-  useEffect(() => {
-    if (currentUser?.profileSetupData) {
-      setFormData(currentUser.profileSetupData);
-    }
-  }, [currentUser]);
+  if (!currentUser || !currentUser.profileSetupData) {
+    return (
+        <div className="flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+    );
+  }
 
   const handleFinalSubmit = async () => {
-    if (!currentUser) return;
+    if (!currentUser?.profileSetupData) return;
     setIsSubmitting(true);
     
-    // We send the latest formData from our local state
-    const finalData = { ...formData };
-
     try {
-        await becomeProvider(currentUser.id, finalData as ProfileSetupData);
+        await becomeProvider(currentUser.id, currentUser.profileSetupData);
         
         setCurrentUser(prevUser => {
           if (!prevUser) return null;
           return {
             ...prevUser,
-            type: finalData.providerType === 'delivery' ? 'repartidor' : 'provider',
-            profileSetupData: {
-              ...(prevUser.profileSetupData || {}),
-              ...finalData,
-            },
+            type: currentUser.profileSetupData.providerType === 'delivery' ? 'repartidor' : 'provider',
             isTransactionsActive: true
           }
         });
@@ -59,8 +50,7 @@ export default function ReviewPage() {
 
   return (
     <Step6Review
-      formData={formData}
-      onUpdate={setFormData}
+      formData={currentUser.profileSetupData}
       onSubmit={handleFinalSubmit}
       isSubmitting={isSubmitting}
     />

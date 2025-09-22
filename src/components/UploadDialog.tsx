@@ -20,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { UploadCloud, X, Image as ImageIcon, Video, PackagePlus, Loader2, Crop, RotateCw, Check } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import type { CreatePublicationInput, CreateProductInput } from '@/lib/types';
-import { createProduct, createPublication } from '@/lib/actions';
+import { createProduct, createPublication } from '@/lib/actions/publication.actions';
 
 function ImageEditor({ src, onConfirm, onCancel, isVideo }: { src: string, onConfirm: (dataUrl: string, aspectRatio: 'square' | 'horizontal' | 'vertical') => void, onCancel: () => void, isVideo: boolean }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);

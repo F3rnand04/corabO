@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth-provider';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, Loader2 } from 'lucide-react';
@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { useRouter } from 'next/navigation';
 import { updateFullProfile } from '@/lib/actions/user.actions';
+import { Card } from '@/components/ui/card';
 
 // Import Step Components
 import Step1_CompanyInfo from '@/components/profile-setup/company/Step1_CompanyInfo';
@@ -18,19 +19,12 @@ import Step4_Review from '@/components/profile-setup/company/Step4_Review';
 
 
 export default function ProfileSetupPage() {
-  const { currentUser } = useAuth();
+  const { currentUser, setCurrentUser } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState<ProfileSetupData>(currentUser?.profileSetupData || {});
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (currentUser?.profileSetupData) {
-      setFormData(prev => ({ ...prev, ...currentUser.profileSetupData }));
-    }
-  }, [currentUser]);
   
   if (!currentUser) {
     return (
@@ -39,6 +33,9 @@ export default function ProfileSetupPage() {
         </div>
     );
   }
+
+  // Use the central state from context as the source of truth
+  const formData = currentUser.profileSetupData || {};
 
   const totalSteps = 4; // Info, Logistics, Legal, Review
 
@@ -51,8 +48,18 @@ export default function ProfileSetupPage() {
     }
   };
   
+  // onUpdate now directly modifies the central state via setCurrentUser
   const handleUpdateFormData = (data: Partial<ProfileSetupData>) => {
-    setFormData(prev => ({ ...prev, ...data }));
+    setCurrentUser(prev => {
+        if (!prev) return null;
+        return {
+            ...prev,
+            profileSetupData: {
+                ...(prev.profileSetupData || {}),
+                ...data
+            }
+        }
+    });
   };
 
   const handleFinalSubmit = async () => {

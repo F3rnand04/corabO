@@ -5,7 +5,7 @@ import type { User } from '@/lib/types';
 import { autoVerifyIdWithAIFlow } from '@/ai/flows/verification-flow';
 import { sendNewCampaignNotificationsFlow } from '@/ai/flows/notification-flow';
 import { createManagementUserFlow } from '@/ai/flows/admin-flow';
-import { createTransactionFlow } from '@/ai_flows/transaction-flow';
+import { createTransactionFlow } from '@/ai/flows/transaction-flow';
 import { updateUserFlow, deleteUserFlow, toggleGpsFlow } from '@/ai/flows/profile-flow';
 import { getFirestore } from '../firebase-admin';
 

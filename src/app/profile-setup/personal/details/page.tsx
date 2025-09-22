@@ -4,12 +4,19 @@ import { useRouter } from 'next/navigation';
 import type { ProfileSetupData } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth-provider';
 import Step2_Details from '@/components/profile-setup/personal/Step2_Details';
+import { Loader2 } from 'lucide-react';
 
 export default function DetailsPage() {
   const { currentUser, setCurrentUser } = useAuth();
   const router = useRouter();
 
-  if (!currentUser) return null;
+  if (!currentUser) {
+    return (
+        <div className="flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+    )
+  }
 
   const onUpdate = (data: Partial<ProfileSetupData>) => {
     setCurrentUser(prev => prev ? { ...prev, profileSetupData: { ...prev.profileSetupData, ...data } } : null);

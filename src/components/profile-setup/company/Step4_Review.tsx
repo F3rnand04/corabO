@@ -8,9 +8,9 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 
 interface StepProps {
-  formData: Partial<ProfileSetupData>;
-  onSubmit: () => void;
-  isSubmitting: boolean;
+    formData: Partial<ProfileSetupData>;
+    onSubmit: () => void;
+    isSubmitting: boolean;
 }
 
 const ReviewItem = ({ label, value }: { label: string, value?: string | string[] }) => {
@@ -30,22 +30,23 @@ const ReviewItem = ({ label, value }: { label: string, value?: string | string[]
 };
 
 
-export default function Step6_Review({ formData, onSubmit, isSubmitting }: StepProps) {
+export default function Step4_Review({ formData, onSubmit, isSubmitting }: StepProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Paso 6: Revisión Final</CardTitle>
-        <CardDescription>Revisa que toda la información sea correcta. Al confirmar, tu perfil de proveedor se activará.</CardDescription>
+        <CardTitle>Paso 4: Revisión Final</CardTitle>
+        <CardDescription>Revisa que toda la información de tu empresa sea correcta. Al confirmar, tu perfil de proveedor se activará.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <ReviewItem label="Tipo de Perfil" value={formData.providerType} />
-        <ReviewItem label="Especialidad Principal" value={formData.specialty} />
-        <ReviewItem label="Oferta Principal" value={formData.offerType} />
-        <Separator />
-        <ReviewItem label="Categorías" value={formData.categories} />
+        <ReviewItem label="Razón Social" value={formData.username} />
+        <ReviewItem label="Sitio Web" value={formData.website} />
+        <ReviewItem label="Especialidad" value={formData.specialty} />
         <Separator />
         <ReviewItem label="Ubicación" value={formData.location} />
         <ReviewItem label="Radio de Servicio" value={`${formData.serviceRadius || 'N/A'} km`} />
+        <Separator />
+        <ReviewItem label="Nombre Representante Legal" value={formData.legalRepresentative?.name} />
+        <ReviewItem label="Cédula Representante Legal" value={formData.legalRepresentative?.idNumber} />
       </CardContent>
       <CardFooter>
         <Button onClick={onSubmit} className="w-full" disabled={isSubmitting}>

@@ -99,7 +99,6 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex =
   const handleDeleteComment = (commentIndex: number) => {
     if (currentImage && owner && currentUser) {
         removeCommentFromImage({
-            ownerId: owner.id,
             imageId: currentImage.id,
             commentIndex,
             authorId: currentUser.id,
