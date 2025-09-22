@@ -1,8 +1,17 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { getFirebaseFirestore } from '@/lib/firebase-admin';
-import { completeInitialSetupFlow, checkIdUniquenessFlow, toggleGpsFlow, addContactToUserFlow, removeContactFromUserFlow, updateUserFlow, becomeProviderFlow } from '@/ai/flows/profile-flow';
+import { getFirebaseFirestore, getFirebaseAuth } from '@/lib/firebase-admin';
+import { 
+    completeInitialSetupFlow, 
+    checkIdUniquenessFlow, 
+    toggleGpsFlow, 
+    addContactToUserFlow, 
+    removeContactFromUserFlow, 
+    updateUserFlow, 
+    becomeProviderFlow 
+} from '@/ai/flows/profile-flow';
 import { sendWelcomeToProviderNotificationFlow } from '@/ai/flows/notification-flow';
 import { createTransactionFlow } from '@/ai/flows/transaction-flow';
 import type { ProfileSetupData, User } from '@/lib/types';
@@ -40,7 +49,7 @@ export async function updateFullProfile(userId: string, formData: ProfileSetupDa
     );
 
     if(becameProvider) {
-        sendWelcomeToProviderNotificationFlow({ userId });
+        await sendWelcomeToProviderNotificationFlow(db, { userId });
     }
 
     revalidatePath('/profile');
@@ -146,3 +155,5 @@ export async function becomeProvider(userId: string, profileData: ProfileSetupDa
     await becomeProviderFlow(db, { userId, profileData });
     revalidatePath('/profile');
 }
+
+    

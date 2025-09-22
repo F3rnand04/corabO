@@ -7,6 +7,7 @@ import { sendNewCampaignNotificationsFlow } from '@/ai/flows/notification-flow';
 import { createManagementUserFlow } from '@/ai/flows/admin-flow';
 import { createTransactionFlow } from '@/ai/flows/transaction-flow';
 import { getFirebaseAuth, getFirebaseFirestore } from '../firebase-admin';
+import { deleteUserFlow } from '@/ai/flows/profile-flow';
 
 /**
  * Approves a user's identity verification.
@@ -71,10 +72,9 @@ export async function sendNewCampaignNotifications(input: { campaignId: string }
 
 
 export async function deleteUser(userId: string) {
-    const auth = getFirebaseAuth();
     const db = getFirebaseFirestore();
-    await auth.deleteUser(userId);
-    await db.collection('users').doc(userId).delete();
+    const auth = getFirebaseAuth();
+    await deleteUserFlow(db, auth, { userId });
     revalidatePath('/admin');
 }
 

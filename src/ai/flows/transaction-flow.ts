@@ -5,7 +5,7 @@
  * @fileOverview Transaction management flows.
  */
 import { z } from 'zod';
-import { getFirestore, FieldValue, type Firestore } from 'firebase-admin/firestore';
+import { type Firestore } from 'firebase-admin/firestore';
 import type { Transaction, User, QrSession } from '@/lib/types';
 import { addDays, endOfMonth, isAfter, startOfWeek } from 'date-fns';
 import { getExchangeRate } from './exchange-rate-flow';
@@ -220,8 +220,7 @@ export async function processDirectPaymentFlow(db: Firestore, input: ProcessDire
 
 
 
-export async function completeWorkFlow(input: BasicTransactionInput) {
-    const db = getFirestore();
+export async function completeWorkFlow(db: Firestore, input: BasicTransactionInput) {
     const txRef = db.collection('transactions').doc(input.transactionId);
     const txSnap = await txRef.get();
     if (!txSnap.exists) throw new Error("Transaction not found.");
@@ -237,8 +236,7 @@ export async function completeWorkFlow(input: BasicTransactionInput) {
   }
 
 
-export async function confirmWorkReceivedFlow(input: ConfirmWorkReceivedInput) {
-    const db = getFirestore();
+export async function confirmWorkReceivedFlow(db: Firestore, input: ConfirmWorkReceivedInput) {
     const txRef = db.collection('transactions').doc(input.transactionId);
     const txSnap = await txRef.get();
     if (!txSnap.exists) throw new Error("Transaction not found.");
@@ -264,8 +262,7 @@ export async function confirmWorkReceivedFlow(input: ConfirmWorkReceivedInput) {
 }
 
 
-export async function payCommitmentFlow(input: PayCommitmentInput) {
-    const db = getFirestore();
+export async function payCommitmentFlow(db: Firestore, input: PayCommitmentInput) {
     const txRef = db.collection('transactions').doc(input.transactionId);
     const txSnap = await txRef.get();
     if (!txSnap.exists) throw new Error("Transaction not found.");
@@ -285,8 +282,7 @@ export async function payCommitmentFlow(input: PayCommitmentInput) {
 }
 
 
-export async function confirmPaymentReceivedFlow(input: ConfirmPaymentReceivedInput) {
-    const db = getFirestore();
+export async function confirmPaymentReceivedFlow(db: Firestore, input: ConfirmPaymentReceivedInput) {
     const batch = db.batch();
     
     const txRef = db.collection('transactions').doc(input.transactionId);
@@ -307,14 +303,13 @@ export async function confirmPaymentReceivedFlow(input: ConfirmPaymentReceivedIn
     });
 
     const clientRef = db.collection('users').doc(transaction.clientId);
-    batch.update(clientRef, { effectiveness: FieldValue.increment(2) });
+    batch.update(clientRef, { effectiveness: db.FieldValue.increment(2) });
 
     await batch.commit();
 }
 
 
-export async function sendQuoteFlow(input: SendQuoteInput) {
-    const db = getFirestore();
+export async function sendQuoteFlow(db: Firestore, input: SendQuoteInput) {
     const txRef = db.collection('transactions').doc(input.transactionId);
     const txSnap = await txRef.get();
     if (!txSnap.exists) throw new Error("Transaction not found.");
@@ -334,8 +329,7 @@ export async function sendQuoteFlow(input: SendQuoteInput) {
 }
 
 
-export async function acceptQuoteFlow(input: BasicTransactionInput) {
-    const db = getFirestore();
+export async function acceptQuoteFlow(db: Firestore, input: BasicTransactionInput) {
     const txRef = db.collection('transactions').doc(input.transactionId);
     const txSnap = await txRef.get();
     if (!txSnap.exists) throw new Error("Transaction not found.");
@@ -351,8 +345,7 @@ export async function acceptQuoteFlow(input: BasicTransactionInput) {
 }
 
 
-export async function createTransactionFlow(txData: Omit<Transaction, 'id'>): Promise<Transaction> {
-    const db = getFirestore();
+export async function createTransactionFlow(db: Firestore, txData: Omit<Transaction, 'id'>): Promise<Transaction> {
     const txId = `txn-sys-${Date.now()}`;
     const newTransaction: Transaction = {
       id: txId,
@@ -370,8 +363,7 @@ export async function createTransactionFlow(txData: Omit<Transaction, 'id'>): Pr
 
 
 
-export async function createAppointmentRequestFlow(request: AppointmentRequestInput) {
-    const db = getFirestore();
+export async function createAppointmentRequestFlow(db: Firestore, request: AppointmentRequestInput) {
     const txId = `txn-appt-${Date.now()}`;
     const newTransaction: Transaction = {
         id: txId,
@@ -391,8 +383,7 @@ export async function createAppointmentRequestFlow(request: AppointmentRequestIn
 }
 
 
-export async function acceptAppointmentFlow(input: BasicTransactionInput) {
-    const db = getFirestore();
+export async function acceptAppointmentFlow(db: Firestore, input: BasicTransactionInput) {
     const txRef = db.collection('transactions').doc(input.transactionId);
     const txSnap = await txRef.get();
     if (!txSnap.exists) throw new Error("Transaction not found.");
@@ -409,21 +400,18 @@ export async function acceptAppointmentFlow(input: BasicTransactionInput) {
 
 
 
-export async function startDisputeFlow(transactionId: string) {
-    const db = getFirestore();
+export async function startDisputeFlow(db: Firestore, transactionId: string) {
     const txRef = db.collection('transactions').doc(transactionId);
     await txRef.update({ status: 'En Disputa' });
 }
 
 
-export async function cancelSystemTransactionFlow(transactionId: string) {
-    const db = getFirestore();
+export async function cancelSystemTransactionFlow(db: Firestore, transactionId: string) {
     const txRef = db.collection('transactions').doc(transactionId);
     await txRef.delete();
 }
 
-export async function checkoutFlow(input: CheckoutInput) {
-    const db = getFirestore();
+export async function checkoutFlow(db: Firestore, input: CheckoutInput) {
     const batch = db.batch();
 
     const q = db.collection('transactions')
@@ -511,14 +499,12 @@ export async function checkoutFlow(input: CheckoutInput) {
 
     if (input.deliveryMethod !== 'pickup') {
         // Run delivery search in the background
-        findDeliveryProviderFlow({ transactionId: cartTx.id });
+        findDeliveryProviderFlow({ transactionId: cartTx.id }, db);
     }
 }
 
 
-export async function createQuoteRequestFlow(input: QuoteRequestInput): Promise<{ requiresPayment: boolean; newTransaction: Transaction | null }> {
-    const db = getFirestore();
-    
+export async function createQuoteRequestFlow(db: Firestore, input: QuoteRequestInput): Promise<{ requiresPayment: boolean; newTransaction: Transaction | null }> {
     const clientRef = db.collection('users').doc(input.clientId);
     const clientSnap = await clientRef.get();
     if (!clientSnap.exists) throw new Error("Client not found.");
@@ -552,7 +538,7 @@ export async function createQuoteRequestFlow(input: QuoteRequestInput): Promise<
             batch.update(clientRef, { lastFreeQuoteAt: new Date().toISOString() });
         }
 
-        await sendNotification({
+        await sendNotification(db, {
             userId: input.clientId,
             type: 'new_quote_request',
             title: 'Nueva solicitud de cotización',
@@ -570,3 +556,5 @@ export async function createQuoteRequestFlow(input: QuoteRequestInput): Promise<
 }
 
   
+
+    

@@ -2,15 +2,16 @@
 /**
  * @fileOverview Flows for fetching and managing user profile data.
  */
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, type Firestore } from 'firebase-admin/firestore';
 import type { User, ProfileSetupData, FirebaseUserInput } from '@/lib/types';
 import { credicoraLevels, credicoraCompanyLevels } from '@/lib/data/options';
+import { sendWelcomeToProviderNotificationFlow } from './notification-flow';
+import type { Auth } from 'firebase-admin/auth';
 
 
 // --- Flows for User Profile Management ---
 
-export async function getOrCreateUserFlow(firebaseUser: FirebaseUserInput): Promise<User> {
-    const db = getFirestore();
+export async function getOrCreateUserFlow(db: Firestore, firebaseUser: FirebaseUserInput): Promise<User> {
     const userRef = db.collection('users').doc(firebaseUser.uid);
     const userSnap = await userRef.get();
 
@@ -43,8 +44,7 @@ export async function getOrCreateUserFlow(firebaseUser: FirebaseUserInput): Prom
 }
 
 
-export async function completeInitialSetupFlow(userId: string, data: { name: string; lastName: string; idNumber: string; birthDate: string; country: string; type: User['type'], providerType: ProfileSetupData['providerType'] }): Promise<User> {
-    const db = getFirestore();
+export async function completeInitialSetupFlow(db: Firestore, userId: string, data: { name: string; lastName: string; idNumber: string; birthDate: string; country: string; type: User['type'], providerType: ProfileSetupData['providerType'] }): Promise<User> {
     const userRef = db.collection('users').doc(userId);
     
     const userSnap = await userRef.get();
@@ -80,14 +80,12 @@ export async function completeInitialSetupFlow(userId: string, data: { name: str
     return updatedUserDoc.data() as User;
 }
 
-export async function updateUserFlow(input: { userId: string, updates: any }) {
-    const db = getFirestore();
+export async function updateUserFlow(db: Firestore, input: { userId: string, updates: any }) {
     const userRef = db.collection('users').doc(input.userId);
     await userRef.update(input.updates);
 }
 
-export async function toggleGpsFlow(input: { userId: string }) {
-    const db = getFirestore();
+export async function toggleGpsFlow(db: Firestore, input: { userId: string }) {
     const userRef = db.collection('users').doc(input.userId);
     const userSnap = await userRef.get();
     if (userSnap.exists) {
@@ -96,17 +94,16 @@ export async function toggleGpsFlow(input: { userId: string }) {
     }
 }
 
-export async function deleteUserFlow(input: { userId: string }) {
-    const db = getFirestore();
+export async function deleteUserFlow(db: Firestore, auth: Auth, input: { userId: string }) {
+    await auth.deleteUser(input.userId);
     const userRef = db.collection('users').doc(input.userId);
     await userRef.delete();
 }
 
-export async function checkIdUniquenessFlow(input: { idNumber: string; country: string; currentUserId: string; }): Promise<boolean> {
+export async function checkIdUniquenessFlow(db: Firestore, input: { idNumber: string; country: string; currentUserId: string; }): Promise<boolean> {
     if (!input.idNumber || !input.country) {
       return true; // Don't run check if data is incomplete
     }
-    const db = getFirestore();
     const usersRef = db.collection('users');
     const q = usersRef.where("idNumber", "==", input.idNumber).where("country", "==", input.country);
     const querySnapshot = await q.get();
@@ -119,18 +116,25 @@ export async function checkIdUniquenessFlow(input: { idNumber: string; country: 
     return isOwnDocument;
 }
 
-export async function addContactToUserFlow(userId: string, contactId: string) {
-    const db = getFirestore();
-    await db.collection('users').doc(userId).update({
-        contacts: FieldValue.arrayUnion(contactId)
+export async function addContactToUserFlow(db: Firestore, input: { userId: string, contactId: string }) {
+    await db.collection('users').doc(input.userId).update({
+        contacts: FieldValue.arrayUnion(input.contactId)
     });
 }
 
-export async function removeContactFromUserFlow(userId: string, contactId: string) {
-    const db = getFirestore();
-    await db.collection('users').doc(userId).update({
-        contacts: FieldValue.arrayRemove(contactId)
+export async function removeContactFromUserFlow(db: Firestore, input: { userId: string, contactId: string }) {
+    await db.collection('users').doc(input.userId).update({
+        contacts: FieldValue.arrayRemove(input.contactId)
     });
 }
 
-  
+export async function becomeProviderFlow(db: Firestore, { userId, profileData }: { userId: string, profileData: ProfileSetupData }) {
+    const userRef = db.collection('users').doc(userId);
+    await userRef.update({ 
+        'profileSetupData': profileData, 
+        'isTransactionsActive': true, 
+        'type': profileData.providerType === 'delivery' ? 'repartidor' : 'provider'
+    });
+    // This flow should also handle sending a notification, passed as a dependency
+    await sendWelcomeToProviderNotificationFlow(db, { userId });
+}
