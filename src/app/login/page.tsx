@@ -28,7 +28,7 @@ export default function LoginPage() {
             const firebaseUser = userCredential.user;
             const idToken = await firebaseUser.getIdToken();
             await createSessionCookie(idToken);
-            // Let the AuthProvider handle the redirect, don't force it here
+            // Let the AuthProvider handle the redirect
         } else {
             throw new Error(response.error || "No se pudo obtener el token de invitado.");
         }
@@ -64,14 +64,7 @@ export default function LoginPage() {
     }
   };
   
-  // Show a loader if either the main auth provider is loading or a specific login action is processing.
-  if (isLoadingAuth || isProcessingLogin) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
+  const isLoginDisabled = isLoadingAuth || isProcessingLogin;
 
   return (
     <div className="relative w-full h-screen flex items-center justify-center p-4">
@@ -105,11 +98,12 @@ export default function LoginPage() {
             La plataforma donde profesionales y clientes se encuentran para realizar proyectos de forma segura y eficiente.
         </p>
         <div className="space-y-4 mt-8">
-            <Button size="lg" className="w-full bg-white text-gray-800 hover:bg-gray-200" onClick={handleGoogleLogin}>
-               <GoogleIcon className="w-6 h-6 mr-2" />
+            <Button size="lg" className="w-full bg-white text-gray-800 hover:bg-gray-200" onClick={handleGoogleLogin} disabled={isLoginDisabled}>
+               {isProcessingLogin ? <Loader2 className="w-6 h-6 mr-2 animate-spin"/> : <GoogleIcon className="w-6 h-6 mr-2" />}
                Ingresar con Google
             </Button>
-            <Button size="lg" className="w-full" onClick={handleGuestLogin}>
+            <Button size="lg" className="w-full" onClick={handleGuestLogin} disabled={isLoginDisabled}>
+                 {isProcessingLogin && <Loader2 className="w-6 h-6 mr-2 animate-spin"/>}
                 Ingresar como Invitado
             </Button>
         </div>
