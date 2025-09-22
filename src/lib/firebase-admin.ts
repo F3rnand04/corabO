@@ -1,4 +1,6 @@
 
+'use server';
+
 /**
  * @fileOverview Centralized Firebase Admin SDK initialization.
  * This file is the single source of truth for the Firebase Admin App instance,
