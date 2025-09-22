@@ -12,7 +12,21 @@
 
 ---
 
-## 1. Core Architecture and Data Flow
+## 1. Apuntes sobre el Entorno de Desarrollo
+
+Esta sección documenta el estado y las particularidades del sistema de archivos del entorno de desarrollo para evitar futuras alarmas o diagnósticos incorrectos.
+
+-   **Sistema de Archivos `/ephemeral`:** La partición `/ephemeral` está montada como `squashfs` y siempre reportará un uso del 100%. Esto es un comportamiento **normal y esperado** para un sistema de archivos comprimido y de solo lectura. No requiere ninguna acción de limpieza o mantenimiento.
+-   **Particiones Reales a Monitorear:** Los discos que contienen datos dinámicos y que deben ser monitoreados por uso de espacio son:
+    -   `/home`: Contiene los datos del usuario y del proyecto.
+    -   `/mnt` y `/dev/sda1`: Utilizados para datos temporales y otros montajes.
+-   **Mantenimiento (Comandos Útiles):**
+    -   Para liberar espacio en `/mnt`, se puede usar `du -h --max-depth=1 /mnt` para identificar los directorios más grandes.
+    -   Para limpiar la caché del gestor de paquetes Nix (que puede consumir un espacio considerable), se puede ejecutar: `nix-collect-garbage -d`.
+
+---
+
+## 2. Core Architecture and Data Flow
 
 The application's core now operates on a robust and decoupled architecture, ensuring security and performance.
 
@@ -24,7 +38,7 @@ The application's core now operates on a robust and decoupled architecture, ensu
 
 ---
 
-## 2. Authentication and User Module
+## 3. Authentication and User Module
 
 The complete user lifecycle is functional and secure.
 
@@ -39,7 +53,7 @@ The complete user lifecycle is functional and secure.
 
 ---
 
-## 3. Profiles and Gallery Module
+## 4. Profiles and Gallery Module
 
 The display and management of users' public identity are complete.
 
@@ -51,7 +65,7 @@ The display and management of users' public identity are complete.
 
 ---
 
-## 4. Transactions and Payments Module
+## 5. Transactions and Payments Module
 
 The financial heart of Corabo is working.
 
@@ -70,7 +84,7 @@ The financial heart of Corabo is working.
 
 ---
 
-## 5. Messaging and Proposals Module
+## 6. Messaging and Proposals Module
 
 Direct communication between users is functional and in real-time.
 
@@ -81,7 +95,7 @@ Direct communication between users is functional and in real-time.
 
 ---
 
-## 6. Administration Module
+## 7. Administration Module
 
 Tools for platform management are implemented.
 
@@ -93,7 +107,7 @@ Tools for platform management are implemented.
 
 ---
 
-## 7. Artificial Intelligence Module (Genkit)
+## 8. Artificial Intelligence Module (Genkit)
 
 The foundation for AI functionalities is active and ready for use.
 
