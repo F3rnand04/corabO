@@ -46,7 +46,7 @@ export async function searchPublicationsFlow(input: z.infer<typeof GetFeedInputS
         if(startAfterDoc.exists) {
             q = q.startAfter(startAfterDoc);
         } else {
-            console.warn(`Cursor document with ID ${'${input.startAfterDocId}'} not found. Fetching from the beginning.`);
+            console.warn(`Cursor document with ID ${input.startAfterDocId} not found. Fetching from the beginning.`);
         }
     }
     

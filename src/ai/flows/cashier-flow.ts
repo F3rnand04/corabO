@@ -25,7 +25,7 @@ type RegenerateQrInput = z.infer<typeof RegenerateQrInputSchema>;
  * Creates a new cashier box, generates a QR code for it, and returns the box object.
  */
 export async function createCashierBoxFlow(input: CreateCashierBoxInput): Promise<CashierBox> {
-    const boxId = `caja-${'${Date.now()}'}`;
+    const boxId = `caja-${Date.now()}`;
     const qrValue = JSON.stringify({ providerId: input.userId, cashierBoxId: boxId });
 
     try {

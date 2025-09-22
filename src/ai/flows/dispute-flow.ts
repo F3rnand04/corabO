@@ -59,14 +59,14 @@ export async function initiateDisputeResolutionFlow(input: InitiateDisputeInput)
     await batch.commit();
 
     // Notify both parties that a manager is now handling the case
-    const notificationMessage = `Un gestor de Corabo ha comenzado a investigar el caso de la transacción #${'${transaction.id.slice(-6)}'}. Serás contactado pronto.`;
+    const notificationMessage = `Un gestor de Corabo ha comenzado a investigar el caso de la transacción #${transaction.id.slice(-6)}. Serás contactado pronto.`;
     
     await sendNotification({
         userId: transaction.clientId,
         type: 'admin_alert',
         title: 'Tu disputa está siendo revisada',
         message: notificationMessage,
-        link: `/transactions?tx=${'${transaction.id}'}`
+        link: `/transactions?tx=${transaction.id}`
     });
     
     await sendNotification({
@@ -74,7 +74,7 @@ export async function initiateDisputeResolutionFlow(input: InitiateDisputeInput)
         type: 'admin_alert',
         title: 'Una disputa está siendo revisada',
         message: notificationMessage,
-        link: `/transactions?tx=${'${transaction.id}'}`
+        link: `/transactions?tx=${transaction.id}`
     });
 
     return newDisputeCase;

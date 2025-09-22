@@ -53,7 +53,7 @@ export async function findDeliveryProviderFlow({ transactionId }: { transactionI
 
     while (attempts < MAX_ATTEMPTS) {
         attempts++;
-        console.log(`Delivery search attempt ${'${attempts}'} for tx: ${'${transactionId}'}`);
+        console.log(`Delivery search attempt ${attempts} for tx: ${transactionId}`);
         
         const q = db.collection('users')
             .where('type', '==', 'repartidor')
@@ -81,7 +81,7 @@ export async function findDeliveryProviderFlow({ transactionId }: { transactionI
                 conversationId: [transaction.providerId, assignedRepartidor.id].sort().join('-'),
                 senderId: transaction.providerId,
                 recipientId: assignedRepartidor.id,
-                text: `¡Nuevo pedido para entregar! ID: ${'${transactionId}'}. Por favor, acéptalo en tu panel de transacciones.`
+                text: `¡Nuevo pedido para entregar! ID: ${transactionId}. Por favor, acéptalo en tu panel de transacciones.`
             });
             return;
         }
@@ -97,8 +97,8 @@ export async function findDeliveryProviderFlow({ transactionId }: { transactionI
         userId: transaction.providerId,
         type: 'admin_alert',
         title: 'Error en Asignación de Delivery',
-        message: `No pudimos encontrar un repartidor para la orden ${'${transaction.id.slice(-6)}'}. Revisa la transacción para elegir una alternativa.`,
-        link: `/transactions?tx=${'${transaction.id}'}`
+        message: `No pudimos encontrar un repartidor para la orden ${transaction.id.slice(-6)}. Revisa la transacción para elegir una alternativa.`,
+        link: `/transactions?tx=${transaction.id}`
     });
   }
 
@@ -123,7 +123,7 @@ export async function resolveDeliveryAsPickupFlow({ transactionId }: { transacti
     });
     
     if (transaction.details.deliveryCost && transaction.details.deliveryCost > 0) {
-        const refundTxId = `txn-refund-${'${transactionId.slice(-6)}'}`;
+        const refundTxId = `txn-refund-${transactionId.slice(-6)}`;
         const refundTx: Transaction = {
             id: refundTxId,
             type: 'Sistema',
@@ -134,7 +134,7 @@ export async function resolveDeliveryAsPickupFlow({ transactionId }: { transacti
             providerId: transaction.clientId, 
             participantIds: [transaction.providerId, transaction.clientId],
             details: {
-                system: `Reembolso por delivery fallido (Tx: ${'${transactionId}'})`,
+                system: `Reembolso por delivery fallido (Tx: ${transactionId})`,
             }
         };
         batch.set(db.collection('transactions').doc(refundTxId), refundTx);

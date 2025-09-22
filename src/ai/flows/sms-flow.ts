@@ -31,7 +31,7 @@ export async function sendSmsVerificationCodeFlow(input: SmsVerificationInput) {
     });
     
     try {
-        console.log(`Simulating SMS to ${'${input.phoneNumber}'}: Your code is ${'${verificationCode}'}`);
+        console.log(`Simulating SMS to ${input.phoneNumber}: Your code is ${verificationCode}`);
     } catch (error) {
         console.error("Error sending SMS via Twilio in flow:", error);
     }

@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -139,7 +138,7 @@ export async function processDirectPaymentFlow(input: ProcessDirectPaymentInput)
             initialPayment: session.initialPayment,
             financedAmount: session.financedAmount,
             paymentVoucherUrl: session.voucherUrl,
-            system: `Venta por ${'${baseAmount.toFixed(2)}'}`,
+            system: `Venta por ${baseAmount.toFixed(2)}`,
             baseAmount: baseAmount,
             exchangeRate,
             amountUSD: baseAmount / exchangeRate,
@@ -157,7 +156,7 @@ export async function processDirectPaymentFlow(input: ProcessDirectPaymentInput)
     const commissionDueDate = endOfMonth(new Date());
     
     const commissionDetails = {
-        system: `Comisión de servicio por Venta (Tx: ${'${initialTxId.slice(-6)}'})`,
+        system: `Comisión de servicio por Venta (Tx: ${initialTxId.slice(-6)})`,
         baseAmount: commissionAmount,
         tax: taxAmountOnCommission,
         taxRate,
@@ -180,7 +179,7 @@ export async function processDirectPaymentFlow(input: ProcessDirectPaymentInput)
     if (session.financedAmount && session.installments && session.financedAmount > 0) {
         const installmentAmount = session.financedAmount / session.installments;
         for (let i = 1; i <= session.installments; i++) {
-            const installmentTxId = `txn-credicora-${'${input.sessionId.slice(-4)}'}-${i}`;
+            const installmentTxId = `txn-credicora-${input.sessionId.slice(-4)}-${i}`;
             const dueDate = addDays(new Date(), i * 15);
             const installmentTx: Transaction = {
                 id: installmentTxId,
@@ -454,7 +453,7 @@ export async function checkoutFlow(input: CheckoutInput) {
 
             const installmentAmount = financedAmount / installments;
             for (let i = 1; i <= installments; i++) {
-                const installmentTxId = `txn-credicora-cart-${'${cartTx.id.slice(-4)}'}-${i}`;
+                const installmentTxId = `txn-credicora-cart-${cartTx.id.slice(-4)}-${i}`;
                 const dueDate = addDays(new Date(), i * 15);
                 const installmentTx: Transaction = {
                     id: installmentTxId,

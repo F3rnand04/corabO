@@ -18,15 +18,15 @@ export async function getOrCreateUserFlow(firebaseUser: FirebaseUserInput): Prom
       return userSnap.data() as User;
     }
 
-    const coraboId = `corabo${'${Math.floor(Math.random() * 9000) + 1000}'}`;
+    const coraboId = `corabo${Math.floor(Math.random() * 9000) + 1000}`;
     
     const newUser: User = {
       id: firebaseUser.uid,
       coraboId: coraboId,
       name: firebaseUser.displayName || 'Invitado',
       lastName: '',
-      email: firebaseUser.email || `${'${coraboId}'}@corabo.app`,
-      profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${'${firebaseUser.uid}'}`,
+      email: firebaseUser.email || `${coraboId}@corabo.app`,
+      profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
       phone: firebaseUser.phoneNumber || '',
       type: 'client',
       reputation: 5,

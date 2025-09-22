@@ -27,7 +27,7 @@ type SendNotificationInput = z.infer<typeof SendNotificationInputSchema>;
  */
 export async function sendNotification(input: SendNotificationInput) {
     const db = getFirestore();
-    const notificationId = `notif-${'${input.userId}'}-${'${Date.now()}'}`;
+    const notificationId = `notif-${input.userId}-${Date.now()}`;
     const notificationRef = db.collection('notifications').doc(notificationId);
     const newNotification: Notification = {
       id: notificationId,
@@ -68,7 +68,7 @@ export async function checkPaymentDeadlinesFlow() {
                     userId: tx.clientId,
                     type: 'payment_reminder',
                     title: 'Recordatorio de Pago Amistoso',
-                    message: `Tu pago de $${'${tx.amount.toFixed(2)}'} por "${'${tx.details.serviceName}' || '${tx.details.system}'}" vence en ${'${daysUntilDue}'} día(s).`,
+                    message: `Tu pago de $${tx.amount.toFixed(2)} por "${tx.details.serviceName || tx.details.system}" vence en ${daysUntilDue} día(s).`,
                     link: '/transactions'
                 });
             } else if (daysUntilDue === 0) {
@@ -76,7 +76,7 @@ export async function checkPaymentDeadlinesFlow() {
                     userId: tx.clientId,
                     type: 'payment_due',
                     title: '¡Tu pago vence hoy!',
-                    message: `Recuerda realizar tu pago de $${'${tx.amount.toFixed(2)}'} hoy para mantener tu reputación.`,
+                    message: `Recuerda realizar tu pago de $${tx.amount.toFixed(2)} hoy para mantener tu reputación.`,
                     link: '/transactions'
                 });
             }
@@ -90,7 +90,7 @@ export async function checkPaymentDeadlinesFlow() {
                         userId: tx.clientId,
                         type: 'payment_warning',
                         title: 'Advertencia: Pago Atrasado',
-                        message: `Tu pago de $${'${tx.amount.toFixed(2)}'} tiene ${'${daysOverdue}'} día(s) de retraso. Esto afectará negativamente tu efectividad.`,
+                        message: `Tu pago de $${tx.amount.toFixed(2)} tiene ${daysOverdue} día(s) de retraso. Esto afectará negativamente tu efectividad.`,
                         link: '/transactions'
                     });
                 } else if (daysOverdue >= 3) {
@@ -98,8 +98,8 @@ export async function checkPaymentDeadlinesFlow() {
                         userId: 'corabo-admin', // Special ID for the admin user
                         type: 'admin_alert',
                         title: 'Alerta de Morosidad Crítica',
-                        message: `El cliente ${'${tx.clientId}'} tiene un pago con ${'${daysOverdue}'} días de retraso (ID: ${'${tx.id}'}). Se requiere contacto directo.`,
-                        link: `/admin?tab=disputes&tx=${'${tx.id}'}`
+                        message: `El cliente ${tx.clientId} tiene un pago con ${daysOverdue} días de retraso (ID: ${tx.id}). Se requiere contacto directo.`,
+                        link: `/admin?tab=disputes&tx=${tx.id}`
                     });
                 }
             }
@@ -109,7 +109,7 @@ export async function checkPaymentDeadlinesFlow() {
                     userId: tx.providerId,
                     type: 'payment_warning',
                     title: 'Acción Requerida: Confirmar Pago',
-                    message: `El cliente ${'${tx.clientId}'} registró un pago hace ${'${daysOverdue}'} días. Por favor, confírmalo para completar la transacción.`,
+                    message: `El cliente ${tx.clientId} registró un pago hace ${daysOverdue} días. Por favor, confírmalo para completar la transacción.`,
                     link: '/transactions'
                 });
             }
@@ -150,16 +150,16 @@ export async function sendNewCampaignNotificationsFlow({ campaignId }: { campaig
 
     querySnapshot.forEach(docSnap => {
         const client = docSnap.data() as User;
-        const notificationId = `notif-${'${client.id}'}-${'${campaignId}'}`;
+        const notificationId = `notif-${client.id}-${campaignId}`;
         const notificationRef = db.collection('notifications').doc(notificationId);
         
         const newNotification: Notification = {
             id: notificationId,
             userId: client.id,
             type: 'new_campaign',
-            title: `✨ Nueva oferta de ${'${provider.name}'}`,
-            message: `"${'${campaign.budgetLevel}' === 'premium' ? '¡Exclusivo!' : '¡No te lo pierdas!'}" Una nueva promoción de ${'${provider.profileSetupData?.specialty}'} podría interesarte.`,
-            link: `/companies/${'${provider.id}'}`,
+            title: `✨ Nueva oferta de ${provider.name}`,
+            message: `"${campaign.budgetLevel === 'premium' ? '¡Exclusivo!' : '¡No te lo pierdas!'}" Una nueva promoción de ${provider.profileSetupData?.specialty} podría interesarte.`,
+            link: `/companies/${provider.id}`,
             isRead: false,
             timestamp: new Date().toISOString(),
         };
@@ -182,16 +182,16 @@ export async function sendNewContentNotificationFlow({ providerId, publicationId
 
     querySnapshot.forEach(docSnap => {
         const client = docSnap.data() as User;
-        const notificationId = `notif-${'${client.id}'}-pub-${'${publicationId}'}`;
+        const notificationId = `notif-${client.id}-pub-${publicationId}`;
         const notificationRef = db.collection('notifications').doc(notificationId);
 
         const newNotification: Notification = {
             id: notificationId,
             userId: client.id,
             type: 'new_publication',
-            title: `📣 ${'${providerName}'} tiene algo nuevo para ti`,
-            message: `"${'${publicationDescription.slice(0, 50)}'}..."`,
-            link: `/companies/${'${providerId}'}`,
+            title: `📣 ${providerName} tiene algo nuevo para ti`,
+            message: `"${publicationDescription.slice(0, 50)}..."`,
+            link: `/companies/${providerId}`,
             isRead: false,
             timestamp: new Date().toISOString(),
         };
@@ -256,22 +256,22 @@ export async function sendNewQuoteRequestNotificationsFlow(input: {
     
     const snapshot = await providersQuery.get();
     if (snapshot.empty) {
-        console.log(`No active providers found for category: ${'${input.category}'}`);
+        console.log(`No active providers found for category: ${input.category}`);
         return;
     }
 
     const batch = db.batch();
     snapshot.forEach(doc => {
         const provider = doc.data() as User;
-        const notificationId = `notif-${'${provider.id}'}-quote-${'${input.transactionId}'}`;
+        const notificationId = `notif-${provider.id}-quote-${input.transactionId}`;
         const notificationRef = db.collection('notifications').doc(notificationId);
         const newNotification: Notification = {
             id: notificationId,
             userId: provider.id,
             type: 'new_quote_request',
             title: '📣 Nueva Oportunidad de Negocio',
-            message: `Un cliente necesita un servicio de "${'${input.title}'}" en tu categoría.`,
-            link: `/transactions?tx=${'${input.transactionId}'}`,
+            message: `Un cliente necesita un servicio de "${input.title}" en tu categoría.`,
+            link: `/transactions?tx=${input.transactionId}`,
             isRead: false,
             timestamp: new Date().toISOString(),
         };

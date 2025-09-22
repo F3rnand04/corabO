@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -28,7 +27,7 @@ export async function generateProviderInvoiceFlow(input: GenerateInvoiceInput) {
     const providerRef = db.collection('users').doc(input.providerId);
     const providerSnap = await providerRef.get();
     if (!providerSnap.exists) {
-        throw new Error(`Provider with ID ${'${input.providerId}'} not found.`);
+        throw new Error(`Provider with ID ${input.providerId} not found.`);
     }
     const provider = providerSnap.data() as User;
     const countryInfo = countries.find(c => c.code === provider.country);
@@ -49,7 +48,7 @@ export async function generateProviderInvoiceFlow(input: GenerateInvoiceInput) {
     const commissionsSnap = await commissionsQuery.get();
     
     if (commissionsSnap.empty) {
-        console.log(`No commissionable transactions found for provider ${'${input.providerId}'} in ${'${monthName}'} ${'${input.year}'}.`);
+        console.log(`No commissionable transactions found for provider ${input.providerId} in ${monthName} ${input.year}.`);
         return; // No invoice needed
     }
 
@@ -61,12 +60,12 @@ export async function generateProviderInvoiceFlow(input: GenerateInvoiceInput) {
     const total = subtotal + iva;
 
     if (total <= 0) {
-        console.log(`Total commission is zero for provider ${'${input.providerId}'}. Skipping invoice.`);
+        console.log(`Total commission is zero for provider ${input.providerId}. Skipping invoice.`);
         return;
     }
 
     // 3. Create the master invoice transaction
-    const invoiceId = `inv-${'${input.providerId}'}-${'${input.year}'}-${'${input.month}' + 1}`;
+    const invoiceId = `inv-${input.providerId}-${input.year}-${input.month + 1}`;
     const invoiceRef = db.collection('transactions').doc(invoiceId);
 
     const invoiceTransaction: Transaction = {
@@ -79,7 +78,7 @@ export async function generateProviderInvoiceFlow(input: GenerateInvoiceInput) {
         providerId: 'corabo-admin',
         participantIds: [input.providerId, 'corabo-admin'],
         details: {
-            system: `Factura de Comisiones - ${'${monthName}'} ${'${input.year}'}`,
+            system: `Factura de Comisiones - ${monthName} ${input.year}`,
             baseAmount: subtotal,
             tax: iva,
             taxRate: IVA_RATE,
@@ -103,8 +102,8 @@ export async function generateProviderInvoiceFlow(input: GenerateInvoiceInput) {
         userId: input.providerId,
         type: 'monthly_invoice',
         title: 'Tu factura mensual está lista',
-        message: `El resumen de comisiones de ${'${monthName}'} ya está disponible. Total a pagar: $${'${total.toFixed(2)}'}.`,
-        link: `/payment?commitmentId=${'${invoiceId}'}`,
+        message: `El resumen de comisiones de ${monthName} ya está disponible. Total a pagar: $${total.toFixed(2)}.`,
+        link: `/payment?commitmentId=${invoiceId}`,
         metadata: {
             invoiceDetails: {
                 subtotal,
@@ -114,5 +113,5 @@ export async function generateProviderInvoiceFlow(input: GenerateInvoiceInput) {
         }
     });
 
-    console.log(`Invoice ${'${invoiceId}'} created for provider ${'${input.providerId}'} with a total of $${'${total.toFixed(2)}'}.`);
+    console.log(`Invoice ${invoiceId} created for provider ${input.providerId} with a total of $${total.toFixed(2)}.`);
 }
