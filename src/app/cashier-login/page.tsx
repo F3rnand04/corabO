@@ -1,8 +1,7 @@
 
 'use client';
 
-// This page is currently not in use and has been simplified.
-// The cashier login flow has been removed to reduce complexity.
+// This page is currently not in use.
 export default function CashierLoginPage() {
     return null;
 }
