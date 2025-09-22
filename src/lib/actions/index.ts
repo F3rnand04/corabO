@@ -15,6 +15,7 @@ export * from './livestream.actions';
 export * from './messaging.actions';
 export * from './notification.actions';
 export * from './publication.actions';
+export * from './qr-code.actions';
 export * from './report.actions';
 export * from './search.actions';
 export * from './sms.actions';

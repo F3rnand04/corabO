@@ -1,3 +1,4 @@
+'use server';
 
 /**
  * @fileOverview Central Genkit initialization and Firebase Admin SDK setup.
