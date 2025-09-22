@@ -1,19 +1,14 @@
 'use server';
 
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
 import { createCashierBoxFlow, regenerateCashierQrFlow } from '@/ai/flows/cashier-flow';
 import { sendNotification } from '@/ai/flows/notification-flow';
 import { processDirectPaymentFlow } from '@/ai/flows/transaction-flow';
+import { getFirestore } from '../firebase-admin';
 
 
 export async function addCashierBox(userId: string, name: string, password: string) {
-  const newBox = await createCashierBoxFlow({ userId, name, password });
-  const db = getFirestore();
-  const userRef = db.collection('users').doc(userId);
-  await userRef.update({
-    'profileSetupData.cashierBoxes': FieldValue.arrayUnion(newBox),
-  });
+  await createCashierBoxFlow({ userId, name, password });
   revalidatePath('/transactions/settings/cashier');
 }
 
@@ -46,21 +41,7 @@ export async function updateCashierBox(userId: string, boxId: string, updates: {
 
 
 export async function regenerateCashierBoxQr(userId: string, boxId: string) {
-    const { qrValue, qrDataURL } = await regenerateCashierQrFlow({ userId, boxId });
-    
-    const db = getFirestore();
-    const userRef = db.collection('users').doc(userId);
-    const userSnap = await userRef.get();
-    const userData = userSnap.data();
-    const existingBoxes = userData?.profileSetupData?.cashierBoxes || [];
-    const boxIndex = existingBoxes.findIndex((box: any) => box.id === boxId);
-    if (boxIndex === -1) throw new Error('Cashier box not found');
-    
-    const updatedBoxes = [...existingBoxes];
-    updatedBoxes[boxIndex].qrValue = qrValue;
-    updatedBoxes[boxIndex].qrDataURL = qrDataURL;
-
-    await userRef.update({ 'profileSetupData.cashierBoxes': updatedBoxes });
+    await regenerateCashierQrFlow({ userId, boxId });
     revalidatePath('/transactions/settings/cashier');
 }
 

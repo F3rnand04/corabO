@@ -5,6 +5,7 @@
 import { z } from 'zod';
 import QRCode from 'qrcode';
 import type { CashierBox } from '@/lib/types';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 
 const CreateCashierBoxInputSchema = z.object({
   userId: z.string(),
@@ -43,12 +44,18 @@ export async function createCashierBoxFlow(input: CreateCashierBoxInput): Promis
             qrDataURL,
         };
 
+        const db = getFirestore();
+        const userRef = db.collection('users').doc(input.userId);
+        await userRef.update({
+            'profileSetupData.cashierBoxes': FieldValue.arrayUnion(newBox),
+        });
+
         return newBox;
     } catch (err) {
         console.error("Failed to generate QR Data URL in flow", err);
         throw new Error("Could not generate QR code.");
     }
-  }
+}
 
 
 
@@ -64,10 +71,24 @@ export async function regenerateCashierQrFlow(input: RegenerateQrInput): Promise
             type: 'image/png',
             margin: 1,
         });
+        
+        const db = getFirestore();
+        const userRef = db.collection('users').doc(input.userId);
+        const userSnap = await userRef.get();
+        const userData = userSnap.data();
+        const existingBoxes = userData?.profileSetupData?.cashierBoxes || [];
+        const boxIndex = existingBoxes.findIndex((box: any) => box.id === input.boxId);
+        if (boxIndex === -1) throw new Error('Cashier box not found');
+        
+        const updatedBoxes = [...existingBoxes];
+        updatedBoxes[boxIndex].qrValue = newQrValue;
+        updatedBoxes[boxIndex].qrDataURL = newQrDataURL;
+
+        await userRef.update({ 'profileSetupData.cashierBoxes': updatedBoxes });
 
         return { qrValue: newQrValue, qrDataURL: newQrDataURL };
     } catch (err) {
         console.error("Failed to regenerate QR Data URL in flow", err);
         throw new Error("Could not regenerate QR code.");
     }
-  }
+}

@@ -9,7 +9,7 @@ import type { Transaction, User, QrSession, QuoteRequestInput } from '@/lib/type
 import { addDays, endOfMonth, isAfter, startOfWeek } from 'date-fns';
 import { getExchangeRate } from './exchange-rate-flow';
 import { findDeliveryProviderFlow, calculateDeliveryCostFlow } from './delivery-flow';
-import { haversineDistance } from '@/lib/utils';
+import { sendNotification } from './notification-flow';
 
 // --- Schemas ---
 
@@ -348,6 +348,11 @@ export async function createTransactionFlow(txData: Omit<Transaction, 'id'>): Pr
     };
     const txRef = db.collection('transactions').doc(txId);
     await txRef.set(newTransaction);
+    
+    if (txData.details.isSubscription) {
+        await db.collection('users').doc(txData.clientId).update({ isSubscribed: true });
+    }
+
     return newTransaction;
 }
 
@@ -541,6 +546,15 @@ export async function createQuoteRequestFlow(input: QuoteRequestInput): Promise<
         if (!client.isSubscribed) {
             batch.update(clientRef, { lastFreeQuoteAt: new Date().toISOString() });
         }
+
+        await sendNotification({
+            userId: input.clientId,
+            type: 'new_quote_request',
+            title: 'Nueva solicitud de cotización',
+            message: `Has creado una nueva solicitud de cotización: ${input.title}`,
+            link: `/transactions?tx=${txId}`
+        });
+
         
         await batch.commit();
         return { requiresPayment: false, newTransaction };

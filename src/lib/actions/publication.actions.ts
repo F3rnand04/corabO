@@ -1,11 +1,11 @@
-
 'use server';
 
-import type { User, CreatePublicationInput, CreateProductInput, AddCommentInput, RemoveCommentInput, UpdateGalleryImageInput, RemoveGalleryImageInput } from '@/lib/types';
-import { getFirestore } from 'firebase-admin/firestore';
+import type { CreatePublicationInput, CreateProductInput, AddCommentInput, RemoveCommentInput, UpdateGalleryImageInput, RemoveGalleryImageInput } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { createProductFlow, createPublicationFlow, addCommentToImageFlow, removeCommentFromImageFlow, updateGalleryImageFlow, removeGalleryImageFlow } from '@/ai/flows/publication-flow';
 import { sendNewContentNotificationFlow } from '@/ai/flows/notification-flow';
+import { getFirestore } from 'firebase-admin/firestore';
+import type { User } from '@/lib/types';
 
 /**
  * Server Action to create a new publication.
@@ -94,5 +94,3 @@ export async function removeGalleryImage(ownerId: string, imageId: string) {
     await removeGalleryImageFlow({imageId: imageId});
     revalidatePath(`/companies/${ownerId}`);
 }
-
-    

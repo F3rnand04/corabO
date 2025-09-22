@@ -1,21 +1,19 @@
 'use server';
 
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { revalidatePath } from 'next/cache';
 import type { User, Transaction } from '@/lib/types';
 import { autoVerifyIdWithAIFlow } from '@/ai/flows/verification-flow';
 import { sendNewCampaignNotificationsFlow } from '@/ai/flows/notification-flow';
 import { createManagementUserFlow } from '@/ai/flows/admin-flow';
+import { createTransactionFlow } from '@/ai/flows/transaction-flow';
+import { updateUserFlow, deleteUserFlow, toggleGpsFlow } from '@/ai/flows/profile-flow';
+import { getFirestore } from '../firebase-admin';
 
 /**
  * Approves a user's identity verification.
  */
 export async function verifyUserId(userId: string) {
-    const db = getFirestore();
-    await db.collection('users').doc(userId).update({ 
-      idVerificationStatus: 'verified',
-      verified: true 
-    });
+    await updateUserFlow({ userId, updates: { idVerificationStatus: 'verified', verified: true } });
     revalidatePath('/admin');
 }
 
@@ -23,20 +21,18 @@ export async function verifyUserId(userId: string) {
  * Rejects a user's identity verification.
  */
 export async function rejectUserId(userId: string) {
-    const db = getFirestore();
-    await db.collection('users').doc(userId).update({ idVerificationStatus: 'rejected' });
+    await updateUserFlow({ userId, updates: { idVerificationStatus: 'rejected' } });
     revalidatePath('/admin');
 }
 
 
 export async function autoVerifyIdWithAI(user: User) {
-    // Ensure the flow is only called if the document URL exists
     if (!user.idDocumentUrl) {
         throw new Error("El documento de identidad no ha sido cargado.");
     }
     const result = await autoVerifyIdWithAIFlow({
       userId: user.id,
-      nameInRecord: `${'${user.name}'} ${'${user.lastName}'}`,
+      nameInRecord: `${user.name} ${user.lastName}`,
       idInRecord: user.idNumber || '',
       documentImageUrl: user.idDocumentUrl,
       isCompany: user.profileSetupData?.providerType === 'company',
@@ -73,26 +69,23 @@ export async function sendNewCampaignNotifications(input: { campaignId: string }
 
 
 export async function deleteUser(userId: string) {
-    const db = getFirestore();
-    await db.collection('users').doc(userId).delete();
+    await deleteUserFlow({ userId });
     revalidatePath('/admin');
 }
 
 export async function toggleUserPause(userId: string, shouldUnpause: boolean) {
-    const db = getFirestore();
     const updates = shouldUnpause 
         ? { isPaused: false } 
         : { isPaused: true, pauseReason: 'Paused by admin' };
-    await db.collection('users').doc(userId).update(updates);
+    await updateUserFlow({ userId, updates });
     revalidatePath('/admin');
 }
 
 export async function registerSystemPayment(userId: string, concept: string, amount: number, isSubscription: boolean, voucherUrl: string, reference: string) {
-    const db = getFirestore();
-    const txId = `txn-sys-${'${userId.slice(0,5)}'}-${'${Date.now()}'}`;
+    const txId = `txn-sys-${userId.slice(0,5)}-${Date.now()}`;
     const newTransaction: Omit<Transaction, 'id'> = {
         type: 'Sistema',
-        status: 'Pago Enviado - Esperando Confirmación', // Changed from 'Pagado'
+        status: 'Pago Enviado - Esperando Confirmación',
         date: new Date().toISOString(),
         amount: amount,
         clientId: userId,
@@ -108,12 +101,7 @@ export async function registerSystemPayment(userId: string, concept: string, amo
         }
     };
 
-    await db.collection('transactions').doc(txId).set({ id: txId, ...newTransaction });
-
-    if (isSubscription) {
-        // We do not mark as subscribed until payment is verified by an admin
-        // await db.collection('users').doc(userId).update({ isSubscribed: true });
-    }
+    await createTransactionFlow(newTransaction);
     
     revalidatePath('/transactions');
     revalidatePath('/admin');

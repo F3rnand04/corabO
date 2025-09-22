@@ -118,3 +118,17 @@ export async function checkIdUniquenessFlow(input: { idNumber: string; country: 
     const isOwnDocument = querySnapshot.docs[0].id === input.currentUserId;
     return isOwnDocument;
 }
+
+export async function addContactToUserFlow(userId: string, contactId: string) {
+    const db = getFirestore();
+    await db.collection('users').doc(userId).update({
+        contacts: FieldValue.arrayUnion(contactId)
+    });
+}
+
+export async function removeContactFromUserFlow(userId: string, contactId: string) {
+    const db = getFirestore();
+    await db.collection('users').doc(userId).update({
+        contacts: FieldValue.arrayRemove(contactId)
+    });
+}
