@@ -6,9 +6,11 @@
  */
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import type { User, GalleryImage, GalleryImageComment, CreatePublicationInput, CreateProductInput, AddCommentInput, RemoveCommentInput, UpdateGalleryImageInput, RemoveGalleryImageInput } from '@/lib/types';
+import { sendNewContentNotificationFlow } from './notification-flow';
 
 /**
  * Creates a new publication (image or video) in the 'publications' collection.
+ * It also triggers a notification if the provider is reputable.
  * @param input - The data for the new publication.
  * @returns The newly created GalleryImage object.
  * @throws Will throw an error if the user is not found.
@@ -21,6 +23,7 @@ export async function createPublicationFlow(input: CreatePublicationInput): Prom
     if (!userSnap.exists) {
       throw new Error('User not found.');
     }
+    const user = userSnap.data() as User;
     
     const publicationId = `pub-${Date.now()}`;
 
@@ -35,16 +38,42 @@ export async function createPublicationFlow(input: CreatePublicationInput): Prom
       comments: [],
       likes: 0,
       aspectRatio: input.aspectRatio,
+      owner: { // Embed owner data for performance
+        id: user.id,
+        name: user.name,
+        profileImage: user.profileImage,
+        verified: user.verified,
+        isGpsActive: user.isGpsActive,
+        reputation: user.reputation,
+        profileSetupData: {
+          specialty: user.profileSetupData?.specialty,
+          providerType: user.profileSetupData?.providerType,
+          username: user.profileSetupData?.username,
+          primaryCategory: user.profileSetupData?.primaryCategory,
+        },
+        activeAffiliation: user.activeAffiliation || null,
+      },
     };
     
     const publicationRef = db.collection('publications').doc(publicationId);
     await publicationRef.set(newPublication);
+
+    // Notify contacts if the provider is reputable
+    if (user.verified || (user.reputation || 0) > 4.0) {
+      sendNewContentNotificationFlow({
+        providerId: input.userId,
+        publicationId: newPublication.id,
+        publicationDescription: newPublication.description,
+        providerName: user.name,
+      });
+    }
     
     return newPublication;
 }
 
 /**
  * Creates a new product, which is a special type of publication.
+ * It also triggers a notification if the provider is reputable.
  * @param input - The data for the new product.
  * @returns The newly created product as a GalleryImage object.
  * @throws Will throw an error if the user is not found.
@@ -56,6 +85,7 @@ export async function createProductFlow(input: CreateProductInput): Promise<Gall
     if (!userSnap.exists) {
         throw new Error('User not found.');
     }
+    const user = userSnap.data() as User;
     
     const productId = `prod-${Date.now()}`;
     
@@ -72,13 +102,38 @@ export async function createProductFlow(input: CreateProductInput): Promise<Gall
         productDetails: {
           name: input.name,
           price: input.price || 0,
-          category: (userSnap.data() as User).profileSetupData?.primaryCategory || 'General',
+          category: user.profileSetupData?.primaryCategory || 'General',
+        },
+        owner: { // Embed owner data for performance
+          id: user.id,
+          name: user.name,
+          profileImage: user.profileImage,
+          verified: user.verified,
+          isGpsActive: user.isGpsActive,
+          reputation: user.reputation,
+          profileSetupData: {
+            specialty: user.profileSetupData?.specialty,
+            providerType: user.profileSetupData?.providerType,
+            username: user.profileSetupData?.username,
+            primaryCategory: user.profileSetupData?.primaryCategory,
+          },
+          activeAffiliation: user.activeAffiliation || null,
         },
     };
     
     const productRef = db.collection('publications').doc(productId);
     await productRef.set(newProductPublication);
     
+     // Notify contacts if the provider is reputable
+    if (user.verified || (user.reputation || 0) > 4.0) {
+      sendNewContentNotificationFlow({
+        providerId: input.userId,
+        publicationId: newProductPublication.id,
+        publicationDescription: `¡Nuevo producto! ${newProductPublication.alt}`,
+        providerName: user.name,
+      });
+    }
+
     return newProductPublication;
 }
 

@@ -727,5 +727,3 @@ export const VerificationOutputSchema = z.object({
   idMatch: z.boolean(),
 });
 export type VerificationOutput = z.infer<typeof VerificationOutputSchema>;
-
-    
