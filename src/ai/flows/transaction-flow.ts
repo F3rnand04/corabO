@@ -11,6 +11,8 @@ import { getExchangeRate } from './exchange-rate-flow';
 import { findDeliveryProviderFlow, calculateDeliveryCostFlow } from './delivery-flow';
 import { sendNotification } from './notification-flow';
 import { haversineDistance } from '@/lib/utils';
+import { countries } from '@/lib/data/options';
+
 
 // --- Schemas ---
 
@@ -119,7 +121,8 @@ export async function processDirectPaymentFlow(input: ProcessDirectPaymentInput)
     }
     
     const baseAmount = session.amount;
-    const taxRate = 0.16;
+    const countryInfo = countries.find(c => c.code === provider.country);
+    const taxRate = countryInfo?.ivaRate || 0.16;
     const commissionAmount = baseAmount * commissionRate;
     const taxAmountOnCommission = commissionAmount * taxRate;
     const providerCommitmentAmount = commissionAmount + taxAmountOnCommission;
@@ -564,3 +567,5 @@ export async function createQuoteRequestFlow(input: QuoteRequestInput): Promise<
         return { requiresPayment: true, newTransaction: null };
     }
 }
+
+    

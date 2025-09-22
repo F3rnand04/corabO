@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { useState, useRef, ChangeEvent, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import { setQrSessionAmount, cancelQrSession, confirmMobilePayment, finalizeQrSession } from '@/lib/actions/cashier.actions';
-import { credicoraLevels } from '@/lib/types';
+import { credicoraLevels } from '@/lib/data/options';
 import { PersonalQrDialog } from '@/components/PersonalQrDialog';
 
 export default function ShowQrPage() {
@@ -173,3 +173,5 @@ export default function ShowQrPage() {
     </div>
   );
 }
+
+  

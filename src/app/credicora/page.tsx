@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, ShieldCheck, TrendingUp, Gem, Star, Award, Zap, Percent, Building, User } from 'lucide-react';
-import { credicoraLevels, credicoraCompanyLevels } from '@/lib/types';
+import { credicoraLevels, credicoraCompanyLevels } from '@/lib/data/options';
 import { Separator } from '@/components/ui/separator';
 
 function CredicoraHeader() {
@@ -152,3 +152,5 @@ export default function CredicoraPage() {
     </>
   );
 }
+
+  

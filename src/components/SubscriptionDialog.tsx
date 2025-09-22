@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -17,7 +18,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { cn } from '@/lib/utils';
 import type { Transaction } from '@/lib/types';
-import { credicoraLevels, credicoraCompanyLevels } from '@/lib/types';
+import { credicoraLevels, credicoraCompanyLevels } from '@/lib/data/options';
 import { subscribeUser, updateUser } from '@/lib/actions/user.actions';
 
 
@@ -194,3 +195,5 @@ export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogP
     </Dialog>
   );
 }
+
+  

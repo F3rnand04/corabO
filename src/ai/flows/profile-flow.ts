@@ -4,7 +4,7 @@
  */
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import type { User, ProfileSetupData, FirebaseUserInput } from '@/lib/types';
-import { credicoraLevels, credicoraCompanyLevels } from '@/lib/types';
+import { credicoraLevels, credicoraCompanyLevels } from '@/lib/data/options';
 
 
 // --- Flows for User Profile Management ---
@@ -132,3 +132,5 @@ export async function removeContactFromUserFlow(userId: string, contactId: strin
         contacts: FieldValue.arrayRemove(contactId)
     });
 }
+
+  

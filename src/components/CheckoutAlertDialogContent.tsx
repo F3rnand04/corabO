@@ -10,7 +10,7 @@ import { Separator } from "./ui/separator";
 import { Switch } from "./ui/switch";
 import { Label } from "./ui/label";
 import { Star, Truck, MapPin, Building, User, Phone, LocateFixed, Minus, Plus } from "lucide-react";
-import { credicoraLevels } from "@/lib/types";
+import { credicoraLevels } from "@/lib/data/options";
 import { useRouter, useSearchParams } from "next/navigation";
 import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
@@ -185,7 +185,7 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
                              <Label htmlFor="delivery-pickup" className="flex items-center space-x-2 rounded-lg border p-3 cursor-pointer has-[:checked]:border-primary">
                                 <RadioGroupItem value="pickup" id="delivery-pickup" />
                                 <p className="font-semibold flex-grow">Recoger en tienda</p>
-                                <Building className="h-4 w-4 text-muted-foreground"/>
+                                <Building className="h-4 h-4 text-muted-foreground"/>
                             </Label>
                         )}
                     </RadioGroup>
@@ -249,3 +249,5 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
       </Dialog>
     );
 }
+
+  

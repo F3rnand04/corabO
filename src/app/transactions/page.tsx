@@ -13,7 +13,7 @@ import type { Transaction } from "@/lib/types";
 import { TransactionList } from "@/components/TransactionList";
 import { ActivationWarning } from "@/components/ActivationWarning";
 import { Skeleton } from "@/components/ui/skeleton";
-import { credicoraLevels, credicoraCompanyLevels } from "@/lib/types";
+import { credicoraLevels, credicoraCompanyLevels } from "@/lib/data/options";
 import Link from "next/link";
 import { SubscriptionDialog } from "@/components/SubscriptionDialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -310,3 +310,5 @@ export default function TransactionsPage() {
         </div>
     );
 }
+
+  

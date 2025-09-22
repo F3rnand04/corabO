@@ -157,103 +157,6 @@ export type CredicoraLevel = {
     transactionsForNextLevel: number;
 };
 
-export const credicoraLevels: Record<string, CredicoraLevel> = {
-    '1': {
-        level: 1,
-        name: 'Alfa',
-        color: '210 90% 54%', // blue-500
-        creditLimit: 150,
-        initialPaymentPercentage: 0.60,
-        installments: 3,
-        transactionsForNextLevel: 25,
-    },
-    '2': {
-        level: 2,
-        name: 'Delta',
-        color: '262 84% 58%', // violet-500
-        creditLimit: 200,
-        initialPaymentPercentage: 0.50,
-        installments: 6,
-        transactionsForNextLevel: 40,
-    },
-     '3': {
-        level: 3,
-        name: 'Lambda',
-        color: '322 84% 58%', // pink-500
-        creditLimit: 300,
-        initialPaymentPercentage: 0.40,
-        installments: 9,
-        transactionsForNextLevel: 60,
-    },
-    '4': {
-        level: 4,
-        name: 'Sigma',
-        color: '25 95% 53%', // orange-500
-        creditLimit: 600,
-        initialPaymentPercentage: 0.30,
-        installments: 12,
-        transactionsForNextLevel: 80,
-    },
-    '5': {
-        level: 5,
-        name: 'Omega',
-        color: '45 93% 47%', // yellow-600 (gold)
-        creditLimit: 1000,
-        initialPaymentPercentage: 0.0,
-        installments: 18,
-        transactionsForNextLevel: 150,
-    },
-};
-
-export const credicoraCompanyLevels: Record<string, CredicoraLevel> = {
-    '1': {
-        level: 1,
-        name: 'Bronce',
-        color: '27 54% 33%', // SaddleBrown
-        creditLimit: 500,
-        initialPaymentPercentage: 0.50,
-        installments: 4,
-        transactionsForNextLevel: 50,
-    },
-    '2': {
-        level: 2,
-        name: 'Plata',
-        color: '220 13% 69%', // Silver
-        creditLimit: 750,
-        initialPaymentPercentage: 0.45,
-        installments: 8,
-        transactionsForNextLevel: 75,
-    },
-     '3': {
-        level: 3,
-        name: 'Oro',
-        color: '45 93% 47%', // gold
-        creditLimit: 1000,
-        initialPaymentPercentage: 0.35,
-        installments: 12,
-        transactionsForNextLevel: 100,
-    },
-    '4': {
-        level: 4,
-        name: 'Platino',
-        color: '220 13% 91%', // LightGray for Platinum
-        creditLimit: 1500,
-        initialPaymentPercentage: 0.25,
-        installments: 18,
-        transactionsForNextLevel: 150,
-    },
-    '5': {
-        level: 5,
-        name: 'Diamante',
-        color: '207 90% 54%', // blue-500 for Diamond
-        creditLimit: 2000,
-        initialPaymentPercentage: 0.20,
-        installments: 24, // 12 months * 2 bi-weekly
-        transactionsForNextLevel: 250,
-    },
-};
-
-
 // New type for specialized data
 export type SpecializedData = {
     // Transporte y Asistencia
@@ -727,3 +630,7 @@ export const VerificationOutputSchema = z.object({
   idMatch: z.boolean(),
 });
 export type VerificationOutput = z.infer<typeof VerificationOutputSchema>;
+
+  
+
+    

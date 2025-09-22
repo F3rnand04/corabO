@@ -6,6 +6,7 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getOrCreateUserFlow, completeInitialSetupFlow, checkIdUniquenessFlow, deleteUserFlow, toggleGpsFlow, updateUserFlow, addContactToUserFlow, removeContactFromUserFlow } from '@/ai/flows/profile-flow';
 import { sendWelcomeToProviderNotificationFlow } from '@/ai/flows/notification-flow';
 import { createTransactionFlow } from '@/ai/flows/transaction-flow';
+import { credicoraCompanyLevels, credicoraLevels } from '../data/options';
 
 
 // --- Exported Actions ---
@@ -58,7 +59,7 @@ export async function toggleGps(userId: string) {
     revalidatePath(`/companies/${userId}`);
 }
 
-export async function deleteUserAction(userId: string) {
+export async function deleteUser(userId: string) {
     await deleteUserFlow({ userId });
     revalidatePath('/admin');
 }
@@ -150,3 +151,5 @@ export async function becomeProvider(userId: string, profileData: ProfileSetupDa
     });
     revalidatePath('/profile');
 }
+
+  

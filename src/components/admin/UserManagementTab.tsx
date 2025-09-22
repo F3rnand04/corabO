@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '../ui/button';
 import { Trash2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
-import { deleteUserAction, toggleUserPause } from '@/lib/actions/user.actions';
+import { deleteUser, toggleUserPause } from '@/lib/actions/user.actions';
 
 export function UserManagementTab() {
   const { users } = useAuth();
@@ -88,7 +88,7 @@ export function UserManagementTab() {
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
                                       <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => deleteUserAction(user.id)}>Sí, eliminar usuario</AlertDialogAction>
+                                      <AlertDialogAction onClick={() => deleteUser(user.id)}>Sí, eliminar usuario</AlertDialogAction>
                                   </AlertDialogFooter>
                               </AlertDialogContent>
                            </AlertDialog>
@@ -102,3 +102,5 @@ export function UserManagementTab() {
     </Card>
   );
 }
+
+  
