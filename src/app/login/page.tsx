@@ -29,7 +29,6 @@ export default function LoginPage() {
             const idToken = await firebaseUser.getIdToken();
             await createSessionCookie(idToken);
             // Let the AuthProvider handle the redirect, don't force it here
-            // window.location.href = '/'; 
         } else {
             throw new Error(response.error || "No se pudo obtener el token de invitado.");
         }
@@ -54,8 +53,6 @@ export default function LoginPage() {
         await createSessionCookie(idToken);
         
         // Let the AuthProvider handle the redirect
-        // window.location.href = '/';
-
     } catch (error: any) {
         console.error("Google Sign-In Error:", error);
         toast({
