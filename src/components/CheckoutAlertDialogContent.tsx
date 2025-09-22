@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "./ui/input";
 import Image from "next/image";
 import { ScrollArea } from "./ui/scroll-area";
-import { checkout, payCommitment } from '@/lib/actions/transaction.actions';
+import { checkout } from '@/lib/actions/transaction.actions';
 import { updateCart } from '@/lib/actions/cart.actions';
 
 export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (open: boolean) => void }) {
@@ -70,31 +70,16 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
     if (!provider) return null;
     
     const handleCheckout = async () => {
-        if(!currentUser.id || !activeCartForCheckout) return;
+        if(!currentUser.id || !activeCartForCheckout || !providerId) return;
 
-        // Create the pre-invoice transaction
-        const preInvoiceTxId = `pre-txn-${Date.now()}`;
-        const items = activeCartForCheckout;
-        const subtotal = items.reduce((total, item) => total + item.product.price * item.quantity, 0);
-
-        // This is a temporary state, the final transaction will be created by the checkout flow
-        const tempTx = {
-            id: preInvoiceTxId,
-            type: 'Compra',
-            status: 'Pre-factura Pendiente',
-            date: new Date().toISOString(),
-            amount: subtotal,
-            clientId: currentUser.id,
+        await checkout(
+            currentUser.id,
             providerId,
-            participantIds: [currentUser.id, providerId],
-            details: {
-                items,
-                delivery: { method: deliveryMethod, address: deliveryAddress },
-                paymentMethod: useCredicora ? 'credicora' : 'direct',
-            },
-        };
-        
-        await payCommitment(tempTx.id, currentUser.id, tempTx.details);
+            deliveryMethod,
+            useCredicora,
+            tempRecipientInfo,
+            deliveryAddress
+        );
 
         onOpenChange(false);
         setUseCredicora(false);
@@ -264,5 +249,3 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
       </Dialog>
     );
 }
-
-    
