@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createContentReportFlow, approveContentReportFlow, rejectContentReportFlow } from '@/ai/flows/report-flow';
+import { sendNotification as sendNotificationFlow } from '@/ai/flows/notification-flow';
 import type { ContentReport, SanctionReason } from '../types';
 import { getFirebaseFirestore } from '../firebase-admin';
 

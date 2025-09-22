@@ -5,7 +5,7 @@ import { getFirebaseFirestore } from '@/lib/firebase-admin';
 import type { LiveStream, User, Gift } from '@/lib/types';
 import { FieldValue } from 'firebase-admin/firestore';
 import { gifts } from '../data/options';
-import { sendNotification } from '@/ai/flows/notification-flow';
+import { sendNotification as sendNotificationFlow } from '@/ai/flows/notification-flow';
 
 /**
  * Creates a new live stream document and updates the user's status.
@@ -52,7 +52,7 @@ export async function requestPrivateLiveAccess(liveStreamId: string, requesterId
         pendingRequests: FieldValue.arrayUnion(requesterId)
     });
     
-    await sendNotification({
+    await sendNotificationFlow(db, {
         userId: liveStream.creatorId,
         type: 'live_access_request',
         title: 'Solicitud de Acceso al Live',
@@ -86,7 +86,7 @@ export async function approveLiveAccess(liveStreamId: string, viewerId: string) 
     });
 
     // Notify the viewer that their request was approved
-    await sendNotification({
+    await sendNotificationFlow(db, {
         userId: viewerId,
         type: 'admin_alert', // Reusing a generic notification type
         title: '¡Acceso Aprobado!',

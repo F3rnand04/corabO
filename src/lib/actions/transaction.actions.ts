@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -25,7 +24,8 @@ import {
 
 /**
  * Uploads a file (as a data URL) to a specified path in Firebase Storage.
- * @param storage - The Firebase Admin Storage instance.
+ * This is a helper function isolated from client-side code.
+ * @param storage - The Firebase Admin Storage instance (injected).
  * @param filePath The desired path in the storage bucket.
  * @param dataUrl The base64 encoded data URL of the file.
  * @returns The public URL of the uploaded file.
@@ -81,11 +81,11 @@ export async function checkout(
     providerId: string, 
     deliveryMethod: string, 
     useCredicora: boolean, 
-    recipientInfo: { name: string; phone: string } | undefined, 
+    recipientInfo: { name: string; phone: string } | null, 
     deliveryAddress: string
 ) {
     const db = getFirebaseFirestore();
-    await checkoutFlow(db, { userId, providerId, deliveryMethod, useCredicora, recipientInfo, deliveryAddress: deliveryAddress || undefined });
+    await checkoutFlow(db, { userId, providerId, deliveryMethod, useCredicora, recipientInfo: recipientInfo || undefined, deliveryAddress: deliveryAddress || undefined });
     revalidatePath('/transactions');
     revalidatePath('/cart'); // Assuming a cart page or component
 }
@@ -108,7 +108,7 @@ export async function payCommitment(transactionId: string, userId: string, payme
 
     // If a new voucher data URL is provided, upload it to storage
     if (paymentDetails.paymentVoucherUrl && paymentDetails.paymentVoucherUrl.startsWith('data:')) {
-        const storage = getFirebaseStorage();
+        const storage = getFirebaseStorage(); // Get storage instance here
         const filePath = `vouchers/${userId}/${transactionId}-${Date.now()}`;
         uploadedVoucherUrl = await uploadToStorage(storage, filePath, paymentDetails.paymentVoucherUrl);
     }
@@ -195,7 +195,3 @@ export async function writeOffDebt(transactionId: string) {
     await db.collection('transactions').doc(transactionId).update({ status: 'Incobrable' });
     revalidatePath('/admin');
 }
-
-    
-
-    

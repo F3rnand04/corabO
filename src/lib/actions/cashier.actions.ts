@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createCashierBoxFlow, regenerateCashierQrFlow } from '@/ai/flows/cashier-flow';
-import { sendNotification } from '@/ai/flows/notification-flow';
+import { sendNotification as sendNotificationFlow } from '@/ai/flows/notification-flow';
 import { processDirectPaymentFlow } from '@/ai/flows/transaction-flow';
 import { getFirebaseFirestore } from '../firebase-admin';
 import type { User } from '@/lib/types';
@@ -107,7 +107,7 @@ export async function confirmMobilePayment(sessionId: string) {
 
 export async function finalizeQrSession(sessionId: string) {
     const db = getFirebaseFirestore();
-    const { transactionId } = await processDirectPaymentFlow(db, {sessionId});
+    const { transactionId } = await processDirectPaymentFlow(db, { sessionId });
     
     await db.collection('qr_sessions').doc(sessionId).update({
         status: 'completed',
@@ -119,8 +119,9 @@ export async function finalizeQrSession(sessionId: string) {
 }
 
 export async function requestCashierLogin(providerId: string, cashierName: string, cashierBoxId: string) {
+    const db = getFirebaseFirestore();
     const requestId = `cashier-req-${Date.now()}`;
-    await sendNotification({
+    await sendNotificationFlow(db, {
         userId: providerId,
         type: 'cashier_request',
         title: 'Solicitud de Apertura de Caja',
