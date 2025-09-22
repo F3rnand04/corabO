@@ -8,8 +8,6 @@ import { getAuth, type Auth } from 'firebase-admin/auth';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { getMessaging, type Messaging } from 'firebase-admin/messaging';
-import { firebaseConfig } from './firebase-config';
-
 
 // --- Singleton Pattern for Admin SDK ---
 // This prevents multiple initializations in serverless environments.
@@ -27,8 +25,8 @@ function initializeAdminApp(): admin.app.App {
     // The SDK will connect automatically if the FIRESTORE_EMULATOR_HOST is set.
     if (process.env.FIRESTORE_EMULATOR_HOST) {
         return admin.initializeApp({
-            projectId: firebaseConfig.projectId,
-            storageBucket: firebaseConfig.storageBucket,
+            projectId: "corabo-demo",
+            storageBucket: "corabo-demo.appspot.com",
         });
     }
 
@@ -36,8 +34,8 @@ function initializeAdminApp(): admin.app.App {
     if (serviceAccount) {
         return admin.initializeApp({
             credential: admin.credential.cert(serviceAccount),
-            projectId: firebaseConfig.projectId,
-            storageBucket: firebaseConfig.storageBucket,
+            projectId: "corabo-demo",
+            storageBucket: "corabo-demo.appspot.com",
         });
     }
 
