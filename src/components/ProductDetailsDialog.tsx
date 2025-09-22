@@ -65,14 +65,7 @@ export function ProductDetailsDialog({ isOpen, onOpenChange, product }: ProductD
   }
 
   const handleUpdateQuantity = (newQuantity: number) => {
-      if (!isTransactionReady) {
-           toast({
-              variant: "destructive",
-              title: "Acción Requerida",
-              description: "Tu registro de transacciones debe estar activo.",
-          });
-          return;
-      }
+      if (!isTransactionReady || !currentUser.id) return;
       updateCart(currentUser.id, product.id, newQuantity);
   }
 

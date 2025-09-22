@@ -116,4 +116,3 @@ export function ScheduleEditor({ provider, isSelfProfile }: ScheduleEditorProps)
         </Card>
     );
 }
-

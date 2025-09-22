@@ -249,5 +249,3 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
       </Dialog>
     );
 }
-
-  

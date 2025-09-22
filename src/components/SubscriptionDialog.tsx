@@ -195,5 +195,3 @@ export function SubscriptionDialog({ isOpen, onOpenChange }: SubscriptionDialogP
     </Dialog>
   );
 }
-
-  

@@ -22,7 +22,7 @@ import { AlertDialog, AlertDialogTrigger } from "./ui/alert-dialog";
 import { Badge } from "./ui/badge";
 import { CartPopoverContent } from "./CartPopoverContent";
 import { CheckoutAlertDialogContent } from "./CheckoutAlertDialogContent";
-import { toggleGps } from "@/lib/actions/user.actions";
+import { toggleGps } from '@/lib/actions/user.actions';
 
 
 export function Header() {
