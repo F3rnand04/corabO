@@ -23,24 +23,30 @@ function initializeAdminApp(): admin.app.App {
       ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY)
       : undefined;
 
-    // In a local emulator environment, service account might not be needed.
-    // The check for FIRESTORE_EMULATOR_HOST ensures we don't throw in a dev environment.
-    if (!serviceAccount && !process.env.FIRESTORE_EMULATOR_HOST) {
-        console.warn("ADVERTENCIA: La variable de entorno FIREBASE_SERVICE_ACCOUNT_KEY no está definida. Se asumirá un entorno de emulador, pero esto fallará en producción.");
-    }
-
-    const appOptions: admin.AppOptions = {
-        projectId: firebaseConfig.projectId,
-        storageBucket: firebaseConfig.storageBucket,
-    };
-    
+    // In a production environment, the service account key MUST be provided.
+    // In a local emulator environment, the SDK can auto-discover the emulators
+    // if we initialize without any arguments.
     if (serviceAccount) {
-        appOptions.credential = admin.credential.cert(serviceAccount);
+        return admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount),
+            projectId: firebaseConfig.projectId,
+            storageBucket: firebaseConfig.storageBucket,
+        });
+    } else if (process.env.FIRESTORE_EMULATOR_HOST) {
+        // If we are in an emulator environment (detected by env var),
+        // initialize without credentials. The SDK will connect automatically.
+        return admin.initializeApp({
+            projectId: firebaseConfig.projectId,
+            storageBucket: firebaseConfig.storageBucket,
+        });
+    } else {
+        // In a real production environment without emulators, this would be a critical error.
+        console.warn(
+            "ADVERTENCIA: La variable de entorno FIREBASE_SERVICE_ACCOUNT_KEY no está definida. El SDK de Admin no pudo autenticarse. Esto solo funcionará si los emuladores de Firebase están activos."
+        );
+        // We initialize without options, hoping emulators are running.
+        return admin.initializeApp();
     }
-
-    const app = admin.initializeApp(appOptions);
-
-    return app;
 }
 
 const adminApp = initializeAdminApp();
