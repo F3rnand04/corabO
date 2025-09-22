@@ -122,6 +122,7 @@ export async function removeCommentFromImageFlow(input: RemoveCommentInput) {
     if (!commentToRemove) throw new Error("Comment not found at the specified index.");
     
     const publicationOwnerId = publication.providerId;
+    // A comment can be deleted by its author or the owner of the publication
     if (input.authorId !== commentToRemove.authorId && input.authorId !== publicationOwnerId) {
         throw new Error("You are not authorized to delete this comment.");
     }

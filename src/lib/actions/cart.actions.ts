@@ -13,7 +13,7 @@ import { updateCartFlow } from '@/ai/flows/cart-flow';
 export async function updateCart(userId: string, productId: string, newQuantity: number) {
     try {
         await updateCartFlow({ userId, productId, newQuantity });
-        // Revalidate the transactions path because carts are a type of transaction
+        // Revalidate the transactions path because carts are displayed in a popover there
         revalidatePath('/transactions');
         revalidatePath('/profile'); // For product grid cards to update
     } catch (error) {

@@ -19,7 +19,7 @@ import { useState, useEffect, useRef, ChangeEvent } from 'react';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel";
 import { cn } from '@/lib/utils';
 import { Textarea } from './ui/textarea';
-import { addCommentToImage, removeCommentFromImage, removeGalleryImage, updateGalleryImage } from '@/lib/actions/publication.actions';
+import { addCommentToImage, removeCommentFromImage, removeGalleryImage, updateGalleryImage } from '@/lib/actions';
 
 
 interface ImageDetailsDialogProps {
@@ -108,7 +108,7 @@ export function ImageDetailsDialog({ isOpen, onOpenChange, gallery, startIndex =
   }
 
   const handleDeletePublication = (imageId: string) => {
-    if (owner) {
+    if (owner && currentUser) {
       removeGalleryImage(owner.id, imageId);
       onOpenChange(false);
     }

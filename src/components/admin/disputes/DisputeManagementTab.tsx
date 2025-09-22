@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
@@ -8,14 +7,12 @@ import { MessageSquare, Info, ShieldHalf, Loader2, FileWarning, User, Eye, Trash
 import { Badge } from '@/components/ui/badge';
 import type { Transaction, ContentReport, User as CoraboUser, SanctionReason } from '@/lib/types';
 import { useRouter } from 'next/navigation';
-import { sendMessage } from '@/lib/actions/messaging.actions';
+import { sendMessage, initiateDisputeResolution, approveContentReport, rejectContentReport } from '@/lib/actions';
 import { TransactionDetailsDialog } from '@/components/TransactionDetailsDialog';
 import { useToast } from '@/hooks/use-toast';
-import { initiateDisputeResolution } from '@/lib/actions/dispute.actions';
 import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase-client';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { approveContentReport, rejectContentReport } from '@/lib/actions/report.actions';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/use-auth-provider';
@@ -196,7 +193,7 @@ export function DisputeManagementTab({ selectedCountry }: DisputeManagementTabPr
                               </div>
                             </div>
                             <div className="flex flex-col sm:flex-row gap-2 self-start sm:self-center pt-2 sm:pt-0 border-t sm:border-none w-full sm:w-auto">
-                              <Button asChild variant="secondary" size="sm"><a href={'/publications/${report.reportedContentId}'} target="_blank"><Eye className="mr-2 h-4 w-4"/>Ver Contenido</a></Button>
+                              <Button asChild variant="secondary" size="sm"><a href={`/publications/${report.reportedContentId}`} target="_blank"><Eye className="mr-2 h-4 w-4"/>Ver Contenido</a></Button>
                                <Button variant="destructive" size="sm" onClick={() => setSanctionDialogReport(report)}><Trash2 className="mr-2 h-4 w-4"/>Aprobar Denuncia</Button>
                                <Button variant="outline" size="sm" onClick={() => handleRejectReport(report.id)}>Descartar</Button>
                             </div>

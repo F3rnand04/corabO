@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -9,7 +8,7 @@ import { Input } from './ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { MessageSquare, ThumbsUp, ThumbsDown, Send, Trash2 } from 'lucide-react';
 import type { GalleryImage, GalleryImageComment } from '@/lib/types';
-import { addCommentToImage, removeCommentFromImage } from '@/lib/actions/publication.actions';
+import { addCommentToImage, removeCommentFromImage } from '@/lib/actions';
 import { db } from '@/lib/firebase-client';
 
 interface PublicationCommentsProps {
