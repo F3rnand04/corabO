@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -15,7 +14,6 @@ import { useToast } from '@/hooks/use-toast';
 import { ReportDialog } from '@/components/ReportDialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogFooter, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { BusinessHoursStatus } from '@/components/BusinessHoursStatus';
@@ -24,74 +22,26 @@ import { Badge } from '@/components/ui/badge';
 import { ProductDetailsDialog } from '@/components/ProductDetailsDialog';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { db } from '@/lib/firebase-client';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { getPublicProfile, getProfileGallery, getProfileProducts } from '@/lib/actions/feed.actions';
-import { createAppointmentRequest } from '@/lib/actions/transaction.actions';
+import { createAppointmentRequest, requestAffiliation } from '@/lib/actions';
 import { sendMessage } from '@/lib/actions/messaging.actions';
-import { toggleGps, addContactToUser } from '@/lib/actions/user.actions';
+import { addContactToUser } from '@/lib/actions/user.actions';
 import { ProfileGalleryView } from './ProfileGalleryView';
 import { CampaignDialog } from './CampaignDialog';
 import { SubscriptionDialog } from './SubscriptionDialog';
 import { EditableAvatar } from './EditableAvatar';
 import { TransactionDetailsDialog } from './TransactionDetailsDialog';
-import { haversineDistance } from '@/lib/utils';
 import { useAuth } from '@/hooks/use-auth-provider';
 import { ProfileStats } from './ProfileStats';
+import { ProfileDetails } from './profile/ProfileDetails';
+import { ScheduleEditor } from './profile/ScheduleEditor';
+import { AffiliationHandler } from './profile/AffiliationHandler';
 
-
-const categoryIcons: { [key: string]: React.ElementType } = {
-    'Salud y Bienestar': BrainCircuit,
-    'Alimentos y Restaurantes': Utensils,
-    'Hogar y Reparaciones': HomeIcon,
-    'Tecnología y Soporte': Briefcase,
-    'Eventos': Briefcase,
-    'Belleza': Scissors,
-    'Automotriz y Repuestos': Car,
-    'Transporte y Asistencia': Wrench,
-};
-
-const DetailBadge = ({ value, icon }: { value: string; icon?: React.ElementType }) => {
-    const Icon = icon;
-    return (
-        <Badge variant="secondary" className="font-normal">
-            {Icon && <Icon className="w-3 h-3 mr-1.5" />}
-            {value}
-        </Badge>
-    );
-};
-
-const renderSpecializedBadges = (specializedData?: SpecializedData) => {
-    if (!specializedData) return null;
-    
-    const badges = [];
-    const allSkills = [
-        ...(specializedData.mainTrades || []),
-        ...(specializedData.mainServices || []),
-        ...(specializedData.beautyTrades || []),
-        ...(specializedData.specialties || []),
-        ...(specializedData.specificSkills || []),
-        ...(specializedData.keySkills || []),
-    ];
-
-    if (allSkills.length > 0) {
-        const visibleSkills = allSkills.slice(0, 2);
-        visibleSkills.forEach(skill => {
-            badges.push(<DetailBadge key={skill} value={skill} />);
-        });
-    }
-
-    return (
-        <div className="flex flex-wrap items-center gap-1.5 pt-3">
-            {badges}
-        </div>
-    );
-};
 
 export function UserProfilePage({ userId }: { userId: string}) {
-  const { currentUser, users, transactions, addContact, currentUserLocation } = useAuth();
+  const { currentUser, users, transactions, addContact, isContact } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -105,14 +55,10 @@ export function UserProfilePage({ userId }: { userId: string}) {
   const [activeTab, setActiveTab] = useState<'publications' | 'catalog'>('publications');
 
   const [isCampaignDialogOpen, setIsCampaignDialogOpen] = useState(false);
-  const [isSubscriptionDialogOpen, setIsSubscriptionDialogOpen] = useState(false);
   
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isProductDetailsDialogOpen, setIsProductDetailsDialogOpen] = useState(false);
-  const [isAppointmentDialogOpen, setIsAppointmentDialogOpen] = useState(false);
-  const [appointmentDate, setAppointmentDate] = useState<Date | null>(null);
-  const [appointmentDetails, setAppointmentDetails] = useState('');
 
   const isSelfProfile = currentUser?.id === userId;
 
@@ -174,41 +120,6 @@ export function UserProfilePage({ userId }: { userId: string}) {
     return providerProducts.filter(p => p.name.toLowerCase().includes(catalogSearchQuery.toLowerCase()));
   }, [providerProducts, catalogSearchQuery]);
 
-  const getAgendaEvents = (transactions: Transaction[], providerId: string) => {
-    return transactions
-        .filter(tx => tx.providerId === providerId && ['Finalizado - Pendiente de Pago', 'Cita Solicitada'].includes(tx.status))
-        .map(tx => ({
-            date: new Date(tx.date),
-            type: tx.status === 'Finalizado - Pendiente de Pago' ? 'payment' : 'appointment',
-            transactionId: tx.id,
-        }));
-  }
-
-  const { agendaEvents, eventDates } = useMemo(() => {
-    if (!provider) return { agendaEvents: [], eventDates: [] };
-    
-    const events = getAgendaEvents(transactions, provider.id);
-    const dates = events.map(e => e.date);
-
-    return { agendaEvents: events, eventDates: dates };
-  }, [provider, transactions]);
-  
-  const distance = useMemo(() => {
-    if (currentUserLocation && provider?.profileSetupData?.location) {
-        const [lat, lon] = provider.profileSetupData.location.split(',').map(Number);
-        const dist = haversineDistance(currentUserLocation.latitude, currentUserLocation.longitude, lat, lon);
-        return dist < 1 ? `${(dist * 1000).toFixed(0)} m` : `${dist.toFixed(1)} km`;
-    }
-    return null;
-  }, [currentUserLocation, provider?.profileSetupData?.location]);
-
-    const handleEditProfile = () => {
-        if (!provider) return;
-        const setupPath = provider.profileSetupData?.providerType === 'company'
-            ? '/profile-setup/company'
-            : '/profile-setup/personal';
-        router.push(setupPath);
-    };
 
   if (isLoading) {
     return (
@@ -231,121 +142,29 @@ export function UserProfilePage({ userId }: { userId: string}) {
   const isProvider = provider.type === 'provider';
   const isCompany = isProvider && provider.profileSetupData?.providerType === 'company';
   const offerType = provider.profileSetupData?.offerType;
-  const specializedData = provider.profileSetupData?.specializedData;
-  const allSpecializedSkills = [
-      ...(specializedData?.mainTrades || []), ...(specializedData?.mainServices || []),
-      ...(specializedData?.beautyTrades || []), ...(specializedData?.specialties || []),
-      ...(specializedData?.specificSkills || []), ...(specializedData?.keySkills || []),
-  ];
-
-  const handleDateSelect = (date: Date | undefined) => {
-    if (!currentUser?.isTransactionsActive) {
-         toast({ variant: "destructive", title: "Acción Requerida", description: "Por favor, activa tu registro de transacciones para poder agendar citas." }); return;
-    }
-    if (!provider.isTransactionsActive) {
-         toast({ variant: "destructive", title: "Proveedor no disponible", description: "Este proveedor no tiene las transacciones activas en este momento." }); return;
-    }
-    if (date && provider) {
-        setAppointmentDate(date);
-        setIsAppointmentDialogOpen(true);
-    }
-  };
-
-  const handleConfirmAppointment = async () => {
-    if (appointmentDate && provider && currentUser) {
-        await createAppointmentRequest({
-            providerId: provider.id,
-            clientId: currentUser.id,
-            date: appointmentDate.toISOString(),
-            details: appointmentDetails,
-            amount: provider.profileSetupData?.appointmentCost || 0,
-        });
-        setIsAppointmentDialogOpen(false);
-        setAppointmentDetails('');
-        toast({ title: "Solicitud de Cita Enviada", description: "El proveedor revisará tu solicitud." });
-    }
-  };
-  
-  const disabledDays = Object.entries(provider.profileSetupData?.schedule || {}).filter(([, dayDetails]) => !(dayDetails as any).active).map(([dayName]) => ({ 'Domingo': 0, 'Lunes': 1, 'Martes': 2, 'Miércoles': 3, 'Jueves': 4, 'Viernes': 5, 'Sábado': 6 }[dayName] as number));
-  const displayName = provider.profileSetupData?.useUsername && provider.profileSetupData.username ? provider.profileSetupData.username : provider.name;
-  const specialty = provider.profileSetupData?.specialty || "Sin especialidad definida";
-  const categoryPlaceholders: { [key: string]: string } = { 'Hogar y Reparaciones': 'Ej: Fuga en el baño.', 'Tecnología y Soporte': 'Ej: Mi PC no enciende.', 'Automotriz y Repuestos': 'Ej: Cambio de aceite.', 'Alimentos y Restaurantes': 'Ej: Cotización para 20 personas.', 'Salud y Bienestar': 'Ej: Consulta de fisioterapia.', 'Belleza': 'Ej: Corte y secado.', 'Eventos': 'Ej: Fotógrafo para cumpleaños.'};
-  const appointmentPlaceholder = categoryPlaceholders[provider.profileSetupData?.primaryCategory || ''] || 'Ej: Quisiera discutir los detalles...';
-  const DetailsIcon = categoryIcons[provider.profileSetupData?.primaryCategory || ''] || Briefcase;
 
   return (
     <div className="bg-background min-h-screen">
       <div className="container mx-auto px-0 md:px-2 max-w-2xl pb-24">
         
-        {/* Profile Header */}
-        <div className="sticky top-0 z-20 bg-background/95 backdrop-blur-sm pt-4 px-2">
-            <div className="flex items-center space-x-4">
-              {isSelfProfile && currentUser ? (
-                 <EditableAvatar user={{ id: currentUser.id, name: currentUser.name, profileImage: currentUser.profileImage }} />
-              ) : (
-                <Avatar className="w-16 h-16 shrink-0"><AvatarImage src={provider.profileImage} alt={displayName} /><AvatarFallback>{displayName.charAt(0)}</AvatarFallback></Avatar>
-              )}
-             
-              <div className="flex-grow min-w-0">
-                <div className="flex items-center gap-2">
-                  <h1 className="text-lg font-bold text-foreground truncate">{displayName}</h1>
-                  {provider.isSubscribed && <CheckCircle className="w-5 h-5 text-blue-500" />}
-                  {isCompany && <Building className="w-4 h-4 text-muted-foreground" />}
-                </div>
-                <p className="text-sm text-muted-foreground">{specialty}</p>
-                <ProfileStats user={provider} isSelf={isSelfProfile} />
-              </div>
-              <div className="flex flex-col items-end gap-2 shrink-0">
-                 {!isSelfProfile && <Button variant="link" size="sm" className="p-0 h-auto text-primary hover:text-primary/80 font-semibold text-xs" onClick={() => sendMessage({recipientId: provider.id, text: `¡Hola! Me interesa tu perfil.`, conversationId: [currentUser!.id, provider.id].sort().join('-'), senderId: currentUser!.id}).then(id => router.push(`/messages/${id}`))}>Contactar</Button>}
-                 <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground" onClick={() => isSelfProfile && toggleGps(provider.id)}><MapPin className={cn("h-5 w-5", provider.isGpsActive ? "text-green-500" : "text-muted-foreground")} /></Button>
-                    <Popover>
-                        <PopoverTrigger asChild><Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground"><Calendar className="w-5 h-5"/></Button></PopoverTrigger>
-                        <PopoverContent className="w-auto p-0"><CalendarComponent mode="multiple" selected={eventDates} onDayClick={(day) => handleDateSelect(day)} disabled={[{ dayOfWeek: disabledDays }, { before: new Date() }]} /></PopoverContent>
-                    </Popover>
-                    {isSelfProfile ? (
-                        <Button variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground" onClick={handleEditProfile}>
-                            <Settings className="w-5 h-5"/>
-                        </Button>
-                    ) : (
-                       <Button asChild variant="ghost" size="icon" className="w-8 h-8 text-muted-foreground"><Link href="/transactions"><Wallet className="w-5 h-5"/></Link></Button>
-                    )}
-                 </div>
-              </div>
-            </div>
-            
-            <div className="flex flex-wrap items-center gap-2 pt-3">
-              {renderSpecializedBadges(specializedData)}
-              {allSpecializedSkills.length > 2 && (
-                <Popover>
-                    <PopoverTrigger asChild><Button variant="ghost" className="flex items-center gap-1 text-xs p-1 h-auto text-muted-foreground"><DetailsIcon className="w-4 h-4 text-primary"/>Ver más<MoreHorizontal className="w-3 h-3 ml-1" /></Button></PopoverTrigger>
-                    <PopoverContent className="w-72"><div className="space-y-2 text-sm"><h4 className="font-bold mb-2">Todas las Habilidades</h4><div className="flex flex-wrap gap-1">{allSpecializedSkills.map(skill => <Badge key={skill} variant="secondary">{skill}</Badge>)}</div></div></PopoverContent>
-                </Popover>
-              )}
-            </div>
-
-            {isSelfProfile && isProvider && !isCompany && (
-              <div className="flex items-center gap-2 mt-4">
-                  <Button variant="outline" className="flex-1" onClick={() => setIsCampaignDialogOpen(true)}><Megaphone className="w-4 h-4 mr-2"/>Campañas</Button>
-              </div>
-            )}
-            
-            {provider.activeAffiliation && (
-                <Link href={`/companies/${provider.activeAffiliation.companyId}`} className="group block mt-4">
-                    <div className="p-3 bg-muted/50 rounded-lg flex items-center gap-3 border hover:border-primary/50 transition-colors"><Avatar className="w-10 h-10 shrink-0"><AvatarImage src={provider.activeAffiliation.companyProfileImage} /><AvatarFallback>{provider.activeAffiliation.companyName.charAt(0)}</AvatarFallback></Avatar><div><p className="text-xs text-muted-foreground">Verificado por:</p><p className="font-semibold text-foreground group-hover:underline">{provider.activeAffiliation.companyName}</p><p className="text-xs text-muted-foreground">{provider.activeAffiliation.companySpecialty}</p></div></div>
-                </Link>
-            )}
-
-            {!isSelfProfile && (
-              <div className="grid grid-cols-2 gap-2 mt-4">
-                <Button variant="outline" onClick={() => { addContact(provider); toast({ title: "¡Contacto Guardado!", description: `Has añadido a ${provider.name} a tus contactos.` }); }}><Bookmark className="w-4 h-4 mr-2"/>Guardar</Button>
-                <Button onClick={() => sendMessage({recipientId: provider.id, text: `¡Hola! Me interesa tu perfil.`, conversationId: [currentUser!.id, provider.id].sort().join('-'), senderId: currentUser!.id}).then(id => router.push(`/messages/${id}`))}><MessageCircle className="w-4 h-4 mr-2"/>Mensaje</Button>
-              </div>
-            )}
+        <ProfileDetails provider={provider} isSelfProfile={isSelfProfile} onContact={() => {
+            if (!currentUser) return;
+            sendMessage({ recipientId: provider.id, text: `¡Hola! Me interesa tu perfil.`, conversationId: [currentUser.id, provider.id].sort().join('-'), senderId: currentUser.id }).then(id => router.push(`/messages/${id}`))
+        }} />
+        
+        <div className="px-4 py-4 space-y-4">
+            <AffiliationHandler provider={provider} />
+            <ScheduleEditor provider={provider} isSelfProfile={isSelfProfile}/>
         </div>
+            
+        {isSelfProfile && isProvider && !isCompany && (
+          <div className="flex items-center gap-2 mt-4 px-4">
+              <Button variant="outline" className="flex-1" onClick={() => setIsCampaignDialogOpen(true)}><Megaphone className="w-4 h-4 mr-2"/>Campañas</Button>
+          </div>
+        )}
         
         {/* Tabs for content */}
-        <div className="border-b mt-4 sticky top-[152px] z-20 bg-background/95 backdrop-blur-sm">
+        <div className="border-b mt-4 sticky top-0 z-20 bg-background/95 backdrop-blur-sm">
             <div className="container flex justify-around">
                 {(offerType === 'service' || offerType === 'both' || !offerType) && <Button variant="ghost" className={cn("flex-1 rounded-none", activeTab === 'publications' && 'border-b-2 border-primary text-primary')} onClick={() => setActiveTab('publications')}>Publicaciones</Button>}
                 {(offerType === 'product' || offerType === 'both') && <Button variant="ghost" className={cn("flex-1 rounded-none", activeTab === 'catalog' && 'border-b-2 border-primary text-primary')} onClick={() => setActiveTab('catalog')}>Catálogo</Button>}
@@ -380,15 +199,7 @@ export function UserProfilePage({ userId }: { userId: string}) {
       </div>
       <ProductDetailsDialog isOpen={isProductDetailsDialogOpen} onOpenChange={setIsProductDetailsDialogOpen} product={selectedProduct} />
       <CampaignDialog isOpen={isCampaignDialogOpen} onOpenChange={setIsCampaignDialogOpen} />
-      <SubscriptionDialog isOpen={isSubscriptionDialogOpen} onOpenChange={setIsSubscriptionDialogOpen} />
       <TransactionDetailsDialog isOpen={!!selectedTransaction} onOpenChange={() => setSelectedTransaction(null)} transaction={selectedTransaction} />
-       <AlertDialog open={isAppointmentDialogOpen} onOpenChange={setIsAppointmentDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader><AlertDialogTitle>Confirmar Solicitud de Cita</AlertDialogTitle><AlertDialogDescription>Estás a punto de solicitar una cita con {displayName} para el {appointmentDate ? format(appointmentDate, "PPP", { locale: es }) : ''}.</AlertDialogDescription></AlertDialogHeader>
-          <div className="py-4 space-y-2"><Label htmlFor="appt-details">Añade detalles sobre lo que necesitas (opcional)</Label><Textarea id="appt-details" value={appointmentDetails} onChange={(e) => setAppointmentDetails(e.target.value)} placeholder={appointmentPlaceholder} /></div>
-          <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction onClick={handleConfirmAppointment}>Confirmar Solicitud</AlertDialogAction></AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

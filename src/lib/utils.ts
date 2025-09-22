@@ -48,5 +48,8 @@ export function generateKeywords(text: string): string[] {
         }
     });
 
+    // Add the full words as well for exact matches
+    words.forEach(word => keywords.add(word));
+
     return Array.from(keywords);
 }

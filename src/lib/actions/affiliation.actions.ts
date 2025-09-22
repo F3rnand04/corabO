@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { requestAffiliationFlow, approveAffiliationFlow, rejectAffiliationFlow, revokeAffiliationFlow } from '@/ai/flows/affiliation-flow';
+import { approveAffiliationFlow, rejectAffiliationFlow, revokeAffiliationFlow, requestAffiliationFlow } from '@/ai/flows/affiliation-flow';
 import { sendNotification } from '@/ai/flows/notification-flow';
 
 

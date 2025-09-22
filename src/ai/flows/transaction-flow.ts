@@ -10,6 +10,7 @@ import { addDays, endOfMonth, isAfter, startOfWeek } from 'date-fns';
 import { getExchangeRate } from './exchange-rate-flow';
 import { findDeliveryProviderFlow, calculateDeliveryCostFlow } from './delivery-flow';
 import { sendNotification } from './notification-flow';
+import { haversineDistance } from '@/lib/utils';
 
 // --- Schemas ---
 
