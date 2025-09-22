@@ -208,7 +208,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           const location = { latitude: position.coords.latitude, longitude: position.coords.longitude };
           setCurrentUserLocation(location);
           if (currentUser?.id) {
-            updateUserAction(currentUser.id, { 'profileSetupData.location': `${'${location.latitude}'},${'${location.longitude}'}` });
+            updateUserAction(currentUser.id, { 'profileSetupData.location': `${location.latitude},${location.longitude}` });
           }
         },
         () => toast({ variant: "destructive", title: "Error de Ubicación", description: "No se pudo obtener tu ubicación. Revisa los permisos." }),
@@ -219,10 +219,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   
   const setDeliveryAddressToCurrent = useCallback(() => {
     if (currentUserLocation) {
-        setDeliveryAddress(`${'${currentUserLocation.latitude}'},${'${currentUserLocation.longitude}'}`);
+        setDeliveryAddress(`${currentUserLocation.latitude},${currentUserLocation.longitude}`);
     } else {
         getCurrentLocation();
-        if(currentUserLocation) setDeliveryAddress(`${'${currentUserLocation.latitude}'},${'${currentUserLocation.longitude}'}`);
+        if(currentUserLocation) setDeliveryAddress(`${currentUserLocation.latitude},${currentUserLocation.longitude}`);
         else toast({ variant: "destructive", title: "Ubicación no disponible", description: "Activa el GPS o intenta de nuevo." });
     }
   }, [currentUserLocation, toast, getCurrentLocation]);

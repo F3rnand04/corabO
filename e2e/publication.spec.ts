@@ -16,14 +16,39 @@ test.describe('Flujo de Creación de Contenido del Proveedor', () => {
   });
 
   test('El proveedor puede crear una nueva publicación en su galería', async ({ page }) => {
-    // Este caso de prueba está pendiente de implementación.
-    // En el próximo paso, añadiremos la lógica para:
-    // 1. Hacer clic en el botón de subir.
-    // 2. Llenar el formulario de nueva publicación.
-    // 3. Simular la carga de una imagen.
+    // 1. Contar cuántas publicaciones existen inicialmente en la galería.
+    const initialCount = await page.locator('.publication-gallery-main-image').count();
+
+    // 2. Hacer clic en el botón de subir contenido (el botón "+" central del footer).
+    await page.locator('button[key="central-action"]').click();
+    
+    // 3. Esperar a que el diálogo de subida aparezca y rellenar el formulario.
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('heading', { name: 'Crear Nueva Publicación' })).toBeVisible();
+    
+    // Simular la carga de un archivo (Playwright no sube archivos reales, intercepta la petición)
+    // Usaremos un archivo de prueba ficticio.
+    await page.setInputFiles('input[type="file"]', {
+      name: 'test-image.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from('esto-es-una-imagen-de-prueba', 'utf-8'),
+    });
+
+    // Añadir una descripción única para poder encontrarla después.
+    const description = `Una publicación de prueba automática ${Math.random()}`;
+    await page.getByPlaceholder('Añade una descripción para tu publicación...').fill(description);
+
     // 4. Enviar el formulario.
+    await page.getByRole('button', { name: 'Publicar en Galería' }).click();
+
     // 5. Verificar que la nueva publicación aparece en la galería.
-    test.skip(true, 'Prueba pendiente de implementación');
+    // La forma más robusta es esperar a que el número de publicaciones aumente.
+    await expect(page.locator('.publication-gallery-main-image')).toHaveCount(initialCount + 1, { timeout: 10000 });
+    
+    // Opcional: También podríamos hacer clic en la nueva imagen y verificar que la descripción coincida.
+    await page.locator('.publication-gallery-main-image').first().click();
+    await expect(page.getByText(description)).toBeVisible();
   });
 
 });
