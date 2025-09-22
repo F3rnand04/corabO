@@ -42,16 +42,19 @@ function ProviderActions({ tx, onAction }: { tx: Transaction; onAction: () => vo
   };
 
   const handleConfirmPayment = (fromThirdParty: boolean) => {
+    if (!currentUser) return;
     confirmPaymentReceived({ transactionId: tx.id, userId: currentUser.id, fromThirdParty });
     onAction();
   };
 
   const handleCompleteWork = () => {
+    if (!currentUser) return;
     completeWork({ transactionId: tx.id, userId: currentUser.id });
     onAction();
   };
 
   const handleAcceptAppointment = () => {
+    if (!currentUser) return;
     acceptAppointment({transactionId: tx.id, userId: currentUser.id});
     onAction();
   }
@@ -106,6 +109,7 @@ function ClientActions({ tx, onAction }: { tx: Transaction; onAction: () => void
 
   const handleConfirmWorkReceived = async () => {
     if (rating === 0) return;
+    if (!currentUser) return;
     await confirmWorkReceived({transactionId: tx.id, userId: currentUser.id, rating, comment});
     setShowRatingScreen(false);
     onAction();
@@ -224,9 +228,9 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>No se encontró un repartidor</AlertDialogTitle><AlertDialogDescription>Elige una opción para continuar.</AlertDialogDescription></AlertDialogHeader>
           <div className="flex flex-col gap-4 py-4">
-            <Button onClick={() => { retryFindDelivery({transactionId: transaction.id}); handleClose(); }}><Repeat className="mr-2 h-4 w-4"/>Volver a Intentar Búsqueda</Button>
-            <Button onClick={() => { assignOwnDelivery(transaction.id, currentUser.id); handleClose(); }} variant="outline"><Truck className="mr-2 h-4 w-4"/>Asignarme el Delivery</Button>
-            <Button onClick={() => { resolveDeliveryAsPickup({ transactionId: transaction.id }); handleClose(); }} variant="secondary"><Handshake className="mr-2 h-4 w-4"/>Convertir a Retiro en Tienda</Button>
+            <Button onClick={() => { if(transaction) { retryFindDelivery({transactionId: transaction.id}); handleClose(); } }}><Repeat className="mr-2 h-4 w-4"/>Volver a Intentar Búsqueda</Button>
+            <Button onClick={() => { if(transaction && currentUser) { assignOwnDelivery(transaction.id, currentUser.id); handleClose(); } }} variant="outline"><Truck className="mr-2 h-4 w-4"/>Asignarme el Delivery</Button>
+            <Button onClick={() => { if(transaction) { resolveDeliveryAsPickup({ transactionId: transaction.id }); handleClose(); } }} variant="secondary"><Handshake className="mr-2 h-4 w-4"/>Convertir a Retiro en Tienda</Button>
           </div>
           <AlertDialogFooter><AlertDialogCancel>Cerrar</AlertDialogCancel></AlertDialogFooter>
         </AlertDialogContent>
@@ -276,5 +280,3 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
     </>
   );
 }
-
-    

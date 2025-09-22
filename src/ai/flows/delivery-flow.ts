@@ -149,3 +149,64 @@ export async function resolveDeliveryAsPickupFlow({ transactionId }: { transacti
 
     await batch.commit();
 }
+
+
+export async function acceptDeliveryJob(input: { transactionId: string, providerId: string }) {
+    const db = getFirestore();
+    const txRef = db.collection('transactions').doc(input.transactionId);
+    await txRef.update({
+        'details.deliveryProviderId': input.providerId,
+        status: 'En Reparto',
+    });
+
+    const transaction = (await txRef.get()).data() as Transaction;
+
+    // Notify client
+    await sendNotification({
+        userId: transaction.clientId,
+        type: 'admin_alert',
+        title: '¡Tu pedido va en camino!',
+        message: `Un repartidor ha aceptado tu pedido y se dirige a recogerlo.`,
+        link: `/transactions?tx=${input.transactionId}`
+    });
+}
+
+export async function completeDelivery(input: { transactionId: string }) {
+    const db = getFirestore();
+    const txRef = db.collection('transactions').doc(input.transactionId);
+    const transaction = (await txRef.get()).data() as Transaction;
+
+    // Create commission transaction for the delivery provider
+    if (transaction.details.deliveryCost) {
+        const commissionAmount = transaction.details.deliveryCost * 0.85; // Delivery provider keeps 85%
+        const commissionTx: Transaction = {
+            id: `txn-delivery-comm-${transaction.id.slice(-6)}`,
+            type: 'Sistema',
+            status: 'Pagado', // Mark as paid immediately for delivery providers
+            date: new Date().toISOString(),
+            amount: commissionAmount,
+            clientId: transaction.details.deliveryProviderId!,
+            providerId: 'corabo-admin',
+            participantIds: [transaction.details.deliveryProviderId!, 'corabo-admin'],
+            details: {
+                system: `Comisión por entrega (Tx: ${transaction.id.slice(-6)})`,
+            }
+        };
+        await db.collection('transactions').doc(commissionTx.id).set(commissionTx);
+    }
+    
+    // Update original transaction status
+    await txRef.update({
+        status: 'Pagado', // Or another appropriate final status
+        'details.delivery.status': 'Entregado',
+    });
+
+     // Notify client
+    await sendNotification({
+        userId: transaction.clientId,
+        type: 'admin_alert',
+        title: '¡Pedido Entregado!',
+        message: `Tu pedido ha sido entregado exitosamente. ¡Gracias por usar Corabo!`,
+        link: `/transactions?tx=${input.transactionId}`
+    });
+}
