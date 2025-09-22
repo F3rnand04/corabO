@@ -20,8 +20,7 @@ import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { sendQuote, confirmPaymentReceived, completeWork, acceptAppointment, startDispute, cancelSystemTransaction, downloadTransactionsPDF, confirmWorkReceived, payCommitment } from '@/lib/actions/transaction.actions';
+import { sendQuote, confirmPaymentReceived, completeWork, acceptAppointment, startDispute, cancelSystemTransaction, downloadTransactionsPDF, confirmWorkReceived } from '@/lib/actions/transaction.actions';
 import { retryFindDelivery, assignOwnDelivery, resolveDeliveryAsPickup } from '@/lib/actions/delivery.actions';
 
 
@@ -62,7 +61,7 @@ function ProviderActions({ tx, onAction }: { tx: Transaction; onAction: () => vo
       <div className="w-full space-y-2 pt-4 border-t">
         <h4 className="font-semibold">Enviar Cotización</h4>
         <Textarea placeholder="Desglose de costos y condiciones..." value={quoteBreakdown} onChange={e => setQuoteBreakdown(e.target.value)} />
-        <Input type="number" placeholder="Monto total" value={quoteTotal} onChange={e => setQuoteTotal(parseFloat(e.target.value))} />
+        <Input type="number" placeholder="Monto total" value={quoteTotal || ''} onChange={e => setQuoteTotal(parseFloat(e.target.value))} />
         <Button onClick={handleSendQuote} className="w-full">Enviar Cotización</Button>
       </div>
     ),
@@ -105,13 +104,13 @@ function ClientActions({ tx, onAction }: { tx: Transaction; onAction: () => void
 
   if (!currentUser) return null;
 
-  const handleConfirmWorkReceived = () => {
+  const handleConfirmWorkReceived = async () => {
     if (rating === 0) return;
-    confirmWorkReceived({transactionId: tx.id, userId: currentUser.id, rating, comment});
+    await confirmWorkReceived({transactionId: tx.id, userId: currentUser.id, rating, comment});
     setShowRatingScreen(false);
     onAction();
     // Redirect to payment page after rating
-    router.push(`/payment?commitmentId=${'${tx.id}'}`);
+    router.push(`/payment?commitmentId=${tx.id}`);
   }
 
   if (showRatingScreen) {
@@ -119,7 +118,7 @@ function ClientActions({ tx, onAction }: { tx: Transaction; onAction: () => void
       <div className="py-6 space-y-6">
         <div className="flex justify-center gap-2">
             {[1, 2, 3, 4, 5].map((star) => (
-                <Star key={star} className={'w-8 h-8 cursor-pointer ${rating >= star ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}'} onClick={() => setRating(star)} />
+                <Star key={star} className={`w-8 h-8 cursor-pointer ${rating >= star ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`} onClick={() => setRating(star)} />
             ))}
         </div>
         <Textarea placeholder="Añade un comentario opcional..." value={comment} onChange={(e) => setComment(e.target.value)} rows={4} />
@@ -137,10 +136,10 @@ function ClientActions({ tx, onAction }: { tx: Transaction; onAction: () => void
       <Button onClick={() => setShowRatingScreen(true)} className="w-full">Confirmar Recepción y Calificar</Button>
     ),
     'Finalizado - Pendiente de Pago': (
-      <Button onClick={() => router.push(`/payment?commitmentId=${'${tx.id}'}`)} className="w-full"><Banknote className="mr-2 h-4 w-4" />Pagar Ahora</Button>
+      <Button onClick={() => router.push(`/payment?commitmentId=${tx.id}`)} className="w-full"><Banknote className="mr-2 h-4 w-4" />Pagar Ahora</Button>
     ),
     'Cotización Recibida': (
-       <Button onClick={() => router.push(`/payment?commitmentId=${'${tx.id}'}`)} className="w-full"><Banknote className="mr-2 h-4 w-4" />Pagar Ahora</Button>
+       <Button onClick={() => router.push(`/payment?commitmentId=${tx.id}`)} className="w-full"><Banknote className="mr-2 h-4 w-4" />Pagar Ahora</Button>
     ),
   };
 
@@ -236,7 +235,7 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
-              <div className={'w-8 h-8 rounded-full flex items-center justify-center ${iconColor}'}><CurrentIcon className="w-5 h-5 text-white" /></div>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${iconColor}`}><CurrentIcon className="w-5 h-5 text-white" /></div>
               Detalles de la Transacción
             </DialogTitle>
             <DialogDescription>ID: {transaction.id}</DialogDescription>
@@ -278,4 +277,4 @@ export function TransactionDetailsDialog({ transaction, isOpen, onOpenChange }: 
   );
 }
 
-  
+    

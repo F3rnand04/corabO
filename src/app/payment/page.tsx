@@ -13,8 +13,7 @@ import { Label } from '@/components/ui/label';
 import { ChevronLeft, Banknote, Upload, Smartphone, Loader2 } from 'lucide-react';
 import type { Transaction } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { registerSystemPayment } from '@/lib/actions/admin.actions';
-import { payCommitment } from '@/lib/actions/transaction.actions';
+import { registerSystemPayment, payCommitment } from '@/lib/actions/transaction.actions';
 
 
 function PaymentHeader() {
@@ -150,7 +149,7 @@ function PaymentPageContent() {
                         </div>
                         <div className="flex justify-between items-center text-2xl font-bold">
                             <span className="text-muted-foreground">Monto a Pagar:</span>
-                            <span>${'${displayAmount?.toFixed(2)}'}</span>
+                            <span>${displayAmount?.toFixed(2)}</span>
                         </div>
                     </CardContent>
                 </Card>
@@ -230,3 +229,5 @@ export default function PaymentPage() {
         </Suspense>
     )
 }
+
+    

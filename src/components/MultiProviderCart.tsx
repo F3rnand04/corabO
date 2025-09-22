@@ -82,3 +82,5 @@ export function MultiProviderCart({ onCheckoutClick }: MultiProviderCartProps) {
         </div>
     );
 }
+
+    
