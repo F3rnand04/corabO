@@ -8,6 +8,7 @@
 import { z } from 'zod';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import type { Conversation, Message, Transaction, User, AgreementProposal } from '@/lib/types';
+import { createTransactionFlow } from './transaction-flow';
 
 // Schema for sending a message/proposal
 const SendMessageInputSchema = z.object({
@@ -126,21 +127,60 @@ export async function acceptProposalFlow(input: AcceptProposalInput): Promise<{ 
     const messageIndex = conversation.messages.findIndex(
       (m) => m.id === input.messageId
     );
+    
+    let updatedMessage: Message | null = null;
+    let updatedConversation: Conversation | null = null;
 
     if (messageIndex > -1) {
       const updatedMessages = [...conversation.messages];
       updatedMessages[messageIndex] = { ...message, isProposalAccepted: true };
       
-      // Update the conversation in Firestore
       await convoRef.update({ messages: updatedMessages });
+      
+      updatedMessage = updatedMessages[messageIndex];
+      updatedConversation = { ...conversation, messages: updatedMessages };
 
-      // Return the updated message and conversation for the action layer
-      return { 
-        message: updatedMessages[messageIndex], 
-        conversation: { ...conversation, messages: updatedMessages }
-      };
+    } else {
+      throw new Error('Could not find message in conversation array to update.');
     }
+    
+    // --- Create Transaction ---
+    if (!updatedMessage.proposal) throw new Error("Accepted message is not a valid proposal.");
 
-    // If message wasn't found in array, which is unlikely if it passed previous checks
-    throw new Error('Could not find message in conversation array to update.');
+    const clientSnap = await db.collection('users').doc(input.acceptorId).get();
+    if (!clientSnap.exists) throw new Error('Client user data not found.');
+    const clientData = clientSnap.data() as User;
+    
+    const isClientSubscribed = clientData.isSubscribed === true;
+    const initialStatus = isClientSubscribed
+      ? 'Acuerdo Aceptado - Pendiente de Ejecución'
+      : 'Finalizado - Pendiente de Pago';
+
+    const providerId = updatedMessage.senderId;
+    const clientId = input.acceptorId;
+
+    const newTransactionData: Omit<Transaction, 'id'> = {
+      type: 'Servicio',
+      status: initialStatus,
+      date: new Date().toISOString(),
+      amount: updatedMessage.proposal.amount,
+      clientId: clientId,
+      providerId: providerId,
+      participantIds: [clientId, providerId].sort(),
+      details: {
+        serviceName: updatedMessage.proposal.title,
+        proposal: updatedMessage.proposal,
+        paymentMethod:
+          updatedMessage.proposal.acceptsCredicora && updatedMessage.proposal.amount >= 20
+            ? 'credicora'
+            : 'direct',
+      },
+    };
+    
+    await createTransactionFlow(newTransactionData);
+
+    return { 
+        message: updatedMessage, 
+        conversation: updatedConversation
+    };
 }

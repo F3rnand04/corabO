@@ -1,8 +1,9 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
 import { createQuoteRequestFlow, createTransactionFlow } from '@/ai/flows/transaction-flow';
-import type { Transaction, User, QuoteRequestInput, AgreementProposal } from '@/lib/types';
+import type { Transaction, QuoteRequestInput, AgreementProposal } from '@/lib/types';
 import { getFirebaseStorage, getFirebaseFirestore } from '@/lib/firebase-admin';
 import { 
     createAppointmentRequestFlow, 
@@ -19,7 +20,6 @@ import {
     startDisputeFlow, 
     cancelSystemTransactionFlow
 } from '@/ai/flows/transaction-flow';
-import { acceptProposalFlow } from '@/ai/flows/message-flow';
 
 /**
  * Uploads a file (as a data URL) to a specified path in Firebase Storage.
@@ -148,49 +148,6 @@ export async function processDirectPayment(sessionId: string) {
 
 export async function createQuoteRequest(input: QuoteRequestInput): Promise<{ requiresPayment: boolean; newTransaction: Transaction | null }> {
     return await createQuoteRequestFlow(input);
-}
-
-export async function acceptProposal(conversationId: string, messageId: string, acceptorId: string) {
-    const { message } = await acceptProposalFlow({ conversationId, messageId, acceptorId });
-
-    if (!message.proposal) throw new Error("Accepted message is not a valid proposal.");
-
-    const db = getFirebaseFirestore();
-    const clientRef = db.collection('users').doc(acceptorId);
-    const clientSnap = await clientRef.get();
-    if (!clientSnap.exists) throw new Error('Client user data not found.');
-    const clientData = clientSnap.data() as User;
-    
-    const isClientSubscribed = clientData.isSubscribed === true;
-    const initialStatus = isClientSubscribed
-      ? 'Acuerdo Aceptado - Pendiente de Ejecución'
-      : 'Finalizado - Pendiente de Pago';
-
-    const providerId = message.senderId;
-    const clientId = acceptorId;
-
-    const newTransaction: Omit<Transaction, 'id'> = {
-      type: 'Servicio',
-      status: initialStatus,
-      date: new Date().toISOString(),
-      amount: message.proposal.amount,
-      clientId: clientId,
-      providerId: providerId,
-      participantIds: [clientId, providerId].sort(),
-      details: {
-        serviceName: message.proposal.title,
-        proposal: message.proposal,
-        paymentMethod:
-          message.proposal.acceptsCredicora && message.proposal.amount >= 20
-            ? 'credicora'
-            : 'direct',
-      },
-    };
-    
-    await createTransactionFlow(newTransaction);
-    
-    revalidatePath(`/messages/${conversationId}`);
-    revalidatePath('/transactions');
 }
 
 export async function purchaseGift(userId: string, gift: { id: string, name: string, price: number }) {

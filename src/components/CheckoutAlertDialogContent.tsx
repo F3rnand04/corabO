@@ -94,15 +94,6 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
         }
     }
     
-    const handleRemoveProviderCart = () => {
-        if(!currentUser.id) return;
-        activeCartForCheckout.forEach(item => {
-            updateCart(currentUser.id, item.product.id, 0);
-        });
-        onOpenChange(false);
-        setActiveCartForCheckout(null);
-    };
-
     const providerAcceptsCredicora = provider.profileSetupData?.acceptsCredicora || false;
     const providerHasLocation = provider.profileSetupData?.hasPhysicalLocation || false;
 
@@ -148,11 +139,6 @@ export function CheckoutAlertDialogContent({ onOpenChange }: { onOpenChange: (op
                     ))}
                   </div>
               </ScrollArea>
-               <div className="px-4">
-                 <Button variant="link" size="sm" className="text-destructive p-0 h-auto" onClick={handleRemoveProviderCart}>
-                    <Trash2 className="w-3 h-3 mr-1"/> Eliminar todos los productos de este proveedor
-                 </Button>
-               </div>
             </div>
             <div className="py-4 space-y-4">
                 <div className="space-y-3">
