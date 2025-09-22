@@ -11,9 +11,10 @@ import { Input } from '@/components/ui/input';
 import { Button } from '../ui/button';
 import { Trash2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+import { deleteUser, toggleUserPause } from '@/lib/actions/user.actions'; // Import server actions directly
 
 export function UserManagementTab() {
-  const { users, toggleUserPause, deleteUser } = useAuth();
+  const { users } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredUsers = users.filter(u => 

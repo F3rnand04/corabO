@@ -49,12 +49,6 @@ export interface AuthContextValue {
   
   getUserMetrics: (userId: string, userType: User['type'], allTransactions: Transaction[]) => { reputation: number, effectiveness: number, averagePaymentTimeMs: number };
   getAgendaEvents: (transactions: Transaction[]) => any[];
-
-  // Server Action Wrappers
-  updateUser: (userId: string, updates: Partial<User> | { [key: string]: any }) => Promise<void>;
-  updateUserProfileImage: (userId: string, dataUrl: string) => Promise<void>;
-  deleteUser: (userId: string) => Promise<void>;
-  toggleUserPause: (userId: string, shouldUnpause: boolean) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);

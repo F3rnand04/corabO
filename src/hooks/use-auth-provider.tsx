@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter, usePathname } from 'next/navigation';
 import { doc, onSnapshot, collection, query, where, orderBy } from 'firebase/firestore';
 import type { User, Transaction, GalleryImage, CartItem, TempRecipientInfo, QrSession, Notification, Conversation } from '@/lib/types';
-import { updateUser as updateUserAction, deleteUser as deleteUserAction, toggleUserPause as toggleUserPauseAction, updateUserProfileImage as updateUserProfileImageAction } from '@/lib/actions/user.actions';
+import { updateUser as updateUserAction } from '@/lib/actions/user.actions';
 import { differenceInMilliseconds } from 'date-fns';
 
 // --- Centralized Context Definition ---
@@ -59,12 +59,6 @@ export interface AuthContextValue {
   
   getUserMetrics: (userId: string, userType: User['type'], allTransactions: Transaction[]) => { reputation: number, effectiveness: number, averagePaymentTimeMs: number };
   getAgendaEvents: (transactions: Transaction[]) => any[];
-
-  // Server Action Wrappers
-  updateUser: (userId: string, updates: Partial<User> | { [key: string]: any }) => Promise<void>;
-  updateUserProfileImage: (userId: string, dataUrl: string) => Promise<void>;
-  deleteUser: (userId: string) => Promise<void>;
-  toggleUserPause: (userId: string, shouldUnpause: boolean) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -284,22 +278,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }));
     }, []);
   
-  const value: AuthContextValue = {
+  const value: Omit<AuthContextValue, 'updateUser' | 'updateUserProfileImage' | 'deleteUser' | 'toggleUserPause' | 'addContact' | 'removeContact'> = {
     // Auth
     currentUser, firebaseUser, isLoadingAuth, logout, setCurrentUser,
     // Data
     contacts, isContact, users, transactions, setTransactions, allPublications, setAllPublications, cart, activeCartForCheckout, setActiveCartForCheckout, tempRecipientInfo, setTempRecipientInfo, deliveryAddress, setDeliveryAddress, setDeliveryAddressToCurrent, currentUserLocation, getCurrentLocation, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, searchHistory, clearSearchHistory, addSearchToHistory, notifications, conversations, qrSession,
     // Metric getters
     getUserMetrics, getAgendaEvents,
-    // Server Action Wrappers
-    updateUser: updateUserAction,
-    updateUserProfileImage: updateUserProfileImageAction,
-    deleteUser: deleteUserAction,
-    toggleUserPause: toggleUserPauseAction,
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={value as AuthContextValue}>
       {children}
     </AuthContext.Provider>
   );

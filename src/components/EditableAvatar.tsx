@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useRef, ChangeEvent } from 'react';
 import { useToast } from '@/hooks/use-toast';
@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/use-auth-provider';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
+import { updateUserProfileImage } from '@/lib/actions/user.actions'; // Import server action directly
 
 interface EditableAvatarProps {
   user: {
@@ -18,7 +19,6 @@ interface EditableAvatarProps {
 export function EditableAvatar({ user }: EditableAvatarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-  const { updateUserProfileImage } = useAuth(); // Use the hook to get the action function
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -51,6 +51,7 @@ export function EditableAvatar({ user }: EditableAvatarProps) {
 
           const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
           
+          // Call the server action directly from the component
           updateUserProfileImage(user.id, dataUrl).then(() => {
               toast({
                   title: "¡Foto de Perfil Actualizada!",
@@ -82,7 +83,7 @@ export function EditableAvatar({ user }: EditableAvatarProps) {
         <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
       </Avatar>
       <Button size="icon" className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full" onClick={handleAvatarClick}>
-        <Plus className="w-4 h-4" />
+        <Plus className="w-4 w-4" />
       </Button>
     </div>
   );
