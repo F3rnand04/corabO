@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { becomeProvider } from "@/lib/actions/user.actions";
+import { updateFullProfile } from "@/lib/actions/user.actions";
 import type { ProfileSetupData } from "@/lib/types";
 import Step4_Review from "@/components/profile-setup/company/Step4_Review";
 import { useAuth } from "@/hooks/use-auth-provider";
@@ -21,7 +20,7 @@ export default function ReviewPage() {
     if (!currentUser.profileSetupData) return;
     setIsSubmitting(true);
     try {
-        await becomeProvider(currentUser.id, currentUser.profileSetupData);
+        await updateFullProfile(currentUser.id, currentUser.profileSetupData, 'provider');
         // Also update local state to reflect transaction activation
         setCurrentUser(prev => prev ? { ...prev, type: 'provider', isTransactionsActive: true } : null);
         toast({ title: "¡Perfil Actualizado!", description: "La información de tu empresa ha sido guardada."});
