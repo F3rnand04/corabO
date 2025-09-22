@@ -7,7 +7,7 @@
 import admin from 'firebase-admin';
 import { getAuth, type Auth } from 'firebase-admin/auth';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
-import { getStorage, type Storage } from 'firebase/storage';
+import { getStorage } from 'firebase-admin/storage';
 import { getMessaging, type Messaging } from 'firebase-admin/messaging';
 import { firebaseConfig } from './firebase-config';
 
@@ -50,7 +50,7 @@ export function getFirebaseFirestore(): Firestore {
 }
 
 export function getFirebaseStorage(): admin.storage.Storage {
-    return admin.storage(adminApp);
+    return getStorage(adminApp);
 }
 
 export function getFirebaseMessaging(): Messaging {

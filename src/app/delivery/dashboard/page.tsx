@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -9,8 +8,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Loader2, Truck, Check, History, Navigation, Phone, MapPin, DollarSign, LogOut, ChevronLeft } from 'lucide-react';
-import { getDeliveryJobs, acceptDeliveryJob, completeDelivery } from '@/lib/actions';
-import { toggleGps } from '@/lib/actions';
+import { getDeliveryJobs } from '@/lib/actions/delivery.actions';
+import { acceptDeliveryJob, completeDelivery } from '@/lib/actions/delivery.actions';
+import { toggleGps } from '@/lib/actions/user.actions';
 import type { Transaction, User } from '@/lib/types';
 import { haversineDistance } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';

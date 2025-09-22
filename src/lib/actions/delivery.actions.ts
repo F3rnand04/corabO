@@ -1,10 +1,10 @@
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
 import { findDeliveryProviderFlow, resolveDeliveryAsPickupFlow } from '@/ai/flows/delivery-flow';
 import { getFirestore } from 'firebase-admin/firestore';
 import type { Transaction } from '@/lib/types';
+import { acceptDeliveryJob as acceptDeliveryJobFlow, completeDelivery as completeDeliveryFlow } from '@/ai/flows/delivery-flow';
 
 
 /**
@@ -29,11 +29,7 @@ export async function getDeliveryJobs(providerId: string): Promise<Transaction[]
  * Allows a delivery provider to accept a delivery job.
  */
 export async function acceptDeliveryJob(transactionId: string, providerId: string) {
-    const db = getFirestore();
-    await db.collection('transactions').doc(transactionId).update({
-        'details.deliveryProviderId': providerId,
-        status: 'En Reparto',
-    });
+    await acceptDeliveryJobFlow({ transactionId, providerId });
     revalidatePath('/delivery/dashboard');
 }
 
@@ -41,37 +37,7 @@ export async function acceptDeliveryJob(transactionId: string, providerId: strin
  * Marks a delivery job as completed by the provider.
  */
 export async function completeDelivery(transactionId: string) {
-    const db = getFirestore();
-    const txRef = db.collection('transactions').doc(transactionId);
-    
-    const txSnap = await txRef.get();
-    if(!txSnap.exists) throw new Error("Transaction not found.");
-    const transaction = txSnap.data() as Transaction;
-    
-    // Create the payment transaction for the delivery provider
-    const deliveryPaymentTxId = `txn-delivery-fee-${transactionId.slice(-6)}`;
-    const deliveryFee = (transaction.details.deliveryCost || 0) * 0.85; // Assume 15% commission
-
-    const deliveryPaymentTx: Transaction = {
-        id: deliveryPaymentTxId,
-        type: 'Sistema',
-        status: 'Pagado',
-        date: new Date().toISOString(),
-        amount: deliveryFee,
-        clientId: transaction.details.deliveryProviderId!, // The delivery person is the "client" of the system payment
-        providerId: 'corabo-admin', 
-        participantIds: [transaction.details.deliveryProviderId!, 'corabo-admin'],
-        details: {
-            system: `Pago por servicio de delivery (Tx: ${transactionId})`,
-        }
-    };
-    
-    const batch = db.batch();
-    batch.update(txRef, { status: 'Pagado' }); // Mark the original transaction as fully paid/delivered
-    batch.set(db.collection('transactions').doc(deliveryPaymentTxId), deliveryPaymentTx);
-    
-    await batch.commit();
-
+    await completeDeliveryFlow({ transactionId });
     revalidatePath('/delivery/dashboard');
 }
 
