@@ -48,8 +48,8 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     '/cashier-login',
   ];
 
-  const shouldHideHeader = hideHeaderForPaths.some(path => (pathname || '').startsWith(path));
-  const shouldHideFooter = hideFooterForPaths.some(path => (pathname || '').startsWith(path));
+  const shouldHideHeader = hideHeaderForPaths.some(path => pathname.startsWith(path));
+  const shouldHideFooter = hideFooterForPaths.some(path => pathname.startsWith(path));
   
   return (
     <>

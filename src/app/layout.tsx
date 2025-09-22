@@ -1,4 +1,3 @@
-
 import '@/app/globals.css';
 import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/ThemeProvider';
@@ -18,7 +17,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className={`${'${inter.variable}'} antialiased bg-background`}>
+      <body className={`${inter.variable} antialiased bg-background`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <AuthProvider>
                 <ClientLayout>
