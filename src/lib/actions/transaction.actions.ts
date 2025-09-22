@@ -187,5 +187,3 @@ export async function writeOffDebt(transactionId: string) {
     await db.collection('transactions').doc(transactionId).update({ status: 'Incobrable' });
     revalidatePath('/admin');
 }
-
-    
