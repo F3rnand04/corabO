@@ -4,7 +4,7 @@
  * @fileOverview Flows for creating and managing publications and products securely on the backend.
  * This file handles the direct interaction with the Firestore database for all publication-related write operations.
  */
-import { getFirestore, FieldValue, type Firestore } from 'firebase-admin/firestore';
+import { FieldValue, type Firestore } from 'firebase-admin/firestore';
 import type { User, GalleryImage, GalleryImageComment, CreatePublicationInput, CreateProductInput, AddCommentInput, RemoveCommentInput, UpdateGalleryImageInput, RemoveGalleryImageInput } from '@/lib/types';
 // DO NOT import notification flows here to prevent circular dependencies. Orchestration happens in the action layer.
 

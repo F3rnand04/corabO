@@ -33,7 +33,7 @@ export async function calculateDeliveryCostFlow({ distanceInKm }: { distanceInKm
  * Finds an available delivery provider for a given transaction.
  * It searches in a 3km radius and retries up to 3 times.
  */
-export async function findDeliveryProviderFlow({ transactionId }: { transactionId: string }, db: Firestore) {
+export async function findDeliveryProviderFlow(db: Firestore, { transactionId }: { transactionId: string }) {
     const txRef = db.collection('transactions').doc(transactionId);
     const txSnap = await txRef.get();
 
@@ -92,7 +92,7 @@ export async function findDeliveryProviderFlow({ transactionId }: { transactionI
 
     await txRef.update({ status: 'Error de Delivery - Acción Requerida' });
 
-    await sendNotification({
+    await sendNotification(db, {
         userId: transaction.providerId,
         type: 'admin_alert',
         title: 'Error en Asignación de Delivery',
@@ -149,7 +149,7 @@ export async function resolveDeliveryAsPickupFlow(db: Firestore, { transactionId
 }
 
 
-export async function acceptDeliveryJob(db: Firestore, input: { transactionId: string, providerId: string }) {
+export async function acceptDeliveryJobFlow(db: Firestore, input: { transactionId: string, providerId: string }) {
     const txRef = db.collection('transactions').doc(input.transactionId);
     await txRef.update({
         'details.deliveryProviderId': input.providerId,
@@ -159,7 +159,7 @@ export async function acceptDeliveryJob(db: Firestore, input: { transactionId: s
     const transaction = (await txRef.get()).data() as Transaction;
 
     // Notify client
-    await sendNotification({
+    await sendNotification(db, {
         userId: transaction.clientId,
         type: 'admin_alert',
         title: '¡Tu pedido va en camino!',
@@ -168,7 +168,7 @@ export async function acceptDeliveryJob(db: Firestore, input: { transactionId: s
     });
 }
 
-export async function completeDelivery(db: Firestore, input: { transactionId: string }) {
+export async function completeDeliveryFlow(db: Firestore, input: { transactionId: string }) {
     const txRef = db.collection('transactions').doc(input.transactionId);
     const transaction = (await txRef.get()).data() as Transaction;
 
@@ -198,7 +198,7 @@ export async function completeDelivery(db: Firestore, input: { transactionId: st
     });
 
      // Notify client
-    await sendNotification({
+    await sendNotification(db, {
         userId: transaction.clientId,
         type: 'admin_alert',
         title: '¡Pedido Entregado!',

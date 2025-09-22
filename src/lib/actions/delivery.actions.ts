@@ -1,10 +1,9 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { findDeliveryProviderFlow, resolveDeliveryAsPickupFlow } from '@/ai/flows/delivery-flow';
+import { findDeliveryProviderFlow, resolveDeliveryAsPickupFlow, acceptDeliveryJobFlow, completeDeliveryFlow } from '@/ai/flows/delivery-flow';
 import { getFirebaseFirestore } from '../firebase-admin';
 import type { Transaction } from '@/lib/types';
-import { acceptDeliveryJob as acceptDeliveryJobFlow, completeDelivery as completeDeliveryFlow } from '@/ai/flows/delivery-flow';
 
 
 /**
@@ -51,7 +50,7 @@ export async function retryFindDelivery(input: { transactionId: string }) {
     const db = getFirebaseFirestore();
     // This action doesn't await the flow, allowing the UI to respond immediately.
     // The flow will run in the background.
-    findDeliveryProviderFlow({ transactionId: input.transactionId }, db);
+    findDeliveryProviderFlow(db, { transactionId: input.transactionId });
     revalidatePath('/transactions');
 }
 

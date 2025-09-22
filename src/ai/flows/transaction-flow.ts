@@ -499,7 +499,7 @@ export async function checkoutFlow(db: Firestore, input: CheckoutInput) {
 
     if (input.deliveryMethod !== 'pickup') {
         // Run delivery search in the background
-        findDeliveryProviderFlow({ transactionId: cartTx.id }, db);
+        findDeliveryProviderFlow(db, { transactionId: cartTx.id });
     }
 }
 
@@ -556,5 +556,7 @@ export async function createQuoteRequestFlow(db: Firestore, input: QuoteRequestI
 }
 
   
+
+    
 
     

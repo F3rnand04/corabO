@@ -9,7 +9,7 @@
  * - getProfileProductsFlow - Fetches a user's products with pagination.
  */
 import { z } from 'zod';
-import { getFirestore, type DocumentSnapshot, type Firestore } from 'firebase-admin/firestore';
+import { type DocumentSnapshot, type Firestore } from 'firebase-admin/firestore';
 import type { GalleryImage, User, PublicationOwner, Product, GetFeedInput, GetFeedOutput } from '@/lib/types';
 
 

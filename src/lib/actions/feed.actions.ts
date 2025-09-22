@@ -4,7 +4,7 @@
 import { z } from 'zod';
 import { getFeedFlow, getProfileGalleryFlow, getProfileProductsFlow, getPublicProfileFlow } from '@/ai/flows/feed-flow';
 import { getFirebaseFirestore } from '../firebase-admin';
-import { GetFeedInput } from '../types';
+import type { GetFeedInput } from '../types';
 
 export async function getPublicProfile(userId: string) {
     const db = getFirebaseFirestore();
