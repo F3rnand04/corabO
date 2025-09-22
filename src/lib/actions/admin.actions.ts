@@ -1,4 +1,3 @@
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -6,7 +5,7 @@ import type { User } from '@/lib/types';
 import { autoVerifyIdWithAIFlow } from '@/ai/flows/verification-flow';
 import { sendNewCampaignNotificationsFlow } from '@/ai/flows/notification-flow';
 import { createManagementUserFlow } from '@/ai/flows/admin-flow';
-import { getFirestore, getAuth } from 'firebase-admin/firestore';
+import { createTransactionFlow } from '@/ai/flows/transaction-flow';
 import { getFirebaseAuth, getFirebaseFirestore } from '../firebase-admin';
 
 /**

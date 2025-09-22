@@ -3,7 +3,7 @@
  * @fileOverview A flow for managing SMS verification codes, including sending the SMS.
  */
 import { z } from 'zod';
-import { getFirestore } from 'firebase-admin/firestore';
+import { type Firestore } from 'firebase-admin/firestore';
 import { addMinutes, isAfter } from 'date-fns';
 import type { User } from '@/lib/types';
 // import { Twilio } from 'twilio';
@@ -18,8 +18,7 @@ type SmsVerificationInput = z.infer<typeof SmsVerificationInputSchema>;
 /**
  * Generates a verification code, stores it in Firestore, and sends it via SMS.
  */
-export async function sendSmsVerificationCodeFlow(input: SmsVerificationInput) {
-    const db = getFirestore();
+export async function sendSmsVerificationCodeFlow(db: Firestore, input: SmsVerificationInput) {
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit code
     const codeExpiry = addMinutes(new Date(), 10); // Code is valid for 10 minutes
 
@@ -46,8 +45,7 @@ const VerifySmsCodeInputSchema = z.object({
 type VerifySmsCodeInput = z.infer<typeof VerifySmsCodeInputSchema>;
 
 
-export async function verifySmsCodeFlow(input: VerifySmsCodeInput): Promise<{ success: boolean, message: string }> {
-    const db = getFirestore();
+export async function verifySmsCodeFlow(db: Firestore, input: VerifySmsCodeInput): Promise<{ success: boolean, message: string }> {
     const userRef = db.collection('users').doc(input.userId);
     const userSnap = await userRef.get();
 

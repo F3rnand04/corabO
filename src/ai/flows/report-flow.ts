@@ -22,7 +22,7 @@ export async function createContentReportFlow(db: Firestore, input: Omit<Content
     await db.collection('reports').doc(reportId).set(newReport);
     
     // Notify admin
-    await sendNotification({
+    await sendNotification(db, {
         userId: 'corabo-admin',
         type: 'admin_alert',
         title: 'Nueva Denuncia de Contenido',
@@ -53,7 +53,7 @@ export async function approveContentReportFlow(db: Firestore, input: { reportId:
     await batch.commit();
     
     // Notify the reported user
-    await sendNotification({
+    await sendNotification(db, {
         userId: input.reportedUserId,
         type: 'payment_warning', // Re-using a warning-style notification
         title: 'Contenido Eliminado por Infracción',

@@ -1,7 +1,6 @@
-
 'use server';
 
-import { generateQrCodeDataUrlFlow } from "@/ai/flows/qr-code-flow";
+import QRCode from "qrcode";
 
 /**
  * Server Action to securely generate a QR code data URL.
@@ -9,7 +8,11 @@ import { generateQrCodeDataUrlFlow } from "@/ai/flows/qr-code-flow";
  */
 export async function generateQrCode(text: string): Promise<string> {
     try {
-        const { dataUrl } = await generateQrCodeDataUrlFlow({ text });
+        const dataUrl = await QRCode.toDataURL(text, {
+            errorCorrectionLevel: 'H',
+            type: 'image/png',
+            margin: 1,
+        });
         return dataUrl;
     } catch (error) {
         console.error(`[ACTION_ERROR] generateQrCode:`, error);

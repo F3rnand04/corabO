@@ -6,7 +6,7 @@
  * - sendNewCampaignNotifications: Notifies relevant users about a new campaign.
  */
 import { z } from 'zod';
-import { getFirestore } from 'firebase-admin/firestore';
+import { type Firestore } from 'firebase-admin/firestore';
 import type { Notification, Transaction, User, Campaign } from '@/lib/types';
 import { addDays, differenceInDays, isFuture, isPast } from 'date-fns';
 
@@ -25,8 +25,7 @@ type SendNotificationInput = z.infer<typeof SendNotificationInputSchema>;
  * Creates a notification document in Firestore. In a real implementation,
  * this flow would also trigger a push notification via a service like FCM.
  */
-export async function sendNotification(input: SendNotificationInput) {
-    const db = getFirestore();
+export async function sendNotification(db: Firestore, input: SendNotificationInput) {
     const notificationId = `notif-${input.userId}-${Date.now()}`;
     const notificationRef = db.collection('notifications').doc(notificationId);
     const newNotification: Notification = {
@@ -44,8 +43,7 @@ export async function sendNotification(input: SendNotificationInput) {
  * Scans for upcoming and overdue payments and sends notifications accordingly.
  * This flow is designed to be triggered by a scheduled job (e.g., daily cron).
  */
-export async function checkPaymentDeadlinesFlow() {
-    const db = getFirestore();
+export async function checkPaymentDeadlinesFlow(db: Firestore) {
     const q = db.collection('transactions')
         .where('status', 'in', ['Finalizado - Pendiente de Pago', 'Pendiente de Confirmación del Cliente']);
 
@@ -64,7 +62,7 @@ export async function checkPaymentDeadlinesFlow() {
             const daysUntilDue = differenceInDays(dueDate, now);
             
             if (tx.status === 'Finalizado - Pendiente de Pago' && [7, 2, 1].includes(daysUntilDue)) {
-                await sendNotification({
+                await sendNotification(db, {
                     userId: tx.clientId,
                     type: 'payment_reminder',
                     title: 'Recordatorio de Pago Amistoso',
@@ -72,7 +70,7 @@ export async function checkPaymentDeadlinesFlow() {
                     link: '/transactions'
                 });
             } else if (daysUntilDue === 0) {
-                 await sendNotification({
+                 await sendNotification(db, {
                     userId: tx.clientId,
                     type: 'payment_due',
                     title: '¡Tu pago vence hoy!',
@@ -86,7 +84,7 @@ export async function checkPaymentDeadlinesFlow() {
              
             if (tx.status === 'Finalizado - Pendiente de Pago' && daysOverdue >= 1) {
                 if (daysOverdue >= 1 && daysOverdue <= 2) {
-                    await sendNotification({
+                    await sendNotification(db, {
                         userId: tx.clientId,
                         type: 'payment_warning',
                         title: 'Advertencia: Pago Atrasado',
@@ -94,7 +92,7 @@ export async function checkPaymentDeadlinesFlow() {
                         link: '/transactions'
                     });
                 } else if (daysOverdue >= 3) {
-                     await sendNotification({
+                     await sendNotification(db, {
                         userId: 'corabo-admin', // Special ID for the admin user
                         type: 'admin_alert',
                         title: 'Alerta de Morosidad Crítica',
@@ -105,7 +103,7 @@ export async function checkPaymentDeadlinesFlow() {
             }
             
             if(tx.status === 'Pago Enviado - Esperando Confirmación' && daysOverdue >= 2) {
-                await sendNotification({
+                await sendNotification(db, {
                     userId: tx.providerId,
                     type: 'payment_warning',
                     title: 'Acción Requerida: Confirmar Pago',
@@ -121,8 +119,7 @@ export async function checkPaymentDeadlinesFlow() {
 /**
  * Finds relevant users and notifies them about a new high-budget campaign.
  */
-export async function sendNewCampaignNotificationsFlow({ campaignId }: { campaignId: string }) {
-    const db = getFirestore();
+export async function sendNewCampaignNotificationsFlow(db: Firestore, { campaignId }: { campaignId: string }) {
     const campaignRef = db.collection('campaigns').doc(campaignId);
     const campaignSnap = await campaignRef.get();
     if (!campaignSnap.exists) return;
@@ -173,9 +170,7 @@ export async function sendNewCampaignNotificationsFlow({ campaignId }: { campaig
  * Notifies relevant users about a new publication or product from a provider.
  * This is triggered for reputable providers and sent to a targeted audience.
  */
-export async function sendNewContentNotificationFlow({ providerId, publicationId, publicationDescription, providerName }: { providerId: string, publicationId: string, publicationDescription: string, providerName: string }) {
-    const db = getFirestore();
-    
+export async function sendNewContentNotificationFlow(db: Firestore, { providerId, publicationId, publicationDescription, providerName }: { providerId: string, publicationId: string, publicationDescription: string, providerName: string }) {
     const q = db.collection('users').where('contacts', 'array-contains', providerId);
     const querySnapshot = await q.get();
     const batch = db.batch();
@@ -205,8 +200,8 @@ export async function sendNewContentNotificationFlow({ providerId, publicationId
 /**
  * Sends a welcome notification to a user who just became a provider.
  */
-export async function sendWelcomeToProviderNotificationFlow({ userId }: { userId: string }) {
-    await sendNotification({
+export async function sendWelcomeToProviderNotificationFlow(db: Firestore, { userId }: { userId: string }) {
+    await sendNotification(db, {
         userId: userId,
         type: 'welcome',
         title: '¡Felicidades por convertirte en proveedor!',
@@ -219,8 +214,7 @@ export async function sendWelcomeToProviderNotificationFlow({ userId }: { userId
 /**
  * Fetches notifications for a given user with pagination support.
  */
-export async function getNotificationsFlow({ userId, limitNum = 20, startAfterDocId }: { userId: string, limitNum?: number, startAfterDocId?: string }) {
-    const db = getFirestore();
+export async function getNotificationsFlow(db: Firestore, { userId, limitNum = 20, startAfterDocId }: { userId: string, limitNum?: number, startAfterDocId?: string }) {
     let q = db.collection('notifications')
         .where('userId', '==', userId)
         .orderBy('timestamp', 'desc')
@@ -242,13 +236,12 @@ export async function getNotificationsFlow({ userId, limitNum = 20, startAfterDo
         lastVisibleDocId: snapshot.docs.length === limitNum ? lastVisible?.id : undefined
     };
 }
-export async function sendNewQuoteRequestNotificationsFlow(input: {
+export async function sendNewQuoteRequestNotificationsFlow(db: Firestore, input: {
     category: string;
     title: string;
     transactionId: string;
     limitedReach?: boolean;
 }) {
-    const db = getFirestore();
     const providersQuery = db.collection('users')
         .where('type', '==', 'provider')
         .where('profileSetupData.primaryCategory', '==', input.category)
