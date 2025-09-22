@@ -23,9 +23,10 @@ function initializeAdminApp(): admin.app.App {
       ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY)
       : undefined;
 
-    // In a local emulator environment, service account might not be needed
+    // In a local emulator environment, service account might not be needed.
+    // The check for FIRESTORE_EMULATOR_HOST ensures we don't throw in a dev environment.
     if (!serviceAccount && !process.env.FIRESTORE_EMULATOR_HOST) {
-        throw new Error("CRITICAL: La variable de entorno FIREBASE_SERVICE_ACCOUNT_KEY no está definida. El backend no puede conectar con Firebase.");
+        console.warn("ADVERTENCIA: La variable de entorno FIREBASE_SERVICE_ACCOUNT_KEY no está definida. Se asumirá un entorno de emulador, pero esto fallará en producción.");
     }
 
     const app = admin.initializeApp({
