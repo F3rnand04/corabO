@@ -29,11 +29,16 @@ function initializeAdminApp(): admin.app.App {
         console.warn("ADVERTENCIA: La variable de entorno FIREBASE_SERVICE_ACCOUNT_KEY no está definida. Se asumirá un entorno de emulador, pero esto fallará en producción.");
     }
 
-    const app = admin.initializeApp({
-        credential: serviceAccount ? admin.credential.cert(serviceAccount) : undefined,
+    const appOptions: admin.AppOptions = {
         projectId: firebaseConfig.projectId,
         storageBucket: firebaseConfig.storageBucket,
-    });
+    };
+    
+    if (serviceAccount) {
+        appOptions.credential = admin.credential.cert(serviceAccount);
+    }
+
+    const app = admin.initializeApp(appOptions);
 
     return app;
 }

@@ -22,7 +22,7 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'corabo-demo.web.app',
       },
-      {
+       {
         protocol: 'https',
         hostname: 'picsum.photos',
       },
