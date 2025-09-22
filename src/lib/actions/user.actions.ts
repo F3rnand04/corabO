@@ -19,13 +19,13 @@ export async function getOrCreateUser(firebaseUser: FirebaseUserInput): Promise<
 export async function updateUser(userId: string, updates: Partial<User> | { [key: string]: any }) {
     await updateUserFlow({ userId, updates });
     revalidatePath('/profile');
-    revalidatePath(`/companies/${userId}`);
+    revalidatePath(`/companies/${'${userId}'}`);
 }
 
 export async function updateUserProfileImage(userId: string, dataUrl: string) {
     await updateUserFlow({ userId, updates: { profileImage: dataUrl } });
     revalidatePath('/profile');
-    revalidatePath(`/companies/${userId}`);
+    revalidatePath(`/companies/${'${userId}'}`);
 }
 
 export async function updateFullProfile(userId: string, formData: ProfileSetupData, userType: User['type']) {
@@ -48,7 +48,7 @@ export async function updateFullProfile(userId: string, formData: ProfileSetupDa
     }
 
     revalidatePath('/profile');
-    revalidatePath(`/companies/${userId}`);
+    revalidatePath(`/companies/${'${userId}'}`);
 }
 
 
@@ -56,7 +56,7 @@ export async function toggleGps(userId: string) {
     await toggleGpsFlow({ userId });
     revalidatePath('/');
     revalidatePath('/profile');
-    revalidatePath(`/companies/${userId}`);
+    revalidatePath(`/companies/${'${userId}'}`);
 }
 
 export async function deleteUser(userId: string) {
@@ -92,7 +92,7 @@ export async function subscribeUser(userId: string, planName: string, amount: nu
         providerId: 'corabo-admin',
         participantIds: [userId, 'corabo-admin'],
         details: {
-            system: `Suscripción a ${planName}`,
+            system: `Suscripción a ${'${planName}'}`,
             isSubscription: true
         },
     });
@@ -134,12 +134,12 @@ export async function activatePromotion(userId: string, promotion: { imageId: st
     });
 
     revalidatePath('/profile');
-    revalidatePath(`/companies/${userId}`);
+    revalidatePath(`/companies/${'${userId}'}`);
 }
 
 export async function addContactToUser(userId: string, contactId: string) {
     await addContactToUserFlow({ userId, contactId });
-    revalidatePath(`/companies/${contactId}`);
+    revalidatePath(`/companies/${'${contactId}'}`);
     revalidatePath('/contacts');
 }
 
