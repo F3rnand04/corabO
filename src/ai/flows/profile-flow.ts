@@ -26,7 +26,7 @@ export async function getOrCreateUserFlow(db: Firestore, firebaseUser: FirebaseU
       name: firebaseUser.displayName || 'Invitado',
       lastName: '',
       email: firebaseUser.email || `${coraboId}@corabo.app`,
-      profileImage: firebaseUser.photoURL || `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
+      profileImage: `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
       phone: firebaseUser.phoneNumber || '',
       type: 'client',
       reputation: 5,

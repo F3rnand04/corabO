@@ -23,30 +23,28 @@ function initializeAdminApp(): admin.app.App {
       ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY)
       : undefined;
 
+    // In an emulator environment, initialize without credentials.
+    // The SDK will connect automatically if the FIRESTORE_EMULATOR_HOST is set.
+    if (process.env.FIRESTORE_EMULATOR_HOST) {
+        return admin.initializeApp({
+            projectId: firebaseConfig.projectId,
+            storageBucket: firebaseConfig.storageBucket,
+        });
+    }
+
     // In a production environment, the service account key MUST be provided.
-    // In a local emulator environment, the SDK can auto-discover the emulators
-    // if we initialize without any arguments.
     if (serviceAccount) {
         return admin.initializeApp({
             credential: admin.credential.cert(serviceAccount),
             projectId: firebaseConfig.projectId,
             storageBucket: firebaseConfig.storageBucket,
         });
-    } else if (process.env.FIRESTORE_EMULATOR_HOST) {
-        // If we are in an emulator environment (detected by env var),
-        // initialize without credentials. The SDK will connect automatically.
-        return admin.initializeApp({
-            projectId: firebaseConfig.projectId,
-            storageBucket: firebaseConfig.storageBucket,
-        });
-    } else {
-        // In a real production environment without emulators, this would be a critical error.
-        console.warn(
-            "ADVERTENCIA: La variable de entorno FIREBASE_SERVICE_ACCOUNT_KEY no está definida. El SDK de Admin no pudo autenticarse. Esto solo funcionará si los emuladores de Firebase están activos."
-        );
-        // We initialize without options, hoping emulators are running.
-        return admin.initializeApp();
     }
+
+    // If neither emulator nor service account is found, it's a critical error.
+    throw new Error(
+        "CRITICAL: FIREBASE_SERVICE_ACCOUNT_KEY no está definida y no se detectan emuladores. El backend no puede autenticarse."
+    );
 }
 
 const adminApp = initializeAdminApp();
