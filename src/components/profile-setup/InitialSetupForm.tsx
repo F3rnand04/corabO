@@ -181,7 +181,7 @@ export default function InitialSetupForm({ user, onSubmit, isSubmitting }: Initi
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0">
-                        <Calendar mode="single" selected={birthDate} onSelect={(date) => {setBirthDate(date); setIsCalendarOpen(false);}} captionLayout="dropdown-buttons" fromYear={1950} toYear={new Date().getFullYear() - 18} initialFocus />
+                        <Calendar mode="single" selected={birthDate} onSelect={(date) => {setBirthDate(date); setIsCalendarOpen(false);}} captionLayout="dropdown" fromYear={1950} toYear={new Date().getFullYear() - 18} initialFocus />
                     </PopoverContent>
                 </Popover>
                 {ageError && <p className="text-sm text-destructive">{ageError}</p>}

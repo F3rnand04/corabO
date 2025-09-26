@@ -18,7 +18,7 @@ export async function createPublication(input: CreatePublicationInput): Promise<
     // After the publication is created, check if we should send notifications.
     // This orchestration happens here, in the action layer, not in the flow.
     const userSnap = await db.collection('users').doc(input.userId).get();
-    if (userSnap.exists()) {
+    if (userSnap.exists) {
         const user = userSnap.data() as User;
         if (user.verified || (user.reputation || 0) > 4.0) {
              sendNewContentNotificationFlow(db, {
@@ -45,7 +45,7 @@ export async function createProduct(input: CreateProductInput) {
 
     // Orchestration of notification sending is done here.
     const userSnap = await db.collection('users').doc(input.userId).get();
-    if (userSnap.exists()) {
+    if (userSnap.exists) {
         const user = userSnap.data() as User;
         if (user.verified || (user.reputation || 0) > 4.0) {
              sendNewContentNotificationFlow(db, {

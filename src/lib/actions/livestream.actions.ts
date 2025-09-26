@@ -45,7 +45,7 @@ export async function requestPrivateLiveAccess(liveStreamId: string, requesterId
     const liveStreamRef = db.collection('livestreams').doc(liveStreamId);
     const liveStreamSnap = await liveStreamRef.get();
     
-    if (!liveStreamSnap.exists()) throw new Error("Live stream not found.");
+    if (!liveStreamSnap.exists) throw new Error("Live stream not found.");
     const liveStream = liveStreamSnap.data() as LiveStream;
 
     await liveStreamRef.update({

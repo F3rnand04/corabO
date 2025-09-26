@@ -102,9 +102,9 @@ export type PublicationOwner = {
   reputation?: number;
   profileSetupData?: {
     specialty?: string;
-    providerType?: 'professional' | 'company' | 'delivery';
+    providerType?: 'professional' | 'company' | 'delivery' | 'lodging' | 'tourism';
     username?: string;
-    primaryCategory?: string;
+    primaryCategory?: string | null;
     location?: string;
     showExactLocation?: boolean;
   }
@@ -199,6 +199,13 @@ export type SpecializedData = {
     keySkills?: string[];
     toolsAndBrands?: string;
     yearsOfExperience?: number;
+
+    // Tourism and Lodging
+    amenities?: string[];
+    lodgingType?: string;
+    tourType?: string;
+    duration?: string;
+    includedServices?: string[];
 };
 
 // NEW: Type for a single cashier box
@@ -300,6 +307,7 @@ export type User = {
   managementRole?: 'payment_verifier' | 'document_verifier' | 'dispute_manager' | 'affiliation_manager' | 'quality_auditor' | 'customer_support' | 'accountant';
   idDocumentUrl?: string | null;
   idVerificationStatus?: 'pending' | 'verified' | 'rejected';
+  idRejectionReason?: string;
   idVerificationDate?: string; // Timestamp of verification
   idVerifiedBy?: string; // Admin who verified
   phoneVerificationCode?: string | null;

@@ -2,11 +2,11 @@
 // It is environment-agnostic and can be safely imported by both client and server modules.
 
 export const firebaseConfig = {
-  projectId: "corabo-demo",
-  appId: "1:220291714642:web:3aca123e39a92f16c0998b",
-  storageBucket: "corabo-demo.appspot.com",
-  apiKey: "AIzaSyAOZ9eRQz1Sry6pdLNwCVZ3QNsr1pZgHnQ",
-  authDomain: "corabo-demo.firebaseapp.com",
-  messagingSenderId: "220291714642",
-  measurementId: "G-CYN8E0S2VZ",
+  apiKey: "AIzaSyDYfiqZNb-T1CB4lVe3bPCmpnVH2OWhaLY",
+  authDomain: "127.0.0.1",
+  projectId: "corabo-dc0a9",
+  storageBucket: "corabo-dc0a9.firebasestorage.app",
+  messagingSenderId: "752314666658",
+  appId: "1:752314666658:web:3f1d9f1e15bc942bc2d1fb",
+  measurementId: "G-RY9MYEBX4K"
 };

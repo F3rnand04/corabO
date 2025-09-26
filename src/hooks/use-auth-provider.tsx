@@ -8,7 +8,7 @@ import { clearSessionCookie, getOrCreateUser } from '@/lib/actions/auth.actions'
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, usePathname } from 'next/navigation';
 import { doc, onSnapshot, collection, query, where, orderBy } from 'firebase/firestore';
-import type { User, Transaction, GalleryImage, CartItem, TempRecipientInfo, QrSession, Notification, Conversation } from '@/lib/types';
+import type { User, Transaction, GalleryImage, CartItem, TempRecipientInfo, QrSession, Notification, Conversation, FirebaseUserInput } from '@/lib/types';
 import { updateUser } from '@/lib/actions/user.actions';
 import { differenceInMilliseconds } from 'date-fns';
 
@@ -24,6 +24,7 @@ export interface AuthContextValue {
   // Data states
   contacts: User[];
   isContact: (userId: string) => boolean;
+  removeContact: (contactId: string) => Promise<void>;
   
   users: User[];
   transactions: Transaction[];
@@ -39,10 +40,10 @@ export interface AuthContextValue {
   setTempRecipientInfo: React.Dispatch<React.SetStateAction<TempRecipientInfo | null>>;
   deliveryAddress: string;
   setDeliveryAddress: React.Dispatch<React.SetStateAction<string>>;
-  setDeliveryAddressToCurrent: () => void;
+  setDeliveryAddressToCurrent: () => Promise<void>;
   
   currentUserLocation: { latitude: number; longitude: number } | null;
-  getCurrentLocation: () => void;
+  getCurrentLocation: () => Promise<{ latitude: number, longitude: number }>;
   
   searchQuery: string;
   setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
@@ -77,8 +78,8 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Auth State
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
 
   const { toast } = useToast();
@@ -104,13 +105,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Load search history from local storage on initial mount
   useEffect(() => {
-    try {
-      const storedHistory = localStorage.getItem('coraboSearchHistory');
-      if (storedHistory) {
-        setSearchHistory(JSON.parse(storedHistory));
+    if (typeof window !== 'undefined') {
+      try {
+        const storedHistory = localStorage.getItem('coraboSearchHistory');
+        if (storedHistory) {
+          setSearchHistory(JSON.parse(storedHistory));
+        }
+      } catch (error) {
+        // Error loading from localStorage is not critical
       }
-    } catch (error) {
-      console.error("Could not load search history from localStorage", error);
     }
   }, []);
   
@@ -120,8 +123,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setFirebaseUser(fbUser);
 
       if (fbUser) {
-        // Now calling the server action
-        const userDoc = await getOrCreateUser(fbUser);
+        const userInput: FirebaseUserInput = {
+            uid: fbUser.uid,
+            email: fbUser.email,
+            displayName: fbUser.displayName,
+            photoURL: fbUser.photoURL,
+            emailVerified: fbUser.emailVerified
+        };
+        
+        await getOrCreateUser(userInput);
         
         // --- DATA LISTENERS ---
         const userDocRef = doc(db, 'users', fbUser.uid);
@@ -130,7 +140,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 const updatedUser = doc.data() as User;
                 setCurrentUser(updatedUser);
                 setCart(updatedUser.cart || []);
-                // Fetch contacts if they exist
                 if (updatedUser.contacts && updatedUser.contacts.length > 0) {
                     const contactsQuery = query(collection(db, "users"), where('id', 'in', updatedUser.contacts));
                     onSnapshot(contactsQuery, (snapshot) => {
@@ -147,7 +156,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const unsubTransactions = onSnapshot(query(collection(db, "transactions"), where('participantIds', 'array-contains', fbUser.uid)), (snapshot) => setTransactions(snapshot.docs.map(doc => doc.data() as Transaction).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())));
         const unsubNotifications = onSnapshot(query(collection(db, "notifications"), where('userId', '==', fbUser.uid), orderBy('timestamp', 'desc')), (snapshot) => setNotifications(snapshot.docs.map(doc => doc.data() as Notification)));
         const unsubConversations = onSnapshot(query(collection(db, "conversations"), where('participantIds', 'array-contains', fbUser.uid)), (snapshot) => setConversations(snapshot.docs.map(doc => doc.data() as Conversation)));
-        const unsubQrSession = onSnapshot(query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', fbUser.uid), where('status', '!=', 'closed')), (snapshot) => setQrSession(snapshot.empty ? null : snapshot.docs[0].data() as QrSession));
+        const unsubQrSession = onSnapshot(query(collection(db, "qr_sessions"), where('participantIds', 'array-contains', fbUser.uid), where('status', 'in', ['active', 'pending'])), (snapshot) => setQrSession(snapshot.empty ? null : snapshot.docs[0].data() as QrSession));
         const unsubPublications = onSnapshot(collection(db, "publications"), (snapshot) => setAllPublications(snapshot.docs.map(d => d.data() as GalleryImage)));
 
         return () => {
@@ -157,7 +166,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         };
 
       } else {
-        // --- CLEAR ALL STATE ON LOGOUT ---
         setCurrentUser(null);
         setIsLoadingAuth(false);
         setUsers([]); setTransactions([]); setCart([]); setContacts([]);
@@ -169,83 +177,107 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => unsubscribeAuth();
   }, []);
 
-  // Effect for handling client-side routing based on auth state
   useEffect(() => {
     if (isLoadingAuth) return;
 
     const isAuthPage = pathname === '/login';
-    const isSetupPage = pathname === '/initial-setup';
+    const isSetupPage = pathname.startsWith('/profile-setup');
 
     if (!currentUser && !isAuthPage) {
       router.push('/login');
     } else if (currentUser && !currentUser.isInitialSetupComplete && !isSetupPage) {
-      router.push('/initial-setup');
+      router.push('/profile-setup');
     } else if (currentUser && currentUser.isInitialSetupComplete && (isAuthPage || isSetupPage)) {
       router.push('/');
     }
   }, [currentUser, isLoadingAuth, pathname, router]);
 
-  // Logout function
   const logout = useCallback(async () => {
     try {
       await signOut(auth);
       await clearSessionCookie();
-      // State clearing is now handled by the onAuthStateChanged listener
       router.push('/login');
     } catch (error: any) {
-      console.error("Error during logout:", error);
       toast({ variant: 'destructive', title: 'Error', description: 'No se pudo cerrar la sesión.' });
     }
-  }, [toast, router]);
+  }, [router, toast]);
 
   const isContact = useCallback((userId: string) => currentUser?.contacts?.includes(userId) ?? false, [currentUser?.contacts]);
-  
-  const getCurrentLocation = useCallback(() => {
-    if (typeof window !== 'undefined' && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const location = { latitude: position.coords.latitude, longitude: position.coords.longitude };
-          setCurrentUserLocation(location);
-          if (currentUser?.id) {
-            updateUser(currentUser.id, { 'profileSetupData.location': `${location.latitude},${location.longitude}` });
-          }
-        },
-        () => toast({ variant: "destructive", title: "Error de Ubicación", description: "No se pudo obtener tu ubicación. Revisa los permisos." }),
-        { enableHighAccuracy: true, timeout: 10000, maximumAge: 600000 }
-      );
+
+  const removeContact = useCallback(async (contactId: string) => {
+    if (!currentUser) return;
+    try {
+      const updatedContacts = currentUser.contacts?.filter(id => id !== contactId) ?? [];
+      await updateUser(currentUser.id, { contacts: updatedContacts });
+      toast({ title: 'Contacto eliminado', description: 'El contacto ha sido eliminado de tu lista.' });
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error', description: 'No se pudo eliminar el contacto.' });
     }
-  }, [toast, currentUser?.id]);
+  }, [currentUser, toast]);
   
-  const setDeliveryAddressToCurrent = useCallback(() => {
+  const getCurrentLocation = useCallback((): Promise<{ latitude: number, longitude: number }> => {
+    return new Promise((resolve, reject) => {
+        if (typeof window !== 'undefined' && navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const location = { latitude: position.coords.latitude, longitude: position.coords.longitude };
+                    setCurrentUserLocation(location);
+                    if (currentUser?.id) {
+                        updateUser(currentUser.id, { 'profileSetupData.location': `${location.latitude},${location.longitude}` });
+                    }
+                    resolve(location);
+                },
+                (error) => {
+                    toast({ variant: "destructive", title: "Error de Ubicación", description: "No se pudo obtener tu ubicación. Revisa los permisos." });
+                    reject(error);
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 600000 }
+            );
+        } else {
+            const error = new Error("Geolocation is not supported by this browser.");
+            toast({ variant: "destructive", title: "Error de Ubicación", description: error.message });
+            reject(error);
+        }
+    });
+}, [currentUser?.id, toast]);
+  
+  const setDeliveryAddressToCurrent = useCallback(async () => {
     if (currentUserLocation) {
         setDeliveryAddress(`${currentUserLocation.latitude},${currentUserLocation.longitude}`);
-    } else {
-        getCurrentLocation();
-        if(currentUserLocation) setDeliveryAddress(`${currentUserLocation.latitude},${currentUserLocation.longitude}`);
-        else toast({ variant: "destructive", title: "Ubicación no disponible", description: "Activa el GPS o intenta de nuevo." });
+        return;
     }
-  }, [currentUserLocation, toast, getCurrentLocation]);
+    try {
+        const location = await getCurrentLocation();
+        setDeliveryAddress(`${location.latitude},${location.longitude}`);
+    } catch (error) {
+        // Silently fail if location cannot be obtained
+    }
+  }, [currentUserLocation, getCurrentLocation]);
   
   const clearSearchHistory = () => {
-      setSearchHistory([]);
+    if (typeof window !== 'undefined') {
       try {
+        setSearchHistory([]);
         localStorage.removeItem('coraboSearchHistory');
       } catch (error) {
-        console.error("Could not clear search history from localStorage", error);
+        // Not critical
       }
+    }
   };
 
   const addSearchToHistory = (query: string) => {
     if (!query) return;
-    setSearchHistory(prev => {
-      const newHistory = [query, ...prev.filter(item => item !== query)].slice(0, 10);
-      try {
-        localStorage.setItem('coraboSearchHistory', JSON.stringify(newHistory));
-      } catch (error) {
-        console.error("Could not save search history to localStorage", error);
-      }
-      return newHistory;
-    });
+    if (typeof window !== 'undefined') {
+      setSearchHistory(prev => {
+        const newHistory = [query, ...prev.filter(item => item !== query)].slice(0, 10);
+        try {
+          localStorage.setItem('coraboSearchHistory', JSON.stringify(newHistory));
+        } catch (error) {
+          // Not critical
+        }
+        return newHistory;
+      });
+    }
   };
   
     const getUserMetrics = useCallback((userId: string, userType: User['type'], allTransactions: Transaction[]) => {
@@ -277,11 +309,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }));
     }, []);
   
-  const value: Omit<AuthContextValue, 'updateUser' | 'updateUserProfileImage' | 'deleteUser' | 'toggleUserPause' | 'addContact' | 'removeContact'> = {
+  const value: Omit<AuthContextValue, 'updateUser' | 'updateUserProfileImage' | 'deleteUser' | 'toggleUserPause' | 'addContact'> = {
     // Auth
-    currentUser, firebaseUser, isLoadingAuth, logout, setCurrentUser,
+    firebaseUser, currentUser, isLoadingAuth, logout, setCurrentUser,
     // Data
-    contacts, isContact, users, transactions, setTransactions, allPublications, setAllPublications, cart, activeCartForCheckout, setActiveCartForCheckout, tempRecipientInfo, setTempRecipientInfo, deliveryAddress, setDeliveryAddress, setDeliveryAddressToCurrent, currentUserLocation, getCurrentLocation, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, searchHistory, clearSearchHistory, addSearchToHistory, notifications, conversations, qrSession,
+    contacts, isContact, removeContact, users, transactions, setTransactions, allPublications, setAllPublications, cart, activeCartForCheckout, setActiveCartForCheckout, tempRecipientInfo, setTempRecipientInfo, deliveryAddress, setDeliveryAddress, setDeliveryAddressToCurrent, currentUserLocation, getCurrentLocation, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, searchHistory, clearSearchHistory, addSearchToHistory, notifications, conversations, qrSession,
     // Metric getters
     getUserMetrics, getAgendaEvents,
   };

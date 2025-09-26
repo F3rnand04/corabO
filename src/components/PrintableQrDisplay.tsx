@@ -32,19 +32,20 @@ export const PrintableQrDisplay = ({ boxName, businessId, qrValue, onClose }: Pr
         setIsDownloading(true);
         html2canvas(printRef.current, {
             useCORS: true,
-            backgroundColor: null,
-            logging: false,
-            scale: 2 
+            logging: false
         }).then(canvas => {
             const link = document.createElement('a');
             link.download = `QR-Caja-${boxName.replace(/\s+/g, '-')}.png`;
             link.href = canvas.toDataURL('image/png');
             link.click();
             toast({ title: "Descarga Iniciada", description: "Tu código QR se está descargando." });
+            // Reset state on success
+            setIsDownloading(false);
+            onClose();
         }).catch(err => {
             console.error("Error al descargar el canvas:", err);
             toast({ variant: "destructive", title: "Error de Descarga", description: "No se pudo generar el PNG." });
-        }).finally(() => {
+            // Reset state on error
             setIsDownloading(false);
             onClose();
         });

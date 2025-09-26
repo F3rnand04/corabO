@@ -31,7 +31,7 @@ export function ActivationWarning({ userType }: ActivationWarningProps) {
     }
     
     if (!currentUser.isInitialSetupComplete) {
-      router.push('/initial-setup');
+      router.push('/profile-setup');
     } else if (currentUser.idVerificationStatus !== 'verified') {
       router.push('/profile-setup/verify-id');
     } else {

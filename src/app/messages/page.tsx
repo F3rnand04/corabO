@@ -1,16 +1,15 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth-provider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ChevronLeft, Search, SquarePen, Loader2 } from 'lucide-react';
+import { ChevronLeft, Search, SquarePen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ConversationCard } from '@/components/ConversationCard';
 import { ActivationWarning } from '@/components/ActivationWarning';
 import { Skeleton } from '@/components/ui/skeleton';
-
 
 function MessagesHeader() {
   const router = useRouter();
@@ -30,7 +29,6 @@ function MessagesHeader() {
     </header>
   );
 }
-
 
 export default function MessagesPage() {
     const { currentUser, conversations, users, isLoadingAuth } = useAuth();
@@ -74,6 +72,7 @@ export default function MessagesPage() {
                     {filteredConversations.map((convo) => {
                        const otherParticipantId = convo.participantIds.find(pId => pId !== currentUser?.id);
                        const otherParticipant = otherParticipantId ? users.find(u => u.id === otherParticipantId) : (convo.participantIds.length === 1 ? currentUser : null);
+                       if (!otherParticipant) return null;
                         return (
                            <ConversationCard 
                                 key={convo.id} 
@@ -81,7 +80,7 @@ export default function MessagesPage() {
                                 otherParticipant={otherParticipant} 
                             />
                         )
-                    })}
+                    }).filter(Boolean)}
                 </div>
             )
         }

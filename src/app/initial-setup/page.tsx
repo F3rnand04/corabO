@@ -19,7 +19,7 @@ export default function InitialSetupPage() {
   const handleSubmit = async (data: any) => {
     setIsSubmitting(true);
     try {
-      await completeInitialSetup(firebaseUser.id, data);
+      await completeInitialSetup(firebaseUser.uid, data);
       // The redirect is handled automatically by the AuthProvider now
     } catch (error: any) {
       console.error("Initial setup failed:", error);

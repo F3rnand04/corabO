@@ -1,6 +1,7 @@
 
 'use client';
 
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { EditableAvatar } from '@/components/EditableAvatar';
 import { ProfileStats } from '@/components/ProfileStats';
@@ -8,8 +9,8 @@ import { useAuth } from '@/hooks/use-auth-provider';
 import type { User } from '@/lib/types';
 import { Building, CheckCircle, Edit, MapPin, MoreHorizontal, Settings } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { Badge } from '../ui/badge';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { Badge } from '@/components/ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
 interface ProfileDetailsProps {

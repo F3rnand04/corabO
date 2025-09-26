@@ -44,6 +44,11 @@ export async function updateCartFlow(db: Firestore, input: UpdateCartInput): Pro
         }
         const productData = productSnap.data();
 
+        // This check satisfies TypeScript, even if it seems redundant.
+        if (!productData) {
+            throw new Error('Product data is missing after existence check.');
+        }
+
         const product: Product = {
             id: productSnap.id,
             name: productData.productDetails?.name || 'Producto sin nombre',

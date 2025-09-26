@@ -48,7 +48,6 @@ export async function generateProviderInvoiceFlow(db: Firestore, input: Generate
     const commissionsSnap = await commissionsQuery.get();
     
     if (commissionsSnap.empty) {
-        console.log(`No commissionable transactions found for provider ${input.providerId} in ${monthName} ${input.year}.`);
         return; // No invoice needed
     }
 
@@ -60,7 +59,6 @@ export async function generateProviderInvoiceFlow(db: Firestore, input: Generate
     const total = subtotal + iva;
 
     if (total <= 0) {
-        console.log(`Total commission is zero for provider ${input.providerId}. Skipping invoice.`);
         return;
     }
 
@@ -98,7 +96,7 @@ export async function generateProviderInvoiceFlow(db: Firestore, input: Generate
     await batch.commit();
 
     // 5. Notify the provider
-    await sendNotification({
+    await sendNotification(db, {
         userId: input.providerId,
         type: 'monthly_invoice',
         title: 'Tu factura mensual está lista',
@@ -112,6 +110,4 @@ export async function generateProviderInvoiceFlow(db: Firestore, input: Generate
             }
         }
     });
-
-    console.log(`Invoice ${invoiceId} created for provider ${input.providerId} with a total of $${total.toFixed(2)}.`);
 }

@@ -28,7 +28,7 @@ export default function TermsPage() {
       <TermsHeader />
       <main className="container max-w-4xl mx-auto py-8">
         <article className="prose dark:prose-invert max-w-none">
-          <p className="text-sm text-muted-foreground">Fecha de Última Actualización: 22 de julio de 2025</p>
+          <p className="text-sm text-muted-foreground">Fecha de Última Actualización: 24 de julio de 2024</p>
           
           <p>El presente documento establece las Políticas de Servicio que rigen el acceso y uso de la plataforma digital CorabO. Al acceder, registrarse o utilizar la Plataforma, usted manifiesta su pleno conocimiento, comprensión y aceptación de la totalidad de los términos y condiciones aquí estipulados.</p>
 

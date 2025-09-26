@@ -249,7 +249,6 @@ export async function sendNewQuoteRequestNotificationsFlow(db: Firestore, input:
     
     const snapshot = await providersQuery.get();
     if (snapshot.empty) {
-        console.log(`No active providers found for category: ${input.category}`);
         return;
     }
 

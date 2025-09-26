@@ -3,7 +3,7 @@
 import { useAuth } from '@/hooks/use-auth-provider';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Bookmark, Send, Star, MessageCircle } from 'lucide-react';
+import { Send, Star, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import type { GalleryImage, User } from '@/lib/types';
@@ -13,28 +13,18 @@ import { cn } from '@/lib/utils';
 
 // Component for a single video reel item
 function ReelItem({ video, owner }: { video: GalleryImage, owner: User }) {
-    const { addContact, isContact } = useAuth();
     const { toast } = useToast();
     
     // State for interaction within this specific reel
     const [isLiked, setIsLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(Math.floor(Math.random() * 5000));
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
-    const [isSaved, setIsSaved] = useState(isContact(owner.id));
 
     const handleLike = () => {
         setIsLiked(!isLiked);
         setLikeCount(prev => isLiked ? prev - 1 : prev + 1);
     };
 
-    const handleSave = () => {
-        if (!isSaved) {
-            addContact(owner);
-            setIsSaved(true);
-            toast({ title: "Guardado", description: `Has guardado el perfil de ${owner.name}.` });
-        }
-    };
-    
     const handleShare = async () => {
         const shareData = {
           title: `Mira este video de ${owner.name}`,
@@ -55,7 +45,6 @@ function ReelItem({ video, owner }: { video: GalleryImage, owner: User }) {
            });
         }
     }
-
 
     return (
         <>
@@ -103,12 +92,7 @@ function ReelItem({ video, owner }: { video: GalleryImage, owner: User }) {
                             </Button>
                             <span className="text-sm font-bold mt-1 drop-shadow-md">{(Math.random() * 2000).toFixed(0)}</span>
                         </div>
-                        <div className="flex flex-col items-center">
-                            <Button variant="ghost" size="icon" className="text-white hover:text-white bg-black/30 rounded-full h-12 w-12" onClick={handleSave}>
-                                <Bookmark className={cn("w-7 h-7", isSaved && "fill-primary text-primary")} />
-                            </Button>
-                            <span className="text-sm font-bold mt-1 drop-shadow-md">Guardar</span>
-                        </div>
+                         {/* The "Save" button has been removed as the addContact function is no longer available in the AuthContext */}
                     </div>
 
                     {/* Bottom info */}
@@ -162,5 +146,3 @@ export default function VideosPage() {
     </div>
   );
 }
-
-    

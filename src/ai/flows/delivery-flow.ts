@@ -52,7 +52,6 @@ export async function findDeliveryProviderFlow(db: Firestore, { transactionId }:
 
     while (attempts < MAX_ATTEMPTS) {
         attempts++;
-        console.log(`Delivery search attempt ${'${attempts}'} for tx: ${'${transactionId}'}`);
         
         const q = db.collection('users')
             .where('type', '==', 'repartidor')

@@ -20,7 +20,8 @@ import { AlertTriangle, CheckCircle, Handshake, MessageSquare, Send, ShieldAlert
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
-import { sendQuote, confirmPaymentReceived, completeWork, acceptAppointment, startDispute, cancelSystemTransaction, downloadTransactionsPDF, confirmWorkReceived } from '@/lib/actions/transaction.actions';
+import { sendQuote, confirmPaymentReceived, completeWork, acceptAppointment, startDispute, cancelSystemTransaction, confirmWorkReceived } from '@/lib/actions/transaction.actions';
+import { downloadTransactionsPDF } from '@/lib/pdf-utils';
 import { retryFindDelivery, assignOwnDelivery, resolveDeliveryAsPickup } from '@/lib/actions/delivery.actions';
 
 

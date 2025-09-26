@@ -26,7 +26,7 @@ interface PublicationCardProps {
 }
 
 export function PublicationCard({ publication, className }: PublicationCardProps) {
-    const { isContact, currentUser, addContact, transactions } = useAuth();
+    const { isContact, currentUser, transactions } = useAuth();
     const router = useRouter();
     const { toast } = useToast();
     

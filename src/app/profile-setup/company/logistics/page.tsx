@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import type { ProfileSetupData } from '@/lib/types';
-import Step2_Logistics from '@/components/profile-setup/company/Step2_Logistics';
+import { SpecializedFields } from '@/components/profile-setup/SpecializedFields';
 import { useAuth } from '@/hooks/use-auth-provider';
 import { Loader2 } from 'lucide-react';
 
@@ -12,7 +12,7 @@ export default function LogisticsPage() {
 
   if (!currentUser) {
     return (
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-center h-screen">
             <Loader2 className="h-8 w-8 animate-spin" />
         </div>
     )
@@ -22,15 +22,10 @@ export default function LogisticsPage() {
     setCurrentUser(prev => prev ? { ...prev, profileSetupData: { ...prev.profileSetupData, ...data } } : null);
   };
   
-  const handleNext = () => {
-    router.push('/profile-setup/company/legal');
-  };
-
   return (
-    <Step2_Logistics 
+    <SpecializedFields 
       formData={currentUser.profileSetupData || {}} 
       onUpdate={handleUpdate} 
-      onNext={handleNext} 
     />
   );
 }

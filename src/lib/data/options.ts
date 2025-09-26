@@ -53,9 +53,10 @@ export const countries: { code: string; name: string; idLabel: string; companyId
 ];
 
 export const gifts: Gift[] = [
-  { id: 'rose', name: 'Rosa', price: 1, credits: 100, icon: 'https://i.postimg.cc/SNqD5pqW/avatar-placeholder.png' },
-  { id: 'diamond', name: 'Diamante', price: 5, credits: 500, icon: 'https://i.postimg.cc/SNqD5pqW/avatar-placeholder.png' },
-  { id: 'crown', name: 'Corona', price: 10, credits: 1000, icon: 'https://i.postimg.cc/SNqD5pqW/avatar-placeholder.png' },
+  { id: 'rose', name: 'Rosa', price: 1, credits: 100, icon: 'https://i.postimg.cc/Qd9M2QzM/100-corabitos.png' },
+  { id: 'diamond', name: 'Diamante', price: 5, credits: 500, icon: 'https://i.postimg.cc/k4Mv4Hk3/500-corabitos.png' },
+  { id: 'crown', name: 'Corona', price: 10, credits: 1000, icon: 'https://i.postimg.cc/Hn5nN5J3/1000-corabitos.png' },
+  { id: 'universe', name: 'Universo', price: 50, credits: 5000, icon: 'https://i.postimg.cc/wMN3PCGq/5000-corabitos.png' },
 ];
 
 export const credicoraLevels: Record<string, CredicoraLevel> = {

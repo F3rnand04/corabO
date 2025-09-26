@@ -13,7 +13,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { ContactSupportCard } from '@/components/ContactSupportCard';
-import { removeContactFromUser, sendMessage } from '@/lib/actions';
+import { sendMessage } from '@/lib/actions/messaging.actions';
 
 
 function ContactsHeader({ onSubscribeClick }: { onSubscribeClick: () => void }) {

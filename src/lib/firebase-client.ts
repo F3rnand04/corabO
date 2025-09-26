@@ -1,12 +1,10 @@
-
 'use client';
 
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
-import { getAuth, connectAuthEmulator, GoogleAuthProvider, type Auth } from 'firebase/auth';
-import { getFirestore, connectFirestoreEmulator, type Firestore } from 'firebase/firestore';
+import { getAuth, GoogleAuthProvider, type Auth, connectAuthEmulator } from 'firebase/auth';
+import { getFirestore, type Firestore, connectFirestoreEmulator } from 'firebase/firestore';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
 import { firebaseConfig } from './firebase-config';
-
 
 // --- Firebase App Initialization (Singleton) ---
 const app: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
@@ -16,23 +14,20 @@ const db: Firestore = getFirestore(app);
 const storage = getStorage(app);
 const googleProvider = new GoogleAuthProvider();
 
-
-// --- Emulator Connection for Local Development ---
-// This logic ensures emulators are connected only once and only on the client-side
-// in a localhost environment.
-if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
-    // Check if emulators are already connected to prevent re-connection errors on hot reloads
-    if (!(auth as any)._isEmulator) {
-        console.log("Connecting to Firebase Emulators...");
-        try {
-            connectAuthEmulator(auth, 'http://127.0.0.1:9101', { disableWarnings: true });
-            connectFirestoreEmulator(db, '127.0.0.1', 8083);
-            connectStorageEmulator(storage, '127.0.0.1', 9199);
-            console.log("Successfully connected to all Firebase emulators.");
-        } catch (error) {
-            console.error("Error connecting to Firebase Emulators:", error);
-        }
+// --- Emulator Connection for Development ---
+if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+  try {
+    // @ts-ignore
+    if (!auth.emulatorConfig) {
+        console.log(`Connecting to Firebase emulators on host: ${window.location.hostname}`);
+        connectAuthEmulator(auth, `http://127.0.0.1:9201`, { disableCors: true });
+        connectFirestoreEmulator(db, '127.0.0.1', 8183);
+        connectStorageEmulator(storage, '127.0.0.1', 9299);
+        console.log('Successfully connected to Firebase emulators.');
     }
+  } catch (error) {
+    console.error('Error connecting to Firebase emulators:', error);
+  }
 }
 
 

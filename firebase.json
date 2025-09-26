@@ -1,36 +1,33 @@
-
 {
   "firestore": {
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },
+  "functions": {},
   "storage": {
     "rules": "storage.rules"
   },
   "emulators": {
-    "firestore": {
-      "host": "127.0.0.1",
-      "port": 8083
-    },
     "auth": {
-      "host": "127.0.0.1",
-      "port": 9101
+      "port": 9099
     },
-    "storage": {
-      "host": "127.0.0.1",
-      "port": 9199
-    },
-    "hub": {
-      "host": "127.0.0.1",
-      "port": 4401
-    },
-    "logging": {
-      "host": "127.0.0.1",
-      "port": 4501
+    "firestore": {
+      "port": 8080
     },
     "ui": {
-      "host": "127.0.0.1",
-      "port": 4001
+      "enabled": true
+    },
+    "storage": {
+      "port": 9199
     }
+  },
+  "hosting": {
+    "site": "corabo---dev",
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
   }
 }

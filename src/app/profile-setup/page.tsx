@@ -9,24 +9,23 @@ import { useToast } from '@/hooks/use-toast';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { useRouter } from 'next/navigation';
 import { updateFullProfile } from '@/lib/actions/user.actions';
-import { Card } from '@/components/ui/card';
 
 // Import Step Components
-import Step1_CompanyInfo from '@/components/profile-setup/company/Step1_CompanyInfo';
-import Step2_Logistics from '@/components/profile-setup/company/Step2_Logistics';
+import InitialSetupForm from '@/components/profile-setup/InitialSetupForm';
+import { SpecializedFields } from '@/components/profile-setup/SpecializedFields';
 import Step3_LegalInfo from '@/components/profile-setup/company/Step3_LegalInfo';
 import Step4_Review from '@/components/profile-setup/company/Step4_Review';
 
 
 export default function ProfileSetupPage() {
-  const { currentUser, setCurrentUser } = useAuth();
+  const { currentUser, firebaseUser, setCurrentUser } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  if (!currentUser) {
+  if (!currentUser || !firebaseUser) {
     return (
         <div className="flex items-center justify-center min-h-screen">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -34,10 +33,8 @@ export default function ProfileSetupPage() {
     );
   }
 
-  // Use the central state from context as the source of truth
   const formData = currentUser.profileSetupData || {};
-
-  const totalSteps = 4; // Info, Logistics, Legal, Review
+  const totalSteps = 4; 
 
   const handleNext = () => setStep(prev => Math.min(prev + 1, totalSteps));
   const handleBack = () => {
@@ -48,18 +45,19 @@ export default function ProfileSetupPage() {
     }
   };
   
-  // onUpdate now directly modifies the central state via setCurrentUser
   const handleUpdateFormData = (data: Partial<ProfileSetupData>) => {
     setCurrentUser(prev => {
         if (!prev) return null;
         return {
             ...prev,
-            profileSetupData: {
-                ...(prev.profileSetupData || {}),
-                ...data
-            }
+            profileSetupData: { ...(prev.profileSetupData || {}), ...data }
         }
     });
+  };
+
+  const handleStep1Submit = (data: Partial<ProfileSetupData>) => {
+      handleUpdateFormData(data);
+      handleNext();
   };
 
   const handleFinalSubmit = async () => {
@@ -70,18 +68,24 @@ export default function ProfileSetupPage() {
         router.push('/profile');
     } catch(error) {
         console.error("Error submitting profile data:", error);
-        toast({ variant: 'destructive', title: "Error", description: "No se pudo guardar la información."});
+        toast({ variant: 'destructive', title: "No se pudo guardar la información."});
     } finally {
         setIsSubmitting(false);
     }
   };
 
+  const userForForm = { 
+      ...currentUser,
+      uid: firebaseUser.uid, 
+      emailVerified: firebaseUser.emailVerified 
+  };
+
   const renderStep = () => {
     switch (step) {
       case 1:
-        return <Step1_CompanyInfo formData={formData} onUpdate={handleUpdateFormData} onNext={handleNext} />;
+        return <InitialSetupForm user={userForForm} onSubmit={handleStep1Submit} isSubmitting={isSubmitting} />;
       case 2:
-        return <Step2_Logistics formData={formData} onUpdate={handleUpdateFormData} onNext={handleNext} />;
+        return <SpecializedFields formData={formData} onUpdate={handleUpdateFormData} />;
       case 3:
         return <Step3_LegalInfo formData={formData} onUpdate={handleUpdateFormData} onNext={handleNext} />;
       case 4:

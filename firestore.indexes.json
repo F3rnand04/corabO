@@ -25,14 +25,6 @@
         { "fieldPath": "type", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
-    },
-    {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION_GROUP",
-      "fields": [
-        { "fieldPath": "type", "order": "ASCENDING" },
-        { "fieldPath": "profileSetupData.categories", "arrayConfig": "CONTAINS" }
-      ]
     }
   ],
   "fieldOverrides": []

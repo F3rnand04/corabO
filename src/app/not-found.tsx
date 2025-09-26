@@ -11,7 +11,7 @@ export default function NotFound() {
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background text-center px-4">
       <Image 
-          src="https://i.postimg.cc/YSNBv5DT/logo-light-png.png"
+          src="/images/logo-dark.png"
           alt="Corabo logo"
           width={192}
           height={64}

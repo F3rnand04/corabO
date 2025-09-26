@@ -35,14 +35,13 @@ import { SubscriptionDialog } from './SubscriptionDialog';
 import { EditableAvatar } from './EditableAvatar';
 import { TransactionDetailsDialog } from './TransactionDetailsDialog';
 import { useAuth } from '@/hooks/use-auth-provider';
-import { ProfileStats } from './profile/ProfileStats';
 import { ProfileDetails } from './profile/ProfileDetails';
 import { ScheduleEditor } from './profile/ScheduleEditor';
 import { AffiliationHandler } from './profile/AffiliationHandler';
 
 
 export function UserProfilePage({ userId }: { userId: string}) {
-  const { currentUser, users, transactions, addContact, isContact } = useAuth();
+  const { currentUser, users, transactions, isContact } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -53,7 +52,7 @@ export function UserProfilePage({ userId }: { userId: string}) {
   const [catalogSearchQuery, setCatalogSearchQuery] = useState('');
   const [affiliatedProfessionals, setAffiliatedProfessionals] = useState<User[]>([]);
   
-  const [activeTab, setActiveTab] = useState<'publications' | 'catalog'>('publications');
+  const [activeTab, setActiveTab] = useState<'publications' | 'catalog' | 'team'>('publications');
 
   const [isCampaignDialogOpen, setIsCampaignDialogOpen] = useState(false);
   

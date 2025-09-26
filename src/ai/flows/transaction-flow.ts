@@ -5,7 +5,7 @@
  * @fileOverview Transaction management flows.
  */
 import { z } from 'zod';
-import { type Firestore } from 'firebase-admin/firestore';
+import { type Firestore, FieldValue } from 'firebase-admin/firestore';
 import type { Transaction, User, QrSession } from '@/lib/types';
 import { addDays, endOfMonth, isAfter, startOfWeek } from 'date-fns';
 import { getExchangeRate } from './exchange-rate-flow';
@@ -303,7 +303,7 @@ export async function confirmPaymentReceivedFlow(db: Firestore, input: ConfirmPa
     });
 
     const clientRef = db.collection('users').doc(transaction.clientId);
-    batch.update(clientRef, { effectiveness: db.FieldValue.increment(2) });
+    batch.update(clientRef, { effectiveness: FieldValue.increment(2) });
 
     await batch.commit();
 }

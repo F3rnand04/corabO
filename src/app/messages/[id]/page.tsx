@@ -22,7 +22,7 @@ import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
-import { createAppointmentRequest, acceptProposal } from '@/lib/actions/transaction.actions';
+import { createAppointmentRequest, acceptQuote } from '@/lib/actions/transaction.actions';
 import { sendMessage, markConversationAsRead } from '@/lib/actions/messaging.actions';
 
 
@@ -183,7 +183,7 @@ function ProposalBubble({ msg, onAccept, canAccept }: { msg: Message, onAccept: 
                 ) : null}
                 <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Fecha Entrega:</span>
-                    <span className="font-semibold">{formattedDate || '...'}</span>
+                    <span className="font-semibold">{formattedDate || '...' }</span>
                 </div>
                  <div className="flex justify-between items-baseline text-sm">
                     <span className="text-muted-foreground">Total Estimado:</span>
@@ -390,9 +390,24 @@ export default function ChatPage() {
       }
   };
   
-  const handleAcceptProposal = (messageId: string) => {
+  const handleAcceptQuote = async (messageId: string) => {
       if(!currentUser) return;
-      acceptProposal(conversationId, messageId, currentUser.id);
+      
+      toast({ title: 'Aceptando Propuesta...' });
+      try {
+          await acceptQuote({ transactionId: conversationId, userId: currentUser.id });
+          toast({
+              title: 'Propuesta Aceptada',
+              description: 'La transacción se ha movido al siguiente estado.'
+          });
+      } catch (error) {
+          toast({
+              title: 'Error',
+              description: 'No se pudo aceptar la propuesta. Inténtalo de nuevo.',
+              variant: 'destructive',
+          });
+          console.error('Failed to accept quote:', error);
+      }
   }
 
   const isProvider = currentUser?.type === 'provider';
@@ -419,7 +434,7 @@ export default function ChatPage() {
           </Alert>
       )}
 
-      <div className="flex-grow bg-[url('/doodle-bg.png')] bg-repeat">
+      <div className="flex-grow bg-[url('https://i.postimg.cc/8kZDBVkS/doodle-bg.png')] bg-repeat">
         <ScrollArea className="h-full" ref={scrollAreaRef}>
           <div className="p-4 space-y-2">
             {conversation.messages.map((msg) => {
@@ -429,7 +444,7 @@ export default function ChatPage() {
                   key={msg.id} 
                   msg={msg} 
                   isCurrentUser={isCurrentUserMsg} 
-                  onAccept={handleAcceptProposal} 
+                  onAccept={handleAcceptQuote} 
                   canAcceptProposal={canAcceptProposal} 
                   onForwardLocation={(loc) => sendMessage({ recipientId: otherParticipant.id, location: loc, conversationId, senderId: currentUser.id })}
                 />
@@ -461,7 +476,7 @@ export default function ChatPage() {
                         </PopoverContent>
                      </Popover>
                     {isProvider && !isSelfChat && (
-                        <Button variant="ghost" className="w-full justify-start" onClick={() => setIsProposalDialogOpen(true)}><PlusCircle className="mr-2 h-4 w-4 text-green-500"/>Propuesta de Acuerdo</Button>
+                        <Button variant="ghost" className="w-full justify-start" onClick={() => setIsProposalDialogOpen(true)}><PlusCircle className="mr-2 h-4 w-4 text-green-500" />Propuesta de Acuerdo</Button>
                     )}
                 </div>
             </PopoverContent>

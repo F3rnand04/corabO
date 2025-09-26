@@ -20,7 +20,6 @@ export async function getExchangeRate(): Promise<ExchangeRateOutput> {
   // The cache tag 'exchange-rate' can be used for on-demand revalidation if needed.
   return unstable_cache(
     async () => {
-      console.log('Fetching fresh exchange rate...');
       // In a real-world scenario, this flow would contain logic to scrape
       // a financial data API or read from a secure database.
       // For this prototype, we return a fixed, realistic value.

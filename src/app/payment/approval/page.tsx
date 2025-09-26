@@ -8,7 +8,7 @@ import { useAuth } from '@/hooks/use-auth-provider';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, CheckCircle, Handshake, AlertTriangle, Smartphone, Copy, Banknote, Star } from 'lucide-react';
-import { User, credicoraLevels, QrSession } from '@/lib/types';
+import { User, CredicoraLevel, QrSession } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';

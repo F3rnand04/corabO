@@ -30,7 +30,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
   // Once we have a user, render the main app layout.
   const hideHeaderForPaths = [
-    '/initial-setup',
+    '/profile-setup',
     '/cashier-login',
     '/scan-qr',
     '/show-qr',
@@ -44,7 +44,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     '/show-qr',
     '/admin',
     '/videos',
-    '/initial-setup',
+    '/profile-setup',
     '/cashier-login',
   ];
 

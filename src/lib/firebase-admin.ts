@@ -1,65 +1,52 @@
-/**
- * @fileOverview Centralized Firebase Admin SDK initialization.
- * This file is the single source of truth for the Firebase Admin App instance,
- * ensuring it is initialized only once for all server-side operations.
- */
 import admin from 'firebase-admin';
-import { getAuth, type Auth } from 'firebase-admin/auth';
-import { getFirestore, type Firestore } from 'firebase-admin/firestore';
+import { getApps } from 'firebase-admin/app';
 import { getStorage } from 'firebase-admin/storage';
-import { getMessaging, type Messaging } from 'firebase-admin/messaging';
 
-// --- Singleton Pattern for Admin SDK ---
-// This prevents multiple initializations in serverless environments.
-
-function initializeAdminApp(): admin.app.App {
-    if (admin.apps.length > 0) {
+function initializeAdminApp() {
+    if (getApps().length > 0) {
         return admin.app();
     }
-    
-    const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_KEY
-      ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY)
-      : undefined;
 
-    // In an emulator environment, initialize without credentials.
-    // The SDK will connect automatically if the FIRESTORE_EMULATOR_HOST is set.
-    if (process.env.FIRESTORE_EMULATOR_HOST) {
-        return admin.initializeApp({
-            projectId: "corabo-demo",
-            storageBucket: "corabo-demo.appspot.com",
-        });
+    if (!process.env.FIREBASE_PRIVATE_KEY_B64) {
+        throw new Error('The FIREBASE_PRIVATE_KEY_B64 environment variable is not defined.');
     }
 
-    // In a production environment, the service account key MUST be provided.
-    if (serviceAccount) {
-        return admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount),
-            projectId: "corabo-demo",
-            storageBucket: "corabo-demo.appspot.com",
-        });
-    }
+    // Decode the Base64 private key from the environment variable
+    const decodedPrivateKey = Buffer.from(process.env.FIREBASE_PRIVATE_KEY_B64, 'base64').toString('utf8');
 
-    // If neither emulator nor service account is found, it's a critical error.
-    throw new Error(
-        "CRITICAL: FIREBASE_SERVICE_ACCOUNT_KEY no está definida y no se detectan emuladores. El backend no puede autenticarse."
-    );
+    const serviceAccount = {
+        type: process.env.FIREBASE_TYPE || 'service_account',
+        project_id: process.env.FIREBASE_PROJECT_ID,
+        private_key_id: process.env.FIREBASE_PRIVATE_KEY_ID,
+        private_key: decodedPrivateKey, // Use the decoded key
+        client_email: process.env.FIREBASE_CLIENT_EMAIL,
+        client_id: process.env.FIREBASE_CLIENT_ID,
+        auth_uri: process.env.FIREBASE_AUTH_URI,
+        token_uri: process.env.FIREBASE_TOKEN_URI,
+        auth_provider_x509_cert_url: process.env.FIREBASE_AUTH_PROVIDER_X509_CERT_URL,
+        client_x509_cert_url: process.env.FIREBASE_CLIENT_X509_CERT_URL,
+        universe_domain: process.env.UNIVERSE_DOMAIN || 'googleapis.com',
+    };
+
+    try {
+        if (!serviceAccount.project_id || !serviceAccount.client_email || !serviceAccount.private_key) {
+            throw new Error('Firebase service account details are missing or incomplete in environment variables.');
+        }
+
+        return admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
+            databaseURL: `https://${serviceAccount.project_id}.firebaseio.com`,
+            storageBucket: `${serviceAccount.project_id}.appspot.com`
+        });
+    } catch (error: any) {
+        console.error("Firebase Admin Initialization Error:", error);
+        throw new Error(`Failed to initialize Firebase Admin SDK: ${error.message}`);
+    }
 }
 
 const adminApp = initializeAdminApp();
 
-// Export getter functions for each service
-export function getFirebaseAuth(): Auth {
-    return getAuth(adminApp);
-}
-
-export function getFirebaseFirestore(): Firestore {
-    return getFirestore(adminApp);
-}
-
-export function getFirebaseStorage(): admin.storage.Storage {
-    return getStorage(adminApp);
-}
-
-export function getFirebaseMessaging(): Messaging {
-    return getMessaging(adminApp);
-}
+export const getFirebaseAdminApp = () => adminApp;
+export const getFirebaseAuth = () => admin.auth(adminApp);
+export const getFirebaseFirestore = () => admin.firestore(adminApp);
+export const getFirebaseStorage = () => getStorage(adminApp);

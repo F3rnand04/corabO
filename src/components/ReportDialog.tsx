@@ -49,15 +49,6 @@ export function ReportDialog({ isOpen, onOpenChange, providerId, publicationId }
     setIsSubmitting(true);
     // Simulate API call
     setTimeout(() => {
-        console.log({
-            providerId,
-            publicationId,
-            reason,
-            description,
-            hideContent,
-            hideProvider,
-        });
-
         toast({
             title: "Denuncia Enviada",
             description: "Gracias por ayudarnos a mantener la comunidad segura. Revisaremos tu denuncia a la brevedad."

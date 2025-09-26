@@ -49,7 +49,7 @@ export function ValidationItem({
         setIsLoading(true);
         try {
             if (type === 'phone') {
-                await sendSmsVerificationCode(firebaseUser.id, currentValue);
+                await sendSmsVerificationCode(firebaseUser.uid, currentValue);
                 setStatus('pending');
                 toast({ title: 'Código Enviado', description: 'Revisa tu teléfono para obtener el código de 6 dígitos.'});
             } else if (onValidate) {
@@ -70,7 +70,7 @@ export function ValidationItem({
         setIsLoading(true);
         try {
             if (type === 'phone') {
-                const result = await verifySmsCode(firebaseUser.id, inputCode);
+                const result = await verifySmsCode(firebaseUser.uid, inputCode);
                 if(result.success) {
                     setStatus('validated');
                 } else {

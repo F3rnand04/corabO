@@ -1,39 +1,48 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
+  experimental: {
+    serverComponentsExternalPackages: [
+      '@react-email/components',
+      '@react-email/render',
+      'react-hook-form',
+      '@hookform/resolvers/zod',
+      'lucide-react',
+    ],
   },
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'placehold.co',
-        port: '',
-        pathname: '/**',
+        hostname: 'lh3.googleusercontent.com',
       },
       {
         protocol: 'https',
         hostname: 'i.postimg.cc',
-        port: '',
-        pathname: '/**',
-      }
+      },
+      {
+        protocol: 'https',
+        hostname: 'placehold.co',
+      },
+      {
+        protocol: 'https',
+        hostname: 'firebasestorage.googleapis.com',
+      },
     ],
   },
-  webpack: (config) => { // Añadimos la configuración de Webpack aquí
-    // Tell webpack to ignore watching the files that Genkit generates.
-    // This prevents an infinite hot-reload loop.
+  webpack: (config, { isServer }) => {
     config.watchOptions = {
       ignored: [
-        "**/.genkit/**",
-        "**/.firebase/**",
-        "**/genkit-log.json",
-        "**/firebase-debug.log",
+        '**/.genkit/**', 
+        '**/.firebase/**',
+        '**/genkit-log.json',
+        '**/firebase-debug.log',
       ],
     };
+
+    // From src/next.config.js
+    if (isServer) {
+      config.externals.push('@opentelemetry/instrumentation', 'require-in-the-middle');
+    }
     return config;
   },
 };

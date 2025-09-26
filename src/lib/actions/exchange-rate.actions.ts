@@ -9,7 +9,6 @@ import { revalidateTag } from 'next/cache';
 export async function setExchangeRate(countryCode: string, rate: number) {
     // In a real app, this would call a flow to update the rate in a secure backend/DB.
     // For this prototype, we'll just log it and revalidate.
-    console.log(`Setting exchange rate for ${countryCode} to ${rate}`);
     
     // This revalidates the cache for the getExchangeRate flow.
     revalidateTag('exchange-rate');

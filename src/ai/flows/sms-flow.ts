@@ -29,11 +29,7 @@ export async function sendSmsVerificationCodeFlow(db: Firestore, input: SmsVerif
       phoneVerificationCodeExpires: codeExpiry.toISOString(),
     });
     
-    try {
-        console.log(`Simulating SMS to ${input.phoneNumber}: Your code is ${verificationCode}`);
-    } catch (error) {
-        console.error("Error sending SMS via Twilio in flow:", error);
-    }
+    // TODO: Implement actual SMS sending via Twilio or another provider
   }
 
 

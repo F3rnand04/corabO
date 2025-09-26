@@ -14,26 +14,36 @@ export default function ReviewPage() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // We show a loader if the necessary data is not yet available.
+  // This also prevents rendering the component with incomplete data.
   if (!currentUser || !currentUser.profileSetupData) {
     return (
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-center min-h-[300px]">
             <Loader2 className="h-8 w-8 animate-spin" />
         </div>
     );
   }
 
   const handleFinalSubmit = async () => {
-    if (!currentUser?.profileSetupData) return;
+    // Create a stable reference to the profile data after checking for its existence.
+    const profileData = currentUser.profileSetupData;
+
+    if (!profileData) {
+        toast({ variant: 'destructive', title: "Error", description: "No se encontraron los datos del perfil para enviar." });
+        return;
+    }
+
     setIsSubmitting(true);
     
     try {
-        await becomeProvider(currentUser.id, currentUser.profileSetupData);
+        await becomeProvider(currentUser.id, profileData);
         
+        // Use the stable `profileData` reference inside the state updater.
         setCurrentUser(prevUser => {
           if (!prevUser) return null;
           return {
             ...prevUser,
-            type: currentUser.profileSetupData.providerType === 'delivery' ? 'repartidor' : 'provider',
+            type: profileData.providerType === 'delivery' ? 'repartidor' : 'provider',
             isTransactionsActive: true
           }
         });

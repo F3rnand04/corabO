@@ -1,4 +1,3 @@
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -33,7 +32,7 @@ export async function markConversationAsRead(conversationId: string) {
     const convoRef = db.collection('conversations').doc(conversationId);
     const convoSnap = await convoRef.get();
 
-    if (convoSnap.exists()) {
+    if (convoSnap.exists) {
         const conversation = convoSnap.data() as Conversation;
         const updatedMessages = conversation.messages.map(msg => ({ ...msg, isRead: true }));
         await convoRef.update({ messages: updatedMessages });

@@ -15,3 +15,5 @@ export function ThemeSwitcher() {
     </DropdownMenuItem>
   );
 }
+
+export { useTheme };

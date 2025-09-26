@@ -14,7 +14,6 @@ export async function generateMonthlyInvoices(month: number, year: number) {
     const providersSnap = await providersQuery.get();
 
     if (providersSnap.empty) {
-        console.log("No providers found to generate invoices for.");
         return { success: true, message: "No providers found." };
     }
 

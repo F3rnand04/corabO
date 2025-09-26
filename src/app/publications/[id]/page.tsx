@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Edit, Trash2 } from 'lucide-react';
 import { PublicationComments } from '@/components/PublicationComments';
 import { Skeleton } from '@/components/ui/skeleton';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore'; // Correctly import getDoc
 import type { GalleryImage, User } from '@/lib/types';
 import { PublicationCard } from '@/components/PublicationCard';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -75,13 +75,14 @@ export default function PublicationPage() {
             if (docSnap.exists()) {
                 const pubData = docSnap.data() as GalleryImage;
                 
-                // Use the already embedded owner if available
                 if (pubData.owner) {
                     setPublication(pubData);
                 } else {
-                    // Fallback to fetch owner if not embedded (for older data)
                      try {
-                        const ownerDocSnap = await doc(db, 'users', pubData.providerId).get();
+                        // Use the modern getDoc function with the document reference
+                        const ownerDocRef = doc(db, 'users', pubData.providerId);
+                        const ownerDocSnap = await getDoc(ownerDocRef);
+                        
                         if (ownerDocSnap.exists()) {
                             setPublication({ ...pubData, owner: ownerDocSnap.data() as User });
                         }

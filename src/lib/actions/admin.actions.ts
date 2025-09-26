@@ -1,8 +1,6 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import type { User } from '@/lib/types';
-import { autoVerifyIdWithAIFlow } from '@/ai/flows/verification-flow';
 import { sendNewCampaignNotificationsFlow } from '@/ai/flows/notification-flow';
 import { createManagementUserFlow } from '@/ai/flows/admin-flow';
 import { createTransactionFlow } from '@/ai/flows/transaction-flow';
@@ -14,32 +12,24 @@ import { deleteUserFlow } from '@/ai/flows/profile-flow';
  */
 export async function verifyUserId(userId: string) {
     const db = getFirebaseFirestore();
-    await db.collection('users').doc(userId).update({ idVerificationStatus: 'verified', verified: true });
+    await db.collection('users').doc(userId).update({ 
+        idVerificationStatus: 'verified',
+        verified: true, 
+        idRejectionReason: null // Clear any previous rejection reason
+    });
     revalidatePath('/admin');
 }
 
 /**
- * Rejects a user's identity verification.
+ * Rejects a user's identity verification with a reason.
  */
-export async function rejectUserId(userId: string) {
+export async function rejectUserId(userId: string, reason: string) {
     const db = getFirebaseFirestore();
-    await db.collection('users').doc(userId).update({ idVerificationStatus: 'rejected' });
-    revalidatePath('/admin');
-}
-
-
-export async function autoVerifyIdWithAI(user: User) {
-    if (!user.idDocumentUrl) {
-        throw new Error("El documento de identidad no ha sido cargado.");
-    }
-    const result = await autoVerifyIdWithAIFlow({
-      userId: user.id,
-      nameInRecord: `${user.name} ${user.lastName}`,
-      idInRecord: user.idNumber || '',
-      documentImageUrl: user.idDocumentUrl,
-      isCompany: user.profileSetupData?.providerType === 'company',
+    await db.collection('users').doc(userId).update({ 
+        idVerificationStatus: 'rejected',
+        idRejectionReason: reason 
     });
-    return result;
+    revalidatePath('/admin');
 }
 
 /**
@@ -78,10 +68,10 @@ export async function deleteUser(userId: string) {
     revalidatePath('/admin');
 }
 
-export async function toggleUserPause(userId: string, shouldUnpause: boolean) {
+export async function toggleUserPause(userId: string, isCurrentlyPaused: boolean) {
     const db = getFirebaseFirestore();
-    const updates = shouldUnpause 
-        ? { isPaused: false } 
+    const updates = isCurrentlyPaused 
+        ? { isPaused: false, pauseReason: null } 
         : { isPaused: true, pauseReason: 'Paused by admin' };
     await db.collection('users').doc(userId).update(updates);
     revalidatePath('/admin');

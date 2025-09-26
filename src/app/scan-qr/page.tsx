@@ -69,7 +69,7 @@ function ScanQrContent() {
 
     setupCamera().then(() => {
        if ('BarcodeDetector' in window) {
-           animationFrameId = requestAnimationFrame(detect-qr-code);
+           animationFrameId = requestAnimationFrame(detectQrCode);
        } else {
            console.warn("BarcodeDetector API not supported in this browser.");
            // Consider a fallback to a library if needed, but for now we'll rely on manual input.
